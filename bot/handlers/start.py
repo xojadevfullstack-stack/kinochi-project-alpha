@@ -1,0 +1,42 @@
+from aiogram import Router, F
+from aiogram.filters import CommandStart, CommandObject
+from aiogram.types import Message
+from services.api_client import api_client
+from utils.movie_sender import send_movie_to_user
+from aiogram.exceptions import TelegramBadRequest
+from config import settings
+
+router = Router()
+
+@router.message(CommandStart())
+async def cmd_start(message: Message, command: CommandObject):
+    # Register or update user
+    await api_client.register_user(
+        telegram_id=message.from_user.id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name
+    )
+
+    args = command.args
+    if args:
+        code = args.strip()
+        movie = await api_client.get_movie_by_code(code)
+        
+        if not movie:
+            await message.answer("❌ <b>Kino topilmadi!</b>\n\nSiz yuborgan kod bo'yicha baza tekshirildi, lekin hech narsa chiqmadi. Kodni to'g'ri yozganingizga ishonch hosil qiling!", parse_mode="HTML")
+            return
+
+        success = await send_movie_to_user(message.bot, message.from_user.id, movie)
+
+        if not success:
+            await message.answer("Kechirasiz, ushbu kino videosi hali yuklanmagan yoki xatolik yuz berdi.")
+    else:
+        from keyboards.reply import main_menu
+        welcome_text = (
+            "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
+            "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
+            "🎥 Kinoni ko'rish uchun <b>kino kodini</b> yuboring yoki saytimiz orqali tanlang!\n\n"
+            "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
+        )
+        await message.answer(welcome_text, parse_mode="HTML", reply_markup=main_menu)

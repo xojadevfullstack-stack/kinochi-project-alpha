@@ -1,0 +1,3 @@
+# Alembic versions directory — migration scripts go here.
+# This directory is intentionally empty at Phase 0.
+# Phase 1 will generate the first migration with domain models.
