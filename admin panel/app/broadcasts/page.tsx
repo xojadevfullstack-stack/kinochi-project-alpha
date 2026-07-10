@@ -7,9 +7,9 @@ type Broadcast = {
   id: number;
   message_text: string;
   status: "draft" | "sending" | "completed" | "failed";
-  total_recipients: int;
-  sent_count: int;
-  failed_count: int;
+  total_recipients: number;
+  sent_count: number;
+  failed_count: number;
   created_at: string;
 };
 
