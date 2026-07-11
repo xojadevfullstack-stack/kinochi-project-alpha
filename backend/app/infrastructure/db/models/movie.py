@@ -46,7 +46,13 @@ class MovieModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now(), nullable=False
     )
+    
+    is_series: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
 
     categories: Mapped[list["CategoryModel"]] = relationship(
         secondary=movie_category_table, back_populates="movies", lazy="selectin"
+    )
+    
+    seasons: Mapped[list["SeasonModel"]] = relationship(
+        back_populates="movie", cascade="all, delete-orphan", lazy="selectin"
     )
