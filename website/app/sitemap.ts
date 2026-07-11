@@ -15,8 +15,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Fetch all movies (limit 1000 for sitemap purposes, or implement pagination if needed)
-    const moviesData = await fetchApi('/movies?limit=1000');
-    const movies = moviesData.items || [];
+    const moviesData = await fetchApi('/movies?limit=1000').catch(() => null);
+    const movies = moviesData?.items || [];
 
     const movieRoutes: MetadataRoute.Sitemap = movies.map((movie: any) => ({
       url: `${BASE_URL}/movie/${movie.code}`,
@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     
     // Note: If you add dynamic Category pages in the future (e.g. /category/[id]), 
     // you should fetch categories and add them here as well.
-    const categoriesData = await fetchApi('/categories');
+    const categoriesData = await fetchApi('/categories').catch(() => null);
     const categories = (categoriesData || []).filter((c: any) => c.is_active);
     
     const categoryRoutes: MetadataRoute.Sitemap = categories.map((cat: any) => ({

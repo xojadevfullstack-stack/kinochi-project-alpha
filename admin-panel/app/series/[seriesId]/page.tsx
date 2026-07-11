@@ -8,7 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 type Season = {
   id: number;
   series_id: number;
-  season_number: int;
+  season_number: number;
   title: string | null;
   description: string | null;
   created_at: string;
