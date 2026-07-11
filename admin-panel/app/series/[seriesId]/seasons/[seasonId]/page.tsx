@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, fetchApiUpload } from "@/lib/api";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -137,22 +137,10 @@ export default function EpisodesListPage() {
         const formData = new FormData();
         formData.append("file", selectedFile);
         
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-        const tokenMatch = document.cookie.match(/access_token=([^;]+)/);
-        const token = tokenMatch ? tokenMatch[1] : "";
-        
-        const uploadRes = await fetch(`${API_URL}/series/episodes/${currentEpisodeId}/upload-video`, {
+        await fetchApiUpload(`/series/episodes/${currentEpisodeId}/upload-video`, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          },
           body: formData
         });
-        
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json().catch(() => ({}));
-          throw new Error(errData.detail || "Video yuklashda xatolik");
-        }
       } else if (uploadMethod === "message" && messageId && currentEpisodeId) {
         await fetchApi(`/series/episodes/${currentEpisodeId}/link-video`, {
           method: "POST",
