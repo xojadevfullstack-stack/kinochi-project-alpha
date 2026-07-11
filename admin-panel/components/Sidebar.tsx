@@ -32,6 +32,9 @@ export default function Sidebar() {
         <Link href="/movies" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
           Movies
         </Link>
+        <Link href="/series" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
+          Series
+        </Link>
         <Link href="/categories" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
           Categories
         </Link>
