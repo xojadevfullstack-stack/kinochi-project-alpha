@@ -145,103 +145,119 @@ export default function SeriesDetailsPage() {
   // Actually, episodes store video too! I haven't written the upload endpoint for episodes in backend yet!
   // For now, let's just leave a placeholder or alert that FSM bot should be used for videos.
   
-  if (loading) return <div className="p-8">Yuklanmoqda...</div>;
+  if (loading) return <div className="p-8 text-gray-500">Yuklanmoqda...</div>;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <Link href="/movies" className="text-blue-600 hover:underline mb-2 inline-block">← Orqaga (Kinolar)</Link>
-          <h1 className="text-3xl font-bold text-gray-800">
-            {movie ? `${movie.title} (Kod: ${movie.code})` : "Serial boshqaruvi"}
-          </h1>
-        </div>
+    <div>
+      <div className="mb-6 flex flex-col gap-2">
+        <Link href="/movies" className="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center">
+          &larr; Kinolar ro'yxatiga qaytish
+        </Link>
+        <h1 className="text-3xl font-bold text-gray-800">
+          {movie ? `${movie.title} (Kod: ${movie.code})` : "Serial boshqaruvi"}
+        </h1>
+        <p className="text-gray-500 text-sm">
+          Bu sahifada ushbu serial uchun fasllar va ularning qismlarini boshqarishingiz mumkin.
+        </p>
       </div>
 
       {/* Fasl qoshish */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8 border-l-4 border-purple-500">
-        <h2 className="text-xl font-semibold mb-4">Yangi Fasl qo'shish</h2>
-        <form onSubmit={handleAddSeason} className="flex gap-4 items-end">
-          <div>
-            <label className="block text-sm">Fasl (Mavsum) raqami</label>
-            <input required type="number" min={1} className="w-32 border p-2 rounded" value={newSeasonNum} onChange={e => setNewSeasonNum(e.target.value ? Number(e.target.value) : "")} />
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Yangi fasl qo'shish</h2>
+        <form onSubmit={handleAddSeason} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          <div className="md:col-span-3">
+            <label className="block text-sm text-gray-600 mb-1">Fasl raqami</label>
+            <input required type="number" min={1} className="w-full border border-gray-300 p-2 rounded focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={newSeasonNum} onChange={e => setNewSeasonNum(e.target.value ? Number(e.target.value) : "")} placeholder="Masalan: 1" />
           </div>
-          <div className="flex-1">
-            <label className="block text-sm">Ta'rif (ixtiyoriy)</label>
-            <input type="text" className="w-full border p-2 rounded" value={seasonDesc} onChange={e => setSeasonDesc(e.target.value)} />
+          <div className="md:col-span-7">
+            <label className="block text-sm text-gray-600 mb-1">Ta'rif (ixtiyoriy)</label>
+            <input type="text" className="w-full border border-gray-300 p-2 rounded focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={seasonDesc} onChange={e => setSeasonDesc(e.target.value)} placeholder="Fasl haqida qisqacha..." />
           </div>
-          <button type="submit" className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700">Qo'shish</button>
+          <div className="md:col-span-2">
+            <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition">Qo'shish</button>
+          </div>
         </form>
       </div>
 
       {/* Fasllar royxati */}
       <div className="space-y-6">
         {seasons.map(season => (
-          <div key={season.id} className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-b">
+          <div key={season.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-200 gap-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-800">{season.season_number}-Fasl</h3>
-                {season.description && <p className="text-sm text-gray-500">{season.description}</p>}
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <span className="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded text-sm">{season.season_number}-Fasl</span>
+                </h3>
+                {season.description && <p className="text-sm text-gray-500 mt-1">{season.description}</p>}
               </div>
-              <div className="flex gap-4 items-center">
+              <div className="flex gap-3 items-center w-full sm:w-auto">
                 <button 
                   onClick={() => setActiveSeasonId(activeSeasonId === season.id ? null : season.id)} 
-                  className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 font-medium"
+                  className="flex-1 sm:flex-none text-sm bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 font-medium transition"
                 >
-                  + Qism qo'shish
+                  {activeSeasonId === season.id ? "Yopish" : "+ Qism qo'shish"}
                 </button>
-                <button onClick={() => handleDeleteSeason(season.id)} className="text-red-500 hover:text-red-700 text-sm">🗑 O'chirish</button>
+                <button onClick={() => handleDeleteSeason(season.id)} className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-2">
+                  O'chirish
+                </button>
               </div>
             </div>
 
             {/* Qism qo'shish formasi */}
             {activeSeasonId === season.id && (
-              <div className="p-4 bg-blue-50 border-b">
-                <form onSubmit={e => handleAddEpisode(e, season.id)} className="flex gap-4 items-end">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600">Qism raqami</label>
-                    <input required type="number" min={1} className="w-24 border p-1 rounded" value={newEpisodeNum} onChange={e => setNewEpisodeNum(e.target.value ? Number(e.target.value) : "")} />
+              <div className="p-5 bg-blue-50/50 border-b border-gray-200">
+                <form onSubmit={e => handleAddEpisode(e, season.id)} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                  <div className="md:col-span-3">
+                    <label className="block text-sm text-gray-600 mb-1">Qism raqami</label>
+                    <input required type="number" min={1} className="w-full border border-gray-300 p-2 rounded focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={newEpisodeNum} onChange={e => setNewEpisodeNum(e.target.value ? Number(e.target.value) : "")} placeholder="Masalan: 1" />
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-600">Nomi (ixtiyoriy)</label>
-                    <input type="text" className="w-full border p-1 rounded" value={newEpisodeTitle} onChange={e => setNewEpisodeTitle(e.target.value)} />
+                  <div className="md:col-span-7">
+                    <label className="block text-sm text-gray-600 mb-1">Nomi (ixtiyoriy)</label>
+                    <input type="text" className="w-full border border-gray-300 p-2 rounded focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={newEpisodeTitle} onChange={e => setNewEpisodeTitle(e.target.value)} placeholder="Masalan: Qasoskorlar..." />
                   </div>
-                  <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">Saqlash</button>
+                  <div className="md:col-span-2">
+                    <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition">Saqlash</button>
+                  </div>
                 </form>
               </div>
             )}
 
-            <div className="p-0">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-white">
                   <tr>
-                    <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase">Kod (Avto)</th>
-                    <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase">Qism</th>
-                    <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase">Nomi</th>
-                    <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase">Video</th>
-                    <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase">Amal</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Kod</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Qism</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nomi</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Video statusi</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Amal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-200 bg-white">
                   {season.episodes?.map(ep => (
-                    <tr key={ep.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 whitespace-nowrap text-sm font-mono font-bold text-blue-600">{ep.code}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-sm font-semibold">{ep.episode_number}-qism</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{ep.title || "-"}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-sm">
+                    <tr key={ep.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-gray-900 bg-gray-50/50">{ep.code}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{ep.episode_number}-qism</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{ep.title || <span className="text-gray-400 italic">Mavjud emas</span>}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {ep.telegram_file_id || ep.storage_channel_message_id ? (
-                          <span className="text-green-600 font-bold">✅ Yuklangan</span>
+                          <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-1 rounded-full text-xs font-medium border border-green-200">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                            Yuklangan
+                          </span>
                         ) : (
-                          <span className="text-gray-400">Bot orqali yuklang</span>
+                          <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-1 rounded-full text-xs font-medium border border-amber-200">
+                            Botdan yuklang
+                          </span>
                         )}
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap text-sm">
-                        <button onClick={() => handleDeleteEpisode(ep.id)} className="text-red-500 hover:text-red-700">O'chirish</button>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button onClick={() => handleDeleteEpisode(ep.id)} className="text-red-600 hover:text-red-900 font-medium transition">O'chirish</button>
                       </td>
                     </tr>
                   ))}
                   {(!season.episodes || season.episodes.length === 0) && (
-                    <tr><td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-400">Hali qismlar yo'q</td></tr>
+                    <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">Bu faslda hali qismlar mavjud emas. Yuqoridagi "Qism qo'shish" tugmasini bosing.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -249,8 +265,12 @@ export default function SeriesDetailsPage() {
           </div>
         ))}
         {seasons.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-lg border text-gray-500">
-            Hali fasllar qo'shilmagan. Yuqoridagi formadan fasl qo'shing.
+          <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
+            <svg className="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <h3 className="text-sm font-medium text-gray-900">Fasllar yo'q</h3>
+            <p className="mt-1 text-sm text-gray-500">Ushbu serial uchun hali fasllar kiritilmagan.</p>
           </div>
         )}
       </div>
