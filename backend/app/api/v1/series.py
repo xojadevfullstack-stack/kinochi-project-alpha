@@ -112,6 +112,17 @@ async def list_seasons(
         raise HTTPException(status_code=404, detail="Series not found")
     return series.seasons
 
+@router.get("/seasons/{season_id}", response_model=Season)
+async def get_season(
+    season_id: int,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get a season by ID (Public)."""
+    season = await service.get_season_by_id(season_id)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    return season
+
 
 @router.put("/seasons/{season_id}", response_model=Season)
 async def update_season(
