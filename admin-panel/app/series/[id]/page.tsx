@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 
 type Episode = {
   id: number;
-  season_id: int;
+  season_id: number;
   episode_number: number;
   title: string | null;
   code: string;
