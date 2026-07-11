@@ -5,8 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from app.infrastructure.db.session import get_session
-from app.api.deps import get_current_admin
+from app.api.deps import get_db_session, get_current_admin
 from app.api.schemas.series import (
     SeasonCreate, SeasonUpdate, SeasonResponse,
     EpisodeCreate, EpisodeUpdate, EpisodeResponse
@@ -18,7 +17,7 @@ from app.application.movies.series_service import SeriesService
 
 router = APIRouter(prefix="/series", tags=["series"])
 
-def get_series_service(session: AsyncSession = Depends(get_session)) -> SeriesService:
+def get_series_service(session: AsyncSession = Depends(get_db_session)) -> SeriesService:
     series_repo = SeriesRepositoryImpl(session)
     movie_repo = MovieRepositoryImpl(session)
     return SeriesService(series_repo, movie_repo)
