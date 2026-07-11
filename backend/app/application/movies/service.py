@@ -39,7 +39,8 @@ class MovieService:
         trailer_url: str | None = None,
         telegram_file_id: str | None = None,
         storage_channel_message_id: int | None = None,
-        category_ids: list[int] | None = None
+        category_ids: list[int] | None = None,
+        is_series: bool = False
     ) -> Movie:
         if code is None:
             code = await self._generate_unique_code()
@@ -59,7 +60,8 @@ class MovieService:
             poster_url=poster_url,
             trailer_url=trailer_url,
             telegram_file_id=telegram_file_id,
-            storage_channel_message_id=storage_channel_message_id
+            storage_channel_message_id=storage_channel_message_id,
+            is_series=is_series
         )
         return await self.movie_repo.create(movie, category_ids=category_ids)
 
@@ -92,7 +94,8 @@ class MovieService:
         trailer_url: str | None = None,
         telegram_file_id: str | None = None,
         storage_channel_message_id: int | None = None,
-        category_ids: list[int] | None = None
+        category_ids: list[int] | None = None,
+        is_series: bool | None = None
     ) -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
         if not movie:
@@ -113,6 +116,7 @@ class MovieService:
         if trailer_url is not None: movie.trailer_url = trailer_url
         if telegram_file_id is not None: movie.telegram_file_id = telegram_file_id
         if storage_channel_message_id is not None: movie.storage_channel_message_id = storage_channel_message_id
+        if is_series is not None: movie.is_series = is_series
 
         return await self.movie_repo.update(movie, category_ids=category_ids)
 
