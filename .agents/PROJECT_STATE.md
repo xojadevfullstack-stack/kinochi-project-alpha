@@ -1,93 +1,83 @@
-# Kinochi Loyihasi Holati (Project State - Diagnostika Natijasi)
+# Kinochi Loyihasi Holati (Project State)
 
-Ushbu hujjat loyihaning haqiqiy kod holati (audit natijasi) asosida tuzildi.
+Ushbu hujjat loyihaning haqiqiy kod holatini aks ettiruvchi dolzarb context hujjatidir. (So'nggi yangilanish: **2026-07-11**). AI va Dasturchilar uchun loyihaning arxitekturasi, mavjud yechimlari va joriy statusini saqlab turadi.
 
-## Arhitektura va Texnologiyalar
-- **Backend:** FastAPI, PostgreSQL, SQLAlchemy 2.0, Alembic, Pydantic, HTTPX. Clean Architecture tamoyillari (Domain, Application, Infrastructure, API).
-- **Telegram Bot:** Aiogram 3.x. Mustaqil servis sifatida ishlaydi.
-- **Admin Panel:** Next.js (App Router) + TypeScript + Tailwind CSS.
-- **Website:** Foydalanuvchi tomonidan Next.js (App Router) bilan yozilmoqda. **AGENTLAR TOMONIDAN WEBSITE PAPKASIGA TEGILMASIN.**
+## Loyihaning Umumiy Holati
 
----
+Loyiha to'liq MVP holatiga kelgan va **Production muhitiga joylangan (Deployed)**:
+- **Frontend (Website & Admin Panel):** Vercel
+- **Backend & Telegram Bot:** Render
+- **Database:** Neon (PostgreSQL)
+- **Redis (Kesh & Limitlar):** Upstash
 
-## 1. Backend Holati (MAVJUD VA TEKSHIRILGAN)
-
-Backend to'liq ishlashga tayyor va barcha qatlamlari to'g'ri bog'langan.
-
-**Modullar zanjiri (Domain -> Model -> Service -> API):**
-- `movies`: To'liq zanjir mavjud va ishlaydi.
-- `categories`: To'liq zanjir mavjud va ishlaydi.
-- `channels`: To'liq zanjir mavjud va ishlaydi.
-- `broadcasts`: To'liq zanjir mavjud va ishlaydi (Rate limiting `sender.py` orqali ta'minlangan).
-  *Eslatma: Broadcast: TO'LIQ TEKSHIRILDI va ISHLAYDI — amaliy 'send' sinovi foydalanuvchi tomonidan tasdiqlandi (2026-07-09), xabar botdan real foydalanuvchiga muvaffaqiyatli yetib bordi.*
-- `users`: To'liq zanjir mavjud.
-- `admin_users` va `auth`: Domain/Model/API darajasida JWT asosida ishlaydi. Auth xavfsizligi `Depends(get_current_admin)` orqali himoyalangan.
-
-**Alembic Migratsiyalar Zanjiri:**
-Barcha migratsiya fayllari zanjiri to'g'ri (uzilmagan) va izchil:
-1. `001_initial_movies_categories.py`
-2. `9994a3613b61_add_user_and_mandatorychannel_models.py` (down_revision: 001)
-3. `6b34f1d25588_add_is_active_to_categories.py` (down_revision: 9994a3613b61)
-4. `e42a9b3c4f9a_make_channel_id_nullable.py` (down_revision: 6b34f1d25588)
-5. `f7c8d2e1a5b3_create_admin_users_table.py` (down_revision: e42a9b3c4f9a)
-6. `b3528338b53f_add_broadcasts_table.py` (down_revision: f7c8d2e1a5b3)
-
-**`.env.example` o'zgaruvchilari:**
-`PROJECT_NAME`, `VERSION`, `APP_ENV`, `DEBUG`, `DATABASE_URL`, `REDIS_URL`, `CORS_ORIGINS`, `SECRET_KEY`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS`, `BOT_TOKEN`, `STORAGE_CHANNEL_ID`.
+Asosiy maqsad (bot orqali kino/serial tarqatish, veb-sayt orqali SEO qidiruv, va admin panel orqali boshqarish) to'liq amalga oshirilgan.
 
 ---
 
-## 2. Bot Holati (MAVJUD VA TEKSHIRILGAN)
+## 1. BACKEND (backend/)
+**Holati: To'liq shakllangan, Clean Architecture qoidalarida ishlaydi.**
 
-Bot `aiogram` da ishlangan va `.venv` ichida yurgizilishi shart.
-- **handlers/:** `start.py` (ro'yxatdan o'tish), `search.py` (sarlavha bo'yicha qidirish), `check_sub.py` (obunani tekshirish).
-- **middlewares/:** `subscription_check.py` (Foydalanuvchi majburiy kanallarga a'zo bo'lmaguncha botni bloklaydi).
-- **services/:** `api_client.py` (Backend bilan muloqot qiladi).
-- **keyboards/:** `inline.py` (Obuna bo'lish, qidiruv natijalari uchun tugmalar).
-- **utils/:** `movie_sender.py` (Videolarni yuborish mantiqi).
-- **`main.py` routerlar:** `start_router`, `check_sub_router`, `search_router` ulangan.
+**1.1 Domain va Modullar:**
+- `movies`: Alohida filmlar CRUD amallari.
+- `series` (YANGI): Seriallar arxitekturasi **filmlardan butunlay ajratilgan (decoupled)**. `Series -> Season -> Episode` iyerarxiyasida ishlaydi. 
+- `categories`: Janrlar va toifalar.
+- `users`: Telegram bot orqali ro'yxatdan o'tganlar.
+- `channels`: Majburiy obuna kanallari (Redis orqali tekshiriladi).
+- `broadcasts`: Barcha foydalanuvchilarga xabar yuborish mexanizmi.
+- `admin_users` / `auth`: JWT (Access/Refresh token) asosida ishlovchi admin avtorizatsiyasi.
 
----
+**1.2 Alembic Migratsiyalar:**
+- `alembic/versions/` papkasida migratsiyalar ketma-ketligi mavjud.
+- *Eslatma:* Migratsiyani autogenerate qilish uchun local/remote DB ishlayotgan bo'lishi shart. Agar `movies.is_series` yoki eski jadvallar qolib ketgan bo'lsa, manual `alembic upgrade head` qilinishi kutilmoqda.
 
-## 3. Admin Panel Holati (MAVJUD VA TEKSHIRILGAN)
-
-Panel API'ga `fetchApi` (credentials: 'include') bilan ulangan va to'liq ishlashga tayyor.
-- Mavjud sahifalar: `/login`, `/movies`, `/categories`, `/channels`, `/broadcasts`.
-- **Eslatma:** `broadcasts` UI sahifasi oxirgi ishlarda qo'shildi va u ham API bilan to'liq ulangan (shu jumladan "Test yuborish" formasi bilan).
-
----
-
-## 4. Website Holati (KUZATISH REJIMI)
-
-**DIQQAT: FOYDALANUVCHI TOMONIDAN MUSTAQIL OLIB BORILMOQDA. AGENT TEGMAYDI!**
-- Papka: `website/` (Next.js App Router, Tailwind CSS, TypeScript).
-- Hozirgi holati: `package.json`, `next.config.mjs`, `tailwind.config.ts`, `app/page.tsx` mavjud. Foydalanuvchi "Phase 3: Public Website" vizual qismini mustaqil yozmoqda.
+**1.3 API Xavfsizligi va Avtorizatsiya:**
+- `/auth/me`, `/movies`, `/series`, `/categories`, `/channels`, `/broadcasts` endpointlarining mutatsion qismlari (POST, PUT, DELETE) `get_current_admin` bilan to'liq yopilgan.
+- Keng omma (Bot va Vebsayt) uchun faqat o'qish (GET) va ayrim maxsus (Register) post endpointlar ochiq qoldirilgan.
 
 ---
 
-## 5. Agent Qoidalari (.agents/rules/)
+## 2. BOT (bot/)
+**Holati: Funksional va Barqaror.**
 
-Agentlarga ishlash davomida quyidagi qoidalar rahbarlik qiladi:
-- `security-env.md` (`always_on`): `.env` faylini o'qimaslik.
-- `verification-protocol.md` (`always_on`): O'zgarishlarni tekshirish protokoli.
-- `bot-thin-client.md` (`glob: bot/**`): Bot faqat API orqali ishlashi, to'g'ridan-to'g'ri DB'ga ulanmasligi.
-- `clean-architecture-boundaries.md` (Always-On): Qatlamlararo qat'iy qaramlik qoidalari.
-- `database-migrations.md` (`glob: backend/alembic/**`): Migratsiyalar ustida qoidalar.
-
-*Eslatma: Avvalgi `PROJECT_STATE.md` dagi "Phase 3 qoldi", "Broadcast UI yozilmagan" degan ma'lumotlar HAQIQIY kodda allaqachon bajarilgan yoki jarayonga o'zgartirilganligi sababli, bu versiyada haqiqatga to'g'rilandi.*
+**2.1 Mexanizm va Funksiyalar:**
+- **Polling / Web Server:** Bot Render.com da port band qilishi va o'chib qolmasligi uchun `main.py` da "dummy web server" (Aiohttp yordamida `0.0.0.0:PORT`) bilan birgalikda Polling rejimida ishga tushirilgan.
+- **Handlers:** `/start` deep-linking (kino yoki epizodni avtomatik berish), qidiruv (`search`), seriallarni qadam-baqadam tanlash menyulari.
+- **Middleware:** `subscription_check.py` orqali baza va redisni tekshirib foydalanuvchini majburiy kanallarga a'zolikka majburlaydi.
+- **Kino berish:** Fayl ID lari backenddan keladi va bot bevosita Telegram serverlaridan videoni forward/copy qiladi.
 
 ---
 
-## Muhim texnik eslatmalar (kelajakda takrorlanmasligi uchun):
+## 3. ADMIN PANEL (admin-panel/)
+**Holati: To'liq ishlayapti, UI/UX yechimlari bilan boyitilgan.**
 
-1. **Botni ishga tushirish:** Bot `bot/.venv` orqali ishga tushirilishi SHART (`.\.venv\Scripts\Activate.ps1` → `python main.py`), aks holda `ModuleNotFoundError` beradi va bot butunlay ishlamay qoladi.
-2. **Alembic:** Alembic buyruqlari `python -m alembic` shaklida ishlatilishi kerak — aks holda `ModuleNotFoundError: app` xatosi chiqadi.
-3. **Pydantic Entities:** Barcha entity'larda `model_config = ConfigDict(from_attributes=True)` bo'lishi SHART, aks holda API 500 xato beradi.
-4. Backend Docker orqali ishlaydi; kod o'zgargandan keyin `docker-compose up -d --build backend` MAJBURIY, aks holda eski kod ishlab qoladi.
-5. `alembic/env.py` da `from app.infrastructure.db import models` qatori bo'lishi SHART, aks holda autogenerate yangi model qo'shilganda eski jadvallarni DROP qiladi.
-6. `get_db_session()` har bir tranzaksiyadan so'ng o'ziga qilingan o'zgarishlarni `commit()` qilishi kerak.
-7. Tashqi API bilan ishlashda xatoni jimgina yutish (bare except) mumkin emas, log yozish majburiy.
-8. 5432-port boshqa loyiha konteyneri bilan to'qnashishi mumkin, `docker ps -a` bilan tekshirish kerak.
-9. `.env` fayllari qo'lda `.env.example` dan nusxalanishi va to'ldirilishi kerak.
-10. `models/__init__.py` ga yangi model qo'shilganda import qo'shish SHART (Alembic discovery uchun).
-11. Admin panel `fetchApi` wrapper'da `credentials: 'include'` bor — bu cookie yuborilishi uchun zarur, umuman olib tashlanmasin.
+**3.1 Asosiy qismlar:**
+- **Auth:** Login orqali kirish (Cookie-based JWT ulanishi).
+- **Movies:** Kino ma'lumotlarini kiritish va videoni bevosita Telegram yopiq kanaliga yuklash.
+- **Series (Yangi):** Seriallarni `Series -> Season -> Episode` zanjiri orqali boshqarish. **Video yuklash jarayoni bevosita "Episode (Qism)" yaratish formasi bilan bitta "Saqlash" tugmasiga birlashtirilgan** (ikkinchi qadamga hojat qolmagan).
+- **Channels & Broadcasts:** Obuna kanallarini qo'shish va reklama jo'natish paneli.
+
+---
+
+## 4. WEBSITE (website/)
+**Holati: To'liq SEO-optimallashtirilgan Katalog.**
+
+**4.1 Xususiyatlari:**
+- Next.js (App Router) da yozilgan, Server-Side Rendering (SSR) dan faol foydalanilgan.
+- `app/sitemap.ts` va `app/robots.ts` orqali avtomatlashtirilgan SEO fayllar generatsiyasi.
+- Kino va Seriallarni qidirish, ko'rish hamda bevosita botga yo'naltiruvchi `TGSaytga o'tish` deep-linklari.
+
+---
+
+## 5. MUHIM TEXNIK QOIDALAR VA QO'LLANMA (.agents/rules)
+
+1. **Clean Architecture (`backend/`):** Routerni to'g'ridan-to'g'ri Repositoriyga ulash taqiqlanadi. Albatta Service qatlami bo'lishi kerak. Pydantic modellarga `ConfigDict(from_attributes=True)` yozish yoddan chiqmasin.
+2. **Thin Client (`bot/` va `website/`):** Ular hech qachon bazaga to'g'ridan-to'g'ri ulanmaydi, barcha ma'lumot HTTP so'rov orqali backend API'dan olinadi.
+3. **Session Cookie:** Admin panelda HTTP klient albatta `credentials: "include"` argumenti bilan fetch qilishi shart.
+4. **Cloud Deployment:** Render'da botning o'chib qolmasligi uning ichki aiohttp dummy-serveri hisobiga amalga oshmoqda. Buni o'chirish taqiqlanadi (Webhook'ga o'tilmaguncha).
+
+---
+
+## KEYINGI QADAM (NEXT STEPS)
+
+- **Series (Seriallar) bo'limi:** Backend va Admin Panel to'liq mustaqil Series/Season/Episode arxitekturasiga o'tkazildi. Qismlar (Episodes) uchun to'g'ridan-to'g'ri fayl yuklash yoki Telegram Storage kanalidagi mavjud xabar (`message_id`) orqali videoni ulash (link-video) imkoniyatlari muvaffaqiyatli joriy etildi. Bot qismida Serial qismlari uchun navigatsiyali (Oldingi/Keyingi qism) Inline Keyboard va informatsion oynalar qo'shildi. Series feature'si TO'LIQ ISHLAMoqda.
+- Hozirgi kod bazasi kengayishga (scalable) to'liq tayyor holatda. Kelgusi jarayonlar foydalanuvchi vizual didi va mayda qulayliklarga qaratilishi mumkin.

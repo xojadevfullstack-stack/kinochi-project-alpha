@@ -9,6 +9,6 @@ from app.infrastructure.db.models.user import UserModel
 from app.infrastructure.db.models.channel import MandatoryChannelModel
 from app.infrastructure.db.models.admin_user import AdminUserModel
 from app.infrastructure.db.models.broadcast import BroadcastModel
-from app.infrastructure.db.models.series import SeasonModel, EpisodeModel
+from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 
-__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeasonModel", "EpisodeModel"]
+__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel"]

@@ -63,6 +63,15 @@ def get_broadcast_service(session: AsyncSession = Depends(get_db_session)) -> Br
     u_repo = UserRepositoryImpl(session)
     return BroadcastService(b_repo, u_repo)
 
+from app.infrastructure.db.repositories.series_repository import SeriesRepository
+from app.application.series.series_service import SeriesService
+from app.infrastructure.telegram.telegram_client import telegram_client
+
+def get_series_service(session: AsyncSession = Depends(get_db_session)) -> SeriesService:
+    repo = SeriesRepository(session)
+    return SeriesService(repo, telegram_client)
+
+
 
 async def get_current_admin(request: Request, session: AsyncSession = Depends(get_db_session)):
     """

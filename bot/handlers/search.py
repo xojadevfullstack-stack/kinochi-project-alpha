@@ -10,20 +10,14 @@ router = Router()
 async def handle_search_query(message: Message):
     query = message.text.strip()
     
-    if query == "🔍 Qidirish":
+    if query == "🔍 Kino qidirish":
         await message.answer("🍿 <b>Kino olamiga xush kelibsiz!</b>\n\nQidirmoqchi bo'lgan kinongiz nomini yoki maxsus kodini yuboring. Eng sifatli va yangi kinolar faqat bizda!", parse_mode="HTML")
         return
-    elif query == "🎬 Katalog":
-        result = await api_client.search_movies(query="", limit=10)
-        movies = result.get("items", [])
-        if not movies:
-            await message.answer("Katalog hozircha bo'sh.")
-            return
-        keyboard = build_movies_list_keyboard(movies)
-        await message.answer("📚 <b>Katalog</b>\n\nQuyidagi kinolardan birini tanlang:", parse_mode="HTML", reply_markup=keyboard)
+    elif query == "🎲 Tavsiya kino":
+        await message.answer("🔥 <b>Tez kunda...</b>\n\nSiz uchun maxsus tavsiyalar, yilning eng qizg'in premyeralari ro'yxatini tayyorlayapmiz! Biz bilan qoling, zerikishga vaqt bo'lmaydi 😉", parse_mode="HTML")
         return
     elif query == "🌐 Saytga o'tish":
-        await message.answer("🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>https://kinochi-project-alpha-web.onrender.com</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
+        await message.answer("🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>http://localhost:3000</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
         return
         
     # Do not search if query is too short

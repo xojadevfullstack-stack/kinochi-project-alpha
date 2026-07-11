@@ -21,16 +21,26 @@ async def cmd_start(message: Message, command: CommandObject):
     args = command.args
     if args:
         code = args.strip()
-        movie = await api_client.get_movie_by_code(code)
         
-        if not movie:
-            await message.answer("❌ <b>Kino topilmadi!</b>\n\nSiz yuborgan kod bo'yicha baza tekshirildi, lekin hech narsa chiqmadi. Kodni to'g'ri yozganingizga ishonch hosil qiling!", parse_mode="HTML")
+        # 1. Try fetching as a movie
+        movie = await api_client.get_movie_by_code(code)
+        if movie:
+            success = await send_movie_to_user(message.bot, message.from_user.id, movie)
+            if not success:
+                await message.answer("Kechirasiz, ushbu kino videosi hali yuklanmagan yoki xatolik yuz berdi.")
             return
 
-        success = await send_movie_to_user(message.bot, message.from_user.id, movie)
+        # 2. Try fetching as an episode
+        from utils.episode_sender import send_episode_to_user
+        episode = await api_client.get_episode_by_code(code)
+        if episode:
+            success = await send_episode_to_user(message.bot, message.from_user.id, episode)
+            if not success:
+                await message.answer("Kechirasiz, ushbu qism videosi hali yuklanmagan yoki xatolik yuz berdi.")
+            return
 
-        if not success:
-            await message.answer("Kechirasiz, ushbu kino videosi hali yuklanmagan yoki xatolik yuz berdi.")
+        # 3. If neither found
+        await message.answer("❌ <b>Hech narsa topilmadi!</b>\n\nSiz yuborgan kod bo'yicha kino yoki serial qismi topilmadi. Kodni to'g'ri yozganingizga ishonch hosil qiling!", parse_mode="HTML")
     else:
         from keyboards.reply import main_menu
         welcome_text = (

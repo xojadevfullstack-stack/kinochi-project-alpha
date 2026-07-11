@@ -1,24 +1,41 @@
 """
-Series ORM models (Seasons and Episodes).
+Series ORM models.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, ForeignKey, Column, func
+from sqlalchemy import String, Integer, Text, ForeignKey, Column, Table, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
+
+class SeriesModel(Base):
+    __tablename__ = "series"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    poster_url: Mapped[str | None] = mapped_column(String(1024))
+    
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    seasons: Mapped[list["SeasonModel"]] = relationship(
+        back_populates="series", cascade="all, delete-orphan", lazy="selectin"
+    )
 
 class SeasonModel(Base):
     __tablename__ = "seasons"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), index=True)
+    series_id: Mapped[int] = mapped_column(ForeignKey("series.id", ondelete="CASCADE"), index=True, nullable=False)
     season_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    description: Mapped[str | None] = mapped_column(String(1024))
+    title: Mapped[str | None] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
-    # Relationships
-    movie: Mapped["MovieModel"] = relationship(back_populates="seasons")
+    series: Mapped["SeriesModel"] = relationship(back_populates="seasons")
     episodes: Mapped[list["EpisodeModel"]] = relationship(
         back_populates="season", cascade="all, delete-orphan", lazy="selectin"
     )
@@ -27,18 +44,19 @@ class EpisodeModel(Base):
     __tablename__ = "episodes"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id", ondelete="CASCADE"), index=True)
+    season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id", ondelete="CASCADE"), index=True, nullable=False)
     episode_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    
+    # Internal unique short code (like movies code)
+    code: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
+    # Human-readable format S1-CH1
+    display_code: Mapped[str] = mapped_column(String(50), nullable=False)
+    
     title: Mapped[str | None] = mapped_column(String(255))
     
-    # Generated code like "105-S1-CH1"
-    code: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
-    
-    # Video details
     telegram_file_id: Mapped[str | None] = mapped_column(String(255))
     storage_channel_message_id: Mapped[int | None] = mapped_column(Integer)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
-    # Relationships
     season: Mapped["SeasonModel"] = relationship(back_populates="episodes")

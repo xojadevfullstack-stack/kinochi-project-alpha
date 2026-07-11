@@ -1,58 +1,131 @@
-"""
-FastAPI router for Series (Seasons and Episodes) management.
-"""
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+"""API v1 — Series endpoints."""
+import logging
 from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 
-from app.api.deps import get_db_session, get_current_admin
-from app.api.schemas.series import (
-    SeasonCreate, SeasonUpdate, SeasonResponse,
-    EpisodeCreate, EpisodeUpdate, EpisodeResponse
+from app.api.deps import get_series_service, get_current_admin
+from app.application.series.series_service import SeriesService
+from app.domain.series.entities import (
+    Series, SeriesCreate, SeriesUpdate, PaginatedSeriesResponse,
+    Season, SeasonCreate, SeasonUpdate,
+    Episode, EpisodeCreate, EpisodeUpdate
 )
 
-from app.infrastructure.db.repositories.series_repo import SeriesRepositoryImpl
-from app.infrastructure.db.repositories.movie_repo import MovieRepositoryImpl
-from app.application.movies.series_service import SeriesService
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/series", tags=["series"])
 
-def get_series_service(session: AsyncSession = Depends(get_db_session)) -> SeriesService:
-    series_repo = SeriesRepositoryImpl(session)
-    movie_repo = MovieRepositoryImpl(session)
-    return SeriesService(series_repo, movie_repo)
 
-# ── Seasons ──────────────────────────────────────────────────────
-@router.post("/movies/{movie_id}/seasons", response_model=SeasonResponse, status_code=status.HTTP_201_CREATED)
-async def create_season(
-    movie_id: int,
-    data: SeasonCreate,
+# --- SERIES ---
+
+@router.post("", response_model=Series, status_code=status.HTTP_201_CREATED)
+async def create_series(
+    series_in: SeriesCreate,
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
-    try:
-        return await service.create_season(movie_id, data.season_number, data.description)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """Create a new series (Admin only)."""
+    return await service.create_series(series_in)
 
-@router.get("/movies/{movie_id}/seasons", response_model=List[SeasonResponse])
-async def list_seasons(
-    movie_id: int,
+
+@router.get("", response_model=PaginatedSeriesResponse)
+async def list_series(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     service: SeriesService = Depends(get_series_service)
 ):
-    return await service.list_seasons(movie_id)
+    """List series (Public)."""
+    items, total = await service.get_all_series(skip=skip, limit=limit)
+    
+    # Calculate pages
+    pages = (total + limit - 1) // limit if total > 0 else 0
+    page = (skip // limit) + 1 if limit > 0 else 1
+    
+    return PaginatedSeriesResponse(items=items, total=total, page=page, size=limit, pages=pages)
 
-@router.put("/seasons/{season_id}", response_model=SeasonResponse)
-async def update_season(
-    season_id: int,
-    data: SeasonUpdate,
+
+@router.get("/{series_id}", response_model=Series)
+async def get_series(
+    series_id: int,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get series by ID (Public)."""
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series
+
+
+@router.put("/{series_id}", response_model=Series)
+async def update_series(
+    series_id: int,
+    series_in: SeriesUpdate,
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
+    """Update a series (Admin only)."""
+    series = await service.update_series(series_id, series_in)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series
+
+
+@router.delete("/{series_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_series(
+    series_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete a series (Admin only)."""
+    success = await service.delete_series(series_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Series not found")
+
+
+# --- SEASONS ---
+
+@router.post("/{series_id}/seasons", response_model=Season, status_code=status.HTTP_201_CREATED)
+async def create_season(
+    series_id: int,
+    season_in: SeasonCreate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Create a new season for a series (Admin only)."""
+    if season_in.series_id != series_id:
+        raise HTTPException(status_code=400, detail="Series ID mismatch")
+    
     try:
-        return await service.update_season(season_id, **data.model_dump(exclude_unset=True))
+        return await service.create_season(season_in)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/{series_id}/seasons", response_model=List[Season])
+async def list_seasons(
+    series_id: int,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get all seasons for a series (Public)."""
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series.seasons
+
+
+@router.put("/seasons/{season_id}", response_model=Season)
+async def update_season(
+    season_id: int,
+    season_in: SeasonUpdate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Update a season (Admin only)."""
+    season = await service.update_season(season_id, season_in)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    return season
+
 
 @router.delete("/seasons/{season_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_season(
@@ -60,57 +133,69 @@ async def delete_season(
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
+    """Delete a season (Admin only)."""
     success = await service.delete_season(season_id)
     if not success:
         raise HTTPException(status_code=404, detail="Season not found")
 
-# ── Episodes ─────────────────────────────────────────────────────
-@router.post("/seasons/{season_id}/episodes", response_model=EpisodeResponse, status_code=status.HTTP_201_CREATED)
-async def create_episode(
-    season_id: int,
-    data: EpisodeCreate,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    try:
-        return await service.create_episode(
-            season_id=season_id,
-            episode_number=data.episode_number,
-            title=data.title,
-            telegram_file_id=data.telegram_file_id,
-            storage_channel_message_id=data.storage_channel_message_id
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/seasons/{season_id}/episodes", response_model=List[EpisodeResponse])
-async def list_episodes(
-    season_id: int,
-    service: SeriesService = Depends(get_series_service)
-):
-    return await service.list_episodes(season_id)
+# --- EPISODES ---
 
-@router.get("/episodes/code/{code}", response_model=EpisodeResponse)
+from app.domain.series.entities import EpisodeDetail
+
+@router.get("/episodes/code/{code}", response_model=EpisodeDetail)
 async def get_episode_by_code(
     code: str,
     service: SeriesService = Depends(get_series_service)
 ):
-    episode = await service.get_episode_by_code(code)
+    """Get episode details by code (Public, for Bot)."""
+    episode = await service.get_episode_detail_by_code(code)
     if not episode:
         raise HTTPException(status_code=404, detail="Episode not found")
     return episode
 
-@router.put("/episodes/{episode_id}", response_model=EpisodeResponse)
-async def update_episode(
-    episode_id: int,
-    data: EpisodeUpdate,
+@router.post("/seasons/{season_id}/episodes", response_model=Episode, status_code=status.HTTP_201_CREATED)
+async def create_episode(
+    season_id: int,
+    episode_in: EpisodeCreate,
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
+    """Create a new episode for a season (Admin only)."""
+    if episode_in.season_id != season_id:
+        raise HTTPException(status_code=400, detail="Season ID mismatch")
+        
     try:
-        return await service.update_episode(episode_id, **data.model_dump(exclude_unset=True))
+        return await service.create_episode(episode_in)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/seasons/{season_id}/episodes", response_model=List[Episode])
+async def list_episodes(
+    season_id: int,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get all episodes for a season (Public)."""
+    season = await service.get_season_by_id(season_id)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    return season.episodes
+
+
+@router.put("/episodes/{episode_id}", response_model=Episode)
+async def update_episode(
+    episode_id: int,
+    episode_in: EpisodeUpdate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Update an episode (Admin only)."""
+    episode = await service.update_episode(episode_id, episode_in)
+    if not episode:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    return episode
+
 
 @router.delete("/episodes/{episode_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_episode(
@@ -118,6 +203,56 @@ async def delete_episode(
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
+    """Delete an episode (Admin only)."""
     success = await service.delete_episode(episode_id)
     if not success:
         raise HTTPException(status_code=404, detail="Episode not found")
+
+
+@router.post("/episodes/{episode_id}/upload-video", response_model=Episode)
+async def upload_episode_video(
+    episode_id: int,
+    file: UploadFile = File(...),
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Upload video for an episode to Telegram storage (Admin only)."""
+    if not file.content_type or not file.content_type.startswith("video/"):
+        raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak).")
+
+    # Let service handle reading and uploading
+    try:
+        episode = await service.upload_episode_video(episode_id, file)
+        if not episode:
+            raise HTTPException(status_code=404, detail="Episode not found")
+        return episode
+    except Exception as e:
+        logger.error(f"Error in upload_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
+        # Ensure we return a user-friendly error if it's too large or something else fails
+        if "too large" in str(e).lower() or "memory" in str(e).lower():
+            raise HTTPException(status_code=400, detail="Video hajmi juda katta.")
+        raise HTTPException(status_code=500, detail="Video yuklashda xatolik yuz berdi.")
+
+from pydantic import BaseModel
+class LinkVideoRequest(BaseModel):
+    message_id: int
+
+@router.post("/episodes/{episode_id}/link-video", response_model=Episode)
+async def link_episode_video(
+    episode_id: int,
+    request: LinkVideoRequest,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Link video for an episode from an existing message ID in the storage channel (Admin only)."""
+    try:
+        episode = await service.link_episode_video_from_message(episode_id, request.message_id)
+        if not episode:
+            raise HTTPException(status_code=404, detail="Episode not found")
+        return episode
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in link_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")
+

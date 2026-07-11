@@ -25,36 +25,9 @@ class Movie(BaseModel):
     telegram_file_id: str | None = None
     storage_channel_message_id: int | None = None
     
-    is_series: bool = False
-    
     created_at: datetime | None = None
     updated_at: datetime | None = None
     
     categories: list[Category] = Field(default_factory=list)
-    seasons: list["Season"] = Field(default_factory=list)
     
     model_config = ConfigDict(from_attributes=True)
-
-class Episode(BaseModel):
-    id: int | None = None
-    season_id: int
-    episode_number: int
-    title: str | None = None
-    code: str
-    telegram_file_id: str | None = None
-    storage_channel_message_id: int | None = None
-    created_at: datetime | None = None
-    
-    model_config = ConfigDict(from_attributes=True)
-
-class Season(BaseModel):
-    id: int | None = None
-    movie_id: int
-    season_number: int
-    description: str | None = None
-    created_at: datetime | None = None
-    episodes: list[Episode] = Field(default_factory=list)
-    
-    model_config = ConfigDict(from_attributes=True)
-
-Movie.model_rebuild()

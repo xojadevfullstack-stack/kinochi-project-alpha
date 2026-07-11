@@ -19,36 +19,12 @@ from app.core.config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle manager."""
-    import logging
-    logger = logging.getLogger("uvicorn.error")
-    logger.info("Running DB migrations...")
-    try:
-        from alembic.config import Config
-        from alembic import command
-        import asyncio
-        import os
-        
-        def run_upgrade():
-            # ensure we are in the backend directory where alembic.ini is
-            # usually the current working dir is backend
-            alembic_cfg = Config("alembic.ini")
-            command.upgrade(alembic_cfg, "head")
-            
-        await asyncio.to_thread(run_upgrade)
-        logger.info("DB migrations completed.")
-    except Exception as e:
-        logger.error(f"Failed to run migrations: {e}")
-
+    # Phase 1+ will initialise DB pool, Redis connection, etc. here
     yield
     # Cleanup resources on shutdown
 
 
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, uploads, series
-from fastapi.staticfiles import StaticFiles
-import os
-
-# Create uploads directory if it doesn't exist
-os.makedirs("uploads/posters", exist_ok=True)
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series
 
 # ── App factory ──────────────────────────────────────────────────
 app = FastAPI(
@@ -59,18 +35,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── Mount Static Files ───────────────────────────────────────────
-app.mount("/static", StaticFiles(directory="uploads"), name="static")
-
 # ── Routers ──────────────────────────────────────────────────────
 app.include_router(movies.router, prefix="/api/v1")
-app.include_router(series.router, prefix="/api/v1")
 app.include_router(categories.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(channels.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(broadcasts.router, prefix="/api/v1")
-app.include_router(uploads.router, prefix="/api/v1")
+app.include_router(series.router, prefix="/api/v1")
 
 # ── CORS ─────────────────────────────────────────────────────────
 app.add_middleware(

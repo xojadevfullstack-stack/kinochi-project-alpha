@@ -33,7 +33,6 @@ class MovieCreate(BaseModel):
     telegram_file_id: str | None = None
     storage_channel_message_id: int | None = None
     category_ids: list[int] | None = None
-    is_series: bool = False
 
 class MovieUpdate(BaseModel):
     title: str | None = None
@@ -51,7 +50,6 @@ class MovieUpdate(BaseModel):
     telegram_file_id: str | None = None
     storage_channel_message_id: int | None = None
     category_ids: list[int] | None = None
-    is_series: bool | None = None
 
 class MovieResponse(BaseModel):
     id: int
@@ -70,7 +68,6 @@ class MovieResponse(BaseModel):
     code: str
     telegram_file_id: str | None = None
     storage_channel_message_id: int | None = None
-    is_series: bool
     categories: list[CategoryResponse] = []
 
     model_config = {"from_attributes": True}

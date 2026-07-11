@@ -54,6 +54,67 @@ class TelegramClient:
                 logger.error(f"Telegram upload generic error: {str(e)}", exc_info=True)
                 raise HTTPException(status_code=500, detail=f"Failed to communicate with Telegram: {str(e)}")
 
+    async def get_video_file_id_from_message(self, message_id: int) -> str:
+        """
+        Retrieves the file_id of a video from a specific message in the storage channel
+        by forwarding it silently and deleting the forwarded message.
+        """
+        if not self.bot_token or not self.storage_channel_id:
+            raise HTTPException(status_code=500, detail="Telegram configuration is missing (.env)")
+
+        url_forward = f"{self.base_url}/forwardMessage"
+        data_forward = {
+            "chat_id": self.storage_channel_id,
+            "from_chat_id": self.storage_channel_id,
+            "message_id": message_id,
+            "disable_notification": True
+        }
+
+        async with httpx.AsyncClient() as client:
+            try:
+                # 1. Forward the message to get the Message object
+                response = await client.post(url_forward, json=data_forward, timeout=10.0)
+                result = response.json()
+                
+                if not response.is_success or not result.get("ok"):
+                    error_desc = result.get('description', 'Unknown error')
+                    if "message to forward not found" in error_desc.lower():
+                        raise HTTPException(status_code=404, detail="Ko'rsatilgan xabar topilmadi.")
+                    logger.error(f"Telegram forwardMessage error: {error_desc}")
+                    raise HTTPException(status_code=400, detail=f"Xabarni tekshirishda xatolik: {error_desc}")
+                
+                message = result["result"]
+                new_message_id = message["message_id"]
+                
+                # 2. Extract video file_id
+                file_id = None
+                if "video" in message:
+                    file_id = message["video"]["file_id"]
+                elif "document" in message and message["document"].get("mime_type", "").startswith("video/"):
+                    file_id = message["document"]["file_id"]
+                
+                # 3. Immediately delete the forwarded message
+                url_delete = f"{self.base_url}/deleteMessage"
+                await client.post(url_delete, json={
+                    "chat_id": self.storage_channel_id,
+                    "message_id": new_message_id
+                }, timeout=5.0)
+                
+                # 4. Check if we found a video
+                if not file_id:
+                    raise HTTPException(status_code=400, detail="Bu xabar video emas. Qaytadan tekshiring.")
+                    
+                return file_id
+                
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Telegram forward HTTP error {e.response.status_code}")
+                raise HTTPException(status_code=502, detail="Telegram API bilan bog'lanishda xatolik.")
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Telegram get_video generic error: {str(e)}", exc_info=True)
+                raise HTTPException(status_code=500, detail="Kutilmagan xatolik yuz berdi.")
+
     async def send_message(self, chat_id: int, text: str) -> bool:
         if not self.bot_token:
             logger.error("BOT_TOKEN is missing")
