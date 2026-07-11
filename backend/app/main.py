@@ -19,7 +19,26 @@ from app.core.config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle manager."""
-    # Phase 1+ will initialise DB pool, Redis connection, etc. here
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+    logger.info("Running DB migrations...")
+    try:
+        from alembic.config import Config
+        from alembic import command
+        import asyncio
+        import os
+        
+        def run_upgrade():
+            # ensure we are in the backend directory where alembic.ini is
+            # usually the current working dir is backend
+            alembic_cfg = Config("alembic.ini")
+            command.upgrade(alembic_cfg, "head")
+            
+        await asyncio.to_thread(run_upgrade)
+        logger.info("DB migrations completed.")
+    except Exception as e:
+        logger.error(f"Failed to run migrations: {e}")
+
     yield
     # Cleanup resources on shutdown
 
