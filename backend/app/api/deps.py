@@ -66,10 +66,20 @@ def get_broadcast_service(session: AsyncSession = Depends(get_db_session)) -> Br
 
 async def get_current_admin(request: Request, session: AsyncSession = Depends(get_db_session)):
     """
-    Dependency: validate access_token from httpOnly cookie.
+    Dependency: validate access_token from httpOnly cookie OR Authorization header.
+    Cookie — Vercel proxy orqali kelgan so'rovlar uchun.
+    Authorization header — to'g'ridan-to'g'ri Render'ga kelgan so'rovlar uchun (masalan, katta fayl yuklash).
     Returns admin dict. Raises 401 if token missing/invalid.
     """
+    # 1. Avval Cookie'dan tekshiramiz
     access_token = request.cookies.get("access_token")
+
+    # 2. Cookie yo'q bo'lsa, Authorization header'dan tekshiramiz
+    if not access_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            access_token = auth_header[7:]  # "Bearer " dan keyingi qism
+
     if not access_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

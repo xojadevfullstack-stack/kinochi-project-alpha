@@ -31,6 +31,11 @@ export default function LoginPage() {
         return;
       }
 
+      const data = await res.json();
+      if (data.access_token) {
+        sessionStorage.setItem("access_token", data.access_token);
+      }
+
       router.push("/");
     } catch (err) {
       setError("Serverga ulanib bo'lmadi");

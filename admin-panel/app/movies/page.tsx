@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, fetchApiUpload } from "@/lib/api";
 
 type Category = { id: number; name: string };
 type Movie = {
@@ -102,7 +102,7 @@ export default function MoviesPage() {
     formData.append("file", file);
 
     try {
-      await fetchApi(`/movies/${id}/upload-video`, {
+      await fetchApiUpload(`/movies/${id}/upload-video`, {
         method: "POST",
         body: formData,
       });

@@ -112,7 +112,11 @@ async def login(
 
     _set_auth_cookies(response, access_token, refresh_token)
 
-    return {"message": "Tizimga kirildi", "admin": AdminMeResponse.model_validate(admin).model_dump()}
+    return {
+        "message": "Tizimga kirildi",
+        "admin": AdminMeResponse.model_validate(admin).model_dump(),
+        "access_token": access_token,
+    }
 
 
 @router.post("/logout")
