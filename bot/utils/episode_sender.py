@@ -50,41 +50,34 @@ async def send_episode_to_user(bot: Bot, chat_id: int, episode: dict) -> bool:
     """
     Sends an episode video to the specified chat_id.
     """
-    file_id = episode.get("telegram_file_id")
-    storage_msg_id = episode.get("storage_channel_message_id")
+    translations = episode.get("translations", [])
     
+    if not translations:
+        return False
+        
     caption = format_episode_caption(episode)
     keyboard = build_episode_keyboard(episode)
-
-    success = False
     
-    # 1. Try sending via telegram_file_id
-    if file_id:
+    item_code = episode.get("code")
+    
+    if len(translations) == 1:
+        # Send video directly
+        t = translations[0]
+        from utils.movie_sender import send_video_translation
+        return await send_video_translation(bot, chat_id, t, caption, reply_markup=keyboard)
+    else:
+        # Send keyboard to choose studio
+        from keyboards.translations import get_translations_keyboard
+        # The translation keyboard won't have navigation buttons in this step,
+        # but they will be added when the video is sent in the callback.
+        kb = get_translations_keyboard('E', item_code, translations)
         try:
-            await bot.send_video(
-                chat_id=chat_id, 
-                video=file_id, 
-                caption=caption, 
-                parse_mode="HTML",
-                reply_markup=keyboard
-            )
-            success = True
-        except TelegramBadRequest:
-            pass
-            
-    # 2. Fallback to copy from storage channel
-    if not success and storage_msg_id and settings.STORAGE_CHANNEL_ID:
-        try:
-            await bot.copy_message(
+            await bot.send_message(
                 chat_id=chat_id,
-                from_chat_id=settings.STORAGE_CHANNEL_ID,
-                message_id=storage_msg_id,
-                caption=caption,
-                parse_mode="HTML",
-                reply_markup=keyboard
+                text=f"🎬 <b>{episode.get('title') or episode.get('episode_number')}</b>\n\nQaysi tilda/studiyada ko'rishni xohlaysiz?",
+                reply_markup=kb,
+                parse_mode="HTML"
             )
-            success = True
+            return True
         except TelegramBadRequest:
-            pass
-
-    return success
+            return False

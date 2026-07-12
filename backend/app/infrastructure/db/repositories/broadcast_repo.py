@@ -21,7 +21,7 @@ class BroadcastRepositoryImpl(IBroadcastRepository):
             failed_count=broadcast.failed_count
         )
         self.session.add(model)
-        await self.session.commit()
+        await self.session.flush()   # commit() emas — Unit of Work pattern: session deps.py da commit qiladi
         await self.session.refresh(model)
         return self._to_entity(model)
 

@@ -23,7 +23,9 @@ from app.application.channels.service import ChannelService
 from app.application.broadcasts.service import BroadcastService
 from app.infrastructure.db.models.admin_user import AdminUserModel
 from app.infrastructure.security.jwt_handler import decode_token
-
+from app.infrastructure.db.repositories.series_repository import SeriesRepository
+from app.application.series.series_service import SeriesService
+from app.infrastructure.telegram.telegram_client import telegram_client
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to provide a DB session."""
@@ -62,10 +64,6 @@ def get_broadcast_service(session: AsyncSession = Depends(get_db_session)) -> Br
     b_repo = BroadcastRepositoryImpl(session)
     u_repo = UserRepositoryImpl(session)
     return BroadcastService(b_repo, u_repo)
-
-from app.infrastructure.db.repositories.series_repository import SeriesRepository
-from app.application.series.series_service import SeriesService
-from app.infrastructure.telegram.telegram_client import telegram_client
 
 def get_series_service(session: AsyncSession = Depends(get_db_session)) -> SeriesService:
     repo = SeriesRepository(session)

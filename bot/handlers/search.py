@@ -3,6 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from services.api_client import api_client
 from keyboards.inline import build_search_results_keyboard
 from utils.movie_sender import send_movie_to_user
+from config import settings
 
 router = Router()
 
@@ -17,7 +18,7 @@ async def handle_search_query(message: Message):
         await message.answer("🔥 <b>Tez kunda...</b>\n\nSiz uchun maxsus tavsiyalar, yilning eng qizg'in premyeralari ro'yxatini tayyorlayapmiz! Biz bilan qoling, zerikishga vaqt bo'lmaydi 😉", parse_mode="HTML")
         return
     elif query == "🌐 Saytga o'tish":
-        await message.answer("🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>http://localhost:3000</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
+        await message.answer(f"🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>{settings.WEBSITE_URL}</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
         return
         
     # Do not search if query is too short

@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series
 
 
 # ── Lifespan (startup / shutdown hooks) ──────────────────────────
@@ -23,8 +24,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
     # Cleanup resources on shutdown
 
-
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series
 
 # ── App factory ──────────────────────────────────────────────────
 app = FastAPI(
@@ -49,8 +48,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Bot-Secret"],
 )
 
 

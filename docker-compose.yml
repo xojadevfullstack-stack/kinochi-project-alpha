@@ -10,15 +10,15 @@ services:
     container_name: kinochi-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: kinochi
-      POSTGRES_PASSWORD: kinochi_secret
-      POSTGRES_DB: kinochi
+      POSTGRES_USER: ${POSTGRES_USER:-kinochi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-kinochi}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kinochi"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kinochi}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -50,8 +50,10 @@ services:
     volumes:
       - ./backend:/app
       - /app/.venv
+    env_file:
+      - ./backend/.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://kinochi:kinochi_secret@postgres:5432/kinochi
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kinochi}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kinochi}
       REDIS_URL: redis://redis:6379/0
       APP_ENV: development
     depends_on:

@@ -1,19 +1,33 @@
 /**
- * Next.js Middleware — client-side auth guard.
+ * Next.js Middleware — auth guard with JWT verification.
  *
- * MVP qaror: access_token muddati tugasa, foydalanuvchi qayta login
- * qiladi. Avtomatik refresh middleware darajasida QILINMAYDI, chunki:
- *   1. Middleware Edge Runtime'da ishlaydi — backend'ga so'rov yuborish
- *      murakkab va ishonchsiz.
- *   2. MVP uchun oddiylik muhimroq; haqiqiy himoya backend'dagi
- *      get_current_admin orqali ta'minlanadi.
- *   3. Kelajakda fetchApi wrapper ichiga 401 → auto-refresh → retry
- *      logikasi qo'shilishi mumkin (client-side, middleware emas).
+ * Edge Runtime'da jose library orqali JWT signature va expiry tekshiriladi.
+ * Bu expired yoki qalbaki token bilan kirish imkonini yo'q qiladi.
+ * SECRET_KEY backend bilan bir xil bo'lishi kerak.
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
-export function middleware(request: NextRequest) {
+const SECRET_KEY = new TextEncoder().encode(
+  process.env.JWT_SECRET_KEY || ""
+);
+
+async function verifyToken(token: string): Promise<boolean> {
+  if (!process.env.JWT_SECRET_KEY) {
+    // Secret konfiguratsiyalanmagan — faqat token mavjudligi tekshiriladi (fallback)
+    console.warn("JWT_SECRET_KEY konfiguratsiyalanmagan — token yaroqliligi tekshirilmaydi!");
+    return true;
+  }
+  try {
+    await jwtVerify(token, SECRET_KEY, { algorithms: ["HS256"] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Login sahifasini himoyalamaydi
@@ -26,11 +40,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // access_token cookie borligini tekshirish
-  const token = request.cookies.get("access_token");
-  if (!token) {
+  // access_token cookie borligini va yaroqliligini tekshirish
+  const tokenCookie = request.cookies.get("access_token");
+  if (!tokenCookie) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
+  }
+
+  const isValid = await verifyToken(tokenCookie.value);
+  if (!isValid) {
+    const loginUrl = new URL("/login", request.url);
+    const response = NextResponse.redirect(loginUrl);
+    // Yaroqsiz cookie'ni tozalaymiz
+    response.cookies.delete("access_token");
+    response.cookies.delete("refresh_token");
+    return response;
   }
 
   return NextResponse.next();
@@ -48,3 +72,4 @@ export const config = {
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
+

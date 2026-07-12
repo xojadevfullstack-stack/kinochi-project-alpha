@@ -59,8 +59,8 @@ async def handle_series_info(callback: CallbackQuery):
     else:
         text += "Hali mavsumlar qo'shilmagan."
         
-    await callback.message.answer(text, parse_mode="HTML")
     await callback.answer()
+    await callback.message.answer(text, parse_mode="HTML")
 
 
 @router.callback_query(F.data == "main_menu")

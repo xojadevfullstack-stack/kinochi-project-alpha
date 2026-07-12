@@ -1,6 +1,6 @@
 """API v1 — Movies endpoints.  Phase 1: CRUD + search."""
 from typing import Sequence
-from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 import logging
 from pydantic import BaseModel, Field
 
@@ -157,20 +157,37 @@ async def update_movie(
 @router.post("/{movie_id}/upload-video", response_model=MovieResponse)
 async def upload_movie_video(
     movie_id: int,
+    request: Request,
     file: UploadFile = File(...),
     language: str = Form("Asosiy"),
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin)
 ):
     """Upload video for a movie to Telegram storage (Admin only)."""
+    MAX_SIZE = 50 * 1024 * 1024  # 50 MB
+
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak).")
 
-    file_bytes = await file.read()
-    
-    if len(file_bytes) > 50 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
-        
+    # 1. Content-Length header tekshiruvi (agar server yuborsa)
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > MAX_SIZE:
+                raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+        except ValueError:
+            pass  # Invalid Content-Length — chunked o'qishda tekshiramiz
+
+    # 2. Chunked o'qish — xotirani to'ldirmaslik uchun
+    chunks = []
+    total_size = 0
+    async for chunk in file:
+        total_size += len(chunk)
+        if total_size > MAX_SIZE:
+            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+        chunks.append(chunk)
+    file_bytes = b"".join(chunks)
+
     try:
         file_id, message_id = await telegram_client.send_video_to_storage(
             file_bytes=file_bytes,
@@ -180,18 +197,19 @@ async def upload_movie_video(
     except Exception as e:
         logger.error(f"Error in upload_movie_video endpoint for movie {movie_id}: {str(e)}", exc_info=True)
         raise
-    
+
     movie = await service.add_movie_translation(
         movie_id=movie_id,
         language=language,
         file_id=file_id,
         message_id=message_id
     )
-    
+
     if not movie:
         raise HTTPException(status_code=404, detail="Kino topilmadi.")
-        
+
     return movie
+
 
 class LinkVideoRequest(BaseModel):
     message_id: int

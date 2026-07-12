@@ -1,3 +1,4 @@
+import logging
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from config import settings
@@ -41,10 +42,11 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
                 parse_mode="HTML"
             )
             return True
-        except TelegramBadRequest:
+        except TelegramBadRequest as e:
+            logging.warning(f"Failed to send keyboard for movie {item_code} to {chat_id}: {e}")
             return False
 
-async def send_video_translation(bot: Bot, chat_id: int, translation: dict, caption: str) -> bool:
+async def send_video_translation(bot: Bot, chat_id: int, translation: dict, caption: str, reply_markup=None) -> bool:
     file_id = translation.get("telegram_file_id")
     storage_msg_id = translation.get("storage_channel_message_id")
     
@@ -53,10 +55,10 @@ async def send_video_translation(bot: Bot, chat_id: int, translation: dict, capt
     # 1. Try sending via telegram_file_id
     if file_id:
         try:
-            await bot.send_video(chat_id=chat_id, video=file_id, caption=caption, parse_mode="HTML")
+            await bot.send_video(chat_id=chat_id, video=file_id, caption=caption, parse_mode="HTML", reply_markup=reply_markup)
             success = True
-        except TelegramBadRequest:
-            pass
+        except TelegramBadRequest as e:
+            logging.warning(f"Failed to send video via file_id {file_id} to {chat_id}: {e}")
             
     # 2. Fallback to copy from storage channel
     if not success and storage_msg_id and settings.STORAGE_CHANNEL_ID:
@@ -66,10 +68,11 @@ async def send_video_translation(bot: Bot, chat_id: int, translation: dict, capt
                 from_chat_id=settings.STORAGE_CHANNEL_ID,
                 message_id=storage_msg_id,
                 caption=caption,
-                parse_mode="HTML"
+                parse_mode="HTML",
+                reply_markup=reply_markup
             )
             success = True
-        except TelegramBadRequest:
-            pass
+        except TelegramBadRequest as e:
+            logging.warning(f"Failed to copy message {storage_msg_id} from storage to {chat_id}: {e}")
 
     return success

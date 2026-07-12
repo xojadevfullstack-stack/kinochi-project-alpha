@@ -87,36 +87,36 @@ class SeriesService:
         return Episode.model_validate(episode_model)
 
     async def get_episode_detail_by_code(self, code: str) -> EpisodeDetail | None:
-        episode = await self.get_episode_by_code(code)
-        if not episode:
+        # Repository'dagi optimallashtirilgan metod — 3 ta alohida so'rov o'rniga bitta
+        episode_model, season_model, series_model = await self.repository.get_episode_with_context_by_code(code)
+
+        if not episode_model:
             return None
-            
-        season = await self.get_season_by_id(episode.season_id)
-        if not season:
+        if not season_model or not series_model:
             return None
-            
-        series = await self.get_series_by_id(season.series_id)
-        if not series:
-            return None
-            
+
+        episode = Episode.model_validate(episode_model)
+        season = Season.model_validate(season_model)
+        series = Series.model_validate(series_model)
+
         # Flatten episodes from all seasons to find prev/next
         sorted_seasons = sorted(series.seasons, key=lambda s: s.season_number)
-        
+
         all_episodes = []
         for s in sorted_seasons:
             sorted_eps = sorted(s.episodes, key=lambda e: e.episode_number)
             all_episodes.extend(sorted_eps)
-            
+
         idx = next((i for i, e in enumerate(all_episodes) if e.id == episode.id), -1)
-        
+
         prev_code = None
         next_code = None
-        
+
         if idx > 0:
             prev_code = all_episodes[idx - 1].code
         if idx != -1 and idx < len(all_episodes) - 1:
             next_code = all_episodes[idx + 1].code
-            
+
         return EpisodeDetail(
             **episode.model_dump(),
             prev_episode_code=prev_code,
@@ -146,18 +146,19 @@ class SeriesService:
         return Episode.model_validate(episode_model)
 
     async def update_episode(self, episode_id: int, update_data: EpisodeUpdate) -> Episode | None:
-        # If episode_number changes, we should ideally update display_code too
         episode_model = await self.repository.get_episode_by_id(episode_id)
         if not episode_model:
             return None
             
+        update_dict = update_data.model_dump(exclude_unset=True)
         if update_data.episode_number is not None and update_data.episode_number != episode_model.episode_number:
             season = await self.repository.get_season_by_id(episode_model.season_id)
             if season:
-                episode_model.display_code = f"S{season.season_number}-CH{update_data.episode_number}"
+                update_dict["display_code"] = f"S{season.season_number}-CH{update_data.episode_number}"
                 
-        episode_model = await self.repository.update_episode(episode_id, update_data)
-        return Episode.model_validate(episode_model)
+        # Repozitoriy endi dict qabul qila oladi va barcha yangilanishlar bitta chaqiruvda bajariladi
+        updated_model = await self.repository.update_episode(episode_id, update_dict)
+        return Episode.model_validate(updated_model)
 
     async def delete_episode(self, episode_id: int) -> bool:
         return await self.repository.delete_episode(episode_id)

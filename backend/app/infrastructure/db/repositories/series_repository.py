@@ -129,6 +129,52 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_episode_with_context_by_code(self, code: str):
+        """
+        Bitta SQL so'rovida episode + uning season + series + barcha episodlarini yuklaydi.
+        Bu get_episode_detail_by_code uchun N+1 muammosini bartaraf etadi.
+        Returns: (episode, season, series) yoki (None, None, None)
+        """
+        # 1. Episode + translations va season_id'ni ol
+        stmt = (
+            select(EpisodeModel)
+            .options(selectinload(EpisodeModel.translations))
+            .where(EpisodeModel.code == code)
+        )
+        result = await self.session.execute(stmt)
+        episode = result.scalar_one_or_none()
+        if not episode:
+            return None, None, None
+
+        # 2. Season + uning barcha episodes (navigatsiya uchun)
+        season_stmt = (
+            select(SeasonModel)
+            .options(
+                selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)
+            )
+            .where(SeasonModel.id == episode.season_id)
+        )
+        season_result = await self.session.execute(season_stmt)
+        season = season_result.scalar_one_or_none()
+        if not season:
+            return episode, None, None
+
+        # 3. Series + barcha seasons va episodes (prev/next navigatsiya uchun)
+        series_stmt = (
+            select(SeriesModel)
+            .options(
+                selectinload(SeriesModel.seasons)
+                .selectinload(SeasonModel.episodes)
+                .selectinload(EpisodeModel.translations),
+                selectinload(SeriesModel.categories)
+            )
+            .where(SeriesModel.id == season.series_id)
+        )
+        series_result = await self.session.execute(series_stmt)
+        series = series_result.scalar_one_or_none()
+
+        return episode, season, series
+
     async def get_episodes_by_season(self, season_id: int) -> List[EpisodeModel]:
         stmt = select(EpisodeModel).where(EpisodeModel.season_id == season_id).order_by(EpisodeModel.episode_number)
         result = await self.session.execute(stmt)
@@ -140,12 +186,13 @@ class SeriesRepository:
         await self.session.flush()
         return await self.get_episode_by_id(episode.id)
 
-    async def update_episode(self, episode_id: int, update_data: EpisodeUpdate) -> EpisodeModel | None:
+    async def update_episode(self, episode_id: int, update_data: EpisodeUpdate | dict) -> EpisodeModel | None:
         episode = await self.get_episode_by_id(episode_id)
         if not episode:
             return None
             
-        for key, value in update_data.model_dump(exclude_unset=True).items():
+        data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude_unset=True)
+        for key, value in data.items():
             setattr(episode, key, value)
             
         await self.session.flush()

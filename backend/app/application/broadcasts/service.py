@@ -31,14 +31,13 @@ class BroadcastService:
         broadcast = await self.broadcast_repo.get_by_id(id)
         if not broadcast or broadcast.status != BroadcastStatus.DRAFT:
             return None
-            
+
+        # process_broadcast o'z session'ini yaratadi — repo'larni berish shart emas
         background_tasks.add_task(
             process_broadcast,
             broadcast_id=id,
             message_text=broadcast.message_text,
-            broadcast_repo=self.broadcast_repo,
-            user_repo=self.user_repo
         )
-        
+
         # Mark as sending initially
         return await self.broadcast_repo.update_status(id, BroadcastStatus.SENDING)

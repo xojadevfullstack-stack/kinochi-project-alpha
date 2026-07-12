@@ -31,6 +31,8 @@ async def process_translation_selection(callback: CallbackQuery):
         translations = movie.get("translations", [])
         title = movie.get("title", "")
         description = movie.get("description", "")
+        reply_markup = None
+        
         
     elif item_type == 'E':
         episode = await api_client.get_episode_by_code(item_code)
@@ -41,6 +43,10 @@ async def process_translation_selection(callback: CallbackQuery):
         translations = episode.get("translations", [])
         title = episode.get("title", f"{episode.get('episode_number')}-qism")
         description = ""
+        
+        # Build episode keyboard for navigation
+        from utils.episode_sender import build_episode_keyboard
+        reply_markup = build_episode_keyboard(episode)
     else:
         await callback.answer("Noma'lum tur.")
         return
@@ -55,4 +61,4 @@ async def process_translation_selection(callback: CallbackQuery):
     await callback.answer()
     
     caption = f"🍿 <b>{title}</b>\n\n{description}"
-    await send_video_translation(callback.bot, callback.from_user.id, translation, caption)
+    await send_video_translation(callback.bot, callback.from_user.id, translation, caption, reply_markup=reply_markup)

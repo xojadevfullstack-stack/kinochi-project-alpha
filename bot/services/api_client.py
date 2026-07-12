@@ -5,7 +5,11 @@ from config import settings
 class APIClient:
     def __init__(self):
         self.base_url = settings.BACKEND_API_URL.rstrip('/')
-        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0)
+        # X-Bot-Secret header — backend /users/register himoyasi uchun
+        headers = {}
+        if settings.BOT_API_SECRET:
+            headers["X-Bot-Secret"] = settings.BOT_API_SECRET
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0, headers=headers)
 
     async def close(self):
         await self.client.aclose()
@@ -58,16 +62,6 @@ class APIClient:
             print(f"Error fetching episode {code}: {e}")
             return None
 
-    async def get_episode_by_id(self, episode_id: int) -> Optional[Dict[str, Any]]:
-        # Backend doesn't have a direct /episodes/{id} endpoint exposed publicly yet, maybe I need to add it or use code.
-        # Wait, the backend has /series/seasons/{season_id}/episodes but no /series/episodes/{episode_id} GET endpoint!
-        # Ah, we can just use the code to fetch it since we have it... wait, we only have ID in the callback data.
-        try:
-            # We must add this endpoint in the backend, or we can just send the code in callback_data?
-            pass
-        except httpx.HTTPError as e:
-            pass
-
     async def get_series_by_id(self, series_id: int) -> Optional[Dict[str, Any]]:
         try:
             response = await self.client.get(f"/series/{series_id}")
@@ -90,7 +84,10 @@ class APIClient:
 
     async def search_movies(self, query: str, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
         try:
-            response = await self.client.get(f"/movies/search?q={query}&skip={skip}&limit={limit}")
+            response = await self.client.get(
+                "/movies/search",
+                params={"q": query, "skip": skip, "limit": limit}
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -99,7 +96,10 @@ class APIClient:
 
     async def search_series(self, query: str, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
         try:
-            response = await self.client.get(f"/series/search?q={query}&skip={skip}&limit={limit}")
+            response = await self.client.get(
+                "/series/search",
+                params={"q": query, "skip": skip, "limit": limit}
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:

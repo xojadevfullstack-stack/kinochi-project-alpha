@@ -1,0 +1,52 @@
+name: Kinochi CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || echo "requirements.txt not found, skipping"
+          pip install pytest httpx aiosqlite ruff
+          
+      - name: Run Ruff Linter
+        run: |
+          cd backend
+          ruff check .
+          
+      - name: Run Pytest
+        run: |
+          cd backend
+          pytest tests/
+          
+      - name: Install bot dependencies
+        run: |
+          cd bot
+          pip install -r requirements.txt || echo "requirements.txt not found, skipping"
+          pip install ruff
+          
+      - name: Run Ruff on Bot
+        run: |
+          cd bot
+          ruff check .

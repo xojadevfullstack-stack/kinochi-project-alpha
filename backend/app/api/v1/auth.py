@@ -115,7 +115,6 @@ async def login(
     return {
         "message": "Tizimga kirildi",
         "admin": AdminMeResponse.model_validate(admin).model_dump(),
-        "access_token": access_token,
     }
 
 

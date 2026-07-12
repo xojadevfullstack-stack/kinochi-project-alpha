@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Kinochi"
     VERSION: str = "0.1.0"
     APP_ENV: str = "development"          # development | staging | production
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # ── Database (async PostgreSQL) ──────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://kinochi:kinochi_secret@localhost:5432/kinochi"
@@ -37,11 +37,14 @@ class Settings(BaseSettings):
     # ── Telegram (Phase 4+) ──────────────────────────────────────────
     BOT_TOKEN: str = ""
     STORAGE_CHANNEL_ID: str = ""
+    # Internal secret for bot → backend API calls (POST /users/register, etc.)
+    BOT_API_SECRET: str = ""
 
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
+        "extra": "ignore",  # Testlar va Docker muhitida extra o'zgaruvchilar xato bermasligi uchun
     }
 
 
