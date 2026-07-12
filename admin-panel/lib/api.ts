@@ -86,7 +86,8 @@ export async function fetchApiUpload(endpoint: string, options: RequestInit = {}
 export function uploadWithProgress(
   endpoint: string, 
   file: File, 
-  onProgress: (percent: number) => void
+  onProgress: (percent: number) => void,
+  additionalData?: Record<string, string>
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     const url = `${DIRECT_API_URL}${endpoint}`;
@@ -131,6 +132,11 @@ export function uploadWithProgress(
 
     const formData = new FormData();
     formData.append("file", file);
+    if (additionalData) {
+      for (const key in additionalData) {
+        formData.append(key, additionalData[key]);
+      }
+    }
     xhr.send(formData);
   });
 }

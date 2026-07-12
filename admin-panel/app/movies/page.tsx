@@ -17,9 +17,8 @@ type Movie = {
   poster_url: string | null;
   release_year: number;
   duration_minutes: number;
-  telegram_file_id: string;
-  storage_channel_message_id: number | null;
   categories: Category[];
+  translations: { id: number; language: string; telegram_file_id: string }[];
 };
 
 export default function MoviesPage() {
@@ -84,6 +83,16 @@ export default function MoviesPage() {
     if (!confirm("O'chirilsinmi?")) return;
     try {
       await fetchApi(`/movies/${id}`, { method: "DELETE" });
+      loadMovies();
+    } catch (e: any) {
+      alert("O'chirishda xato: " + e.message);
+    }
+  };
+
+  const handleDeleteTranslation = async (translationId: number) => {
+    if (!confirm("Bu video (studiya) o'chirilsinmi?")) return;
+    try {
+      await fetchApi(`/movies/translations/${translationId}`, { method: "DELETE" });
       loadMovies();
     } catch (e: any) {
       alert("O'chirishda xato: " + e.message);
@@ -182,9 +191,18 @@ export default function MoviesPage() {
               <tr key={m.id}>
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{m.code}</td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{m.title}</td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  {m.telegram_file_id || m.storage_channel_message_id ? (
-                    <span className="text-green-600 font-bold">✅ Bor</span>
+                <td className="px-4 py-4">
+                  {m.translations && m.translations.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {m.translations.map((t) => (
+                        <div key={t.id} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
+                          <span>✅ {t.language}</span>
+                          <button onClick={() => handleDeleteTranslation(t.id)} className="text-red-500 hover:text-red-700 ml-2" title="Videoni o'chirish">
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <span className="text-red-600 font-bold">❌ Yo'q</span>
                   )}

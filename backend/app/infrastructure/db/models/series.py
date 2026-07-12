@@ -72,9 +72,10 @@ class EpisodeModel(Base):
     
     title: Mapped[str | None] = mapped_column(String(255))
     
-    telegram_file_id: Mapped[str | None] = mapped_column(String(255))
-    storage_channel_message_id: Mapped[int | None] = mapped_column(Integer)
-    
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
     season: Mapped["SeasonModel"] = relationship(back_populates="episodes")
+
+    translations: Mapped[list["EpisodeTranslationModel"]] = relationship(
+        back_populates="episode", cascade="all, delete-orphan", lazy="selectin"
+    )

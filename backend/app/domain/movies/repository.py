@@ -37,3 +37,11 @@ class IMovieRepository(ABC):
     @abstractmethod
     async def delete(self, movie_id: int) -> bool:
         pass
+
+    @abstractmethod
+    async def add_translation(self, movie_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> Movie | None:
+        pass
+
+    @abstractmethod
+    async def delete_translation(self, translation_id: int) -> bool:
+        pass

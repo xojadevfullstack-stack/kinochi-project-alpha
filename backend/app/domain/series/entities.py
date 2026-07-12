@@ -9,8 +9,6 @@ class EpisodeBase(BaseModel):
     season_id: int
     episode_number: int
     title: str | None = None
-    telegram_file_id: str | None = None
-    storage_channel_message_id: int | None = None
 
 class EpisodeCreate(EpisodeBase):
     pass
@@ -24,6 +22,7 @@ class Episode(EpisodeBase):
     code: str
     display_code: str
     created_at: datetime
+    translations: list['EpisodeTranslation'] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
 
 class EpisodeDetail(Episode):
@@ -34,6 +33,15 @@ class EpisodeDetail(Episode):
     season_description: str | None = None
     series_id: int | None = None
 
+class EpisodeTranslation(BaseModel):
+    id: int | None = None
+    episode_id: int
+    language: str
+    telegram_file_id: str | None = None
+    storage_channel_message_id: int | None = None
+    created_at: datetime | None = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class SeasonBase(BaseModel):
     series_id: int

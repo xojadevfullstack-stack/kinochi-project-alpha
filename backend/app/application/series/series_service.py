@@ -162,7 +162,7 @@ class SeriesService:
     async def delete_episode(self, episode_id: int) -> bool:
         return await self.repository.delete_episode(episode_id)
 
-    async def upload_episode_video(self, episode_id: int, file: UploadFile) -> Episode | None:
+    async def upload_episode_video(self, episode_id: int, file: UploadFile, language: str = "Asosiy") -> Episode | None:
         episode = await self.repository.get_episode_by_id(episode_id)
         if not episode:
             return None
@@ -176,15 +176,16 @@ class SeriesService:
             mime_type=file.content_type or "video/mp4"
         )
         
-        updated_episode = await self.repository.update_episode_video(
+        updated_episode = await self.repository.add_episode_translation(
             episode_id=episode_id,
-            file_id=file_id,
-            message_id=message_id
+            language=language,
+            telegram_file_id=file_id,
+            storage_channel_message_id=message_id
         )
         
         return Episode.model_validate(updated_episode)
 
-    async def link_episode_video_from_message(self, episode_id: int, message_id: int) -> Episode | None:
+    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "Asosiy") -> Episode | None:
         episode = await self.repository.get_episode_by_id(episode_id)
         if not episode:
             return None
@@ -192,11 +193,15 @@ class SeriesService:
         # Get file_id from telegram message
         file_id = await self.telegram_api.get_video_file_id_from_message(message_id)
         
-        updated_episode = await self.repository.update_episode_video(
+        updated_episode = await self.repository.add_episode_translation(
             episode_id=episode_id,
-            file_id=file_id,
-            message_id=message_id
+            language=language,
+            telegram_file_id=file_id,
+            storage_channel_message_id=message_id
         )
         
         return Episode.model_validate(updated_episode)
+
+    async def delete_episode_translation(self, translation_id: int) -> bool:
+        return await self.repository.delete_episode_translation(translation_id)
 

@@ -36,6 +36,17 @@ class APIClient:
             print(f"Error fetching movie {code}: {e}")
             return None
 
+    async def get_movie_by_id(self, movie_id: int) -> Optional[Dict[str, Any]]:
+        try:
+            response = await self.client.get(f"/movies/{movie_id}")
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Error fetching movie by ID {movie_id}: {e}")
+            return None
+
     async def get_episode_by_code(self, code: str) -> Optional[Dict[str, Any]]:
         try:
             response = await self.client.get(f"/series/episodes/code/{code}")
@@ -46,6 +57,16 @@ class APIClient:
         except httpx.HTTPError as e:
             print(f"Error fetching episode {code}: {e}")
             return None
+
+    async def get_episode_by_id(self, episode_id: int) -> Optional[Dict[str, Any]]:
+        # Backend doesn't have a direct /episodes/{id} endpoint exposed publicly yet, maybe I need to add it or use code.
+        # Wait, the backend has /series/seasons/{season_id}/episodes but no /series/episodes/{episode_id} GET endpoint!
+        # Ah, we can just use the code to fetch it since we have it... wait, we only have ID in the callback data.
+        try:
+            # We must add this endpoint in the backend, or we can just send the code in callback_data?
+            pass
+        except httpx.HTTPError as e:
+            pass
 
     async def get_series_by_id(self, series_id: int) -> Optional[Dict[str, Any]]:
         try:

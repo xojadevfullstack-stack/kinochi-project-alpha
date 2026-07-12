@@ -1,9 +1,9 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from typing import Tuple, List
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.models.category import CategoryModel
+from app.infrastructure.db.models.translation import EpisodeTranslationModel
 from app.domain.series.entities import SeriesCreate, SeriesUpdate, SeasonCreate, SeasonUpdate, EpisodeCreate, EpisodeUpdate
 
 class SeriesRepository:
@@ -16,7 +16,7 @@ class SeriesRepository:
         total = await self.session.scalar(total_stmt)
         
         stmt = select(SeriesModel).options(
-            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories)
         ).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
@@ -29,7 +29,7 @@ class SeriesRepository:
         total = await self.session.scalar(total_stmt)
         
         stmt = select(SeriesModel).options(
-            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories)
         ).where(SeriesModel.title.ilike(search_pattern)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         
@@ -39,7 +39,7 @@ class SeriesRepository:
 
     async def get_series_by_id(self, series_id: int) -> SeriesModel | None:
         stmt = select(SeriesModel).options(
-            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories)
         ).where(SeriesModel.id == series_id)
         result = await self.session.execute(stmt)
@@ -83,12 +83,12 @@ class SeriesRepository:
 
     # --- Seasons ---
     async def get_season_by_id(self, season_id: int) -> SeasonModel | None:
-        stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes)).where(SeasonModel.id == season_id)
+        stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)).where(SeasonModel.id == season_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
         
     async def get_seasons_by_series(self, series_id: int) -> List[SeasonModel]:
-        stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes)).where(SeasonModel.series_id == series_id).order_by(SeasonModel.season_number)
+        stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)).where(SeasonModel.series_id == series_id).order_by(SeasonModel.season_number)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -119,12 +119,12 @@ class SeriesRepository:
 
     # --- Episodes ---
     async def get_episode_by_id(self, episode_id: int) -> EpisodeModel | None:
-        stmt = select(EpisodeModel).where(EpisodeModel.id == episode_id)
+        stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(EpisodeModel.id == episode_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_episode_by_code(self, code: str) -> EpisodeModel | None:
-        stmt = select(EpisodeModel).where(EpisodeModel.code == code)
+        stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(EpisodeModel.code == code)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -150,15 +150,24 @@ class SeriesRepository:
         await self.session.flush()
         return await self.get_episode_by_id(episode.id)
 
-    async def update_episode_video(self, episode_id: int, file_id: str, message_id: int) -> EpisodeModel | None:
-        episode = await self.get_episode_by_id(episode_id)
-        if not episode:
-            return None
-            
-        episode.telegram_file_id = file_id
-        episode.storage_channel_message_id = message_id
+    async def add_episode_translation(self, episode_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> EpisodeModel | None:
+        translation = EpisodeTranslationModel(
+            episode_id=episode_id,
+            language=language,
+            telegram_file_id=telegram_file_id,
+            storage_channel_message_id=storage_channel_message_id
+        )
+        self.session.add(translation)
         await self.session.flush()
-        return await self.get_episode_by_id(episode.id)
+        return await self.get_episode_by_id(episode_id)
+
+    async def delete_episode_translation(self, translation_id: int) -> bool:
+        model = await self.session.get(EpisodeTranslationModel, translation_id)
+        if not model:
+            return False
+        await self.session.delete(model)
+        await self.session.flush()
+        return True
 
     async def delete_episode(self, episode_id: int) -> bool:
         episode = await self.get_episode_by_id(episode_id)

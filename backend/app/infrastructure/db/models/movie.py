@@ -39,8 +39,6 @@ class MovieModel(Base):
     trailer_url: Mapped[str | None] = mapped_column(String(1024))
     
     code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True)
-    telegram_file_id: Mapped[str | None] = mapped_column(String(255))
-    storage_channel_message_id: Mapped[int | None] = mapped_column(Integer)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -49,4 +47,8 @@ class MovieModel(Base):
 
     categories: Mapped[list["CategoryModel"]] = relationship(
         secondary=movie_category_table, back_populates="movies", lazy="selectin"
+    )
+
+    translations: Mapped[list["MovieTranslationModel"]] = relationship(
+        back_populates="movie", cascade="all, delete-orphan", lazy="selectin"
     )

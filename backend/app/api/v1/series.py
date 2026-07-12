@@ -240,6 +240,7 @@ async def delete_episode(
 async def upload_episode_video(
     episode_id: int,
     file: UploadFile = File(...),
+    language: str = "Asosiy",
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
@@ -247,9 +248,8 @@ async def upload_episode_video(
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak).")
 
-    # Let service handle reading and uploading
     try:
-        episode = await service.upload_episode_video(episode_id, file)
+        episode = await service.upload_episode_video(episode_id, file, language)
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
         return episode
@@ -263,6 +263,7 @@ async def upload_episode_video(
 from pydantic import BaseModel
 class LinkVideoRequest(BaseModel):
     message_id: int
+    language: str = "Asosiy"
 
 @router.post("/episodes/{episode_id}/link-video", response_model=Episode)
 async def link_episode_video(
@@ -271,9 +272,8 @@ async def link_episode_video(
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
-    """Link video for an episode from an existing message ID in the storage channel (Admin only)."""
     try:
-        episode = await service.link_episode_video_from_message(episode_id, request.message_id)
+        episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language)
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
         return episode
@@ -282,4 +282,15 @@ async def link_episode_video(
     except Exception as e:
         logger.error(f"Error in link_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")
+
+@router.delete("/episodes/translations/{translation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_episode_translation(
+    translation_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete an episode translation (Admin only)."""
+    success = await service.delete_episode_translation(translation_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Translation not found")
 

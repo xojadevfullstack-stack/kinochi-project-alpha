@@ -37,8 +37,6 @@ class MovieService:
         runtime: int | None = None,
         poster_url: str | None = None,
         trailer_url: str | None = None,
-        telegram_file_id: str | None = None,
-        storage_channel_message_id: int | None = None,
         category_ids: list[int] | None = None
     ) -> Movie:
         if code is None:
@@ -57,9 +55,7 @@ class MovieService:
             release_year=release_year,
             runtime=runtime,
             poster_url=poster_url,
-            trailer_url=trailer_url,
-            telegram_file_id=telegram_file_id,
-            storage_channel_message_id=storage_channel_message_id
+            trailer_url=trailer_url
         )
         return await self.movie_repo.create(movie, category_ids=category_ids)
 
@@ -90,8 +86,6 @@ class MovieService:
         runtime: int | None = None,
         poster_url: str | None = None,
         trailer_url: str | None = None,
-        telegram_file_id: str | None = None,
-        storage_channel_message_id: int | None = None,
         category_ids: list[int] | None = None
     ) -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
@@ -111,15 +105,13 @@ class MovieService:
         if runtime is not None: movie.runtime = runtime
         if poster_url is not None: movie.poster_url = poster_url
         if trailer_url is not None: movie.trailer_url = trailer_url
-        if telegram_file_id is not None: movie.telegram_file_id = telegram_file_id
-        if storage_channel_message_id is not None: movie.storage_channel_message_id = storage_channel_message_id
 
         return await self.movie_repo.update(movie, category_ids=category_ids)
 
     async def delete_movie(self, movie_id: int) -> bool:
         return await self.movie_repo.delete(movie_id)
 
-    async def link_movie_video_from_message(self, movie_id: int, message_id: int) -> Movie | None:
+    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "Asosiy") -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
         if not movie:
             return None
@@ -128,6 +120,10 @@ class MovieService:
         from app.infrastructure.telegram.telegram_client import telegram_client
         file_id = await telegram_client.get_video_file_id_from_message(message_id)
         
-        movie.telegram_file_id = file_id
-        movie.storage_channel_message_id = message_id
-        return await self.movie_repo.update(movie)
+        return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
+
+    async def add_movie_translation(self, movie_id: int, language: str, file_id: str, message_id: int) -> Movie | None:
+        return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
+        
+    async def delete_movie_translation(self, translation_id: int) -> bool:
+        return await self.movie_repo.delete_translation(translation_id)

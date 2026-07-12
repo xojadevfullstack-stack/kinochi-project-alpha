@@ -22,6 +22,7 @@ export default function VideoUploadModal({
 }: VideoUploadModalProps) {
   const [uploadMethod, setUploadMethod] = useState<'file' | 'message'>('file');
   const [messageId, setMessageId] = useState("");
+  const [language, setLanguage] = useState("Asosiy");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isUploading, setIsUploading] = useState(false);
@@ -45,7 +46,8 @@ export default function VideoUploadModal({
         await uploadWithProgress(
           uploadEndpoint,
           file,
-          (percent) => setUploadProgress(percent)
+          (percent) => setUploadProgress(percent),
+          { language }
         );
         
         alert(`${entityName} fayli muvaffaqiyatli yuklandi!`);
@@ -59,7 +61,7 @@ export default function VideoUploadModal({
         
         await fetchApi(linkEndpoint, {
           method: "POST",
-          body: JSON.stringify({ message_id: parsedId })
+          body: JSON.stringify({ message_id: parsedId, language })
         });
         
         alert(`${entityName} Telegram ID orqali muvaffaqiyatli ulandi!`);
@@ -75,7 +77,7 @@ export default function VideoUploadModal({
     }
   };
 
-  const isSubmitDisabled = isUploading || (uploadMethod === 'message' && (!messageId || isNaN(Number(messageId))));
+  const isSubmitDisabled = isUploading || (uploadMethod === 'message' && (!messageId || isNaN(Number(messageId)))) || !language.trim();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -90,6 +92,17 @@ export default function VideoUploadModal({
         </div>
         
         <div className="p-6">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Studiya nomi (Til)</label>
+            <input 
+              type="text" 
+              placeholder="Masalan: Asosiy, O'zbekcha, Tarjima Kinolar..." 
+              value={language} 
+              onChange={(e) => setLanguage(e.target.value)} 
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500" 
+            />
+          </div>
+
           <label className="block text-sm font-medium text-gray-700 mb-3">Video manbasini tanlang</label>
           <div className="flex gap-6 mb-6">
             <label className="flex items-center gap-2 cursor-pointer">

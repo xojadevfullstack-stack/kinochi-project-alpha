@@ -41,6 +41,9 @@ async def main():
     
     from handlers.episode import router as episode_router
     dp.include_router(episode_router)
+    
+    from handlers.translation_callback import router as translation_router
+    dp.include_router(translation_router)
 
     # Start dummy web server in the background
     await start_web_server()

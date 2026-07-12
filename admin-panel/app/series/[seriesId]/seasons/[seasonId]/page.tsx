@@ -13,8 +13,7 @@ type Episode = {
   title: string | null;
   code: string;
   display_code: string;
-  telegram_file_id: string | null;
-  storage_channel_message_id: number | null;
+  translations: { id: number; language: string; telegram_file_id: string }[];
   created_at: string;
 };
 
@@ -124,6 +123,16 @@ export default function EpisodesListPage() {
     if (!confirm("Ushbu qismni o'chirasizmi? (Telegramdagi video ham o'chib ketishi mumkin)")) return;
     try {
       await fetchApi(`/series/episodes/${id}`, { method: "DELETE" });
+      loadData();
+    } catch (e: any) {
+      alert("O'chirishda xato: " + e.message);
+    }
+  };
+
+  const handleDeleteTranslation = async (translationId: number) => {
+    if (!confirm("Bu video (studiya) o'chib ketadimi?")) return;
+    try {
+      await fetchApi(`/series/episodes/translations/${translationId}`, { method: "DELETE" });
       loadData();
     } catch (e: any) {
       alert("O'chirishda xato: " + e.message);
@@ -252,9 +261,18 @@ export default function EpisodesListPage() {
                       Display: {e.display_code}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {e.telegram_file_id || e.storage_channel_message_id ? (
-                      <span className="text-green-600 font-bold">✅ Bor</span>
+                  <td className="px-6 py-4">
+                    {e.translations && e.translations.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {e.translations.map((t) => (
+                          <div key={t.id} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
+                            <span>✅ {t.language}</span>
+                            <button onClick={() => handleDeleteTranslation(t.id)} className="text-red-500 hover:text-red-700 ml-2" title="Videoni o'chirish">
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <span className="text-red-600 font-bold">❌ Yo'q</span>
                     )}
