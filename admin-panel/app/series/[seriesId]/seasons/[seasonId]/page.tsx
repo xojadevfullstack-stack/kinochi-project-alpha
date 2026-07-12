@@ -149,7 +149,7 @@ export default function EpisodesListPage() {
       season_id: e.season_id,
       episode_number: e.episode_number,
       title: e.title || "",
-      duration: e.duration || "",
+      duration: e.duration?.toString() || "",
     });
   };
 

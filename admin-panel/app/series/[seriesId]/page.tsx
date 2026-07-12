@@ -110,7 +110,7 @@ export default function SeasonsListPage() {
       title: s.title || "",
       description: s.description || "",
       poster_url: s.poster_url || "",
-      episode_count: s.episode_count || "",
+      episode_count: s.episode_count?.toString() || "",
     });
   };
 
