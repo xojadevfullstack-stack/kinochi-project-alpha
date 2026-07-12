@@ -4,16 +4,20 @@ import { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 
+type Category = { id: number; name: string };
+
 type Series = {
   id: number;
   title: string;
   description: string | null;
   poster_url: string | null;
   created_at: string;
+  categories: Category[];
 };
 
 export default function SeriesListPage() {
   const [seriesList, setSeriesList] = useState<Series[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -21,11 +25,21 @@ export default function SeriesListPage() {
     title: "",
     description: "",
     poster_url: "",
+    category_ids: [] as number[],
   });
 
   useEffect(() => {
-    loadSeries();
+    Promise.all([loadSeries(), loadCategories()]).then(() => setLoading(false));
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchApi("/categories/");
+      setCategories(data);
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
 
   const loadSeries = async () => {
     try {
@@ -33,8 +47,6 @@ export default function SeriesListPage() {
       setSeriesList(data.items);
     } catch (e: any) {
       alert("Xato: " + e.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -69,12 +81,22 @@ export default function SeriesListPage() {
       title: s.title,
       description: s.description || "",
       poster_url: s.poster_url || "",
+      category_ids: s.categories ? s.categories.map((c) => c.id) : [],
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", poster_url: "" });
+    setForm({ title: "", description: "", poster_url: "", category_ids: [] });
+  };
+
+  const handleCategoryChange = (id: number) => {
+    setForm(prev => {
+      const ids = prev.category_ids.includes(id) 
+        ? prev.category_ids.filter(x => x !== id)
+        : [...prev.category_ids, id];
+      return { ...prev, category_ids: ids };
+    });
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Yuklanmoqda...</div>;
@@ -118,6 +140,17 @@ export default function SeriesListPage() {
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kategoriyalar</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(c => (
+                <label key={c.id} className="flex items-center bg-gray-100 px-2 py-1 rounded cursor-pointer">
+                  <input type="checkbox" className="mr-2" checked={form.category_ids.includes(c.id)} onChange={() => handleCategoryChange(c.id)} />
+                  {c.name}
+                </label>
+              ))}
+            </div>
+          </div>
           
           <div className="md:col-span-2 flex gap-3 pt-2">
             <button
@@ -149,6 +182,18 @@ export default function SeriesListPage() {
             )}
             <div className="p-5 flex-1 flex flex-col">
               <h3 className="text-lg font-bold text-gray-900 mb-2">{s.title}</h3>
+              {s.categories && s.categories.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {s.categories.map((c) => (
+                    <span
+                      key={c.id}
+                      className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full"
+                    >
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="text-sm text-gray-500 mb-4 line-clamp-3">{s.description || "Tavsif yo'q"}</p>
               <div className="mt-auto flex justify-between items-center gap-2">
                 <Link

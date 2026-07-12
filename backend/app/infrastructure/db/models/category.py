@@ -22,3 +22,7 @@ class CategoryModel(Base):
     movies: Mapped[list["MovieModel"]] = relationship(
         secondary="movie_category", back_populates="categories"
     )
+    
+    series: Mapped[list["SeriesModel"]] = relationship(
+        secondary="series_category", back_populates="categories"
+    )

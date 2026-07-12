@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { fetchApi, fetchApiUpload } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { fetchApi } from "@/lib/api";
+import VideoUploadModal from "@/components/VideoUploadModal";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -42,11 +43,10 @@ export default function EpisodesListPage() {
   const [saving, setSaving] = useState(false);
   
   const [editingId, setEditingId] = useState<number | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const [uploadMethod, setUploadMethod] = useState<"file" | "message">("file");
-  const [messageId, setMessageId] = useState<string>("");
+  
+  // Video Modal states
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoEpisodeId, setVideoEpisodeId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     season_id: parseInt(seasonId),
@@ -86,32 +86,11 @@ export default function EpisodesListPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    } else {
-      setSelectedFile(null);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingId) {
-      if (uploadMethod === "file" && !selectedFile) {
-        alert("Iltimos, video faylni tanlang!");
-        return;
-      }
-      if (uploadMethod === "message" && !messageId) {
-        alert("Iltimos, xabar ID sini kiriting!");
-        return;
-      }
-    }
 
     setSaving(true);
     try {
-      let currentEpisodeId = editingId;
-
-      // 1. Create or Update Episode Metadata
       if (editingId) {
         await fetchApi(`/series/episodes/${editingId}`, { 
           method: "PUT", 
@@ -121,30 +100,13 @@ export default function EpisodesListPage() {
           }) 
         });
       } else {
-        const newEpisode = await fetchApi(`/series/seasons/${seasonId}/episodes`, { 
+        await fetchApi(`/series/seasons/${seasonId}/episodes`, { 
           method: "POST", 
           body: JSON.stringify({
             season_id: form.season_id,
             episode_number: form.episode_number,
             title: form.title || null
           }) 
-        });
-        currentEpisodeId = newEpisode.id;
-      }
-
-      // 2. Upload or Link Video
-      if (uploadMethod === "file" && selectedFile && currentEpisodeId) {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        
-        await fetchApiUpload(`/series/episodes/${currentEpisodeId}/upload-video`, {
-          method: "POST",
-          body: formData
-        });
-      } else if (uploadMethod === "message" && messageId && currentEpisodeId) {
-        await fetchApi(`/series/episodes/${currentEpisodeId}/link-video`, {
-          method: "POST",
-          body: JSON.stringify({ message_id: parseInt(messageId) })
         });
       }
 
@@ -175,14 +137,10 @@ export default function EpisodesListPage() {
       episode_number: e.episode_number,
       title: e.title || "",
     });
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
     
     const nextNum = episodes.length > 0 ? Math.max(...episodes.map((e: Episode) => e.episode_number)) + 1 : 1;
     setForm({ season_id: parseInt(seasonId), episode_number: nextNum, title: "" });
@@ -245,70 +203,13 @@ export default function EpisodesListPage() {
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Video manbasini tanlang</label>
-            <div className="flex gap-6 mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="uploadMethod" 
-                  value="file" 
-                  checked={uploadMethod === 'file'} 
-                  onChange={() => setUploadMethod('file')}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-sm text-gray-700">Komp'yuterdan fayl yuklash</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="radio" 
-                  name="uploadMethod" 
-                  value="message" 
-                  checked={uploadMethod === 'message'} 
-                  onChange={() => setUploadMethod('message')}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-sm text-gray-700">Kanal xabaridan ID orqali olish</span>
-              </label>
-            </div>
-
-            {uploadMethod === 'file' ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Video fayl {editingId ? "(Faqat videoni o'zgartirish kerak bo'lsa tanlang)" : "(Majburiy)"}
-                </label>
-                <input
-                  type="file"
-                  accept="video/*"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Xabar ID'si (Message ID) {editingId ? "(Faqat videoni o'zgartirish kerak bo'lsa kiritish)" : "(Majburiy)"}
-                </label>
-                <input
-                  type="number"
-                  placeholder="Masalan: 12345"
-                  value={messageId}
-                  onChange={(e) => setMessageId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Storage kanalidagi video xabarini toping va uning ID'sini (Message ID) kiriting.
-                </p>
-              </div>
-            )}
           </div>
           
           <div className="md:col-span-2 flex gap-3 pt-2">
             <button 
               type="submit" 
-              disabled={saving || (uploadMethod === 'message' && !editingId && (!messageId || isNaN(Number(messageId))))}
-              className={`px-6 py-2 rounded-lg font-medium transition ${saving || (uploadMethod === 'message' && !editingId && (!messageId || isNaN(Number(messageId)))) ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              disabled={saving}
+              className={`px-6 py-2 rounded-lg font-medium transition ${saving ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               {saving ? "Yuklanmoqda..." : "Saqlash"}
             </button>
@@ -353,19 +254,24 @@ export default function EpisodesListPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {e.telegram_file_id ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Yuklangan
-                      </span>
+                    {e.telegram_file_id || e.storage_channel_message_id ? (
+                      <span className="text-green-600 font-bold">✅ Bor</span>
                     ) : (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        Kutilmoqda
-                      </span>
+                      <span className="text-red-600 font-bold">❌ Yo'q</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => handleEdit(e)} className="text-blue-600 hover:text-blue-900 p-2">Tahrir</button>
-                    <button onClick={() => handleDelete(e.id)} className="text-red-600 hover:text-red-900 p-2 ml-2">O'chirish</button>
+                    <button 
+                      onClick={() => {
+                        setVideoEpisodeId(e.id);
+                        setVideoModalOpen(true);
+                      }} 
+                      className="text-blue-600 hover:text-blue-900 mr-4 font-bold border border-blue-600 px-2 py-1 rounded"
+                    >
+                      Video yuklash
+                    </button>
+                    <button onClick={() => handleEdit(e)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>
+                    <button onClick={() => handleDelete(e.id)} className="text-red-600 hover:text-red-900">O'chirish</button>
                   </td>
                 </tr>
               ))}
@@ -377,6 +283,17 @@ export default function EpisodesListPage() {
           </div>
         )}
       </div>
+      <VideoUploadModal
+        isOpen={videoModalOpen}
+        onClose={() => {
+          setVideoModalOpen(false);
+          setVideoEpisodeId(null);
+        }}
+        entityName="Qism"
+        uploadEndpoint={`/series/episodes/${videoEpisodeId}/upload-video`}
+        linkEndpoint={`/series/episodes/${videoEpisodeId}/link-video`}
+        onSuccess={() => loadData()}
+      />
     </div>
   );
 }

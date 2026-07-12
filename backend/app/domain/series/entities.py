@@ -3,6 +3,7 @@ Series domain entities.
 """
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
+from app.domain.categories.entities import Category
 
 class EpisodeBase(BaseModel):
     season_id: int
@@ -61,18 +62,20 @@ class SeriesBase(BaseModel):
     poster_url: str | None = Field(None, max_length=1024)
 
 class SeriesCreate(SeriesBase):
-    pass
+    category_ids: list[int] | None = None
 
 class SeriesUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    category_ids: list[int] | None = None
 
 class Series(SeriesBase):
     id: int
     created_at: datetime
     updated_at: datetime
     seasons: list[Season] = Field(default_factory=list)
+    categories: list[Category] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
 
 # Pagination responses

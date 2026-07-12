@@ -2,8 +2,8 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import Tuple, List
-
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
+from app.infrastructure.db.models.category import CategoryModel
 from app.domain.series.entities import SeriesCreate, SeriesUpdate, SeasonCreate, SeasonUpdate, EpisodeCreate, EpisodeUpdate
 
 class SeriesRepository:
@@ -15,17 +15,29 @@ class SeriesRepository:
         total_stmt = select(func.count(SeriesModel.id))
         total = await self.session.scalar(total_stmt)
         
-        stmt = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
+        stmt = select(SeriesModel).options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),
+            selectinload(SeriesModel.categories)
+        ).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
     async def get_series_by_id(self, series_id: int) -> SeriesModel | None:
-        stmt = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes)).where(SeriesModel.id == series_id)
+        stmt = select(SeriesModel).options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),
+            selectinload(SeriesModel.categories)
+        ).where(SeriesModel.id == series_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def create_series(self, series_data: SeriesCreate) -> SeriesModel:
-        series = SeriesModel(**series_data.model_dump())
+        series = SeriesModel(**series_data.model_dump(exclude={"category_ids"}, exclude_unset=True))
+        
+        if series_data.category_ids:
+            result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(series_data.category_ids)))
+            categories = result.scalars().all()
+            series.categories = list(categories)
+            
         self.session.add(series)
         await self.session.flush()
         return await self.get_series_by_id(series.id)
@@ -35,8 +47,13 @@ class SeriesRepository:
         if not series:
             return None
         
-        for key, value in update_data.model_dump(exclude_unset=True).items():
+        for key, value in update_data.model_dump(exclude={"category_ids"}, exclude_unset=True).items():
             setattr(series, key, value)
+            
+        if update_data.category_ids is not None:
+            result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(update_data.category_ids)))
+            categories = result.scalars().all()
+            series.categories = list(categories)
             
         await self.session.flush()
         return await self.get_series_by_id(series.id)

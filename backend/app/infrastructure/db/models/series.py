@@ -7,6 +7,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
 
+# Many-to-many association table between series and categories
+series_category_table = Table(
+    "series_category",
+    Base.metadata,
+    Column("series_id", Integer, ForeignKey("series.id", ondelete="CASCADE"), primary_key=True),
+    Column("category_id", Integer, ForeignKey("categories.id", ondelete="CASCADE"), primary_key=True),
+)
+
 class SeriesModel(Base):
     __tablename__ = "series"
 
@@ -22,6 +30,10 @@ class SeriesModel(Base):
 
     seasons: Mapped[list["SeasonModel"]] = relationship(
         back_populates="series", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+    categories: Mapped[list["CategoryModel"]] = relationship(
+        secondary=series_category_table, back_populates="series", lazy="selectin"
     )
 
 class SeasonModel(Base):

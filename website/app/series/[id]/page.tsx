@@ -88,6 +88,13 @@ export default async function SeriesDetailsPage({ params }: Props) {
         {/* Right Side: Details */}
         <div className="w-full md:w-2/3 p-6 md:p-8 flex flex-col">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">{series.title}</h1>
+          
+          <div className="mb-6 space-y-2 text-sm text-gray-300">
+            {series.categories && series.categories.length > 0 && (
+              <p><strong className="text-white">Kategoriya:</strong> {series.categories.map((c: any) => c.name).join(', ')}</p>
+            )}
+          </div>
+          
           <div className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 flex-grow">
             {series.description || "Ushbu serial uchun batafsil ma'lumot kiritilmagan."}
           </div>

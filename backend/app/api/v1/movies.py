@@ -187,7 +187,27 @@ async def upload_movie_video(
         
     return movie
 
+class LinkVideoRequest(BaseModel):
+    message_id: int
 
+@router.post("/{movie_id}/link-video", response_model=MovieResponse)
+async def link_movie_video(
+    movie_id: int,
+    request: LinkVideoRequest,
+    service: MovieService = Depends(get_movie_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Link video for a movie from an existing message ID in the storage channel (Admin only)."""
+    try:
+        movie = await service.link_movie_video_from_message(movie_id, request.message_id)
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+        return movie
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in link_movie_video endpoint for movie {movie_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_movie(
     movie_id: int,

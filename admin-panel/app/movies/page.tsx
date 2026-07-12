@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchApi, fetchApiUpload } from "@/lib/api";
+import { fetchApi } from "@/lib/api";
+import VideoUploadModal from "@/components/VideoUploadModal";
 
 type Category = { id: number; name: string };
 type Movie = {
@@ -24,6 +25,10 @@ export default function MoviesPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
+  
+  // Video Modal states
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoMovieId, setVideoMovieId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "",
@@ -96,34 +101,14 @@ export default function MoviesPage() {
     setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", category_ids: [] });
   };
 
-  const handleUploadVideo = async (id: number, file: File) => {
-    setUploadingId(id);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      await fetchApiUpload(`/movies/${id}/upload-video`, {
-        method: "POST",
-        body: formData,
-      });
-      loadMovies();
-      alert("Video muvaffaqiyatli yuklandi!");
-    } catch (e: any) {
-      alert("Yuklashda xato: " + e.message);
-    } finally {
-      setUploadingId(null);
-    }
+  const openVideoModal = (id: number) => {
+    setVideoMovieId(id);
+    setVideoModalOpen(true);
   };
 
-  const triggerFileInput = (id: number) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "video/*";
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (file) handleUploadVideo(id, file);
-    };
-    input.click();
+  const closeVideoModal = () => {
+    setVideoModalOpen(false);
+    setVideoMovieId(null);
   };
 
   const handleCategoryChange = (id: number) => {
@@ -196,9 +181,11 @@ export default function MoviesPage() {
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                   {uploadingId === m.id ? (
-                    <span className="text-gray-500 mr-4">Yuklanmoqda...</span>
+                    <span className="text-gray-500 mr-4">
+                      Yuklanmoqda...
+                    </span>
                   ) : (
-                    <button onClick={() => triggerFileInput(m.id)} className="text-blue-600 hover:text-blue-900 mr-4 font-bold border border-blue-600 px-2 py-1 rounded">Video yuklash</button>
+                    <button onClick={() => openVideoModal(m.id)} className="text-blue-600 hover:text-blue-900 mr-4 font-bold border border-blue-600 px-2 py-1 rounded">Video yuklash</button>
                   )}
                   <button onClick={() => handleEdit(m)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>
                   <button onClick={() => handleDelete(m.id)} className="text-red-600 hover:text-red-900">O'chirish</button>
@@ -209,6 +196,15 @@ export default function MoviesPage() {
           </tbody>
         </table>
       </div>
+
+      <VideoUploadModal
+        isOpen={videoModalOpen}
+        onClose={closeVideoModal}
+        entityName="Kino"
+        uploadEndpoint={`/movies/${videoMovieId}/upload-video`}
+        linkEndpoint={`/movies/${videoMovieId}/link-video`}
+        onSuccess={() => loadMovies()}
+      />
     </div>
   );
 }

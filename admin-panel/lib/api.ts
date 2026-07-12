@@ -80,3 +80,58 @@ export async function fetchApiUpload(endpoint: string, options: RequestInit = {}
   return response.json();
 }
 
+/**
+ * Katta fayllarni yuklash uchun XHR asosidagi funksiya (Progress bar bilan)
+ */
+export function uploadWithProgress(
+  endpoint: string, 
+  file: File, 
+  onProgress: (percent: number) => void
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const url = `${DIRECT_API_URL}${endpoint}`;
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    
+    if (token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        onProgress(percentComplete);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch(e) {
+          resolve(xhr.responseText);
+        }
+      } else {
+        let errorMsg = `Error: ${xhr.status} ${xhr.statusText}`;
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data.detail) {
+            errorMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+          }
+        } catch(e) {}
+        reject(new Error(errorMsg));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Network Error occurred during upload"));
+    };
+
+    const formData = new FormData();
+    formData.append("file", file);
+    xhr.send(formData);
+  });
+}
+
