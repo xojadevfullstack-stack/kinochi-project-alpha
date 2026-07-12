@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from aiohttp import web
+
 from aiogram import Bot, Dispatcher
 from config import settings
 from handlers.start import router as start_router
@@ -10,36 +10,7 @@ from handlers.search import router as search_router
 from middlewares.subscription_check import SubscriptionMiddleware
 from services.api_client import api_client
 
-logging.basicConfig(level=logging.INFO)
-
-# Dummy web server to keep Render happy
-async def handle_ping(request):
-    return web.Response(text="Bot is running!")
-
-async def start_web_server():
-    app = web.Application()
-    app.router.add_get("/", handle_ping)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    port = int(os.environ.get("PORT", 8080))
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    logging.info(f"Dummy web server running on port {port}")
-
-async def keep_alive():
-    import httpx
-    url = os.environ.get("RENDER_EXTERNAL_URL")
-    if not url:
-        return
-    while True:
-        await asyncio.sleep(14 * 60)
-        try:
-            async with httpx.AsyncClient() as client:
-                await client.get(url)
-        except Exception as e:
-            logging.error(f"Bot keep-alive failed: {e}")
-
-async def main():
+async def run_bot():
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
 
@@ -58,16 +29,21 @@ async def main():
     from handlers.translation_callback import router as translation_router
     dp.include_router(translation_router)
 
-    # Start dummy web server in the background
-    await start_web_server()
-    asyncio.create_task(keep_alive())
+    retry_delay = 5
+    max_delay = 60
 
     try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await dp.start_polling(bot)
+        while True:
+            try:
+                logging.info("[BOT] Starting Telegram bot polling...")
+                await bot.delete_webhook(drop_pending_updates=True)
+                await dp.start_polling(bot)
+            except Exception as e:
+                logging.error(f"[BOT] Polling failed: {e}")
+                logging.info(f"[BOT] Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+                # Exponential backoff
+                retry_delay = min(retry_delay * 2, max_delay)
     finally:
         await api_client.close()
         await bot.session.close()
-
-if __name__ == "__main__":
-    asyncio.run(main())

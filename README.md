@@ -9,31 +9,24 @@ Loyihaning arxitekturasi Clean Architecture tamoyillariga asoslangan bo'lib, quy
 - **Bot (Aiogram 3)**: Foydalanuvchilar bilan muloqot qiluvchi Telegram bot. Backend API'ga ulanadi, mustaqil DB'ga ega emas.
 - **Admin Panel / Frontend (Next.js)**: Filmlarni boshqarish, kanal va obunalarni sozlash uchun interfeys. JWT orqali himoyalangan.
 
-## 🚀 Deployment Qadamlari
+## 🚀 Deployment Qadamlari (Render uchun)
 
-Loyihani serverga joylashtirish (deploy qilish) uchun quyidagi amallarni bajaring:
+Loyihani serverga (Render PaaS kabi) bitta jarayonda (Bot + Backend) deploy qilish uchun quyidagi amallarni bajaring:
 
-1. Serverda kerakli dasturlarni o'rnating: `Docker`, `Docker Compose`, `Git`.
-2. Repozitoriyni klon qiling:
-   ```bash
-   git clone <repo-url>
-   cd kinochi-project
-   ```
-3. `.env` fayllarni yarating (namunalar pastda ko'rsatilgan).
-4. Docker Compose orqali barcha servislarni ishga tushiring:
-   ```bash
-   docker-compose up -d --build
-   ```
-5. Bazaga migratsiyalarni qo'llang (agar avtomatik bo'lmasa):
-   ```bash
-   docker-compose exec backend alembic upgrade head
-   ```
+1. Render da yangi **Web Service** yarating va GitHub repozitoriyangizni ulang.
+2. Quyidagi sozlamalarni kiriting:
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `python run.py`
+3. Environment Variables (Muhit O'zgaruvchilari) ni Render dashboard'ida barchasini (ham Bot, ham Backend uchun) **bitta joyga** kiriting. Ular bitta process da ishlagani uchun umumiy `.env` dan o'qiydi.
+4. "Deploy" tugmasini bosing!
 
-## ⚙️ .env O'zgaruvchilari
+> **Eslatma**: `run.py` orqali FastAPI (API) va Aiogram (Telegram bot) bitta resurs (512MB RAM) ichida parallel ishga tushadi. 
 
-Loyihani ishga tushirish uchun ikkita `.env` fayli kerak (backend va bot uchun).
+## ⚙️ .env O'zgaruvchilari (Umumiy)
 
-### `backend/.env`
+Barcha kerakli muhit o'zgaruvchilar ro'yxati (Render dashboard ga qo'shiladi):
+
 ```env
 # Loyiha
 PROJECT_NAME="Kinochi"
@@ -41,29 +34,23 @@ VERSION="0.1.0"
 APP_ENV="production"
 DEBUG="False"
 
-# Database & Redis
-DATABASE_URL="postgresql+asyncpg://user:pass@db:5432/kinochi_db"
-REDIS_URL="redis://redis:6379/0"
+# Database & Redis (Masalan Neon va Upstash URL lari)
+DATABASE_URL="postgresql+asyncpg://user:pass@neon.tech/kinochi_db"
+REDIS_URL="redis://your-upstash-redis-url"
 
 # Xavfsizlik
 SECRET_KEY="generate-a-strong-32-byte-secret"
 ACCESS_TOKEN_EXPIRE_MINUTES="30"
 REFRESH_TOKEN_EXPIRE_DAYS="7"
 BOT_API_SECRET="shared-secret-between-bot-and-backend"
+JWT_SECRET_KEY="front-end-admin-panel-secret"
 
 # Telegram
 BOT_TOKEN="your-telegram-bot-token"
 STORAGE_CHANNEL_ID="-1001234567890"
 
-# CORS
+# URL'lar (CORS va Bot API uchun)
 CORS_ORIGINS='["https://your-website.com"]'
-```
-
-### `bot/.env`
-```env
-BOT_TOKEN="your-telegram-bot-token"
-BACKEND_API_URL="http://backend:8000/api/v1"
-STORAGE_CHANNEL_ID="-1001234567890"
-BOT_API_SECRET="shared-secret-between-bot-and-backend"
+BACKEND_API_URL="http://127.0.0.1:8000/api/v1" # Ichki tarmoqda ishlagani uchun localhost yetarli!
 WEBSITE_URL="https://your-website.com"
 ```
