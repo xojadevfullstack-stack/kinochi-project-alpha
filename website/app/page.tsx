@@ -41,7 +41,7 @@ const MovieRow = ({ title, movies }: { title: string, movies: Movie[] }) => {
   return (
     <div className="mb-12 max-w-7xl mx-auto">
       <h2 className="text-2xl font-semibold mb-4 px-4 sm:px-6 lg:px-8 text-white/90">{title}</h2>
-      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 sm:px-6 lg:px-8 pb-4">
+      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 sm:px-6 lg:px-8 pb-4 pt-4 -mt-4">
         {movies.map(movie => (
           <Link href={`/movie/${movie.code}`} key={movie.code} className="flex-none w-40 md:w-48 lg:w-56 group relative rounded-xl overflow-hidden bg-surface transition-transform duration-300 hover:scale-105 hover:z-10 ring-1 ring-white/10 hover:ring-primary/50">
             <div className="aspect-[2/3] relative bg-gray-800">
@@ -86,7 +86,7 @@ const SeriesRow = ({ title, seriesList }: { title: string, seriesList: Series[] 
   return (
     <div className="mb-12 max-w-7xl mx-auto">
       <h2 className="text-2xl font-semibold mb-4 px-4 sm:px-6 lg:px-8 text-white/90">{title}</h2>
-      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 sm:px-6 lg:px-8 pb-4">
+      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 sm:px-6 lg:px-8 pb-4 pt-4 -mt-4">
         {seriesList.map(series => (
           <Link href={`/series/${series.id}`} key={series.id} className="flex-none w-40 md:w-48 lg:w-56 group relative rounded-xl overflow-hidden bg-surface transition-transform duration-300 hover:scale-105 hover:z-10 ring-1 ring-white/10 hover:ring-primary/50">
             <div className="aspect-[2/3] relative bg-gray-800">
@@ -225,7 +225,7 @@ export default async function Home() {
       </div>
 
       {/* Main Content Rows */}
-      <div className="relative z-10 -mt-20">
+      <div className="relative z-10 pt-8">
         <MovieRow title="Yangi qo'shilganlar" movies={latestMovies} />
         
         <SeriesRow title="So'nggi Seriallar" seriesList={latestSeries} />

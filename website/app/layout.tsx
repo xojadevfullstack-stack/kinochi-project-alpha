@@ -51,7 +51,7 @@ export default function RootLayout({
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-4">
                   <a href="/" className="text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 glow-border-hover border border-transparent">Bosh sahifa</a>
-                  <a href="/" className="text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 glow-border-hover border border-transparent">Kinolar</a>
+                  <a href="/movies" className="text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 glow-border-hover border border-transparent">Kinolar</a>
                   <a href="/series" className="text-gray-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 glow-border-hover border border-transparent">Seriallar</a>
                 </div>
               </div>

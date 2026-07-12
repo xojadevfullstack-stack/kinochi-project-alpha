@@ -117,10 +117,12 @@ export default async function MovieDetailsPage({ params }: Props) {
               href={telegramDeepLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full md:w-auto items-center justify-center gap-2 bg-primary hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition-all shadow-lg shadow-primary/30 hover:scale-105"
+              className="group inline-flex w-full md:w-auto items-center justify-between gap-4 bg-surface border border-white/5 hover:border-primary/50 text-white py-3 px-4 rounded-xl transition-all duration-300"
             >
-              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-              Telegram'da tomosha qilish
+              <span className="font-medium px-2">Telegram'da tomosha qilish</span>
+              <div className="w-10 h-10 bg-primary/20 text-primary group-hover:bg-primary group-hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 shadow-[0_0_0_rgba(229,9,20,0)] group-hover:shadow-[0_0_15px_rgba(229,9,20,0.5)]">
+                <svg className="w-5 h-5 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
             </a>
           </div>
           
