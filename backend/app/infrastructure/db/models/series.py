@@ -44,6 +44,7 @@ class SeasonModel(Base):
     season_number: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str | None] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text)
+    poster_url: Mapped[str | None] = mapped_column(String(1024))
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 

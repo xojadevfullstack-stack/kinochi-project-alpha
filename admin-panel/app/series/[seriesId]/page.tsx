@@ -11,6 +11,7 @@ type Season = {
   season_number: number;
   title: string | null;
   description: string | null;
+  poster_url: string | null;
   created_at: string;
 };
 
@@ -34,6 +35,7 @@ export default function SeasonsListPage() {
     season_number: 1,
     title: "",
     description: "",
+    poster_url: "",
   });
 
   useEffect(() => {
@@ -71,7 +73,8 @@ export default function SeasonsListPage() {
         await fetchApi(`/series/seasons/${editingId}`, { method: "PUT", body: JSON.stringify({
           season_number: form.season_number,
           title: form.title || null,
-          description: form.description || null
+          description: form.description || null,
+          poster_url: form.poster_url || null
         }) });
       } else {
         await fetchApi(`/series/${seriesId}/seasons`, { method: "POST", body: JSON.stringify(form) });
@@ -100,13 +103,14 @@ export default function SeasonsListPage() {
       season_number: s.season_number,
       title: s.title || "",
       description: s.description || "",
+      poster_url: s.poster_url || "",
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     const nextNum = seasons.length > 0 ? Math.max(...seasons.map((s: Season) => s.season_number)) + 1 : 1;
-    setForm({ series_id: parseInt(seriesId), season_number: nextNum, title: "", description: "" });
+    setForm({ series_id: parseInt(seriesId), season_number: nextNum, title: "", description: "", poster_url: "" });
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Yuklanmoqda...</div>;
@@ -165,6 +169,16 @@ export default function SeasonsListPage() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
               rows={2}
+            />
+          </div>
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Poster URL (rasm havolasi)</label>
+            <input
+              type="text"
+              placeholder="https://..."
+              value={form.poster_url}
+              onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
             />
           </div>
           

@@ -79,5 +79,5 @@ Asosiy maqsad (bot orqali kino/serial tarqatish, veb-sayt orqali SEO qidiruv, va
 
 ## KEYINGI QADAM (NEXT STEPS)
 
-- **Series (Seriallar) bo'limi (Part 2):** Backend va Admin Panel to'liq mustaqil Series/Season/Episode arxitekturasiga o'tkazildi. Qismlar (Episodes) uchun video yuklash va message_id ulash tizimi qo'shildi. Bot qismida Serial qismlari uchun navigatsiyali Inline Keyboard qo'shildi. **Eng asosiysi, Seriallarga Kategoriyalar bog'lash to'liq joriy qilindi**: `series_category` many-to-many jadvali yaratildi, Admin Panel'da serial qo'shish va tahrirlashda kategoriyalarni belgilash yoqildi, ro'yxat va Vebsaytda (website/app/series/[id]) kategoriyalar Movie qanday ko'rsatilsa, huddi shunday badge formatida tasvirlandi.
-- Hozirgi kod bazasi kengayishga to'liq tayyor. Keyingi qadamlar: Series (Season) uchun Poster kiritish, Xronologik dizayn, va Ko'p-dublyaj (studiya) tanlash tizimi (Part 3 va Part 4).
+- **Series (Seriallar) bo'limi (Part 2 & Part 3):** Backend va Admin Panel to'liq mustaqil Series/Season/Episode arxitekturasiga o'tkazildi. Qismlar (Episodes) uchun video yuklash va message_id ulash tizimi qo'shildi. Bot qismida Serial qismlari uchun navigatsiyali Inline Keyboard qo'shildi. Seriallarga Kategoriyalar bog'lash to'liq joriy qilindi. **Season uchun Poster URL qo'shildi va Vebsaytda Serial qismlari xronologik dizaynga (timeline) o'tkazildi.**
+- Hozirgi kod bazasi kengayishga to'liq tayyor. Keyingi qadam: Ko'p-dublyaj (studiya) tanlash tizimi (Part 4) va Admin Panelni sayqallash (Part 5).

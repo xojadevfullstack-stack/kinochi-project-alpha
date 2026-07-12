@@ -40,6 +40,7 @@ class SeasonBase(BaseModel):
     season_number: int
     title: str | None = None
     description: str | None = None
+    poster_url: str | None = Field(None, max_length=1024)
 
 class SeasonCreate(SeasonBase):
     pass
@@ -48,6 +49,7 @@ class SeasonUpdate(BaseModel):
     season_number: int | None = None
     title: str | None = None
     description: str | None = None
+    poster_url: str | None = Field(None, max_length=1024)
 
 class Season(SeasonBase):
     id: int

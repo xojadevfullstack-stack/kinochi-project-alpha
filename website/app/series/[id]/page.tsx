@@ -51,6 +51,7 @@ type Season = {
   season_number: number;
   title: string | null;
   description: string | null;
+  poster_url: string | null;
   episodes: Episode[];
 };
 
@@ -114,54 +115,90 @@ export default async function SeriesDetailsPage({ params }: Props) {
             {series.seasons
               .sort((a: Season, b: Season) => a.season_number - b.season_number)
               .map((season: Season) => (
-              <div key={season.id} className="bg-surface rounded-xl overflow-hidden ring-1 ring-white/5">
-                <div className="bg-white/5 px-6 py-4 border-b border-white/5">
-                  <h3 className="text-xl font-semibold">
-                    {season.season_number}-Fasl {season.title ? `- ${season.title}` : ""}
-                  </h3>
-                  {season.description && (
-                    <p className="text-sm text-gray-400 mt-1">{season.description}</p>
-                  )}
-                </div>
+              <div key={season.id} className="bg-surface rounded-xl overflow-hidden ring-1 ring-white/5 relative">
+                {/* Timeline connector (optional decorative line) */}
+                <div className="hidden md:block absolute left-8 top-0 bottom-0 w-px bg-white/5 z-0"></div>
                 
-                <div className="p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {!season.episodes || season.episodes.length === 0 ? (
-                    <div className="col-span-full text-gray-500 text-sm py-2">
-                      Bu faslga qismlar qo'shilmagan.
+                <div className="relative z-10 flex flex-col md:flex-row gap-6 p-6">
+                  {/* Season Poster */}
+                  <div className="w-full md:w-48 aspect-[2/3] relative flex-shrink-0 bg-background/50 rounded-lg overflow-hidden shadow-lg border border-white/5">
+                    {season.poster_url ? (
+                      <Image 
+                        src={season.poster_url} 
+                        alt={`${season.season_number}-fasl`}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : series.poster_url ? (
+                      <Image 
+                        src={series.poster_url} 
+                        alt="Fasl"
+                        fill
+                        className="object-cover opacity-30 grayscale blur-[2px]"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+                        Rasm yo'q
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Season Content */}
+                  <div className="flex-grow flex flex-col">
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-bold flex items-center gap-3">
+                        <span className="bg-white/10 px-3 py-1 rounded-md text-primary text-xl">
+                          {season.season_number}-Fasl
+                        </span>
+                        {season.title && <span>{season.title}</span>}
+                      </h3>
+                      {season.description && (
+                        <p className="text-gray-400 mt-4 leading-relaxed text-sm">
+                          {season.description}
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    season.episodes
-                      .sort((a, b) => a.episode_number - b.episode_number)
-                      .map((episode) => {
-                      const telegramDeepLink = `https://t.me/${botUsername}?start=${episode.code}`;
-                      return (
-                        <a 
-                          href={telegramDeepLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          key={episode.id} 
-                          className="group bg-background rounded-lg p-4 border border-white/5 hover:border-primary/50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)] flex items-center justify-between"
-                        >
-                          <div>
-                            <div className="font-medium text-white group-hover:text-primary transition-colors">
-                              {episode.episode_number}-qism
-                            </div>
-                            {episode.title && (
-                              <div className="text-xs text-gray-400 mt-1 truncate max-w-[120px]" title={episode.title}>
-                                {episode.title}
+                    
+                    {/* Episodes Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-auto">
+                      {!season.episodes || season.episodes.length === 0 ? (
+                        <div className="col-span-full text-gray-500 text-sm py-2">
+                          Bu faslga qismlar qo'shilmagan.
+                        </div>
+                      ) : (
+                        season.episodes
+                          .sort((a, b) => a.episode_number - b.episode_number)
+                          .map((episode) => {
+                          const telegramDeepLink = `https://t.me/${botUsername}?start=${episode.code}`;
+                          return (
+                            <a 
+                              href={telegramDeepLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              key={episode.id} 
+                              className="group bg-background rounded-lg p-3 border border-white/5 hover:border-primary/50 transition-all duration-300 flex items-center justify-between"
+                            >
+                              <div className="overflow-hidden pr-2">
+                                <div className="font-medium text-white/90 group-hover:text-primary transition-colors text-sm">
+                                  {episode.episode_number}-qism
+                                </div>
+                                {episode.title && (
+                                  <div className="text-xs text-gray-500 mt-0.5 truncate" title={episode.title}>
+                                    {episode.title}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          
-                          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-colors text-gray-400">
-                            <svg className="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </a>
-                      )
-                    })
-                  )}
+                              <div className="w-8 h-8 flex-shrink-0 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 group-hover:text-primary transition-colors text-gray-400">
+                                <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </div>
+                            </a>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
