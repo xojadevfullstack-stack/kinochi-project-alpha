@@ -148,7 +148,7 @@ export default async function Home() {
   return (
     <div className="pb-20">
       {/* Hero Section */}
-      <div className="relative h-[70vh] min-h-[500px] w-full bg-background flex items-center">
+      <div className="relative h-[70vh] min-h-[500px] w-full bg-background flex items-center overflow-hidden">
         {heroMovie && heroMovie.poster_url ? (
           <>
             <div className="absolute inset-0 z-0">
