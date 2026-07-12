@@ -25,6 +25,10 @@ class SeriesService:
         series_models, total = await self.repository.get_all_series(skip, limit)
         return [Series.model_validate(s) for s in series_models], total
 
+    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[Series], int]:
+        series_models, total = await self.repository.search_series(title_query, skip, limit)
+        return [Series.model_validate(s) for s in series_models], total
+
     async def get_series_by_id(self, series_id: int) -> Series | None:
         series_model = await self.repository.get_series_by_id(series_id)
         if not series_model:

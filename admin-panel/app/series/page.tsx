@@ -11,6 +11,10 @@ type Series = {
   title: string;
   description: string | null;
   poster_url: string | null;
+  imdb_rating: number | null;
+  release_year: number | null;
+  director: string | null;
+  cast: string | null;
   created_at: string;
   categories: Category[];
 };
@@ -25,6 +29,10 @@ export default function SeriesListPage() {
     title: "",
     description: "",
     poster_url: "",
+    imdb_rating: 0,
+    release_year: 2024,
+    director: "",
+    cast: "",
     category_ids: [] as number[],
   });
 
@@ -81,13 +89,17 @@ export default function SeriesListPage() {
       title: s.title,
       description: s.description || "",
       poster_url: s.poster_url || "",
+      imdb_rating: s.imdb_rating || 0,
+      release_year: s.release_year || 2024,
+      director: s.director || "",
+      cast: s.cast || "",
       category_ids: s.categories ? s.categories.map((c) => c.id) : [],
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", poster_url: "", category_ids: [] });
+    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [] });
   };
 
   const handleCategoryChange = (id: number) => {
@@ -137,6 +149,45 @@ export default function SeriesListPage() {
               type="url"
               value={form.poster_url}
               onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rejissyor</label>
+            <input
+              type="text"
+              value={form.director}
+              onChange={(e) => setForm({ ...form, director: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Yil</label>
+            <input
+              type="number"
+              value={form.release_year}
+              onChange={(e) => setForm({ ...form, release_year: parseInt(e.target.value) })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Aktyorlar</label>
+            <input
+              type="text"
+              value={form.cast}
+              onChange={(e) => setForm({ ...form, cast: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reyting (IMDb)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              value={form.imdb_rating}
+              onChange={(e) => setForm({ ...form, imdb_rating: parseFloat(e.target.value) })}
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
             />
           </div>

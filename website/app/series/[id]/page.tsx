@@ -88,16 +88,29 @@ export default async function SeriesDetailsPage({ params }: Props) {
 
         {/* Right Side: Details */}
         <div className="w-full md:w-2/3 p-6 md:p-8 flex flex-col">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">{series.title}</h1>
+          <h1 className="text-3xl md:text-5xl font-bold mb-2">{series.title}</h1>
           
+          <div className="flex flex-wrap items-center gap-4 text-sm md:text-base mb-6">
+            <span className="text-star font-bold flex items-center gap-1">
+              ★ {series.imdb_rating || "N/A"}
+            </span>
+            <span>|</span>
+            <span className="text-gray-300">{series.release_year || "Yil no'malum"}</span>
+          </div>
+
           <div className="mb-6 space-y-2 text-sm text-gray-300">
             {series.categories && series.categories.length > 0 && (
               <p><strong className="text-white">Kategoriya:</strong> {series.categories.map((c: any) => c.name).join(', ')}</p>
             )}
+            <p><strong className="text-white">Rejissyor:</strong> {series.director || "Kiritilmagan"}</p>
+            <p><strong className="text-white">Aktyorlar:</strong> {series.cast || "Kiritilmagan"}</p>
           </div>
           
-          <div className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 flex-grow">
-            {series.description || "Ushbu serial uchun batafsil ma'lumot kiritilmagan."}
+          <div className="mb-8 flex-grow">
+            <h3 className="text-lg font-semibold mb-2 text-white">Serial haqida:</h3>
+            <p className="text-gray-300 leading-relaxed text-sm md:text-base">
+              {series.description || "Ushbu serial uchun batafsil ma'lumot kiritilmagan."}
+            </p>
           </div>
         </div>
       </div>

@@ -22,6 +22,21 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
+    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[SeriesModel], int]:
+        search_pattern = f"%{title_query}%"
+        
+        total_stmt = select(func.count(SeriesModel.id)).where(SeriesModel.title.ilike(search_pattern))
+        total = await self.session.scalar(total_stmt)
+        
+        stmt = select(SeriesModel).options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),
+            selectinload(SeriesModel.categories)
+        ).where(SeriesModel.title.ilike(search_pattern)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
+        
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all()), total or 0
+
+
     async def get_series_by_id(self, series_id: int) -> SeriesModel | None:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes),

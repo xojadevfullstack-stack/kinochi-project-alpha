@@ -11,6 +11,9 @@ type Movie = {
   code: string;
   description: string;
   genres: string;
+  director: string | null;
+  cast: string | null;
+  imdb_rating: number | null;
   poster_url: string | null;
   release_year: number;
   duration_minutes: number;
@@ -32,6 +35,7 @@ export default function MoviesPage() {
 
   const [form, setForm] = useState({
     title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "",
+    director: "", cast: "", imdb_rating: 0,
     category_ids: [] as number[]
   });
 
@@ -92,13 +96,16 @@ export default function MoviesPage() {
       title: m.title, description: m.description, genres: m.genres, 
       release_year: m.release_year, duration_minutes: m.duration_minutes,
       poster_url: m.poster_url || "",
+      director: m.director || "",
+      cast: m.cast || "",
+      imdb_rating: m.imdb_rating || 0,
       category_ids: m.categories.map(c => c.id)
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", category_ids: [] });
+    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [] });
   };
 
   const openVideoModal = (id: number) => {
@@ -133,8 +140,11 @@ export default function MoviesPage() {
           <div className="md:col-span-2"><label className="block text-sm">Ta'rif</label><textarea className="w-full border p-2 rounded" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
           <div className="md:col-span-2"><label className="block text-sm">Poster URL (rasm havolasi)</label><input type="text" className="w-full border p-2 rounded" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} /></div>
           <div><label className="block text-sm">Janrlar</label><input type="text" className="w-full border p-2 rounded" value={form.genres} onChange={e => setForm({...form, genres: e.target.value})} /></div>
+          <div><label className="block text-sm">Rejissyor</label><input type="text" className="w-full border p-2 rounded" value={form.director} onChange={e => setForm({...form, director: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm">Aktyorlar</label><input type="text" className="w-full border p-2 rounded" value={form.cast} onChange={e => setForm({...form, cast: e.target.value})} /></div>
           <div><label className="block text-sm">Yil</label><input type="number" className="w-full border p-2 rounded" value={form.release_year} onChange={e => setForm({...form, release_year: parseInt(e.target.value)})} /></div>
           <div><label className="block text-sm">Davomiylik (min)</label><input type="number" className="w-full border p-2 rounded" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value)})} /></div>
+          <div><label className="block text-sm">Reyting (IMDb)</label><input type="number" step="0.1" min="0" max="10" className="w-full border p-2 rounded" value={form.imdb_rating} onChange={e => setForm({...form, imdb_rating: parseFloat(e.target.value)})} /></div>
           
           <div className="md:col-span-2">
             <label className="block text-sm mb-2">Kategoriyalar</label>

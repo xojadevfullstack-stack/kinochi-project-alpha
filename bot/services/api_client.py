@@ -76,4 +76,13 @@ class APIClient:
             print(f"Error searching movies with query '{query}': {e}")
             return {"items": [], "total": 0}
 
+    async def search_series(self, query: str, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
+        try:
+            response = await self.client.get(f"/series/search?q={query}&skip={skip}&limit={limit}")
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Error searching series with query '{query}': {e}")
+            return {"items": [], "total": 0}
+
 api_client = APIClient()

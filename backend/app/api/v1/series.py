@@ -44,6 +44,22 @@ async def list_series(
     return PaginatedSeriesResponse(items=items, total=total, page=page, size=limit, pages=pages)
 
 
+@router.get("/search", response_model=PaginatedSeriesResponse)
+async def search_series(
+    q: str = Query(..., min_length=2),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Search series by title (Public)."""
+    items, total = await service.search_series(title_query=q, skip=skip, limit=limit)
+    
+    pages = (total + limit - 1) // limit if total > 0 else 0
+    page = (skip // limit) + 1 if limit > 0 else 1
+    
+    return PaginatedSeriesResponse(items=items, total=total, page=page, size=limit, pages=pages)
+
+
 @router.get("/{series_id}", response_model=Series)
 async def get_series(
     series_id: int,

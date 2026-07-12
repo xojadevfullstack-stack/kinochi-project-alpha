@@ -62,6 +62,10 @@ class SeriesBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    imdb_rating: float | None = Field(None, ge=0, le=10)
+    release_year: int | None = None
+    director: str | None = None
+    cast: str | None = None
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
@@ -70,6 +74,10 @@ class SeriesUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    imdb_rating: float | None = Field(None, ge=0, le=10)
+    release_year: int | None = None
+    director: str | None = None
+    cast: str | None = None
     category_ids: list[int] | None = None
 
 class Series(SeriesBase):
