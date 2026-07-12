@@ -26,6 +26,19 @@ async def start_web_server():
     await site.start()
     logging.info(f"Dummy web server running on port {port}")
 
+async def keep_alive():
+    import httpx
+    url = os.environ.get("RENDER_EXTERNAL_URL")
+    if not url:
+        return
+    while True:
+        await asyncio.sleep(14 * 60)
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.get(url)
+        except Exception as e:
+            logging.error(f"Bot keep-alive failed: {e}")
+
 async def main():
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
@@ -47,6 +60,7 @@ async def main():
 
     # Start dummy web server in the background
     await start_web_server()
+    asyncio.create_task(keep_alive())
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)

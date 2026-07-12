@@ -20,9 +20,27 @@ from app.api.v1 import movies, categories, users, channels, auth, broadcasts, se
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle manager."""
-    # Phase 1+ will initialise DB pool, Redis connection, etc. here
+    import asyncio
+    import os
+    import httpx
+    import logging
+
+    async def keep_alive():
+        url = os.getenv("RENDER_EXTERNAL_URL")
+        if not url:
+            return
+        ping_url = f"{url}/health"
+        while True:
+            await asyncio.sleep(14 * 60)
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.get(ping_url)
+            except Exception as e:
+                logging.error(f"Backend keep-alive failed: {e}")
+
+    task = asyncio.create_task(keep_alive())
     yield
-    # Cleanup resources on shutdown
+    task.cancel()
 
 
 # ── App factory ──────────────────────────────────────────────────
