@@ -203,7 +203,6 @@ export default function EpisodesListPage() {
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          </div>
           
           <div className="md:col-span-2 flex gap-3 pt-2">
             <button 
