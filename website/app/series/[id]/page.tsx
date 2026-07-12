@@ -43,6 +43,7 @@ type Episode = {
   episode_number: number;
   title: string | null;
   code: string;
+  duration: number | null;
 };
 
 type Season = {
@@ -52,6 +53,7 @@ type Season = {
   title: string | null;
   description: string | null;
   poster_url: string | null;
+  episode_count: number | null;
   episodes: Episode[];
 };
 
@@ -165,6 +167,11 @@ export default async function SeriesDetailsPage({ params }: Props) {
                         </span>
                         {season.title && <span>{season.title}</span>}
                       </h3>
+                      {season.episode_count && (
+                        <p className="text-gray-400 mt-2 text-sm font-medium">
+                          Mavsumda jami: <span className="text-white">{season.episode_count} ta qism</span>
+                        </p>
+                      )}
                       {season.description && (
                         <p className="text-gray-400 mt-4 leading-relaxed text-sm">
                           {season.description}
@@ -198,6 +205,11 @@ export default async function SeriesDetailsPage({ params }: Props) {
                                 {episode.episode_number}-qism
                                 {episode.title && <span className="ml-1 opacity-80 font-normal">- {episode.title}</span>}
                               </span>
+                              {episode.duration && (
+                                <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded opacity-80">
+                                  {episode.duration} daqiqa
+                                </span>
+                              )}
                             </a>
                           )
                         })
