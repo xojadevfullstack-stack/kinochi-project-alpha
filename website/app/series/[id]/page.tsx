@@ -189,23 +189,15 @@ export default async function SeriesDetailsPage({ params }: Props) {
                               target="_blank"
                               rel="noopener noreferrer"
                               key={episode.id} 
-                              className="group bg-surface hover:bg-surface-hover/80 rounded-xl p-3 border border-white/5 hover:border-primary/50 transition-all duration-300 flex items-center justify-between"
+                              className="bg-primary hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/30 hover:scale-105 w-full"
                             >
-                              <div className="overflow-hidden pr-2">
-                                <div className="font-medium text-white/90 group-hover:text-white transition-colors text-sm">
-                                  {episode.episode_number}-qism
-                                </div>
-                                {episode.title && (
-                                  <div className="text-xs text-gray-500 mt-0.5 truncate" title={episode.title}>
-                                    {episode.title}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="w-10 h-10 flex-shrink-0 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary text-primary group-hover:text-white transition-all duration-300 shadow-[0_0_0_rgba(229,9,20,0)] group-hover:shadow-[0_0_15px_rgba(229,9,20,0.5)]">
-                                <svg className="w-5 h-5 ml-1 fill-current" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z" />
-                                </svg>
-                              </div>
+                              <svg className="w-5 h-5 fill-current flex-shrink-0" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                              <span className="truncate">
+                                {episode.episode_number}-qism
+                                {episode.title && <span className="ml-1 opacity-80 font-normal">- {episode.title}</span>}
+                              </span>
                             </a>
                           )
                         })
