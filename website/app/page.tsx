@@ -29,6 +29,9 @@ type Series = {
   title: string;
   description: string | null;
   poster_url: string | null;
+  imdb_rating: number | null;
+  release_year: number | null;
+  categories?: any[];
 };
 
 // Component for the horizontal movie card row
@@ -36,9 +39,9 @@ const MovieRow = ({ title, movies }: { title: string, movies: Movie[] }) => {
   if (!movies || movies.length === 0) return null;
   
   return (
-    <div className="mb-12">
-      <h2 className="text-2xl font-semibold mb-4 px-4 md:px-8 text-white/90">{title}</h2>
-      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 md:px-8 pb-4">
+    <div className="mb-12 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-semibold mb-4 px-4 sm:px-6 lg:px-8 text-white/90">{title}</h2>
+      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 sm:px-6 lg:px-8 pb-4">
         {movies.map(movie => (
           <Link href={`/movie/${movie.code}`} key={movie.code} className="flex-none w-40 md:w-48 lg:w-56 group relative rounded-xl overflow-hidden bg-surface transition-transform duration-300 hover:scale-105 hover:z-10 ring-1 ring-white/10 hover:ring-primary/50">
             <div className="aspect-[2/3] relative bg-gray-800">
@@ -81,9 +84,9 @@ const SeriesRow = ({ title, seriesList }: { title: string, seriesList: Series[] 
   if (!seriesList || seriesList.length === 0) return null;
   
   return (
-    <div className="mb-12">
-      <h2 className="text-2xl font-semibold mb-4 px-4 md:px-8 text-white/90">{title}</h2>
-      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 md:px-8 pb-4">
+    <div className="mb-12 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-semibold mb-4 px-4 sm:px-6 lg:px-8 text-white/90">{title}</h2>
+      <div className="flex overflow-x-auto hide-scrollbar gap-4 px-4 sm:px-6 lg:px-8 pb-4">
         {seriesList.map(series => (
           <Link href={`/series/${series.id}`} key={series.id} className="flex-none w-40 md:w-48 lg:w-56 group relative rounded-xl overflow-hidden bg-surface transition-transform duration-300 hover:scale-105 hover:z-10 ring-1 ring-white/10 hover:ring-primary/50">
             <div className="aspect-[2/3] relative bg-gray-800">
@@ -102,7 +105,12 @@ const SeriesRow = ({ title, seriesList }: { title: string, seriesList: Series[] 
               )}
               {/* Gradient Overlay on hover */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                <div className="text-xs text-gray-300 line-clamp-3">{series.description || "Serial"}</div>
+                <div className="flex items-center gap-1 text-star font-bold text-sm mb-1">
+                  ★ {series.imdb_rating || "N/A"}
+                </div>
+                <div className="text-xs text-gray-300 truncate">
+                  {series.categories && series.categories.length > 0 ? series.categories[0].name : "Serial"} • {series.release_year || ""}
+                </div>
               </div>
             </div>
             <div className="p-3">
