@@ -9,6 +9,7 @@ class EpisodeBase(BaseModel):
     season_id: int
     episode_number: int
     title: str | None = None
+    duration: int | None = None # In minutes
 
 class EpisodeCreate(EpisodeBase):
     pass
@@ -16,6 +17,7 @@ class EpisodeCreate(EpisodeBase):
 class EpisodeUpdate(BaseModel):
     title: str | None = None
     episode_number: int | None = None
+    duration: int | None = None
 
 class Episode(EpisodeBase):
     id: int
@@ -49,6 +51,7 @@ class SeasonBase(BaseModel):
     title: str | None = None
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    episode_count: int | None = None
 
 class SeasonCreate(SeasonBase):
     pass
@@ -58,6 +61,7 @@ class SeasonUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    episode_count: int | None = None
 
 class Season(SeasonBase):
     id: int

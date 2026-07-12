@@ -12,6 +12,7 @@ type Season = {
   title: string | null;
   description: string | null;
   poster_url: string | null;
+  episode_count: number | null;
   created_at: string;
 };
 
@@ -36,6 +37,7 @@ export default function SeasonsListPage() {
     title: "",
     description: "",
     poster_url: "",
+    episode_count: "",
   });
 
   useEffect(() => {
@@ -74,10 +76,14 @@ export default function SeasonsListPage() {
           season_number: form.season_number,
           title: form.title || null,
           description: form.description || null,
-          poster_url: form.poster_url || null
+          poster_url: form.poster_url || null,
+          episode_count: form.episode_count ? parseInt(form.episode_count as string) : null
         }) });
       } else {
-        await fetchApi(`/series/${seriesId}/seasons`, { method: "POST", body: JSON.stringify(form) });
+        await fetchApi(`/series/${seriesId}/seasons`, { method: "POST", body: JSON.stringify({
+          ...form,
+          episode_count: form.episode_count ? parseInt(form.episode_count as string) : null
+        }) });
       }
       handleCancel();
       loadData();
@@ -104,13 +110,14 @@ export default function SeasonsListPage() {
       title: s.title || "",
       description: s.description || "",
       poster_url: s.poster_url || "",
+      episode_count: s.episode_count || "",
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     const nextNum = seasons.length > 0 ? Math.max(...seasons.map((s: Season) => s.season_number)) + 1 : 1;
-    setForm({ series_id: parseInt(seriesId), season_number: nextNum, title: "", description: "", poster_url: "" });
+    setForm({ series_id: parseInt(seriesId), season_number: nextNum, title: "", description: "", poster_url: "", episode_count: "" });
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Yuklanmoqda...</div>;
@@ -152,7 +159,18 @@ export default function SeasonsListPage() {
               required
             />
           </div>
-          <div className="md:col-span-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Qismlar soni</label>
+            <input
+              type="number"
+              min="1"
+              placeholder="Masalan: 12"
+              value={form.episode_count}
+              onChange={(e) => setForm({ ...form, episode_count: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Maxsus nom (ixtiyoriy)</label>
             <input
               type="text"
@@ -201,6 +219,7 @@ export default function SeasonsListPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mavsum</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qismlar soni</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tavsif</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
               </tr>
@@ -211,6 +230,9 @@ export default function SeasonsListPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900">{s.season_number}-mavsum</div>
                     {s.title && <div className="text-sm text-gray-500">{s.title}</div>}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {s.episode_count ? `${s.episode_count} ta qism` : "-"}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                     {s.description || "-"}

@@ -50,6 +50,7 @@ class SeasonModel(Base):
     title: Mapped[str | None] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text)
     poster_url: Mapped[str | None] = mapped_column(String(1024))
+    episode_count: Mapped[int | None] = mapped_column(Integer)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
@@ -71,6 +72,7 @@ class EpisodeModel(Base):
     display_code: Mapped[str] = mapped_column(String(50), nullable=False)
     
     title: Mapped[str | None] = mapped_column(String(255))
+    duration: Mapped[int | None] = mapped_column(Integer) # In minutes
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 

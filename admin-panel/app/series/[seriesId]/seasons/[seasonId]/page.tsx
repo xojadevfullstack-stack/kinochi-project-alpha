@@ -11,6 +11,7 @@ type Episode = {
   season_id: number;
   episode_number: number;
   title: string | null;
+  duration: number | null;
   code: string;
   display_code: string;
   translations: { id: number; language: string; telegram_file_id: string }[];
@@ -51,6 +52,7 @@ export default function EpisodesListPage() {
     season_id: parseInt(seasonId),
     episode_number: 1,
     title: "",
+    duration: "",
   });
 
   useEffect(() => {
@@ -95,7 +97,8 @@ export default function EpisodesListPage() {
           method: "PUT", 
           body: JSON.stringify({
             episode_number: form.episode_number,
-            title: form.title || null
+            title: form.title || null,
+            duration: form.duration ? parseInt(form.duration as string) : null
           }) 
         });
       } else {
@@ -104,7 +107,8 @@ export default function EpisodesListPage() {
           body: JSON.stringify({
             season_id: form.season_id,
             episode_number: form.episode_number,
-            title: form.title || null
+            title: form.title || null,
+            duration: form.duration ? parseInt(form.duration as string) : null
           }) 
         });
       }
@@ -145,6 +149,7 @@ export default function EpisodesListPage() {
       season_id: e.season_id,
       episode_number: e.episode_number,
       title: e.title || "",
+      duration: e.duration || "",
     });
   };
 
@@ -152,7 +157,7 @@ export default function EpisodesListPage() {
     setEditingId(null);
     
     const nextNum = episodes.length > 0 ? Math.max(...episodes.map((e: Episode) => e.episode_number)) + 1 : 1;
-    setForm({ season_id: parseInt(seasonId), episode_number: nextNum, title: "" });
+    setForm({ season_id: parseInt(seasonId), episode_number: nextNum, title: "", duration: "" });
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Yuklanmoqda...</div>;
@@ -203,6 +208,17 @@ export default function EpisodesListPage() {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Davomiyligi (daqiqa)</label>
+            <input
+              type="number"
+              min="1"
+              placeholder="Masalan: 45"
+              value={form.duration}
+              onChange={(e) => setForm({ ...form, duration: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Maxsus nom (ixtiyoriy)</label>
             <input
               type="text"
@@ -252,6 +268,7 @@ export default function EpisodesListPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900">{e.episode_number}-qism</div>
                     {e.title && <div className="text-sm text-gray-500">{e.title}</div>}
+                    {e.duration && <div className="text-xs text-blue-600 mt-1">{e.duration} daqiqa</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded inline-block mb-1">
