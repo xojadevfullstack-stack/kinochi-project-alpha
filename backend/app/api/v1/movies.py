@@ -1,6 +1,6 @@
 """API v1 — Movies endpoints.  Phase 1: CRUD + search."""
 from typing import Sequence
-from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 import logging
 from pydantic import BaseModel, Field
 
@@ -158,7 +158,7 @@ async def update_movie(
 async def upload_movie_video(
     movie_id: int,
     file: UploadFile = File(...),
-    language: str = "Asosiy",
+    language: str = Form("Asosiy"),
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin)
 ):

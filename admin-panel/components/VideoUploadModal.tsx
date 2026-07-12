@@ -139,7 +139,11 @@ export default function VideoUploadModal({
               {uploadProgress !== null && (
                 <div className="mt-4">
                   <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Yuklanmoqda...</span>
+                    <span>
+                      {uploadProgress < 100 
+                        ? "Serverga yuklanmoqda..." 
+                        : "Telegram kanalga joylanmoqda (Biroz kuting)..."}
+                    </span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">

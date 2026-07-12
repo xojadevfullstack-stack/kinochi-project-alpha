@@ -21,7 +21,7 @@ class MovieRepositoryImpl(IMovieRepository):
         return Movie.model_validate(model)
 
     async def create(self, movie: Movie, category_ids: list[int] | None = None) -> Movie:
-        model = MovieModel(**movie.model_dump(exclude={"id", "created_at", "updated_at", "categories"}, exclude_unset=True))
+        model = MovieModel(**movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations"}, exclude_unset=True))
         
         if category_ids:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
@@ -91,7 +91,7 @@ class MovieRepositoryImpl(IMovieRepository):
         if not model:
             raise ValueError(f"Movie with id {movie.id} not found")
             
-        update_data = movie.model_dump(exclude={"id", "created_at", "updated_at", "categories"}, exclude_unset=True)
+        update_data = movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations"}, exclude_unset=True)
         for key, value in update_data.items():
             setattr(model, key, value)
             

@@ -1,7 +1,7 @@
 """API v1 — Series endpoints."""
 import logging
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 
 from app.api.deps import get_series_service, get_current_admin
 from app.application.series.series_service import SeriesService
@@ -240,7 +240,7 @@ async def delete_episode(
 async def upload_episode_video(
     episode_id: int,
     file: UploadFile = File(...),
-    language: str = "Asosiy",
+    language: str = Form("Asosiy"),
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
