@@ -19,7 +19,7 @@ async def cmd_start(message: Message, command: CommandObject):
     )
 
     args = command.args
-    if args:
+    if args and args.strip():
         code = args.strip()
         
         # 1. Try fetching as a movie

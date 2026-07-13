@@ -26,6 +26,22 @@ async def handle_search_query(message: Message):
         await message.answer("❌ <b>Qidiruv xatosi:</b> Kengroq natija olish uchun kamida 2 ta harf kiriting!", parse_mode="HTML")
         return
         
+    # First, try to see if the query is a code
+    movie = await api_client.get_movie_by_code(query)
+    if movie:
+        success = await send_movie_to_user(message.bot, message.from_user.id, movie)
+        if not success:
+            await message.answer("Kechirasiz, ushbu kino videosi hali yuklanmagan yoki xatolik yuz berdi.")
+        return
+        
+    from utils.episode_sender import send_episode_to_user
+    episode = await api_client.get_episode_by_code(query)
+    if episode:
+        success = await send_episode_to_user(message.bot, message.from_user.id, episode)
+        if not success:
+            await message.answer("Kechirasiz, ushbu qism videosi hali yuklanmagan yoki xatolik yuz berdi.")
+        return
+        
     # Send search request to backend for movies and series
     movie_result = await api_client.search_movies(query=query, limit=10)
     series_result = await api_client.search_series(query=query, limit=10)
