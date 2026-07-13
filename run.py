@@ -45,6 +45,12 @@ async def run_api():
 async def main():
     setup_global_logging()
     
+    # Patch BACKEND_API_URL to use the correct port dynamically if running locally
+    port = os.environ.get("PORT", "8000")
+    backend_url = os.environ.get("BACKEND_API_URL", "http://localhost:8000/api/v1")
+    if "localhost:8000" in backend_url or "127.0.0.1:8000" in backend_url:
+        os.environ["BACKEND_API_URL"] = backend_url.replace(":8000", f":{port}")
+    
     # Lazy import to avoid import errors before sys.path is set
     from bot.main import run_bot
     
