@@ -15,8 +15,7 @@ main_menu = ReplyKeyboardMarkup(
             KeyboardButton(text="📂 Katalog")
         ],
         [
-            KeyboardButton(text="🎲 Tavsiya kino"),
-            KeyboardButton(text="🌐 Saytga o'tish")
+            KeyboardButton(text="🎲 Tavsiya kino")
         ]
     ],
     resize_keyboard=True,

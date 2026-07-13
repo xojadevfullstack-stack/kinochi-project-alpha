@@ -82,6 +82,24 @@ class APIClient:
             print(f"Error fetching active channels: {e}")
             return []
 
+    async def get_movies(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
+        try:
+            response = await self.client.get("/movies", params={"skip": skip, "limit": limit})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Error fetching movies: {e}")
+            return {"items": [], "total": 0}
+
+    async def get_series(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
+        try:
+            response = await self.client.get("/series", params={"skip": skip, "limit": limit})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Error fetching series: {e}")
+            return {"items": [], "total": 0}
+
     async def search_movies(self, query: str, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
         try:
             response = await self.client.get(
