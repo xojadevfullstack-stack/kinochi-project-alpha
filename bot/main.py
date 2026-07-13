@@ -48,9 +48,7 @@ async def run_bot():
                 
                 # Set up the menu button for WebApp
                 from aiogram.types import MenuButtonWebApp, WebAppInfo
-                web_app_url = settings.WEBSITE_URL
-                if not web_app_url.startswith("https://"):
-                    web_app_url = "https://kinochi-project-alpha.vercel.app/"
+                web_app_url = "https://kinochi-project-alpha.vercel.app/"
                 await bot.set_chat_menu_button(
                     menu_button=MenuButtonWebApp(text="🌐 Sayt", web_app=WebAppInfo(url=web_app_url))
                 )

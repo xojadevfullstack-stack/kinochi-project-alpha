@@ -8,10 +8,7 @@ from config import settings
 router = Router()
 
 def get_webapp_url():
-    webapp_url = settings.WEBSITE_URL
-    if not webapp_url.startswith("https://"):
-        webapp_url = "https://kinochi-project-alpha.vercel.app/"
-    return webapp_url
+    return "https://kinochi-project-alpha.vercel.app/"
 
 @router.callback_query(F.data == "menu_catalog")
 async def handle_catalog_btn(callback: CallbackQuery):

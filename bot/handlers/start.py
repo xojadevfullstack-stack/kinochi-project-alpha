@@ -50,8 +50,6 @@ async def cmd_start(message: Message, command: CommandObject):
             "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
         )
         
-        webapp_url = settings.WEBSITE_URL
-        if not webapp_url.startswith("https://"):
-            webapp_url = "https://kinochi-project-alpha.vercel.app/"
+        webapp_url = "https://kinochi-project-alpha.vercel.app/"
             
         await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_main_menu_inline(webapp_url))
