@@ -17,20 +17,31 @@ export async function generateMetadata({ searchParams }: { searchParams: { q?: s
 
 export default async function SearchPage({ searchParams }: { searchParams: { q?: string, type?: string } }) {
   const query = searchParams.q || "";
-  const searchType = searchParams.type === "series" ? "series" : "movie";
+  const specificType = searchParams.type; // "series" or "movie" or undefined
   
   let results: any[] = [];
   let errorMsg = null;
 
   if (query.length >= 2) {
     try {
-      // The backend API requires q to be at least 2 characters long
-      const endpoint = searchType === "series" 
-        ? `/series/search?q=${encodeURIComponent(query)}&limit=40` 
-        : `/movies/search?q=${encodeURIComponent(query)}&limit=40`;
+      if (specificType === "series") {
+        const res = await fetchApi(`/series/search?q=${encodeURIComponent(query)}&limit=40`);
+        results = (res.items || []).map((i: any) => ({ ...i, isSeries: true }));
+      } else if (specificType === "movie") {
+        const res = await fetchApi(`/movies/search?q=${encodeURIComponent(query)}&limit=40`);
+        results = (res.items || []).map((i: any) => ({ ...i, isSeries: false }));
+      } else {
+        // Search both
+        const [moviesRes, seriesRes] = await Promise.all([
+          fetchApi(`/movies/search?q=${encodeURIComponent(query)}&limit=20`),
+          fetchApi(`/series/search?q=${encodeURIComponent(query)}&limit=20`)
+        ]);
+        const movies = (moviesRes.items || []).map((i: any) => ({ ...i, isSeries: false }));
+        const series = (seriesRes.items || []).map((i: any) => ({ ...i, isSeries: true }));
         
-      const response = await fetchApi(endpoint);
-      results = response.items || [];
+        // Merge and sort somewhat (e.g. by newest) or just concat
+        results = [...movies, ...series];
+      }
     } catch (error: any) {
       errorMsg = error.message;
     }
@@ -42,7 +53,9 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
-            {searchType === "series" ? "Seriallar bo'yicha qidiruv natijalari" : "Kinolar bo'yicha qidiruv natijalari"}
+            {specificType === "series" ? "Seriallar bo'yicha qidiruv natijalari" : 
+             specificType === "movie" ? "Kinolar bo'yicha qidiruv natijalari" : 
+             "Qidiruv natijalari"}
           </h1>
           <p className="text-gray-400">
             {query ? `"${query}" so'rovi bo'yicha` : "Iltimos, qidirish uchun so'z kiriting (kamida 2 ta harf)."}
@@ -52,19 +65,19 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         {/* Search Input again for convenience */}
         <div className="mb-12 max-w-xl">
           <form action="/search" method="GET" className="relative group">
-            <input type="hidden" name="type" value={searchType} />
+            {specificType && <input type="hidden" name="type" value={specificType} />}
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <input 
+              <input 
               type="text" 
               name="q"
               defaultValue={query}
               required
               className="bg-surface-hover/80 border border-white/10 text-white text-base rounded-full focus:ring-primary focus:border-primary block w-full pl-10 p-4 outline-none transition-all shadow-lg" 
-              placeholder={searchType === "series" ? "Boshqa serial qidirish..." : "Boshqa kino qidirish..."} 
+              placeholder={specificType === "series" ? "Boshqa serial qidirish..." : specificType === "movie" ? "Boshqa kino qidirish..." : "Qidirish..."} 
             />
             <button type="submit" className="hidden">Qidirish</button>
           </form>
@@ -77,11 +90,12 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           <div className="text-gray-400 text-lg">Qidiruv uchun kamida 2 ta harf kiritish kerak.</div>
         ) : results.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pt-4">
-            {results.map(item => {
-              const linkUrl = searchType === "series" ? `/series/${item.id}` : `/movie/${item.code}`;
-              const key = searchType === "series" ? item.id : item.code;
+            {results.map((item, idx) => {
+              const isSeries = item.isSeries !== undefined ? item.isSeries : specificType === "series";
+              const linkUrl = isSeries ? `/series/${item.id}` : `/movie/${item.code}`;
+              const key = `${isSeries ? 's' : 'm'}-${isSeries ? item.id : item.code}-${idx}`;
               const rating = item.imdb_rating || item.tmdb_rating || "N/A";
-              const subtext = searchType === "series" 
+              const subtext = isSeries 
                 ? `${item.categories?.[0]?.name || "Serial"} • ${item.release_year || ""}`
                 : `${item.genres || "Kino"} • ${item.release_year || ""}`;
 
@@ -126,7 +140,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h2 className="text-2xl font-bold text-white mb-2">Hech narsa topilmadi</h2>
-              <p className="text-gray-400">"{query}" bo'yicha hech qanday {searchType === "series" ? "serial" : "kino"} mavjud emas.</p>
+              <p className="text-gray-400">"{query}" bo'yicha hech qanday natija mavjud emas.</p>
             </div>
           )
         )}

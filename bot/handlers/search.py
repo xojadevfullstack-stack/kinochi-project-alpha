@@ -26,17 +26,21 @@ async def handle_search_query(message: Message):
         await message.answer("❌ <b>Qidiruv xatosi:</b> Kengroq natija olish uchun kamida 2 ta harf kiriting!", parse_mode="HTML")
         return
         
+    from utils.info_sender import send_movie_info, send_series_info
+    
     # First, try to see if the query is a code
     movie = await api_client.get_movie_by_code(query)
     if movie:
-        success = await send_movie_to_user(message.bot, message.from_user.id, movie)
+        success = await send_movie_info(message.bot, message.from_user.id, movie)
         if not success:
-            await message.answer("Kechirasiz, ushbu kino videosi hali yuklanmagan yoki xatolik yuz berdi.")
+            await message.answer("Kechirasiz, xatolik yuz berdi.")
         return
         
-    from utils.episode_sender import send_episode_to_user
     episode = await api_client.get_episode_by_code(query)
     if episode:
+        # If they searched episode code directly, we should fetch the series and show series info to let them select season/episode, or just show season info?
+        # A better approach: if they search an episode code, they probably just want to watch it directly. Let's send the episode video directly since it's an exact episode code.
+        from utils.episode_sender import send_episode_to_user
         success = await send_episode_to_user(message.bot, message.from_user.id, episode)
         if not success:
             await message.answer("Kechirasiz, ushbu qism videosi hali yuklanmagan yoki xatolik yuz berdi.")
@@ -81,10 +85,11 @@ async def handle_movie_selection(callback: CallbackQuery):
         await callback.message.answer("⚠️ <b>Xatolik:</b> Bu kino bazadan topilmadi. Balki o'chirilgandir?", parse_mode="HTML")
         return
         
-    success = await send_movie_to_user(callback.bot, callback.from_user.id, movie)
+    from utils.info_sender import send_movie_info
+    success = await send_movie_info(callback.bot, callback.from_user.id, movie)
     
     if not success:
-        await callback.message.answer("⏳ <b>Kino tayyorlanmoqda...</b>\n\nBu kinoning videosi tez orada bazaga yuklanadi. Kuting va keyinroq qayta urinib ko'ring!", parse_mode="HTML")
+        await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")
 
 @router.callback_query(F.data.startswith("series_"))
 async def handle_series_selection(callback: CallbackQuery):
@@ -99,38 +104,8 @@ async def handle_series_selection(callback: CallbackQuery):
         await callback.message.answer("⚠️ <b>Xatolik:</b> Bu serial bazadan topilmadi. Balki o'chirilgandir?", parse_mode="HTML")
         return
         
-    # Find the first episode of the first season
-    seasons = series.get("seasons", [])
-    if not seasons:
-        await callback.message.answer("⚠️ <b>Xatolik:</b> Bu serialda hali fasllar mavjud emas.", parse_mode="HTML")
-        return
-        
-    # Sort seasons by season_number
-    seasons = sorted(seasons, key=lambda s: s.get("season_number", 0))
-    first_season = seasons[0]
-    
-    episodes = first_season.get("episodes", [])
-    if not episodes:
-        await callback.message.answer("⚠️ <b>Xatolik:</b> Bu serialning 1-faslida hali qismlar mavjud emas.", parse_mode="HTML")
-        return
-        
-    # Sort episodes by episode_number
-    episodes = sorted(episodes, key=lambda e: e.get("episode_number", 0))
-    first_episode = episodes[0]
-    
-    episode_code = first_episode.get("code")
-    if not episode_code:
-        await callback.message.answer("⚠️ <b>Xatolik:</b> Birinchi qism kodini topib bo'lmadi.", parse_mode="HTML")
-        return
-        
-    # We can fetch the episode using the episode_code
-    episode = await api_client.get_episode_by_code(episode_code)
-    
-    if not episode:
-        await callback.message.answer("⚠️ <b>Xatolik:</b> Bu serial qismi bazadan topilmadi.", parse_mode="HTML")
-        return
-        
-    success = await send_movie_to_user(callback.bot, callback.from_user.id, episode)
+    from utils.info_sender import send_series_info
+    success = await send_series_info(callback.bot, callback.from_user.id, series)
     
     if not success:
-        await callback.message.answer("⏳ <b>Video tayyorlanmoqda...</b>\n\nBu qismning videosi tez orada bazaga yuklanadi. Kuting va keyinroq qayta urinib ko'ring!", parse_mode="HTML")
+        await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")

@@ -41,8 +41,8 @@ async def process_translation_selection(callback: CallbackQuery):
             return
             
         translations = episode.get("translations", [])
-        title = episode.get("title", f"{episode.get('episode_number')}-qism")
-        description = ""
+        from utils.episode_sender import format_episode_caption
+        caption = format_episode_caption(episode)
         
         # Build episode keyboard for navigation
         from utils.episode_sender import build_episode_keyboard
@@ -60,5 +60,7 @@ async def process_translation_selection(callback: CallbackQuery):
         
     await callback.answer()
     
-    caption = f"🍿 <b>{title}</b>\n\n{description}"
+    if item_type == 'M':
+        caption = f"🍿 <b>{title}</b>\n\n{description}"
+        
     await send_video_translation(callback.bot, callback.from_user.id, translation, caption, reply_markup=reply_markup)

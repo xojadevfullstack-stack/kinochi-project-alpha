@@ -40,7 +40,16 @@ def format_episode_caption(episode: dict) -> str:
     if len(desc) > 150:
         desc = desc[:147] + "..."
         
-    caption = f"🍿 <b>{series_title}</b>\n📌 {display_code}"
+    # display_code is usually S1-CH1. We can format it nicely.
+    season_num = episode.get("season_number", "?")
+    episode_num = episode.get("episode_number", "?")
+    
+    if season_num != "?" and episode_num != "?":
+        display_text = f"📌 <b>{season_num}-mavsum, {episode_num}-qism</b>"
+    else:
+        display_text = f"📌 {display_code}"
+        
+    caption = f"🍿 <b>{series_title}</b>\n{display_text}"
     if desc:
         caption += f"\n\n📝 <i>{desc}</i>"
         

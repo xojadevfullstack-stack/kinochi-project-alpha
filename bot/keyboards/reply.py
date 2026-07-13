@@ -1,12 +1,16 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from aiogram.types import WebAppInfo
+from config import settings
+
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(text="🔍 Kino qidirish"),
-            KeyboardButton(text="🎲 Tavsiya kino")
+            KeyboardButton(text="📂 Katalog", web_app=WebAppInfo(url=settings.WEBSITE_URL))
         ],
         [
+            KeyboardButton(text="🎲 Tavsiya kino"),
             KeyboardButton(text="🌐 Saytga o'tish")
         ]
     ],

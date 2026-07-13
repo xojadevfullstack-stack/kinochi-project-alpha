@@ -23,6 +23,9 @@ async def run_bot():
     dp.include_router(check_sub_router)
     dp.include_router(search_router)
     
+    from handlers.browsing import router as browsing_router
+    dp.include_router(browsing_router)
+    
     from handlers.episode import router as episode_router
     dp.include_router(episode_router)
     
