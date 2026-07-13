@@ -12,7 +12,7 @@ main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(text="🔍 Kino qidirish"),
-            KeyboardButton(text="📂 Katalog", web_app=WebAppInfo(url=web_app_url))
+            KeyboardButton(text="📂 Katalog")
         ],
         [
             KeyboardButton(text="🎲 Tavsiya kino"),
@@ -21,4 +21,18 @@ main_menu = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True,
     input_field_placeholder="Bo'limni tanlang..."
+)
+
+catalog_menu = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton(text="🎬 Kinolar"),
+            KeyboardButton(text="📺 Seriallar")
+        ],
+        [
+            KeyboardButton(text="🔙 Asosiy menyu")
+        ]
+    ],
+    resize_keyboard=True,
+    input_field_placeholder="Nimani ko'ramiz?"
 )

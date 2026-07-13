@@ -26,6 +26,9 @@ async def run_bot():
     from handlers.browsing import router as browsing_router
     dp.include_router(browsing_router)
     
+    from handlers.catalog import router as catalog_router
+    dp.include_router(catalog_router)
+    
     from handlers.episode import router as episode_router
     dp.include_router(episode_router)
     
@@ -39,6 +42,16 @@ async def run_bot():
         while True:
             try:
                 logging.info("[BOT] Starting Telegram bot polling...")
+                
+                # Set up the menu button for WebApp
+                from aiogram.types import MenuButtonWebApp, WebAppInfo
+                web_app_url = settings.WEBSITE_URL
+                if not web_app_url.startswith("https://"):
+                    web_app_url = "https://kinochi-project-alpha.onrender.com"
+                await bot.set_chat_menu_button(
+                    menu_button=MenuButtonWebApp(text="🌐 Sayt", web_app=WebAppInfo(url=web_app_url))
+                )
+                
                 await bot.delete_webhook(drop_pending_updates=True)
                 await dp.start_polling(bot)
             except Exception as e:
