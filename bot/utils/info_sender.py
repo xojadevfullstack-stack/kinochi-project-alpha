@@ -25,7 +25,10 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")],
-        [InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")]
+        [
+            InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="menu_main"),
+            InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
+        ]
     ])
     
     try:
@@ -106,7 +109,10 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     if current_row:
         rows.append(current_row)
         
-    rows.append([InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")])
+    rows.append([
+        InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="menu_main"),
+        InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
+    ])
         
     keyboard = InlineKeyboardMarkup(inline_keyboard=rows)
     
@@ -187,8 +193,9 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
         
     rows.append([
         InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_series:{series_id}"),
-        InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
+        InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="menu_main")
     ])
+    rows.append([InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")])
         
     keyboard = InlineKeyboardMarkup(inline_keyboard=rows)
     

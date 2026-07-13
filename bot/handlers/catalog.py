@@ -15,10 +15,16 @@ def get_webapp_url():
 
 @router.callback_query(F.data == "menu_catalog")
 async def handle_catalog_btn(callback: CallbackQuery):
-    await callback.message.edit_text(
-        "📂 Kategoriyalardan birini tanlang:", 
-        reply_markup=get_catalog_categories_inline()
-    )
+    text = "📂 Kategoriyalardan birini tanlang:"
+    markup = get_catalog_categories_inline()
+    try:
+        if callback.message.photo or callback.message.video:
+            await callback.message.delete()
+            await callback.message.answer(text, reply_markup=markup)
+        else:
+            await callback.message.edit_text(text, reply_markup=markup)
+    except Exception:
+        await callback.message.answer(text, reply_markup=markup)
     await callback.answer()
 
 @router.callback_query(F.data == "menu_main")
@@ -30,13 +36,25 @@ async def handle_back_to_main(callback: CallbackQuery):
         "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
     )
     try:
-        await callback.message.edit_text(
+        if callback.message.photo or callback.message.video:
+            await callback.message.delete()
+            await callback.message.answer(
+                welcome_text, 
+                reply_markup=get_main_menu_inline(get_webapp_url()),
+                parse_mode="HTML"
+            )
+        else:
+            await callback.message.edit_text(
+                welcome_text, 
+                reply_markup=get_main_menu_inline(get_webapp_url()),
+                parse_mode="HTML"
+            )
+    except Exception:
+        await callback.message.answer(
             welcome_text, 
             reply_markup=get_main_menu_inline(get_webapp_url()),
             parse_mode="HTML"
         )
-    except Exception:
-        pass
     await callback.answer()
 
 @router.callback_query(F.data == "menu_movies")
