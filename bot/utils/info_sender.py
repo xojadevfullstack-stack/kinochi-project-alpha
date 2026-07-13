@@ -26,7 +26,7 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")],
         [
-            InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="menu_main"),
+            InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_movies"),
             InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
         ]
     ])
@@ -110,7 +110,7 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
         rows.append(current_row)
         
     rows.append([
-        InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="menu_main"),
+        InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_series"),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
         
@@ -193,9 +193,8 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
         
     rows.append([
         InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_series:{series_id}"),
-        InlineKeyboardButton(text="🔙 Asosiy menyu", callback_data="menu_main")
+        InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
-    rows.append([InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")])
         
     keyboard = InlineKeyboardMarkup(inline_keyboard=rows)
     

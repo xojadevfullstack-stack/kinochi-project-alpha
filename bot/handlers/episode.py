@@ -42,10 +42,13 @@ async def handle_series_info(callback: CallbackQuery):
         return
         
     from utils.info_sender import send_series_info
-    # Send as a new message so they can keep the video
     success = await send_series_info(callback.bot, callback.from_user.id, series)
     
     if success:
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
         await callback.answer()
     else:
         await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
