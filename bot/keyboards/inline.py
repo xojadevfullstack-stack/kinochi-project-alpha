@@ -40,7 +40,7 @@ def build_search_results_keyboard(results: list[dict]) -> InlineKeyboardMarkup:
             series_id = item.get("id")
             builder.button(
                 text=f"📺 {title}",
-                callback_data=f"series_{series_id}"
+                callback_data=f"search_series_{series_id}"
             )
             
     builder.adjust(1)

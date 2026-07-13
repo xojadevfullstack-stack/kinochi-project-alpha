@@ -91,9 +91,9 @@ async def handle_movie_selection(callback: CallbackQuery):
     if not success:
         await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")
 
-@router.callback_query(F.data.startswith("series_"))
+@router.callback_query(F.data.startswith("search_series_"))
 async def handle_series_selection(callback: CallbackQuery):
-    series_id_str = callback.data.split("_", 1)[1]
+    series_id_str = callback.data.split("_", 2)[2]
     
     await callback.answer() # Acknowledge callback
     

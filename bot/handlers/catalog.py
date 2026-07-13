@@ -64,11 +64,16 @@ async def handle_movies_catalog(callback: CallbackQuery):
         await callback.answer("Hozircha kinolar mavjud emas.", show_alert=True)
         return
         
-    await callback.message.edit_text(
-        "🎬 <b>Eng so'nggi kinolar:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>", 
-        parse_mode="HTML",
-        reply_markup=build_catalog_items_list(movies, "movie")
-    )
+    text = "🎬 <b>Eng so'nggi kinolar:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>"
+    markup = build_catalog_items_list(movies, "movie")
+    try:
+        if callback.message.photo or callback.message.video:
+            await callback.message.delete()
+            await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+        else:
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    except Exception:
+        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
 
 @router.callback_query(F.data == "menu_series")
@@ -81,11 +86,16 @@ async def handle_series_catalog(callback: CallbackQuery):
         await callback.answer("Hozircha seriallar mavjud emas.", show_alert=True)
         return
         
-    await callback.message.edit_text(
-        "📺 <b>Eng so'nggi seriallar:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>", 
-        parse_mode="HTML",
-        reply_markup=build_catalog_items_list(series_list, "series")
-    )
+    text = "📺 <b>Eng so'nggi seriallar:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>"
+    markup = build_catalog_items_list(series_list, "series")
+    try:
+        if callback.message.photo or callback.message.video:
+            await callback.message.delete()
+            await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+        else:
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    except Exception:
+        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
 
 @router.callback_query(F.data.startswith("catalog_item_movie_"))
