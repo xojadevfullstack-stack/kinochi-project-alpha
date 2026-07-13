@@ -5,6 +5,7 @@ from services.api_client import api_client
 from utils.movie_sender import send_movie_to_user
 from aiogram.exceptions import TelegramBadRequest
 from config import settings
+from keyboards.inline import get_main_menu_inline
 
 router = Router()
 
@@ -42,11 +43,15 @@ async def cmd_start(message: Message, command: CommandObject):
         # 3. If neither found
         await message.answer("❌ <b>Hech narsa topilmadi!</b>\n\nSiz yuborgan kod bo'yicha kino yoki serial qismi topilmadi. Kodni to'g'ri yozganingizga ishonch hosil qiling!", parse_mode="HTML")
     else:
-        from keyboards.reply import main_menu
         welcome_text = (
             "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
             "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
-            "🎥 Kinoni ko'rish uchun <b>kino kodini</b> yuboring yoki saytimiz orqali tanlang!\n\n"
+            "🎥 Kinoni ko'rish uchun menyudan tanlang yoki izlang!\n\n"
             "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
         )
-        await message.answer(welcome_text, parse_mode="HTML", reply_markup=main_menu)
+        
+        webapp_url = settings.WEBSITE_URL
+        if not webapp_url.startswith("https://"):
+            webapp_url = "https://kinochi-project-alpha.vercel.app/"
+            
+        await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_main_menu_inline(webapp_url))

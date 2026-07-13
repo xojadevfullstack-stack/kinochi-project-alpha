@@ -3,11 +3,12 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedia
 from aiogram.exceptions import TelegramBadRequest
 from services.api_client import api_client
 from typing import Optional
+import html
 
 async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: Optional[int] = None):
     """Sends movie info card with 'Ko'rish' button."""
-    title = movie.get("title", "Nomsiz kino")
-    desc = movie.get("description") or "Ma'lumot mavjud emas."
+    title = html.escape(movie.get("title", "Nomsiz kino"))
+    desc = html.escape(movie.get("description") or "Ma'lumot mavjud emas.")
     year = movie.get("release_year")
     rating = movie.get("imdb_rating")
     poster_url = movie.get("poster_url")
@@ -70,8 +71,8 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
 
 async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id: Optional[int] = None):
     """Sends series info card with seasons buttons."""
-    title = series.get("title", "Nomsiz serial")
-    desc = series.get("description") or "Ma'lumot mavjud emas."
+    title = html.escape(series.get("title", "Nomsiz serial"))
+    desc = html.escape(series.get("description") or "Ma'lumot mavjud emas.")
     year = series.get("release_year")
     rating = series.get("imdb_rating")
     poster_url = series.get("poster_url")
@@ -151,8 +152,8 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
 async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id: Optional[int] = None, series_poster: str = None):
     """Sends season info card with episodes buttons."""
     s_num = season.get("season_number", 0)
-    title = season.get("title") or f"{s_num}-Mavsum"
-    desc = season.get("description") or ""
+    title = html.escape(season.get("title") or f"{s_num}-Mavsum")
+    desc = html.escape(season.get("description") or "")
     poster_url = season.get("poster_url") or series_poster
     season_id = season.get("id")
     series_id = season.get("series_id")
@@ -185,7 +186,7 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
         rows.append(current_row)
         
     rows.append([
-        InlineKeyboardButton(text="◀️ Ortga", callback_data=f"series_info:{series_id}"),
+        InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_series:{series_id}"),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
         

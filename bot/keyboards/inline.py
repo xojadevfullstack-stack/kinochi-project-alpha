@@ -45,3 +45,35 @@ def build_search_results_keyboard(results: list[dict]) -> InlineKeyboardMarkup:
             
     builder.adjust(1)
     return builder.as_markup()
+
+from aiogram.types import WebAppInfo
+
+def get_main_menu_inline(webapp_url: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔍 Qidirish (Qanday?)", callback_data="help_search")
+    builder.button(text="📂 Katalog", callback_data="menu_catalog")
+    builder.button(text="🎲 Tavsiya", callback_data="menu_random")
+    builder.button(text="🌐 Saytga o'tish", web_app=WebAppInfo(url=webapp_url))
+    builder.adjust(1, 2, 1)
+    return builder.as_markup()
+
+def get_catalog_categories_inline() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🎬 Kinolar", callback_data="menu_movies")
+    builder.button(text="📺 Seriallar", callback_data="menu_series")
+    builder.button(text="🔙 Asosiy menyu", callback_data="menu_main")
+    builder.adjust(2, 1)
+    return builder.as_markup()
+
+def build_catalog_items_list(items: list[dict], item_type: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for item in items:
+        title = item.get("title", "Noma'lum")
+        if item_type == "movie":
+            builder.button(text=f"🎬 {title}", callback_data=f"catalog_item_movie_{item.get('id')}")
+        else:
+            builder.button(text=f"📺 {title}", callback_data=f"catalog_item_series_{item.get('id')}")
+            
+    builder.button(text="🔙 Katalogga qaytish", callback_data="menu_catalog")
+    builder.adjust(1)
+    return builder.as_markup()

@@ -50,6 +50,23 @@ async def handle_series_info(callback: CallbackQuery):
     else:
         await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
 
+@router.callback_query(F.data.startswith("back_to_series:"))
+async def handle_back_to_series(callback: CallbackQuery):
+    series_id = int(callback.data.split(":", 1)[1])
+    
+    series = await api_client.get_series_by_id(series_id)
+    if not series:
+        await callback.answer("⚠️ Serial ma'lumotlari topilmadi!", show_alert=True)
+        return
+        
+    from utils.info_sender import send_series_info
+    success = await send_series_info(callback.bot, callback.from_user.id, series, edit_message_id=callback.message.message_id)
+    
+    if success:
+        await callback.answer()
+    else:
+        await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
+
 
 @router.callback_query(F.data == "main_menu")
 async def handle_main_menu_callback(callback: CallbackQuery):
