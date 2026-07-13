@@ -30,12 +30,22 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     try:
         if edit_message_id:
             if poster_url:
-                await bot.edit_message_media(
-                    chat_id=chat_id,
-                    message_id=edit_message_id,
-                    media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
-                    reply_markup=keyboard
-                )
+                try:
+                    await bot.edit_message_media(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
+                        reply_markup=keyboard
+                    )
+                except TelegramBadRequest:
+                    # Fallback if poster is invalid or media cannot be edited
+                    await bot.edit_message_text(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        text=caption,
+                        parse_mode="HTML",
+                        reply_markup=keyboard
+                    )
             else:
                 await bot.edit_message_text(
                     chat_id=chat_id,
@@ -46,11 +56,16 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
                 )
         else:
             if poster_url:
-                await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                try:
+                    await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                except TelegramBadRequest:
+                    # Fallback if poster is invalid
+                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
             else:
                 await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
         return True
-    except TelegramBadRequest:
+    except TelegramBadRequest as e:
+        print(f"Error sending movie info: {e}")
         return False
 
 async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id: Optional[int] = None):
@@ -97,12 +112,21 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     try:
         if edit_message_id:
             if poster_url:
-                await bot.edit_message_media(
-                    chat_id=chat_id,
-                    message_id=edit_message_id,
-                    media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
-                    reply_markup=keyboard
-                )
+                try:
+                    await bot.edit_message_media(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
+                        reply_markup=keyboard
+                    )
+                except TelegramBadRequest:
+                    await bot.edit_message_text(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        text=caption,
+                        parse_mode="HTML",
+                        reply_markup=keyboard
+                    )
             else:
                 await bot.edit_message_text(
                     chat_id=chat_id,
@@ -113,7 +137,10 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
                 )
         else:
             if poster_url:
-                await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                try:
+                    await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                except TelegramBadRequest:
+                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
             else:
                 await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
         return True
@@ -167,12 +194,21 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
     try:
         if edit_message_id:
             if poster_url:
-                await bot.edit_message_media(
-                    chat_id=chat_id,
-                    message_id=edit_message_id,
-                    media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
-                    reply_markup=keyboard
-                )
+                try:
+                    await bot.edit_message_media(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
+                        reply_markup=keyboard
+                    )
+                except TelegramBadRequest:
+                    await bot.edit_message_text(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        text=caption,
+                        parse_mode="HTML",
+                        reply_markup=keyboard
+                    )
             else:
                 await bot.edit_message_text(
                     chat_id=chat_id,
@@ -183,7 +219,10 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
                 )
         else:
             if poster_url:
-                await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                try:
+                    await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                except TelegramBadRequest:
+                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
             else:
                 await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
         return True
