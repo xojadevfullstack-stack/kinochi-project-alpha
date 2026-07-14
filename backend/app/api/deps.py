@@ -113,3 +113,20 @@ async def get_current_admin(request: Request, session: AsyncSession = Depends(ge
 
     return {"admin_id": admin.id, "email": admin.email, "role": admin.role}
 
+
+from fastapi import Header
+from app.core.config import settings
+
+async def get_admin_or_bot(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    x_bot_secret: str | None = Header(None, alias="X-Bot-Secret")
+):
+    """
+    Dependency: Allow either bot (via X-Bot-Secret) or admin (via token).
+    """
+    if x_bot_secret and settings.BOT_API_SECRET and x_bot_secret == settings.BOT_API_SECRET:
+        return {"role": "bot"}
+        
+    return await get_current_admin(request, session)
+

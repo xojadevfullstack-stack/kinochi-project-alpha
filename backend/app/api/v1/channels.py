@@ -100,6 +100,8 @@ async def delete_channel(
     if not success:
         raise HTTPException(status_code=404, detail="Channel not found")
 
+from app.api.deps import get_admin_or_bot
+
 class VerifySubscriberRequest(BaseModel):
     user_id: int
 
@@ -108,7 +110,7 @@ async def verify_subscriber(
     channel_id: int,
     req: VerifySubscriberRequest,
     service: ChannelService = Depends(get_channel_service),
-    admin: dict = Depends(get_current_admin)  # Protected by X-Bot-Secret
+    admin: dict = Depends(get_admin_or_bot)
 ):
     """Verify and record a user subscription. Atomic operation."""
     success = await service.verify_subscription(channel_id, req.user_id)

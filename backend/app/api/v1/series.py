@@ -221,12 +221,14 @@ async def get_episode_by_code(
         raise HTTPException(status_code=404, detail="Episode not found")
     return episode
 
+from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot
+
 @router.post("/seasons/{season_id}/episodes", response_model=Episode, status_code=status.HTTP_201_CREATED)
 async def create_episode(
     season_id: int,
     episode_in: EpisodeCreate,
     service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_admin_or_bot)
 ):
     """Create a new episode for a season (Admin only)."""
     if episode_in.season_id != season_id:
@@ -310,7 +312,7 @@ async def link_episode_video(
     episode_id: int,
     request: LinkVideoRequest,
     service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_admin_or_bot)
 ):
     try:
         episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language)
