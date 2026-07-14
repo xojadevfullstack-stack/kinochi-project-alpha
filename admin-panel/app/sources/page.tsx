@@ -14,7 +14,7 @@ type Source = {
 export default function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", chat_id: "", topic_id: "", type: "supergroup" });
+  const [form, setForm] = useState({ name: "", link_or_id: "", type: "supergroup" });
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -34,11 +34,49 @@ export default function SourcesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let finalChatId: number | null = null;
+    let finalTopicId: number | null = null;
+    const input = form.link_or_id.trim();
+
+    if (input.startsWith('http')) {
+        try {
+            const url = new URL(input);
+            const parts = url.pathname.split('/').filter(p => p);
+            
+            if (parts[0] === 'c' && parts.length >= 2) {
+                const rawChatId = parts[1];
+                finalChatId = parseInt(`-100${rawChatId}`, 10);
+                
+                if (parts.length >= 3 && form.type === 'supergroup') {
+                    finalTopicId = parseInt(parts[2], 10);
+                }
+            } else {
+                alert("Iltimos, yopiq (private) link kiriting (masalan: https://t.me/c/12345/2) yoki raqamli ID yozing.");
+                return;
+            }
+        } catch(err) {
+            alert("Noto'g'ri link formati.");
+            return;
+        }
+    } else {
+        if (!/^-?\d+$/.test(input)) {
+            alert("Iltimos, yopiq link kiriting yoki to'g'ridan-to'g'ri raqamli ID yozing.");
+            return;
+        }
+        finalChatId = parseInt(input, 10);
+    }
+
+    if (!finalChatId || isNaN(finalChatId)) {
+        alert("Chat ID ni aniqlab bo'lmadi.");
+        return;
+    }
+
     try {
       const payload = {
         name: form.name,
-        chat_id: parseInt(form.chat_id, 10),
-        topic_id: form.topic_id ? parseInt(form.topic_id, 10) : null,
+        chat_id: finalChatId,
+        topic_id: finalTopicId,
         type: form.type,
       };
 
@@ -53,7 +91,7 @@ export default function SourcesPage() {
           body: JSON.stringify(payload),
         });
       }
-      setForm({ name: "", chat_id: "", topic_id: "", type: "supergroup" });
+      setForm({ name: "", link_or_id: "", type: "supergroup" });
       setEditingId(null);
       loadSources();
     } catch (e: any) {
@@ -73,10 +111,20 @@ export default function SourcesPage() {
 
   const handleEdit = (s: Source) => {
     setEditingId(s.id);
+    let linkVal = s.chat_id.toString();
+    
+    if (s.chat_id.toString().startsWith('-100')) {
+       const cleanId = s.chat_id.toString().replace('-100', '');
+       if (s.topic_id) {
+         linkVal = `https://t.me/c/${cleanId}/${s.topic_id}`;
+       } else {
+         linkVal = `https://t.me/c/${cleanId}`;
+       }
+    }
+
     setForm({ 
       name: s.name, 
-      chat_id: s.chat_id.toString(), 
-      topic_id: s.topic_id ? s.topic_id.toString() : "", 
+      link_or_id: linkVal,
       type: s.type 
     });
   };
@@ -90,18 +138,6 @@ export default function SourcesPage() {
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4">{editingId ? "Tahrirlash" : "Yangi Manba"}</h2>
         <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700">Nomi</label>
-            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Masalan: Taxtlar O'yini" />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700">Chat ID</label>
-            <input required type="number" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.chat_id} onChange={e => setForm({...form, chat_id: e.target.value})} placeholder="-100123456789" />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700">Topic ID (Agar bo'lsa)</label>
-            <input type="number" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.topic_id} onChange={e => setForm({...form, topic_id: e.target.value})} placeholder="1234" />
-          </div>
           <div className="flex-1 min-w-[150px]">
             <label className="block text-sm font-medium text-gray-700">Turi</label>
             <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
@@ -109,11 +145,19 @@ export default function SourcesPage() {
               <option value="channel">Kanal</option>
             </select>
           </div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700">Nomi</label>
+            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Masalan: Taxtlar O'yini" />
+          </div>
+          <div className="flex-[2] min-w-[300px]">
+            <label className="block text-sm font-medium text-gray-700">Manba linki (yoki ID)</label>
+            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.link_or_id} onChange={e => setForm({...form, link_or_id: e.target.value})} placeholder="Masalan: https://t.me/c/3941035700/2 yoki -100..." />
+          </div>
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 h-10 w-full sm:w-auto">
             Saqlash
           </button>
           {editingId && (
-            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", chat_id: "", topic_id: "", type: "supergroup"}) }} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 h-10 w-full sm:w-auto">
+            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", link_or_id: "", type: "supergroup"}) }} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 h-10 w-full sm:w-auto">
               Bekor qilish
             </button>
           )}
