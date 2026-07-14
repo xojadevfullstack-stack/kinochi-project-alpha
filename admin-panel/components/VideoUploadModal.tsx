@@ -52,9 +52,27 @@ export default function VideoUploadModal({
         
         alert(`${entityName} fayli muvaffaqiyatli yuklandi!`);
       } else {
-        const parsedId = parseInt(messageId);
-        if (!messageId || isNaN(parsedId)) {
-          alert("Iltimos, yaroqli Telegram xabar ID sini kiriting (faqat raqam)!");
+        // Parse the message ID from input (number or url)
+        let parsedId: number | null = null;
+        const inputStr = messageId.trim();
+        
+        if (/^\d+$/.test(inputStr)) {
+          parsedId = parseInt(inputStr);
+        } else {
+          try {
+            const url = new URL(inputStr);
+            const pathParts = url.pathname.split('/').filter(p => p);
+            const lastPart = pathParts[pathParts.length - 1];
+            if (/^\d+$/.test(lastPart)) {
+              parsedId = parseInt(lastPart);
+            }
+          } catch (e) {
+            // Not a valid URL
+          }
+        }
+        
+        if (!parsedId || isNaN(parsedId)) {
+          alert("Iltimos, yaroqli Telegram xabar ID sini yoki to'g'ri linkni kiriting!");
           setIsUploading(false);
           return;
         }
@@ -77,7 +95,7 @@ export default function VideoUploadModal({
     }
   };
 
-  const isSubmitDisabled = isUploading || (uploadMethod === 'message' && (!messageId || isNaN(Number(messageId)))) || !language.trim();
+  const isSubmitDisabled = isUploading || (uploadMethod === 'message' && !messageId.trim()) || !language.trim();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -123,7 +141,7 @@ export default function VideoUploadModal({
                 onChange={() => setUploadMethod('message')} 
                 className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
               />
-              <span className="text-sm text-gray-700">Telegram ID orqali</span>
+              <span className="text-sm text-gray-700">Telegram Link/ID orqali</span>
             </label>
           </div>
 
@@ -157,15 +175,15 @@ export default function VideoUploadModal({
             </div>
           ) : (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Storage kanaldagi xabar IDsi (Message ID)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Storage kanaldagi xabar IDsi yoki Linki</label>
               <input 
-                type="number" 
-                placeholder="Masalan: 45" 
+                type="text" 
+                placeholder="Masalan: 45 yoki https://t.me/c/123/45" 
                 value={messageId} 
                 onChange={(e) => setMessageId(e.target.value)} 
                 className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500" 
               />
-              <p className="mt-2 text-xs text-gray-500">Video yuklangan bazadagi (storage channel) postning IDsini kiriting.</p>
+              <p className="mt-2 text-xs text-gray-500">Video yuklangan bazadagi postning IDsini yoki uning to'liq linkini kiriting.</p>
             </div>
           )}
 
