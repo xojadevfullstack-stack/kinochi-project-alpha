@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const API_URL = "/api/v1";
+const API_URL = "https://kinochi-project-alpha.onrender.com/api/v1";
 
 export default function LoginPage() {
   const router = useRouter();

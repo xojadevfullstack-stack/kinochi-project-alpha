@@ -1,4 +1,4 @@
-const API_URL = "/api/v1";
+const API_URL = "https://kinochi-project-alpha.onrender.com/api/v1";
 const DIRECT_API_URL = "https://kinochi-project-alpha.onrender.com/api/v1";
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {

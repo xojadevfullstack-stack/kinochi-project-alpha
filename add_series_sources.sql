@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS series_sources (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    chat_id BIGINT NOT NULL,
+    topic_id INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+ALTER TABLE series ADD COLUMN IF NOT EXISTS source_id INTEGER REFERENCES series_sources(id) ON DELETE SET NULL;
+ALTER TABLE series DROP COLUMN IF EXISTS source_chat_id;
+ALTER TABLE series DROP COLUMN IF EXISTS source_topic_id;
