@@ -66,7 +66,8 @@ async def process_video(message: Message, bot: Bot):
 
     try:
         if is_first_series_ep:
-            caption = f"🎬 *{series.get('title', 'Noma\\'lum')}*\n\n"
+            title_str = series.get('title') or "Noma'lum"
+            caption = f"🎬 *{title_str}*\n\n"
             if series.get('description'):
                 caption += f"{series.get('description')}\n"
             

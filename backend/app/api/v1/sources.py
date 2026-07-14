@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_current_admin
+from app.api.deps import get_db_session, get_current_admin
 from app.infrastructure.db.repositories.source_repository import SourceRepository
 from app.domain.series.source_entities import SourceResponse, SourceCreate, SourceUpdate
 
@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[SourceResponse])
 async def get_sources(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
     admin=Depends(get_current_admin)
 ):
     repo = SourceRepository(db)
@@ -19,7 +19,7 @@ async def get_sources(
 @router.post("/", response_model=SourceResponse)
 async def create_source(
     data: SourceCreate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
     admin=Depends(get_current_admin)
 ):
     repo = SourceRepository(db)
@@ -29,7 +29,7 @@ async def create_source(
 async def update_source(
     source_id: int,
     data: SourceUpdate,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
     admin=Depends(get_current_admin)
 ):
     repo = SourceRepository(db)
@@ -41,7 +41,7 @@ async def update_source(
 @router.delete("/{source_id}")
 async def delete_source(
     source_id: int,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
     admin=Depends(get_current_admin)
 ):
     repo = SourceRepository(db)
