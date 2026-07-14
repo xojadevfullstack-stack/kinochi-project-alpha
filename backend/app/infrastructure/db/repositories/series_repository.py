@@ -18,7 +18,8 @@ class SeriesRepository:
         
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
-            selectinload(SeriesModel.categories)
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.source)
         ).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
@@ -31,7 +32,8 @@ class SeriesRepository:
         
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
-            selectinload(SeriesModel.categories)
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.source)
         ).where(SeriesModel.title.ilike(search_pattern)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         
         result = await self.session.execute(stmt)
@@ -41,31 +43,28 @@ class SeriesRepository:
     async def get_series_by_id(self, series_id: int) -> SeriesModel | None:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
-            selectinload(SeriesModel.categories)
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.source)
         ).where(SeriesModel.id == series_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_series_by_source(self, chat_id: int, topic_id: int | None) -> SeriesModel | None:
-        from sqlalchemy import or_, desc
+        from app.infrastructure.db.models.source import SourceModel
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
-            selectinload(SeriesModel.categories)
-        ).where(SeriesModel.source_chat_id == chat_id)
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.source)
+        ).join(SourceModel, SeriesModel.source_id == SourceModel.id).where(SourceModel.chat_id == chat_id)
         
         if topic_id is not None:
-            stmt = stmt.where(or_(
-                SeriesModel.source_topic_id == topic_id,
-                SeriesModel.source_topic_id.is_(None)
-            )).order_by(desc(SeriesModel.source_topic_id.isnot(None)))
-        else:
-            stmt = stmt.where(SeriesModel.source_topic_id.is_(None))
+            stmt = stmt.where(SourceModel.topic_id == topic_id)
             
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
     async def create_series(self, series_data: SeriesCreate | dict) -> SeriesModel:
-        data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True)
+        data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids"}, exclude_unset=True)
         
         # Remove category_ids if present in dict
         category_ids = data.pop("category_ids", None)
@@ -86,7 +85,7 @@ class SeriesRepository:
         if not series:
             return None
         
-        data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True)
+        data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude={"category_ids"}, exclude_unset=True)
         for key, value in data.items():
             setattr(series, key, value)
             
@@ -192,7 +191,8 @@ class SeriesRepository:
                 selectinload(SeriesModel.seasons)
                 .selectinload(SeasonModel.episodes)
                 .selectinload(EpisodeModel.translations),
-                selectinload(SeriesModel.categories)
+                selectinload(SeriesModel.categories),
+                selectinload(SeriesModel.source)
             )
             .where(SeriesModel.id == season.series_id)
         )

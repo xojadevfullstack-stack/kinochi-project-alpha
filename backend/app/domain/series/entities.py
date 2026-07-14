@@ -81,9 +81,7 @@ class SeriesBase(BaseModel):
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
-    source_link: str | None = None
-    source_chat_id: int | None = None
-    source_topic_id: int | None = None
+    source_id: int | None = None
 
 class SeriesUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=255)
@@ -94,9 +92,9 @@ class SeriesUpdate(BaseModel):
     director: str | None = None
     cast: str | None = None
     category_ids: list[int] | None = None
-    source_link: str | None = None
-    source_chat_id: int | None = None
-    source_topic_id: int | None = None
+    source_id: int | None = None
+
+from app.domain.series.source_entities import SourceResponse
 
 class Series(SeriesBase):
     id: int
@@ -105,18 +103,9 @@ class Series(SeriesBase):
     seasons: list[Season] = Field(default_factory=list)
     categories: list[Category] = Field(default_factory=list)
     
-    source_chat_id: int | None = None
-    source_topic_id: int | None = None
+    source_id: int | None = None
+    source: SourceResponse | None = None
     
-    @computed_field
-    def source_link(self) -> str | None:
-        if self.source_chat_id:
-            chat_id_str = str(self.source_chat_id).replace("-100", "")
-            if self.source_topic_id:
-                return f"https://t.me/c/{chat_id_str}/{self.source_topic_id}"
-            return f"https://t.me/c/{chat_id_str}"
-        return None
-
     model_config = ConfigDict(from_attributes=True)
 
 # Pagination responses

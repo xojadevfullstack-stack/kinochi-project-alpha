@@ -41,10 +41,9 @@ def parse_telegram_link(url: str) -> dict[str, int | None]:
     # Format: c/<chat_id>/<message_id>
     elif len(parts) == 3:
         _, chat_id_str, message_id_str = parts
-        # Check query string for thread
-        query = parse_qs(parsed_url.query)
-        if "thread" in query:
-            topic_id_str = query["thread"][0]
+        # Oson yechim: agar faqat 2 ta raqam bo'lsa, oxirgisini topic_id deb qabul qilamiz.
+        # Chunki kanal bo'lsa topic ahamiyatsiz, topic bo'lsa bu aynan topic ID bo'ladi.
+        topic_id_str = message_id_str
     else:
         raise ValueError("Noto'g'ri Telegram link formati: noto'g'ri URL segmentlari.")
         

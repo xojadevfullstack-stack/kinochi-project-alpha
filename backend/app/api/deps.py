@@ -113,7 +113,6 @@ async def get_current_admin(request: Request, session: AsyncSession = Depends(ge
 
     return {"admin_id": admin.id, "email": admin.email, "role": admin.role}
 
-
 from fastapi import Header
 from app.core.config import settings
 

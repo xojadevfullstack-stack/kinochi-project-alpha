@@ -40,6 +40,7 @@ async def run_bot():
     
     from handlers.auto_index import router as auto_index_router
     dp.include_router(auto_index_router)
+    
 
     retry_delay = 5
     max_delay = 60

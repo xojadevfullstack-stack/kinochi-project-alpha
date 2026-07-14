@@ -3,14 +3,13 @@ import logging
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
 
-from app.api.deps import get_series_service, get_current_admin
+from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot
 from app.application.series.series_service import SeriesService
 from app.domain.series.entities import (
     Series, SeriesCreate, SeriesUpdate, PaginatedSeriesResponse,
     Season, SeasonCreate, SeasonUpdate,
     Episode, EpisodeCreate, EpisodeUpdate
 )
-from app.utils.telegram_link_parser import parse_telegram_link
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +26,6 @@ async def create_series(
 ):
     """Create a new series (Admin only)."""
     create_dict = series_in.model_dump(exclude_unset=True)
-    if "source_link" in create_dict:
-        del create_dict["source_link"]
-        
-    if series_in.source_link:
-        try:
-            parsed = parse_telegram_link(series_in.source_link)
-            create_dict["source_chat_id"] = parsed["chat_id"]
-            create_dict["source_topic_id"] = parsed["topic_id"]
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-    
     return await service.create_series(create_dict)
 
 
@@ -106,20 +94,6 @@ async def update_series(
 ):
     """Update a series (Admin only)."""
     update_dict = series_in.model_dump(exclude_unset=True)
-    if "source_link" in update_dict:
-        del update_dict["source_link"]
-        
-    if series_in.source_link:
-        try:
-            parsed = parse_telegram_link(series_in.source_link)
-            update_dict["source_chat_id"] = parsed["chat_id"]
-            update_dict["source_topic_id"] = parsed["topic_id"]
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-    elif "source_link" in series_in.model_fields_set and series_in.source_link is None:
-        update_dict["source_chat_id"] = None
-        update_dict["source_topic_id"] = None
-        
     series = await service.update_series(series_id, update_dict)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
@@ -221,8 +195,6 @@ async def get_episode_by_code(
         raise HTTPException(status_code=404, detail="Episode not found")
     return episode
 
-from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot
-
 @router.post("/seasons/{season_id}/episodes", response_model=Episode, status_code=status.HTTP_201_CREATED)
 async def create_episode(
     season_id: int,
@@ -230,7 +202,7 @@ async def create_episode(
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_admin_or_bot)
 ):
-    """Create a new episode for a season (Admin only)."""
+    """Create a new episode for a season (Admin or Bot)."""
     if episode_in.season_id != season_id:
         raise HTTPException(status_code=400, detail="Season ID mismatch")
         

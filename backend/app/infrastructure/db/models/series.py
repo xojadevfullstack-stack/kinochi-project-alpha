@@ -28,8 +28,8 @@ class SeriesModel(Base):
     director: Mapped[str | None] = mapped_column(String(255))
     cast: Mapped[str | None] = mapped_column(Text)
     
-    source_chat_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
-    source_topic_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    source_id: Mapped[int | None] = mapped_column(ForeignKey("series_sources.id", ondelete="SET NULL"), index=True)
+    source: Mapped["SourceModel"] = relationship(back_populates="series", lazy="selectin")
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

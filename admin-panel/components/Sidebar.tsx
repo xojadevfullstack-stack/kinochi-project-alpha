@@ -41,6 +41,9 @@ export default function Sidebar() {
         <Link href="/channels" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
           Channels
         </Link>
+        <Link href="/sources" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
+          Sources
+        </Link>
         <Link href="/broadcasts" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
           Broadcasts
         </Link>
