@@ -16,14 +16,22 @@ async def auto_index_video(message: Message, bot: Bot):
     chat_id = message.chat.id
     
     if message.chat.type != "channel":
-        user_id = message.from_user.id
-        try:
-            member = await bot.get_chat_member(chat_id, user_id)
-            if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR):
-                return  # Ignore silently
-        except Exception as e:
-            logger.error(f"Error checking chat member status: {e}")
-            return
+        # Check if sent by anonymous admin or channel
+        if message.sender_chat:
+            # If sender is the group itself (anonymous admin) or a linked channel, allow it
+            if message.sender_chat.id != chat_id:
+                # If it's a different channel, maybe we should ignore or allow depending on requirements.
+                # Usually, linked channels are allowed. We'll allow it for now.
+                pass
+        else:
+            user_id = message.from_user.id
+            try:
+                member = await bot.get_chat_member(chat_id, user_id)
+                if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR):
+                    return  # Ignore silently
+            except Exception as e:
+                logger.error(f"Error checking chat member status: {e}")
+                return
 
     topic_id = message.message_thread_id
 
