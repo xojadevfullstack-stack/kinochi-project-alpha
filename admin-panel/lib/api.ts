@@ -51,7 +51,24 @@ export async function fetchApiUpload(endpoint: string, options: RequestInit = {}
   const url = `${DIRECT_API_URL}${endpoint}`;
 
   // sessionStorage'dan tokenni olib, Authorization header'ga qo'shamiz
-  const token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+  let token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+  
+  if (!token && typeof window !== "undefined") {
+    // Keshda token bo'lmasa, uni backenddan refresh orqali olishga harakat qilamiz
+    try {
+      const refreshRes = await fetch(`${API_URL}/auth/refresh`, { method: "POST" });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        if (refreshData.access_token) {
+          token = refreshData.access_token;
+          sessionStorage.setItem("access_token", token);
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+
   const headers: any = { ...(options.headers || {}) };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -89,10 +106,23 @@ export function uploadWithProgress(
   onProgress: (percent: number) => void,
   additionalData?: Record<string, string>
 ): Promise<any> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const url = `${DIRECT_API_URL}${endpoint}`;
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+    let token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
     
+    if (!token && typeof window !== "undefined") {
+      try {
+        const refreshRes = await fetch(`${API_URL}/auth/refresh`, { method: "POST" });
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          if (refreshData.access_token) {
+            token = refreshData.access_token;
+            sessionStorage.setItem("access_token", token);
+          }
+        }
+      } catch (e) {}
+    }
+
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
     

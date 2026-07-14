@@ -17,6 +17,7 @@ export default function Sidebar() {
     } catch (e) {
       // Even if request fails, redirect to login
     }
+    sessionStorage.removeItem("access_token");
     router.push("/login");
   };
 
