@@ -60,7 +60,7 @@ class SeriesRepository:
         return result.scalar_one_or_none()
 
     async def create_series(self, series_data: SeriesCreate) -> SeriesModel:
-        series = SeriesModel(**series_data.model_dump(exclude={"category_ids"}, exclude_unset=True))
+        series = SeriesModel(**series_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True))
         
         if series_data.category_ids:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(series_data.category_ids)))
@@ -76,7 +76,7 @@ class SeriesRepository:
         if not series:
             return None
         
-        for key, value in update_data.model_dump(exclude={"category_ids"}, exclude_unset=True).items():
+        for key, value in update_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True).items():
             setattr(series, key, value)
             
         if update_data.category_ids is not None:
