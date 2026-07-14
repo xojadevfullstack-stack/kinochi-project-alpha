@@ -8,10 +8,29 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     "Content-Type": "application/json",
   };
 
-  const headers = {
+  let token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+
+  if (!token && typeof window !== "undefined") {
+    try {
+      const refreshRes = await fetch(`${API_URL}/auth/refresh`, { method: "POST", credentials: "include" });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        if (refreshData.access_token) {
+          token = refreshData.access_token;
+          sessionStorage.setItem("access_token", token);
+        }
+      }
+    } catch (e) {}
+  }
+
+  const headers: any = {
     ...defaultHeaders,
     ...options.headers,
   };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   if (options.body instanceof FormData) {
     delete headers["Content-Type"];
@@ -56,7 +75,10 @@ export async function fetchApiUpload(endpoint: string, options: RequestInit = {}
   if (!token && typeof window !== "undefined") {
     // Keshda token bo'lmasa, uni backenddan refresh orqali olishga harakat qilamiz
     try {
-      const refreshRes = await fetch(`${API_URL}/auth/refresh`, { method: "POST" });
+      const refreshRes = await fetch(`${API_URL}/auth/refresh`, { 
+        method: "POST",
+        credentials: "include"
+      });
       if (refreshRes.ok) {
         const refreshData = await refreshRes.json();
         if (refreshData.access_token) {
@@ -112,7 +134,10 @@ export function uploadWithProgress(
     
     if (!token && typeof window !== "undefined") {
       try {
-        const refreshRes = await fetch(`${API_URL}/auth/refresh`, { method: "POST" });
+        const refreshRes = await fetch(`${API_URL}/auth/refresh`, { 
+          method: "POST",
+          credentials: "include"
+        });
         if (refreshRes.ok) {
           const refreshData = await refreshRes.json();
           if (refreshData.access_token) {
