@@ -14,7 +14,7 @@ type Source = {
 export default function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", link_or_id: "", type: "supergroup" });
+  const [form, setForm] = useState({ name: "", link_or_id: "", type: "superguruh" });
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function SourcesPage() {
                 const rawChatId = parts[1];
                 finalChatId = parseInt(`-100${rawChatId}`, 10);
                 
-                if (parts.length >= 3 && form.type === 'supergroup') {
+                if (parts.length >= 3 && form.type === 'superguruh') {
                     finalTopicId = parseInt(parts[2], 10);
                 }
             } else {
@@ -91,7 +91,7 @@ export default function SourcesPage() {
           body: JSON.stringify(payload),
         });
       }
-      setForm({ name: "", link_or_id: "", type: "supergroup" });
+      setForm({ name: "", link_or_id: "", type: "superguruh" });
       setEditingId(null);
       loadSources();
     } catch (e: any) {
@@ -141,8 +141,8 @@ export default function SourcesPage() {
           <div className="flex-1 min-w-[150px]">
             <label className="block text-sm font-medium text-gray-700">Turi</label>
             <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-              <option value="supergroup">Supergroup</option>
-              <option value="channel">Kanal</option>
+              <option value="superguruh">Superguruh</option>
+              <option value="kanal">Kanal</option>
             </select>
           </div>
           <div className="flex-1 min-w-[200px]">
@@ -157,7 +157,7 @@ export default function SourcesPage() {
             Saqlash
           </button>
           {editingId && (
-            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", link_or_id: "", type: "supergroup"}) }} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 h-10 w-full sm:w-auto">
+            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", link_or_id: "", type: "superguruh"}) }} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 h-10 w-full sm:w-auto">
               Bekor qilish
             </button>
           )}
