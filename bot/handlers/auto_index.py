@@ -10,18 +10,20 @@ logger = logging.getLogger(__name__)
 router = Router(name="auto_index")
 
 @router.message(F.chat.type.in_({"supergroup", "group"}), F.content_type.in_({ContentType.VIDEO, ContentType.DOCUMENT}))
+@router.channel_post(F.chat.type == "channel", F.content_type.in_({ContentType.VIDEO, ContentType.DOCUMENT}))
 async def auto_index_video(message: Message, bot: Bot):
-    # 1. Check if the user is an admin
+    # 1. Check if the user is an admin (skip for channels, as only admins can post anyway)
     chat_id = message.chat.id
-    user_id = message.from_user.id
     
-    try:
-        member = await bot.get_chat_member(chat_id, user_id)
-        if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR):
-            return  # Ignore silently
-    except Exception as e:
-        logger.error(f"Error checking chat member status: {e}")
-        return
+    if message.chat.type != "channel":
+        user_id = message.from_user.id
+        try:
+            member = await bot.get_chat_member(chat_id, user_id)
+            if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR):
+                return  # Ignore silently
+        except Exception as e:
+            logger.error(f"Error checking chat member status: {e}")
+            return
 
     topic_id = message.message_thread_id
 
