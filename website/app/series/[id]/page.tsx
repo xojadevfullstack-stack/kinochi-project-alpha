@@ -203,7 +203,9 @@ export default async function SeriesDetailsPage({ params }: Props) {
                               </svg>
                               <span className="truncate">
                                 {episode.episode_number}-qism
-                                {episode.title && <span className="ml-1 opacity-80 font-normal">- {episode.title}</span>}
+                                {episode.title && episode.title !== `${episode.episode_number}-qism` && (
+                                  <span className="ml-1 opacity-80 font-normal">- {episode.title}</span>
+                                )}
                               </span>
                               {episode.duration && (
                                 <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded opacity-80">
