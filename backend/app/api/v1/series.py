@@ -10,6 +10,7 @@ from app.domain.series.entities import (
     Season, SeasonCreate, SeasonUpdate,
     Episode, EpisodeCreate, EpisodeUpdate
 )
+from app.utils.telegram_link_parser import parse_telegram_link
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,14 @@ async def create_series(
     admin: dict = Depends(get_current_admin)
 ):
     """Create a new series (Admin only)."""
+    if series_in.source_link:
+        try:
+            parsed = parse_telegram_link(series_in.source_link)
+            series_in.source_chat_id = parsed["chat_id"]
+            series_in.source_topic_id = parsed["topic_id"]
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    
     return await service.create_series(series_in)
 
 
@@ -60,6 +69,18 @@ async def search_series(
     return PaginatedSeriesResponse(items=items, total=total, page=page, size=limit, pages=pages)
 
 
+@router.get("/by-source", response_model=Series)
+async def get_series_by_source(
+    chat_id: int = Query(...),
+    topic_id: int | None = Query(None),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get series by source (chat_id and topic_id) (Public)."""
+    series = await service.get_series_by_source(chat_id, topic_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series
+
 @router.get("/{series_id}", response_model=Series)
 async def get_series(
     series_id: int,
@@ -80,6 +101,17 @@ async def update_series(
     admin: dict = Depends(get_current_admin)
 ):
     """Update a series (Admin only)."""
+    if series_in.source_link:
+        try:
+            parsed = parse_telegram_link(series_in.source_link)
+            series_in.source_chat_id = parsed["chat_id"]
+            series_in.source_topic_id = parsed["topic_id"]
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    elif "source_link" in series_in.model_fields_set and series_in.source_link is None:
+        series_in.source_chat_id = None
+        series_in.source_topic_id = None
+        
     series = await service.update_series(series_id, series_in)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")

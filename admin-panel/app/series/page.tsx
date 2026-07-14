@@ -17,6 +17,7 @@ type Series = {
   cast: string | null;
   created_at: string;
   categories: Category[];
+  source_link: string | null;
 };
 
 export default function SeriesListPage() {
@@ -34,7 +35,9 @@ export default function SeriesListPage() {
     director: "",
     cast: "",
     category_ids: [] as number[],
+    source_link: "",
   });
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([loadSeries(), loadCategories()]).then(() => setLoading(false));
@@ -60,16 +63,26 @@ export default function SeriesListPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
+    const payload = {
+      ...form,
+      source_link: form.source_link || null
+    };
+
     try {
       if (editingId) {
-        await fetchApi(`/series/${editingId}`, { method: "PUT", body: JSON.stringify(form) });
+        await fetchApi(`/series/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       } else {
-        await fetchApi("/series", { method: "POST", body: JSON.stringify(form) });
+        await fetchApi("/series", { method: "POST", body: JSON.stringify(payload) });
       }
       handleCancel();
       loadSeries();
     } catch (e: any) {
-      alert("Saqlashda xato: " + e.message);
+      if (e.message && e.message.includes("Invalid Telegram URL")) {
+        setErrorMsg("Noto'g'ri Telegram link formati");
+      } else {
+        setErrorMsg("Saqlashda xato: " + (e.message || "Noma'lum xato"));
+      }
     }
   };
 
@@ -94,12 +107,14 @@ export default function SeriesListPage() {
       director: s.director || "",
       cast: s.cast || "",
       category_ids: s.categories ? s.categories.map((c) => c.id) : [],
+      source_link: s.source_link || "",
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [] });
+    setErrorMsg(null);
+    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], source_link: "" });
   };
 
   const handleCategoryChange = (id: number) => {
@@ -191,6 +206,20 @@ export default function SeriesListPage() {
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Manba (Telegram) link (ixtiyoriy)</label>
+            <input
+              type="text"
+              value={form.source_link}
+              onChange={(e) => setForm({ ...form, source_link: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              placeholder="https://t.me/c/..."
+            />
+            <p className="text-xs text-gray-500 mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi (https://t.me/c/... formatida). Ommaviy (@username bilan) guruh linklari ishlamaydi.</p>
+            {errorMsg && <p className="text-red-500 text-sm mt-1">{errorMsg}</p>}
+          </div>
+
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Kategoriyalar</label>
             <div className="flex flex-wrap gap-2">
@@ -244,6 +273,11 @@ export default function SeriesListPage() {
                     </span>
                   ))}
                 </div>
+              )}
+              {s.source_link && (
+                <a href={s.source_link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm mb-3 flex items-center gap-1" title={s.source_link}>
+                  🔗 Telegram manba
+                </a>
               )}
               <p className="text-sm text-gray-500 mb-4 line-clamp-3">{s.description || "Tavsif yo'q"}</p>
               <div className="mt-auto flex justify-between items-center gap-2">

@@ -1,10 +1,11 @@
 """MandatoryChannel repository implementation."""
 from typing import Sequence
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, case, and_
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.channels.entities import MandatoryChannel
 from app.domain.channels.repository import IMandatoryChannelRepository
-from app.infrastructure.db.models.channel import MandatoryChannelModel
+from app.infrastructure.db.models.channel import MandatoryChannelModel, VerifiedSubscriptionModel
 
 class MandatoryChannelRepositoryImpl(IMandatoryChannelRepository):
     def __init__(self, session: AsyncSession):
@@ -64,3 +65,41 @@ class MandatoryChannelRepositoryImpl(IMandatoryChannelRepository):
         total = await self.session.scalar(count_stmt) or 0
         
         return [self._to_entity(m) for m in models], total
+
+    async def verify_subscription(self, channel_id: int, user_id: int) -> bool:
+        channel = await self.session.get(MandatoryChannelModel, channel_id)
+        if not channel:
+            return False
+
+        stmt = insert(VerifiedSubscriptionModel).values(
+            user_id=user_id,
+            channel_id=channel_id
+        ).on_conflict_do_nothing(
+            index_elements=['user_id', 'channel_id']
+        ).returning(VerifiedSubscriptionModel.id)
+        
+        result = await self.session.execute(stmt)
+        inserted = result.scalar_one_or_none()
+        
+        if not inserted:
+            # Already subscribed and verified
+            return False
+            
+        update_stmt = update(MandatoryChannelModel).where(
+            MandatoryChannelModel.id == channel_id
+        ).values(
+            current_subscriber_count=MandatoryChannelModel.current_subscriber_count + 1,
+            is_active=case(
+                (
+                    and_(
+                        MandatoryChannelModel.subscriber_limit != None,
+                        MandatoryChannelModel.current_subscriber_count + 1 >= MandatoryChannelModel.subscriber_limit
+                    ),
+                    False
+                ),
+                else_=MandatoryChannelModel.is_active
+            )
+        )
+        await self.session.execute(update_stmt)
+        await self.session.commit()
+        return True

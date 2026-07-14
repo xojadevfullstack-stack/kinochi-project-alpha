@@ -18,6 +18,7 @@ type Movie = {
   release_year: number;
   duration_minutes: number;
   categories: Category[];
+  source_link: string | null;
   translations: { id: number; language: string; telegram_file_id: string }[];
 };
 
@@ -35,8 +36,10 @@ export default function MoviesPage() {
   const [form, setForm] = useState({
     title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "",
     director: "", cast: "", imdb_rating: 0,
-    category_ids: [] as number[]
+    category_ids: [] as number[],
+    source_link: ""
   });
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([loadMovies(), loadCategories()]).then(() => setLoading(false));
@@ -62,8 +65,10 @@ export default function MoviesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     const payload = {
       ...form,
+      source_link: form.source_link || null
     };
 
     try {
@@ -75,7 +80,11 @@ export default function MoviesPage() {
       handleCancel();
       loadMovies();
     } catch (e: any) {
-      alert("Saqlashda xato: " + e.message);
+      if (e.message && e.message.includes("Invalid Telegram URL")) {
+        setErrorMsg("Noto'g'ri Telegram link formati");
+      } else {
+        setErrorMsg("Saqlashda xato: " + (e.message || "Noma'lum xato"));
+      }
     }
   };
 
@@ -108,13 +117,15 @@ export default function MoviesPage() {
       director: m.director || "",
       cast: m.cast || "",
       imdb_rating: m.imdb_rating || 0,
-      category_ids: m.categories.map(c => c.id)
+      category_ids: m.categories.map(c => c.id),
+      source_link: m.source_link || ""
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [] });
+    setErrorMsg(null);
+    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [], source_link: "" });
   };
 
   const openVideoModal = (id: number) => {
@@ -156,6 +167,13 @@ export default function MoviesPage() {
           <div><label className="block text-sm">Reyting (IMDb)</label><input type="number" step="0.1" min="0" max="10" className="w-full border p-2 rounded" value={form.imdb_rating} onChange={e => setForm({...form, imdb_rating: parseFloat(e.target.value)})} /></div>
           
           <div className="md:col-span-2">
+            <label className="block text-sm">Manba (Telegram) link (ixtiyoriy)</label>
+            <input type="text" className="w-full border p-2 rounded" placeholder="https://t.me/c/..." value={form.source_link} onChange={e => setForm({...form, source_link: e.target.value})} />
+            <p className="text-xs text-gray-500 mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi (https://t.me/c/... formatida). Ommaviy (@username bilan) guruh linklari ishlamaydi.</p>
+            {errorMsg && <p className="text-red-500 text-sm mt-1">{errorMsg}</p>}
+          </div>
+
+          <div className="md:col-span-2">
             <label className="block text-sm mb-2">Kategoriyalar</label>
             <div className="flex flex-wrap gap-2">
               {categories.map(c => (
@@ -182,6 +200,7 @@ export default function MoviesPage() {
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kod</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sarlavha</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manba</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Video</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
             </tr>
@@ -191,6 +210,13 @@ export default function MoviesPage() {
               <tr key={m.id}>
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{m.code}</td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{m.title}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {m.source_link ? (
+                    <a href={m.source_link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center gap-1" title={m.source_link}>
+                      🔗 Link
+                    </a>
+                  ) : "-"}
+                </td>
                 <td className="px-4 py-4">
                   {m.translations && m.translations.length > 0 ? (
                     <div className="flex flex-col gap-1">

@@ -9,6 +9,8 @@ type Channel = {
   channel_username: string;
   channel_title: string;
   is_active: boolean;
+  subscriber_limit: number | null;
+  current_subscriber_count: number;
 };
 
 export default function ChannelsPage() {
@@ -20,6 +22,7 @@ export default function ChannelsPage() {
     channel_username: "",
     channel_title: "",
     is_active: true,
+    subscriber_limit: "" as string | number,
   });
 
   useEffect(() => {
@@ -40,10 +43,14 @@ export default function ChannelsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        subscriber_limit: form.subscriber_limit ? Number(form.subscriber_limit) : null
+      };
       if (editingId) {
-        await fetchApi(`/channels/${editingId}`, { method: "PUT", body: JSON.stringify(form) });
+        await fetchApi(`/channels/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       } else {
-        await fetchApi("/channels/", { method: "POST", body: JSON.stringify(form) });
+        await fetchApi("/channels/", { method: "POST", body: JSON.stringify(payload) });
       }
       handleCancel();
       loadChannels();
@@ -68,12 +75,13 @@ export default function ChannelsPage() {
       channel_username: c.channel_username || "",
       channel_title: c.channel_title || "",
       is_active: c.is_active,
+      subscriber_limit: c.subscriber_limit || "",
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ channel_username: "", channel_title: "", is_active: true });
+    setForm({ channel_username: "", channel_title: "", is_active: true, subscriber_limit: "" });
   };
 
   if (loading) return <div>Yuklanmoqda...</div>;
@@ -92,6 +100,10 @@ export default function ChannelsPage() {
           <div>
             <label className="block text-sm">Sarlavha</label>
             <input required type="text" className="w-full border p-2 rounded mt-1" value={form.channel_title} onChange={e => setForm({...form, channel_title: e.target.value})} />
+          </div>
+          <div>
+            <label className="block text-sm">Obunachi limiti (ixtiyoriy)</label>
+            <input type="number" className="w-full border p-2 rounded mt-1" placeholder="Masalan: 200" value={form.subscriber_limit} onChange={e => setForm({...form, subscriber_limit: e.target.value})} />
           </div>
           <div className="flex items-center mt-2">
             <label className="flex items-center cursor-pointer">
@@ -113,6 +125,7 @@ export default function ChannelsPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sarlavha</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Holat</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
             </tr>
@@ -123,10 +136,18 @@ export default function ChannelsPage() {
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{c.id}</td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">@{c.channel_username}</td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{c.channel_title}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {c.subscriber_limit ? `${c.current_subscriber_count} / ${c.subscriber_limit}` : `${c.current_subscriber_count} (cheksiz)`}
+                </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {c.is_active ? 'Faol' : 'Nofaol'}
                   </span>
+                  {!c.is_active && c.subscriber_limit && c.current_subscriber_count >= c.subscriber_limit && (
+                    <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      Limitga yetdi
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                   <button onClick={() => handleEdit(c)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>

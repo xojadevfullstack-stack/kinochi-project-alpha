@@ -37,7 +37,9 @@ class MovieService:
         runtime: int | None = None,
         poster_url: str | None = None,
         trailer_url: str | None = None,
-        category_ids: list[int] | None = None
+        category_ids: list[int] | None = None,
+        source_chat_id: int | None = None,
+        source_topic_id: int | None = None
     ) -> Movie:
         if code is None:
             code = await self._generate_unique_code()
@@ -55,7 +57,9 @@ class MovieService:
             release_year=release_year,
             runtime=runtime,
             poster_url=poster_url,
-            trailer_url=trailer_url
+            trailer_url=trailer_url,
+            source_chat_id=source_chat_id,
+            source_topic_id=source_topic_id
         )
         return await self.movie_repo.create(movie, category_ids=category_ids)
 
@@ -86,7 +90,9 @@ class MovieService:
         runtime: int | None = None,
         poster_url: str | None = None,
         trailer_url: str | None = None,
-        category_ids: list[int] | None = None
+        category_ids: list[int] | None = None,
+        source_chat_id: int | None = None,
+        source_topic_id: int | None = None
     ) -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
         if not movie:
@@ -105,6 +111,8 @@ class MovieService:
         if runtime is not None: movie.runtime = runtime
         if poster_url is not None: movie.poster_url = poster_url
         if trailer_url is not None: movie.trailer_url = trailer_url
+        if source_chat_id is not None: movie.source_chat_id = source_chat_id
+        if source_topic_id is not None: movie.source_topic_id = source_topic_id
 
         return await self.movie_repo.update(movie, category_ids=category_ids)
 

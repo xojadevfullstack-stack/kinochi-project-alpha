@@ -46,6 +46,19 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_series_by_source(self, chat_id: int, topic_id: int | None) -> SeriesModel | None:
+        stmt = select(SeriesModel).options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
+            selectinload(SeriesModel.categories)
+        ).where(SeriesModel.source_chat_id == chat_id)
+        if topic_id is not None:
+            stmt = stmt.where(SeriesModel.source_topic_id == topic_id)
+        else:
+            stmt = stmt.where(SeriesModel.source_topic_id.is_(None))
+            
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create_series(self, series_data: SeriesCreate) -> SeriesModel:
         series = SeriesModel(**series_data.model_dump(exclude={"category_ids"}, exclude_unset=True))
         

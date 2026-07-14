@@ -48,3 +48,6 @@ class ChannelService:
 
     async def list_all(self, skip: int = 0, limit: int = 20) -> tuple[Sequence[MandatoryChannel], int]:
         return await self.channel_repo.list_all(skip=skip, limit=limit)
+
+    async def verify_subscription(self, channel_id: int, user_id: int) -> bool:
+        return await self.channel_repo.verify_subscription(channel_id, user_id)

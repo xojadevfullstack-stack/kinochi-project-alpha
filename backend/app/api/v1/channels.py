@@ -13,11 +13,13 @@ class ChannelCreate(BaseModel):
     channel_username: str | None = None
     channel_title: str | None = None
     is_active: bool = True
+    subscriber_limit: int | None = None
 
 class ChannelUpdate(BaseModel):
     channel_username: str | None = None
     channel_title: str | None = None
     is_active: bool | None = None
+    subscriber_limit: int | None = None
 
 class ChannelResponse(BaseModel):
     id: int
@@ -25,6 +27,8 @@ class ChannelResponse(BaseModel):
     channel_username: str | None = None
     channel_title: str | None = None
     is_active: bool
+    subscriber_limit: int | None = None
+    current_subscriber_count: int
     added_at: datetime
 
     model_config = {"from_attributes": True}
@@ -95,3 +99,17 @@ async def delete_channel(
     success = await service.delete_channel(channel_id)
     if not success:
         raise HTTPException(status_code=404, detail="Channel not found")
+
+class VerifySubscriberRequest(BaseModel):
+    user_id: int
+
+@router.post("/{channel_id}/verify-subscriber", status_code=status.HTTP_200_OK)
+async def verify_subscriber(
+    channel_id: int,
+    req: VerifySubscriberRequest,
+    service: ChannelService = Depends(get_channel_service),
+    admin: dict = Depends(get_current_admin)  # Protected by X-Bot-Secret
+):
+    """Verify and record a user subscription. Atomic operation."""
+    success = await service.verify_subscription(channel_id, req.user_id)
+    return {"success": success}

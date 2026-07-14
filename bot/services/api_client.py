@@ -73,6 +73,36 @@ class APIClient:
             print(f"Error fetching series {series_id}: {e}")
             return None
 
+    async def get_series_by_source(self, chat_id: int, topic_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        try:
+            params = {"chat_id": chat_id}
+            if topic_id is not None:
+                params["topic_id"] = topic_id
+            response = await self.client.get("/series/by-source", params=params)
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Error fetching series by source {chat_id}/{topic_id}: {e}")
+            return None
+
+    async def create_episode(self, season_id: int, episode_number: int, title: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        payload = {
+            "season_id": season_id,
+            "episode_number": episode_number
+        }
+        if title:
+            payload["title"] = title
+            
+        try:
+            response = await self.client.post(f"/series/seasons/{season_id}/episodes", json=payload)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Error creating episode {episode_number} for season {season_id}: {e}")
+            return None
+
     async def get_active_channels(self) -> list[Dict[str, Any]]:
         try:
             response = await self.client.get("/channels/active")
@@ -81,6 +111,19 @@ class APIClient:
         except httpx.HTTPError as e:
             print(f"Error fetching active channels: {e}")
             return []
+
+    async def verify_channel_subscription(self, channel_id: int, user_id: int) -> bool:
+        try:
+            response = await self.client.post(
+                f"/channels/{channel_id}/verify-subscriber",
+                json={"user_id": user_id}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("success", False)
+        except httpx.HTTPError as e:
+            print(f"Error verifying subscription for channel {channel_id}: {e}")
+            return False
 
     async def get_movies(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
         try:

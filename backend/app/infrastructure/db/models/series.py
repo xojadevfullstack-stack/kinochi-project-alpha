@@ -2,7 +2,7 @@
 Series ORM models.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func
+from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
@@ -27,6 +27,9 @@ class SeriesModel(Base):
     release_year: Mapped[int | None] = mapped_column(Integer, index=True)
     director: Mapped[str | None] = mapped_column(String(255))
     cast: Mapped[str | None] = mapped_column(Text)
+    
+    source_chat_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    source_topic_id: Mapped[int | None] = mapped_column(Integer, index=True)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -61,6 +64,9 @@ class SeasonModel(Base):
 
 class EpisodeModel(Base):
     __tablename__ = "episodes"
+    __table_args__ = (
+        UniqueConstraint("season_id", "episode_number", name="uq_season_episode_number"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     season_id: Mapped[int] = mapped_column(ForeignKey("seasons.id", ondelete="CASCADE"), index=True, nullable=False)
@@ -73,6 +79,8 @@ class EpisodeModel(Base):
     
     title: Mapped[str | None] = mapped_column(String(255))
     duration: Mapped[int | None] = mapped_column(Integer) # In minutes
+    
+    source_message_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
