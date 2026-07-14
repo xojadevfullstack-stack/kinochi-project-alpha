@@ -41,7 +41,7 @@ class SeriesService:
             return None
         return Series.model_validate(series_model)
 
-    async def create_series(self, series_data: SeriesCreate) -> Series:
+    async def create_series(self, series_data: SeriesCreate | dict) -> Series:
         series_model = await self.repository.create_series(series_data)
         return Series.model_validate(series_model)
 

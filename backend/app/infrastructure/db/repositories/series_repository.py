@@ -64,11 +64,16 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def create_series(self, series_data: SeriesCreate) -> SeriesModel:
-        series = SeriesModel(**series_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True))
+    async def create_series(self, series_data: SeriesCreate | dict) -> SeriesModel:
+        data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True)
         
-        if series_data.category_ids:
-            result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(series_data.category_ids)))
+        # Remove category_ids if present in dict
+        category_ids = data.pop("category_ids", None)
+        
+        series = SeriesModel(**data)
+        
+        if category_ids:
+            result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             series.categories = list(categories)
             
@@ -76,16 +81,19 @@ class SeriesRepository:
         await self.session.flush()
         return await self.get_series_by_id(series.id)
 
-    async def update_series(self, series_id: int, update_data: SeriesUpdate) -> SeriesModel | None:
+    async def update_series(self, series_id: int, update_data: SeriesUpdate | dict) -> SeriesModel | None:
         series = await self.get_series_by_id(series_id)
         if not series:
             return None
         
-        for key, value in update_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True).items():
+        data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude={"category_ids", "source_link"}, exclude_unset=True)
+        for key, value in data.items():
             setattr(series, key, value)
             
-        if update_data.category_ids is not None:
-            result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(update_data.category_ids)))
+        # Get category_ids from dict or model
+        category_ids = data.get("category_ids") if isinstance(update_data, dict) else update_data.category_ids
+        if category_ids is not None:
+            result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             series.categories = list(categories)
             

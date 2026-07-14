@@ -26,15 +26,19 @@ async def create_series(
     admin: dict = Depends(get_current_admin)
 ):
     """Create a new series (Admin only)."""
+    create_dict = series_in.model_dump(exclude_unset=True)
+    if "source_link" in create_dict:
+        del create_dict["source_link"]
+        
     if series_in.source_link:
         try:
             parsed = parse_telegram_link(series_in.source_link)
-            series_in.source_chat_id = parsed["chat_id"]
-            series_in.source_topic_id = parsed["topic_id"]
+            create_dict["source_chat_id"] = parsed["chat_id"]
+            create_dict["source_topic_id"] = parsed["topic_id"]
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     
-    return await service.create_series(series_in)
+    return await service.create_series(create_dict)
 
 
 @router.get("", response_model=PaginatedSeriesResponse)
@@ -101,18 +105,22 @@ async def update_series(
     admin: dict = Depends(get_current_admin)
 ):
     """Update a series (Admin only)."""
+    update_dict = series_in.model_dump(exclude_unset=True)
+    if "source_link" in update_dict:
+        del update_dict["source_link"]
+        
     if series_in.source_link:
         try:
             parsed = parse_telegram_link(series_in.source_link)
-            series_in.source_chat_id = parsed["chat_id"]
-            series_in.source_topic_id = parsed["topic_id"]
+            update_dict["source_chat_id"] = parsed["chat_id"]
+            update_dict["source_topic_id"] = parsed["topic_id"]
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     elif "source_link" in series_in.model_fields_set and series_in.source_link is None:
-        series_in.source_chat_id = None
-        series_in.source_topic_id = None
+        update_dict["source_chat_id"] = None
+        update_dict["source_topic_id"] = None
         
-    series = await service.update_series(series_id, series_in)
+    series = await service.update_series(series_id, update_dict)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series

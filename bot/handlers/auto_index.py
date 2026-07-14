@@ -62,9 +62,10 @@ async def auto_index_video(message: Message, bot: Bot):
             seasons = fresh_series.get("seasons", [])
             if not seasons:
                 break
-            latest_season = sorted(seasons, key=lambda s: s["season_number"])[-1]
-            season_id = latest_season["id"]
-            episodes = latest_season.get("episodes", [])
+            
+        latest_season = sorted(seasons, key=lambda s: s["season_number"])[-1]
+        season_id = latest_season["id"]
+        episodes = latest_season.get("episodes", [])
         
         # 4. Find the last episode number
         if episodes:
