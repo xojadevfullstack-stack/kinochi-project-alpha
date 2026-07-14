@@ -17,7 +17,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         const refreshData = await refreshRes.json();
         if (refreshData.access_token) {
           token = refreshData.access_token;
-          sessionStorage.setItem("access_token", token);
+          sessionStorage.setItem("access_token", token as string);
         }
       }
     } catch (e) {}
@@ -83,7 +83,7 @@ export async function fetchApiUpload(endpoint: string, options: RequestInit = {}
         const refreshData = await refreshRes.json();
         if (refreshData.access_token) {
           token = refreshData.access_token;
-          sessionStorage.setItem("access_token", token);
+          sessionStorage.setItem("access_token", token as string);
         }
       }
     } catch (e) {
@@ -142,7 +142,7 @@ export function uploadWithProgress(
           const refreshData = await refreshRes.json();
           if (refreshData.access_token) {
             token = refreshData.access_token;
-            sessionStorage.setItem("access_token", token);
+            sessionStorage.setItem("access_token", token as string);
           }
         }
       } catch (e) {}
