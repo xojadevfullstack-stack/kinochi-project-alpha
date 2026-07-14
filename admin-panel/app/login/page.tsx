@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const API_URL = "/api/v1";
@@ -11,6 +11,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Vercel/Render free tier muammosi: server uxlab qolgan bo'lsa uyg'otish uchun
+  // sahifa ochilgandayoq fonda ping jo'natamiz.
+  useEffect(() => {
+    fetch(`${API_URL}/health`).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +32,10 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
+        if (res.status === 504 || res.status === 502) {
+          setError("Server uyqudan uyg'onmoqda... Yana bir marta 'Kirish' tugmasini bosing.");
+          return;
+        }
         const data = await res.json().catch(() => ({}));
         setError(data.detail || "Tizimga kirishda xatolik yuz berdi");
         return;

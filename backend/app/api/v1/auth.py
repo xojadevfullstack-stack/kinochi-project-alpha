@@ -114,6 +114,7 @@ async def login(
 
     return {
         "message": "Tizimga kirildi",
+        "access_token": access_token,
         "admin": AdminMeResponse.model_validate(admin).model_dump(),
     }
 
@@ -155,7 +156,10 @@ async def refresh(
     new_refresh = create_refresh_token(str(admin.id))
     _set_auth_cookies(response, new_access, new_refresh)
 
-    return {"message": "Token yangilandi"}
+    return {
+        "message": "Token yangilandi",
+        "access_token": new_access,
+    }
 
 
 @router.get("/me", response_model=AdminMeResponse)
