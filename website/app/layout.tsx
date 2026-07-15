@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -51,33 +52,7 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`}>
-        {/* TopNavBar */}
-        <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-gutter py-4 bg-background-obsidian/80 backdrop-blur-lg border-b border-white/10 shadow-2xl shadow-primary-container/20 transition-all duration-300 ease-out">
-          <div className="flex items-center gap-8">
-            <a className="font-display-hero-mobile text-[32px] sm:text-display-hero-mobile text-primary-container tracking-tighter" href="/">Kinochi</a>
-            {/* Navigation Links (Desktop) */}
-            <div className="hidden md:flex items-center gap-6">
-              <a className="text-primary-container font-bold border-b-2 border-primary-container pb-1 transition-all duration-300 ease-out hover:scale-105 hover:bg-white/5 px-2 rounded-t-sm" href="/">Asosiy</a>
-              <a className="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-2 py-1 rounded-sm" href="/movies">Kinolar</a>
-              <a className="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-2 py-1 rounded-sm" href="/series">Seriallar</a>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Search Bar */}
-            <div className="hidden md:flex items-center bg-white/10 rounded-full px-4 py-2 border border-transparent focus-within:border-white/30 transition-colors">
-              <span className="material-symbols-outlined text-text-secondary mr-2" data-icon="search">search</span>
-              <input className="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-48 outline-none" placeholder="Qidirish..." type="text"/>
-            </div>
-            {/* Trailing Icon Action */}
-            <button className="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 p-2 rounded-full hover:bg-white/5">
-              <span className="material-symbols-outlined" data-icon="notifications">notifications</span>
-            </button>
-            {/* Profile Image Placeholder */}
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 ml-2 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center">
-              <span className="material-symbols-outlined text-text-secondary">person</span>
-            </div>
-          </div>
-        </nav>
+        <Navbar />
 
         <main className="min-h-screen">
           {children}

@@ -112,34 +112,34 @@ export default async function Home() {
       {/* Massive Hero Section */}
       <section className="relative w-full h-[870px] min-h-[600px] flex items-end pb-margin-desktop">
         {/* Featured Background */}
-        <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 w-full h-full bg-background-obsidian">
           {heroMovie && heroMovie.poster_url ? (
             <Image 
               src={heroMovie.poster_url}
               alt={heroMovie.title}
               fill
               priority
-              className="object-cover opacity-60"
+              className="object-cover opacity-50"
             />
           ) : (
-            <div className="absolute inset-0 bg-surface-container-low"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
           )}
           {/* Smooth Dark Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/60 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/70 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/50 to-transparent"></div>
         </div>
 
         <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full">
           <div className="max-w-3xl">
             {/* Badges */}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="px-2 py-1 rounded bg-white/10 backdrop-blur-md text-text-primary font-label-caps text-label-caps uppercase tracking-widest border border-white/10">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+              <span className="px-2 py-1 rounded bg-white/10 backdrop-blur-md text-text-primary font-label-caps text-[10px] sm:text-label-caps uppercase tracking-widest border border-white/10">
                 {heroMovie?.genres || "Kino"}
               </span>
-              <span className="px-2 py-1 rounded bg-primary-container text-white font-label-caps text-label-caps font-bold">YANGI</span>
+              <span className="px-2 py-1 rounded bg-primary-container text-white font-label-caps text-[10px] sm:text-label-caps font-bold">YANGI</span>
             </div>
             
-            <h1 className="font-display-hero text-[40px] md:text-display-hero text-text-primary mb-4 drop-shadow-2xl tracking-tighter">
+            <h1 className="font-display-hero text-4xl sm:text-[48px] md:text-display-hero text-text-primary mb-4 drop-shadow-2xl tracking-tighter leading-tight">
               {heroMovie ? heroMovie.title : "KINOCHI PREMIUM"}
             </h1>
             

@@ -21,14 +21,25 @@ type Movie = {
   genres: string | null;
 };
 
+type Category = {
+  id: number;
+  name: string;
+};
+
+
 export default async function MoviesListPage() {
   let movies: Movie[] = [];
+  let categories: Category[] = [];
   
   try {
-    const data = await fetchApi("/movies?limit=50");
-    movies = data.items || [];
+    const [moviesData, categoriesData] = await Promise.all([
+      fetchApi("/movies?limit=50"),
+      fetchApi("/categories")
+    ]);
+    movies = moviesData.items || [];
+    categories = categoriesData || [];
   } catch (error) {
-    console.error("Failed to fetch movies:", error);
+    console.error("Failed to fetch movies or categories:", error);
   }
 
   return (
@@ -42,12 +53,16 @@ export default async function MoviesListPage() {
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta kino kolleksiyamiz bilan tanishing.</p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-            <button className="px-6 py-2 rounded-full bg-primary-container text-white font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap shadow-[0_0_15px_rgba(229,9,20,0.5)]">Barchasi</button>
-            {/* Mock categories for design */}
-            <button className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10 font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors">Jangarilar</button>
-            <button className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10 font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors">Drama</button>
-            <button className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10 font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors">Fantastika</button>
-            <button className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10 font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors">Komediya</button>
+            <Link href="/movies" className="px-6 py-2 rounded-full bg-primary-container text-white font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap shadow-[0_0_15px_rgba(229,9,20,0.5)]">Barchasi</Link>
+            {categories.map(cat => (
+              <Link 
+                key={cat.id} 
+                href={`/movies?category=${cat.id}`}
+                className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10 font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors"
+              >
+                {cat.name}
+              </Link>
+            ))}
           </div>
         </div>
 

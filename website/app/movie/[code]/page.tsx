@@ -52,10 +52,16 @@ export default async function MovieDetailsPage({ params }: Props) {
     <>
       <section className="relative w-full min-h-[1024px] flex items-center pt-[100px] pb-stack-lg overflow-hidden">
         {/* Background Blur & Gradient Overlays */}
-        <div className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl mask-gradient-bottom" 
-             style={{ backgroundImage: `url('${movie.poster_url || ""}')` }}></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/60 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-transparent to-transparent hidden md:block"></div>
+        <div className="absolute inset-0 bg-background-obsidian">
+           {movie.poster_url ? (
+            <div className="absolute inset-0 bg-cover bg-center opacity-30 blur-xl" 
+               style={{ backgroundImage: `url('${movie.poster_url}')` }}></div>
+           ) : (
+            <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
+           )}
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/70 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/40 to-transparent hidden md:block"></div>
         
         {/* Content Container */}
         <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-margin-desktop">
@@ -81,7 +87,7 @@ export default async function MovieDetailsPage({ params }: Props) {
           
           {/* Right: Movie Info */}
           <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero-mobile md:font-display-hero text-[40px] md:text-display-hero text-text-primary mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter">
+            <h1 className="font-display-hero text-4xl sm:text-[48px] md:text-display-hero text-text-primary mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
               {movie.title}
             </h1>
             
