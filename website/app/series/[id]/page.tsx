@@ -14,10 +14,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const series = await fetchApi(`/series/${params.id}`);
     
     return {
-      title: `${series.title} - Kinochi`,
+      title: `${series.title} - KINOCHI`,
       description: series.description || `${series.title} serialini bepul tomosha qiling.`,
       openGraph: {
-        title: `${series.title} - Kinochi`,
+        title: `${series.title} - KINOCHI`,
         description: series.description || `${series.title} serialini bepul tomosha qiling.`,
         url: `https://kinochi.uz/series/${params.id}`,
         images: series.poster_url ? [
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (error) {
     return {
-      title: "Serial topilmadi - Kinochi"
+      title: "Serial topilmadi - KINOCHI"
     };
   }
 }
@@ -57,6 +57,33 @@ type Season = {
   episodes: Episode[];
 };
 
+// Helper to mock actor avatars since API just returns a string
+const renderActors = (castString: string) => {
+  if (!castString) return null;
+  const actors = castString.split(',').map(a => a.trim()).slice(0, 6); // max 6 actors
+  
+  return (
+    <div className="mt-8">
+      <h3 className="text-xl font-bold mb-4 text-white flex items-center gap-2">
+        <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+        Aktyorlar
+      </h3>
+      <div className="flex flex-wrap gap-4 sm:gap-6">
+        {actors.map((actor, idx) => (
+          <div key={idx} className="flex flex-col items-center gap-2">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-surface border border-white/10 flex items-center justify-center overflow-hidden shadow-lg group">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            </div>
+            <span className="text-xs sm:text-sm font-medium text-gray-300 text-center w-16 sm:w-20 line-clamp-2 leading-tight">{actor}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default async function SeriesDetailsPage({ params }: Props) {
   let series;
   try {
@@ -66,63 +93,155 @@ export default async function SeriesDetailsPage({ params }: Props) {
   }
 
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+  // The main button will link to the bot without code or maybe the first episode's code
+  const firstEpisodeCode = series?.seasons?.[0]?.episodes?.[0]?.code;
+  const telegramDeepLink = firstEpisodeCode 
+    ? `https://t.me/${botUsername}?start=${firstEpisodeCode}`
+    : `https://t.me/${botUsername}`;
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-white">
-      <div className="max-w-5xl mx-auto bg-surface rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row mb-12">
-        
-        {/* Left Side: Poster */}
-        <div className="w-full md:w-1/3 relative aspect-[2/3] bg-gray-900 flex-shrink-0">
+    <div className="min-h-screen bg-[#09090B] pb-20">
+      
+      {/* Hero Section */}
+      <div className="relative w-full">
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 h-[80vh] w-full overflow-hidden z-0">
           {series.poster_url ? (
-            <Image 
-              src={series.poster_url}
-              alt={series.title}
-              fill
-              className="object-cover"
-              priority
-            />
+            <>
+              <Image 
+                src={series.poster_url}
+                alt="Background"
+                fill
+                priority
+                className="object-cover object-top opacity-30 blur-[10px] scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-[#09090B]/80 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#09090B] via-[#09090B]/60 to-transparent" />
+            </>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-              Rasm mavjud emas
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-surface to-[#09090B]" />
           )}
         </div>
 
-        {/* Right Side: Details */}
-        <div className="w-full md:w-2/3 p-6 md:p-8 flex flex-col">
-          <h1 className="text-3xl md:text-5xl font-bold mb-2">{series.title}</h1>
+        {/* Content Container */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 lg:pt-40 pb-12 flex flex-col lg:flex-row gap-10 lg:gap-16">
           
-          <div className="flex flex-wrap items-center gap-4 text-sm md:text-base mb-6">
-            <span className="text-star font-bold flex items-center gap-1">
-              ★ {series.imdb_rating || "N/A"}
-            </span>
-            <span>|</span>
-            <span className="text-gray-300">{series.release_year || "Yil no'malum"}</span>
+          {/* Left: Poster */}
+          <div className="w-full max-w-[280px] sm:max-w-[320px] mx-auto lg:mx-0 flex-shrink-0">
+            <div className="aspect-[2/3] relative rounded-2xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10 group">
+              {series.poster_url ? (
+                <Image 
+                  src={series.poster_url}
+                  alt={series.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-surface text-gray-500">
+                  Poster yo'q
+                </div>
+              )}
+              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none"></div>
+            </div>
           </div>
 
-          <div className="mb-6 space-y-2 text-sm text-gray-300">
+          {/* Right: Info */}
+          <div className="flex-1 flex flex-col justify-center text-center lg:text-left">
+            
+            {/* Badges */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-6">
+              <span className="bg-star text-black text-xs sm:text-sm font-bold px-2.5 py-1 rounded-sm uppercase tracking-wider flex items-center gap-1">
+                ★ IMDb {series.imdb_rating || "N/A"}
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-white/90 bg-white/10 px-3 py-1 rounded-sm uppercase tracking-widest">
+                {series.release_year || "2024"}
+              </span>
+              <span className="bg-primary text-white text-xs sm:text-sm font-bold px-3 py-1 rounded-sm uppercase tracking-widest">
+                SERIAL
+              </span>
+            </div>
+            
+            {/* Title */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tighter mb-2 lg:mb-4 text-white drop-shadow-lg leading-tight">
+              {series.title}
+            </h1>
+
+            {/* Genres / Categories */}
             {series.categories && series.categories.length > 0 && (
-              <p><strong className="text-white">Kategoriya:</strong> {series.categories.map((c: any) => c.name).join(', ')}</p>
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-8">
+                {series.categories.map((c: any, i: number) => (
+                  <span key={i} className="px-3 py-1.5 rounded-full border border-white/20 text-xs font-semibold uppercase tracking-wider text-gray-300 backdrop-blur-md">
+                    {c.name}
+                  </span>
+                ))}
+              </div>
             )}
-            <p><strong className="text-white">Rejissyor:</strong> {series.director || "Kiritilmagan"}</p>
-            <p><strong className="text-white">Aktyorlar:</strong> {series.cast || "Kiritilmagan"}</p>
-          </div>
-          
-          <div className="mb-8 flex-grow">
-            <h3 className="text-lg font-semibold mb-2 text-white">Serial haqida:</h3>
-            <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-              {series.description || "Ushbu serial uchun batafsil ma'lumot kiritilmagan."}
+
+            {/* Description */}
+            <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-3xl mb-10 font-medium opacity-90 mx-auto lg:mx-0">
+              {series.description || "Ushbu serial uchun batafsil tavsif kiritilmagan. Ammo bu serialni telegram orqali tomosha qilishingiz mumkin."}
             </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <a 
+                href={telegramDeepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto bg-primary hover:bg-red-700 text-white font-bold py-4 px-10 rounded-full transition-transform duration-300 flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(229,9,20,0.4)] hover:shadow-[0_0_60px_rgba(229,9,20,0.6)] hover:-translate-y-1"
+              >
+                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                Tomosha qilish
+              </a>
+              <button className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md flex items-center justify-center transition-colors text-white hidden sm:flex">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+              </button>
+            </div>
+
+            {/* Actors Grid */}
+            {series.cast && renderActors(series.cast)}
+
           </div>
         </div>
       </div>
 
-      {/* Seasons and Episodes */}
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-2xl md:text-3xl font-bold mb-8 text-white/90">Fasllar va Qismlar</h2>
+      {/* Trailer Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 relative z-20">
+        <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+          <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+          Rasmiy Treyler
+        </h2>
+        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black ring-1 ring-white/10 shadow-2xl relative group cursor-pointer flex items-center justify-center mb-16">
+          {/* Placeholder for YouTube Player (Since API might not have trailer URLs yet, showing a realistic mockup) */}
+          {series.poster_url ? (
+            <Image 
+              src={series.poster_url}
+              alt="Trailer Thumbnail"
+              fill
+              className="object-cover opacity-60 group-hover:opacity-40 transition-opacity"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-surface"></div>
+          )}
+          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
+          
+          {/* Play Button Mockup */}
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/90 flex items-center justify-center shadow-[0_0_30px_rgba(229,9,20,0.5)] group-hover:scale-110 group-hover:bg-primary transition-all duration-300">
+            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Seasons and Episodes Section (Only for Series) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 relative z-20">
+        <h2 className="text-3xl font-bold mb-8 text-white flex items-center gap-3">
+          <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+          Fasllar va Qismlar
+        </h2>
         
         {!series.seasons || series.seasons.length === 0 ? (
-          <div className="bg-surface/50 rounded-xl p-8 text-center text-gray-400">
+          <div className="bg-surface/50 rounded-2xl p-10 text-center text-gray-400 border border-white/5">
             Hozircha qismlar yuklanmagan.
           </div>
         ) : (
@@ -130,26 +249,23 @@ export default async function SeriesDetailsPage({ params }: Props) {
             {series.seasons
               .sort((a: Season, b: Season) => a.season_number - b.season_number)
               .map((season: Season) => (
-              <div key={season.id} className="bg-surface rounded-xl overflow-hidden ring-1 ring-white/5 relative">
-                {/* Timeline connector (optional decorative line) */}
-                <div className="hidden md:block absolute left-8 top-0 bottom-0 w-px bg-white/5 z-0"></div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row gap-6 p-6">
+              <div key={season.id} className="bg-surface/80 backdrop-blur-md rounded-2xl overflow-hidden ring-1 ring-white/10 hover:ring-white/20 transition-all">
+                <div className="flex flex-col md:flex-row gap-6 lg:gap-8 p-6 lg:p-8">
                   {/* Season Poster */}
-                  <div className="w-full md:w-48 aspect-[2/3] relative flex-shrink-0 bg-background/50 rounded-lg overflow-hidden shadow-lg border border-white/5">
+                  <div className="w-full md:w-56 aspect-[2/3] relative flex-shrink-0 bg-background/50 rounded-xl overflow-hidden shadow-2xl border border-white/10">
                     {season.poster_url ? (
                       <Image 
                         src={season.poster_url} 
                         alt={`${season.season_number}-fasl`}
                         fill
-                        className="object-cover"
+                        className="object-cover hover:scale-105 transition-transform duration-500"
                       />
                     ) : series.poster_url ? (
                       <Image 
                         src={series.poster_url} 
                         alt="Fasl"
                         fill
-                        className="object-cover opacity-30 grayscale blur-[2px]"
+                        className="object-cover opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
@@ -160,56 +276,60 @@ export default async function SeriesDetailsPage({ params }: Props) {
                   
                   {/* Season Content */}
                   <div className="flex-grow flex flex-col">
-                    <div className="mb-6">
-                      <h3 className="text-2xl font-bold flex items-center gap-3">
-                        <span className="bg-white/10 px-3 py-1 rounded-md text-primary text-xl">
+                    <div className="mb-6 border-b border-white/10 pb-6">
+                      <h3 className="text-3xl font-display font-bold flex items-center gap-3 text-white">
+                        <span className="bg-primary/20 text-primary px-3 py-1 rounded-lg text-2xl font-black">
                           {season.season_number}-Fasl
                         </span>
                         {season.title && <span>{season.title}</span>}
                       </h3>
                       {season.episode_count && (
-                        <p className="text-gray-400 mt-2 text-sm font-medium">
-                          Mavsumda jami: <span className="text-white">{season.episode_count} ta qism</span>
+                        <p className="text-gray-400 mt-2 text-sm font-medium uppercase tracking-wider">
+                          Jami: <span className="text-white">{season.episode_count} qism</span>
                         </p>
                       )}
                       {season.description && (
-                        <p className="text-gray-400 mt-4 leading-relaxed text-sm">
+                        <p className="text-gray-300 mt-4 leading-relaxed text-base max-w-3xl">
                           {season.description}
                         </p>
                       )}
                     </div>
                     
                     {/* Episodes Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-auto">
                       {!season.episodes || season.episodes.length === 0 ? (
-                        <div className="col-span-full text-gray-500 text-sm py-2">
+                        <div className="col-span-full text-gray-500 py-4">
                           Bu faslga qismlar qo'shilmagan.
                         </div>
                       ) : (
                         season.episodes
                           .sort((a, b) => a.episode_number - b.episode_number)
                           .map((episode) => {
-                          const telegramDeepLink = `https://t.me/${botUsername}?start=${episode.code}`;
+                          const episodeLink = `https://t.me/${botUsername}?start=${episode.code}`;
                           return (
                             <a 
-                              href={telegramDeepLink}
+                              href={episodeLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               key={episode.id} 
-                              className="bg-primary hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/30 hover:scale-105 w-full"
+                              className="bg-background hover:bg-white/10 border border-white/5 hover:border-white/20 text-white p-4 rounded-xl transition-all flex items-center gap-4 group"
                             >
-                              <svg className="w-5 h-5 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                              <span className="truncate">
-                                {episode.episode_number}-qism
+                              <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-primary flex items-center justify-center transition-colors flex-shrink-0">
+                                <svg className="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-base truncate group-hover:text-primary transition-colors">
+                                  {episode.episode_number}-qism
+                                </h4>
                                 {episode.title && episode.title !== `${episode.episode_number}-qism` && (
-                                  <span className="ml-1 opacity-80 font-normal">- {episode.title}</span>
+                                  <p className="text-xs text-gray-400 truncate mt-0.5">{episode.title}</p>
                                 )}
-                              </span>
+                              </div>
                               {episode.duration && (
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded opacity-80">
-                                  {episode.duration} daqiqa
+                                <span className="text-xs text-gray-500 font-medium bg-black/50 px-2 py-1 rounded">
+                                  {episode.duration}m
                                 </span>
                               )}
                             </a>
@@ -224,6 +344,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
           </div>
         )}
       </div>
+      
     </div>
   );
 }
