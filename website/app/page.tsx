@@ -122,7 +122,7 @@ export default async function Home() {
               className="object-cover opacity-60"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-30 grayscale mix-blend-luminosity"></div>
           )}
           {/* Smooth Dark Gradients */}
           <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/70 to-transparent"></div>
