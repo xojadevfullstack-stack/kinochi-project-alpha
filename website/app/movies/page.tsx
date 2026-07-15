@@ -44,7 +44,7 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter">
+    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian">
       <div className="max-w-container-max mx-auto">
         
         {/* Header & Categories */}

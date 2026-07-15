@@ -60,8 +60,8 @@ export default async function MovieDetailsPage({ params }: Props) {
             <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
            )}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/70 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/40 to-transparent hidden md:block"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block"></div>
         
         {/* Content Container */}
         <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-margin-desktop">

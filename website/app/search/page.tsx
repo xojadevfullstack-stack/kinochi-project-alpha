@@ -48,7 +48,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter">
+    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian">
       <div className="max-w-7xl mx-auto">
         
         <div className="mb-8">
@@ -100,7 +100,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                     </div>
                   )}
                   
-                  <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90 transition-opacity"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.55] to-transparent opacity-90 transition-opacity"></div>
                   
                   <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
                     <h3 className="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">{item.title}</h3>

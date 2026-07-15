@@ -68,7 +68,7 @@ const MovieRow = ({ title, items, isSeries = false }: { title: string, items: an
               </div>
             )}
             
-            <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90 transition-opacity"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.55] to-transparent opacity-90 transition-opacity"></div>
             
             <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
               <h3 className="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">{item.title}</h3>
@@ -125,8 +125,8 @@ export default async function Home() {
             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-30 grayscale mix-blend-luminosity"></div>
           )}
           {/* Smooth Dark Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/70 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/50 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.65] to-transparent"></div>
         </div>
 
         <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full">
