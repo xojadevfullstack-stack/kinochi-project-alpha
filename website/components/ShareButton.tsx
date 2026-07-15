@@ -12,6 +12,16 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
+    const fallbackCopy = async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Error copying to clipboard:", err);
+      }
+    };
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -21,16 +31,10 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
         });
       } catch (error) {
         console.error("Error sharing:", error);
+        await fallbackCopy();
       }
     } else {
-      // Fallback: Copy to clipboard
-      try {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (error) {
-        console.error("Error copying to clipboard:", error);
-      }
+      await fallbackCopy();
     }
   };
 

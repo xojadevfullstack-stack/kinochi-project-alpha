@@ -116,7 +116,19 @@ export default function Navbar() {
         mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       }`}>
         <div className="flex flex-col items-center justify-center h-full gap-8 px-6">
-          {/* Mobile Search - Removed to avoid duplication, user can use header icon (will add if requested) */}          {navLinks.map((link) => {
+          {/* Mobile Search */}
+          <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-white/30 transition-all">
+            <span className="material-symbols-outlined text-text-secondary mr-3 text-[24px]">search</span>
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-text-primary text-lg w-full outline-none placeholder:text-text-secondary" 
+              placeholder="Qidirish..." 
+            />
+          </form>
+
+          {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
             return (
               <Link

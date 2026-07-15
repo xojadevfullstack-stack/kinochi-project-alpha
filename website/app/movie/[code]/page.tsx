@@ -15,10 +15,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const movie = await fetchApi(`/movies/code/${params.code}`);
     
     return {
-      title: `${movie.title} - Kinochi Premium`,
+      title: `${movie.title} - Kinochi`,
       description: movie.description || `${movie.title} filmini bepul tomosha qiling.`,
       openGraph: {
-        title: `${movie.title} - Kinochi Premium`,
+        title: `${movie.title} - Kinochi`,
         description: movie.description || `${movie.title} filmini bepul tomosha qiling.`,
         url: `https://kinochi.uz/movie/${params.code}`,
         images: movie.poster_url ? [
@@ -99,8 +99,8 @@ export default async function MovieDetailsPage({ params }: Props) {
                 <span>{movie.imdb_rating || movie.tmdb_rating || "N/A"}</span>
               </div>
               <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{movie.release_year || "2024"}</span>
-              <span className="text-text-primary font-bold bg-white/10 px-3 py-1.5 rounded border border-white/20">{movie.original_title ? "Original: " + movie.original_title : "4K HDR"}</span>
-              <span className="text-text-primary bg-white/5 px-3 py-1.5 rounded border border-white/5 hover:bg-white/10 transition-colors cursor-pointer">{movie.genres?.split(',')[0] || "KINO"}</span>
+              <span className="text-text-primary bg-white/10 px-3 py-1.5 rounded font-bold border border-white/10">KINO</span>
+              <span className="text-white bg-primary-container px-3 py-1.5 rounded font-bold border border-primary-container">YANGI</span>
             </div>
             
             {/* Description */}

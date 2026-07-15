@@ -35,10 +35,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const series = await fetchApi(`/series/${params.id}`);
     
     return {
-      title: `${series.title} - Kinochi Premium`,
+      title: `${series.title} - Kinochi`,
       description: series.description || `${series.title} serialini bepul tomosha qiling.`,
       openGraph: {
-        title: `${series.title} - Kinochi Premium`,
+        title: `${series.title} - Kinochi`,
         description: series.description || `${series.title} serialini bepul tomosha qiling.`,
         url: `https://kinochi.uz/series/${params.id}`,
         images: series.poster_url ? [
@@ -120,8 +120,8 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 <span>{series.imdb_rating || "N/A"}</span>
               </div>
               <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{series.release_year || "Yil no'malum"}</span>
-              <span className="text-text-primary font-bold bg-white/10 px-3 py-1.5 rounded border border-white/20">PREMIUM</span>
-              <span className="text-text-primary bg-white/5 px-3 py-1.5 rounded border border-white/5 hover:bg-white/10 transition-colors cursor-pointer">{series.categories?.[0]?.name || "SERIAL"}</span>
+              <span className="text-text-primary bg-white/10 px-3 py-1.5 rounded font-bold border border-white/10">SERIAL</span>
+              <span className="text-white bg-primary-container px-3 py-1.5 rounded font-bold border border-primary-container">YANGI</span>
             </div>
             
             {/* Description */}

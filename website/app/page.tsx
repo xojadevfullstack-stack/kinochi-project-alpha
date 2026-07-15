@@ -166,8 +166,8 @@ export default async function Home() {
                   <span>{heroItem.imdb_rating || heroItem.tmdb_rating || "N/A"}</span>
                 </div>
                 <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{heroItem.release_year || "2024"}</span>
-                <span className="text-text-primary font-bold bg-white/10 px-3 py-1.5 rounded border border-white/20">PREMIUM</span>
-                <span className="text-text-primary bg-white/5 px-3 py-1.5 rounded border border-white/5">{isHeroSeries ? "SERIAL" : "KINO"}</span>
+                <span className="text-text-primary bg-white/10 px-3 py-1.5 rounded font-bold border border-white/10">{isHeroSeries ? "SERIAL" : "KINO"}</span>
+                <span className="text-white bg-primary-container px-3 py-1.5 rounded font-bold border border-primary-container">YANGI</span>
               </div>
               
               {/* Description */}
@@ -200,7 +200,7 @@ export default async function Home() {
       )}
 
       {/* Horizontal Scrolling Rows */}
-      <div className="space-y-margin-desktop py-margin-desktop -mt-20 relative z-20">
+      <div className="space-y-margin-desktop py-margin-desktop relative z-20 bg-background-obsidian">
         <MovieRow title="Yangi kinolar" items={latestMovies} />
         <MovieRow title="So'nggi seriallar" items={latestSeries} isSeries={true} />
         

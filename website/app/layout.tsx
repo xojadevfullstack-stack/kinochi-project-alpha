@@ -9,10 +9,10 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: '--font-space
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: '--font-jetbrains-mono' });
 
 export const metadata: Metadata = {
-  title: "Kinochi - Premium Cinema",
-  description: "Kinochi Telegram boti orqali eng sara kinolarni tomosha qiling.",
+  title: "Kinochi - Eng so'nggi kinolar va seriallar",
+  description: "Telegram tarmog'idagi eng katta va qulay kino bazasi",
   openGraph: {
-    title: "Kinochi - Premium Cinema",
+    title: "Kinochi - Eng so'nggi kinolar va seriallar",
     description: "Kinochi Telegram boti orqali eng sara kinolarni bepul tomosha qiling. Eng katta kino katalogi.",
     url: "https://kinochi.uz",
     siteName: "Kinochi",

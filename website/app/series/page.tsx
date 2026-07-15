@@ -6,8 +6,8 @@ import { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Seriallar - Kinochi Premium",
-  description: "Eng sara va so'nggi seriallarni bepul tomosha qiling.",
+  title: "Seriallar - Kinochi",
+  description: "Eng so'nggi va qiziqarli seriallarni tomosha qiling.",
 };
 
 type Series = {
