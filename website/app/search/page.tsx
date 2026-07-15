@@ -84,7 +84,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                 <Link 
                   href={linkUrl} 
                   key={key} 
-                  className="aspect-[2/3] relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]"
+                  className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
                 >
                   {item.poster_url ? (
                     <Image 
@@ -95,22 +95,24 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                       className="object-cover"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-surface-container-high flex items-center justify-center border border-white/5">
-                      <span className="material-symbols-outlined text-4xl text-white/20">movie</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-high text-gray-500 border border-white/5">
+                      <span className="material-symbols-outlined text-4xl mb-2 opacity-30">movie</span>
                     </div>
                   )}
                   
-                  <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.55] to-transparent opacity-90 transition-opacity"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
                   
-                  <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
-                    <h3 className="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">{item.title}</h3>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-text-secondary text-sm">{item.release_year || ""}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-rating-gold text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                        <span className="text-text-primary text-sm font-bold">{rating}</span>
-                      </div>
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-rating-gold flex items-center gap-1 border border-white/10">
+                    <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    <span className="font-label-caps text-xs font-bold">{rating}</span>
+                  </div>
+                  
+                  <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                    <div className="flex gap-1 mb-1">
+                      <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{isSeries ? item.categories?.[0]?.name || "Serial" : item.genres?.split(',')[0] || "Kino"}</span>
+                      {item.release_year && <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{item.release_year}</span>}
                     </div>
+                    <h3 className="font-body-lg text-text-primary font-bold line-clamp-2 drop-shadow-md">{item.title}</h3>
                   </div>
                 </Link>
               );
