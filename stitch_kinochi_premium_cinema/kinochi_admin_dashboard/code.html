@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kinochi Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;family=Outfit:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#b7b4b7",
+                        "on-secondary": "#303032",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "on-tertiary-fixed": "#001b3c",
+                        "rating-gold": "#F5C518",
+                        "tertiary-fixed-dim": "#a7c8ff",
+                        "surface-container-low": "#2a1614",
+                        "on-primary": "#690003",
+                        "surface-bright": "#4a3330",
+                        "outline-variant": "#5e3f3b",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#462f2c",
+                        "surface-container-high": "#3a2522",
+                        "surface-tint": "#ffb4aa",
+                        "secondary-fixed": "#e5e1e4",
+                        "on-surface": "#ffdad5",
+                        "tertiary-container": "#0072d7",
+                        "background": "#200e0c",
+                        "surface-dim": "#200e0c",
+                        "primary": "#ffb4aa",
+                        "on-tertiary-fixed-variant": "#004689",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "outline": "#af8782",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "background-obsidian": "#09090B",
+                        "secondary": "#c8c6c8",
+                        "primary-container": "#e50914",
+                        "on-surface-variant": "#e9bcb6",
+                        "on-primary-fixed": "#410001",
+                        "on-secondary-fixed-variant": "#474649",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#a7c8ff",
+                        "inverse-primary": "#c0000c",
+                        "inverse-on-surface": "#412b28",
+                        "on-primary-container": "#fff7f6",
+                        "surface-container-lowest": "#1a0908",
+                        "surface-container": "#2e1a18",
+                        "primary-fixed": "#ffdad5",
+                        "inverse-surface": "#ffdad5",
+                        "on-tertiary-container": "#f8f9ff",
+                        "surface-container-highest": "#462f2c",
+                        "secondary-container": "#474649",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "text-secondary": "#A1A1AA",
+                        "text-primary": "#FFFFFF",
+                        "on-primary-fixed-variant": "#930007",
+                        "on-background": "#ffdad5",
+                        "tertiary-fixed": "#d5e3ff",
+                        "on-tertiary": "#003061",
+                        "surface": "#200e0c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "container-max": "1440px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "margin-desktop": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Outfit"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Outfit"],
+                        "body-md": ["Inter"],
+                        "display-hero": ["Outfit"],
+                        "display-hero-mobile": ["Outfit"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.15em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "display-hero": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900" }],
+                        "display-hero-mobile": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            backdrop-filter: blur(16px);
+            background-color: rgba(26, 9, 8, 0.6); /* surface-container-lowest with opacity */
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .metric-card {
+            background: linear-gradient(145deg, rgba(46, 26, 24, 0.8) 0%, rgba(26, 9, 8, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(229, 9, 20, 0.3); /* primary-container */
+            box-shadow: 0 8px 32px rgba(229, 9, 20, 0.15);
+        }
+
+        .data-table-row {
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .data-table-row:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background-obsidian text-text-primary min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="h-screen w-[280px] fixed left-0 top-0 bg-surface-container-lowest border-r border-white/5 flex flex-col z-40">
+<!-- Brand / Header -->
+<div class="p-gutter border-b border-white/5 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A cinematic, high-contrast avatar portrait of an admin user in a dark studio setting. The lighting is dramatic, with subtle neon red rim light highlighting the silhouette against a deep obsidian background, matching a premium streaming service aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsisKAJX9eoG_xe5wKo3oHeFrIFj5Ek2l_f0t0CpJ0US9y0gtPE1qgyi4Ds-poK57etEwJKVvfZLBq6zSXNnfPKD95S8avFuLYR5aKkAPM7Y5GwIw2REH3sIFLNXgAJ2VOvaW3YsVsJGGiy2YtVhGfOWCkLG5lKMPjOz81SM7CE4XHUuffd3lhXod94rbQFzXIyR9VhsII3jQL9kfV1c9ROGkrRlv-buBRCgz9B3TvwU43RtSQOZ2kNITOH8qMAtmFNFv0gCaLQfk"/>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-primary-container">Kinochi Admin</h1>
+<p class="font-label-caps text-label-caps text-text-secondary mt-1">System Controller</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 py-stack-md overflow-y-auto">
+<ul class="space-y-2">
+<!-- Active Item -->
+<li>
+<a class="flex items-center gap-4 bg-primary-container/10 text-primary-container border-l-4 border-primary-container p-4 font-label-caps text-label-caps active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span>Dashboard</span>
+</a>
+</li>
+<!-- Inactive Items -->
+<li>
+<a class="flex items-center gap-4 text-on-secondary-container p-4 hover:bg-white/5 hover:text-text-primary transition-all font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-secondary-container p-4 hover:bg-white/5 hover:text-text-primary transition-all font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined">movie</span>
+<span>Content Library</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-secondary-container p-4 hover:bg-white/5 hover:text-text-primary transition-all font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Users</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-secondary-container p-4 hover:bg-white/5 hover:text-text-primary transition-all font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- CTA -->
+<div class="p-gutter border-t border-white/5">
+<button class="w-full bg-primary-container text-on-primary-container font-label-caps text-label-caps py-3 rounded-full hover:scale-105 transition-all duration-300 ease-out shadow-lg shadow-primary-container/20 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                Add Content
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[280px] flex-1 min-h-screen p-margin-desktop bg-background-obsidian relative">
+<!-- Subtle Background Glow -->
+<div class="absolute top-0 left-1/4 w-[800px] h-[400px] bg-primary-container/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+<!-- Header -->
+<header class="flex justify-between items-end mb-stack-lg">
+<div>
+<h2 class="font-display-hero-mobile text-display-hero-mobile text-text-primary tracking-tighter">Overview</h2>
+<p class="font-body-lg text-body-lg text-text-secondary mt-2">Welcome back, System Controller.</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="glass-panel px-4 py-2 rounded-full flex items-center gap-2 text-text-secondary">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span class="font-body-md text-body-md text-sm">Oct 24, 2024</span>
+</div>
+</div>
+</header>
+<!-- Metrics Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<!-- Metric 1 -->
+<div class="metric-card p-gutter rounded-xl flex flex-col justify-between">
+<div class="flex justify-between items-start mb-stack-md">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+</div>
+<span class="text-tertiary-container flex items-center font-label-caps text-label-caps text-xs">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> 12%
+                    </span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-text-secondary mb-1">Total Users</p>
+<h3 class="font-headline-lg text-headline-lg text-text-primary">2.4M</h3>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="metric-card p-gutter rounded-xl flex flex-col justify-between">
+<div class="flex justify-between items-start mb-stack-md">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">movie</span>
+</div>
+<span class="text-tertiary-container flex items-center font-label-caps text-label-caps text-xs">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> 5%
+                    </span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-text-secondary mb-1">Total Movies</p>
+<h3 class="font-headline-lg text-headline-lg text-text-primary">8,432</h3>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="metric-card p-gutter rounded-xl flex flex-col justify-between">
+<div class="flex justify-between items-start mb-stack-md">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">tv</span>
+</div>
+<span class="text-on-secondary-container flex items-center font-label-caps text-label-caps text-xs">
+<span class="material-symbols-outlined text-[16px]">horizontal_rule</span> 0%
+                    </span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-text-secondary mb-1">Total Series</p>
+<h3 class="font-headline-lg text-headline-lg text-text-primary">1,204</h3>
+</div>
+</div>
+</section>
+<!-- Data Table Section -->
+<section class="glass-panel rounded-xl overflow-hidden shadow-2xl">
+<div class="p-gutter border-b border-white/5 flex justify-between items-center bg-surface-container-lowest/80">
+<h3 class="font-headline-md text-headline-md text-text-primary">Recent Uploads</h3>
+<button class="text-text-secondary hover:text-primary-container transition-colors font-label-caps text-label-caps flex items-center gap-1">
+                    View All <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest/50 border-b border-white/10">
+<th class="p-4 font-label-caps text-label-caps text-text-secondary font-medium">Title</th>
+<th class="p-4 font-label-caps text-label-caps text-text-secondary font-medium">Type</th>
+<th class="p-4 font-label-caps text-label-caps text-text-secondary font-medium">Status</th>
+<th class="p-4 font-label-caps text-label-caps text-text-secondary font-medium">Date</th>
+<th class="p-4 font-label-caps text-label-caps text-text-secondary font-medium text-right">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<!-- Row 1 -->
+<tr class="data-table-row">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-14 bg-surface-container-highest rounded overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A highly detailed cinematic poster for a neo-noir sci-fi thriller. The artwork features a brooding detective silhouetted against a neon-drenched futuristic cityscape in deep blues and striking reds, perfectly matching a premium streaming service visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdhd23yUJiQLiylw5M4INBBHUlaJ4IuoqNbthJjpghIl2XX4fDJz-UjNUjO95_IvMej8kwvDSeeUjV-lrP34HvNWOe_gKneuExUrYR1Xiy98ug2OQdqhaERR6YgTbGrNiWunCtLOOJVh7VSrbjbl6lz09TC2rKFKSWxg7--b8TuUy7lYwC7DU89vrQd5lzNHR8ga-Zxn5_aohOQtFC78hG8z11uWQsdl7YiUDO5xATn4V_KDyKWvKirUZgQ37ehFRG5gL6Iz-OUTU"/>
+</div>
+<span class="text-text-primary font-medium">Neon Shadows</span>
+</div>
+</td>
+<td class="p-4 text-text-secondary">Movie</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-tertiary-container/20 text-tertiary-container rounded text-xs font-label-caps text-label-caps">PUBLISHED</span>
+</td>
+<td class="p-4 text-text-secondary text-sm">Oct 24, 2024</td>
+<td class="p-4 text-right">
+<button class="text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="data-table-row">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-14 bg-surface-container-highest rounded overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A high-end cinematic poster for an intense historical drama series. The image shows a regal, shadowy figure seated on an ornate throne in a dimly lit, atmospheric hall with dramatic shafts of light illuminating floating dust motes, stylized for a premium dark mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr267LmYz-tNVR9RAECsm8SVGGfyU56yIFmgKbfuAC5Ay7X_DTnnq_klTa4iW10xHwuXyTX9gMwQbBz-uqSyGETVfLaVC9gcLvs2LeIIeeS78qFERFeeg56deinhz1wGVjdgq6olnsP0W1v8x39xTM8g5-UoybuW4Eo04kWvWNY3e5QYXdnpnCfQ9ywCPgXq3W4_XcX2vN5nelHq82a0Ezmu5OLAiykelv5ZodprWQcrl7ooh9VvSrTgMsQSBPiysC9sWQz98znNg"/>
+</div>
+<span class="text-text-primary font-medium">The Crown's Shadow</span>
+</div>
+</td>
+<td class="p-4 text-text-secondary">Series</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-rating-gold/20 text-rating-gold rounded text-xs font-label-caps text-label-caps">PROCESSING</span>
+</td>
+<td class="p-4 text-text-secondary text-sm">Oct 23, 2024</td>
+<td class="p-4 text-right">
+<button class="text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="data-table-row">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-14 bg-surface-container-highest rounded overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A stunning cinematic poster for an atmospheric horror film. The visual features a desolate, fog-covered cabin in deep forest green and obsidian blacks, with a single menacing, glowing red eye visible in the darkness, designed for a high-contrast streaming platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJUHM44j81JazT3jrV8dHkDLrmcUgA6N63AFFr7gh-WuWJovdPKoVlG8p-7uuzhpT2GlRTMQzA2cKUWI8SoU37mXq8kiAwHNGzw2rLPVHCLlRdbDOg6yjsHyB70pvtfmn1LzGjoPlzNpvD3Uk01r9HIRsjqiyfKqmwddS2bLlqNz8IK-9CnuDHv4VvXZkiJYifVo3zGpUW-1vJeSl1W95FWBaKMbvDQEYt_oNCYmb1QzXw-nPrFIS6eKblSHtxdKNyPdnlDXKPIjg"/>
+</div>
+<span class="text-text-primary font-medium">Whispers in the Dark</span>
+</div>
+</td>
+<td class="p-4 text-text-secondary">Movie</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-surface-container-highest text-text-secondary rounded text-xs font-label-caps text-label-caps">DRAFT</span>
+</td>
+<td class="p-4 text-text-secondary text-sm">Oct 21, 2024</td>
+<td class="p-4 text-right">
+<button class="text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>

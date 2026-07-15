@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barcha Filmlar - Kinochi</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Outfit:wght@700;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .glass {
+                @apply bg-white/5 backdrop-blur-md border border-white/10;
+            }
+            .text-glow {
+                text-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
+            }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#3a2522",
+                        "on-surface": "#ffdad5",
+                        "surface-tint": "#ffb4aa",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "on-surface-variant": "#e9bcb6",
+                        "on-tertiary": "#003061",
+                        "tertiary-fixed-dim": "#a7c8ff",
+                        "on-tertiary-fixed-variant": "#004689",
+                        "error-container": "#93000a",
+                        "outline": "#af8782",
+                        "tertiary-container": "#0072d7",
+                        "on-secondary": "#303032",
+                        "on-error": "#690005",
+                        "on-primary-fixed": "#410001",
+                        "on-primary-container": "#fff7f6",
+                        "surface-container-lowest": "#1a0908",
+                        "on-tertiary-fixed": "#001b3c",
+                        "background": "#200e0c",
+                        "surface-container-low": "#2a1614",
+                        "surface-container": "#2e1a18",
+                        "secondary-container": "#474649",
+                        "tertiary-fixed": "#d5e3ff",
+                        "inverse-primary": "#c0000c",
+                        "background-obsidian": "#09090B",
+                        "inverse-surface": "#ffdad5",
+                        "on-secondary-container": "#b7b4b7",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "on-secondary-fixed-variant": "#474649",
+                        "inverse-on-surface": "#412b28",
+                        "on-tertiary-container": "#f8f9ff",
+                        "on-background": "#ffdad5",
+                        "surface": "#200e0c",
+                        "text-secondary": "#A1A1AA",
+                        "text-primary": "#FFFFFF",
+                        "primary-container": "#e50914",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#930007",
+                        "primary": "#ffb4aa",
+                        "secondary": "#c8c6c8",
+                        "outline-variant": "#5e3f3b",
+                        "error": "#ffb4ab",
+                        "tertiary": "#a7c8ff",
+                        "surface-bright": "#4a3330",
+                        "rating-gold": "#F5C518",
+                        "secondary-fixed": "#e5e1e4",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "surface-dim": "#200e0c",
+                        "surface-container-highest": "#462f2c",
+                        "surface-variant": "#462f2c",
+                        "primary-fixed": "#ffdad5",
+                        "on-primary": "#690003"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1440px",
+                        "margin-desktop": "48px",
+                        "stack-md": "16px",
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Outfit"],
+                        "body-md": ["Inter"],
+                        "display-hero-mobile": ["Outfit"],
+                        "display-hero": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "headline-lg": ["Outfit"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "display-hero-mobile": ["40px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+                        "display-hero": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.15em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background-obsidian text-text-primary font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-background-obsidian/80 backdrop-blur-lg border-b border-white/10 shadow-2xl shadow-primary-container/20 transition-all duration-300 ease-out">
+<div class="flex justify-between items-center px-gutter py-4 w-full max-w-container-max mx-auto">
+<div class="font-display-hero-mobile text-display-hero-mobile text-primary-container tracking-tighter">
+                Kinochi
+            </div>
+<nav class="hidden md:flex gap-8">
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 font-body-md text-body-md" href="#">Home</a>
+<a class="text-primary-container font-bold border-b-2 border-primary-container pb-1 font-body-md text-body-md" href="#">Movies</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 font-body-md text-body-md" href="#">Series</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 font-body-md text-body-md" href="#">New</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 font-body-md text-body-md" href="#">My List</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-white/10 rounded-full py-2 pl-4 pr-10 text-text-primary placeholder:text-text-secondary border-none focus:ring-1 focus:ring-primary-container transition-all" placeholder="Search..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" data-icon="search">search</span>
+</div>
+<button class="text-on-secondary-container hover:text-text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<img alt="User profile" class="w-10 h-10 rounded-full object-cover border border-white/20" data-alt="A cinematic close-up portrait of a user profile picture, softly lit with neon red and deep blue accents against a dark obsidian background, conveying a high-end streaming service aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb8OaE6bMarXh3ZVaYW5B9Nz4qvqDdmSng7jQ7S02_vpFXgRtiGtGeycCr768NUJDC2nvv6KxUiyiyaz2AyNytkxWExyByVAZ9QL0pgnvrTeQGS_alejz9fKfbxpJVBh_wi1BpUFqoWumh7wyFcrLmVl445BmPCvHJbR9ByScq3IWxJXrZNqxskYr6z2UHVy3UVZdPDg2eWR95sXirLn3K-kGL-Io6niSGTqH7_xpAifARwIMo8lXGY_yP6-EZ07HH4exI8JcZk-w"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow pt-[100px] pb-margin-desktop px-gutter max-w-container-max mx-auto w-full">
+<!-- Header & Filters -->
+<div class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-display-hero text-display-hero-mobile md:text-display-hero mb-2">Barcha Filmlar</h1>
+<p class="text-text-secondary font-body-lg text-body-lg">Explore our vast collection of cinematic masterpieces.</p>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-4 py-2 rounded-full bg-primary-container text-on-primary-container font-label-caps text-label-caps whitespace-nowrap shadow-[0_0_15px_rgba(229,9,20,0.5)]">All</button>
+<button class="px-4 py-2 rounded-full glass text-text-secondary hover:text-text-primary font-label-caps text-label-caps whitespace-nowrap transition-colors">Action</button>
+<button class="px-4 py-2 rounded-full glass text-text-secondary hover:text-text-primary font-label-caps text-label-caps whitespace-nowrap transition-colors">Drama</button>
+<button class="px-4 py-2 rounded-full glass text-text-secondary hover:text-text-primary font-label-caps text-label-caps whitespace-nowrap transition-colors">Sci-Fi</button>
+<button class="px-4 py-2 rounded-full glass text-text-secondary hover:text-text-primary font-label-caps text-label-caps whitespace-nowrap transition-colors">Comedy</button>
+</div>
+</div>
+<!-- Movie Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+<!-- Card 1 -->
+<div class="group relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full" data-alt="A dramatic cinematic movie poster featuring a lone astronaut walking on a desolate, dark red alien landscape under a starry obsidian sky. High contrast, atmospheric lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAOiAe3faxaL4qgpFBN2Qig_dvWBb8Ebp1zV9YtK9Df1caoBgGS9zqjzFJ8FNhVH0KDhsIDX_GaKmFXzZvQdfPx65hI6_K_9UP2YiE7ZxkaoLrRUcDmTQMmZd6YnnUEH07OWYAXZ-Lgsh5-XVtCN6pFaak8iEa0qWsXT3dhnv7ypDaMRgcubDCllvjfChzuLKOaSJz3zVHZyHEHI_bQNrHveDK_5kDYU_fgOxZRWq__f1xh8GeveXH_jfrxIvrGHESHSro8Sgkz24o')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded font-label-caps text-label-caps text-rating-gold flex items-center gap-1 border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                    8.5
+                </div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+<div class="flex gap-1 mb-1">
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Sci-Fi</span>
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">4K</span>
+</div>
+<h3 class="font-headline-md text-[18px] leading-tight text-white mb-1 group-hover:text-primary-fixed-dim transition-colors">Stellar Echoes</h3>
+<p class="text-text-secondary text-[12px]">2023</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full" data-alt="A gritty urban action movie poster showing a silhouetted figure standing in a neon-lit, rain-slicked cyberpunk alleyway. Deep blacks contrasting with vivid red and blue neon lights." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5BsdtSgNUHtasxnJEHL6jPcJW20tsrafcwqjvAGUaN_O0dF28MWm6Ljt8b8TOV2GLSOv8ueMGgUkK-NPfzSwFzNxSiFoctKMWOKq4C2bdE07EZP29kKTaFug5jwFaABk4QHDyhzjUfzzsUilQ1Ik8a9ue7R5_t9ZM7Mo7eFs6rm91owe4EDWileelF03Wkz59SsgeMrLtZwkNLDP0-my8nJAd3Gyb8fNc_ban_yWLG-8IHssvpcf0HkAW_LgZGuAawKadoBUKcIE')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded font-label-caps text-label-caps text-rating-gold flex items-center gap-1 border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                    7.2
+                </div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+<div class="flex gap-1 mb-1">
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Action</span>
+</div>
+<h3 class="font-headline-md text-[18px] leading-tight text-white mb-1 group-hover:text-primary-fixed-dim transition-colors">Neon Protocol</h3>
+<p class="text-text-secondary text-[12px]">2024</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full" data-alt="A moody drama movie poster depicting a close-up profile of a woman looking pensively out a rain-streaked window. Soft, cold blue lighting against a dark background, evoking melancholy." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBB3dxsJ8d-KDrvGxusYjwX91npz8zIHSXZ4dBTiYsCdsN5ffq65OS1rzc9W4eyWalkiNeCfuHS74HxBJ6q8WNxUN7yVkHyI5qbIkbR4oFX6jQjpfxDYJJC-sOiGavw6FC5iLYjtoRfYx4jWWevV8rO1YcNznRHpPRJNUjV7PAktl614fz9-fv-sOgEvMakLqo5m24osxO4yGlFZs0jJZqh1jCSzdxZodeTXiUgRtfmxbOQs92Dm2GAgd329GJE5SbbiLRUUM1bnr0')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded font-label-caps text-label-caps text-rating-gold flex items-center gap-1 border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                    9.1
+                </div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+<div class="flex gap-1 mb-1">
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Drama</span>
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">HD</span>
+</div>
+<h3 class="font-headline-md text-[18px] leading-tight text-white mb-1 group-hover:text-primary-fixed-dim transition-colors">Silent Tears</h3>
+<p class="text-text-secondary text-[12px]">2022</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full" data-alt="An intense thriller movie poster featuring a cracked mirror reflecting a shadowed face. High contrast black and white with a single streak of bright red blood. Suspenseful atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC2n3nArKDqOJDAS6HuZYzu2FOLv3_UZEqIvT84bypM_WEXWrQr2asaXJm7RdlburgE3cD7b--N_NpdEayCkD1ScnMdDiPwlNner_LdtjL1U3Is0T8huXhdkeOgmu3hM_B9gchcumXyI74Mmw_p1HwUvACRC9boYkXxeF7UFu_9qIF7QWkWWrByIE0AdY-UVr0H3q4Ki4qSwZobV61FglB-Uzl5GaDSdkn8p0q7H-0Tuf36k_SHFl0B_wrWL6U0Q1gjdAjVzZ6ATbU')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded font-label-caps text-label-caps text-rating-gold flex items-center gap-1 border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                    6.8
+                </div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+<div class="flex gap-1 mb-1">
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Thriller</span>
+</div>
+<h3 class="font-headline-md text-[18px] leading-tight text-white mb-1 group-hover:text-primary-fixed-dim transition-colors">Shattered</h3>
+<p class="text-text-secondary text-[12px]">2023</p>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="group relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full" data-alt="A visually stunning fantasy movie poster showing a glowing magical artifact resting on a dark obsidian pedestal. Deep purples and radiant reds illuminate the dark cinematic scene." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvJvLF5DDZlyflsyXqQzx4AfL7oQdQtVY2KyrLA3XqclnDPaWjJcco3xuKiQXZeXvpNTG94_gLnWp75zN_dw_zBRG7TSN95uOASQLkeWBDuN4TsD1K92MSpHObNr7RRNOFWKIT-hINoDCeNVG-DDQcts5uaflgRQRCUSPAN6CXEWV5hKm2nN7gqImbbsLukEJnk0-7iKo_OAIKZyX7ebIpWQk_ZGD6wEWEWXFiX5RBox8yv9zKYdVI9DwbQoDJzP8cc3PnTc847ZE')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded font-label-caps text-label-caps text-rating-gold flex items-center gap-1 border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                    8.0
+                </div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+<div class="flex gap-1 mb-1">
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Fantasy</span>
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">4K</span>
+</div>
+<h3 class="font-headline-md text-[18px] leading-tight text-white mb-1 group-hover:text-primary-fixed-dim transition-colors">The Crimson Relic</h3>
+<p class="text-text-secondary text-[12px]">2024</p>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="group relative aspect-[2/3] rounded-lg overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)]">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full" data-alt="A fast-paced sci-fi movie poster featuring a sleek, futuristic vehicle speeding through a dark, brutalist city landscape. Motion blur and bright red taillights cutting through the darkness." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDPK9C53kIYDXpf85VQbZTaQkX8blvgzkzfcfvZ9xFAcmaO4wICN7vfoSm8WRpBuxv0m99_IqoeTnB5yfdNqCwEjsQ3EZeX8ethqAnPfFar0E1wmu4XeyEz0SYWP0zf7YhwRZs3rab3h2u4-Fpsjl3p1v0nvBsjEGt2dqRWGGRBZf061hKEOY5XUD6CTrF61_EMorI2icNdVLmNWR-xfFQgtcnemADiyNLNsSsZiFJSiHoZkDabkGFiVFE7up8Mx4T-JQk5_LXI8Xk')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+<div class="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded font-label-caps text-label-caps text-rating-gold flex items-center gap-1 border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                    7.5
+                </div>
+<div class="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+<div class="flex gap-1 mb-1">
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Sci-Fi</span>
+<span class="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-bold text-text-secondary uppercase">Action</span>
+</div>
+<h3 class="font-headline-md text-[18px] leading-tight text-white mb-1 group-hover:text-primary-fixed-dim transition-colors">Velocity Zero</h3>
+<p class="text-text-secondary text-[12px]">2022</p>
+</div>
+</div>
+</div>
+<!-- Load More -->
+<div class="mt-stack-lg flex justify-center">
+<button class="px-6 py-3 rounded-full glass hover:bg-white/10 transition-colors flex items-center gap-2 font-label-caps text-label-caps text-text-primary">
+                Load More
+                <span class="material-symbols-outlined text-[18px]" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-background-obsidian w-full py-stack-lg border-t border-white/10 mt-auto">
+<div class="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="font-headline-md text-headline-md text-primary-container">
+                Kinochi
+            </div>
+<div class="flex gap-6 font-body-md text-body-md">
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Privacy Policy</a>
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Terms of Service</a>
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Help Center</a>
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Contact Us</a>
+</div>
+<div class="text-text-secondary text-sm">
+                © 2024 Kinochi Streaming. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

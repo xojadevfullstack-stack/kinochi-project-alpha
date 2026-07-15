@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uz"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barcha Seriallar - Kinochi</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;family=Outfit:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#3a2522",
+                    "on-surface": "#ffdad5",
+                    "surface-tint": "#ffb4aa",
+                    "secondary-fixed-dim": "#c8c6c8",
+                    "on-surface-variant": "#e9bcb6",
+                    "on-tertiary": "#003061",
+                    "tertiary-fixed-dim": "#a7c8ff",
+                    "on-tertiary-fixed-variant": "#004689",
+                    "error-container": "#93000a",
+                    "outline": "#af8782",
+                    "tertiary-container": "#0072d7",
+                    "on-secondary": "#303032",
+                    "on-error": "#690005",
+                    "on-primary-fixed": "#410001",
+                    "on-primary-container": "#fff7f6",
+                    "surface-container-lowest": "#1a0908",
+                    "on-tertiary-fixed": "#001b3c",
+                    "background": "#200e0c",
+                    "surface-container-low": "#2a1614",
+                    "surface-container": "#2e1a18",
+                    "secondary-container": "#474649",
+                    "tertiary-fixed": "#d5e3ff",
+                    "inverse-primary": "#c0000c",
+                    "background-obsidian": "#09090B",
+                    "inverse-surface": "#ffdad5",
+                    "on-secondary-container": "#b7b4b7",
+                    "primary-fixed-dim": "#ffb4aa",
+                    "on-secondary-fixed-variant": "#474649",
+                    "inverse-on-surface": "#412b28",
+                    "on-tertiary-container": "#f8f9ff",
+                    "on-background": "#ffdad5",
+                    "surface": "#200e0c",
+                    "text-secondary": "#A1A1AA",
+                    "text-primary": "#FFFFFF",
+                    "primary-container": "#e50914",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#930007",
+                    "primary": "#ffb4aa",
+                    "secondary": "#c8c6c8",
+                    "outline-variant": "#5e3f3b",
+                    "error": "#ffb4ab",
+                    "tertiary": "#a7c8ff",
+                    "surface-bright": "#4a3330",
+                    "rating-gold": "#F5C518",
+                    "secondary-fixed": "#e5e1e4",
+                    "on-secondary-fixed": "#1b1b1d",
+                    "surface-dim": "#200e0c",
+                    "surface-container-highest": "#462f2c",
+                    "surface-variant": "#462f2c",
+                    "primary-fixed": "#ffdad5",
+                    "on-primary": "#690003"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "margin-desktop": "48px",
+                    "stack-md": "16px",
+                    "gutter": "24px",
+                    "stack-sm": "8px",
+                    "stack-lg": "32px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Outfit"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "display-hero-mobile": [
+                            "Outfit"
+                    ],
+                    "display-hero": [
+                            "Outfit"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Outfit"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-hero-mobile": [
+                            "40px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "display-hero": [
+                            "72px",
+                            {
+                                    "lineHeight": "1.1",
+                                    "letterSpacing": "-0.04em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "1",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .movie-card:hover {
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+            border-color: rgba(229, 9, 20, 0.5);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background-obsidian text-text-primary font-body-md antialiased min-h-screen flex flex-col pt-[88px]">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-background-obsidian/80 backdrop-blur-lg border-b border-white/10 shadow-2xl shadow-primary-container/20 transition-all duration-300 ease-out hidden md:flex">
+<div class="max-w-container-max mx-auto px-gutter w-full flex justify-between items-center py-4">
+<!-- Brand -->
+<a class="font-headline-md text-headline-md text-primary-container tracking-tighter hover:scale-105 transition-transform duration-300" href="#">
+                Kinochi
+            </a>
+<!-- Navigation Links -->
+<ul class="flex items-center gap-stack-lg">
+<li><a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-2 rounded font-body-md text-body-md" href="#">Home</a></li>
+<li><a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-2 rounded font-body-md text-body-md" href="#">Movies</a></li>
+<li><a class="text-primary-container font-bold border-b-2 border-primary-container pb-1 px-3 py-2 font-body-md text-body-md" href="#">Series</a></li>
+<li><a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-2 rounded font-body-md text-body-md" href="#">New</a></li>
+<li><a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-2 rounded font-body-md text-body-md" href="#">My List</a></li>
+</ul>
+<!-- Search & Actions -->
+<div class="flex items-center gap-stack-md">
+<div class="relative hidden lg:block group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-secondary-container group-focus-within:text-text-primary transition-colors">search</span>
+<input class="bg-white/10 border border-transparent rounded-full py-2 pl-10 pr-4 text-body-md font-body-md text-text-primary placeholder:text-on-secondary-container focus:outline-none focus:border-white focus:bg-white/20 transition-all w-64" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-secondary-container hover:text-text-primary hover:scale-105 hover:bg-white/5 p-2 rounded-full transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors ml-2 hover:scale-105">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A cinematic portrait of a user profile avatar in a dark atmospheric setting with subtle red rim lighting, reflecting the high-end dark mode aesthetic of a premium streaming platform. The image is moody, sharp, and modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2ZfdoM41KnWphvXf6YRRIJndPvOuUFuH2_upbWR8vZfAq3sPrLvZLHjofFe7kd1iBINANgPXzY3KouCFnYMg71ANE1jh2jTN1YOuAc7qpLQs3IDFSOtvCEdk4qWC97TocgvXoBJ3TM_MjXwOVDZB1fKtKrkLbnvZPRuGoNjh3NToUcTO3qQVvDDYwWT8MyBVwkJwKl-HHyLIpN0igmxo3WetmOHmZJlxXePWJi9GP8ABiZHGOd9qJ81a-QVb3jgQmBCtMZJNgieo"/>
+</button>
+</div>
+</div>
+</nav>
+<!-- Mobile Top Header (Simplified) -->
+<header class="md:hidden fixed top-0 w-full z-50 bg-background-obsidian/90 backdrop-blur-md border-b border-white/5 py-4 px-margin-mobile flex justify-between items-center shadow-lg shadow-black/50">
+<a class="font-headline-md text-headline-md text-primary-container tracking-tighter" href="#">Kinochi</a>
+<div class="flex items-center gap-4">
+<button class="text-on-secondary-container"><span class="material-symbols-outlined">search</span></button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-white/10">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A cinematic portrait of a user profile avatar in a dark atmospheric setting with subtle red rim lighting, reflecting the high-end dark mode aesthetic of a premium streaming platform. The image is moody, sharp, and modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZna8kVmFJFkkhMgJC00eGl3wIcHtlgdlx41Y-a3vUKhRysTg3fEKRXOJFKb76PLKTN1yK0oZSf6wAAa_SsdZdtRdP3zfh1H_GridmJLSIXR6Pw5DZk-OKb0OMj03hfVS5HDt1mMjkTWwp3xvMVeo9hsPOC9eEytlFJ4XNN68EZYqsgDUre8Gn9gWPmrz4CJEjoGiy9dw_nYwJEYGJal-yMEUipLfSNYGj-yycb3sSuoSjtXqaYB2j43fD2o0n8RUhjqdbRvgo8ak"/>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-gutter py-stack-lg flex flex-col gap-stack-lg">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-stack-md w-full border-b border-white/10 pb-stack-md">
+<div>
+<h1 class="font-display-hero-mobile md:font-headline-lg text-display-hero-mobile md:text-headline-lg text-text-primary mb-2">Barcha Seriallar</h1>
+<p class="font-body-md text-body-md text-on-secondary-container">Discover epic sagas and gripping dramas.</p>
+</div>
+<!-- Filters -->
+<div class="flex flex-wrap gap-stack-sm mt-4 md:mt-0">
+<button class="bg-primary-container text-on-primary-container font-label-caps text-label-caps px-4 py-2 rounded-full hover:bg-inverse-primary hover:shadow-[0_0_15px_rgba(229,9,20,0.5)] transition-all duration-300">Trending</button>
+<button class="bg-white/10 text-text-primary backdrop-blur-md border border-white/10 font-label-caps text-label-caps px-4 py-2 rounded-full hover:bg-white/20 transition-all duration-300">New</button>
+<button class="bg-white/10 text-text-primary backdrop-blur-md border border-white/10 font-label-caps text-label-caps px-4 py-2 rounded-full hover:bg-white/20 transition-all duration-300 flex items-center gap-1">
+                    Genres <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+</div>
+</section>
+<!-- Series Grid -->
+<section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-stack-md md:gap-gutter">
+<!-- Card 1 -->
+<a class="movie-card group relative aspect-[2/3] rounded-lg overflow-hidden bg-surface border border-white/5 transition-all duration-300 transform" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A highly detailed cinematic poster for a dark sci-fi TV series. Deep obsidian background with striking neon red accents. A solitary figure stands against a futuristic dystopian cityscape. High contrast, premium streaming service aesthetic, 8k resolution, moody lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCDbLVX9Yo6kY34E3pSEkB1FPEj2_VA6oDCX7tcE163r3bXlRTo5wYwvs7pnR5YaEF09iIualLEtmqFTkahZq6n4DQYb6eA_RY1srkLaUQdjVVPWE6kfopQA_-67ddO8Wfam7RSX3OreTSwJLt24lVk_YaGnc6CVOut3ulUche5xfGKkZOm3KcUSxkYv0ZymDiABajn6JfoEP6bY_c8oCtgMjOHW8wY_EblLKZDFqk34K3TUZKEeWIxpOeOFkgF7yyrhFDdR4WG3g"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 flex flex-col gap-1">
+<span class="bg-black/60 backdrop-blur-sm text-text-primary font-label-caps text-label-caps px-2 py-1 rounded text-xs border border-white/10 shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-rating-gold" style="font-variation-settings: 'FILL' 1;">star</span> 9.2
+                    </span>
+<span class="bg-primary-container text-white font-label-caps text-label-caps px-2 py-1 rounded text-xs text-center border border-primary-container">4K</span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-body-lg text-text-primary text-glow leading-tight truncate">Neon Syndicate</h3>
+<p class="font-body-md text-[14px] text-on-secondary-container flex items-center justify-between">
+<span>2024 • Sci-Fi</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary-container material-symbols-outlined">play_circle</span>
+</p>
+</div>
+</a>
+<!-- Card 2 -->
+<a class="movie-card group relative aspect-[2/3] rounded-lg overflow-hidden bg-surface border border-white/5 transition-all duration-300 transform" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A dramatic cinematic poster for a fantasy historical drama TV series. A grand castle shrouded in mist, illuminated by a blood-red moon. Dark slate and obsidian tones dominate the composition. Epic scale, highly detailed, moody and immersive lighting typical of high-end streaming platforms." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAG5Xpt8KXMnMVr1vshj08qYMRvLc2jpZkCU_9mUHDmtLLRraMUVeUN541pRTtCtZaCL9xiJiR3ZRk4vPUpLpocccbRBspO1ZV5bb0dPcAHGB1GMs7tmdCZx1JGhpZdD2lSrdIkk-eXkK23_F3DfEpgoNL6TucBqW02VKF_1EepWWn76EyLiZF5tAWwcA5x6Pfmiq6j_iNdJMbj3DWRePispVyblYt_hED2aqbVTy7JWkir-RRZZ21LstsPJuOumQ4oyDmNSqH2JRc"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 flex flex-col gap-1">
+<span class="bg-black/60 backdrop-blur-sm text-text-primary font-label-caps text-label-caps px-2 py-1 rounded text-xs border border-white/10 shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-rating-gold" style="font-variation-settings: 'FILL' 1;">star</span> 8.8
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-body-lg text-text-primary text-glow leading-tight truncate">Crimson Crown</h3>
+<p class="font-body-md text-[14px] text-on-secondary-container flex items-center justify-between">
+<span>2023 • Drama</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary-container material-symbols-outlined">play_circle</span>
+</p>
+</div>
+</a>
+<!-- Card 3 -->
+<a class="movie-card group relative aspect-[2/3] rounded-lg overflow-hidden bg-surface border border-white/5 transition-all duration-300 transform" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A tense, atmospheric cinematic poster for a crime thriller TV series. Rain-slicked city streets at night, dark alleyways, a solitary detective figure in silhouette. Deep obsidian blacks with vibrant neon red streetlights reflecting in puddles. High contrast, gritty yet polished premium aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEPkdMk4RSmR5HBOs02so37Tmh6J2pAXt84ii_NeQ0AxHXD3JcvfmY3up6aQtsUJFdMkaNCYWn3WXi_sbzE23SoGmU7DWKgflOYUC37_fOxsQY8KSuhn5ohhcSe69JGrWtptWRhmJ0phfIYCgd74RTi0paurv5VaXjWtWUevGO9WE6crw1dVweLCfKFxccDOdgB8ZT8xlBw59DOS9vyaxYMEmSVWeupiheHdLIry7KsQukzgZ7bJ-Ob52by-XfrM9DzU3dHuRfdSI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 flex flex-col gap-1">
+<span class="bg-black/60 backdrop-blur-sm text-text-primary font-label-caps text-label-caps px-2 py-1 rounded text-xs border border-white/10 shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-rating-gold" style="font-variation-settings: 'FILL' 1;">star</span> 8.5
+                    </span>
+<span class="bg-surface-container-high text-white font-label-caps text-label-caps px-2 py-1 rounded text-xs text-center border border-white/20">HD</span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-body-lg text-text-primary text-glow leading-tight truncate">Midnight Protocol</h3>
+<p class="font-body-md text-[14px] text-on-secondary-container flex items-center justify-between">
+<span>2024 • Thriller</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary-container material-symbols-outlined">play_circle</span>
+</p>
+</div>
+</a>
+<!-- Card 4 -->
+<a class="movie-card group relative aspect-[2/3] rounded-lg overflow-hidden bg-surface border border-white/5 transition-all duration-300 transform" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A visually striking cinematic poster for a cyberpunk anime TV series. Intense neon red and stark white accents against a pitch-black background. Cybernetic details, highly stylized characters, sharp modern composition fitting a high-end dark mode streaming interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmsWiXu7NfW4MkzRH7YlgvPVqIFxx3tzlChtC0Tl-cvY-K58H0ms4oVu6OhQ1ET9NvlvbWWRuHkS4ffo_kAjpHpBaerQw8wfsvpq7XUAWtkYjAqQD0lWfI4wbu6W1BvpllwuBvEvlzwzUqKjTAR94_5y9spmmfsb6B7qqLb4SdJEtQpCNngvk1JcD9hqT9oP0Ra1eOhyCw8y5LMOFECPFlNlO-gQVijWAbLl4qHE_lAxwQ2ZZkbptQaXNBOt1A4VAj3GzCvXXGJTY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 flex flex-col gap-1">
+<span class="bg-black/60 backdrop-blur-sm text-text-primary font-label-caps text-label-caps px-2 py-1 rounded text-xs border border-white/10 shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-rating-gold" style="font-variation-settings: 'FILL' 1;">star</span> 9.0
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-body-lg text-text-primary text-glow leading-tight truncate">Wired Soul</h3>
+<p class="font-body-md text-[14px] text-on-secondary-container flex items-center justify-between">
+<span>2022 • Anime</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary-container material-symbols-outlined">play_circle</span>
+</p>
+</div>
+</a>
+<!-- Card 5 -->
+<a class="movie-card group relative aspect-[2/3] rounded-lg overflow-hidden bg-surface border border-white/5 transition-all duration-300 transform" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A mysterious cinematic poster for a psychological horror TV series. Abstract, unsettling imagery involving shattered glass and deep shadows. The color palette relies heavily on stark blacks, subtle slates, and sudden, piercing crimson red highlights. Moody, premium visual aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSj0RM67PIfp9TtKoEnbkRKBzuAEvZa2uuTd8YH-KJP8B4oF2sgoJtp-6wuQXO78rwidOQvs96K9xV84_224x-Moqpr7FK6osjyFNKkQQLd-gpKAzllvfoMK3L1i9QzbReaCrAo_rEt8TC06EQHsKa-TsyhIyI1UmXQ7stJ6yEAn-XObLteERizTA1f6WQstKA0GSZDTj6WopWWaeF6kKgVmLOU3lWxew0tKwFhGyHbfWAVaWH0FPTIWuFi1QjeCl0iw9eHXYI280"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 flex flex-col gap-1">
+<span class="bg-black/60 backdrop-blur-sm text-text-primary font-label-caps text-label-caps px-2 py-1 rounded text-xs border border-white/10 shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-rating-gold" style="font-variation-settings: 'FILL' 1;">star</span> 7.8
+                    </span>
+<span class="bg-primary-container text-white font-label-caps text-label-caps px-2 py-1 rounded text-xs text-center border border-primary-container">NEW</span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-body-lg text-text-primary text-glow leading-tight truncate">Shattered Mind</h3>
+<p class="font-body-md text-[14px] text-on-secondary-container flex items-center justify-between">
+<span>2024 • Horror</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary-container material-symbols-outlined">play_circle</span>
+</p>
+</div>
+</a>
+<!-- Card 6 -->
+<a class="movie-card group relative aspect-[2/3] rounded-lg overflow-hidden bg-surface border border-white/5 transition-all duration-300 transform" href="#">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A vast, sweeping cinematic poster for a historical epic TV series. An army silhouetted against a setting sun that paints the sky in shades of deep red and black. Rich textures, cinematic depth, and a high-contrast dark mode style suited for a luxury streaming platform interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6IlFsvgvVv4CCzqisjgmIN0FlWKziNt1F2I5c5wPXj1S5pPnRuXKAKU3E6dtRO3V-xTY20Da0f0A5cDs9bGh7i8wl_zrto8i2U328aUfjP2qkVBDSNk6xoq0byB3HgUEBsgZQgKCIEoVBpvYbo7QIsAnDB8GuQnzktBYwXYRIAfU26WfHw0bK7_bwj3gNeQUob2z2YuvQRBvPb-cRuMjVxZNpFqQD9webiLIHQFRkstXpZHM_8d06PXqX88ojvO9Lsca6cugGw4U"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 flex flex-col gap-1">
+<span class="bg-black/60 backdrop-blur-sm text-text-primary font-label-caps text-label-caps px-2 py-1 rounded text-xs border border-white/10 shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-rating-gold" style="font-variation-settings: 'FILL' 1;">star</span> 8.9
+                    </span>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-body-lg text-text-primary text-glow leading-tight truncate">Empire's Fall</h3>
+<p class="font-body-md text-[14px] text-on-secondary-container flex items-center justify-between">
+<span>2021 • Epic</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-primary-container material-symbols-outlined">play_circle</span>
+</p>
+</div>
+</a>
+</section>
+<!-- Load More -->
+<div class="flex justify-center w-full py-stack-lg border-t border-white/5 mt-4">
+<button class="bg-surface-container-high border border-white/10 text-text-primary font-body-md text-body-md px-8 py-3 rounded-full hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2">
+                 Load More <span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-background-obsidian w-full py-stack-lg border-t border-white/10 mt-auto">
+<div class="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row justify-between items-center gap-4">
+<!-- Brand Logo -->
+<div class="font-headline-md text-headline-md text-primary-container">
+                Kinochi
+            </div>
+<!-- Links -->
+<div class="flex flex-wrap justify-center gap-stack-md">
+<a class="text-on-secondary-container hover:text-text-primary font-body-md text-body-md hover:underline transition-opacity duration-200" href="#">Privacy Policy</a>
+<a class="text-on-secondary-container hover:text-text-primary font-body-md text-body-md hover:underline transition-opacity duration-200" href="#">Terms of Service</a>
+<a class="text-on-secondary-container hover:text-text-primary font-body-md text-body-md hover:underline transition-opacity duration-200" href="#">Help Center</a>
+<a class="text-on-secondary-container hover:text-text-primary font-body-md text-body-md hover:underline transition-opacity duration-200" href="#">Contact Us</a>
+</div>
+<!-- Copyright -->
+<div class="text-on-secondary-container font-body-md text-[14px]">
+                © 2024 Kinochi Streaming. All rights reserved.
+            </div>
+</div>
+</footer>
+<!-- Mobile Bottom Navigation (Visible only on small screens) -->
+<div class="md:hidden fixed bottom-0 w-full bg-background-obsidian/90 backdrop-blur-md border-t border-white/10 py-2 px-4 flex justify-between items-center z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+<a class="flex flex-col items-center gap-1 text-on-secondary-container p-2" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-caps text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary-container p-2" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">movie</span>
+<span class="font-label-caps text-[10px] font-bold">Series</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-secondary-container p-2" href="#">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-caps text-[10px]">My List</span>
+</a>
+</div>
+</body></html>

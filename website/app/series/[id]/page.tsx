@@ -14,10 +14,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const series = await fetchApi(`/series/${params.id}`);
     
     return {
-      title: `${series.title} - Kinochi`,
+      title: `${series.title} - Kinochi Premium`,
       description: series.description || `${series.title} serialini bepul tomosha qiling.`,
       openGraph: {
-        title: `${series.title} - Kinochi`,
+        title: `${series.title} - Kinochi Premium`,
         description: series.description || `${series.title} serialini bepul tomosha qiling.`,
         url: `https://kinochi.uz/series/${params.id}`,
         images: series.poster_url ? [
@@ -37,26 +37,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-type Episode = {
-  id: number;
-  season_id: number;
-  episode_number: number;
-  title: string | null;
-  code: string;
-  duration: number | null;
-};
-
-type Season = {
-  id: number;
-  series_id: number;
-  season_number: number;
-  title: string | null;
-  description: string | null;
-  poster_url: string | null;
-  episode_count: number | null;
-  episodes: Episode[];
-};
-
 export default async function SeriesDetailsPage({ params }: Props) {
   let series;
   try {
@@ -66,164 +46,95 @@ export default async function SeriesDetailsPage({ params }: Props) {
   }
 
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+  // Assuming series has episodes and we link to the bot
+  const telegramDeepLink = `https://t.me/${botUsername}`;
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-white">
-      <div className="max-w-5xl mx-auto bg-surface rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row mb-12">
+    <>
+      <section className="relative w-full min-h-[1024px] flex items-center pt-[100px] pb-stack-lg overflow-hidden">
+        {/* Background Blur & Gradient Overlays */}
+        <div className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl mask-gradient-bottom" 
+             style={{ backgroundImage: `url('${series.poster_url || ""}')` }}></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-transparent to-transparent hidden md:block"></div>
         
-        {/* Left Side: Poster */}
-        <div className="w-full md:w-1/3 relative aspect-[2/3] bg-gray-900 flex-shrink-0">
-          {series.poster_url ? (
-            <Image 
-              src={series.poster_url}
-              alt={series.title}
-              fill
-              className="object-cover"
-              priority
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-              Rasm mavjud emas
-            </div>
-          )}
-        </div>
-
-        {/* Right Side: Details */}
-        <div className="w-full md:w-2/3 p-6 md:p-8 flex flex-col">
-          <h1 className="text-3xl md:text-5xl font-bold mb-2">{series.title}</h1>
-          
-          <div className="flex flex-wrap items-center gap-4 text-sm md:text-base mb-6">
-            <span className="text-star font-bold flex items-center gap-1">
-              ★ {series.imdb_rating || "N/A"}
-            </span>
-            <span>|</span>
-            <span className="text-gray-300">{series.release_year || "Yil no'malum"}</span>
-          </div>
-
-          <div className="mb-6 space-y-2 text-sm text-gray-300">
-            {series.categories && series.categories.length > 0 && (
-              <p><strong className="text-white">Kategoriya:</strong> {series.categories.map((c: any) => c.name).join(', ')}</p>
-            )}
-            <p><strong className="text-white">Rejissyor:</strong> {series.director || "Kiritilmagan"}</p>
-            <p><strong className="text-white">Aktyorlar:</strong> {series.cast || "Kiritilmagan"}</p>
-          </div>
-          
-          <div className="mb-8 flex-grow">
-            <h3 className="text-lg font-semibold mb-2 text-white">Serial haqida:</h3>
-            <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-              {series.description || "Ushbu serial uchun batafsil ma'lumot kiritilmagan."}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seasons and Episodes */}
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-2xl md:text-3xl font-bold mb-8 text-white/90">Fasllar va Qismlar</h2>
-        
-        {!series.seasons || series.seasons.length === 0 ? (
-          <div className="bg-surface/50 rounded-xl p-8 text-center text-gray-400">
-            Hozircha qismlar yuklanmagan.
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {series.seasons
-              .sort((a: Season, b: Season) => a.season_number - b.season_number)
-              .map((season: Season) => (
-              <div key={season.id} className="bg-surface rounded-xl overflow-hidden ring-1 ring-white/5 relative">
-                {/* Timeline connector (optional decorative line) */}
-                <div className="hidden md:block absolute left-8 top-0 bottom-0 w-px bg-white/5 z-0"></div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row gap-6 p-6">
-                  {/* Season Poster */}
-                  <div className="w-full md:w-48 aspect-[2/3] relative flex-shrink-0 bg-background/50 rounded-lg overflow-hidden shadow-lg border border-white/5">
-                    {season.poster_url ? (
-                      <Image 
-                        src={season.poster_url} 
-                        alt={`${season.season_number}-fasl`}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : series.poster_url ? (
-                      <Image 
-                        src={series.poster_url} 
-                        alt="Fasl"
-                        fill
-                        className="object-cover opacity-30 grayscale blur-[2px]"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
-                        Rasm yo'q
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Season Content */}
-                  <div className="flex-grow flex flex-col">
-                    <div className="mb-6">
-                      <h3 className="text-2xl font-bold flex items-center gap-3">
-                        <span className="bg-white/10 px-3 py-1 rounded-md text-primary text-xl">
-                          {season.season_number}-Fasl
-                        </span>
-                        {season.title && <span>{season.title}</span>}
-                      </h3>
-                      {season.episode_count && (
-                        <p className="text-gray-400 mt-2 text-sm font-medium">
-                          Mavsumda jami: <span className="text-white">{season.episode_count} ta qism</span>
-                        </p>
-                      )}
-                      {season.description && (
-                        <p className="text-gray-400 mt-4 leading-relaxed text-sm">
-                          {season.description}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Episodes Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-auto">
-                      {!season.episodes || season.episodes.length === 0 ? (
-                        <div className="col-span-full text-gray-500 text-sm py-2">
-                          Bu faslga qismlar qo'shilmagan.
-                        </div>
-                      ) : (
-                        season.episodes
-                          .sort((a, b) => a.episode_number - b.episode_number)
-                          .map((episode) => {
-                          const telegramDeepLink = `https://t.me/${botUsername}?start=${episode.code}`;
-                          return (
-                            <a 
-                              href={telegramDeepLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              key={episode.id} 
-                              className="bg-primary hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-full transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/30 hover:scale-105 w-full"
-                            >
-                              <svg className="w-5 h-5 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                              <span className="truncate">
-                                {episode.episode_number}-qism
-                                {episode.title && episode.title !== `${episode.episode_number}-qism` && (
-                                  <span className="ml-1 opacity-80 font-normal">- {episode.title}</span>
-                                )}
-                              </span>
-                              {episode.duration && (
-                                <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded opacity-80">
-                                  {episode.duration} daqiqa
-                                </span>
-                              )}
-                            </a>
-                          )
-                        })
-                      )}
-                    </div>
-                  </div>
+        {/* Content Container */}
+        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-margin-desktop">
+          {/* Left: Poster */}
+          <div className="w-full md:w-1/3 lg:w-[400px] shrink-0 mt-stack-lg md:mt-0 relative group perspective-1000">
+            <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-primary-container/20 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-primary-container/40 relative bg-surface-container-high">
+              {series.poster_url ? (
+                <Image 
+                  src={series.poster_url}
+                  alt={series.title}
+                  fill
+                  priority
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                   <span className="material-symbols-outlined text-6xl opacity-30">live_tv</span>
                 </div>
-              </div>
-            ))}
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+          
+          {/* Right: Movie Info */}
+          <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
+            <h1 className="font-display-hero-mobile md:font-display-hero text-[40px] md:text-display-hero text-text-primary mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter">
+              {series.title}
+            </h1>
+            
+            {/* Badges Row */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-stack-md font-label-caps text-label-caps tracking-widest uppercase text-xs">
+              <div className="flex items-center gap-1 text-rating-gold bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5">
+                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                <span>{series.imdb_rating || "N/A"}</span>
+              </div>
+              <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{series.release_year || "2024"}</span>
+              <span className="text-text-primary font-bold bg-white/10 px-3 py-1.5 rounded border border-white/20">4K HDR</span>
+              <span className="text-text-primary bg-white/5 px-3 py-1.5 rounded border border-white/5 hover:bg-white/10 transition-colors cursor-pointer">{series.categories?.[0]?.name || "SERIAL"}</span>
+            </div>
+            
+            {/* Description */}
+            <p className="font-body-lg text-body-lg text-text-secondary mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed">
+              {series.description || "Ushbu serial haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
+            </p>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center md:justify-start">
+              <a 
+                href={telegramDeepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary-container text-white px-8 py-4 rounded-full font-label-caps text-xs uppercase tracking-widest hover:bg-inverse-primary hover:scale-105 hover:shadow-[0_0_30px_rgba(229,9,20,0.4)] transition-all duration-300 ease-out group font-bold"
+              >
+                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                TELEGRAMDA KO'RISH
+              </a>
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 text-text-primary px-8 py-4 rounded-full font-label-caps text-xs uppercase tracking-widest hover:bg-white/10 hover:border-white/30 hover:scale-105 transition-all duration-300 ease-out group font-bold">
+                <span className="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">share</span>
+                ULASHISH
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trailer Section */}
+      <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
+        <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md">Treyler</h2>
+        <div className="aspect-video w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative group cursor-pointer border border-white/10 bg-surface-container-lowest">
+          <div className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-40 transition-opacity duration-500" 
+               style={{ backgroundImage: `url('${series.poster_url || ""}')` }}></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-500">
+            <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-text-primary group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white group-hover:shadow-[0_0_40px_rgba(229,9,20,0.6)] group-hover:scale-110 transition-all duration-500 ease-out">
+              <span className="material-symbols-outlined text-[48px] ml-2" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

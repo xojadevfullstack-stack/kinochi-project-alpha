@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kinochi - Series Detail</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;family=Outfit:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Style Guidance -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#b7b4b7",
+                    "on-secondary": "#303032",
+                    "on-secondary-fixed": "#1b1b1d",
+                    "on-tertiary-fixed": "#001b3c",
+                    "rating-gold": "#F5C518",
+                    "tertiary-fixed-dim": "#a7c8ff",
+                    "surface-container-low": "#2a1614",
+                    "on-primary": "#690003",
+                    "surface-bright": "#4a3330",
+                    "outline-variant": "#5e3f3b",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#462f2c",
+                    "surface-container-high": "#3a2522",
+                    "surface-tint": "#ffb4aa",
+                    "secondary-fixed": "#e5e1e4",
+                    "on-surface": "#ffdad5",
+                    "tertiary-container": "#0072d7",
+                    "background": "#200e0c",
+                    "surface-dim": "#200e0c",
+                    "primary": "#ffb4aa",
+                    "on-tertiary-fixed-variant": "#004689",
+                    "secondary-fixed-dim": "#c8c6c8",
+                    "outline": "#af8782",
+                    "primary-fixed-dim": "#ffb4aa",
+                    "background-obsidian": "#09090B",
+                    "secondary": "#c8c6c8",
+                    "primary-container": "#e50914",
+                    "on-surface-variant": "#e9bcb6",
+                    "on-primary-fixed": "#410001",
+                    "on-secondary-fixed-variant": "#474649",
+                    "on-error-container": "#ffdad6",
+                    "tertiary": "#a7c8ff",
+                    "inverse-primary": "#c0000c",
+                    "inverse-on-surface": "#412b28",
+                    "on-primary-container": "#fff7f6",
+                    "surface-container-lowest": "#1a0908",
+                    "surface-container": "#2e1a18",
+                    "primary-fixed": "#ffdad5",
+                    "inverse-surface": "#ffdad5",
+                    "on-tertiary-container": "#f8f9ff",
+                    "surface-container-highest": "#462f2c",
+                    "secondary-container": "#474649",
+                    "on-error": "#690005",
+                    "error-container": "#93000a",
+                    "text-secondary": "#A1A1AA",
+                    "text-primary": "#FFFFFF",
+                    "on-primary-fixed-variant": "#930007",
+                    "on-background": "#ffdad5",
+                    "tertiary-fixed": "#d5e3ff",
+                    "on-tertiary": "#003061",
+                    "surface": "#200e0c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "container-max": "1440px",
+                    "stack-sm": "8px",
+                    "stack-md": "16px",
+                    "margin-desktop": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Outfit"],
+                    "label-caps": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Outfit"],
+                    "body-md": ["Inter"],
+                    "display-hero": ["Outfit"],
+                    "display-hero-mobile": ["Outfit"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.15em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-hero": ["72px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900"}],
+                    "display-hero-mobile": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for horizontal lists */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-obsidian text-text-primary antialiased">
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 w-full z-50 bg-background-obsidian/80 backdrop-blur-lg border-b border-white/10 shadow-2xl shadow-primary-container/20 transition-all duration-300 ease-out">
+<div class="max-w-container-max mx-auto flex justify-between items-center px-gutter py-4 w-full">
+<!-- Brand Logo -->
+<div class="font-display-hero-mobile text-display-hero-mobile text-primary-container tracking-tighter cursor-pointer">
+                Kinochi
+            </div>
+<!-- Navigation Links (Desktop) -->
+<div class="hidden md:flex items-center gap-8 font-body-md text-body-md">
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-1 rounded" href="#">Home</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-1 rounded" href="#">Movies</a>
+<!-- Active Item -->
+<a class="text-primary-container font-bold border-b-2 border-primary-container pb-1 transition-colors hover:scale-105 px-3 py-1" href="#">Series</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-1 rounded" href="#">New</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-3 py-1 rounded" href="#">My List</a>
+</div>
+<!-- Trailing Icons -->
+<div class="flex items-center gap-4">
+<button class="text-primary-container hover:text-text-primary hover:scale-105 transition-all p-2 rounded-full hover:bg-white/5">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-primary-container hover:text-text-primary hover:scale-105 transition-all p-2 rounded-full hover:bg-white/5">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<img alt="User profile" class="w-10 h-10 rounded-full border border-white/20 hover:scale-105 transition-transform cursor-pointer" data-alt="A small circular avatar of a user profile. A glowing, stylized neon silhouette in a dark cinematic environment, deep obsidian tones with subtle red accents, matching a premium streaming app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOBPEuM1hXh8AVK_09Jcw6ybW7m1Q9IEN68p-gdS_uyaB3eSnj9pySN2CjTb92tXXWSGHfE_7etGgWShd5oTriSNBbVCOv_UpTAmBH_RpM9Btmf6gtHPn9RdHDTQCkUyEerV9fTyJCO4tlFZUvnzoX2Z3mzjD44EalhS0e2ZwPN7RWF1Xaq__t-yPq8vweXvJcQ-iZU-wUnzzF4bNIrQ0B1MFzuAj-509M0JLJodoXNrUSnhjA7PhDWxktihHJM8rsZnphnAxmSdc"/>
+</div>
+</div>
+</nav>
+<!-- Massive Cinematic Hero Background -->
+<header class="relative w-full min-h-[921px] flex items-end pb-12 pt-32 overflow-hidden">
+<!-- Background Image & Gradients -->
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-cover bg-center bg-no-repeat w-full h-full" data-alt="A sprawling, high-budget cinematic scene depicting a futuristic metropolis at night. Rain slicks the neon-lit streets, reflecting intense crimson lights against deep obsidian shadows. The atmosphere is tense, moody, and visually breathtaking, perfect for a blockbuster sci-fi thriller series background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB6oThUyj0xlkMGEbd1wYvDuVNbchrRMReAwBpXPC9nMd1ali12ZEO_wPc0Y8e_tkjKA3Ap9cZYrtMblL3bbmBBqMjzHGAUrCQBsaWMXtjU0hPtl_bBJ9GOsD1tjvyEfdRTXqEwucgQYyYLrSjxuUlstJA5s9IHjdjURYpFVnM-a9JFlBrRNEadI46gTq4Eduxv6IGqZFl0cpbhiyhHRwv8GiqLUF-aqiEIV9Lmoa0qJzJSvawWizdpMEDaVKxefNxvo1fIFQvYXjg')">
+</div>
+<!-- Vignette and fade to bottom -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/70 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-background-obsidian/80 via-transparent to-transparent"></div>
+</div>
+<!-- Hero Content Container -->
+<div class="relative z-10 w-full max-w-container-max mx-auto px-gutter md:px-margin-desktop grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
+<!-- Series Poster (Desktop Overlay) -->
+<div class="hidden md:block col-span-3 lg:col-span-3 transform translate-y-12 shadow-2xl shadow-black/80">
+<div class="aspect-[2/3] rounded-lg overflow-hidden border border-white/10 group relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A striking, high-contrast poster for a dramatic sci-fi thriller series. A solitary figure stands against a massive, glowing red neon structure amidst deep black shadows. The composition is highly symmetric and cinematic, projecting intense authority and mystery." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoasVbHIwlwWM1eG9vIeNLPP0vCtqoFXfAslYbin22FJzR3ReuZDTwqh_ZVIKvI348kzixi70pZ6DYGQFrIQ7UzIB6F-sDtaWhoMd2heffTJn6XPeZn1MjHO-JG5mVBz15VFd8k9MVfgWmASkCt_7TK1TBoupA59Dkp9mFNPOA59-fYKYS6MCAf8M_K4zHo2qhIdNNqrKJOGdQAJ-6QYtEA8K_kNuNLLOCSEOWxVXTlkMfD-q9utz9VXNnoZsT-CIIIUME0vJN--A"/>
+</div>
+</div>
+<!-- Series Details -->
+<div class="col-span-1 md:col-span-9 lg:col-span-7 flex flex-col gap-6">
+<!-- Badges -->
+<div class="flex flex-wrap items-center gap-3">
+<span class="flex items-center gap-1 bg-surface-container/50 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full font-label-caps text-label-caps text-rating-gold">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">star</span> 9.2
+                    </span>
+<span class="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full font-label-caps text-label-caps text-text-primary">2024</span>
+<span class="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full font-label-caps text-label-caps text-text-primary">3 SEASONS</span>
+<span class="bg-surface-container/50 border border-white/5 px-3 py-1.5 rounded text-[10px] font-bold tracking-widest text-text-secondary uppercase">Sci-Fi</span>
+<span class="bg-surface-container/50 border border-white/5 px-3 py-1.5 rounded text-[10px] font-bold tracking-widest text-text-secondary uppercase">Thriller</span>
+</div>
+<!-- Title -->
+<h1 class="font-display-hero-mobile md:font-display-hero text-display-hero-mobile md:text-display-hero text-text-primary drop-shadow-lg">
+                    NEON <br/>SYNDICATE
+                </h1>
+<!-- Synopsis -->
+<p class="font-body-lg text-body-lg text-text-secondary max-w-2xl line-clamp-3 md:line-clamp-none">
+                    In the sprawling megacity of Sector 4, a rogue detective uncovers a vast conspiracy that ties the city's corrupt elite to an underground rebellion. As loyalties blur in the neon-lit shadows, the fight for survival becomes a war for the soul of the metropolis.
+                </p>
+<!-- Actions (Glassmorphism & Primary) -->
+<div class="flex flex-wrap items-center gap-4 mt-4">
+<button class="bg-primary-container text-on-primary-container px-8 py-4 rounded-full font-headline-md text-headline-md hover:scale-105 transition-transform duration-300 shadow-[0_0_15px_rgba(229,9,20,0.4)] hover:shadow-[0_0_25px_rgba(229,9,20,0.6)] flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        RESUME S2 E4
+                    </button>
+<button class="bg-white/10 backdrop-blur-md border border-white/20 text-text-primary px-8 py-4 rounded-full font-headline-md text-[18px] hover:bg-white/20 transition-all duration-300 flex items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                        MY LIST
+                    </button>
+<button class="bg-white/5 backdrop-blur-md border border-white/10 text-text-primary p-4 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center justify-center">
+<span class="material-symbols-outlined">thumb_up</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full max-w-container-max mx-auto px-gutter md:px-margin-desktop py-16 flex flex-col gap-24">
+<!-- Embedded Trailer Section -->
+<section class="w-full flex flex-col gap-6">
+<h2 class="font-headline-lg text-headline-lg text-text-primary border-l-4 border-primary-container pl-4">Official Trailer</h2>
+<div class="relative w-full aspect-video bg-surface-container-high rounded-xl overflow-hidden border border-white/5 group cursor-pointer shadow-2xl">
+<!-- Trailer Thumbnail -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A dramatic wide shot of a glowing red hovercraft speeding through a dark, rain-swept futuristic city street. The scene is lit entirely by neon signs and the craft's engine glow, creating a striking contrast against the obsidian background. High-end cinematic aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBd-UB_oT5AfzS_ev-lSnvsdJEOtAT-a9WA5J0jKBSROfVfYmT_XjrNOTAq6dlWbxOeIJnH_wCY145StpTx-eX4mUcBqEc8uAFOmNcejEkwXy1xVc66CbwuB2PO8VduHc-OZwEDH07gu3ugtaG09Gb1edhtSTnPwPimwPOk7CWUBuISSkxaO-nmZfcGmJPeoODk8K6eFU3DnmQ2KsmXP5nSwm3gd4z_aTxRJNpvnUVuhOiHcwRfvr3uVsuufZWFTV896QJBgh1butU')">
+</div>
+<!-- Play Overlay -->
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center transition-colors duration-300 group-hover:bg-black/20">
+<div class="w-20 h-20 bg-primary-container/80 backdrop-blur-md rounded-full flex items-center justify-center text-text-primary shadow-[0_0_20px_rgba(229,9,20,0.5)] group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-[40px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Top Cast -->
+<section class="w-full flex flex-col gap-6">
+<h2 class="font-headline-lg text-headline-lg text-text-primary border-l-4 border-primary-container pl-4">Top Cast</h2>
+<div class="flex items-center gap-6 overflow-x-auto hide-scrollbar pb-4">
+<!-- Cast Member 1 -->
+<div class="flex flex-col items-center gap-2 min-w-[120px] group cursor-pointer">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary-container transition-colors duration-300 shadow-lg">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A moody, high-contrast studio portrait of a serious male actor. Lighting is split, with deep shadows on one side and a harsh white rim light on the other, against a pure black background. Cinematic styling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3dSAVv_oQOzyzZczC4JFxo_tVSk0rPcYho_sfnuXlb2nZlJVtvdXBLGmSBoqBejaAkCqYsXliJwcRbPH-kvbDMvrxM7m-UsxxXQU6lXwKc113GzQdJ8JYybPFHu2AbVCkWez-qYBbPDK5O9n9ADDx5oqAOGx1iEGOd2sSA-eKICGGkdd1x43duPc5f2CzNcK7rMJmxjPepdjDRHlq7WccIhruwqeQUHb287eFDqJn6WzWt3eNh1gq5Lw8ZZPNkg2QWgee8V4rGIg"/>
+</div>
+<span class="font-body-md text-body-md text-text-primary text-center leading-tight">Elias<br/>Vance</span>
+<span class="font-label-caps text-[10px] text-text-secondary text-center">Det. Rourke</span>
+</div>
+<!-- Cast Member 2 -->
+<div class="flex flex-col items-center gap-2 min-w-[120px] group cursor-pointer">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary-container transition-colors duration-300 shadow-lg">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A stylized, cinematic portrait of a fierce female actress. She is illuminated by a soft, neon red glow that cuts through the surrounding pitch-black darkness. Her expression is intense and authoritative." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU6K3hVMsmxeB6oFxICfad_aH5wGpF9E2cXhFLYsABlOUhaSECrngubaxCmRhrZheJt_IcwHnp2wIjl3lnrV_bwX9fqe1TtvR82PZ0V2Fb1VUY-w_368MeKQw3VjY07Y3BnwyQzmrnOBEAnBfND1nb1PAeB1T7_CPlPs0JVGHzsiqtjSpdZOzfEc8Ja6h-hfSMJ4JPkXXdwiapMuIAJ81CkLQ_EBl6Gm5b0Zy-MY2I4APUhllHSj-_aSRp0BnMcd6IzKXFmJd4rMI"/>
+</div>
+<span class="font-body-md text-body-md text-text-primary text-center leading-tight">Sarah<br/>Chen</span>
+<span class="font-label-caps text-[10px] text-text-secondary text-center">Dr. Aris</span>
+</div>
+<!-- Cast Member 3 -->
+<div class="flex flex-col items-center gap-2 min-w-[120px] group cursor-pointer">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary-container transition-colors duration-300 shadow-lg">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A dark and gritty character portrait of an older male actor with a weathered face. The lighting is low-key, utilizing cool bluish-grey tones against a black background to emphasize texture and gravitas." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDktxWN7i3nGdCsUghDigZrzJA7DZ1VVWM_M3e3VHjCBTmL4ZABJQcrxgHLpbJrIP8dmr7KvtgKW0n-j7AXt3MhjJk1NZkrx06Db2MdUmYvlZW2yBHrOr8K-O1MNgp-B_sKf4CMsQRdHtdv_GykBW-ffzmoNHIhQMTB2N_d3X64q1GhZORcHSh_9JBMNziyqVuPeVna5QBegkhrceDX1ECw9aqr5qsw-yf6h1nQoYMaqb5G2qnKi0OpFbOCBdQ5J3YMwkhZO3gUQ-0"/>
+</div>
+<span class="font-body-md text-body-md text-text-primary text-center leading-tight">Marcus<br/>Kane</span>
+<span class="font-label-caps text-[10px] text-text-secondary text-center">The Broker</span>
+</div>
+<!-- Cast Member 4 -->
+<div class="flex flex-col items-center gap-2 min-w-[120px] group cursor-pointer">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary-container transition-colors duration-300 shadow-lg">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A sleek, modern portrait of a young male actor. He is silhouetted against a faint red light, looking off-camera. The overall tone is mysterious and polished, fitting a high-budget thriller." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcX2uXIghsBPkqFygBJV0DxpgTsJcc70FDHKeMiaLV_pnSEJ8QPtgeHSHZIr-8wQ6hHKIIRQs1FqTHilQ8u9-0MipFBlF-kmrQ2nS_3HLROvvpqQ247-8MvFxOZyjJbf_2abRX5Q2qFFFMNE34ardmZU5TAZxLIs0jOj4X5cMM8FBW-cXGD1fU4qQQzSC6BnTqsWyT3Z82cUkUUCZXw2884LGOyWaGHay19Ix_8h5ZjRBMIRoaMAxzrXnfwBktED4i1rISfHFs9wk"/>
+</div>
+<span class="font-body-md text-body-md text-text-primary text-center leading-tight">Julian<br/>Frey</span>
+<span class="font-label-caps text-[10px] text-text-secondary text-center">Kael</span>
+</div>
+</div>
+</section>
+<!-- CRITICAL: Seasons & Episodes Grid Layout -->
+<section class="w-full flex flex-col gap-8">
+<div class="flex items-end justify-between border-b border-white/10 pb-4">
+<h2 class="font-headline-lg text-headline-lg text-text-primary">Seasons &amp; Episodes</h2>
+<div class="hidden md:flex items-center gap-2 bg-surface-container rounded-full p-1 border border-white/5">
+<button class="px-4 py-1 rounded-full bg-white/10 text-text-primary font-label-caps text-[11px] transition-colors">Grid</button>
+<button class="px-4 py-1 rounded-full text-text-secondary hover:text-text-primary font-label-caps text-[11px] transition-colors">List</button>
+</div>
+</div>
+<!-- Bento/Grid for Seasons -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Season 1 Card -->
+<div class="group relative h-[250px] rounded-xl overflow-hidden cursor-pointer border border-white/5 hover:border-primary-container/50 transition-all duration-500 shadow-lg">
+<!-- Background Art -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Abstract cinematic art representing the beginning of a dark sci-fi story. A singular glowing red neon line pierces through a dense, foggy, obsidian-black cityscape. Highly stylized and minimal." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAU8KrcScLAa_1X8h3zxCdko4HwGbTrTEl45jzZjrZgynyhdw2aMaZxp-Jc8USgzCWZj9r_Hm2uizdlazxvO8Id96kyr5qM_JPdaPwGnGeDdAepoJuk8oDiSSOvGIk42l_1tnDyFUNM997Pyd108hiv0-OhiNKvM9TVqwcMSBRG2nlJyRM6Tbwo1VPZ1BM1L-fG3lKVy4o_e6OKul-p9wfqLuOGAu2gQYX0LgCZphP5rqg1sIo8hEg9orzdxqONiDqRolfyOiqIuvw')">
+</div>
+<!-- Gradients -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent"></div>
+<div class="absolute inset-0 bg-background-obsidian/20 group-hover:bg-transparent transition-colors duration-300"></div>
+<!-- Content -->
+<div class="absolute inset-0 p-6 flex flex-col justify-end">
+<div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-headline-md text-text-primary mb-1 drop-shadow-md">Season 1</h3>
+<div class="flex items-center gap-4 text-text-secondary font-body-md text-sm">
+<span>8 Episodes</span>
+<span>•</span>
+<span>2022</span>
+</div>
+<div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<span class="text-primary-container flex items-center gap-1 text-sm font-bold uppercase tracking-wider">
+                                    Explore Episodes <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</span>
+</div>
+</div>
+</div>
+<!-- Big Background Number -->
+<div class="absolute -bottom-8 -right-4 font-display-hero text-[180px] text-white/[0.03] font-black pointer-events-none group-hover:text-primary-container/[0.05] transition-colors duration-500">1</div>
+</div>
+<!-- Season 2 Card -->
+<div class="group relative h-[250px] rounded-xl overflow-hidden cursor-pointer border border-white/5 hover:border-primary-container/50 transition-all duration-500 shadow-lg">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Abstract cinematic art representing an escalation in a sci-fi thriller. Two intersecting shards of red light break through a monolithic dark grey structure in a void of pure blackness." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBNylTIdr-jeH_4HWDtXvW9VthY7Nq7qx0b4-evfbd3dprA5a3qAaHcoe7dMaIUY0ZmJmnQOl3UfYdbrLknc20kPbqmN57qv8UVibWJD4EdnW0hYNstO9GnTtvNB3Ln4QqvWBdYPzEmywgUA9RfxG3EOxx7YpHwkuEvzpHmS_k-pBoNOyOmi7_iah9h2_gz7HBaEzJS4lTdRwVpgWVagmLifugy12rxovM9czPLHEhSdaa5pl0ZwXSvztOy3BEJGfEY-WwjobKFrEo')">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent"></div>
+<div class="absolute inset-0 bg-background-obsidian/20 group-hover:bg-transparent transition-colors duration-300"></div>
+<div class="absolute inset-0 p-6 flex flex-col justify-end">
+<div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-headline-md text-text-primary mb-1 drop-shadow-md">Season 2</h3>
+<div class="flex items-center gap-4 text-text-secondary font-body-md text-sm">
+<span>10 Episodes</span>
+<span>•</span>
+<span>2023</span>
+</div>
+<!-- Continue Watching State -->
+<div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="w-full bg-white/10 h-1.5 rounded-full mb-2 overflow-hidden">
+<div class="bg-primary-container h-full w-[40%] rounded-full shadow-[0_0_10px_rgba(229,9,20,0.8)]"></div>
+</div>
+<span class="text-primary-container flex items-center gap-1 text-sm font-bold uppercase tracking-wider">
+                                    Resume Ep 4 <span class="material-symbols-outlined text-[16px]">play_circle</span>
+</span>
+</div>
+</div>
+</div>
+<div class="absolute -bottom-8 -right-4 font-display-hero text-[180px] text-white/[0.03] font-black pointer-events-none group-hover:text-primary-container/[0.05] transition-colors duration-500">2</div>
+</div>
+<!-- Season 3 Card (Latest/Highlighted) -->
+<div class="group relative h-[250px] rounded-xl overflow-hidden cursor-pointer border border-white/5 hover:border-primary-container/50 transition-all duration-500 shadow-lg ring-1 ring-primary-container/20">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="High-impact cinematic art for the finale of a sci-fi series. An explosive burst of deep crimson particles expanding rapidly against a stark, pitch-black background, conveying intense action and resolution." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAP8izL8_MrOIx2GKjjQrcjKKMXF3nTXSMXoGxg3Xmo1Zbxz7Z1IHrtoC0xayUTndrsch6LQ1dfxfPJpGIwCJJ6izasRM0BqR7fmT_mkyxR1vwZLQP8WjF_6YprPsaHcASF7XP0NXkYJRE2YB3TpfLRsTZOu8FBtg0Z4bmzfODd76IqWQf36I7zMAfLL0fjs9yywhOXFs0KQS-j3g9dc9s5my192SCzNy0vNgYW6Le_qrx80lkUTU2HveWOIfmNmSzhHugKunvycN4')">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent"></div>
+<!-- Subtle red tint for latest season -->
+<div class="absolute inset-0 bg-primary-container/10 mix-blend-overlay group-hover:bg-transparent transition-colors duration-300"></div>
+<div class="absolute top-4 right-4 bg-primary-container text-on-primary-container font-label-caps text-[10px] px-2 py-1 rounded shadow-[0_0_10px_rgba(229,9,20,0.5)] z-10">LATEST</div>
+<div class="absolute inset-0 p-6 flex flex-col justify-end z-10">
+<div class="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+<h3 class="font-headline-md text-headline-md text-text-primary mb-1 drop-shadow-md">Season 3</h3>
+<div class="flex items-center gap-4 text-text-secondary font-body-md text-sm">
+<span>8 Episodes</span>
+<span>•</span>
+<span>2024</span>
+</div>
+<div class="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<span class="text-text-primary flex items-center gap-1 text-sm font-bold uppercase tracking-wider">
+                                    View Episodes <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</span>
+</div>
+</div>
+</div>
+<div class="absolute -bottom-8 -right-4 font-display-hero text-[180px] text-primary-container/[0.08] font-black pointer-events-none group-hover:text-primary-container/[0.15] transition-colors duration-500">3</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-background-obsidian w-full py-stack-lg border-t border-white/10 mt-12">
+<div class="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row justify-between items-center gap-6">
+<!-- Brand -->
+<div class="font-headline-md text-headline-md text-primary-container">
+                Kinochi
+            </div>
+<!-- Links -->
+<div class="flex flex-wrap items-center justify-center gap-6 font-body-md text-body-md">
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Privacy Policy</a>
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Terms of Service</a>
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Help Center</a>
+<a class="text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Contact Us</a>
+</div>
+<!-- Copyright -->
+<div class="text-on-secondary-container font-body-md text-body-md text-sm text-center md:text-right">
+                © 2024 Kinochi Streaming. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

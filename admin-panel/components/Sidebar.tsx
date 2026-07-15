@@ -1,12 +1,13 @@
 "use client";
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const API_URL = "/api/v1";
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     try {
@@ -22,45 +23,65 @@ export default function Sidebar() {
     router.push("/login");
   };
 
+  const navItems = [
+    { name: "Dashboard", href: "/", icon: "dashboard" },
+    { name: "Kinolar", href: "/movies", icon: "movie" },
+    { name: "Seriallar", href: "/series", icon: "live_tv" },
+    { name: "Kategoriyalar", href: "/categories", icon: "category" },
+    { name: "Kanallar", href: "/channels", icon: "hub" },
+    { name: "Manbalar", href: "/sources", icon: "source" },
+    { name: "Xabarnomalar", href: "/broadcasts", icon: "podcasts" },
+  ];
+
   return (
-    <div className="w-64 bg-white h-screen shadow-md flex flex-col">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800">Kinochi Admin</h1>
-      </div>
-      <nav className="flex-1 px-4 space-y-2">
-        <Link href="/" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Dashboard
-        </Link>
-        <Link href="/movies" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Movies
-        </Link>
-        <Link href="/series" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Series
-        </Link>
-        <Link href="/categories" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Categories
-        </Link>
-        <Link href="/channels" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Channels
-        </Link>
-        <Link href="/sources" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Sources
-        </Link>
-        <Link href="/broadcasts" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-md">
-          Broadcasts
-        </Link>
-        <div className="block px-4 py-2 text-gray-400 cursor-not-allowed">
-          Statistics (Coming soon)
+    <nav className="h-screen w-[280px] fixed left-0 top-0 bg-surface-container-lowest border-r border-white/5 flex flex-col z-40">
+      {/* Brand / Header */}
+      <div className="p-gutter border-b border-white/5 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary-container bg-surface-container-high flex justify-center items-center">
+          <span className="material-symbols-outlined text-primary-container text-2xl">admin_panel_settings</span>
         </div>
-      </nav>
-      <div className="p-4 border-t">
-        <button
+        <div>
+          <h1 className="font-headline-md text-xl text-primary-container">Kinochi Admin</h1>
+          <p className="font-label-caps text-[10px] text-text-secondary mt-1 uppercase tracking-widest">System Controller</p>
+        </div>
+      </div>
+      
+      {/* Navigation Links */}
+      <div className="flex-1 py-stack-md overflow-y-auto">
+        <ul className="space-y-2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <li key={item.name}>
+                <Link 
+                  href={item.href}
+                  className={`flex items-center gap-4 p-4 font-label-caps text-sm uppercase tracking-wider transition-all ${
+                    isActive 
+                      ? 'bg-primary-container/10 text-primary-container border-l-4 border-primary-container active:scale-95' 
+                      : 'text-on-secondary-container hover:bg-white/5 hover:text-text-primary border-l-4 border-transparent'
+                  }`}
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+                    {item.icon}
+                  </span>
+                  <span>{item.name}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      
+      {/* CTA / Logout */}
+      <div className="p-gutter border-t border-white/5">
+        <button 
           onClick={handleLogout}
-          className="w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition"
+          className="w-full bg-white/5 border border-white/10 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-500 text-on-secondary-container font-label-caps text-sm py-3 rounded-full hover:scale-105 transition-all duration-300 ease-out flex items-center justify-center gap-2"
         >
-          🚪 Chiqish (Logout)
+          <span className="material-symbols-outlined">logout</span>
+          Chiqish
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

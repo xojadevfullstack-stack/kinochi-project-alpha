@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kinochi - Cinematic Streaming</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;family=Outfit:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-container": "#b7b4b7",
+                        "on-secondary": "#303032",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "on-tertiary-fixed": "#001b3c",
+                        "rating-gold": "#F5C518",
+                        "tertiary-fixed-dim": "#a7c8ff",
+                        "surface-container-low": "#2a1614",
+                        "on-primary": "#690003",
+                        "surface-bright": "#4a3330",
+                        "outline-variant": "#5e3f3b",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#462f2c",
+                        "surface-container-high": "#3a2522",
+                        "surface-tint": "#ffb4aa",
+                        "secondary-fixed": "#e5e1e4",
+                        "on-surface": "#ffdad5",
+                        "tertiary-container": "#0072d7",
+                        "background": "#200e0c",
+                        "surface-dim": "#200e0c",
+                        "primary": "#ffb4aa",
+                        "on-tertiary-fixed-variant": "#004689",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "outline": "#af8782",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "background-obsidian": "#09090B",
+                        "secondary": "#c8c6c8",
+                        "primary-container": "#e50914",
+                        "on-surface-variant": "#e9bcb6",
+                        "on-primary-fixed": "#410001",
+                        "on-secondary-fixed-variant": "#474649",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#a7c8ff",
+                        "inverse-primary": "#c0000c",
+                        "inverse-on-surface": "#412b28",
+                        "on-primary-container": "#fff7f6",
+                        "surface-container-lowest": "#1a0908",
+                        "surface-container": "#2e1a18",
+                        "primary-fixed": "#ffdad5",
+                        "inverse-surface": "#ffdad5",
+                        "on-tertiary-container": "#f8f9ff",
+                        "surface-container-highest": "#462f2c",
+                        "secondary-container": "#474649",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "text-secondary": "#A1A1AA",
+                        "text-primary": "#FFFFFF",
+                        "on-primary-fixed-variant": "#930007",
+                        "on-background": "#ffdad5",
+                        "tertiary-fixed": "#d5e3ff",
+                        "on-tertiary": "#003061",
+                        "surface": "#200e0c"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "stack-lg": "32px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "container-max": "1440px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "margin-desktop": "48px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Outfit"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Outfit"],
+                        "body-md": ["Inter"],
+                        "display-hero": ["Outfit"],
+                        "display-hero-mobile": ["Outfit"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["32px", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "label-caps": ["12px", { lineHeight: "1", letterSpacing: "0.15em", fontWeight: "700" }],
+                        "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
+                        "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "700" }],
+                        "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+                        "display-hero": ["72px", { lineHeight: "1.1", letterSpacing: "-0.04em", fontWeight: "900" }],
+                        "display-hero-mobile": ["40px", { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "900" }]
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Hide scrollbar for clean horizontal rows */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden">
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter py-4 bg-background-obsidian/80 backdrop-blur-lg border-b border-white/10 shadow-2xl shadow-primary-container/20 transition-all duration-300 ease-out">
+<div class="flex items-center gap-8">
+<a class="font-display-hero-mobile text-display-hero-mobile text-primary-container tracking-tighter" href="#">Kinochi</a>
+<!-- Navigation Links (Desktop) -->
+<div class="hidden md:flex items-center gap-6">
+<a class="text-primary-container font-bold border-b-2 border-primary-container pb-1 transition-all duration-300 ease-out hover:scale-105 hover:bg-white/5 px-2 rounded-t-sm" href="#">Home</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-2 py-1 rounded-sm" href="#">Movies</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-2 py-1 rounded-sm" href="#">Series</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-2 py-1 rounded-sm" href="#">New</a>
+<a class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 hover:bg-white/5 px-2 py-1 rounded-sm" href="#">My List</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Search Bar -->
+<div class="hidden md:flex items-center bg-white/10 rounded-full px-4 py-2 border border-transparent focus-within:border-white/30 transition-colors">
+<span class="material-symbols-outlined text-text-secondary mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-48 outline-none" placeholder="Search titles..." type="text"/>
+</div>
+<!-- Trailing Icon Action -->
+<button class="text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 p-2 rounded-full hover:bg-white/5">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<!-- Profile Image Placeholder -->
+<div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 ml-2 hover:border-primary-container transition-colors cursor-pointer">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A cinematic close-up portrait of a user profile avatar. Moody lighting, dark background, high resolution, sharp focus. Subtle red rim light highlighting the jawline. Minimalist and premium aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUNi_O05bOM15Lvpv_AneXQBb28_0Xzi1_43eJg6icPD6wT5DXEv48FXvvhy3WerKoazfdOXz2cWgj-KyIVqSiuLS7j9Vh4mdbCZY3H2zOm8nn5bX5WNGXlbiUciAQNgazSQOpDJ5YypZwyK7rqV8F8DljZhlGn6fuDNZPr_4YkftHfTHgWXUCHlPDNrpxqKsBbZd2m2hsO0YkEAywBCnEcVuYe3RnjJpjoe3va05z3ENxO0FBgHUIqneTX5YJ17X7yNzPMmI2dFk"/>
+</div>
+</div>
+</nav>
+<main>
+<!-- Massive Hero Section -->
+<section class="relative w-full h-[870px] min-h-[600px] flex items-end pb-margin-desktop">
+<!-- Featured Movie Background -->
+<div class="absolute inset-0 w-full h-full">
+<img alt="Featured Movie Background" class="w-full h-full object-cover" data-alt="A breathtaking cinematic wide shot of a vast, futuristic cyberpunk cityscape at twilight. Towering skyscrapers with glowing neon signs in deep reds and cyan. Flying vehicles leaving light trails. The mood is dark, immersive, and high-stakes. Epic sci-fi movie poster style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOs6W5df73DxxsD5JKMpkFzGl4VbIz4D5Gb9dS1Gjvv-EFABUe8vEZFstxZIEosuU1vySH06fMUuUTQElrpKfbhF2gpFMzZfKmQaAnIyaYjLFZP73SB5NNyvABKCsEKbk_N_hjtiy1ccLjDqdraVZrcrioaH2T8WvBsjepAcbK0hNqjh7u1k-yYyxpphUfqRhwyUFwCZiO9zo41Ah5cePATTmK6A5515E3Jngwt8guyCyoQIw4EIxjfvh3Y5wI-UZtWVSLZ6uuROI"/>
+<!-- Smooth Dark Gradients for text readability and cinematic depth -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/60 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/40 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-container-max mx-auto px-gutter w-full">
+<div class="max-w-3xl">
+<!-- Badges -->
+<div class="flex items-center gap-3 mb-4">
+<span class="px-2 py-1 rounded bg-white/10 backdrop-blur-md text-text-primary font-label-caps text-label-caps uppercase tracking-widest border border-white/10">Sci-Fi Action</span>
+<span class="px-2 py-1 rounded bg-primary-container text-white font-label-caps text-label-caps font-bold">NEW RELEASE</span>
+</div>
+<h1 class="font-display-hero text-display-hero text-text-primary mb-4 drop-shadow-2xl">NEON ECHOES</h1>
+<p class="font-body-lg text-body-lg text-text-secondary mb-8 max-w-2xl text-shadow-sm">
+                        In a city where memories are currency, a rogue archivist must unravel a conspiracy that threatens to erase the past forever. The definitive cinematic experience of the year.
+                    </p>
+<div class="flex items-center gap-4">
+<!-- Primary Glow Button -->
+<button class="group flex items-center justify-center gap-2 px-8 py-4 bg-primary-container text-white rounded-full font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_20px_rgba(229,9,20,0.4)] hover:shadow-[0_0_30px_rgba(229,9,20,0.7)]">
+<span class="material-symbols-outlined" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                            Watch Now
+                        </button>
+<!-- Secondary Glass Button -->
+<button class="flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/10 text-text-primary rounded-full font-bold transition-all duration-300 hover:bg-white/20 hover:scale-105">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+                            More Info
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Horizontal Scrolling Rows -->
+<div class="space-y-margin-desktop py-margin-desktop">
+<!-- Trending Row -->
+<section class="max-w-container-max mx-auto">
+<div class="px-gutter mb-stack-md flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md text-text-primary flex items-center gap-2">
+<span class="w-1 h-6 bg-primary-container rounded-full block"></span>
+                        Trending Now
+                    </h2>
+<a class="text-text-secondary hover:text-primary-container text-sm font-bold transition-colors" href="#">Explore All</a>
+</div>
+<div class="flex gap-4 overflow-x-auto snap-x hide-scrollbar px-gutter pb-8 pt-4">
+<!-- Movie Card 1 -->
+<div class="w-[160px] md:w-[240px] aspect-[2/3] shrink-0 snap-start relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="A striking movie poster featuring a lone astronaut walking on a desolate, rocky red planet. The sky is an inky black space filled with bright stars. Dramatic cinematic lighting, high contrast. Title treatment implies a deep space thriller." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiYpEGlmeIOgzj-M2Cby7D9DNMHa1fv1oltDTyWkckGH2z5_Bh3BkKrotA16w1LnmrqzvuE7TtbvduznEsi_xSMh51Jbni5050_dBgkDPm56XJrr21lOrFZofBu4gdWHxqDg5xGl-EXSPjvR9AEOHFMBNPVHqmENJw5VHfRRoy8aJ2PG0szm08j7ybgg1sxw80UinScrSPgHhxrjonbbaV9ZeVIrROUFh5lUYbM2Um9JIOOyw7yPROyWIzAYB6N7SUTa4pBHw5kUY"/>
+<!-- Bottom Gradient -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90 transition-opacity"></div>
+<!-- Content Inside -->
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
+<h3 class="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">Void Walker</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-text-secondary text-sm">2024</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-rating-gold text-[16px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-text-primary text-sm font-bold">8.4</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Movie Card 2 -->
+<div class="w-[160px] md:w-[240px] aspect-[2/3] shrink-0 snap-start relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="A gritty action movie poster. A silhouette of a martial artist performing a high kick against a backdrop of rain-slicked city streets illuminated by harsh yellow and green streetlights. Dynamic angle, intense cinematic mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLcBWBx8eqtYzZni40fA_vtPKKSSQQJKjMgd_hz9diTrTnt98Q1D38FxGOVE_81u5Xttv9ft7IrvXz5UTSaZSYLstXeSreZ8FN0_acaERB8vvb9weyj0rsTtoppI5g3IeZU7V4DBhoFM5NwpnC9_Z2BcoH8w3iurwcVdQ7YZaT3l3iDXPdtjO1suCL4SHNwVmxqQaViOWTbRHHqPAoS8jhHvPt0rP5vgTwx-OV2MhnUq3v7IMxp94rPafzN6mkgYIMrjnv2pgmu2s"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
+<h3 class="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">Shadow Fist</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-text-secondary text-sm">2023</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-rating-gold text-[16px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-text-primary text-sm font-bold">7.9</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Movie Card 3 -->
+<div class="w-[160px] md:w-[240px] aspect-[2/3] shrink-0 snap-start relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="A haunting horror movie poster. A crumbling gothic mansion shrouded in thick fog. A single window glows with an eerie, unnatural red light. The overall color palette is desaturated with stark blacks and whites, punctuated by the red glow." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDvzQzpl16UHssVEBFT-FiI0gne2Asc_fPzdvfQPkHiHLsXqC53Fj03US67RTw25qFV-wHQ_thjwH1Mo4dOFeqmyhKFEfMs8w3eWTsdx8O1w4zVrEg9oO2O_GfXFzPe025KXJ0GbqP5kCjCKU82Np-oNqCD0b0OQsXbjbva_HAnwnpaQmpEv5swRkfbzPetsOnMKqm7hlbzMlO2ZpbjukEGYnCVA1kw10pTI-p64a5Cc8074imcemYjjMiA-_euXsQSqaNEu8yUbE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
+<h3 class="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">The Manor</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-text-secondary text-sm">2024</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-rating-gold text-[16px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-text-primary text-sm font-bold">6.8</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Movie Card 4 -->
+<div class="w-[160px] md:w-[240px] aspect-[2/3] shrink-0 snap-start relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="A sweeping fantasy movie poster. A majestic dragon flying over snow-capped mountains. A tiny warrior stands on a peak in the foreground, holding a glowing magical sword. Epic, high-fantasy aesthetic with cool blue and silver tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW_hK70HnAhlA2V9PY15LlWtPZ0VjbalyrPBuORrCVvcXyuwMLLP92cCyUZUgfS2xRfVVbNn2ac_F0fhW8tVx2A-S_fP226_MLdQnHPjfhGQdl1z1baQa5BmOreV4cTXoDEZKBppWYUPwyGKyKkHX5a9QrsRYpGi1LB0KZEzr3t2m9ERPpWVYvzVGc78YRf3hcl87FxyJc-LN76Ucje52ifZI8s72a9h58cEP1dnYyAyJQ3pQUxfATRP2iAGh4HXIg_Eu9WIvwdg0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90 transition-opacity"></div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
+<h3 class="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">Dragon's Peak</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-text-secondary text-sm">2023</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-rating-gold text-[16px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-text-primary text-sm font-bold">8.1</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- New Movies Row -->
+<section class="max-w-container-max mx-auto">
+<div class="px-gutter mb-stack-md flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md text-text-primary flex items-center gap-2">
+<span class="w-1 h-6 bg-primary-container rounded-full block"></span>
+                        New Releases
+                    </h2>
+</div>
+<div class="flex gap-4 overflow-x-auto snap-x hide-scrollbar px-gutter pb-8 pt-4">
+<!-- Reuse Card Pattern with different contents -->
+<div class="w-[160px] md:w-[240px] aspect-[2/3] shrink-0 snap-start relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="A slick espionage thriller poster. A close-up profile of a woman wearing futuristic sunglasses that reflect a complex web of digital data. Cold, sterile lighting, emphasizing a high-tech corporate espionage theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZhl1irzT9hrT9O13z57uMoqbHm_Hmuay3VhNBeurvLcKuzW5UE6fv2Q_658idbF_tO0rDU6Q5LrqVf9LVjgtrgRUBdhF4rUnFVz1Fk8Vh7XTDuryhonAAxWBGExiC05mfP5IP6SZMngVDtLs9tQxX9qAktegF_30hff1gxjq-TpYgrYHECX_K91OsCn16qCU-gdfdDTU5D6q1mdYM93x1B80aU4HYOkBoPTlB17lfB621Ic6wQhoqi88TQ-ZGCxKIShjdKIcjHtg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90"></div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
+<h3 class="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">Protocol</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-text-secondary text-sm">2024</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-rating-gold text-[16px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-text-primary text-sm font-bold">7.2</span>
+</div>
+</div>
+</div>
+</div>
+<div class="w-[160px] md:w-[240px] aspect-[2/3] shrink-0 snap-start relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 ring-0 hover:ring-2 hover:ring-primary-container hover:shadow-[0_0_25px_rgba(229,9,20,0.5)]">
+<img alt="Movie Poster" class="w-full h-full object-cover" data-alt="A vibrant animated feature poster. A whimsical, glowing forest filled with strange, bioluminescent plants and creatures. The art style is lush and painterly, bursting with rich purples, blues, and bright greens." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAmYjShWzz-9yWjF7vM4QvHfEPVmDWDKlFDuT6PjX6MVqhQTvKXXI-HB8V9BFuZ6UXN6i_MQnMTseaeTcS2p7tQTrv6uaP1RWXHjWXLKroMX_QAQ4MYCny1oRqqNBjq4suyTuWRQl2zL1ZIgVXvhFdgXL5ixIJp09IrhrImJ_j_6fGKxYe2CDuvehwqGuhN7bhsLOu_JBu3Byl_J65p_1gxnM8226ANd1ROc0XZBujK-U8ls3LwC_tUNylBfqPmYM7JctdWzMRn1o"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent opacity-90"></div>
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end">
+<h3 class="font-body-lg text-body-lg text-text-primary font-bold truncate drop-shadow-md">Lumina</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-text-secondary text-sm">2024</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-rating-gold text-[16px]" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-text-primary text-sm font-bold">9.0</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-stack-lg bg-background-obsidian border-t border-white/10 mt-margin-desktop">
+<div class="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row justify-between items-center gap-6">
+<!-- Brand -->
+<div class="font-headline-md text-headline-md text-primary-container">
+                Kinochi
+            </div>
+<!-- Links -->
+<nav class="flex flex-wrap items-center justify-center gap-6">
+<a class="font-body-md text-body-md text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Help Center</a>
+<a class="font-body-md text-body-md text-on-secondary-container hover:text-text-primary hover:underline transition-opacity duration-200" href="#">Contact Us</a>
+</nav>
+<!-- Copyright -->
+<div class="font-body-md text-body-md text-on-secondary-container text-sm">
+                © 2024 Kinochi Streaming. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>
