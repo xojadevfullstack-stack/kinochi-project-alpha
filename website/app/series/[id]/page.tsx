@@ -165,8 +165,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
             {series.seasons
               .sort((a: Season, b: Season) => a.season_number - b.season_number)
               .map((season: Season) => (
-              <div key={season.id} className="bg-surface-container-highest rounded-2xl overflow-hidden border border-white/5 shadow-2xl relative">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-container to-transparent opacity-50"></div>
+              <div key={season.id} className="bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm rounded-2xl overflow-hidden border border-white/5 shadow-2xl relative">
                 <div className="flex flex-col md:flex-row gap-8 p-6 md:p-8">
                   {/* Season Poster */}
                   <div className="w-full md:w-56 aspect-[2/3] relative flex-shrink-0 bg-surface-container-low rounded-xl overflow-hidden shadow-xl border border-white/10 group cursor-pointer">

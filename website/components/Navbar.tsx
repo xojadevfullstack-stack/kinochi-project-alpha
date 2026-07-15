@@ -10,6 +10,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
   // Handle scroll for navbar background
   useEffect(() => {
@@ -49,21 +50,27 @@ export default function Navbar() {
         </Link>
 
         {/* Center: Desktop Navigation */}
-        <div className="hidden md:flex flex-1 justify-center items-center gap-8">
+        <div 
+          className="hidden md:flex flex-1 justify-center items-center gap-8"
+          onMouseLeave={() => setHoveredLink(null)}
+        >
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+            const showLine = hoveredLink ? hoveredLink === link.name : isActive;
+            
             return (
               <Link
                 key={link.name}
                 href={link.href}
                 className="relative group px-2 py-1 font-bold text-[15px] transition-colors"
+                onMouseEnter={() => setHoveredLink(link.name)}
               >
                 <span className={`transition-colors duration-300 ${isActive ? "text-primary-container" : "text-on-secondary-container group-hover:text-text-primary"}`}>
                   {link.name}
                 </span>
                 <span 
                   className={`absolute -bottom-2 left-0 h-[2px] bg-primary-container transition-all duration-300 ${
-                    isActive ? "w-full" : "w-0 group-hover:w-full opacity-50"
+                    showLine ? "w-full opacity-100" : "w-0 opacity-0"
                   }`}
                 />
               </Link>
@@ -84,10 +91,9 @@ export default function Navbar() {
               placeholder="Qidirish..." 
             />
           </form>
-          
-          <button className="hidden md:flex text-on-secondary-container hover:text-text-primary transition-colors hover:scale-105 p-2 rounded-full hover:bg-white/5">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
-          </button>
+          <div className="hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center">
+            <span className="material-symbols-outlined text-text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
+          </div>
           
           <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center">
             <span className="material-symbols-outlined text-text-secondary">person</span>
@@ -110,18 +116,7 @@ export default function Navbar() {
         mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       }`}>
         <div className="flex flex-col items-center justify-center h-full gap-8 px-6">
-          <form onSubmit={handleSearch} className="w-full max-w-sm flex items-center bg-white/10 rounded-full px-4 py-3 border border-white/10">
-            <span className="material-symbols-outlined text-text-secondary mr-3 text-[24px]">search</span>
-            <input 
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-text-primary text-lg placeholder:text-text-secondary w-full outline-none" 
-              placeholder="Kino qidirish..." 
-            />
-          </form>
-
-          {navLinks.map((link) => {
+          {/* Mobile Search - Removed to avoid duplication, user can use header icon (will add if requested) */}          {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
             return (
               <Link

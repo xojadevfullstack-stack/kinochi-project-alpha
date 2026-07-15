@@ -23,13 +23,14 @@ type Category = {
 };
 
 
-export default async function SeriesListPage() {
+export default async function SeriesListPage({ searchParams }: { searchParams: { category?: string } }) {
   let seriesList: Series[] = [];
   let categories: Category[] = [];
   
   try {
+    const query = searchParams.category ? `/series?limit=50&category=${searchParams.category}` : "/series?limit=50";
     const [seriesData, categoriesData] = await Promise.all([
-      fetchApi("/series?limit=50"),
+      fetchApi(query),
       fetchApi("/categories")
     ]);
     seriesList = seriesData.items || [];
@@ -49,16 +50,19 @@ export default async function SeriesListPage() {
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta seriallar kolleksiyamiz bilan tanishing.</p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-            <Link href="/series" className="px-6 py-2 rounded-full bg-primary-container text-white font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap shadow-[0_0_15px_rgba(229,9,20,0.5)]">Barchasi</Link>
-            {categories.map(cat => (
-              <Link 
-                key={cat.id} 
-                href={`/series?category=${cat.id}`}
-                className="px-6 py-2 rounded-full bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10 font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors"
-              >
-                {cat.name}
-              </Link>
-            ))}
+            <Link href="/series" className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors ${!searchParams.category ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}>Barchasi</Link>
+            {categories.map(cat => {
+              const isActive = searchParams.category === String(cat.id);
+              return (
+                <Link 
+                  key={cat.id} 
+                  href={`/series?category=${cat.id}`}
+                  className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors ${isActive ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}
+                >
+                  {cat.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
 

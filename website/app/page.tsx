@@ -112,14 +112,14 @@ export default async function Home() {
       {/* Massive Hero Section */}
       <section className="relative w-full h-[870px] min-h-[600px] flex items-end pb-margin-desktop">
         {/* Featured Background */}
-        <div className="absolute inset-0 w-full h-full bg-background-obsidian">
+        <div className="absolute inset-0 w-full h-full">
           {heroMovie && heroMovie.poster_url ? (
             <Image 
               src={heroMovie.poster_url}
               alt={heroMovie.title}
               fill
               priority
-              className="object-cover opacity-50"
+              className="object-cover opacity-60"
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
