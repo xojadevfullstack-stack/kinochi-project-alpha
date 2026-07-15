@@ -2,6 +2,7 @@ import { fetchApi } from "@/lib/api";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Metadata } from "next";
+import ShareButton from "@/components/ShareButton";
 
 type Props = {
   params: { code: string };
@@ -120,10 +121,11 @@ export default async function MovieDetailsPage({ params }: Props) {
                 </svg>
                 TELEGRAM ORQALI TOMOSHA QILISH
               </a>
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 text-text-primary px-8 py-4 rounded-full font-label-caps text-xs uppercase tracking-widest hover:bg-white/10 hover:border-white/30 hover:scale-105 transition-all duration-300 ease-out group font-bold">
-                <span className="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">share</span>
-                ULASHISH
-              </button>
+              <ShareButton 
+                title={movie.title} 
+                text={`${movie.title} filmini bepul tomosha qiling.`}
+                url={`https://kinochi.uz/movie/${movie.code}`}
+              />
             </div>
           </div>
         </div>

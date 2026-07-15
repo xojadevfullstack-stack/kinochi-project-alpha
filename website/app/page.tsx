@@ -1,6 +1,7 @@
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
+import ShareButton from "@/components/ShareButton";
 
 export const revalidate = 60; 
 
@@ -108,54 +109,76 @@ export default async function Home() {
     console.error("Error fetching data for home page:", error);
   }
 
-  const heroMovie = latestMovies.length > 0 ? latestMovies[0] : null;
+  let heroItem: any = null;
+  let isHeroSeries = false;
+  
+  if (latestMovies.length > 0) {
+    heroItem = latestMovies[0];
+  } else if (latestSeries.length > 0) {
+    heroItem = latestSeries[0];
+    isHeroSeries = true;
+  }
 
   return (
     <>
-      {/* Massive Hero Section */}
-      <section className="relative w-full h-[870px] min-h-[600px] flex items-end pb-margin-desktop">
-        {/* Featured Background */}
-        <div className="absolute inset-0 w-full h-full">
-          {heroMovie && heroMovie.poster_url ? (
-            <>
-              <Image 
-                src={heroMovie.poster_url}
-                alt={heroMovie.title}
-                fill
-                priority
-                className="object-cover opacity-60"
-              />
-              {/* Smooth Dark Gradients */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.65] to-transparent"></div>
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian"></div>
-          )}
-        </div>
-
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full">
-          <div className="max-w-3xl">
-            {/* Badges */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
-              <span className="px-2 py-1 rounded bg-white/10 backdrop-blur-md text-text-primary font-label-caps text-[10px] sm:text-label-caps uppercase tracking-widest border border-white/10">
-                {heroMovie?.genres || "Kino"}
-              </span>
-              <span className="px-2 py-1 rounded bg-primary-container text-white font-label-caps text-[10px] sm:text-label-caps font-bold">YANGI</span>
+      {heroItem && (
+        <section className="relative w-full min-h-[700px] flex items-center pt-[100px] pb-stack-lg overflow-hidden">
+          {/* Background Blur & Gradient Overlays */}
+          <div className="absolute inset-0 bg-background-obsidian">
+            <div className="absolute inset-0 bg-cover bg-center opacity-30 blur-xl" 
+                 style={{ backgroundImage: `url('${heroItem.poster_url || ''}')` }}></div>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block"></div>
+          
+          {/* Content Container */}
+          <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-margin-desktop">
+            {/* Left: Poster */}
+            <div className="w-full md:w-1/3 lg:w-[350px] shrink-0 mt-stack-lg md:mt-0 relative group perspective-1000">
+              <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-primary-container/20 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-primary-container/40 relative bg-surface-container-high">
+                {heroItem.poster_url ? (
+                  <Image 
+                    src={heroItem.poster_url}
+                    alt={heroItem.title}
+                    fill
+                    priority
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                     <span className="material-symbols-outlined text-6xl opacity-30">movie</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              </div>
             </div>
             
-            <h1 className="font-display-hero text-4xl sm:text-[48px] md:text-display-hero text-text-primary mb-4 drop-shadow-2xl tracking-tighter leading-tight">
-              {heroMovie ? heroMovie.title : "KINOCHI PREMIUM"}
-            </h1>
-            
-            <p className="font-body-lg text-body-lg text-text-secondary mb-8 max-w-2xl text-shadow-sm line-clamp-3">
-              {heroMovie?.description || "Telegram tarmog'idagi eng katta va qulay kino bazasi. O'zingiz yoqtirgan filmlarni toping va bepul tomosha qiling."}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              {heroMovie ? (
+            {/* Right: Movie Info */}
+            <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
+              <h1 className="font-display-hero text-4xl sm:text-[48px] md:text-display-hero text-text-primary mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+                {heroItem.title}
+              </h1>
+              
+              {/* Badges Row */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-stack-md font-label-caps text-label-caps tracking-widest uppercase text-xs">
+                <div className="flex items-center gap-1 text-rating-gold bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5">
+                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span>{heroItem.imdb_rating || heroItem.tmdb_rating || "N/A"}</span>
+                </div>
+                <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{heroItem.release_year || "2024"}</span>
+                <span className="text-text-primary font-bold bg-white/10 px-3 py-1.5 rounded border border-white/20">PREMIUM</span>
+                <span className="text-text-primary bg-white/5 px-3 py-1.5 rounded border border-white/5">{isHeroSeries ? "SERIAL" : "KINO"}</span>
+              </div>
+              
+              {/* Description */}
+              <p className="font-body-lg text-body-lg text-text-secondary mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-4">
+                {heroItem.description || "Ushbu ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-center md:justify-start">
                 <a 
-                  href={`https://t.me/${botUsername}?start=${heroMovie.code}`}
+                  href={`https://t.me/${botUsername}?start=${isHeroSeries ? 's_' + heroItem.id : heroItem.code}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary-container text-white px-8 py-4 rounded-full font-label-caps text-xs uppercase tracking-widest hover:bg-inverse-primary hover:scale-105 hover:shadow-[0_0_30px_rgba(229,9,20,0.4)] transition-all duration-300 ease-out group font-bold"
@@ -165,19 +188,16 @@ export default async function Home() {
                   </svg>
                   TELEGRAM ORQALI TOMOSHA QILISH
                 </a>
-              ) : (
-                <Link 
-                  href="/movies"
-                  className="flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/10 text-text-primary rounded-full font-bold transition-all duration-300 hover:bg-white/20 hover:scale-105"
-                >
-                  <span className="material-symbols-outlined">movie</span>
-                  Barcha kinolar
-                </Link>
-              )}
+                <ShareButton 
+                  title={heroItem.title} 
+                  text={`${heroItem.title} ni bepul tomosha qiling.`}
+                  url={`https://kinochi.uz/${isHeroSeries ? 'series' : 'movie'}/${isHeroSeries ? heroItem.id : heroItem.code}`}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Horizontal Scrolling Rows */}
       <div className="space-y-margin-desktop py-margin-desktop -mt-20 relative z-20">
