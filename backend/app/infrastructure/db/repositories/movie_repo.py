@@ -74,7 +74,7 @@ class MovieRepositoryImpl(IMovieRepository):
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)
         
-        result = await self.session.execute(query.offset(skip).limit(limit))
+        result = await self.session.execute(query.order_by(MovieModel.id.desc()).offset(skip).limit(limit))
         models = result.scalars().all()
         
         return [self._to_domain(m) for m in models], total or 0
@@ -94,7 +94,7 @@ class MovieRepositoryImpl(IMovieRepository):
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)
         
-        result = await self.session.execute(query.offset(skip).limit(limit))
+        result = await self.session.execute(query.order_by(MovieModel.id.desc()).offset(skip).limit(limit))
         models = result.scalars().all()
         
         return [self._to_domain(m) for m in models], total or 0
