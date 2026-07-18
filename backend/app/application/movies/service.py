@@ -38,6 +38,7 @@ class MovieService:
         poster_url: str | None = None,
         trailer_url: str | None = None,
         category_ids: list[int] | None = None,
+        page_ids: list[int] | None = None,
         source_chat_id: int | None = None,
         source_topic_id: int | None = None
     ) -> Movie:

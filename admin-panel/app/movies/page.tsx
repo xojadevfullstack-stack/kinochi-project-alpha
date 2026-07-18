@@ -85,6 +85,7 @@ export default function MoviesPage() {
     setErrorMsg(null);
     const payload = {
       ...form,
+      runtime: form.duration_minutes,
       source_link: form.source_link || null
     };
 
