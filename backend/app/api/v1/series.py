@@ -275,31 +275,15 @@ async def upload_episode_video(
     admin: dict = Depends(get_current_admin)
 ):
     """Qism videosini qabul qilib, orqa fonda Telegram'ga yuklaydi."""
-    MAX_SIZE = 50 * 1024 * 1024
-
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi.")
-
-    content_length = request.headers.get("content-length")
-    if content_length:
-        try:
-            if int(content_length) > MAX_SIZE:
-                raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
-        except ValueError:
-            pass
 
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir="/tmp")
     tmp_path = tmp_file.name
 
-    total_size = 0
     try:
         async for chunk in file:
-            total_size += len(chunk)
-            if total_size > MAX_SIZE:
-                tmp_file.close()
-                os.remove(tmp_path)
-                raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
             tmp_file.write(chunk)
         tmp_file.close()
     except HTTPException:
