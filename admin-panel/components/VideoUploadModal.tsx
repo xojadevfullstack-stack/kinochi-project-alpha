@@ -53,7 +53,7 @@ export default function VideoUploadModal({
         // Server uyg'onishini kutish (Render free tier uyquda bo'lishi mumkin)
         setUploadProgress(0);
         try {
-          await fetchApi("/health".replace("/api/v1", "").replace("https://kinochi-project-alpha.onrender.com/api/v1", "https://kinochi-project-alpha.onrender.com/health"));
+          await fetch(HEALTH_URL, { method: "GET", signal: AbortSignal.timeout(10000) });
         } catch (e) {
           // health check ishlamasa ham davom etamiz
         }
@@ -177,27 +177,23 @@ export default function VideoUploadModal({
                 className="w-full bg-surface-container border border-white/10 rounded-xl p-2.5 text-text-primary file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-container file:text-text-primary hover:file:bg-primary-container/90 focus:outline-none cursor-pointer file:transition-colors file:cursor-pointer transition-all" 
               />
               {uploadProgress !== null && (
-                <div className="mt-5 p-4 bg-surface-container rounded-xl border border-white/5">
-                  <div className="flex justify-between text-xs text-text-secondary mb-3 font-medium">
-                    <span className="flex items-center gap-2">
-                      {uploadProgress < 100 ? (
-                        <>
-                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                          Serverga yuklanmoqda...
-                        </>
-                      ) : (
-                        <>
-                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                          Telegram kanalga joylanmoqda (Biroz kuting)...
-                        </>
-                      )}
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs text-text-secondary mb-1">
+                    <span>
+                      {uploadProgress === 0
+                        ? "Server uyg'otilmoqda..."
+                        : uploadProgress < 100 
+                          ? "Serverga yuklanmoqda..." 
+                          : "Telegram kanalga joylanmoqda (Biroz kuting)..."}
                     </span>
-                    <span className={uploadProgress === 100 ? "text-green-400" : "text-blue-400"}>{uploadProgress}%</span>
+                    <span className={uploadProgress === 100 ? "text-green-400" : "text-blue-400"}>
+                      {uploadProgress > 0 ? `${uploadProgress}%` : ""}
+                    </span>
                   </div>
                   <div className="w-full bg-surface-container-highest rounded-full h-2.5 overflow-hidden border border-white/5">
                     <div 
-                      className={`h-full rounded-full transition-all duration-300 relative overflow-hidden ${uploadProgress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                      style={{ width: `${uploadProgress}%` }}
+                      className={`h-full rounded-full transition-all duration-300 ${uploadProgress === 0 ? "bg-yellow-500 animate-pulse w-full" : (uploadProgress === 100 ? "bg-green-500" : "bg-blue-500")}`}
+                      style={{ width: uploadProgress === 0 ? "100%" : `${uploadProgress}%` }}
                     >
                       <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                     </div>
