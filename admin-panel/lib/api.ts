@@ -1,5 +1,8 @@
-const API_URL = "https://kinochi-project-alpha.onrender.com/api/v1";
-const DIRECT_API_URL = "https://kinochi-project-alpha.onrender.com/api/v1";
+const RENDER_BASE_URL = "https://kinochi-project-alpha.onrender.com";
+const API_URL = `${RENDER_BASE_URL}/api/v1`;
+const DIRECT_API_URL = `${RENDER_BASE_URL}/api/v1`;
+
+export const HEALTH_URL = `${RENDER_BASE_URL}/health`;
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_URL}${endpoint}`;
@@ -157,6 +160,12 @@ export function uploadWithProgress(
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
     
+    // CORS uchun cookie va header yuborish
+    xhr.withCredentials = true;
+    
+    // Video upload uchun timeout: 5 daqiqa (300 000 ms)
+    xhr.timeout = 300_000;
+    
     if (token) {
       xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     }
@@ -176,7 +185,7 @@ export function uploadWithProgress(
           resolve(xhr.responseText);
         }
       } else {
-        let errorMsg = `Error: ${xhr.status} ${xhr.statusText}`;
+        let errorMsg = `Server xatosi: ${xhr.status} ${xhr.statusText}`;
         try {
           const data = JSON.parse(xhr.responseText);
           if (data.detail) {
@@ -188,7 +197,16 @@ export function uploadWithProgress(
     };
 
     xhr.onerror = () => {
-      reject(new Error("Network Error occurred during upload"));
+      reject(new Error(
+        "Server bilan ulanib bo'lmadi. Render uyquda bo'lishi mumkin — " +
+        "bir oz kuting (30 sek) va qayta urinib ko'ring."
+      ));
+    };
+    
+    xhr.ontimeout = () => {
+      reject(new Error(
+        "Upload vaqti tugadi (5 daqiqa). Fayl hajmi juda katta yoki internet sekin bo'lishi mumkin."
+      ));
     };
 
     const formData = new FormData();
