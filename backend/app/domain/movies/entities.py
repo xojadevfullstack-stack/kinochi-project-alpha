@@ -24,6 +24,9 @@ class Movie(BaseModel):
     trailer_url: str | None = None
     code: str = Field(..., min_length=1, max_length=50) # Unique code
     
+    source_chat_id: int | None = None
+    source_topic_id: int | None = None
+    
     translations: list['MovieTranslation'] = Field(default_factory=list)
     
     created_at: datetime | None = None

@@ -104,17 +104,19 @@ class SeriesRepository:
             return None
         
         data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
+        
+        category_ids = data.pop("category_ids", None) if isinstance(update_data, dict) else update_data.category_ids
+        page_ids = data.pop("page_ids", None) if isinstance(update_data, dict) else update_data.page_ids
+        
         for key, value in data.items():
             setattr(series, key, value)
             
-        # Get category_ids from dict or model
-        category_ids = data.get("category_ids") if isinstance(update_data, dict) else update_data.category_ids
+        # Update category_ids from dict or model
         if category_ids is not None:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             series.categories = list(categories)
             
-        page_ids = data.get("page_ids") if isinstance(update_data, dict) else update_data.page_ids
         if page_ids is not None:
             from app.infrastructure.db.models.page import PageModel
             result = await self.session.execute(select(PageModel).where(PageModel.id.in_(page_ids)))
