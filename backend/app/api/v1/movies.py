@@ -2,6 +2,9 @@
 from typing import Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 import logging
+import asyncio
+import os
+import tempfile
 from pydantic import BaseModel, Field, computed_field
 
 logger = logging.getLogger(__name__)
@@ -13,6 +16,7 @@ from app.api.v1.categories import CategoryResponse
 from app.api.v1.pages import PageResponse
 from app.infrastructure.telegram.telegram_client import telegram_client
 from app.utils.telegram_link_parser import parse_telegram_link
+from app.core.job_manager import job_manager, JobStatus
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -199,7 +203,13 @@ async def update_movie(
     return movie
 
 
-@router.post("/{movie_id}/upload-video", response_model=MovieResponse)
+class UploadJobResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str
+
+
+@router.post("/{movie_id}/upload-video", response_model=UploadJobResponse)
 async def upload_movie_video(
     movie_id: int,
     request: Request,
@@ -208,52 +218,115 @@ async def upload_movie_video(
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin)
 ):
-    """Upload video for a movie to Telegram storage (Admin only)."""
+    """
+    Video faylni qabul qilib, orqa fonda Telegram'ga yuklaydi.
+    Darhol job_id qaytaradi — frontend GET /upload-jobs/{job_id} orqali
+    statusni kuzatib boradi.
+    """
     MAX_SIZE = 50 * 1024 * 1024  # 50 MB
 
     if not file.content_type or not file.content_type.startswith("video/"):
-        raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak).")
+        raise HTTPException(
+            status_code=400,
+            detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak)."
+        )
 
-    # 1. Content-Length header tekshiruvi (agar server yuborsa)
+    # Content-Length tekshiruvi
     content_length = request.headers.get("content-length")
     if content_length:
         try:
             if int(content_length) > MAX_SIZE:
                 raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
         except ValueError:
-            pass  # Invalid Content-Length — chunked o'qishda tekshiramiz
+            pass
 
-    # 2. Chunked o'qish — xotirani to'ldirmaslik uchun
-    chunks = []
+    # ── Faylni /tmp/ ga saqlash (tez, Render'ning 100s limitiga tushmaydi) ──
+    suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir="/tmp")
+    tmp_path = tmp_file.name
+
     total_size = 0
-    async for chunk in file:
-        total_size += len(chunk)
-        if total_size > MAX_SIZE:
-            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
-        chunks.append(chunk)
-    file_bytes = b"".join(chunks)
-
     try:
-        file_id, message_id = await telegram_client.send_video_to_storage(
-            file_bytes=file_bytes,
-            filename=file.filename or "video.mp4",
-            mime_type=file.content_type
-        )
-    except Exception as e:
-        logger.error(f"Error in upload_movie_video endpoint for movie {movie_id}: {str(e)}", exc_info=True)
+        async for chunk in file:
+            total_size += len(chunk)
+            if total_size > MAX_SIZE:
+                tmp_file.close()
+                os.remove(tmp_path)
+                raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+            tmp_file.write(chunk)
+        tmp_file.close()
+    except HTTPException:
         raise
+    except Exception as e:
+        try:
+            tmp_file.close()
+            os.remove(tmp_path)
+        except Exception:
+            pass
+        logger.error(f"Error saving tmp file: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
 
-    movie = await service.add_movie_translation(
-        movie_id=movie_id,
-        language=language,
-        file_id=file_id,
-        message_id=message_id
+    # ── Background job yaratish ──
+    job_id = await job_manager.create_job(meta={"movie_id": movie_id, "language": language})
+
+    async def _background_upload():
+        """Orqa fonda Telegram'ga yuklash va bazaga yozish."""
+        await job_manager.set_processing(job_id, progress=5)
+        try:
+            async def _on_progress(pct: int):
+                await job_manager.set_progress(job_id, pct)
+
+            file_id, message_id = await telegram_client.send_video_to_storage(
+                tmp_path=tmp_path,
+                filename=file.filename or "video.mp4",
+                mime_type=file.content_type or "video/mp4",
+                on_progress=lambda p: asyncio.ensure_future(_on_progress(p)),
+            )
+
+            movie = await service.add_movie_translation(
+                movie_id=movie_id,
+                language=language,
+                file_id=file_id,
+                message_id=message_id
+            )
+            if not movie:
+                await job_manager.set_failed(job_id, "Kino topilmadi (ID noto'g'ri).")
+                return
+
+            await job_manager.set_done(job_id, result={"movie_id": movie_id, "language": language})
+        except Exception as e:
+            err_msg = str(e)
+            logger.error(f"Background upload failed for job {job_id}: {err_msg}", exc_info=True)
+            await job_manager.set_failed(job_id, err_msg)
+            # tmp faylni tozalash (telegram_client finally bloki ishlamagan bo'lsa)
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+
+    # Orqa fonda ishga tushirish — HTTP response shu yerda qaytadi
+    asyncio.create_task(_background_upload())
+    await job_manager.cleanup_old_jobs()
+
+    return UploadJobResponse(
+        job_id=job_id,
+        status=JobStatus.PROCESSING,
+        message="Video qabul qilindi. Telegram'ga yuklanmoqda..."
     )
 
-    if not movie:
-        raise HTTPException(status_code=404, detail="Kino topilmadi.")
 
-    return movie
+@router.get("/{movie_id}/upload-jobs/{job_id}")
+async def get_upload_job_status(
+    movie_id: int,
+    job_id: str,
+    admin: dict = Depends(get_current_admin)
+):
+    """Background upload job statusini tekshirish (polling uchun)."""
+    job = await job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job topilmadi.")
+    return job
 
 
 class LinkVideoRequest(BaseModel):

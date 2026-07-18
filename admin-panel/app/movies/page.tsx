@@ -295,6 +295,7 @@ export default function MoviesPage() {
         isOpen={videoModalOpen}
         onClose={closeVideoModal}
         entityName="Kino"
+        entityId={videoMovieId}
         uploadEndpoint={`/movies/${videoMovieId}/upload-video`}
         linkEndpoint={`/movies/${videoMovieId}/link-video`}
         onSuccess={() => loadMovies()}

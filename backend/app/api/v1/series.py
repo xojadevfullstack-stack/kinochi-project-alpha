@@ -1,7 +1,11 @@
 """API v1 — Series endpoints."""
 import logging
+import asyncio
+import os
+import tempfile
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
+from pydantic import BaseModel
 
 from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot
 from app.application.series.series_service import SeriesService
@@ -10,6 +14,8 @@ from app.domain.series.entities import (
     Season, SeasonCreate, SeasonUpdate,
     Episode, EpisodeCreate, EpisodeUpdate
 )
+from app.infrastructure.telegram.telegram_client import telegram_client
+from app.core.job_manager import job_manager, JobStatus
 
 logger = logging.getLogger(__name__)
 
@@ -252,31 +258,117 @@ async def delete_episode(
         raise HTTPException(status_code=404, detail="Episode not found")
 
 
-@router.post("/episodes/{episode_id}/upload-video", response_model=Episode)
+class UploadJobResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str
+
+
+@router.post("/episodes/{episode_id}/upload-video", response_model=UploadJobResponse)
 async def upload_episode_video(
     episode_id: int,
+    request: Request,
     file: UploadFile = File(...),
     language: str = Form("Asosiy"),
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
-    """Upload video for an episode to Telegram storage (Admin only)."""
+    """Qism videosini qabul qilib, orqa fonda Telegram'ga yuklaydi."""
+    MAX_SIZE = 50 * 1024 * 1024
+
     if not file.content_type or not file.content_type.startswith("video/"):
-        raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak).")
+        raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi.")
 
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > MAX_SIZE:
+                raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+        except ValueError:
+            pass
+
+    suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir="/tmp")
+    tmp_path = tmp_file.name
+
+    total_size = 0
     try:
-        episode = await service.upload_episode_video(episode_id, file, language)
-        if not episode:
-            raise HTTPException(status_code=404, detail="Episode not found")
-        return episode
+        async for chunk in file:
+            total_size += len(chunk)
+            if total_size > MAX_SIZE:
+                tmp_file.close()
+                os.remove(tmp_path)
+                raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+            tmp_file.write(chunk)
+        tmp_file.close()
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error in upload_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
-        # Ensure we return a user-friendly error if it's too large or something else fails
-        if "too large" in str(e).lower() or "memory" in str(e).lower():
-            raise HTTPException(status_code=400, detail="Video hajmi juda katta.")
-        raise HTTPException(status_code=500, detail="Video yuklashda xatolik yuz berdi.")
+        try:
+            tmp_file.close()
+            os.remove(tmp_path)
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
 
-from pydantic import BaseModel
+    job_id = await job_manager.create_job(meta={"episode_id": episode_id, "language": language})
+
+    async def _background_upload():
+        await job_manager.set_processing(job_id, progress=5)
+        try:
+            async def _on_progress(pct: int):
+                await job_manager.set_progress(job_id, pct)
+
+            file_id, message_id = await telegram_client.send_video_to_storage(
+                tmp_path=tmp_path,
+                filename=file.filename or "video.mp4",
+                mime_type=file.content_type or "video/mp4",
+                on_progress=lambda p: asyncio.ensure_future(_on_progress(p)),
+            )
+
+            episode = await service.add_episode_translation(
+                episode_id=episode_id,
+                language=language,
+                file_id=file_id,
+                message_id=message_id
+            )
+            if not episode:
+                await job_manager.set_failed(job_id, "Qism topilmadi.")
+                return
+            await job_manager.set_done(job_id, result={"episode_id": episode_id, "language": language})
+        except Exception as e:
+            err_msg = str(e)
+            logger.error(f"Background upload failed for job {job_id}: {err_msg}", exc_info=True)
+            await job_manager.set_failed(job_id, err_msg)
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+
+    asyncio.create_task(_background_upload())
+    await job_manager.cleanup_old_jobs()
+
+    return UploadJobResponse(
+        job_id=job_id,
+        status=JobStatus.PROCESSING,
+        message="Video qabul qilindi. Telegram'ga yuklanmoqda..."
+    )
+
+
+@router.get("/episodes/{episode_id}/upload-jobs/{job_id}")
+async def get_episode_upload_job_status(
+    episode_id: int,
+    job_id: str,
+    admin: dict = Depends(get_current_admin)
+):
+    """Episode background upload job statusini tekshirish."""
+    job = await job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job topilmadi.")
+    return job
+
+
 class LinkVideoRequest(BaseModel):
     message_id: int
     language: str = "Asosiy"

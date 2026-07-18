@@ -324,6 +324,7 @@ export default function EpisodesListPage() {
           setVideoEpisodeId(null);
         }}
         entityName="Qism"
+        entityId={videoEpisodeId}
         uploadEndpoint={`/series/episodes/${videoEpisodeId}/upload-video`}
         linkEndpoint={`/series/episodes/${videoEpisodeId}/link-video`}
         onSuccess={() => loadData()}
