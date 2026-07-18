@@ -38,12 +38,16 @@ def parse_telegram_link(url: str) -> dict[str, int | None]:
     # Format: c/<chat_id>/<topic_id>/<message_id>
     if len(parts) == 4:
         _, chat_id_str, topic_id_str, message_id_str = parts
-    # Format: c/<chat_id>/<message_id>
+    # Format: c/<chat_id>/<message_id_or_topic_id>
     elif len(parts) == 3:
         _, chat_id_str, message_id_str = parts
-        # Oson yechim: agar faqat 2 ta raqam bo'lsa, oxirgisini topic_id deb qabul qilamiz.
-        # Chunki kanal bo'lsa topic ahamiyatsiz, topic bo'lsa bu aynan topic ID bo'ladi.
+        # Oxirgi raqamni topic_id sifatida saqlaymiz (kanal uchun ahamiyatsiz)
         topic_id_str = message_id_str
+    # Format: c/<chat_id>  — faqat kanal/guruh ID (message_id yo'q)
+    elif len(parts) == 2:
+        _, chat_id_str = parts
+        message_id_str = "0"
+        topic_id_str = None
     else:
         raise ValueError("Noto'g'ri Telegram link formati: noto'g'ri URL segmentlari.")
         

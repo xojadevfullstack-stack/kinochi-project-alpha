@@ -198,8 +198,8 @@ export default function MoviesPage() {
           
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-text-secondary mb-1">Manba (Telegram) link (ixtiyoriy)</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://t.me/c/..." value={form.source_link} onChange={e => setForm({...form, source_link: e.target.value})} />
-            <p className="text-xs text-text-secondary mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi (https://t.me/c/... formatida). Ommaviy (@username bilan) guruh linklari ishlamaydi.</p>
+            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://t.me/c/1234567890 yoki https://t.me/c/1234567890/42" value={form.source_link} onChange={e => setForm({...form, source_link: e.target.value})} />
+            <p className="text-xs text-text-secondary mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi. Formatlar: <code className="bg-white/5 px-1 rounded">https://t.me/c/&lt;chat_id&gt;</code> yoki <code className="bg-white/5 px-1 rounded">https://t.me/c/&lt;chat_id&gt;/&lt;message_id&gt;</code>. Ommaviy (@username) linklar ishlamaydi.</p>
             {errorMsg && <p className="text-red-400 text-sm mt-1">{errorMsg}</p>}
           </div>
 

@@ -36,14 +36,20 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     delete headers["Content-Type"];
   }
 
-  const response = await fetch(url, {
-    ...options,
-    credentials: "include",
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      credentials: "include",
+      headers,
+    });
+  } catch (networkError: any) {
+    // "Failed to fetch" — server o'chiq yoki internet yo'q
+    throw new Error("Server bilan ulanib bo'lmadi. Server ishlaydimi? (Render uxlab qolgan bo'lishi mumkin — bir oz kuting va qayta urinib ko'ring.)");
+  }
 
   if (!response.ok) {
-    let errorMsg = `Error: ${response.status} ${response.statusText}`;
+    let errorMsg = `Server xatosi: ${response.status} ${response.statusText}`;
     try {
       const data = await response.json();
       if (data.detail) {
