@@ -102,6 +102,12 @@ export default function VideoUploadModal({
         const file = fileInputRef.current?.files?.[0];
         if (!file) { alert("Iltimos, video faylni tanlang!"); return; }
 
+        // Fayl hajmi tekshiruvi (50 MB limit)
+        if (file.size > 50 * 1024 * 1024) {
+          alert("Fayl hajmi 50 MB dan oshmasligi kerak!");
+          return;
+        }
+
         // ── 1-bosqich: fayl → server (XHR progress) ──
         setPhase("uploading");
         setUploadProgress(0);

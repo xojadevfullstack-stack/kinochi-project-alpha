@@ -4,6 +4,9 @@ from services.api_client import api_client
 from utils.info_sender import send_movie_info, send_series_info
 from keyboards.inline import get_main_menu_inline, get_catalog_categories_inline, build_catalog_items_list
 from config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -20,7 +23,8 @@ async def handle_catalog_btn(callback: CallbackQuery):
             await callback.message.answer(text, reply_markup=markup)
         else:
             await callback.message.edit_text(text, reply_markup=markup)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Error in handle_catalog_btn: {e}")
         await callback.message.answer(text, reply_markup=markup)
     await callback.answer()
 
@@ -46,7 +50,8 @@ async def handle_back_to_main(callback: CallbackQuery):
                 reply_markup=get_main_menu_inline(get_webapp_url()),
                 parse_mode="HTML"
             )
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Error in handle_back_to_main: {e}")
         await callback.message.answer(
             welcome_text, 
             reply_markup=get_main_menu_inline(get_webapp_url()),
@@ -72,7 +77,8 @@ async def handle_movies_catalog(callback: CallbackQuery):
             await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
         else:
             await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Error in handle_movies_catalog: {e}")
         await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
 
@@ -94,7 +100,8 @@ async def handle_series_catalog(callback: CallbackQuery):
             await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
         else:
             await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Error in handle_series_catalog: {e}")
         await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
 
@@ -110,8 +117,8 @@ async def handle_catalog_movie_select(callback: CallbackQuery):
     # Or just send it. Let's send as new message and optionally delete old one.
     try:
         await callback.message.delete()
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Could not delete message in handle_catalog_movie_select: {e}")
     
     await send_movie_info(callback.bot, callback.from_user.id, movie)
     await callback.answer()
@@ -126,8 +133,8 @@ async def handle_catalog_series_select(callback: CallbackQuery):
         
     try:
         await callback.message.delete()
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Could not delete message in handle_catalog_series_select: {e}")
         
     await send_series_info(callback.bot, callback.from_user.id, series)
     await callback.answer()

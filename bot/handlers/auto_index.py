@@ -2,6 +2,7 @@ import logging
 import uuid
 import asyncio
 from aiogram import Router, F, Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message
 from config import settings
 from services.api_client import api_client
@@ -93,8 +94,13 @@ async def process_video(message: Message, bot: Bot):
                 await bot.send_message(storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
                 
             # 5. Copy video to storage
-            msg = await bot.copy_message(storage_channel_id, from_chat_id=chat_id, message_id=message.message_id)
-            storage_msg_id = msg.message_id
+            try:
+                msg = await bot.copy_message(storage_channel_id, from_chat_id=chat_id, message_id=message.message_id)
+                storage_msg_id = msg.message_id
+            except TelegramBadRequest as e:
+                logger.error(f"Cannot copy message to storage. Missing permissions or invalid msg? {e}")
+                await message.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki noto'g'ri).")
+                return
             
             # 6. Create Episode
             code = str(uuid.uuid4())[:8]

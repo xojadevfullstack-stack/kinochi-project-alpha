@@ -17,6 +17,7 @@ from app.api.v1.pages import PageResponse
 from app.infrastructure.telegram.telegram_client import telegram_client
 from app.utils.telegram_link_parser import parse_telegram_link
 from app.core.job_manager import job_manager, JobStatus
+from app.api.limiter import limiter
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -106,7 +107,9 @@ class PaginatedMoviesResponse(BaseModel):
 
 # ── Endpoints ────────────────────────────────────────────────────
 @router.post("", response_model=MovieResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_movie(
+    request: Request,
     movie_in: MovieCreate,
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin)
@@ -127,7 +130,9 @@ async def create_movie(
 
 
 @router.get("", response_model=PaginatedMoviesResponse)
+@limiter.limit("100/minute")
 async def list_movies(
+    request: Request,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     category_id: int | None = None,
@@ -141,8 +146,10 @@ async def list_movies(
 
 
 @router.get("/search", response_model=PaginatedMoviesResponse)
+@limiter.limit("60/minute")
 async def search_movies(
-    q: str = Query(..., min_length=2),
+    request: Request,
+    q: str = Query(..., min_length=2, description="Qidiruv matni"),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     service: MovieService = Depends(get_movie_service)
@@ -153,7 +160,9 @@ async def search_movies(
 
 
 @router.get("/{movie_id}", response_model=MovieResponse)
+@limiter.limit("120/minute")
 async def get_movie(
+    request: Request,
     movie_id: int,
     service: MovieService = Depends(get_movie_service)
 ):
@@ -164,13 +173,15 @@ async def get_movie(
     return movie
 
 
-@router.get("/code/{code}", response_model=MovieResponse)
+@router.get("/code/{movie_code}", response_model=MovieResponse)
+@limiter.limit("120/minute")
 async def get_movie_by_code(
-    code: str,
+    request: Request,
+    movie_code: str,
     service: MovieService = Depends(get_movie_service)
 ):
     """Get movie by unique code (Public / used by bot deep link)."""
-    movie = await service.get_movie_by_code(code)
+    movie = await service.get_movie_by_code(movie_code)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return movie
@@ -230,9 +241,15 @@ async def upload_movie_video(
             detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak)."
         )
 
-    # ── Faylni /tmp/ ga saqlash (tez, Render'ning 100s limitiga tushmaydi) ──
+    # Hajm tekshiruvi (50MB = 50 * 1024 * 1024 = 52428800)
+    if request.headers.get('content-length'):
+        if int(request.headers.get('content-length')) > 52428800:
+            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+
+    # ── Faylni vaqtinchalik joyga saqlash (tez, Render'ning 100s limitiga tushmaydi) ──
+    # OS ni o'zining temp papkasi ishlatiladi
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir="/tmp")
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp_path = tmp_file.name
 
     try:

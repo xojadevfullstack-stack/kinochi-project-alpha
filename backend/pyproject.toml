@@ -29,6 +29,7 @@ dependencies = [
 
     # Cache / rate-limiting
     "redis[hiredis]>=5.0,<6.0",
+    "slowapi>=0.1.9,<1.0",
 
     # Utilities
     "shortuuid>=1.0.11",

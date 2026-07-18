@@ -1,4 +1,7 @@
+import logging
 import httpx
+
+logger = logging.getLogger(__name__)
 from typing import Optional, Dict, Any
 from config import settings
 
@@ -26,7 +29,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error registering user: {e}")
+            logger.error(f"Error registering user: {e}")
             return {}
 
     async def get_movie_by_code(self, code: str) -> Optional[Dict[str, Any]]:
@@ -37,7 +40,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching movie {code}: {e}")
+            logger.error(f"Error fetching movie {code}: {e}")
             return None
 
     async def get_movie_by_id(self, movie_id: int) -> Optional[Dict[str, Any]]:
@@ -48,7 +51,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching movie by ID {movie_id}: {e}")
+            logger.error(f"Error fetching movie by ID {movie_id}: {e}")
             return None
 
     async def get_episode_by_code(self, code: str) -> Optional[Dict[str, Any]]:
@@ -59,7 +62,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching episode {code}: {e}")
+            logger.error(f"Error fetching episode {code}: {e}")
             return None
 
     async def get_series_by_id(self, series_id: int) -> Optional[Dict[str, Any]]:
@@ -70,7 +73,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching series {series_id}: {e}")
+            logger.error(f"Error fetching series {series_id}: {e}")
             return None
 
     async def get_series_by_source(self, chat_id: int, topic_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
@@ -84,7 +87,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching series by source {chat_id}/{topic_id}: {e}")
+            logger.error(f"Error fetching series by source {chat_id}/{topic_id}: {e}")
             return None
 
     async def create_episode(self, season_id: int, episode_number: int, title: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -100,7 +103,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error creating episode {episode_number} for season {season_id}: {e}")
+            logger.error(f"Error creating episode {episode_number} for season {season_id}: {e}")
             return None
 
     async def get_active_channels(self) -> list[Dict[str, Any]]:
@@ -109,7 +112,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching active channels: {e}")
+            logger.error(f"Error fetching active channels: {e}")
             return []
 
     async def verify_channel_subscription(self, channel_id: int, user_id: int) -> bool:
@@ -122,7 +125,7 @@ class APIClient:
             data = response.json()
             return data.get("success", False)
         except httpx.HTTPError as e:
-            print(f"Error verifying subscription for channel {channel_id}: {e}")
+            logger.error(f"Error verifying subscription for channel {channel_id}: {e}")
             return False
 
     async def get_movies(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
@@ -131,7 +134,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching movies: {e}")
+            logger.error(f"Error fetching movies: {e}")
             return {"items": [], "total": 0}
 
     async def get_series(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
@@ -140,7 +143,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error fetching series: {e}")
+            logger.error(f"Error fetching series: {e}")
             return {"items": [], "total": 0}
 
     async def search_movies(self, query: str, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
@@ -152,7 +155,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error searching movies with query '{query}': {e}")
+            logger.error(f"Error searching movies with query '{query}': {e}")
             return {"items": [], "total": 0}
 
     async def search_series(self, query: str, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
@@ -164,7 +167,7 @@ class APIClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            print(f"Error searching series with query '{query}': {e}")
+            logger.error(f"Error searching series with query '{query}': {e}")
             return {"items": [], "total": 0}
 
 api_client = APIClient()

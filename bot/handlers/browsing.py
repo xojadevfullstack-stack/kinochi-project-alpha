@@ -4,6 +4,9 @@ from services.api_client import api_client
 from utils.movie_sender import send_movie_to_user
 from utils.episode_sender import send_episode_to_user
 from utils.info_sender import send_series_info, send_season_info
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -67,6 +70,6 @@ async def handle_show_season(callback: CallbackQuery):
 async def handle_delete_msg(callback: CallbackQuery):
     try:
         await callback.message.delete()
-    except:
-        pass
+    except Exception as e:
+        logger.warning(f"Could not delete message in handle_delete_msg: {e}")
     await callback.answer()

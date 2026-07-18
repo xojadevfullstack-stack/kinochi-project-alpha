@@ -16,6 +16,7 @@ from app.domain.series.entities import (
 )
 from app.infrastructure.telegram.telegram_client import telegram_client
 from app.core.job_manager import job_manager, JobStatus
+from app.api.limiter import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,9 @@ router = APIRouter(prefix="/series", tags=["series"])
 # --- SERIES ---
 
 @router.post("", response_model=Series, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_series(
+    request: Request,
     series_in: SeriesCreate,
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
@@ -36,7 +39,9 @@ async def create_series(
 
 
 @router.get("", response_model=PaginatedSeriesResponse)
+@limiter.limit("100/minute")
 async def list_series(
+    request: Request,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     category_id: int | None = None,
@@ -55,7 +60,9 @@ async def list_series(
 
 
 @router.get("/search", response_model=PaginatedSeriesResponse)
+@limiter.limit("60/minute")
 async def search_series(
+    request: Request,
     q: str = Query(..., min_length=2),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
@@ -71,7 +78,9 @@ async def search_series(
 
 
 @router.get("/by-source", response_model=Series)
+@limiter.limit("120/minute")
 async def get_series_by_source(
+    request: Request,
     chat_id: int = Query(...),
     topic_id: int | None = Query(None),
     service: SeriesService = Depends(get_series_service)
@@ -83,7 +92,9 @@ async def get_series_by_source(
     return series
 
 @router.get("/{series_id}", response_model=Series)
+@limiter.limit("120/minute")
 async def get_series(
+    request: Request,
     series_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
@@ -141,7 +152,9 @@ async def create_season(
 
 
 @router.get("/{series_id}/seasons", response_model=List[Season])
+@limiter.limit("120/minute")
 async def list_seasons(
+    request: Request,
     series_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
@@ -152,7 +165,9 @@ async def list_seasons(
     return series.seasons
 
 @router.get("/seasons/{season_id}", response_model=Season)
+@limiter.limit("120/minute")
 async def get_season(
+    request: Request,
     season_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
@@ -194,7 +209,9 @@ async def delete_season(
 from app.domain.series.entities import EpisodeDetail
 
 @router.get("/episodes/code/{code}", response_model=EpisodeDetail)
+@limiter.limit("120/minute")
 async def get_episode_by_code(
+    request: Request,
     code: str,
     service: SeriesService = Depends(get_series_service)
 ):
@@ -222,7 +239,9 @@ async def create_episode(
 
 
 @router.get("/seasons/{season_id}/episodes", response_model=List[Episode])
+@limiter.limit("120/minute")
 async def list_episodes(
+    request: Request,
     season_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
@@ -278,8 +297,13 @@ async def upload_episode_video(
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi.")
 
+    # Hajm tekshiruvi (50MB = 50 * 1024 * 1024 = 52428800)
+    if request.headers.get('content-length'):
+        if int(request.headers.get('content-length')) > 52428800:
+            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
+
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir="/tmp")
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp_path = tmp_file.name
 
     try:

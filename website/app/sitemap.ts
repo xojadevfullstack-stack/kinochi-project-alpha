@@ -14,9 +14,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    // Fetch all movies (limit 1000 for sitemap purposes, or implement pagination if needed)
-    const moviesData = await fetchApi('/movies?limit=1000').catch(() => null);
-    const movies = moviesData?.items || [];
+    // Fetch all movies with pagination
+    let movies: any[] = [];
+    let skip = 0;
+    const limit = 100;
+    while (true) {
+      const moviesData = await fetchApi(`/movies?limit=${limit}&skip=${skip}`).catch(() => null);
+      if (!moviesData || !moviesData.items || moviesData.items.length === 0) {
+        break;
+      }
+      movies = movies.concat(moviesData.items);
+      if (moviesData.items.length < limit) {
+        break;
+      }
+      skip += limit;
+    }
 
     const movieRoutes: MetadataRoute.Sitemap = movies.map((movie: any) => ({
       url: `${BASE_URL}/movie/${movie.code}`,
@@ -27,20 +39,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     routes.push(...movieRoutes);
     
-    // Note: If you add dynamic Category pages in the future (e.g. /category/[id]), 
-    // you should fetch categories and add them here as well.
+    // Add Category pages
     const categoriesData = await fetchApi('/categories').catch(() => null);
-    const categories = (categoriesData || []).filter((c: any) => c.is_active);
+    const categories = (categoriesData || []).filter((c: any) => c.is_active !== false); // fallback if is_active is undefined
     
     const categoryRoutes: MetadataRoute.Sitemap = categories.map((cat: any) => ({
-      url: `${BASE_URL}/#category-${cat.id}`, // Placeholder until actual category routes exist
+      url: `${BASE_URL}/category/${cat.id}`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.6,
     }));
     
-    // We omit categoryRoutes for now since they don't have dedicated pages yet, 
-    // but the code is ready for when they do.
+    routes.push(...categoryRoutes);
 
   } catch (error) {
     console.error("Error generating sitemap:", error);

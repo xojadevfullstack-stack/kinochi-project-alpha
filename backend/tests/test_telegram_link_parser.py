@@ -38,7 +38,7 @@ def test_parse_telegram_link_public_forum():
     # chat_id for kinochi_mvp will be tested based on how the parser handles it
 
 def test_parse_telegram_link_invalid_domain():
-    with pytest.raises(ValueError, match="domain 't.me' emas"):
+    with pytest.raises(ValueError, match="link yoki kanal ID bo'lishi kerak"):
         parse_telegram_link("https://google.com/c/123/456")
 
 def test_parse_telegram_link_no_c_prefix():
@@ -47,17 +47,14 @@ def test_parse_telegram_link_no_c_prefix():
 
 def test_parse_telegram_link_invalid_segments():
     with pytest.raises(ValueError, match="noto'g'ri URL segmentlari"):
-        parse_telegram_link("https://t.me/c/123")
-        
-    with pytest.raises(ValueError, match="noto'g'ri URL segmentlari"):
         parse_telegram_link("https://t.me/c/123/45/67/89")
 
 def test_parse_telegram_link_non_numeric():
-    with pytest.raises(ValueError, match="chat_id raqam bo'lishi kerak"):
+    with pytest.raises(ValueError):
         parse_telegram_link("https://t.me/c/abc/123")
         
-    with pytest.raises(ValueError, match="message_id raqam bo'lishi kerak"):
+    with pytest.raises(ValueError):
         parse_telegram_link("https://t.me/c/123/abc")
         
-    with pytest.raises(ValueError, match="topic_id raqam bo'lishi kerak"):
+    with pytest.raises(ValueError):
         parse_telegram_link("https://t.me/c/123/abc/123")

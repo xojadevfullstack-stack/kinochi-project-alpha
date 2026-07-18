@@ -115,6 +115,7 @@ async def get_current_admin(request: Request, session: AsyncSession = Depends(ge
 
 from fastapi import Header
 from app.core.config import settings
+import hmac
 
 async def get_admin_or_bot(
     request: Request,
@@ -124,7 +125,7 @@ async def get_admin_or_bot(
     """
     Dependency: Allow either bot (via X-Bot-Secret) or admin (via token).
     """
-    if x_bot_secret and settings.BOT_API_SECRET and x_bot_secret == settings.BOT_API_SECRET:
+    if x_bot_secret and settings.BOT_API_SECRET and hmac.compare_digest(x_bot_secret.encode(), settings.BOT_API_SECRET.encode()):
         return {"role": "bot"}
         
     return await get_current_admin(request, session)

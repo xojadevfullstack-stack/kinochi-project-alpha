@@ -2,6 +2,9 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from services.api_client import api_client
 from utils.episode_sender import format_episode_caption, build_episode_keyboard
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -25,8 +28,8 @@ async def handle_episode_navigation(callback: CallbackQuery):
     if success:
         try:
             await callback.message.delete()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Could not delete message in handle_episode_navigation: {e}")
         await callback.answer()
     else:
         await callback.answer("Xatolik yuz berdi.", show_alert=True)
@@ -47,8 +50,8 @@ async def handle_series_info(callback: CallbackQuery):
     if success:
         try:
             await callback.message.delete()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Could not delete message in handle_series_info: {e}")
         await callback.answer()
     else:
         await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)

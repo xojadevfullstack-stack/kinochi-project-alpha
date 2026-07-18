@@ -24,10 +24,14 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # ── CORS ─────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:3000",   # website dev
-        "http://localhost:3001",   # admin panel dev
-    ]
+    CORS_ORIGINS: list[str] = []
+
+    def model_post_init(self, __context):
+        if self.APP_ENV != "production":
+            self.CORS_ORIGINS.extend([
+                "http://localhost:3000",   # website dev
+                "http://localhost:3001",   # admin panel dev
+            ])
 
     # ── Security (Phase 1+) ──────────────────────────────────────────
     SECRET_KEY: str = "change-me-in-production"
