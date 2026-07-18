@@ -32,7 +32,7 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
   let categories: Category[] = [];
   
   try {
-    const query = searchParams.category ? `/movies?limit=50&category=${searchParams.category}` : "/movies?limit=50";
+    const query = searchParams.category ? `/movies?limit=50&category_id=${searchParams.category}` : "/movies?limit=50";
     const [moviesData, categoriesData] = await Promise.all([
       fetchApi(query),
       fetchApi("/categories")
