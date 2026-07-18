@@ -51,7 +51,7 @@ export default function MoviesPage() {
 
   const loadMovies = async () => {
     try {
-      const data = await fetchApi("/movies/?limit=100");
+      const data = await fetchApi("/movies?limit=100");
       setMovies(data.items);
     } catch (e: any) {
       alert("Xato: " + e.message);
@@ -60,7 +60,7 @@ export default function MoviesPage() {
 
   const loadCategories = async () => {
     try {
-      const data = await fetchApi("/categories/");
+      const data = await fetchApi("/categories");
       setCategories(data);
     } catch (e: any) {
       console.error(e);
@@ -69,7 +69,7 @@ export default function MoviesPage() {
 
   const loadPages = async () => {
     try {
-      const data = await fetchApi("/pages/");
+      const data = await fetchApi("/pages");
       if (data && data.items) {
           setPages(data.items);
       } else if (Array.isArray(data)) {
@@ -92,7 +92,7 @@ export default function MoviesPage() {
       if (editingId) {
         await fetchApi(`/movies/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       } else {
-        await fetchApi("/movies/", { method: "POST", body: JSON.stringify(payload) });
+        await fetchApi("/movies", { method: "POST", body: JSON.stringify(payload) });
       }
       handleCancel();
       loadMovies();

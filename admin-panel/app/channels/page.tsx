@@ -31,7 +31,7 @@ export default function ChannelsPage() {
 
   const loadChannels = async () => {
     try {
-      const data = await fetchApi("/channels/?limit=100");
+      const data = await fetchApi("/channels?limit=100");
       setChannels(data.items || []);
       setLoading(false);
     } catch (e: any) {
@@ -50,7 +50,7 @@ export default function ChannelsPage() {
       if (editingId) {
         await fetchApi(`/channels/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       } else {
-        await fetchApi("/channels/", { method: "POST", body: JSON.stringify(payload) });
+        await fetchApi("/channels", { method: "POST", body: JSON.stringify(payload) });
       }
       handleCancel();
       loadChannels();

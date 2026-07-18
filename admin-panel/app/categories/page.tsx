@@ -22,7 +22,7 @@ export default function CategoriesPage() {
 
   const loadCategories = async () => {
     try {
-      const data = await fetchApi("/categories/");
+      const data = await fetchApi("/categories");
       setCategories(data);
     } catch (e: any) {
       alert("Xato: " + e.message);
@@ -40,7 +40,7 @@ export default function CategoriesPage() {
           body: JSON.stringify(form),
         });
       } else {
-        await fetchApi("/categories/", {
+        await fetchApi("/categories", {
           method: "POST",
           body: JSON.stringify(form),
         });

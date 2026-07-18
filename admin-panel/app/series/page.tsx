@@ -59,7 +59,7 @@ export default function SeriesListPage() {
 
   const loadCategories = async () => {
     try {
-      const data = await fetchApi("/categories/");
+      const data = await fetchApi("/categories");
       setCategories(data);
     } catch (e: any) {
       console.error(e);
@@ -77,7 +77,7 @@ export default function SeriesListPage() {
 
   const loadPages = async () => {
     try {
-      const data = await fetchApi("/pages/");
+      const data = await fetchApi("/pages");
       if (data && data.items) {
           setPages(data.items);
       } else if (Array.isArray(data)) {

@@ -22,7 +22,7 @@ export default function PagesPage() {
 
   const loadPages = async () => {
     try {
-      const data = await fetchApi("/pages/");
+      const data = await fetchApi("/pages");
       // Based on our paginated endpoint, it might return { items: [...], total: ... }
       if (data && data.items) {
           setPages(data.items);
@@ -47,7 +47,7 @@ export default function PagesPage() {
           body: JSON.stringify(form),
         });
       } else {
-        await fetchApi("/pages/", {
+        await fetchApi("/pages", {
           method: "POST",
           body: JSON.stringify(form),
         });
