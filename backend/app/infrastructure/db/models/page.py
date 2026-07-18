@@ -37,9 +37,9 @@ class PageModel(Base):
     )
 
     movies: Mapped[list["MovieModel"]] = relationship(
-        secondary=page_movie_table, back_populates="pages", lazy="selectin"
+        secondary=page_movie_table, back_populates="pages"
     )
 
     series: Mapped[list["SeriesModel"]] = relationship(
-        secondary=page_series_table, back_populates="pages", lazy="selectin"
+        secondary=page_series_table, back_populates="pages"
     )
