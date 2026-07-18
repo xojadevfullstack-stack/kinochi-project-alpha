@@ -71,68 +71,70 @@ export default function CategoriesPage() {
   if (loading) return <div>Yuklanmoqda...</div>;
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Kategoriyalar</h1>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-text-primary">Kategoriyalar</h1>
+      </div>
       
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">{editingId ? "Tahrirlash" : "Yangi Kategoriya"}</h2>
-        <form onSubmit={handleSubmit} className="flex gap-4 items-end">
+      <div className="metric-card p-6 rounded-xl mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-text-primary">{editingId ? "Tahrirlash" : "Yangi Kategoriya"}</h2>
+        <form onSubmit={handleSubmit} className="flex gap-4 items-end flex-wrap">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nomi</label>
-            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Nomi</label>
+            <input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Slug</label>
-            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Slug</label>
+            <input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} />
           </div>
-          <div className="flex items-center h-10">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} />
+          <div className="flex items-center h-[46px]">
+            <label className="flex items-center text-text-secondary cursor-pointer">
+              <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} />
               Faol
             </label>
           </div>
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 h-10">
+          <button type="submit" className="bg-primary-container text-white px-6 py-2.5 rounded-lg hover:scale-105 transition-all h-[46px] font-medium">
             Saqlash
           </button>
           {editingId && (
-            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", slug: "", is_active: true}) }} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 h-10">
+            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", slug: "", is_active: true}) }} className="bg-white/5 border border-white/10 text-text-primary px-6 py-2.5 rounded-lg hover:bg-white/10 h-[46px] font-medium transition-all">
               Bekor qilish
             </button>
           )}
         </form>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="metric-card rounded-xl overflow-hidden">
+        <table className="min-w-full">
+          <thead className="bg-surface-container-lowest border-b border-white/10">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Holati</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">ID</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Nomi</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Slug</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Holati</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Amallar</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-white/5">
             {categories.map(c => (
-              <tr key={c.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{c.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{c.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{c.slug}</td>
+              <tr key={c.id} className="data-table-row">
+                <td className="px-6 py-4 whitespace-nowrap text-text-primary font-medium">{c.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-text-primary font-medium">{c.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-text-secondary">{c.slug}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${c.is_active ? 'bg-primary-container/20 text-primary-container border border-primary-container/30' : 'bg-surface-container-high text-text-secondary border border-white/10'}`}>
                     {c.is_active ? 'Faol' : 'Nofaol'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button onClick={() => handleEdit(c)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>
-                  <button onClick={() => handleDelete(c.id)} className="text-red-600 hover:text-red-900">O'chirish</button>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-3">
+                  <button onClick={() => handleEdit(c)} className="text-tertiary-fixed hover:text-white transition-colors">Tahrirlash</button>
+                  <button onClick={() => handleDelete(c.id)} className="text-primary-container hover:text-red-400 transition-colors">O'chirish</button>
                 </td>
               </tr>
             ))}
             {categories.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-gray-500">Hech qanday kategoriya topilmadi</td>
+                <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">Hech qanday kategoriya topilmadi</td>
               </tr>
             )}
           </tbody>

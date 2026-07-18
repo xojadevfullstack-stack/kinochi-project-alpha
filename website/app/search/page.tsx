@@ -62,8 +62,19 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           </p>
         </div>
 
-        {/* Search Input removed from here, only keeping navbar search */}
-
+        {/* Mobile Search Input directly on the page for convenience */}
+        <div className="mb-8 md:hidden">
+          <form action="/search" method="GET" className="flex items-center bg-white/5 rounded-full px-4 py-2 border border-white/10 focus-within:border-white/30 transition-all">
+            <span className="material-symbols-outlined text-text-secondary mr-2">search</span>
+            <input 
+              type="text" 
+              name="q"
+              defaultValue={query}
+              className="bg-transparent border-none focus:ring-0 text-text-primary text-base w-full outline-none placeholder:text-text-secondary" 
+              placeholder="Kinolar va seriallarni qidirish..." 
+            />
+          </form>
+        </div>
         {/* Results Grid */}
         {errorMsg ? (
           <div className="text-red-500 text-lg">Xatolik yuz berdi: {errorMsg}</div>

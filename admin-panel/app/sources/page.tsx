@@ -132,67 +132,73 @@ export default function SourcesPage() {
   if (loading) return <div>Yuklanmoqda...</div>;
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Manbalar (Sources)</h1>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-text-primary">Manbalar (Sources)</h1>
+      </div>
       
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">{editingId ? "Tahrirlash" : "Yangi Manba"}</h2>
+      <div className="metric-card p-6 rounded-xl mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-text-primary">{editingId ? "Tahrirlash" : "Yangi Manba"}</h2>
         <form onSubmit={handleSubmit} className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700">Turi</label>
-            <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Turi</label>
+            <select className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
               <option value="superguruh">Superguruh</option>
               <option value="kanal">Kanal</option>
             </select>
           </div>
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700">Nomi</label>
-            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Masalan: Taxtlar O'yini" />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Nomi</label>
+            <input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Masalan: Taxtlar O'yini" />
           </div>
           <div className="flex-[2] min-w-[300px]">
-            <label className="block text-sm font-medium text-gray-700">Manba linki (yoki ID)</label>
-            <input required type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" value={form.link_or_id} onChange={e => setForm({...form, link_or_id: e.target.value})} placeholder="Masalan: https://t.me/c/3941035700/2 yoki -100..." />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Manba linki (yoki ID)</label>
+            <input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.link_or_id} onChange={e => setForm({...form, link_or_id: e.target.value})} placeholder="Masalan: https://t.me/c/3941035700/2 yoki -100..." />
           </div>
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 h-10 w-full sm:w-auto">
+          <button type="submit" className="bg-primary-container text-white px-6 py-2.5 rounded-lg hover:scale-105 transition-all h-[46px] font-medium w-full sm:w-auto">
             Saqlash
           </button>
           {editingId && (
-            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", link_or_id: "", type: "superguruh"}) }} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 h-10 w-full sm:w-auto">
+            <button type="button" onClick={() => { setEditingId(null); setForm({name: "", link_or_id: "", type: "superguruh"}) }} className="bg-white/5 border border-white/10 text-text-primary px-6 py-2.5 rounded-lg hover:bg-white/10 transition-all h-[46px] font-medium w-full sm:w-auto">
               Bekor qilish
             </button>
           )}
         </form>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="metric-card rounded-xl overflow-hidden overflow-x-auto">
+        <table className="min-w-full">
+          <thead className="bg-surface-container-lowest border-b border-white/10">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chat ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Topic ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">ID</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Nomi</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Chat ID</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Topic ID</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Turi</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Amallar</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-white/5">
             {sources.map(s => (
-              <tr key={s.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{s.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 font-medium">{s.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500 font-mono">{s.chat_id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500 font-mono">{s.topic_id || "-"}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-500 capitalize">{s.type}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button onClick={() => handleEdit(s)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>
-                  <button onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-900">O'chirish</button>
+              <tr key={s.id} className="data-table-row">
+                <td className="px-6 py-4 whitespace-nowrap text-text-primary">{s.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-text-primary font-medium">{s.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-text-secondary font-mono text-sm">{s.chat_id}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-text-secondary font-mono text-sm">{s.topic_id || "-"}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-surface-container-high text-text-secondary border border-white/10 capitalize">
+                    {s.type}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-3">
+                  <button onClick={() => handleEdit(s)} className="text-tertiary-fixed hover:text-white transition-colors">Tahrirlash</button>
+                  <button onClick={() => handleDelete(s.id)} className="text-primary-container hover:text-red-400 transition-colors">O'chirish</button>
                 </td>
               </tr>
             ))}
             {sources.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">Hech qanday manba topilmadi</td>
+                <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">Hech qanday manba topilmadi</td>
               </tr>
             )}
           </tbody>

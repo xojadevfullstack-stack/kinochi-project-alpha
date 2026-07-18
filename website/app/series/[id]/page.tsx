@@ -72,7 +72,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
 
   return (
     <>
-      <section className="relative w-full min-h-[1024px] flex items-center pt-[100px] pb-stack-lg overflow-hidden">
+      <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-32 pb-16 overflow-hidden">
         {/* Background Blur & Gradient Overlays */}
         <div className="absolute inset-0 bg-background-obsidian">
            {series.poster_url ? (

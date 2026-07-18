@@ -21,7 +21,6 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
         console.error("Error copying to clipboard:", err);
       }
     };
-
     if (navigator.share) {
       try {
         await navigator.share({
@@ -31,10 +30,12 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
         });
       } catch (error) {
         console.error("Error sharing:", error);
-        await fallbackCopy();
+        // Fallback to Telegram share
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
       }
     } else {
-      await fallbackCopy();
+      // Fallback to Telegram share
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
     }
   };
 

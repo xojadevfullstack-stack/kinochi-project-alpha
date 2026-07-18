@@ -165,67 +165,67 @@ export default function EpisodesListPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Breadcrumb */}
-      <nav className="flex text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
+      <nav className="flex text-sm text-text-secondary mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <Link href="/series" className="hover:text-blue-600 transition">Seriallar</Link>
+            <Link href="/series" className="hover:text-white transition">Seriallar</Link>
           </li>
           <li>
             <div className="flex items-center">
-              <span className="mx-2">/</span>
-              <Link href={`/series/${seriesId}`} className="hover:text-blue-600 transition">{series?.title}</Link>
+              <span className="mx-2 text-white/30">/</span>
+              <Link href={`/series/${seriesId}`} className="hover:text-white transition">{series?.title}</Link>
             </div>
           </li>
           <li>
             <div className="flex items-center">
-              <span className="mx-2">/</span>
-              <span className="text-gray-900 font-medium">{season?.season_number}-mavsum</span>
+              <span className="mx-2 text-white/30">/</span>
+              <span className="text-text-primary font-medium">{season?.season_number}-mavsum</span>
             </div>
           </li>
         </ol>
       </nav>
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-text-primary">
           {series?.title} ({season?.season_number}-mavsum) — Qismlar
         </h1>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+      <div className="metric-card p-6 rounded-xl mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-text-primary">
           {editingId ? "Qismni tahrirlash" : "Yangi qism qo'shish"}
         </h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Qism raqami</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Qism raqami</label>
             <input
               type="number"
               min="1"
               value={form.episode_number}
               onChange={(e) => setForm({ ...form, episode_number: parseInt(e.target.value) || 1 })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Davomiyligi (daqiqa)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Davomiyligi (daqiqa)</label>
             <input
               type="number"
               min="1"
               placeholder="Masalan: 45"
               value={form.duration}
               onChange={(e) => setForm({ ...form, duration: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Maxsus nom (ixtiyoriy)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Maxsus nom (ixtiyoriy)</label>
             <input
               type="text"
               placeholder="Masalan: Uyga qaytish"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
             />
           </div>
           
@@ -233,7 +233,7 @@ export default function EpisodesListPage() {
             <button 
               type="submit" 
               disabled={saving}
-              className={`px-6 py-2 rounded-lg font-medium transition ${saving ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${saving ? 'bg-primary-container/50 text-white cursor-not-allowed' : 'bg-primary-container text-white hover:scale-105'}`}
             >
               {saving ? "Yuklanmoqda..." : "Saqlash"}
             </button>
@@ -242,7 +242,7 @@ export default function EpisodesListPage() {
                 type="button" 
                 onClick={handleCancel}
                 disabled={saving}
-                className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition"
+                className="bg-white/5 border border-white/10 text-text-primary px-6 py-2.5 rounded-lg font-medium hover:bg-white/10 transition-all"
               >
                 Bekor qilish
               </button>
@@ -251,30 +251,30 @@ export default function EpisodesListPage() {
         </form>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="metric-card rounded-xl overflow-hidden">
         {episodes.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full">
+            <thead className="bg-surface-container-lowest border-b border-white/10">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qism</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kod / URL</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Video Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Qism</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Kod / URL</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Video Status</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Amallar</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-white/5">
               {episodes.map((e) => (
-                <tr key={e.id} className="hover:bg-gray-50">
+                <tr key={e.id} className="data-table-row">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{e.episode_number}-qism</div>
-                    {e.title && <div className="text-sm text-gray-500">{e.title}</div>}
-                    {e.duration && <div className="text-xs text-blue-600 mt-1">{e.duration} daqiqa</div>}
+                    <div className="font-bold text-primary-container">{e.episode_number}-qism</div>
+                    {e.title && <div className="text-sm text-text-secondary">{e.title}</div>}
+                    {e.duration && <div className="text-xs text-tertiary-fixed mt-1 font-medium">{e.duration} daqiqa</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded inline-block mb-1">
+                    <div className="text-sm font-mono text-text-primary bg-surface-container-lowest border border-white/10 px-2 py-1 rounded inline-block mb-1">
                       {e.code}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-text-secondary">
                       Display: {e.display_code}
                     </div>
                   </td>
@@ -282,37 +282,37 @@ export default function EpisodesListPage() {
                     {e.translations && e.translations.length > 0 ? (
                       <div className="flex flex-col gap-1">
                         {e.translations.map((t) => (
-                          <div key={t.id} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
+                          <div key={t.id} className="flex items-center justify-between bg-surface-container-high border border-white/10 px-2 py-1 rounded text-sm text-text-secondary">
                             <span>✅ {t.language}</span>
-                            <button onClick={() => handleDeleteTranslation(t.id)} className="text-red-500 hover:text-red-700 ml-2" title="Videoni o'chirish">
+                            <button onClick={() => handleDeleteTranslation(t.id)} className="text-rating-gold hover:text-red-400 ml-2 transition-colors" title="Videoni o'chirish">
                               ✕
                             </button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-red-600 font-bold">❌ Yo'q</span>
+                      <span className="text-rating-gold font-bold">❌ Yo'q</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end gap-2">
                     <button 
                       onClick={() => {
                         setVideoEpisodeId(e.id);
                         setVideoModalOpen(true);
                       }} 
-                      className="text-blue-600 hover:text-blue-900 mr-4 font-bold border border-blue-600 px-2 py-1 rounded"
+                      className="text-tertiary-fixed hover:text-white mr-2 font-bold border border-tertiary-fixed hover:border-white px-3 py-1.5 rounded transition-all"
                     >
                       Video yuklash
                     </button>
-                    <button onClick={() => handleEdit(e)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>
-                    <button onClick={() => handleDelete(e.id)} className="text-red-600 hover:text-red-900">O'chirish</button>
+                    <button onClick={() => handleEdit(e)} className="text-text-secondary hover:text-white p-2 transition-colors">Tahrirlash</button>
+                    <button onClick={() => handleDelete(e.id)} className="text-primary-container hover:text-red-400 p-2 transition-colors">O'chirish</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <div className="p-12 text-center text-gray-500">
+          <div className="p-12 text-center text-text-secondary">
             Hali hech qanday qism qo'shilmagan.
           </div>
         )}

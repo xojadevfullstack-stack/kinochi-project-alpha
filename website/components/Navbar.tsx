@@ -99,15 +99,24 @@ export default function Navbar() {
             <span className="material-symbols-outlined text-text-secondary">person</span>
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <button 
-            className="md:hidden text-text-primary p-1 ml-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <span className="material-symbols-outlined text-3xl">
-              {mobileMenuOpen ? "close" : "menu"}
-            </span>
-          </button>
+          {/* Mobile Menu Toggle & Search */}
+          <div className="flex md:hidden items-center">
+            <Link 
+              href="/search"
+              className="text-text-primary p-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <span className="material-symbols-outlined text-[28px]">search</span>
+            </Link>
+            <button 
+              className="text-text-primary p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <span className="material-symbols-outlined text-3xl">
+                {mobileMenuOpen ? "close" : "menu"}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -125,87 +125,87 @@ export default function SeasonsListPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Breadcrumb */}
-      <nav className="flex text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
+      <nav className="flex text-sm text-text-secondary mb-6" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-3">
           <li className="inline-flex items-center">
-            <Link href="/series" className="hover:text-blue-600 transition">Seriallar</Link>
+            <Link href="/series" className="hover:text-white transition">Seriallar</Link>
           </li>
           <li>
             <div className="flex items-center">
-              <span className="mx-2">/</span>
-              <span className="text-gray-900 font-medium">{series?.title}</span>
+              <span className="mx-2 text-white/30">/</span>
+              <span className="text-text-primary font-medium">{series?.title}</span>
             </div>
           </li>
         </ol>
       </nav>
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{series?.title} — Mavsumlar</h1>
+        <h1 className="text-3xl font-bold text-text-primary">{series?.title} — Mavsumlar</h1>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+      <div className="metric-card p-6 rounded-xl mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-text-primary">
           {editingId ? "Mavsumni tahrirlash" : "Yangi mavsum qo'shish"}
         </h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mavsum raqami</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Mavsum raqami</label>
             <input
               type="number"
               min="1"
               value={form.season_number}
               onChange={(e) => setForm({ ...form, season_number: parseInt(e.target.value) || 1 })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Qismlar soni</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Qismlar soni</label>
             <input
               type="number"
               min="1"
               placeholder="Masalan: 12"
               value={form.episode_count}
               onChange={(e) => setForm({ ...form, episode_count: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Maxsus nom (ixtiyoriy)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Maxsus nom (ixtiyoriy)</label>
             <input
               type="text"
               placeholder="Masalan: Maxfiy topshiriq"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
             />
           </div>
           <div className="md:col-span-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tavsif (ixtiyoriy)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Tavsif (ixtiyoriy)</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
               rows={2}
             />
           </div>
           <div className="md:col-span-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Poster URL (rasm havolasi)</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label>
             <input
               type="text"
               placeholder="https://..."
               value={form.poster_url}
               onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
             />
           </div>
           
           <div className="md:col-span-3 flex gap-3 pt-2">
-            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+            <button type="submit" className="bg-primary-container text-white px-6 py-2.5 rounded-lg font-medium hover:scale-105 transition-all">
               Saqlash
             </button>
             {editingId && (
-              <button type="button" onClick={handleCancel} className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition">
+              <button type="button" onClick={handleCancel} className="bg-white/5 border border-white/10 text-text-primary px-6 py-2.5 rounded-lg font-medium hover:bg-white/10 transition-all">
                 Bekor qilish
               </button>
             )}
@@ -213,46 +213,46 @@ export default function SeasonsListPage() {
         </form>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="metric-card rounded-xl overflow-hidden">
         {seasons.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full">
+            <thead className="bg-surface-container-lowest border-b border-white/10">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mavsum</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qismlar soni</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tavsif</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Mavsum</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Qismlar soni</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Tavsif</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Amallar</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-white/5">
               {seasons.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-50">
+                <tr key={s.id} className="data-table-row">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{s.season_number}-mavsum</div>
-                    {s.title && <div className="text-sm text-gray-500">{s.title}</div>}
+                    <div className="font-bold text-primary-container">{s.season_number}-mavsum</div>
+                    {s.title && <div className="text-sm text-text-secondary">{s.title}</div>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                     {s.episode_count ? `${s.episode_count} ta qism` : "-"}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                  <td className="px-6 py-4 text-sm text-text-secondary max-w-xs truncate">
                     {s.description || "-"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end gap-2">
                     <Link
                       href={`/series/${seriesId}/seasons/${s.id}`}
-                      className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1.5 rounded-lg mr-3 transition"
+                      className="text-tertiary-fixed hover:text-white bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg transition-all hover:border-white/30"
                     >
                       Qismlar
                     </Link>
-                    <button onClick={() => handleEdit(s)} className="text-blue-600 hover:text-blue-900 p-2">Tahrir</button>
-                    <button onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-900 p-2 ml-2">O'chirish</button>
+                    <button onClick={() => handleEdit(s)} className="text-text-secondary hover:text-white p-2 transition-colors">Tahrir</button>
+                    <button onClick={() => handleDelete(s.id)} className="text-primary-container hover:text-red-400 p-2 transition-colors">O'chirish</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <div className="p-12 text-center text-gray-500">
+          <div className="p-12 text-center text-text-secondary">
             Hali hech qanday mavsum qo'shilmagan.
           </div>
         )}

@@ -57,26 +57,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-surface-container-lowest">
+      <div className="metric-card p-8 rounded-xl shadow-lg w-full max-w-md border border-white/5">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">🎬 Kinochi Admin</h1>
-          <p className="text-gray-500 mt-2">Boshqaruv paneliga kirish</p>
+          <div className="w-16 h-16 mx-auto rounded-full border-2 border-primary-container bg-surface-container-high flex justify-center items-center mb-4">
+             <span className="material-symbols-outlined text-primary-container text-3xl">admin_panel_settings</span>
+          </div>
+          <h1 className="text-3xl font-bold text-primary-container">Kinochi Admin</h1>
+          <p className="text-text-secondary mt-2 font-medium">Boshqaruv paneliga kirish</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Email</label>
             <input
               type="email"
               required
-              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition"
               placeholder="admin@kinochi.uz"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -84,11 +87,11 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Parol</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Parol</label>
             <input
               type="password"
               required
-              className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -98,7 +101,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 ${loading ? 'bg-primary-container/50 text-white cursor-not-allowed' : 'bg-primary-container text-white hover:scale-105'}`}
           >
             {loading ? "Yuklanmoqda..." : "Kirish"}
           </button>

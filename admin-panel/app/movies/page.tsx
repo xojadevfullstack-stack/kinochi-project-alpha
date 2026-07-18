@@ -150,103 +150,103 @@ export default function MoviesPage() {
   if (loading) return <div>Yuklanmoqda...</div>;
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Kinolar</h1>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold mb-6 text-text-primary">Kinolar</h1>
+      </div>
       
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">{editingId ? "Tahrirlash" : "Yangi Kino"}</h2>
+      <div className="metric-card p-6 rounded-xl mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-text-primary">{editingId ? "Tahrirlash" : "Yangi Kino"}</h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2"><label className="block text-sm">Sarlavha</label><input required type="text" className="w-full border p-2 rounded" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
-          <div className="md:col-span-2"><label className="block text-sm">Ta'rif</label><textarea className="w-full border p-2 rounded" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
-          <div className="md:col-span-2"><label className="block text-sm">Poster URL (rasm havolasi)</label><input type="text" className="w-full border p-2 rounded" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} /></div>
-          <div><label className="block text-sm">Janrlar</label><input type="text" className="w-full border p-2 rounded" value={form.genres} onChange={e => setForm({...form, genres: e.target.value})} /></div>
-          <div><label className="block text-sm">Rejissyor</label><input type="text" className="w-full border p-2 rounded" value={form.director} onChange={e => setForm({...form, director: e.target.value})} /></div>
-          <div className="md:col-span-2"><label className="block text-sm">Aktyorlar</label><input type="text" className="w-full border p-2 rounded" value={form.cast} onChange={e => setForm({...form, cast: e.target.value})} /></div>
-          <div><label className="block text-sm">Yil</label><input type="number" className="w-full border p-2 rounded" value={form.release_year} onChange={e => setForm({...form, release_year: parseInt(e.target.value)})} /></div>
-          <div><label className="block text-sm">Davomiylik (min)</label><input type="number" className="w-full border p-2 rounded" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value)})} /></div>
-          <div><label className="block text-sm">Reyting (IMDb)</label><input type="number" step="0.1" min="0" max="10" className="w-full border p-2 rounded" value={form.imdb_rating} onChange={e => setForm({...form, imdb_rating: parseFloat(e.target.value)})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Sarlavha</label><input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Ta'rif</label><textarea className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} /></div>
+          <div><label className="block text-sm font-medium text-text-secondary mb-1">Janrlar</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.genres} onChange={e => setForm({...form, genres: e.target.value})} /></div>
+          <div><label className="block text-sm font-medium text-text-secondary mb-1">Rejissyor</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.director} onChange={e => setForm({...form, director: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Aktyorlar</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.cast} onChange={e => setForm({...form, cast: e.target.value})} /></div>
+          <div><label className="block text-sm font-medium text-text-secondary mb-1">Yil</label><input type="number" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.release_year} onChange={e => setForm({...form, release_year: parseInt(e.target.value)})} /></div>
+          <div><label className="block text-sm font-medium text-text-secondary mb-1">Davomiylik (min)</label><input type="number" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value)})} /></div>
+          <div><label className="block text-sm font-medium text-text-secondary mb-1">Reyting (IMDb)</label><input type="number" step="0.1" min="0" max="10" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.imdb_rating} onChange={e => setForm({...form, imdb_rating: parseFloat(e.target.value)})} /></div>
           
           <div className="md:col-span-2">
-            <label className="block text-sm">Manba (Telegram) link (ixtiyoriy)</label>
-            <input type="text" className="w-full border p-2 rounded" placeholder="https://t.me/c/..." value={form.source_link} onChange={e => setForm({...form, source_link: e.target.value})} />
-            <p className="text-xs text-gray-500 mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi (https://t.me/c/... formatida). Ommaviy (@username bilan) guruh linklari ishlamaydi.</p>
-            {errorMsg && <p className="text-red-500 text-sm mt-1">{errorMsg}</p>}
+            <label className="block text-sm font-medium text-text-secondary mb-1">Manba (Telegram) link (ixtiyoriy)</label>
+            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://t.me/c/..." value={form.source_link} onChange={e => setForm({...form, source_link: e.target.value})} />
+            <p className="text-xs text-text-secondary mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi (https://t.me/c/... formatida). Ommaviy (@username bilan) guruh linklari ishlamaydi.</p>
+            {errorMsg && <p className="text-red-400 text-sm mt-1">{errorMsg}</p>}
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm mb-2">Kategoriyalar</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Kategoriyalar</label>
             <div className="flex flex-wrap gap-2">
               {categories.map(c => (
-                <label key={c.id} className="flex items-center bg-gray-100 px-2 py-1 rounded cursor-pointer">
-                  <input type="checkbox" className="mr-2" checked={form.category_ids.includes(c.id)} onChange={() => handleCategoryChange(c.id)} />
+                <label key={c.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer text-text-primary hover:bg-white/5 transition-colors">
+                  <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.category_ids.includes(c.id)} onChange={() => handleCategoryChange(c.id)} />
                   {c.name}
                 </label>
               ))}
             </div>
           </div>
           
-
-          
           <div className="md:col-span-2 flex gap-4 mt-2">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Saqlash</button>
-            {editingId && <button type="button" onClick={handleCancel} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Bekor qilish</button>}
+            <button type="submit" className="bg-primary-container text-white px-6 py-2.5 rounded-lg hover:scale-105 transition-all font-medium">Saqlash</button>
+            {editingId && <button type="button" onClick={handleCancel} className="bg-white/5 border border-white/10 text-text-primary px-6 py-2.5 rounded-lg hover:bg-white/10 transition-all font-medium">Bekor qilish</button>}
           </div>
         </form>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="metric-card rounded-xl overflow-hidden">
+        <table className="min-w-full">
+          <thead className="bg-surface-container-lowest border-b border-white/10">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kod</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sarlavha</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manba</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Video</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amallar</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Kod</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Sarlavha</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Manba</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Video</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Amallar</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-white/5">
             {movies.map(m => (
-              <tr key={m.id}>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{m.code}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{m.title}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tr key={m.id} className="data-table-row">
+                <td className="px-6 py-4 whitespace-nowrap font-bold text-primary-container">{m.code}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-text-primary font-medium">{m.title}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                   {m.source_link ? (
-                    <a href={m.source_link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline flex items-center gap-1" title={m.source_link}>
+                    <a href={m.source_link} target="_blank" rel="noreferrer" className="text-tertiary-fixed hover:text-white transition-colors flex items-center gap-1" title={m.source_link}>
                       🔗 Link
                     </a>
                   ) : "-"}
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-6 py-4">
                   {m.translations && m.translations.length > 0 ? (
                     <div className="flex flex-col gap-1">
                       {m.translations.map((t) => (
-                        <div key={t.id} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
+                        <div key={t.id} className="flex items-center justify-between bg-surface-container-high border border-white/10 px-2 py-1 rounded text-sm text-text-secondary">
                           <span>✅ {t.language}</span>
-                          <button onClick={() => handleDeleteTranslation(t.id)} className="text-red-500 hover:text-red-700 ml-2" title="Videoni o'chirish">
+                          <button onClick={() => handleDeleteTranslation(t.id)} className="text-rating-gold hover:text-red-400 ml-2 transition-colors" title="Videoni o'chirish">
                             ✕
                           </button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <span className="text-red-600 font-bold">❌ Yo'q</span>
+                    <span className="text-rating-gold font-bold">❌ Yo'q</span>
                   )}
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {uploadingId === m.id ? (
-                    <span className="text-gray-500 mr-4">
+                    <span className="text-text-secondary mr-4">
                       Yuklanmoqda...
                     </span>
                   ) : (
-                    <button onClick={() => openVideoModal(m.id)} className="text-blue-600 hover:text-blue-900 mr-4 font-bold border border-blue-600 px-2 py-1 rounded">Video yuklash</button>
+                    <button onClick={() => openVideoModal(m.id)} className="text-tertiary-fixed hover:text-white mr-4 font-bold border border-tertiary-fixed hover:border-white px-3 py-1.5 rounded transition-all">Video yuklash</button>
                   )}
-                  <button onClick={() => handleEdit(m)} className="text-indigo-600 hover:text-indigo-900 mr-4">Tahrirlash</button>
-                  <button onClick={() => handleDelete(m.id)} className="text-red-600 hover:text-red-900">O'chirish</button>
+                  <button onClick={() => handleEdit(m)} className="text-text-secondary hover:text-white mr-4 transition-colors">Tahrirlash</button>
+                  <button onClick={() => handleDelete(m.id)} className="text-primary-container hover:text-red-400 transition-colors">O'chirish</button>
                 </td>
               </tr>
             ))}
-            {movies.length === 0 && <tr><td colSpan={4} className="px-4 py-4 text-center text-gray-500">Hech qanday kino topilmadi</td></tr>}
+            {movies.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-text-secondary">Hech qanday kino topilmadi</td></tr>}
           </tbody>
         </table>
       </div>

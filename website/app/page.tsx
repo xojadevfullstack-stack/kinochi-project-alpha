@@ -122,7 +122,7 @@ export default async function Home() {
   return (
     <>
       {heroItem && (
-        <section className="relative w-full h-[85vh] min-h-[600px] max-h-[900px] flex items-center pt-20 overflow-hidden">
+        <section className="relative w-full min-h-[100svh] md:min-h-[700px] md:h-[85vh] flex items-center pt-32 pb-20 overflow-hidden">
           {/* Full-width Cinematic Background */}
           <div className="absolute inset-0 w-full h-full bg-background-obsidian">
             {heroItem.poster_url && (
