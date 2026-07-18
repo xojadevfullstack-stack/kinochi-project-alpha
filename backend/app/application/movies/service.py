@@ -61,7 +61,7 @@ class MovieService:
             source_chat_id=source_chat_id,
             source_topic_id=source_topic_id
         )
-        return await self.movie_repo.create(movie, category_ids=category_ids)
+        return await self.movie_repo.create(movie, category_ids=category_ids, page_ids=page_ids)
 
     async def get_movie(self, movie_id: int) -> Movie | None:
         return await self.movie_repo.get_by_id(movie_id)
@@ -72,8 +72,8 @@ class MovieService:
     async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None) -> tuple[Sequence[Movie], int]:
-        return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id)
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None) -> tuple[Sequence[Movie], int]:
+        return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id)
 
     async def update_movie(
         self,
@@ -91,6 +91,7 @@ class MovieService:
         poster_url: str | None = None,
         trailer_url: str | None = None,
         category_ids: list[int] | None = None,
+        page_ids: list[int] | None = None,
         source_chat_id: int | None = None,
         source_topic_id: int | None = None
     ) -> Movie | None:
@@ -114,7 +115,7 @@ class MovieService:
         if source_chat_id is not None: movie.source_chat_id = source_chat_id
         if source_topic_id is not None: movie.source_topic_id = source_topic_id
 
-        return await self.movie_repo.update(movie, category_ids=category_ids)
+        return await self.movie_repo.update(movie, category_ids=category_ids, page_ids=page_ids)
 
     async def delete_movie(self, movie_id: int) -> bool:
         return await self.movie_repo.delete(movie_id)

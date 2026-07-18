@@ -4,6 +4,7 @@ Series domain entities.
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 from app.domain.categories.entities import Category
+from app.domain.pages.entities import Page
 
 class EpisodeBase(BaseModel):
     season_id: int
@@ -81,6 +82,7 @@ class SeriesBase(BaseModel):
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
+    page_ids: list[int] | None = None
     source_id: int | None = None
 
 class SeriesUpdate(BaseModel):
@@ -92,6 +94,7 @@ class SeriesUpdate(BaseModel):
     director: str | None = None
     cast: str | None = None
     category_ids: list[int] | None = None
+    page_ids: list[int] | None = None
     source_id: int | None = None
 
 from app.domain.series.source_entities import SourceResponse
@@ -102,6 +105,7 @@ class Series(SeriesBase):
     updated_at: datetime
     seasons: list[Season] = Field(default_factory=list)
     categories: list[Category] = Field(default_factory=list)
+    pages: list['Page'] = Field(default_factory=list)
     
     source_id: int | None = None
     source: SourceResponse | None = None

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-export default function Navbar() {
+export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,6 +33,7 @@ export default function Navbar() {
     { name: "Bosh sahifa", href: "/" },
     { name: "Kinolar", href: "/movies" },
     { name: "Seriallar", href: "/series" },
+    ...pages.map(p => ({ name: p.title, href: `/p/${p.slug}` }))
   ];
 
   return (

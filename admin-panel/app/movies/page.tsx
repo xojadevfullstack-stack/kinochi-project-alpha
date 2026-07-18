@@ -5,6 +5,7 @@ import { fetchApi } from "@/lib/api";
 import VideoUploadModal from "@/components/VideoUploadModal";
 
 type Category = { id: number; name: string };
+type PageItem = { id: number; title: string };
 type Movie = {
   id: number;
   title: string;
@@ -18,6 +19,7 @@ type Movie = {
   release_year: number;
   duration_minutes: number;
   categories: Category[];
+  pages: PageItem[];
   source_link: string | null;
   translations: { id: number; language: string; telegram_file_id: string }[];
 };
@@ -25,6 +27,7 @@ type Movie = {
 export default function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [pages, setPages] = useState<PageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
@@ -37,12 +40,13 @@ export default function MoviesPage() {
     title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "",
     director: "", cast: "", imdb_rating: 0,
     category_ids: [] as number[],
+    page_ids: [] as number[],
     source_link: ""
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([loadMovies(), loadCategories()]).then(() => setLoading(false));
+    Promise.all([loadMovies(), loadCategories(), loadPages()]).then(() => setLoading(false));
   }, []);
 
   const loadMovies = async () => {
@@ -58,6 +62,19 @@ export default function MoviesPage() {
     try {
       const data = await fetchApi("/categories/");
       setCategories(data);
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
+
+  const loadPages = async () => {
+    try {
+      const data = await fetchApi("/pages/");
+      if (data && data.items) {
+          setPages(data.items);
+      } else if (Array.isArray(data)) {
+          setPages(data);
+      }
     } catch (e: any) {
       console.error(e);
     }
@@ -117,7 +134,8 @@ export default function MoviesPage() {
       director: m.director || "",
       cast: m.cast || "",
       imdb_rating: m.imdb_rating || 0,
-      category_ids: m.categories.map(c => c.id),
+      category_ids: m.categories?.map(c => c.id) || [],
+      page_ids: m.pages?.map(p => p.id) || [],
       source_link: m.source_link || ""
     });
   };
@@ -125,7 +143,7 @@ export default function MoviesPage() {
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [], source_link: "" });
+    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [], page_ids: [], source_link: "" });
   };
 
   const openVideoModal = (id: number) => {
@@ -144,6 +162,15 @@ export default function MoviesPage() {
         ? prev.category_ids.filter(x => x !== id)
         : [...prev.category_ids, id];
       return { ...prev, category_ids: ids };
+    });
+  };
+
+  const handlePageChange = (id: number) => {
+    setForm(prev => {
+      const ids = prev.page_ids.includes(id) 
+        ? prev.page_ids.filter(x => x !== id)
+        : [...prev.page_ids, id];
+      return { ...prev, page_ids: ids };
     });
   };
 
@@ -182,6 +209,18 @@ export default function MoviesPage() {
                 <label key={c.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer text-text-primary hover:bg-white/5 transition-colors">
                   <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.category_ids.includes(c.id)} onChange={() => handleCategoryChange(c.id)} />
                   {c.name}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">Sahifalar</label>
+            <div className="flex flex-wrap gap-2">
+              {pages.map(p => (
+                <label key={p.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer text-text-primary hover:bg-white/5 transition-colors">
+                  <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.page_ids.includes(p.id)} onChange={() => handlePageChange(p.id)} />
+                  {p.title}
                 </label>
               ))}
             </div>

@@ -28,6 +28,7 @@ export default function Sidebar() {
     { name: "Kinolar", href: "/movies", icon: "movie" },
     { name: "Seriallar", href: "/series", icon: "live_tv" },
     { name: "Kategoriyalar", href: "/categories", icon: "category" },
+    { name: "Sahifalar", href: "/pages", icon: "pages" },
     { name: "Kanallar", href: "/channels", icon: "hub" },
     { name: "Manbalar", href: "/sources", icon: "source" },
     { name: "Xabarnomalar", href: "/broadcasts", icon: "podcasts" },

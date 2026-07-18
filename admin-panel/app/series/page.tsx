@@ -5,6 +5,7 @@ import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 
 type Category = { id: number; name: string };
+type PageItem = { id: number; title: string };
 
 type Series = {
   id: number;
@@ -17,6 +18,7 @@ type Series = {
   cast: string | null;
   created_at: string;
   categories: Category[];
+  pages: PageItem[];
   source_id: number | null;
   source: Source | null;
 };
@@ -32,6 +34,7 @@ type Source = {
 export default function SeriesListPage() {
   const [seriesList, setSeriesList] = useState<Series[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [pages, setPages] = useState<PageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -44,13 +47,14 @@ export default function SeriesListPage() {
     director: "",
     cast: "",
     category_ids: [] as number[],
+    page_ids: [] as number[],
     source_id: "" as number | "",
   });
   const [sources, setSources] = useState<Source[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([loadSeries(), loadCategories(), loadSources()]).then(() => setLoading(false));
+    Promise.all([loadSeries(), loadCategories(), loadSources(), loadPages()]).then(() => setLoading(false));
   }, []);
 
   const loadCategories = async () => {
@@ -68,6 +72,19 @@ export default function SeriesListPage() {
       setSeriesList(data.items);
     } catch (e: any) {
       alert("Xato: " + e.message);
+    }
+  };
+
+  const loadPages = async () => {
+    try {
+      const data = await fetchApi("/pages/");
+      if (data && data.items) {
+          setPages(data.items);
+      } else if (Array.isArray(data)) {
+          setPages(data);
+      }
+    } catch (e: any) {
+      console.error(e);
     }
   };
 
@@ -122,6 +139,7 @@ export default function SeriesListPage() {
       director: s.director || "",
       cast: s.cast || "",
       category_ids: s.categories ? s.categories.map((c) => c.id) : [],
+      page_ids: s.pages ? s.pages.map((p) => p.id) : [],
       source_id: s.source_id || "",
     });
   };
@@ -129,7 +147,7 @@ export default function SeriesListPage() {
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], source_id: "" });
+    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], page_ids: [], source_id: "" });
   };
 
   const handleCategoryChange = (id: number) => {
@@ -138,6 +156,15 @@ export default function SeriesListPage() {
         ? prev.category_ids.filter(x => x !== id)
         : [...prev.category_ids, id];
       return { ...prev, category_ids: ids };
+    });
+  };
+
+  const handlePageChange = (id: number) => {
+    setForm(prev => {
+      const ids = prev.page_ids.includes(id) 
+        ? prev.page_ids.filter(x => x !== id)
+        : [...prev.page_ids, id];
+      return { ...prev, page_ids: ids };
     });
   };
 
@@ -249,6 +276,18 @@ export default function SeriesListPage() {
             </div>
           </div>
           
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">Sahifalar</label>
+            <div className="flex flex-wrap gap-2">
+              {pages.map(p => (
+                <label key={p.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer text-text-primary hover:bg-white/5 transition-colors">
+                  <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.page_ids.includes(p.id)} onChange={() => handlePageChange(p.id)} />
+                  {p.title}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="md:col-span-2 flex gap-3 pt-2">
             <button
               type="submit"

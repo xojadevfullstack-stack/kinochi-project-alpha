@@ -12,5 +12,6 @@ from app.infrastructure.db.models.broadcast import BroadcastModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel, series_category_table
 from app.infrastructure.db.models.source import SourceModel
 from app.infrastructure.db.models.translation import MovieTranslationModel, EpisodeTranslationModel
+from app.infrastructure.db.models.page import PageModel, page_movie_table, page_series_table
 
-__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel"]
+__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table"]

@@ -55,3 +55,7 @@ class MovieModel(Base):
     translations: Mapped[list["MovieTranslationModel"]] = relationship(
         back_populates="movie", cascade="all, delete-orphan", lazy="selectin"
     )
+
+    pages: Mapped[list["PageModel"]] = relationship(
+        secondary="page_movie", back_populates="movies", lazy="selectin"
+    )

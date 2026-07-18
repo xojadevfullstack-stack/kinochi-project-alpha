@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages
 
 # ── Lifespan (startup / shutdown hooks) ──────────────────────────
 @asynccontextmanager
@@ -59,6 +59,7 @@ app.include_router(channels.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(broadcasts.router, prefix="/api/v1")
 app.include_router(series.router, prefix="/api/v1")
+app.include_router(pages.router, prefix="/api/v1")
 app.include_router(sources.router, prefix="/api/v1/sources", tags=["sources"])
 
 # ── CORS ─────────────────────────────────────────────────────────

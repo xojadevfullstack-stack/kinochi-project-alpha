@@ -12,15 +12,23 @@ class SeriesRepository:
         self.session = session
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100) -> Tuple[List[SeriesModel], int]:
-        total_stmt = select(func.count(SeriesModel.id))
-        total = await self.session.scalar(total_stmt)
-        
+    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
-        ).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
+        )
+        
+        if category_id:
+            stmt = stmt.filter(SeriesModel.categories.any(id=category_id))
+        if page_id:
+            stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
+
+        total_stmt = select(func.count()).select_from(stmt.subquery())
+        total = await self.session.scalar(total_stmt)
+        
+        stmt = stmt.order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
@@ -33,6 +41,7 @@ class SeriesRepository:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         ).where(SeriesModel.title.ilike(search_pattern)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         
@@ -44,6 +53,7 @@ class SeriesRepository:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         ).where(SeriesModel.id == series_id)
         result = await self.session.execute(stmt)
@@ -54,6 +64,7 @@ class SeriesRepository:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         ).join(SourceModel, SeriesModel.source_id == SourceModel.id).where(SourceModel.chat_id == chat_id)
         
@@ -64,10 +75,11 @@ class SeriesRepository:
         return result.scalars().first()
 
     async def create_series(self, series_data: SeriesCreate | dict) -> SeriesModel:
-        data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids"}, exclude_unset=True)
+        data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
         
         # Remove category_ids if present in dict
         category_ids = data.pop("category_ids", None)
+        page_ids = data.pop("page_ids", None)
         
         series = SeriesModel(**data)
         
@@ -75,6 +87,12 @@ class SeriesRepository:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             series.categories = list(categories)
+            
+        if page_ids:
+            from app.infrastructure.db.models.page import PageModel
+            result = await self.session.execute(select(PageModel).where(PageModel.id.in_(page_ids)))
+            pages = result.scalars().all()
+            series.pages = list(pages)
             
         self.session.add(series)
         await self.session.flush()
@@ -85,7 +103,7 @@ class SeriesRepository:
         if not series:
             return None
         
-        data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude={"category_ids"}, exclude_unset=True)
+        data = update_data if isinstance(update_data, dict) else update_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
         for key, value in data.items():
             setattr(series, key, value)
             
@@ -95,6 +113,13 @@ class SeriesRepository:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             series.categories = list(categories)
+            
+        page_ids = data.get("page_ids") if isinstance(update_data, dict) else update_data.page_ids
+        if page_ids is not None:
+            from app.infrastructure.db.models.page import PageModel
+            result = await self.session.execute(select(PageModel).where(PageModel.id.in_(page_ids)))
+            pages = result.scalars().all()
+            series.pages = list(pages)
             
         await self.session.flush()
         return await self.get_series_by_id(series.id)

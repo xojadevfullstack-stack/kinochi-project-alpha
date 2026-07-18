@@ -9,7 +9,7 @@ from app.domain.movies.entities import Movie
 
 class IMovieRepository(ABC):
     @abstractmethod
-    async def create(self, movie: Movie, category_ids: list[int] | None = None) -> Movie:
+    async def create(self, movie: Movie, category_ids: list[int] | None = None, page_ids: list[int] | None = None) -> Movie:
         pass
 
     @abstractmethod
@@ -26,12 +26,12 @@ class IMovieRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None) -> tuple[Sequence[Movie], int]:
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None) -> tuple[Sequence[Movie], int]:
         """Returns a tuple of (movies, total_count)"""
         pass
 
     @abstractmethod
-    async def update(self, movie: Movie, category_ids: list[int] | None = None) -> Movie:
+    async def update(self, movie: Movie, category_ids: list[int] | None = None, page_ids: list[int] | None = None) -> Movie:
         pass
 
     @abstractmethod

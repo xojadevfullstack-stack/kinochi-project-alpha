@@ -33,10 +33,12 @@ async def create_series(
 async def list_series(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    category_id: int | None = None,
+    page_id: int | None = None,
     service: SeriesService = Depends(get_series_service)
 ):
     """List series (Public)."""
-    items, total = await service.get_all_series(skip=skip, limit=limit)
+    items, total = await service.get_all_series(skip=skip, limit=limit, category_id=category_id, page_id=page_id)
     
     # Calculate pages
     pages = (total + limit - 1) // limit if total > 0 else 0

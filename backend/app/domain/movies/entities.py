@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.categories.entities import Category
+from app.domain.pages.entities import Page
 
 
 class Movie(BaseModel):
@@ -29,6 +30,7 @@ class Movie(BaseModel):
     updated_at: datetime | None = None
     
     categories: list[Category] = Field(default_factory=list)
+    pages: list['Page'] = Field(default_factory=list)
     
     model_config = ConfigDict(from_attributes=True)
 

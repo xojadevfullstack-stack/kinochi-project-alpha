@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { fetchApi } from "@/lib/api";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -29,11 +30,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let pages: any[] = [];
+  try {
+    const data = await fetchApi("/pages/");
+    pages = data.items || data || [];
+  } catch (e) {
+    console.error("Failed to fetch pages for layout:", e);
+  }
+
   return (
     <html lang="uz" className="dark">
       <head>
@@ -52,7 +61,7 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`}>
-        <Navbar />
+        <Navbar pages={pages} />
 
         <main className="min-h-screen">
           {children}

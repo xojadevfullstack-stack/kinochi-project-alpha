@@ -20,13 +20,19 @@ class MovieRepositoryImpl(IMovieRepository):
     def _to_domain(self, model: MovieModel) -> Movie:
         return Movie.model_validate(model)
 
-    async def create(self, movie: Movie, category_ids: list[int] | None = None) -> Movie:
-        model = MovieModel(**movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations"}, exclude_unset=True))
+    async def create(self, movie: Movie, category_ids: list[int] | None = None, page_ids: list[int] | None = None) -> Movie:
+        model = MovieModel(**movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations", "pages"}, exclude_unset=True))
         
         if category_ids:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             model.categories = list(categories)
+            
+        if page_ids:
+            from app.infrastructure.db.models.page import PageModel
+            result = await self.session.execute(select(PageModel).where(PageModel.id.in_(page_ids)))
+            pages = result.scalars().all()
+            model.pages = list(pages)
             
         self.session.add(model)
         await self.session.flush()
@@ -36,7 +42,8 @@ class MovieRepositoryImpl(IMovieRepository):
     async def get_by_id(self, movie_id: int) -> Movie | None:
         stmt = select(MovieModel).options(
             selectinload(MovieModel.categories),
-            selectinload(MovieModel.translations)
+            selectinload(MovieModel.translations),
+            selectinload(MovieModel.pages)
         ).where(MovieModel.id == movie_id)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -45,7 +52,8 @@ class MovieRepositoryImpl(IMovieRepository):
     async def get_by_code(self, code: str) -> Movie | None:
         stmt = select(MovieModel).options(
             selectinload(MovieModel.categories),
-            selectinload(MovieModel.translations)
+            selectinload(MovieModel.translations),
+            selectinload(MovieModel.pages)
         ).where(MovieModel.code == code)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -54,7 +62,8 @@ class MovieRepositoryImpl(IMovieRepository):
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),
-            selectinload(MovieModel.translations)
+            selectinload(MovieModel.translations),
+            selectinload(MovieModel.pages)
         ).where(
             or_(
                 MovieModel.title.ilike(f"%{title_query}%"),
@@ -70,13 +79,17 @@ class MovieRepositoryImpl(IMovieRepository):
         
         return [self._to_domain(m) for m in models], total or 0
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None) -> tuple[Sequence[Movie], int]:
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None) -> tuple[Sequence[Movie], int]:
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),
-            selectinload(MovieModel.translations)
+            selectinload(MovieModel.translations),
+            selectinload(MovieModel.pages)
         )
         if category_id:
             query = query.filter(MovieModel.categories.any(id=category_id))
+        
+        if page_id:
+            query = query.filter(MovieModel.pages.any(id=page_id))
             
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)
@@ -86,12 +99,12 @@ class MovieRepositoryImpl(IMovieRepository):
         
         return [self._to_domain(m) for m in models], total or 0
 
-    async def update(self, movie: Movie, category_ids: list[int] | None = None) -> Movie:
+    async def update(self, movie: Movie, category_ids: list[int] | None = None, page_ids: list[int] | None = None) -> Movie:
         model = await self.session.get(MovieModel, movie.id)
         if not model:
             raise ValueError(f"Movie with id {movie.id} not found")
             
-        update_data = movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations"}, exclude_unset=True)
+        update_data = movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations", "pages"}, exclude_unset=True)
         for key, value in update_data.items():
             setattr(model, key, value)
             
@@ -99,6 +112,12 @@ class MovieRepositoryImpl(IMovieRepository):
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
             categories = result.scalars().all()
             model.categories = list(categories)
+            
+        if page_ids is not None:
+            from app.infrastructure.db.models.page import PageModel
+            result = await self.session.execute(select(PageModel).where(PageModel.id.in_(page_ids)))
+            pages = result.scalars().all()
+            model.pages = list(pages)
             
         await self.session.flush()
         await self.session.refresh(model)

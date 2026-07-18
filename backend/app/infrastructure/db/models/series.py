@@ -44,6 +44,10 @@ class SeriesModel(Base):
         secondary=series_category_table, back_populates="series", lazy="selectin"
     )
 
+    pages: Mapped[list["PageModel"]] = relationship(
+        secondary="page_series", back_populates="series", lazy="selectin"
+    )
+
 class SeasonModel(Base):
     __tablename__ = "seasons"
 
