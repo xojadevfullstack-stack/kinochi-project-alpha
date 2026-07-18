@@ -79,7 +79,7 @@ class MovieRepositoryImpl(IMovieRepository):
         
         return [self._to_domain(m) for m in models], total or 0
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None) -> tuple[Sequence[Movie], int]:
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> tuple[Sequence[Movie], int]:
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
@@ -90,6 +90,8 @@ class MovieRepositoryImpl(IMovieRepository):
         
         if page_id:
             query = query.filter(MovieModel.pages.any(id=page_id))
+        elif exclude_paged:
+            query = query.filter(~MovieModel.pages.any())
             
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)

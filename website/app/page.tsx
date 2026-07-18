@@ -98,8 +98,8 @@ export default async function Home() {
 
   try {
     const [moviesRes, seriesRes, catRes] = await Promise.all([
-      fetchApi('/movies?limit=10'),
-      fetchApi('/series?limit=10'),
+      fetchApi('/movies?limit=10&exclude_paged=true'),
+      fetchApi('/series?limit=10&exclude_paged=true'),
       fetchApi('/categories')
     ]);
     latestMovies = moviesRes?.items || [];

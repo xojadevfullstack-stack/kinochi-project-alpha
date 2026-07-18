@@ -132,10 +132,11 @@ async def list_movies(
     limit: int = Query(20, ge=1, le=100),
     category_id: int | None = None,
     page_id: int | None = None,
+    exclude_paged: bool = False,
     service: MovieService = Depends(get_movie_service)
 ):
     """List movies, optionally filtered by category (Public)."""
-    movies, total = await service.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id)
+    movies, total = await service.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
     return {"items": movies, "total": total}
 
 

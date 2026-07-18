@@ -102,12 +102,6 @@ export default function VideoUploadModal({
         const file = fileInputRef.current?.files?.[0];
         if (!file) { alert("Iltimos, video faylni tanlang!"); return; }
 
-        const MAX_MB = 50;
-        if (file.size > MAX_MB * 1024 * 1024) {
-          alert(`Fayl hajmi ${MAX_MB}MB dan oshmasligi kerak. Hozirgi fayl: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
-          return;
-        }
-
         // ── 1-bosqich: fayl → server (XHR progress) ──
         setPhase("uploading");
         setUploadProgress(0);

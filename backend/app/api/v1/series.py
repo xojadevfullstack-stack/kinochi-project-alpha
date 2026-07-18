@@ -41,10 +41,11 @@ async def list_series(
     limit: int = Query(20, ge=1, le=100),
     category_id: int | None = None,
     page_id: int | None = None,
+    exclude_paged: bool = False,
     service: SeriesService = Depends(get_series_service)
 ):
     """List series (Public)."""
-    items, total = await service.get_all_series(skip=skip, limit=limit, category_id=category_id, page_id=page_id)
+    items, total = await service.get_all_series(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
     
     # Calculate pages
     pages = (total + limit - 1) // limit if total > 0 else 0

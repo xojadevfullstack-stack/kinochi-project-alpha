@@ -28,7 +28,7 @@ export default async function SeriesListPage({ searchParams }: { searchParams: {
   let categories: Category[] = [];
   
   try {
-    const query = searchParams.category ? `/series?limit=50&category_id=${searchParams.category}` : "/series?limit=50";
+    const query = searchParams.category ? `/series?limit=50&category_id=${searchParams.category}&exclude_paged=true` : "/series?limit=50&exclude_paged=true";
     const [seriesData, categoriesData] = await Promise.all([
       fetchApi(query),
       fetchApi("/categories")

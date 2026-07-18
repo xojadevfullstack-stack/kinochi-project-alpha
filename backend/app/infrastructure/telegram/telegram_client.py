@@ -8,9 +8,6 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Telegram sendVideo uchun maksimal fayl hajmi (50 MB)
-MAX_VIDEO_BYTES = 50 * 1024 * 1024
-
 class TelegramClient:
     def __init__(self):
         self.bot_token = settings.BOT_TOKEN
@@ -38,8 +35,6 @@ class TelegramClient:
             raise HTTPException(status_code=500, detail="Telegram konfiguratsiyasi topilmadi (.env).")
 
         file_size = os.path.getsize(tmp_path)
-        if file_size > MAX_VIDEO_BYTES:
-            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
 
         url = f"{self.base_url}/sendVideo"
 

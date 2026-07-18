@@ -21,8 +21,8 @@ class SeriesService:
         return shortuuid.uuid()[:8]
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None) -> Tuple[List[Series], int]:
-        series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id)
+    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> Tuple[List[Series], int]:
+        series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged)
         return [Series.model_validate(s) for s in series_models], total
 
     async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[Series], int]:

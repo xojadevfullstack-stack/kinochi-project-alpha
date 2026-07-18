@@ -73,8 +73,8 @@ class MovieService:
     async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None) -> tuple[Sequence[Movie], int]:
-        return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id)
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> tuple[Sequence[Movie], int]:
+        return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
 
     async def update_movie(
         self,

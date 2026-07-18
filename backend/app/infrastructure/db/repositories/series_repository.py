@@ -12,7 +12,7 @@ class SeriesRepository:
         self.session = session
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None) -> Tuple[List[SeriesModel], int]:
+    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
@@ -24,6 +24,8 @@ class SeriesRepository:
             stmt = stmt.filter(SeriesModel.categories.any(id=category_id))
         if page_id:
             stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
+        elif exclude_paged:
+            stmt = stmt.filter(~SeriesModel.pages.any())
 
         total_stmt = select(func.count()).select_from(stmt.subquery())
         total = await self.session.scalar(total_stmt)
