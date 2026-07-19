@@ -10,12 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
+import logging
 
+logging.info("CHECKPOINT 5b: DB engine yaratilmoqda")
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_pre_ping=True,
 )
+logging.info("CHECKPOINT 5c: DB engine yaratildi")
 
 async_session_factory = async_sessionmaker(
     engine,

@@ -40,6 +40,8 @@ async def run_api():
     server = uvicorn.Server(config)
     
     logging.info("CHECKPOINT 4: Uvicorn Server.serve() chaqirilmoqda")
+    logging.info(f"CHECKPOINT 4b: PORT env = {os.environ.get('PORT')}, kodda ishlatilayotgan port = {port}")
+    logging.info(f"CHECKPOINT 4c: Uvicorn log_config berilgan: ha, log_level={config.log_level}")
     logging.info(f"[API] Starting Uvicorn server on {host}:{port}")
     await server.serve()
     logging.info("CHECKPOINT 9: Uvicorn Server.serve() tugadi")

@@ -6,6 +6,9 @@ together all routers, middleware, and lifecycle hooks.  No business
 logic lives here.
 """
 
+import logging
+logging.info("CHECKPOINT 5: main.py moduli import qilinmoqda")
+
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -28,7 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     import httpx
     import logging
 
-    logging.info("CHECKPOINT 5: FastAPI lifespan boshlandi")
+    logging.info("CHECKPOINT 6: lifespan/startup handler boshlandi")
 
     async def keep_alive():
         url = os.getenv("RENDER_EXTERNAL_URL")
@@ -53,12 +56,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         except Exception as e:
             logging.error(f"Redis ulanmadi: {e}. Fon vazifalar vaqtincha ishlamaydi.")
 
-    logging.info("CHECKPOINT 6: FastAPI lifespan orqa fon vazifalari (keep_alive, redis) ishga tushirildi")
+    logging.info("CHECKPOINT 7: orqa fon vazifalari (keep_alive) ishga tushirilmoqda")
     task = asyncio.create_task(keep_alive())
+    logging.info("CHECKPOINT 8: orqa fon vazifalari (redis) ishga tushirilmoqda")
     redis_task = asyncio.create_task(init_redis_bg())
-    logging.info("CHECKPOINT 7: FastAPI lifespan yield qildi (server tayyor)")
+    
+    logging.info("CHECKPOINT 8b: DB dan test so'rov yuborilmoqda (engine ping)")
+    try:
+        from app.infrastructure.db.session import engine
+        from sqlalchemy import text
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+        logging.info("CHECKPOINT 8c: DB test so'rovi tugadi (ulandi)")
+    except Exception as db_err:
+        logging.error(f"DB test xatosi: {db_err}")
+    
+    logging.info("CHECKPOINT 9: FastAPI lifespan yield qildi (server tayyor)")
     yield
-    logging.info("CHECKPOINT 8: FastAPI lifespan shutdown boshlandi")
+    logging.info("CHECKPOINT 9z: FastAPI lifespan shutdown boshlandi")
     task.cancel()
     redis_task.cancel()
 
