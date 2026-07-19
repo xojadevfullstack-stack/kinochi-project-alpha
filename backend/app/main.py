@@ -28,6 +28,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     import httpx
     import logging
 
+    logging.info("CHECKPOINT 5: FastAPI lifespan boshlandi")
+
     async def keep_alive():
         url = os.getenv("RENDER_EXTERNAL_URL")
         if not url:
@@ -41,9 +43,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             except Exception as e:
                 logging.error(f"Backend keep-alive failed: {e}")
 
+    async def init_redis_bg():
+        from app.core.job_manager import job_manager
+        logging.info("Redis'ga ulanmoqda...")
+        try:
+            # Test connection
+            await job_manager._redis.ping()
+            logging.info("Redis ulandi.")
+        except Exception as e:
+            logging.error(f"Redis ulanmadi: {e}. Fon vazifalar vaqtincha ishlamaydi.")
+
+    logging.info("CHECKPOINT 6: FastAPI lifespan orqa fon vazifalari (keep_alive, redis) ishga tushirildi")
     task = asyncio.create_task(keep_alive())
+    redis_task = asyncio.create_task(init_redis_bg())
+    logging.info("CHECKPOINT 7: FastAPI lifespan yield qildi (server tayyor)")
     yield
+    logging.info("CHECKPOINT 8: FastAPI lifespan shutdown boshlandi")
     task.cancel()
+    redis_task.cancel()
 
 
 # ── App factory ──────────────────────────────────────────────────

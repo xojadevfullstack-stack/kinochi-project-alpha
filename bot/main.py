@@ -11,6 +11,7 @@ from middlewares.subscription_check import SubscriptionMiddleware
 from services.api_client import api_client
 
 async def run_bot():
+    logging.info("CHECKPOINT 10: run_bot() funksiyasiga kirildi")
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
 
@@ -57,8 +58,11 @@ async def run_bot():
                     menu_button=MenuButtonWebApp(text="🌐 Sayt", web_app=WebAppInfo(url=web_app_url))
                 )
                 
+                logging.info("CHECKPOINT 11: bot.delete_webhook() chaqirilmoqda")
                 await bot.delete_webhook(drop_pending_updates=True)
+                logging.info("CHECKPOINT 12: dp.start_polling(bot) chaqirilmoqda")
                 await dp.start_polling(bot)
+                logging.info("CHECKPOINT 13: dp.start_polling(bot) tugadi")
             except Exception as e:
                 logging.error(f"[BOT] Polling failed: {e}")
                 logging.info(f"[BOT] Retrying in {retry_delay} seconds...")

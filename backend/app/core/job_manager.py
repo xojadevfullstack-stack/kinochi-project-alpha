@@ -23,7 +23,13 @@ class JobStatus(str, Enum):
 
 class JobManager:
     def __init__(self):
-        self._redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        # We don't connect immediately. We pass timeout settings.
+        self._redis = redis.from_url(
+            settings.REDIS_URL, 
+            decode_responses=True,
+            socket_connect_timeout=3,
+            socket_timeout=3
+        )
         self._prefix = "job:"
 
     async def create_job(self, meta: Optional[Dict] = None) -> str:

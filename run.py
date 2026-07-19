@@ -19,6 +19,7 @@ def setup_global_logging():
 
 # ── Uvicorn API Runner ───────────────────────────────────────────
 async def run_api():
+    logging.info("CHECKPOINT 3: run_api() funksiyasiga kirildi")
     port = int(os.environ.get("PORT", 8000))
     host = os.environ.get("HOST", "0.0.0.0")
     
@@ -38,12 +39,15 @@ async def run_api():
     )
     server = uvicorn.Server(config)
     
+    logging.info("CHECKPOINT 4: Uvicorn Server.serve() chaqirilmoqda")
     logging.info(f"[API] Starting Uvicorn server on {host}:{port}")
     await server.serve()
+    logging.info("CHECKPOINT 9: Uvicorn Server.serve() tugadi")
 
 # ── Main Entrypoint ──────────────────────────────────────────────
 async def main():
     setup_global_logging()
+    logging.info("CHECKPOINT 1: run.py main() boshlandi")
     
     # Patch BACKEND_API_URL to use the correct port dynamically if running locally
     port = os.environ.get("PORT", "8000")
@@ -56,6 +60,7 @@ async def main():
     
     # Run both concurrently
     # return_exceptions=True prevents one crashing from killing the other
+    logging.info("CHECKPOINT 2: asyncio.gather(run_api, run_bot) chaqirilmoqda")
     results = await asyncio.gather(
         run_api(),
         run_bot(),
