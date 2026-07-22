@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (data.access_token) {
-        sessionStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("access_token", data.access_token);
         // Middleware uchun cookieni Vercel domenida o'rnatamiz
         document.cookie = `access_token=${data.access_token}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
       }

@@ -11,7 +11,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     "Content-Type": "application/json",
   };
 
-  let token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+  let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
   if (!token && typeof window !== "undefined") {
     try {
@@ -20,7 +20,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         const refreshData = await refreshRes.json();
         if (refreshData.access_token) {
           token = refreshData.access_token;
-          sessionStorage.setItem("access_token", token as string);
+          localStorage.setItem("access_token", token as string);
         }
       }
     } catch (e) {}
@@ -78,8 +78,8 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 export async function fetchApiUpload(endpoint: string, options: RequestInit = {}) {
   const url = `${DIRECT_API_URL}${endpoint}`;
 
-  // sessionStorage'dan tokenni olib, Authorization header'ga qo'shamiz
-  let token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+  // localStorage'dan tokenni olib, Authorization header'ga qo'shamiz
+  let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   
   if (!token && typeof window !== "undefined") {
     // Keshda token bo'lmasa, uni backenddan refresh orqali olishga harakat qilamiz
@@ -92,7 +92,7 @@ export async function fetchApiUpload(endpoint: string, options: RequestInit = {}
         const refreshData = await refreshRes.json();
         if (refreshData.access_token) {
           token = refreshData.access_token;
-          sessionStorage.setItem("access_token", token as string);
+          localStorage.setItem("access_token", token as string);
         }
       }
     } catch (e) {
@@ -139,7 +139,7 @@ export function uploadWithProgress(
 ): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const url = `${DIRECT_API_URL}${endpoint}`;
-    let token = typeof window !== "undefined" ? sessionStorage.getItem("access_token") : null;
+    let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
     
     if (!token && typeof window !== "undefined") {
       try {
@@ -151,7 +151,7 @@ export function uploadWithProgress(
           const refreshData = await refreshRes.json();
           if (refreshData.access_token) {
             token = refreshData.access_token;
-            sessionStorage.setItem("access_token", token as string);
+            localStorage.setItem("access_token", token as string);
           }
         }
       } catch (e) {}
