@@ -51,8 +51,10 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ── Telegram (Phase 4+) ──────────────────────────────────────────
-    BOT_TOKEN: str = ""
-    STORAGE_CHANNEL_ID: str = ""
+    BOT_TOKEN: str
+    STORAGE_CHANNEL_ID: str | int
+    TELEGRAM_API_ID: int
+    TELEGRAM_API_HASH: str
     # Internal secret for bot → backend API calls (POST /users/register, etc.)
     BOT_API_SECRET: str = ""
 

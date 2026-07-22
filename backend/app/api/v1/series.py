@@ -297,17 +297,15 @@ async def upload_episode_video(
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi.")
 
-    # Hajm tekshiruvi (50MB = 50 * 1024 * 1024 = 52428800)
-    if request.headers.get('content-length'):
-        if int(request.headers.get('content-length')) > 52428800:
-            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
-
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp_path = tmp_file.name
 
     try:
-        async for chunk in file:
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
             tmp_file.write(chunk)
         tmp_file.close()
     except HTTPException:

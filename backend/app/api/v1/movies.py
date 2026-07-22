@@ -241,11 +241,6 @@ async def upload_movie_video(
             detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak)."
         )
 
-    # Hajm tekshiruvi (50MB = 50 * 1024 * 1024 = 52428800)
-    if request.headers.get('content-length'):
-        if int(request.headers.get('content-length')) > 52428800:
-            raise HTTPException(status_code=413, detail="Fayl hajmi 50MB dan oshmasligi kerak.")
-
     # ── Faylni vaqtinchalik joyga saqlash (tez, Render'ning 100s limitiga tushmaydi) ──
     # OS ni o'zining temp papkasi ishlatiladi
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"

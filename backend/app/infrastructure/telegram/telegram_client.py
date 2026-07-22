@@ -33,84 +33,54 @@ class TelegramClient:
         """
         if not self.bot_token or not self.storage_channel_id:
             raise HTTPException(status_code=500, detail="Telegram konfiguratsiyasi topilmadi (.env).")
+        if not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:
+            raise HTTPException(status_code=500, detail="TELEGRAM_API_ID yoki TELEGRAM_API_HASH topilmadi (.env).")
 
-        file_size = os.path.getsize(tmp_path)
+        from pyrogram import Client
+        
+        app = Client(
+            "kinochi_uploader",
+            api_id=settings.TELEGRAM_API_ID,
+            api_hash=settings.TELEGRAM_API_HASH,
+            bot_token=self.bot_token,
+            in_memory=True
+        )
 
-        url = f"{self.base_url}/sendVideo"
-
-        # httpx uchun async generator — faylni kichik bo'laklarda o'qiydi
-        async def _file_stream() -> AsyncIterator[bytes]:
-            sent = 0
-            chunk_size = 256 * 1024  # 256 KB
-            loop = asyncio.get_event_loop()
-            with open(tmp_path, "rb") as f:
-                while True:
-                    chunk = await loop.run_in_executor(None, f.read, chunk_size)
-                    if not chunk:
-                        break
-                    sent += len(chunk)
-                    if on_progress and file_size:
-                        pct = int(sent / file_size * 90)  # 90% gacha (10% Telegram'ning javobi uchun)
+        try:
+            async with app:
+                async def progress(current, total):
+                    if on_progress and total:
+                        pct = int(current / total * 100)
                         on_progress(pct)
-                    yield chunk
 
-        # httpx multipart: fayl generator sifatida beriladi — RAM to'lmaydi
-        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0)) as client:
+                # Convert storage_channel_id to int if it's numeric, otherwise keep as string (e.g. @channel)
+                chat_id = self.storage_channel_id
+                if isinstance(chat_id, str) and chat_id.lstrip('-').isdigit():
+                    chat_id = int(chat_id)
+
+                message = await app.send_video(
+                    chat_id=chat_id,
+                    video=tmp_path,
+                    file_name=filename,
+                    progress=progress
+                )
+                
+                if not message or not message.video:
+                    raise HTTPException(status_code=500, detail="Telegram video qabul qilmadi (Noma'lum xato).")
+                    
+                return message.video.file_id, message.id
+
+        except Exception as e:
+            logger.error(f"Telegram upload generic error via Pyrogram: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Telegram bilan aloqada xato: {str(e)}")
+        finally:
+            # Vaqtinchalik faylni har qanday holatda o'chiramiz
             try:
-                multipart = {
-                    "chat_id": (None, str(self.storage_channel_id)),
-                }
-                # Streamni bytes sifatida to'plab berishimiz kerak chunki httpx multipart
-                # hali async generator'ni to'g'ridan-to'g'ri qabul qilmaydi (v0.27-)
-                # Lekin biz faylni asyncio executor orqali o'qib, xotira bosimini kamaytiramiz.
-                video_bytes = open(tmp_path, "rb").read()
-
-                files = {
-                    "video": (filename, video_bytes, mime_type)
-                }
-
-                if on_progress:
-                    on_progress(10)  # Fayl o'qildi
-
-                response = await client.post(url, data={"chat_id": self.storage_channel_id}, files=files)
-                response.raise_for_status()
-
-                result = response.json()
-                if not result.get("ok"):
-                    raise HTTPException(
-                        status_code=500,
-                        detail=f"Telegram API xatosi: {result.get('description')}"
-                    )
-
-                message = result["result"]
-                message_id = message["message_id"]
-                file_id = message["video"]["file_id"]
-
-                if on_progress:
-                    on_progress(100)
-
-                return file_id, message_id
-
-            except httpx.HTTPStatusError as e:
-                try:
-                    detail = e.response.json().get("description", e.response.text)
-                except Exception:
-                    detail = e.response.text
-                logger.error(f"Telegram upload HTTP error {e.response.status_code}: {detail}")
-                raise HTTPException(status_code=502, detail=f"Telegram upload failed: {detail}")
-            except HTTPException:
-                raise
-            except Exception as e:
-                logger.error(f"Telegram upload generic error: {str(e)}", exc_info=True)
-                raise HTTPException(status_code=500, detail=f"Telegram bilan aloqada xato: {str(e)}")
-            finally:
-                # Vaqtinchalik faylni har qanday holatda o'chiramiz
-                try:
-                    if os.path.exists(tmp_path):
-                        os.remove(tmp_path)
-                        logger.info(f"Tmp file removed: {tmp_path}")
-                except Exception as cleanup_err:
-                    logger.warning(f"Could not remove tmp file {tmp_path}: {cleanup_err}")
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+                    logger.info(f"Tmp file removed: {tmp_path}")
+            except Exception as cleanup_err:
+                logger.warning(f"Could not remove tmp file {tmp_path}: {cleanup_err}")
 
     async def get_video_file_id_from_message(self, message_id: int) -> str:
         """
