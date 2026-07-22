@@ -102,9 +102,9 @@ export default function VideoUploadModal({
         const file = fileInputRef.current?.files?.[0];
         if (!file) { alert("Iltimos, video faylni tanlang!"); return; }
 
-        // Fayl hajmi tekshiruvi (50 MB limit)
-        if (file.size > 50 * 1024 * 1024) {
-          alert("Fayl hajmi 50 MB dan oshmasligi kerak!");
+        // Fayl hajmi tekshiruvi (2 GB limit)
+        if (file.size > 2048 * 1024 * 1024) {
+          alert("Fayl hajmi 2 GB dan oshmasligi kerak!");
           return;
         }
 
@@ -321,7 +321,7 @@ export default function VideoUploadModal({
                 disabled={phase !== "idle" && phase !== "failed"}
                 className="w-full bg-surface-container border border-white/10 rounded-xl p-2.5 text-text-primary file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-container file:text-text-primary hover:file:bg-primary-container/90 focus:outline-none cursor-pointer file:transition-colors file:cursor-pointer transition-all disabled:opacity-50"
               />
-              <p className="text-xs text-text-secondary/60 mt-2">Maksimal fayl hajmi: 50 MB</p>
+              <p className="text-xs text-text-secondary/60 mt-2">Maksimal fayl hajmi: 2 GB</p>
               {renderProgress()}
             </div>
           ) : (
