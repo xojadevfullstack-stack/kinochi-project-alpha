@@ -30,9 +30,9 @@ class Settings(BaseSettings):
         if v:
             v = v.replace("https://", "").replace("http://", "")
             if not v.startswith(("redis://", "rediss://", "unix://")):
-                if "upstash.io" in v:
-                    return f"rediss://{v}"
-                return f"redis://{v}"
+                v = f"redis://{v}"
+            if "upstash.io" in v and v.startswith("redis://"):
+                v = v.replace("redis://", "rediss://", 1)
         return v
 
     # ── CORS ─────────────────────────────────────────────────────
