@@ -58,6 +58,32 @@ class TelegramClient:
                 if isinstance(chat_id, str) and chat_id.lstrip('-').isdigit():
                     chat_id = int(chat_id)
 
+                # Hack: Inject the channel into Pyrogram's in-memory peer storage
+                # Telegram allows Bots to use access_hash=0 for channels they are members of.
+                if isinstance(chat_id, int) and str(chat_id).startswith("-100"):
+                    from pyrogram.utils import get_channel_id
+                    from pyrogram.raw.types import Channel
+                    try:
+                        real_id = get_channel_id(chat_id)
+                        dummy_channel = Channel(
+                            id=real_id,
+                            title="Storage",
+                            access_hash=0,
+                            username=None,
+                            date=0,
+                            creator=False,
+                            left=False,
+                            broadcast=True,
+                            megagroup=False,
+                            signatures=False,
+                            min=False,
+                            default_banned_rights=None,
+                            banned_rights=None
+                        )
+                        await app.storage.update_peers([dummy_channel])
+                    except Exception as e:
+                        logger.warning(f"Could not inject dummy peer: {e}")
+
                 message = await app.send_video(
                     chat_id=chat_id,
                     video=tmp_path,
