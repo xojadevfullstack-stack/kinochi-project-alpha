@@ -27,8 +27,10 @@ class Settings(BaseSettings):
     @field_validator("REDIS_URL", mode="before")
     @classmethod
     def validate_redis_url(cls, v: str) -> str:
-        if v and not v.startswith(("redis://", "rediss://", "unix://")):
-            return f"redis://{v}"
+        if v:
+            v = v.replace("https://", "").replace("http://", "")
+            if not v.startswith(("redis://", "rediss://", "unix://")):
+                return f"redis://{v}"
         return v
 
     # ── CORS ─────────────────────────────────────────────────────
