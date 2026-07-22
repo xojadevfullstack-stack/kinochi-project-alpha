@@ -312,7 +312,7 @@ async def upload_movie_video(
 
     return UploadJobResponse(
         job_id=job_id,
-        status=JobStatus.PROCESSING,
+        status=JobStatus.PROCESSING.value,
         message="Video qabul qilindi. Telegram'ga yuklanmoqda..."
     )
 
