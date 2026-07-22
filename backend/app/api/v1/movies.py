@@ -253,7 +253,10 @@ async def upload_movie_video(
     tmp_path = tmp_file.name
 
     try:
-        async for chunk in file:
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
             tmp_file.write(chunk)
         tmp_file.close()
     except HTTPException:
