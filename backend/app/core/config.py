@@ -6,6 +6,7 @@ layers but depends on nothing except pydantic-settings.
 """
 
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -22,6 +23,13 @@ class Settings(BaseSettings):
 
     # ── Redis ────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    @field_validator("REDIS_URL", mode="before")
+    @classmethod
+    def validate_redis_url(cls, v: str) -> str:
+        if v and not v.startswith(("redis://", "rediss://", "unix://")):
+            return f"redis://{v}"
+        return v
 
     # ── CORS ─────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = []
