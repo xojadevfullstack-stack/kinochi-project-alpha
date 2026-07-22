@@ -58,31 +58,19 @@ class TelegramClient:
                 if isinstance(chat_id, str) and chat_id.lstrip('-').isdigit():
                     chat_id = int(chat_id)
 
-                # Hack: Inject the channel into Pyrogram's in-memory peer storage
-                # Telegram allows Bots to use access_hash=0 for channels they are members of.
-                if isinstance(chat_id, int) and str(chat_id).startswith("-100"):
-                    from pyrogram.utils import get_channel_id
-                    from pyrogram.raw.types import Channel
-                    try:
+                # Hack: Monkey-patch app.resolve_peer to force it to return InputPeerChannel
+                # with access_hash=0, which Telegram servers accept for bot tokens!
+                original_resolve_peer = app.resolve_peer
+                
+                async def fake_resolve_peer(peer_id):
+                    if peer_id == chat_id and isinstance(chat_id, int) and str(chat_id).startswith("-100"):
+                        from pyrogram.raw.types import InputPeerChannel
+                        from pyrogram.utils import get_channel_id
                         real_id = get_channel_id(chat_id)
-                        dummy_channel = Channel(
-                            id=real_id,
-                            title="Storage",
-                            access_hash=0,
-                            username=None,
-                            date=0,
-                            creator=False,
-                            left=False,
-                            broadcast=True,
-                            megagroup=False,
-                            signatures=False,
-                            min=False,
-                            default_banned_rights=None,
-                            banned_rights=None
-                        )
-                        await app.storage.update_peers([dummy_channel])
-                    except Exception as e:
-                        logger.warning(f"Could not inject dummy peer: {e}")
+                        return InputPeerChannel(channel_id=real_id, access_hash=0)
+                    return await original_resolve_peer(peer_id)
+                
+                app.resolve_peer = fake_resolve_peer
 
                 message = await app.send_video(
                     chat_id=chat_id,
