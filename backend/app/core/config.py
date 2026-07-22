@@ -30,6 +30,8 @@ class Settings(BaseSettings):
         if v:
             v = v.replace("https://", "").replace("http://", "")
             if not v.startswith(("redis://", "rediss://", "unix://")):
+                if "upstash.io" in v:
+                    return f"rediss://{v}"
                 return f"redis://{v}"
         return v
 
