@@ -6,8 +6,8 @@ import uvicorn
 from dotenv import load_dotenv
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(PROJECT_ROOT, "backend", ".env"))
-load_dotenv(os.path.join(PROJECT_ROOT, "bot", ".env"))
+load_dotenv(os.path.join(PROJECT_ROOT, "backend", ".env"), override=False)
+load_dotenv(os.path.join(PROJECT_ROOT, "bot", ".env"), override=False)
 
 # Ensure python path includes backend and bot directories
 sys.path.append(os.path.join(PROJECT_ROOT, "backend"))
@@ -19,32 +19,37 @@ def setup_global_logging():
 
 # ── Uvicorn API Runner ───────────────────────────────────────────
 async def run_api():
-    logging.info("CHECKPOINT 3: run_api() funksiyasiga kirildi")
-    port = int(os.environ.get("PORT", 8000))
-    host = os.environ.get("HOST", "0.0.0.0")
-    
-    # Custom log config for uvicorn
-    log_config = uvicorn.config.LOGGING_CONFIG.copy()
-    for formatter in log_config["formatters"].values():
-        if "fmt" in formatter:
-            formatter["fmt"] = f"[API] {formatter['fmt']}"
-    
-    config = uvicorn.Config(
-        "app.main:app", # The backend directory is in sys.path, so app.main:app should work
-        host=host, 
-        port=port, 
-        log_config=log_config,
-        workers=1, # Very important: 1 worker to save memory
-        timeout_keep_alive=65
-    )
-    server = uvicorn.Server(config)
-    
-    logging.info("CHECKPOINT 4: Uvicorn Server.serve() chaqirilmoqda")
-    logging.info(f"CHECKPOINT 4b: PORT env = {os.environ.get('PORT')}, kodda ishlatilayotgan port = {port}")
-    logging.info(f"CHECKPOINT 4c: Uvicorn log_config berilgan: ha, log_level={config.log_level}")
-    logging.info(f"[API] Starting Uvicorn server on {host}:{port}")
-    await server.serve()
-    logging.info("CHECKPOINT 9: Uvicorn Server.serve() tugadi")
+    try:
+        logging.info("CHECKPOINT 3: run_api() funksiyasiga kirildi")
+        port = int(os.environ.get("PORT", 8000))
+        host = os.environ.get("HOST", "0.0.0.0")
+        
+        # Custom log config for uvicorn
+        log_config = uvicorn.config.LOGGING_CONFIG.copy()
+        for formatter in log_config["formatters"].values():
+            if "fmt" in formatter:
+                formatter["fmt"] = f"[API] {formatter['fmt']}"
+        
+        config = uvicorn.Config(
+            "app.main:app", # The backend directory is in sys.path, so app.main:app should work
+            host=host, 
+            port=port, 
+            log_config=log_config,
+            workers=1, # Very important: 1 worker to save memory
+            timeout_keep_alive=65,
+            loop="asyncio"
+        )
+        server = uvicorn.Server(config)
+        
+        logging.info("CHECKPOINT 4: Uvicorn Server.serve() chaqirilmoqda")
+        logging.info(f"CHECKPOINT 4b: PORT env = {os.environ.get('PORT')}, kodda ishlatilayotgan port = {port}")
+        logging.info(f"CHECKPOINT 4c: Uvicorn log_config berilgan: ha, log_level={config.log_level}")
+        logging.info(f"[API] Starting Uvicorn server on {host}:{port}")
+        await server.serve()
+        logging.info("CHECKPOINT 9: Uvicorn Server.serve() tugadi")
+    except Exception:
+        logging.error("run_api() ICHIDA XATO:", exc_info=True)
+        raise
 
 # ── Main Entrypoint ──────────────────────────────────────────────
 async def main():
