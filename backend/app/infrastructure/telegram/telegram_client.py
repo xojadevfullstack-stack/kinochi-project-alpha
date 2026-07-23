@@ -58,20 +58,6 @@ class TelegramClient:
                 if isinstance(chat_id, str) and chat_id.lstrip('-').isdigit():
                     chat_id = int(chat_id)
 
-                # Hack: Monkey-patch app.resolve_peer to force it to return InputPeerChannel
-                # with access_hash=0, which Telegram servers accept for bot tokens!
-                original_resolve_peer = app.resolve_peer
-                
-                async def fake_resolve_peer(peer_id):
-                    if peer_id == chat_id and isinstance(chat_id, int) and str(chat_id).startswith("-100"):
-                        from pyrogram.raw.types import InputPeerChannel
-                        from pyrogram.utils import get_channel_id
-                        real_id = get_channel_id(chat_id)
-                        return InputPeerChannel(channel_id=real_id, access_hash=0)
-                    return await original_resolve_peer(peer_id)
-                
-                app.resolve_peer = fake_resolve_peer
-
                 message = await app.send_video(
                     chat_id=chat_id,
                     video=tmp_path,
