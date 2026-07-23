@@ -5,7 +5,7 @@ WORKDIR /app
 
 # System deps for asyncpg (libpq) and general build tooling
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc build-essential libpq-dev \
+    && apt-get install -y --no-install-recommends gcc build-essential libpq-dev python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
