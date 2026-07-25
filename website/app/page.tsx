@@ -181,15 +181,13 @@ export default async function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <a 
-                  href={`https://t.me/${botUsername}?start=${isHeroSeries ? 's_' + heroItem.id : heroItem.code}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link 
+                  href={isHeroSeries ? `/series/${heroItem.id}` : `/movie/${heroItem.code}`}
                   className="flex items-center justify-center gap-3 bg-primary-container text-white px-8 py-4 rounded-xl font-label-caps text-sm uppercase tracking-widest hover:bg-inverse-primary hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(229,9,20,0.5)] transition-all duration-300 font-bold"
                 >
                   <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
                   Tomosha qilish
-                </a>
+                </Link>
                 <ShareButton 
                   title={heroItem.title} 
                   text={`${heroItem.title} ni bepul tomosha qiling.`}
