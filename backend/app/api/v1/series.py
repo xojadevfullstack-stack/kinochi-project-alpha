@@ -379,6 +379,7 @@ async def get_episode_upload_job_status(
 class LinkVideoRequest(BaseModel):
     message_id: int
     language: str = "Asosiy"
+    source_url: str | None = None
 
 @router.post("/episodes/{episode_id}/link-video", response_model=Episode)
 async def link_episode_video(

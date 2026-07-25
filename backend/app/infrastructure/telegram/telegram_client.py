@@ -82,19 +82,33 @@ class TelegramClient:
             except Exception as cleanup_err:
                 logger.warning(f"Could not remove tmp file {tmp_path}: {cleanup_err}")
 
-    async def get_video_file_id_from_message(self, message_id: int) -> str:
+    async def get_video_file_id_from_message(self, message_id: int, source_url: str | None = None) -> str:
         """
         Retrieves the file_id of a video from a specific message in the storage channel
-        by forwarding it silently and deleting the forwarded message.
+        (or from a provided source_url) by forwarding it silently and deleting the forwarded message.
         """
         if not self.bot_token or not self.storage_channel_id:
             raise HTTPException(status_code=500, detail="Telegram configuration is missing (.env)")
 
+        from_chat_id = self.storage_channel_id
+        target_message_id = message_id
+
+        if source_url:
+            from app.utils.telegram_link_parser import parse_telegram_link
+            try:
+                parsed = parse_telegram_link(source_url)
+                if parsed.get("chat_id"):
+                    from_chat_id = parsed["chat_id"]
+                if parsed.get("message_id"):
+                    target_message_id = parsed["message_id"]
+            except ValueError:
+                pass # If parsing fails, fallback to storage_channel_id and message_id
+
         url_forward = f"{self.base_url}/forwardMessage"
         data_forward = {
             "chat_id": self.storage_channel_id,
-            "from_chat_id": self.storage_channel_id,
-            "message_id": message_id,
+            "from_chat_id": from_chat_id,
+            "message_id": target_message_id,
             "disable_notification": True
         }
 

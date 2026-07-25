@@ -151,13 +151,24 @@ export default function VideoUploadModal({
         }
 
         setPhase("uploading");
-        await fetchApi(linkEndpoint, {
-          method: "POST",
-          body: JSON.stringify({ message_id: parsedId, language }),
-        });
-        setPhase("done");
-        onSuccess();
-        setTimeout(() => onClose(), 1500);
+
+        try {
+          // Serverga ham message_id (eski moslik uchun) ham source_url (to'liq linkni tahlil qilish uchun) yuboramiz.
+          await fetchApi(linkEndpoint, {
+            method: "POST",
+            body: JSON.stringify({
+              message_id: parsedId,
+              source_url: inputStr,
+              language,
+            }),
+          });
+          setPhase("done");
+          onSuccess();
+          setTimeout(() => onClose(), 1500);
+        } catch (e: any) {
+          setPhase("failed");
+          setErrorMsg(e.message || "Noma'lum xato");
+        }
       }
     } catch (e: any) {
       setPhase("failed");
