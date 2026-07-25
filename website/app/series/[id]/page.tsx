@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
+import Link from "next/link";
+import TrailerModal from "@/components/TrailerModal";
 
 type Props = {
   params: { id: string };
@@ -151,6 +153,17 @@ export default async function SeriesDetailsPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Trailer Section */}
+      {series.trailer_url && (
+        <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
+            <span className="w-1.5 h-8 bg-primary-container rounded-full block"></span>
+            Treyler
+          </h2>
+          <TrailerModal trailerUrl={series.trailer_url} posterUrl={series.poster_url || ""} />
+        </section>
+      )}
 
       {/* Seasons & Episodes Section */}
       <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">

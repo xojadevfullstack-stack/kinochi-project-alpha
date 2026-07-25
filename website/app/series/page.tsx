@@ -2,6 +2,7 @@ import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
+import CategoryFilter from "@/components/CategoryFilter";
 
 export const revalidate = 60;
 
@@ -49,21 +50,7 @@ export default async function SeriesListPage({ searchParams }: { searchParams: {
             <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">Barcha Seriallar</h1>
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta seriallar kolleksiyamiz bilan tanishing.</p>
           </div>
-          <div className="flex flex-wrap gap-2 pb-2">
-            <Link href="/series" className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold transition-colors ${!searchParams.category ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}>Barchasi</Link>
-            {categories.map(cat => {
-              const isActive = searchParams.category === String(cat.id);
-              return (
-                <Link 
-                  key={cat.id} 
-                  href={`/series?category=${cat.id}`}
-                  className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold transition-colors ${isActive ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}
-                >
-                  {cat.name}
-                </Link>
-              );
-            })}
-          </div>
+          <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/series" />
         </div>
 
         {seriesList.length === 0 ? (

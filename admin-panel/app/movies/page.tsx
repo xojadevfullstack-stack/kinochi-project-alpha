@@ -16,8 +16,10 @@ type Movie = {
   cast: string | null;
   imdb_rating: number | null;
   poster_url: string | null;
+  trailer_url: string | null;
   release_year: number;
   duration_minutes: number;
+  runtime?: number;
   categories: Category[];
   pages: PageItem[];
   source_link: string | null;
@@ -37,7 +39,7 @@ export default function MoviesPage() {
   const [videoMovieId, setVideoMovieId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
-    title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "",
+    title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", trailer_url: "",
     director: "", cast: "", imdb_rating: 0,
     category_ids: [] as number[],
     page_ids: [] as number[],
@@ -130,8 +132,9 @@ export default function MoviesPage() {
     setEditingId(m.id);
     setForm({
       title: m.title, description: m.description, genres: m.genres, 
-      release_year: m.release_year, duration_minutes: m.duration_minutes,
+      release_year: m.release_year, duration_minutes: m.runtime || m.duration_minutes,
       poster_url: m.poster_url || "",
+      trailer_url: m.trailer_url || "",
       director: m.director || "",
       cast: m.cast || "",
       imdb_rating: m.imdb_rating || 0,
@@ -144,7 +147,7 @@ export default function MoviesPage() {
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [], page_ids: [], source_link: "" });
+    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", trailer_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [], page_ids: [], source_link: "" });
   };
 
   const openVideoModal = (id: number) => {
@@ -189,6 +192,7 @@ export default function MoviesPage() {
           <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Sarlavha</label><input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
           <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Ta'rif</label><textarea className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
           <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Treyler URL (YouTube yoki to'g'ridan-to'g'ri link, majburiy emas)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://youtube.com/watch?v=..." value={form.trailer_url} onChange={e => setForm({...form, trailer_url: e.target.value})} /></div>
           <div><label className="block text-sm font-medium text-text-secondary mb-1">Janrlar</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.genres} onChange={e => setForm({...form, genres: e.target.value})} /></div>
           <div><label className="block text-sm font-medium text-text-secondary mb-1">Rejissyor</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.director} onChange={e => setForm({...form, director: e.target.value})} /></div>
           <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Aktyorlar</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.cast} onChange={e => setForm({...form, cast: e.target.value})} /></div>

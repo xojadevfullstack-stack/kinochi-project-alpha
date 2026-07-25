@@ -22,6 +22,7 @@ class SeriesModel(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text)
     poster_url: Mapped[str | None] = mapped_column(String(1024))
+    trailer_url: Mapped[str | None] = mapped_column(String(1024))
     status: Mapped[str] = mapped_column(String(50), server_default="ongoing", nullable=False)
     
     imdb_rating: Mapped[float | None] = mapped_column(Float)

@@ -77,6 +77,7 @@ class SeriesBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    trailer_url: str | None = Field(None, max_length=1024)
     imdb_rating: float | None = Field(None, ge=0, le=10)
     release_year: int | None = None
     director: str | None = None
@@ -92,6 +93,7 @@ class SeriesUpdate(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
+    trailer_url: str | None = Field(None, max_length=1024)
     imdb_rating: float | None = Field(None, ge=0, le=10)
     release_year: int | None = None
     director: str | None = None

@@ -12,6 +12,7 @@ type Series = {
   title: string;
   description: string | null;
   poster_url: string | null;
+  trailer_url: string | null;
   imdb_rating: number | null;
   release_year: number | null;
   director: string | null;
@@ -43,6 +44,7 @@ export default function SeriesListPage() {
     title: "",
     description: "",
     poster_url: "",
+    trailer_url: "",
     imdb_rating: 0,
     release_year: 2024,
     director: "",
@@ -136,6 +138,7 @@ export default function SeriesListPage() {
       title: s.title,
       description: s.description || "",
       poster_url: s.poster_url || "",
+      trailer_url: s.trailer_url || "",
       imdb_rating: s.imdb_rating || 0,
       release_year: s.release_year || 2024,
       director: s.director || "",
@@ -150,7 +153,7 @@ export default function SeriesListPage() {
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], page_ids: [], source_id: "", status: "ongoing" });
+    setForm({ title: "", description: "", poster_url: "", trailer_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], page_ids: [], source_id: "", status: "ongoing" });
   };
 
   const handleCategoryChange = (id: number) => {
@@ -184,34 +187,11 @@ export default function SeriesListPage() {
           {editingId ? "Serialni tahrirlash" : "Yangi serial qo'shish"}
         </h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Nomi</label>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Tavsif</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
-              rows={3}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Poster URL (Rasm)</label>
-            <input
-              type="url"
-              value={form.poster_url}
-              onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
-            />
-          </div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Sarlavha</label><input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Ta'rif</label><textarea className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} /></div>
+          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Treyler URL (YouTube yoki to'g'ridan-to'g'ri link, majburiy emas)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://youtube.com/watch?v=..." value={form.trailer_url} onChange={e => setForm({...form, trailer_url: e.target.value})} /></div>
+          <div><label className="block text-sm font-medium text-text-secondary mb-1">Status</label><select className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.status} onChange={e => setForm({...form, status: e.target.value})}><option value="ongoing">Davom etyapti</option><option value="completed">Tugallangan</option></select></div>
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Rejissyor</label>
             <input

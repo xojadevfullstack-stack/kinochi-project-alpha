@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
+import Link from "next/link";
+import TrailerModal from "@/components/TrailerModal";
 
 type Props = {
   params: { code: string };
@@ -132,18 +134,12 @@ export default async function MovieDetailsPage({ params }: Props) {
       </section>
 
       {/* Trailer Section */}
-      <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
-        <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md">Treyler</h2>
-        <div className="aspect-video w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative group cursor-pointer border border-white/10 bg-surface-container-lowest">
-          <div className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-40 transition-opacity duration-500" 
-               style={{ backgroundImage: `url('${movie.poster_url || ""}')` }}></div>
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-500">
-            <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-text-primary group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white group-hover:shadow-[0_0_40px_rgba(229,9,20,0.6)] group-hover:scale-110 transition-all duration-500 ease-out">
-              <span className="material-symbols-outlined text-[48px] ml-2" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {movie.trailer_url && (
+        <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md">Treyler</h2>
+          <TrailerModal trailerUrl={movie.trailer_url} posterUrl={movie.poster_url || ""} />
+        </section>
+      )}
     </>
   );
 }
