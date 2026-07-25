@@ -36,7 +36,7 @@ type Series = {
   created_at?: string;
 };
 
-const MovieRow = ({ title, items, isSeries = false }: { title: string, items: any[], isSeries?: boolean }) => {
+const MovieRow = ({ title, items, isSeries = false, isDynamicPage = false, pageSlug = "" }: { title: string, items: any[], isSeries?: boolean, isDynamicPage?: boolean, pageSlug?: string }) => {
   if (!items || items.length === 0) return null;
   
   return (
@@ -46,27 +46,30 @@ const MovieRow = ({ title, items, isSeries = false }: { title: string, items: an
           <span className="w-1 h-6 bg-primary-container rounded-full block"></span>
           {title}
         </h2>
-        <Link href={isSeries ? "/series" : "/movies"} className="text-text-secondary hover:text-primary-container text-sm font-bold transition-colors">
+        <Link href={isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies")} className="text-text-secondary hover:text-primary-container text-sm font-bold transition-colors">
           Barchasi
         </Link>
       </div>
       <div className="flex gap-4 overflow-x-auto snap-x hide-scrollbar px-gutter pb-8 pt-4">
-        {items.map(item => (
+        {items.map(item => {
+          const itemIsSeries = isDynamicPage ? !!item.is_series : isSeries;
+          return (
           <Link 
-            href={isSeries ? `/series/${item.id}` : `/movie/${item.code}`} 
-            key={isSeries ? item.id : item.code} 
+            href={itemIsSeries ? `/series/${item.id}` : `/movie/${item.code}`} 
+            key={itemIsSeries ? `s-${item.id}` : `m-${item.code}`} 
             className="w-[160px] md:w-[240px] shrink-0 snap-start group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
           >
             {item.poster_url ? (
               <Image 
                 src={item.poster_url} 
-                alt={item.title}
+                alt={item.title} 
                 fill
                 sizes="(max-width: 768px) 160px, 240px"
-                className="object-cover"
+                className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+                loading="lazy"
               />
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-high text-gray-500 border border-white/5">
+              <div className="w-full h-full flex flex-col items-center justify-center bg-surface-container-high text-gray-500">
                 <span className="material-symbols-outlined text-4xl mb-2 opacity-30">movie</span>
               </div>
             )}
@@ -80,13 +83,13 @@ const MovieRow = ({ title, items, isSeries = false }: { title: string, items: an
             
             <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
               <div className="flex gap-1 mb-1">
-                <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{isSeries ? item.categories?.[0]?.name || "Serial" : item.genres?.split(',')[0] || "Kino"}</span>
+                <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{itemIsSeries ? item.categories?.[0]?.name || "Serial" : item.genres?.split(',')[0] || "Kino"}</span>
                 {item.release_year && <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{item.release_year}</span>}
               </div>
               <h3 className="font-body-lg text-text-primary font-bold line-clamp-2 drop-shadow-md">{item.title}</h3>
             </div>
           </Link>
-        ))}
+        )})}
       </div>
     </section>
   );
@@ -96,17 +99,37 @@ export default async function Home() {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
   let latestMovies: Movie[] = [];
   let latestSeries: Series[] = [];
-  let categories: Category[] = [];
+  let pagesData: any[] = [];
 
   try {
-    const [moviesRes, seriesRes, catRes] = await Promise.all([
-      fetchApi('/movies?limit=10&exclude_paged=true'),
-      fetchApi('/series?limit=10&exclude_paged=true'),
-      fetchApi('/categories')
+    const [moviesRes, seriesRes, pagesRes] = await Promise.all([
+      fetchApi('/movies?limit=15&exclude_paged=true'),
+      fetchApi('/series?limit=15&exclude_paged=true'),
+      fetchApi('/pages')
     ]);
     latestMovies = moviesRes?.items || [];
     latestSeries = seriesRes?.items || [];
-    categories = catRes || [];
+    const dynamicPages = pagesRes?.items || pagesRes || [];
+
+    pagesData = await Promise.all(dynamicPages.map(async (page: any) => {
+      const [pageMovies, pageSeries] = await Promise.all([
+        fetchApi(`/movies?limit=15&page_id=${page.id}`),
+        fetchApi(`/series?limit=15&page_id=${page.id}`)
+      ]);
+      
+      const combined = [
+        ...(pageMovies?.items || []),
+        ...(pageSeries?.items || []).map((s: any) => ({ ...s, is_series: true }))
+      ];
+      
+      combined.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      
+      return {
+        ...page,
+        items: combined.slice(0, 15)
+      };
+    }));
+
   } catch (error) {
     console.error("Error fetching data for home page:", error);
   }
@@ -221,11 +244,17 @@ export default async function Home() {
 
       {/* Horizontal Scrolling Rows */}
       <div className="space-y-margin-desktop py-margin-desktop relative z-20 bg-background-obsidian">
-        <MovieRow title="Yangi kinolar" items={latestMovies} />
-        <MovieRow title="So'nggi seriallar" items={latestSeries} isSeries={true} />
+        <MovieRow title="Kinolar" items={latestMovies} />
+        <MovieRow title="Seriallar" items={latestSeries} isSeries={true} />
         
-        {categories.slice(0, 3).map(cat => (
-          <MovieRow key={cat.id} title={`${cat.name} turkumidagi kinolar`} items={latestMovies.slice().reverse()} />
+        {pagesData.map(page => (
+          <MovieRow 
+            key={page.id} 
+            title={page.title} 
+            items={page.items} 
+            isDynamicPage={true} 
+            pageSlug={page.slug} 
+          />
         ))}
       </div>
     </>
