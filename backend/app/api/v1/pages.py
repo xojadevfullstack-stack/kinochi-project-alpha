@@ -2,6 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+import re
+
+def slugify(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r'[^a-z0-9]+', '-', text)
+    return text.strip('-')
 
 from app.api.deps import get_db_session, get_current_admin
 from app.infrastructure.db.models.page import PageModel
@@ -40,7 +46,9 @@ async def create_page(
     admin: dict = Depends(get_current_admin)
 ):
     """Create a new page (Admin only)."""
-    model = PageModel(**page_in.model_dump())
+    data = page_in.model_dump()
+    data["slug"] = slugify(data["slug"])
+    model = PageModel(**data)
     session.add(model)
     await session.commit()
     await session.refresh(model)
@@ -90,6 +98,9 @@ async def update_page(
         raise HTTPException(status_code=404, detail="Page not found")
         
     update_data = page_in.model_dump(exclude_unset=True)
+    if "slug" in update_data:
+        update_data["slug"] = slugify(update_data["slug"])
+        
     for key, value in update_data.items():
         setattr(page, key, value)
         

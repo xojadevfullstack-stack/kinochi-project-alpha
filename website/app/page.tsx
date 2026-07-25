@@ -16,6 +16,7 @@ type Movie = {
   release_year: number | null;
   poster_url: string | null;
   code: string;
+  created_at?: string;
 };
 
 type Category = {
@@ -32,6 +33,7 @@ type Series = {
   imdb_rating: number | null;
   release_year: number | null;
   categories?: any[];
+  created_at?: string;
 };
 
 const MovieRow = ({ title, items, isSeries = false }: { title: string, items: any[], isSeries?: boolean }) => {
@@ -112,7 +114,16 @@ export default async function Home() {
   let heroItem: any = null;
   let isHeroSeries = false;
   
-  if (latestMovies.length > 0) {
+  if (latestMovies.length > 0 && latestSeries.length > 0) {
+    const movieDate = new Date(latestMovies[0].created_at || 0).getTime();
+    const seriesDate = new Date(latestSeries[0].created_at || 0).getTime();
+    if (seriesDate > movieDate) {
+      heroItem = latestSeries[0];
+      isHeroSeries = true;
+    } else {
+      heroItem = latestMovies[0];
+    }
+  } else if (latestMovies.length > 0) {
     heroItem = latestMovies[0];
   } else if (latestSeries.length > 0) {
     heroItem = latestSeries[0];

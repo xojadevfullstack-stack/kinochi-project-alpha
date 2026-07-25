@@ -5,6 +5,7 @@ import logging
 import asyncio
 import os
 import tempfile
+from datetime import datetime
 from pydantic import BaseModel, Field, computed_field
 
 logger = logging.getLogger(__name__)
@@ -88,6 +89,7 @@ class MovieResponse(BaseModel):
 
     source_chat_id: int | None = None
     source_topic_id: int | None = None
+    created_at: datetime | None = None
 
     @computed_field
     def source_link(self) -> str | None:
