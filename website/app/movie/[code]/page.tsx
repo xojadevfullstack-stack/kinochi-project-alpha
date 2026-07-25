@@ -134,7 +134,7 @@ export default async function MovieDetailsPage({ params }: Props) {
       </section>
 
       {/* Trailer Section */}
-      {movie.trailer_url && (
+      {movie.trailer_url && movie.trailer_url !== "" && movie.trailer_url !== "null" && movie.trailer_url !== "undefined" && (
         <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
           <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md">Treyler</h2>
           <TrailerModal trailerUrl={movie.trailer_url} posterUrl={movie.poster_url || ""} />

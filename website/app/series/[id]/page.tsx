@@ -155,7 +155,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
       </section>
 
       {/* Trailer Section */}
-      {series.trailer_url && (
+      {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (
         <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
           <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
             <span className="w-1.5 h-8 bg-primary-container rounded-full block"></span>
