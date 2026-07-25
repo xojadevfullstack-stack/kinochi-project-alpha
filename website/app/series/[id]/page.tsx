@@ -276,23 +276,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
         )}
       </section>
 
-      {/* Trailer Section */}
-      <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5 mb-stack-lg">
-        <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
-          <span className="w-1.5 h-8 bg-primary-container rounded-full block"></span>
-          Treyler
-        </h2>
-        <div className="aspect-video w-full max-w-5xl mx-auto rounded-xl overflow-hidden relative group cursor-pointer border border-white/10 bg-surface-container-lowest shadow-2xl">
-          <div className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-40 transition-opacity duration-500" 
-               style={{ backgroundImage: `url('${series.poster_url || ""}')` }}></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian/80 to-transparent"></div>
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-500">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-container/90 backdrop-blur-md border border-white/20 flex items-center justify-center text-text-primary group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white group-hover:shadow-[0_0_40px_rgba(229,9,20,0.8)] group-hover:scale-110 transition-all duration-500 ease-out">
-              <span className="material-symbols-outlined text-[40px] md:text-[48px] ml-2" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </>
   );
 }
