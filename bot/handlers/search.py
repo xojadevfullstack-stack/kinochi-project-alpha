@@ -7,7 +7,7 @@ from config import settings
 
 router = Router()
 
-@router.message(F.text & ~F.text.startswith("/"))
+@router.message(F.text & ~F.text.startswith("/") & (F.chat.type == "private"))
 async def handle_search_query(message: Message):
     query = message.text.strip()
     

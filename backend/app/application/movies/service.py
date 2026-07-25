@@ -70,6 +70,9 @@ class MovieService:
     async def get_movie_by_code(self, code: str) -> Movie | None:
         return await self.movie_repo.get_by_code(code)
 
+    async def get_movie_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
+        return await self.movie_repo.get_by_source(chat_id, topic_id)
+
     async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
 

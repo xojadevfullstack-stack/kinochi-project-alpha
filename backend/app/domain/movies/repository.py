@@ -21,6 +21,10 @@ class IMovieRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
+        pass
+
+    @abstractmethod
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         """Returns a tuple of (movies, total_count)"""
         pass

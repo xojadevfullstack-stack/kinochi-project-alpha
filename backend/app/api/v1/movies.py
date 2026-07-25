@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, computed_field
 
 logger = logging.getLogger(__name__)
 
-from app.api.deps import get_movie_service, get_current_admin
+from app.api.deps import get_movie_service, get_current_admin, get_admin_or_bot
 from app.application.movies.service import MovieService
 from app.domain.movies.entities import Movie
 from app.api.v1.categories import CategoryResponse
@@ -189,6 +189,21 @@ async def get_movie_by_code(
     return movie
 
 
+@router.get("/by-source", response_model=MovieResponse)
+@limiter.limit("120/minute")
+async def get_movie_by_source(
+    request: Request,
+    chat_id: int,
+    topic_id: int | None = None,
+    service: MovieService = Depends(get_movie_service)
+):
+    """Get movie by source chat and topic (Used by Bot)."""
+    movie = await service.get_movie_by_source(chat_id, topic_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found by source")
+    return movie
+
+
 @router.put("/{movie_id}", response_model=MovieResponse)
 async def update_movie(
     movie_id: int,
@@ -339,9 +354,9 @@ async def link_movie_video(
     movie_id: int,
     request: LinkVideoRequest,
     service: MovieService = Depends(get_movie_service),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_admin_or_bot)
 ):
-    """Link video for a movie from an existing message ID in the storage channel (Admin only)."""
+    """Link video for a movie from an existing message ID in the storage channel (Admin or Bot)."""
     try:
         movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language)
         if not movie:

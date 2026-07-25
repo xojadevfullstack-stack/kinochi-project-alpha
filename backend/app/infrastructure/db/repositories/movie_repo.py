@@ -59,6 +59,20 @@ class MovieRepositoryImpl(IMovieRepository):
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
+    async def get_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
+        stmt = select(MovieModel).options(
+            selectinload(MovieModel.categories),
+            selectinload(MovieModel.translations),
+            selectinload(MovieModel.pages)
+        ).where(MovieModel.source_chat_id == chat_id)
+        if topic_id:
+            stmt = stmt.where(MovieModel.source_topic_id == topic_id)
+        else:
+            stmt = stmt.where(MovieModel.source_topic_id.is_(None))
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return self._to_domain(model) if model else None
+
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),

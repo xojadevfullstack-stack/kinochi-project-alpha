@@ -28,10 +28,37 @@ async def process_video(message: Message, bot: Bot):
             url += f"&topic_id={topic_id}"
         resp = await api_client.client.get(url)
         if resp.status_code == 404:
+            # 1.b Look up Movie by source
+            movie_url = f"/movies/by-source?chat_id={chat_id}"
+            if topic_id:
+                movie_url += f"&topic_id={topic_id}"
+            resp_movie = await api_client.client.get(movie_url)
+            if resp_movie.status_code == 404:
+                return
+            resp_movie.raise_for_status()
+            movie = resp_movie.json()
+            
+            # Forward video to storage channel
+            storage_msg = await bot.forward_message(
+                chat_id=settings.STORAGE_CHANNEL_ID,
+                from_chat_id=chat_id,
+                message_id=message.message_id
+            )
+            storage_msg_id = storage_msg.message_id
+            
+            # Link video to movie
+            await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
+                "message_id": storage_msg_id,
+                "language": "Asosiy"
+            })
+            
+            await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
             return
+            
         resp.raise_for_status()
         series = resp.json()
     except Exception as e:
+        logger.error(f"Error checking source: {e}")
         # Not a registered source, ignore
         return
 
