@@ -4,8 +4,6 @@ import Image from "next/image";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
 
-export const revalidate = 60;
-
 type Movie = {
   id: number;
   code: number;

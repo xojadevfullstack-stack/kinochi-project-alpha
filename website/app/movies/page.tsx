@@ -4,8 +4,6 @@ import Image from "next/image";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
 
-export const revalidate = 60;
-
 export const metadata: Metadata = {
   title: "Kinolar - Kinochi",
   description: "Eng so'nggi va qiziqarli kinolarni tomosha qiling.",
