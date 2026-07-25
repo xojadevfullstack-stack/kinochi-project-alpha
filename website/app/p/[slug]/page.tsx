@@ -25,6 +25,11 @@ type Series = {
   categories: { id: number; name: string }[];
 };
 
+type Category = {
+  id: number;
+  name: string;
+};
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
     const page = await fetchApi(`/pages/${params.slug}`);
@@ -39,20 +44,31 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function DynamicPage({ params }: { params: { slug: string } }) {
+export default async function DynamicPage({ params, searchParams }: { params: { slug: string }, searchParams: { category?: string } }) {
   let page = null;
   let movies: Movie[] = [];
   let seriesList: Series[] = [];
+  let categories: Category[] = [];
   
   try {
     page = await fetchApi(`/pages/${params.slug}`);
     if (page && page.id) {
-      const [moviesData, seriesData] = await Promise.all([
-        fetchApi(`/movies?limit=50&page_id=${page.id}`),
-        fetchApi(`/series?limit=50&page_id=${page.id}`)
+      let moviesQuery = `/movies?limit=50&page_id=${page.id}`;
+      let seriesQuery = `/series?limit=50&page_id=${page.id}`;
+      
+      if (searchParams.category) {
+          moviesQuery += `&category_id=${searchParams.category}`;
+          seriesQuery += `&category_id=${searchParams.category}`;
+      }
+
+      const [moviesData, seriesData, categoriesData] = await Promise.all([
+        fetchApi(moviesQuery),
+        fetchApi(seriesQuery),
+        fetchApi('/categories')
       ]);
       movies = moviesData.items || [];
       seriesList = seriesData.items || [];
+      categories = categoriesData || [];
     }
   } catch (error) {
     console.error("Failed to fetch page data:", error);
@@ -75,6 +91,21 @@ export default async function DynamicPage({ params }: { params: { slug: string }
           <div className="mb-stack-md">
             <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">{page.title}</h1>
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning maxsus to'plamlarimiz.</p>
+          </div>
+          <div className="flex flex-wrap gap-2 pb-2">
+            <Link href={`/p/${params.slug}`} className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold transition-colors ${!searchParams.category ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}>Barchasi</Link>
+            {categories.map(cat => {
+              const isActive = searchParams.category === String(cat.id);
+              return (
+                <Link 
+                  key={cat.id} 
+                  href={`/p/${params.slug}?category=${cat.id}`}
+                  className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold transition-colors ${isActive ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}
+                >
+                  {cat.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
