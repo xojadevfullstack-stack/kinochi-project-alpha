@@ -183,7 +183,7 @@ async def update_season(
     season_id: int,
     season_in: SeasonUpdate,
     service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_admin_or_bot)
 ):
     """Update a season (Admin only)."""
     season = await service.update_season(season_id, season_in)
@@ -397,6 +397,22 @@ async def link_episode_video(
     except Exception as e:
         logger.error(f"Error in link_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")
+
+class UpdateTranslationRequest(BaseModel):
+    language: str
+
+@router.put("/episodes/translations/{translation_id}")
+async def update_episode_translation(
+    translation_id: int,
+    request: UpdateTranslationRequest,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Update an episode translation language (Admin only)."""
+    success = await service.update_episode_translation(translation_id, request.language)
+    if not success:
+        raise HTTPException(status_code=404, detail="Translation not found")
+    return {"message": "Success"}
 
 @router.delete("/episodes/translations/{translation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_episode_translation(

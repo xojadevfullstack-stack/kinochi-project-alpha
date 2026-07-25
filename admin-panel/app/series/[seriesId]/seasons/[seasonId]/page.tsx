@@ -55,6 +55,9 @@ export default function EpisodesListPage() {
     duration: "",
   });
 
+  const [editingTranslationId, setEditingTranslationId] = useState<number | null>(null);
+  const [editingLanguage, setEditingLanguage] = useState<string>("");
+
   useEffect(() => {
     if (seriesId && seasonId) {
       loadData();
@@ -140,6 +143,20 @@ export default function EpisodesListPage() {
       loadData();
     } catch (e: any) {
       alert("O'chirishda xato: " + e.message);
+    }
+  };
+
+  const handleEditTranslationSubmit = async (translationId: number) => {
+    if (!editingLanguage.trim()) return alert("Iltimos, nomini kiriting");
+    try {
+      await fetchApi(`/series/episodes/translations/${translationId}`, {
+        method: "PUT",
+        body: JSON.stringify({ language: editingLanguage })
+      });
+      setEditingTranslationId(null);
+      loadData();
+    } catch (e: any) {
+      alert("Tahrirlashda xato: " + e.message);
     }
   };
 
@@ -282,11 +299,34 @@ export default function EpisodesListPage() {
                     {e.translations && e.translations.length > 0 ? (
                       <div className="flex flex-col gap-1">
                         {e.translations.map((t) => (
-                          <div key={t.id} className="flex items-center justify-between bg-surface-container-high border border-white/10 px-2 py-1 rounded text-sm text-text-secondary">
-                            <span>✅ {t.language}</span>
-                            <button onClick={() => handleDeleteTranslation(t.id)} className="text-rating-gold hover:text-red-400 ml-2 transition-colors" title="Videoni o'chirish">
-                              ✕
-                            </button>
+                          <div key={t.id} className="flex flex-col gap-1 bg-surface-container-high border border-white/10 px-2 py-2 rounded text-sm text-text-secondary">
+                            {editingTranslationId === t.id ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={editingLanguage}
+                                  onChange={(ev) => setEditingLanguage(ev.target.value)}
+                                  className="bg-surface-container-lowest border border-white/10 rounded px-2 py-1 text-xs text-text-primary flex-1"
+                                />
+                                <button onClick={() => handleEditTranslationSubmit(t.id)} className="text-green-400 hover:text-green-300">Saql</button>
+                                <button onClick={() => setEditingTranslationId(null)} className="text-gray-400 hover:text-white">Bekor</button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span>✅ {t.language}</span>
+                                <div>
+                                  <button onClick={() => {
+                                    setEditingTranslationId(t.id);
+                                    setEditingLanguage(t.language);
+                                  }} className="text-primary-container hover:text-white transition-colors" title="Tahrirlash">
+                                    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                  </button>
+                                  <button onClick={() => handleDeleteTranslation(t.id)} className="text-rating-gold hover:text-red-400 ml-2 transition-colors" title="Videoni o'chirish">
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

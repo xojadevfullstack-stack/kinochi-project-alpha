@@ -209,6 +209,9 @@ class SeriesService:
         
         return Episode.model_validate(updated_episode)
 
+    async def update_episode_translation(self, translation_id: int, language: str) -> bool:
+        return await self.repository.update_episode_translation(translation_id, language)
+
     async def delete_episode_translation(self, translation_id: int) -> bool:
         return await self.repository.delete_episode_translation(translation_id)
 

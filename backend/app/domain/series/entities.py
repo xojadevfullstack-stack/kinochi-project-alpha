@@ -53,6 +53,7 @@ class SeasonBase(BaseModel):
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
     episode_count: int | None = None
+    status: str = "ongoing"
 
 class SeasonCreate(SeasonBase):
     pass
@@ -63,6 +64,7 @@ class SeasonUpdate(BaseModel):
     description: str | None = None
     poster_url: str | None = Field(None, max_length=1024)
     episode_count: int | None = None
+    status: str | None = None
 
 class Season(SeasonBase):
     id: int
@@ -79,6 +81,7 @@ class SeriesBase(BaseModel):
     release_year: int | None = None
     director: str | None = None
     cast: str | None = None
+    status: str = "ongoing"
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
@@ -96,6 +99,7 @@ class SeriesUpdate(BaseModel):
     category_ids: list[int] | None = None
     page_ids: list[int] | None = None
     source_id: int | None = None
+    status: str | None = None
 
 from app.domain.series.source_entities import SourceResponse
 

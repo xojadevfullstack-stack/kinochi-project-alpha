@@ -21,6 +21,7 @@ type Series = {
   pages: PageItem[];
   source_id: number | null;
   source: Source | null;
+  status: string;
 };
 
 type Source = {
@@ -49,6 +50,7 @@ export default function SeriesListPage() {
     category_ids: [] as number[],
     page_ids: [] as number[],
     source_id: "" as number | "",
+    status: "ongoing" as string,
   });
   const [sources, setSources] = useState<Source[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -141,13 +143,14 @@ export default function SeriesListPage() {
       category_ids: s.categories ? s.categories.map((c) => c.id) : [],
       page_ids: s.pages ? s.pages.map((p) => p.id) : [],
       source_id: s.source_id || "",
+      status: s.status || "ongoing",
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], page_ids: [], source_id: "" });
+    setForm({ title: "", description: "", poster_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], page_ids: [], source_id: "", status: "ongoing" });
   };
 
   const handleCategoryChange = (id: number) => {
@@ -265,6 +268,18 @@ export default function SeriesListPage() {
           </div>
 
           <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-text-secondary mb-1">Status (Holati)</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+            >
+              <option value="ongoing">Davom etmoqda</option>
+              <option value="completed">Tugallangan</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-text-secondary mb-2">Kategoriyalar</label>
             <div className="flex flex-wrap gap-2">
               {categories.map(c => (
@@ -336,6 +351,9 @@ export default function SeriesListPage() {
                   📦 Manba: {s.source.name}
                 </span>
               )}
+              <span className={`text-sm mb-3 font-medium ${s.status === 'completed' ? 'text-green-400' : 'text-yellow-400'}`}>
+                {s.status === 'completed' ? '✅ Tugallangan' : '🔄 Davom etmoqda'}
+              </span>
               <p className="text-sm text-text-secondary mb-4 line-clamp-3">{s.description || "Tavsif yo'q"}</p>
               <div className="mt-auto flex justify-between items-center gap-2">
                 <Link

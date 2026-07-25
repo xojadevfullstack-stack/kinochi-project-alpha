@@ -264,6 +264,14 @@ class SeriesRepository:
         await self.session.flush()
         return await self.get_episode_by_id(episode_id)
 
+    async def update_episode_translation(self, translation_id: int, language: str) -> bool:
+        model = await self.session.get(EpisodeTranslationModel, translation_id)
+        if not model:
+            return False
+        model.language = language
+        await self.session.flush()
+        return True
+
     async def delete_episode_translation(self, translation_id: int) -> bool:
         model = await self.session.get(EpisodeTranslationModel, translation_id)
         if not model:

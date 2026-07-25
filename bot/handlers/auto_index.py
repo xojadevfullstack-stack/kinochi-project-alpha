@@ -37,22 +37,25 @@ async def process_video(message: Message, bot: Bot):
 
     # 2. Get or create Season
     seasons = series.get("seasons", [])
-    if not seasons:
+    ongoing_seasons = [s for s in seasons if s.get("status") == "ongoing"]
+    
+    if ongoing_seasons:
+        season = ongoing_seasons[-1]
+    else:
+        next_season_num = max([s.get("season_number", 0) for s in seasons], default=0) + 1
         try:
             resp = await api_client.client.post(f"/series/{series['id']}/seasons", json={
                 "series_id": series['id'],
-                "season_number": 1,
-                "title": "Mavsum 1"
+                "season_number": next_season_num,
+                "title": f"Mavsum {next_season_num}",
+                "status": "ongoing"
             })
             resp.raise_for_status()
             season = resp.json()
-            seasons = [season]
+            seasons.append(season)
         except Exception as e:
             logger.error(f"Error creating season: {e}")
             return
-    
-    # Use the last season (assuming sequential uploads)
-    season = seasons[-1]
 
     season_id = season['id']
     lock = get_season_lock(season_id)
@@ -119,6 +122,21 @@ async def process_video(message: Message, bot: Bot):
                 "language": "Asosiy"
             })
             resp.raise_for_status()
+            
+            # 8. Check if season is complete
+            expected_count = season.get("episode_count")
+            if expected_count and ep_num >= expected_count:
+                try:
+                    await api_client.client.put(f"/series/seasons/{season_id}", json={
+                        "season_number": season.get("season_number"),
+                        "title": season.get("title"),
+                        "description": season.get("description"),
+                        "poster_url": season.get("poster_url"),
+                        "episode_count": expected_count,
+                        "status": "completed"
+                    })
+                except Exception as e:
+                    logger.error(f"Error completing season: {e}")
             
             # Optionally, reply to the admin in the source chat
             await message.reply(f"✅ {ep_num}-qism saqlandi va indekslandi. Kod: `{code}`", parse_mode="Markdown")

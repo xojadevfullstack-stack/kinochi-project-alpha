@@ -13,6 +13,7 @@ type Season = {
   description: string | null;
   poster_url: string | null;
   episode_count: number | null;
+  status: string;
   created_at: string;
 };
 
@@ -38,6 +39,7 @@ export default function SeasonsListPage() {
     description: "",
     poster_url: "",
     episode_count: "",
+    status: "ongoing" as string,
   });
 
   useEffect(() => {
@@ -77,12 +79,14 @@ export default function SeasonsListPage() {
           title: form.title || null,
           description: form.description || null,
           poster_url: form.poster_url || null,
-          episode_count: form.episode_count ? parseInt(form.episode_count as string) : null
+          episode_count: form.episode_count ? parseInt(form.episode_count as string) : null,
+          status: form.status
         }) });
       } else {
         await fetchApi(`/series/${seriesId}/seasons`, { method: "POST", body: JSON.stringify({
           ...form,
-          episode_count: form.episode_count ? parseInt(form.episode_count as string) : null
+          episode_count: form.episode_count ? parseInt(form.episode_count as string) : null,
+          status: form.status
         }) });
       }
       handleCancel();
@@ -111,13 +115,14 @@ export default function SeasonsListPage() {
       description: s.description || "",
       poster_url: s.poster_url || "",
       episode_count: s.episode_count?.toString() || "",
+      status: s.status || "ongoing",
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     const nextNum = seasons.length > 0 ? Math.max(...seasons.map((s: Season) => s.season_number)) + 1 : 1;
-    setForm({ series_id: parseInt(seriesId), season_number: nextNum, title: "", description: "", poster_url: "", episode_count: "" });
+    setForm({ series_id: parseInt(seriesId), season_number: nextNum, title: "", description: "", poster_url: "", episode_count: "", status: "ongoing" });
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Yuklanmoqda...</div>;
@@ -181,6 +186,17 @@ export default function SeasonsListPage() {
             />
           </div>
           <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-text-secondary mb-1">Status (Holati)</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+            >
+              <option value="ongoing">Davom etmoqda</option>
+              <option value="completed">Tugallangan</option>
+            </select>
+          </div>
+          <div className="md:col-span-3">
             <label className="block text-sm font-medium text-text-secondary mb-1">Tavsif (ixtiyoriy)</label>
             <textarea
               value={form.description}
@@ -230,6 +246,9 @@ export default function SeasonsListPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-bold text-primary-container">{s.season_number}-mavsum</div>
                     {s.title && <div className="text-sm text-text-secondary">{s.title}</div>}
+                    <div className={`text-xs mt-1 font-medium ${s.status === 'completed' ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {s.status === 'completed' ? '✅ Tugallangan' : '🔄 Davom etmoqda'}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                     {s.episode_count ? `${s.episode_count} ta qism` : "-"}
