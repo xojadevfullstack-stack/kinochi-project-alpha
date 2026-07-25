@@ -10,7 +10,8 @@ from pydantic import BaseModel, Field, computed_field
 
 logger = logging.getLogger(__name__)
 
-from app.api.deps import get_movie_service, get_current_admin, get_admin_or_bot
+from app.api.deps import get_movie_service, get_current_admin, get_admin_or_bot, get_db_session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.movies.service import MovieService
 from app.domain.movies.entities import Movie
 from app.api.v1.categories import CategoryResponse
