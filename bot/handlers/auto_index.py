@@ -38,13 +38,18 @@ async def process_video(message: Message, bot: Bot):
             resp_movie.raise_for_status()
             movie = resp_movie.json()
             
-            # Forward video to storage channel
-            storage_msg = await bot.forward_message(
-                chat_id=settings.STORAGE_CHANNEL_ID,
-                from_chat_id=chat_id,
-                message_id=message.message_id
-            )
-            storage_msg_id = storage_msg.message_id
+            # Copy video to storage channel (bypasses forward restrictions)
+            try:
+                storage_msg = await bot.copy_message(
+                    chat_id=settings.STORAGE_CHANNEL_ID,
+                    from_chat_id=chat_id,
+                    message_id=message.message_id
+                )
+                storage_msg_id = storage_msg.message_id
+            except Exception as e:
+                logger.error(f"Cannot copy message to storage: {e}")
+                await message.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki ruxsat yo'q).")
+                return
             
             # Link video to movie
             await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
