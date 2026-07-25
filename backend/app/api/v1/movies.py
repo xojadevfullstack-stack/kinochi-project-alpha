@@ -125,7 +125,7 @@ async def create_movie(
     if source_id:
         from app.infrastructure.db.repositories.source_repository import SourceRepository
         repo = SourceRepository(db)
-        source = await repo.get_source(source_id)
+        source = await repo.get_source_by_id(source_id)
         if source:
             data["source_chat_id"] = source.chat_id
             data["source_topic_id"] = source.topic_id
@@ -220,16 +220,18 @@ async def update_movie(
 ):
     """Update a movie (Admin only)."""
     data = movie_in.model_dump(exclude_unset=True)
+    
+    has_source_id = "source_id" in movie_in.model_fields_set
     source_id = data.pop("source_id", None)
     
-    if source_id is not None:
-        if source_id == "":
+    if has_source_id:
+        if source_id is None or source_id == "":
              data["source_chat_id"] = None
              data["source_topic_id"] = None
         else:
              from app.infrastructure.db.repositories.source_repository import SourceRepository
              repo = SourceRepository(db)
-             source = await repo.get_source(source_id)
+             source = await repo.get_source_by_id(source_id)
              if source:
                  data["source_chat_id"] = source.chat_id
                  data["source_topic_id"] = source.topic_id

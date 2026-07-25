@@ -82,42 +82,20 @@ class MovieService:
     async def update_movie(
         self,
         movie_id: int,
-        title: str | None = None,
-        original_title: str | None = None,
-        description: str | None = None,
-        imdb_rating: float | None = None,
-        tmdb_rating: float | None = None,
-        genres: str | None = None,
-        cast: str | None = None,
-        director: str | None = None,
-        release_year: int | None = None,
-        runtime: int | None = None,
-        poster_url: str | None = None,
-        trailer_url: str | None = None,
-        category_ids: list[int] | None = None,
-        page_ids: list[int] | None = None,
-        source_chat_id: int | None = None,
-        source_topic_id: int | None = None
+        **kwargs
     ) -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
         if not movie:
             return None
             
-        # Update fields if provided
-        if title is not None: movie.title = title
-        if original_title is not None: movie.original_title = original_title
-        if description is not None: movie.description = description
-        if imdb_rating is not None: movie.imdb_rating = imdb_rating
-        if tmdb_rating is not None: movie.tmdb_rating = tmdb_rating
-        if genres is not None: movie.genres = genres
-        if cast is not None: movie.cast = cast
-        if director is not None: movie.director = director
-        if release_year is not None: movie.release_year = release_year
-        if runtime is not None: movie.runtime = runtime
-        if poster_url is not None: movie.poster_url = poster_url
-        if trailer_url is not None: movie.trailer_url = trailer_url
-        if source_chat_id is not None: movie.source_chat_id = source_chat_id
-        if source_topic_id is not None: movie.source_topic_id = source_topic_id
+        # Extract explicit relationship fields
+        category_ids = kwargs.pop("category_ids", None)
+        page_ids = kwargs.pop("page_ids", None)
+            
+        # Update scalar fields
+        for key, value in kwargs.items():
+            if hasattr(movie, key):
+                setattr(movie, key, value)
 
         return await self.movie_repo.update(movie, category_ids=category_ids, page_ids=page_ids)
 
