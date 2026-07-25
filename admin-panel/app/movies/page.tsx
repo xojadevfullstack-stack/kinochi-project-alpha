@@ -22,7 +22,8 @@ type Movie = {
   runtime?: number;
   categories: Category[];
   pages: PageItem[];
-  source_link: string | null;
+  source_id?: number | null;
+  source_link?: string | null;
   translations: { id: number; language: string; telegram_file_id: string }[];
 };
 
@@ -30,6 +31,7 @@ export default function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [pages, setPages] = useState<PageItem[]>([]);
+  const [sources, setSources] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
@@ -38,18 +40,29 @@ export default function MoviesPage() {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoMovieId, setVideoMovieId] = useState<number | null>(null);
 
-  const [form, setForm] = useState({
+  const initialForm = {
     title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", trailer_url: "",
     director: "", cast: "", imdb_rating: 0,
     category_ids: [] as number[],
     page_ids: [] as number[],
-    source_link: ""
-  });
+    source_id: "" as number | ""
+  };
+
+  const [form, setForm] = useState(initialForm);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([loadMovies(), loadCategories(), loadPages()]).then(() => setLoading(false));
+    Promise.all([loadMovies(), loadCategories(), loadPages(), loadSources()]).then(() => setLoading(false));
   }, []);
+
+  const loadSources = async () => {
+    try {
+      const data = await fetchApi("/sources");
+      setSources(data);
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
 
   const loadMovies = async () => {
     try {
@@ -88,7 +101,7 @@ export default function MoviesPage() {
     const payload = {
       ...form,
       runtime: form.duration_minutes,
-      source_link: form.source_link || null
+      source_id: form.source_id === "" ? null : form.source_id
     };
 
     try {
@@ -100,11 +113,7 @@ export default function MoviesPage() {
       handleCancel();
       loadMovies();
     } catch (e: any) {
-      if (e.message && e.message.includes("Invalid Telegram URL")) {
-        setErrorMsg("Noto'g'ri Telegram link formati");
-      } else {
-        setErrorMsg("Saqlashda xato: " + (e.message || "Noma'lum xato"));
-      }
+      setErrorMsg(e.message || "Xato yuz berdi");
     }
   };
 
@@ -129,6 +138,11 @@ export default function MoviesPage() {
   };
 
   const handleEdit = (m: Movie) => {
+    let matchedSourceId: number | "" = "";
+    if ((m as any).source_chat_id) {
+       const source = sources.find(s => s.chat_id === (m as any).source_chat_id && s.topic_id === (m as any).source_topic_id);
+       if (source) matchedSourceId = source.id;
+    }
     setEditingId(m.id);
     setForm({
       title: m.title, description: m.description, genres: m.genres, 
@@ -140,14 +154,14 @@ export default function MoviesPage() {
       imdb_rating: m.imdb_rating || 0,
       category_ids: m.categories?.map(c => c.id) || [],
       page_ids: m.pages?.map(p => p.id) || [],
-      source_link: m.source_link || ""
+      source_id: matchedSourceId
     });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", trailer_url: "", director: "", cast: "", imdb_rating: 0, category_ids: [], page_ids: [], source_link: "" });
+    setForm(initialForm);
   };
 
   const openVideoModal = (id: number) => {
@@ -201,9 +215,17 @@ export default function MoviesPage() {
           <div><label className="block text-sm font-medium text-text-secondary mb-1">Reyting (IMDb)</label><input type="number" step="0.1" min="0" max="10" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.imdb_rating} onChange={e => setForm({...form, imdb_rating: parseFloat(e.target.value)})} /></div>
           
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Manba (Telegram) link (ixtiyoriy)</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://t.me/c/1234567890 yoki https://t.me/c/1234567890/42" value={form.source_link} onChange={e => setForm({...form, source_link: e.target.value})} />
-            <p className="text-xs text-text-secondary mt-1">Faqat yopiq (private) guruh/kanal linklari qabul qilinadi. Formatlar: <code className="bg-white/5 px-1 rounded">https://t.me/c/&lt;chat_id&gt;</code> yoki <code className="bg-white/5 px-1 rounded">https://t.me/c/&lt;chat_id&gt;/&lt;message_id&gt;</code>. Ommaviy (@username) linklar ishlamaydi.</p>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Manba (Source)</label>
+            <select
+              value={form.source_id}
+              onChange={(e) => setForm({ ...form, source_id: e.target.value === "" ? "" : parseInt(e.target.value) })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+            >
+              <option value="">Manba tanlanmagan</option>
+              {sources.map(s => (
+                <option key={s.id} value={s.id}>{s.name} ({s.type})</option>
+              ))}
+            </select>
             {errorMsg && <p className="text-red-400 text-sm mt-1">{errorMsg}</p>}
           </div>
 
