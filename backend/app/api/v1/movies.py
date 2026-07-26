@@ -165,20 +165,6 @@ async def search_movies(
     return {"items": movies, "total": total}
 
 
-@router.get("/{movie_id}", response_model=MovieResponse)
-@limiter.limit("120/minute")
-async def get_movie(
-    request: Request,
-    movie_id: int,
-    service: MovieService = Depends(get_movie_service)
-):
-    """Get movie by ID (Public)."""
-    movie = await service.get_movie(movie_id)
-    if not movie:
-        raise HTTPException(status_code=404, detail="Movie not found")
-    return movie
-
-
 @router.get("/code/{movie_code}", response_model=MovieResponse)
 @limiter.limit("120/minute")
 async def get_movie_by_code(
@@ -205,6 +191,20 @@ async def get_movie_by_source(
     movie = await service.get_movie_by_source(chat_id, topic_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found by source")
+    return movie
+
+
+@router.get("/{movie_id}", response_model=MovieResponse)
+@limiter.limit("120/minute")
+async def get_movie(
+    request: Request,
+    movie_id: int,
+    service: MovieService = Depends(get_movie_service)
+):
+    """Get movie by ID (Public)."""
+    movie = await service.get_movie(movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
     return movie
 
 
@@ -372,7 +372,7 @@ async def link_movie_video(
 ):
     """Link video for a movie from an existing message ID in the storage channel (Admin or Bot)."""
     try:
-        movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language, request.telegram_file_id)
+        movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
         return movie

@@ -1,6 +1,7 @@
 import logging
 import uuid
 import asyncio
+import httpx
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message
@@ -48,7 +49,12 @@ async def process_video(message: Message, bot: Bot):
             resp_movie = await api_client.client.get(movie_url)
             if resp_movie.status_code == 404:
                 return
-            resp_movie.raise_for_status()
+            try:
+                resp_movie.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Error fetching movie by source: {e}")
+                await message.reply(f"❌ Kino backenddan qidirilayotganda tizimli xato (Status: {e.response.status_code})")
+                return
             movie = resp_movie.json()
             
             # Copy video to storage channel (bypasses forward restrictions)
@@ -79,7 +85,12 @@ async def process_video(message: Message, bot: Bot):
             
             return
             
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Error fetching series by source: {e}")
+            await message.reply(f"❌ Serial backenddan qidirilayotganda tizimli xato (Status: {e.response.status_code})")
+            return
         series = resp.json()
     except Exception as e:
         logger.error(f"Error checking source: {e}")
@@ -106,6 +117,7 @@ async def process_video(message: Message, bot: Bot):
             seasons.append(season)
         except Exception as e:
             logger.error(f"Error creating season: {e}")
+            await message.reply("❌ Yangi mavsum (season) yaratishda tizimli xato yuz berdi.")
             return
 
     season_id = season['id']
@@ -120,11 +132,13 @@ async def process_video(message: Message, bot: Bot):
             ep_num = len(episodes) + 1
         except Exception as e:
             logger.error(f"Error fetching episodes: {e}")
+            await message.reply("❌ Qismlarni (episodes) yuklashda tizimli xato yuz berdi.")
             return
 
         storage_channel_id = settings.STORAGE_CHANNEL_ID
         if not storage_channel_id:
             logger.warning("STORAGE_CHANNEL_ID is not set. Cannot index.")
+            await message.reply("❌ STORAGE_CHANNEL_ID sozlanmagan! Videoni saqlab bo'lmaydi.")
             return
 
         # 4. Check if it's the first episode

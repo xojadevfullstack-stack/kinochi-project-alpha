@@ -390,7 +390,7 @@ async def link_episode_video(
     admin: dict = Depends(get_admin_or_bot)
 ):
     try:
-        episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language, request.telegram_file_id)
+        episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
         return episode
