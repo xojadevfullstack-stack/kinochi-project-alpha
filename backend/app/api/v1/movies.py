@@ -361,6 +361,7 @@ class LinkVideoRequest(BaseModel):
     message_id: int
     language: str = "Asosiy"
     source_url: str | None = None
+    telegram_file_id: str | None = None
 
 @router.post("/{movie_id}/link-video", response_model=MovieResponse)
 async def link_movie_video(
@@ -371,7 +372,7 @@ async def link_movie_video(
 ):
     """Link video for a movie from an existing message ID in the storage channel (Admin or Bot)."""
     try:
-        movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language)
+        movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language, request.telegram_file_id)
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
         return movie

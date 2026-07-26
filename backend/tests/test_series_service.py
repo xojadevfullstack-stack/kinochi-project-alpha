@@ -133,3 +133,43 @@ async def test_update_episode_not_found(service, mock_repo):
     # Assert
     assert result is None
     mock_repo.update_episode.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_link_episode_video_with_telegram_file_id(service, mock_repo, mock_telegram_client):
+    class MockEpisode:
+        def __init__(self, id, season_id):
+            self.id = id
+            self.season_id = season_id
+
+    mock_ep = MockEpisode(id=1, season_id=1)
+    mock_repo.get_episode_by_id.return_value = mock_ep
+    
+    class MockUpdatedEpisode:
+        def __init__(self):
+            import datetime
+            self.id = 1
+            self.season_id = 1
+            self.episode_number = 1
+            self.title = "test"
+            self.code = "code"
+            self.display_code = "dcode"
+            self.duration = 0
+            self.created_at = datetime.datetime.now(datetime.timezone.utc)
+    
+    mock_repo.add_episode_translation.return_value = MockUpdatedEpisode()
+
+    result = await service.link_episode_video_from_message(
+        episode_id=1, 
+        message_id=99999, 
+        telegram_file_id="mock_series_file_id_123"
+    )
+    
+    assert result is not None
+    mock_repo.add_episode_translation.assert_called_once_with(
+        episode_id=1, 
+        language="Asosiy", 
+        telegram_file_id="mock_series_file_id_123", 
+        storage_channel_message_id=99999
+    )
+    mock_telegram_client.get_video_file_id_from_message.assert_not_called()

@@ -380,6 +380,7 @@ class LinkVideoRequest(BaseModel):
     message_id: int
     language: str = "Asosiy"
     source_url: str | None = None
+    telegram_file_id: str | None = None
 
 @router.post("/episodes/{episode_id}/link-video", response_model=Episode)
 async def link_episode_video(
@@ -389,7 +390,7 @@ async def link_episode_video(
     admin: dict = Depends(get_admin_or_bot)
 ):
     try:
-        episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language)
+        episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language, request.telegram_file_id)
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
         return episode

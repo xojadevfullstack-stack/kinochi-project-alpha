@@ -21,6 +21,19 @@ async def process_video(message: Message, bot: Bot):
     chat_id = message.chat.id
     topic_id = message.message_thread_id
     
+    # Extract file_id from video or document
+    if message.video:
+        telegram_file_id = message.video.file_id
+    elif message.document:
+        mime_type = message.document.mime_type or ""
+        if not mime_type.startswith("video/"):
+            await message.reply(f"❌ Yuborilgan fayl video emas (mime: {mime_type}).")
+            return
+        telegram_file_id = message.document.file_id
+    else:
+        await message.reply("❌ Yuborilgan xabar video yoki document emas.")
+        return
+    
     # 1. Look up Series by source
     try:
         url = f"/series/by-source?chat_id={chat_id}"
@@ -52,12 +65,18 @@ async def process_video(message: Message, bot: Bot):
                 return
             
             # Link video to movie
-            await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
-                "message_id": storage_msg_id,
-                "language": "Asosiy"
-            })
+            try:
+                resp = await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
+                    "message_id": storage_msg_id,
+                    "language": "Asosiy",
+                    "telegram_file_id": telegram_file_id
+                })
+                resp.raise_for_status()
+                await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
+            except Exception as e:
+                logger.error(f"Error linking video for movie {movie['id']}: {e}")
+                await message.reply(f"❌ Kino bazaga qo'shildi, lekin videoni ulashda xatolik yuz berdi: {e}")
             
-            await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
             return
             
         resp.raise_for_status()
@@ -149,17 +168,23 @@ async def process_video(message: Message, bot: Bot):
             episode = resp.json()
 
             # 7. Link video
-            resp = await api_client.client.post(f"/series/episodes/{episode['id']}/link-video", json={
-                "message_id": storage_msg_id,
-                "language": "Asosiy"
-            })
-            resp.raise_for_status()
+            try:
+                resp = await api_client.client.post(f"/series/episodes/{episode['id']}/link-video", json={
+                    "message_id": storage_msg_id,
+                    "language": "Asosiy",
+                    "telegram_file_id": telegram_file_id
+                })
+                resp.raise_for_status()
+            except Exception as e:
+                logger.error(f"Error linking video for episode {episode['id']}: {e}")
+                await message.reply(f"❌ Qism bazaga qo'shildi, lekin videoni ulashda xatolik yuz berdi: {e}")
+                return
             
             # 8. Check if season is complete
             expected_count = season.get("episode_count")
             if expected_count and ep_num >= expected_count:
                 try:
-                    await api_client.client.put(f"/series/seasons/{season_id}", json={
+                    resp = await api_client.client.put(f"/series/seasons/{season_id}", json={
                         "season_number": season.get("season_number"),
                         "title": season.get("title"),
                         "description": season.get("description"),
@@ -167,8 +192,10 @@ async def process_video(message: Message, bot: Bot):
                         "episode_count": expected_count,
                         "status": "completed"
                     })
+                    resp.raise_for_status()
                 except Exception as e:
                     logger.error(f"Error completing season: {e}")
+                    await message.reply(f"⚠️ Mavsum yakunlandi deb belgilashda xato: {e}")
             
             # Optionally, reply to the admin in the source chat
             await message.reply(f"✅ {ep_num}-qism saqlandi va indekslandi. Kod: `{code}`", parse_mode="Markdown")
@@ -177,10 +204,10 @@ async def process_video(message: Message, bot: Bot):
             logger.error(f"Error in auto_index process: {e}")
             await message.reply(f"❌ Xatolik yuz berdi: {e}")
 
-@router.message(F.video)
+@router.message(F.video | F.document)
 async def auto_index_message(message: Message, bot: Bot):
     await process_video(message, bot)
 
-@router.channel_post(F.video)
+@router.channel_post(F.video | F.document)
 async def auto_index_channel(message: Message, bot: Bot):
     await process_video(message, bot)

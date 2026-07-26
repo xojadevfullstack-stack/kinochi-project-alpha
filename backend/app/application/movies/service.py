@@ -102,14 +102,17 @@ class MovieService:
     async def delete_movie(self, movie_id: int) -> bool:
         return await self.movie_repo.delete(movie_id)
 
-    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "Asosiy", source_url: str | None = None) -> Movie | None:
+    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "Asosiy", source_url: str | None = None, telegram_file_id: str | None = None) -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
         if not movie:
             return None
             
-        # Get file_id from telegram message
-        from app.infrastructure.telegram.telegram_client import telegram_client
-        file_id = await telegram_client.get_video_file_id_from_message(message_id, source_url=source_url)
+        if telegram_file_id:
+            file_id = telegram_file_id
+        else:
+            # Get file_id from telegram message
+            from app.infrastructure.telegram.telegram_client import telegram_client
+            file_id = await telegram_client.get_video_file_id_from_message(message_id, source_url=source_url)
         
         return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
 
