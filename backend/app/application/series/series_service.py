@@ -192,7 +192,7 @@ class SeriesService:
         
         return Episode.model_validate(updated_episode)
 
-    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "Asosiy", telegram_file_id: str | None = None) -> Episode | None:
+    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "Asosiy", source_url: str | None = None, telegram_file_id: str | None = None) -> Episode | None:
         episode = await self.repository.get_episode_by_id(episode_id)
         if not episode:
             return None
@@ -200,11 +200,6 @@ class SeriesService:
         if telegram_file_id:
             file_id = telegram_file_id
         else:
-            # Need to get source_url from the series to join private topics
-            season = await self.repository.get_season_by_id(episode.season_id)
-            series = await self.repository.get_series_by_id(season.series_id) if season else None
-            source_url = series.source_link if series else None
-            
             file_id = await self.telegram_api.get_video_file_id_from_message(message_id, source_url=source_url)
         
         updated_episode = await self.repository.add_episode_translation(
