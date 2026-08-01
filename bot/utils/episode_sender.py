@@ -2,6 +2,7 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.exceptions import TelegramBadRequest
 from config import settings
+import html
 
 def build_episode_keyboard(episode: dict) -> InlineKeyboardMarkup:
     """Builds inline keyboard for an episode."""
@@ -33,9 +34,9 @@ def build_episode_keyboard(episode: dict) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 def format_episode_caption(episode: dict) -> str:
-    series_title = episode.get('series_title', 'Kechirasiz nomi topilmadi')
+    series_title = html.escape(episode.get('series_title', 'Kechirasiz nomi topilmadi'))
     display_code = episode.get('display_code', '')
-    desc = episode.get('season_description') or ''
+    desc = html.escape(episode.get('season_description') or '')
     
     if len(desc) > 150:
         desc = desc[:147] + "..."
@@ -81,9 +82,10 @@ async def send_episode_to_user(bot: Bot, chat_id: int, episode: dict) -> bool:
         # but they will be added when the video is sent in the callback.
         kb = get_translations_keyboard('E', item_code, translations)
         try:
+            safe_title = html.escape(episode.get('title') or str(episode.get('episode_number', '')))
             await bot.send_message(
                 chat_id=chat_id,
-                text=f"🎬 <b>{episode.get('title') or episode.get('episode_number')}</b>\n\nQaysi tilda/studiyada ko'rishni xohlaysiz?",
+                text=f"🎬 <b>{safe_title}</b>\n\nQaysi tilda/studiyada ko'rishni xohlaysiz?",
                 reply_markup=kb,
                 parse_mode="HTML"
             )

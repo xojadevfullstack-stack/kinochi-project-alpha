@@ -3,6 +3,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from config import settings
 from keyboards.translations import get_translations_keyboard
+import html
 
 async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
     """
@@ -19,7 +20,9 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
     if not translations:
         return False
         
-    caption = f"🍿 <b>{movie.get('title')}</b>\n\n{movie.get('description') or ''}"
+    safe_title = html.escape(movie.get('title', ''))
+    safe_desc = html.escape(movie.get('description', ''))
+    caption = f"🍿 <b>{safe_title}</b>\n\n{safe_desc}"
         
     # Check if this is an episode or movie by looking at fields
     # episodes have episode_number, movies have code but not episode_number
@@ -37,7 +40,7 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
         try:
             await bot.send_message(
                 chat_id=chat_id,
-                text=f"🎬 <b>{movie.get('title')}</b>\n\nQaysi tilda/studiyada ko'rishni xohlaysiz?",
+                text=f"🎬 <b>{safe_title}</b>\n\nQaysi tilda/studiyada ko'rishni xohlaysiz?",
                 reply_markup=kb,
                 parse_mode="HTML"
             )

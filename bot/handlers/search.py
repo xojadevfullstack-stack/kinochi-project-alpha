@@ -4,6 +4,7 @@ from services.api_client import api_client
 from keyboards.inline import build_search_results_keyboard
 from utils.movie_sender import send_movie_to_user
 from config import settings
+import html
 
 router = Router()
 
@@ -66,9 +67,10 @@ async def handle_search_query(message: Message):
         await message.answer("😔 <b>Afsuski, hech narsa topilmadi...</b>\n\nBalki kino yoki serial nomida xato bordir? Boshqacharoq yozib ko'ring yoki saytimizdagi katalogdan izlang!", parse_mode="HTML")
         return
         
+    safe_query = html.escape(query)
     keyboard = build_search_results_keyboard(combined_results)
     await message.answer(
-        f"🎉 <b>Qidiruv natijalari:</b>\n\nSiz izlagan <i>'{query}'</i> bo'yicha eng sara kino va seriallarni topdim! Pastdagi ro'yxatdan o'zingizga kerakligini tanlang 👇",
+        f"🎉 <b>Qidiruv natijalari:</b>\n\nSiz izlagan <i>'{safe_query}'</i> bo'yicha eng sara kino va seriallarni topdim! Pastdagi ro'yxatdan o'zingizga kerakligini tanlang 👇",
         reply_markup=keyboard,
         parse_mode="HTML"
     )

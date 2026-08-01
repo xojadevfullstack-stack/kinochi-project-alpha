@@ -17,6 +17,8 @@ from app.domain.series.entities import (
 from app.infrastructure.telegram.telegram_client import telegram_client
 from app.core.job_manager import job_manager, JobStatus
 from app.api.limiter import limiter
+from app.utils.trailer import validate_and_normalize_trailer_url
+from app.core.cache import get_cache, set_cache, delete_cache_pattern
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,11 @@ async def create_series(
 ):
     """Create a new series (Admin only)."""
     create_dict = series_in.model_dump(exclude_unset=True)
-    return await service.create_series(create_dict)
+    if create_dict.get("trailer_url"):
+        create_dict["trailer_url"] = await validate_and_normalize_trailer_url(create_dict["trailer_url"])
+    series = await service.create_series(create_dict)
+    await delete_cache_pattern("cache:series:*")
+    return series
 
 
 @router.get("", response_model=PaginatedSeriesResponse)
@@ -50,13 +56,27 @@ async def list_series(
     service: SeriesService = Depends(get_series_service)
 ):
     """List series (Public)."""
+    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
     items, total = await service.get_all_series(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
     
     # Calculate pages
     pages = (total + limit - 1) // limit if total > 0 else 0
     page = (skip // limit) + 1 if limit > 0 else 1
     
-    return PaginatedSeriesResponse(items=items, total=total, page=page, size=limit, pages=pages)
+    response_data = {
+        "items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in items], 
+        "total": total, 
+        "page": page, 
+        "size": limit, 
+        "pages": pages
+    }
+    await set_cache(cache_key, response_data, 300)
+
+    return response_data
 
 
 @router.get("/search", response_model=PaginatedSeriesResponse)
@@ -69,12 +89,26 @@ async def search_series(
     service: SeriesService = Depends(get_series_service)
 ):
     """Search series by title (Public)."""
+    cache_key = f"cache:series:search:{q}:{skip}:{limit}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
     items, total = await service.search_series(title_query=q, skip=skip, limit=limit)
     
     pages = (total + limit - 1) // limit if total > 0 else 0
     page = (skip // limit) + 1 if limit > 0 else 1
     
-    return PaginatedSeriesResponse(items=items, total=total, page=page, size=limit, pages=pages)
+    response_data = {
+        "items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in items], 
+        "total": total, 
+        "page": page, 
+        "size": limit, 
+        "pages": pages
+    }
+    await set_cache(cache_key, response_data, 300)
+
+    return response_data
 
 
 @router.get("/by-source", response_model=Series)
@@ -114,9 +148,12 @@ async def update_series(
 ):
     """Update a series (Admin only)."""
     update_dict = series_in.model_dump(exclude_unset=True)
+    if "trailer_url" in update_dict and update_dict["trailer_url"]:
+        update_dict["trailer_url"] = await validate_and_normalize_trailer_url(update_dict["trailer_url"])
     series = await service.update_series(series_id, update_dict)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
+    await delete_cache_pattern("cache:series:*")
     return series
 
 
@@ -130,6 +167,7 @@ async def delete_series(
     success = await service.delete_series(series_id)
     if not success:
         raise HTTPException(status_code=404, detail="Series not found")
+    await delete_cache_pattern("cache:series:*")
 
 
 # --- SEASONS ---

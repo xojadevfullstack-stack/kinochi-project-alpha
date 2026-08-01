@@ -8,6 +8,7 @@ from handlers.start import router as start_router
 from handlers.check_sub import router as check_sub_router
 from handlers.search import router as search_router
 from middlewares.subscription_check import SubscriptionMiddleware
+from middlewares.throttling import ThrottlingMiddleware
 from services.api_client import api_client
 
 async def run_bot():
@@ -31,6 +32,12 @@ async def run_bot():
     from handlers.browsing import router as browsing_router
     dp.include_router(browsing_router)
     
+    # Apply rate limiting to specific routers
+    throttler = ThrottlingMiddleware()
+    for r in (start_router, search_router, catalog_router, browsing_router):
+        r.message.middleware(throttler)
+        r.callback_query.middleware(throttler)
+    
 
     
     from handlers.episode import router as episode_router
@@ -41,6 +48,9 @@ async def run_bot():
     
     from handlers.auto_index import router as auto_index_router
     dp.include_router(auto_index_router)
+    
+    from handlers.trailer import router as trailer_router
+    dp.include_router(trailer_router)
     
 
     retry_delay = 5

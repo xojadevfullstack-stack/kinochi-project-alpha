@@ -20,6 +20,8 @@ from app.infrastructure.telegram.telegram_client import telegram_client
 from app.utils.telegram_link_parser import parse_telegram_link
 from app.core.job_manager import job_manager, JobStatus
 from app.api.limiter import limiter
+from app.utils.trailer import validate_and_normalize_trailer_url
+from app.core.cache import get_cache, set_cache, delete_cache_pattern
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -132,7 +134,12 @@ async def create_movie(
         else:
             raise HTTPException(status_code=400, detail="Manba (Source) topilmadi")
             
-    return await service.create_movie(**data)
+    if data.get("trailer_url"):
+        data["trailer_url"] = await validate_and_normalize_trailer_url(data["trailer_url"])
+            
+    movie = await service.create_movie(**data)
+    await delete_cache_pattern("cache:movies:*")
+    return movie
 
 
 @router.get("", response_model=PaginatedMoviesResponse)
@@ -147,7 +154,19 @@ async def list_movies(
     service: MovieService = Depends(get_movie_service)
 ):
     """List movies, optionally filtered by category (Public)."""
+    cache_key = f"cache:movies:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
     movies, total = await service.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
+    
+    # We must convert movie objects to dict before caching because Pydantic models aren't directly JSON serializable
+    # Or rely on PaginatedMoviesResponse rendering them. Let's just use FastAPI's validation/serialization.
+    # Actually, returning a dict directly works because FastAPI will serialize it. Let's just dump it.
+    response_data = {"items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in movies], "total": total}
+    await set_cache(cache_key, response_data, 300)
+    
     return {"items": movies, "total": total}
 
 
@@ -161,7 +180,15 @@ async def search_movies(
     service: MovieService = Depends(get_movie_service)
 ):
     """Search movies by title (Public)."""
+    cache_key = f"cache:movies:search:{q}:{skip}:{limit}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
     movies, total = await service.search_movies(title_query=q, skip=skip, limit=limit)
+    response_data = {"items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in movies], "total": total}
+    await set_cache(cache_key, response_data, 300)
+    
     return {"items": movies, "total": total}
 
 
@@ -238,9 +265,14 @@ async def update_movie(
              else:
                  raise HTTPException(status_code=400, detail="Manba (Source) topilmadi")
             
+    if "trailer_url" in data and data["trailer_url"]:
+        data["trailer_url"] = await validate_and_normalize_trailer_url(data["trailer_url"])
+            
     updated_movie = await service.update_movie(movie_id, **data)
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
+        
+    await delete_cache_pattern("cache:movies:*")
     return updated_movie
 
 
@@ -403,3 +435,4 @@ async def delete_movie(
     success = await service.delete_movie(movie_id)
     if not success:
         raise HTTPException(status_code=404, detail="Movie not found")
+    await delete_cache_pattern("cache:movies:*")

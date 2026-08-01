@@ -23,13 +23,19 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     if len(caption) > 1000:
         caption = caption[:997] + "..."
     
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")],
-        [
-            InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_movies"),
-            InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
-        ]
+    trailer_url = movie.get("trailer_url")
+    
+    buttons = [[InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")]]
+    
+    if trailer_url:
+        buttons.append([InlineKeyboardButton(text="🎬 Treyler", callback_data=f"trailer_m_{code}")])
+        
+    buttons.append([
+        InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_movies"),
+        InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     
     try:
         if edit_message_id:
@@ -108,6 +114,11 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
             
     if current_row:
         rows.append(current_row)
+        
+    trailer_url = series.get("trailer_url")
+    
+    if trailer_url:
+        rows.append([InlineKeyboardButton(text="🎬 Treyler", callback_data=f"trailer_s_{series_id}")])
         
     rows.append([
         InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_series"),

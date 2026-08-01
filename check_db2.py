@@ -1,19 +1,24 @@
 import asyncio
-import asyncpg
+import os
+import sys
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import text
+from dotenv import load_dotenv
+
+load_dotenv(os.path.abspath('backend/.env'))
 
 async def main():
-    conn = await asyncpg.connect('postgresql://neondb_owner:npg_2eToVwtng7Os@ep-frosty-cherry-aitqstf5-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require')
-    res = await conn.fetch('SELECT * FROM seasons WHERE id = 7')
-    print('Season 7:', res)
-    if res:
-        series_id = res[0]['series_id']
-        res2 = await conn.fetch('SELECT * FROM series WHERE id = $1', series_id)
-        print('Series:', res2)
+    engine = create_async_engine(os.getenv("DATABASE_URL"))
+    async with engine.connect() as conn:
+        result = await conn.execute(text("SELECT id, title, source_chat_id, source_topic_id FROM movies WHERE source_chat_id='-1003941035700';"))
+        rows = result.fetchall()
+        for r in rows:
+            print("MOVIE:", r)
         
-    # Also check episode translations
-    trans = await conn.fetch('SELECT * FROM episode_translations WHERE episode_id = 9')
-    print('Translations:', trans)
-    
-    await conn.close()
-
-asyncio.run(main())
+        result2 = await conn.execute(text("SELECT id, chat_id, topic_id FROM sources;"))
+        rows2 = result2.fetchall()
+        for r in rows2:
+            print("SOURCE:", r)
+            
+if __name__ == "__main__":
+    asyncio.run(main())

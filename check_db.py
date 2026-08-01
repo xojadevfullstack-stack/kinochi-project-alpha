@@ -1,30 +1,19 @@
 import asyncio
-import sys
 import os
-
-sys.path.insert(0, os.path.abspath('backend'))
-
+import sys
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import text
 from dotenv import load_dotenv
+
 load_dotenv(os.path.abspath('backend/.env'))
 
-from app.infrastructure.db.session import async_session_factory
-from app.infrastructure.db.models.movie import MovieModel
-from app.infrastructure.db.models.translation import MovieTranslationModel
-from sqlalchemy import select, func
-
 async def main():
-    async with async_session_factory() as session:
-        # Count all movies
-        total_stmt = select(func.count(MovieModel.id))
-        total = (await session.execute(total_stmt)).scalar()
-        
-        # Count movies without translations
-        subq = select(MovieTranslationModel.movie_id).distinct()
-        no_trans_stmt = select(func.count(MovieModel.id)).where(MovieModel.id.not_in(subq))
-        affected = (await session.execute(no_trans_stmt)).scalar()
-        
-        print(f"Total Movies: {total}")
-        print(f"Movies without translations (affected): {affected}")
-
+    engine = create_async_engine(os.getenv("DATABASE_URL"))
+    async with engine.connect() as conn:
+        result = await conn.execute(text("SELECT id, movie_id, language, telegram_file_id, storage_channel_message_id FROM movie_translations WHERE telegram_file_id='mock_file_id_123';"))
+        rows = result.fetchall()
+        for r in rows:
+            print("DB ROW:", r)
+            
 if __name__ == "__main__":
     asyncio.run(main())
