@@ -3,6 +3,8 @@ import { Inter, Outfit, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { fetchApi } from "@/lib/api";
+import { AuthProvider } from "@/lib/auth/AuthProvider";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -46,6 +48,7 @@ export default async function RootLayout({
   return (
     <html lang="uz" className="dark">
       <head>
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
         <style>{`
           .material-symbols-outlined {
@@ -61,16 +64,18 @@ export default async function RootLayout({
         `}</style>
       </head>
       <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`}>
-        <Navbar pages={pages} />
+        <AuthProvider>
+          <Navbar pages={pages} />
 
-        <main className="min-h-screen">
-          {children}
-        </main>
-        
-        {/* Simple Footer */}
-        <footer className="border-t border-white/10 mt-12 py-8 text-center text-text-secondary text-sm">
-          <p>© {new Date().getFullYear()} Kinochi. Barcha huquqlar himoyalangan.</p>
-        </footer>
+          <main className="min-h-screen">
+            {children}
+          </main>
+          
+          {/* Simple Footer */}
+          <footer className="border-t border-white/10 mt-12 py-8 text-center text-text-secondary text-sm">
+            <p>© {new Date().getFullYear()} Kinochi. Barcha huquqlar himoyalangan.</p>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   );

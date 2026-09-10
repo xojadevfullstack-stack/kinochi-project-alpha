@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from services.api_client import api_client
 from utils.info_sender import send_movie_info, send_series_info
-from keyboards.inline import get_main_menu_inline, get_catalog_categories_inline, build_catalog_items_list
+from keyboards.inline import get_main_menu_inline, get_catalog_categories_inline, build_catalog_items_list, build_page_items_list
 from config import settings
 import logging
 
@@ -16,7 +16,11 @@ def get_webapp_url():
 @router.callback_query(F.data == "menu_catalog")
 async def handle_catalog_btn(callback: CallbackQuery):
     text = "📂 Kategoriyalardan birini tanlang:"
-    markup = get_catalog_categories_inline()
+    
+    pages_data = await api_client.get_pages()
+    pages = pages_data.get("items", [])
+    
+    markup = get_catalog_categories_inline(pages)
     try:
         if callback.message.photo or callback.message.video:
             await callback.message.delete()
@@ -59,18 +63,28 @@ async def handle_back_to_main(callback: CallbackQuery):
         )
     await callback.answer()
 
-@router.callback_query(F.data == "menu_movies")
-async def handle_movies_catalog(callback: CallbackQuery):
-    # Fetch latest movies (limit 10 for telegram UI friendliness)
-    data = await api_client.get_movies(limit=10)
-    movies = data.get("items", [])
+@router.callback_query(F.data.startswith("menu_page_"))
+async def handle_page_catalog(callback: CallbackQuery):
+    page_id = int(callback.data.split("_")[-1])
     
-    if not movies:
-        await callback.answer("Hozircha kinolar mavjud emas.", show_alert=True)
+    # Fetch movies and series for this page
+    movies_data = await api_client.get_movies(limit=10, page_id=page_id)
+    series_data = await api_client.get_series(limit=10, page_id=page_id)
+    
+    results = []
+    for m in movies_data.get("items", []):
+        m["type"] = "movie"
+        results.append(m)
+    for s in series_data.get("items", []):
+        s["type"] = "series"
+        results.append(s)
+        
+    if not results:
+        await callback.answer("Hozircha ushbu sahifada hech narsa yo'q.", show_alert=True)
         return
         
-    text = "🎬 <b>Eng so'nggi kinolar:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>"
-    markup = build_catalog_items_list(movies, "movie")
+    text = "📂 <b>Sahifa natijalari:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>"
+    markup = build_page_items_list(results)
     try:
         if callback.message.photo or callback.message.video:
             await callback.message.delete()
@@ -78,30 +92,7 @@ async def handle_movies_catalog(callback: CallbackQuery):
         else:
             await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
     except Exception as e:
-        logger.warning(f"Error in handle_movies_catalog: {e}")
-        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-    await callback.answer()
-
-@router.callback_query(F.data == "menu_series")
-async def handle_series_catalog(callback: CallbackQuery):
-    # Fetch latest series
-    data = await api_client.get_series(limit=10)
-    series_list = data.get("items", [])
-    
-    if not series_list:
-        await callback.answer("Hozircha seriallar mavjud emas.", show_alert=True)
-        return
-        
-    text = "📺 <b>Eng so'nggi seriallar:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>"
-    markup = build_catalog_items_list(series_list, "series")
-    try:
-        if callback.message.photo or callback.message.video:
-            await callback.message.delete()
-            await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-        else:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
-    except Exception as e:
-        logger.warning(f"Error in handle_series_catalog: {e}")
+        logger.warning(f"Error in handle_page_catalog: {e}")
         await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
 

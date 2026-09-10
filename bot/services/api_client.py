@@ -128,18 +128,24 @@ class APIClient:
             logger.error(f"Error verifying subscription for channel {channel_id}: {e}")
             return False
 
-    async def get_movies(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
+    async def get_movies(self, skip: int = 0, limit: int = 10, page_id: Optional[int] = None) -> Dict[str, Any]:
         try:
-            response = await self.client.get("/movies", params={"skip": skip, "limit": limit})
+            params = {"skip": skip, "limit": limit}
+            if page_id:
+                params["page_id"] = page_id
+            response = await self.client.get("/movies", params=params)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Error fetching movies: {e}")
             return {"items": [], "total": 0}
 
-    async def get_series(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
+    async def get_series(self, skip: int = 0, limit: int = 10, page_id: Optional[int] = None) -> Dict[str, Any]:
         try:
-            response = await self.client.get("/series", params={"skip": skip, "limit": limit})
+            params = {"skip": skip, "limit": limit}
+            if page_id:
+                params["page_id"] = page_id
+            response = await self.client.get("/series", params=params)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -168,6 +174,15 @@ class APIClient:
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Error searching series with query '{query}': {e}")
+            return {"items": [], "total": 0}
+
+    async def get_pages(self, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
+        try:
+            response = await self.client.get("/pages", params={"skip": skip, "limit": limit})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"Error fetching pages: {e}")
             return {"items": [], "total": 0}
 
 api_client = APIClient()

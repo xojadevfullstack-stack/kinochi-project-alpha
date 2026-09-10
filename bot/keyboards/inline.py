@@ -57,12 +57,14 @@ def get_main_menu_inline(webapp_url: str) -> InlineKeyboardMarkup:
     builder.adjust(1, 2, 1)
     return builder.as_markup()
 
-def get_catalog_categories_inline() -> InlineKeyboardMarkup:
+def get_catalog_categories_inline(pages: list[dict] = None) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="🎬 Kinolar", callback_data="menu_movies")
-    builder.button(text="📺 Seriallar", callback_data="menu_series")
+    if pages:
+        for page in pages:
+            if page.get('is_active'):
+                builder.button(text=f"📂 {page.get('title')}", callback_data=f"menu_page_{page.get('id')}")
     builder.button(text="🔙 Asosiy menyu", callback_data="menu_main")
-    builder.adjust(2, 1)
+    builder.adjust(2)
     return builder.as_markup()
 
 def build_catalog_items_list(items: list[dict], item_type: str) -> InlineKeyboardMarkup:
@@ -72,6 +74,19 @@ def build_catalog_items_list(items: list[dict], item_type: str) -> InlineKeyboar
         if item_type == "movie":
             builder.button(text=f"🎬 {title}", callback_data=f"catalog_item_movie_{item.get('id')}")
         else:
+            builder.button(text=f"📺 {title}", callback_data=f"catalog_item_series_{item.get('id')}")
+            
+    builder.button(text="🔙 Katalogga qaytish", callback_data="menu_catalog")
+    builder.adjust(1)
+    return builder.as_markup()
+
+def build_page_items_list(items: list[dict]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for item in items:
+        title = item.get("title", "Noma'lum")
+        if item.get("type") == "movie":
+            builder.button(text=f"🎬 {title}", callback_data=f"catalog_item_movie_{item.get('id')}")
+        elif item.get("type") == "series":
             builder.button(text=f"📺 {title}", callback_data=f"catalog_item_series_{item.get('id')}")
             
     builder.button(text="🔙 Katalogga qaytish", callback_data="menu_catalog")

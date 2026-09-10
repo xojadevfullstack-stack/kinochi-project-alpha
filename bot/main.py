@@ -52,6 +52,9 @@ async def run_bot():
     from handlers.trailer import router as trailer_router
     dp.include_router(trailer_router)
     
+    from handlers.history import router as history_router
+    dp.include_router(history_router)
+    
 
     retry_delay = 5
     max_delay = 60

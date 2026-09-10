@@ -13,13 +13,14 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth
 from app.api.limiter import limiter
 
 # ── Lifespan (startup / shutdown hooks) ──────────────────────────
@@ -101,6 +102,7 @@ app.include_router(broadcasts.router, prefix="/api/v1")
 app.include_router(series.router, prefix="/api/v1")
 app.include_router(pages.router, prefix="/api/v1")
 app.include_router(sources.router, prefix="/api/v1/sources", tags=["sources"])
+app.include_router(telegram_auth.router, prefix="/api/v1")
 
 # ── CORS ─────────────────────────────────────────────────────────
 app.add_middleware(
@@ -111,6 +113,13 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Bot-Secret"],
 )
+
+
+# ── Root endpoint ────────────────────────────────────────────────
+@app.get("/", tags=["root"])
+async def root():
+    """Root endpoint returning 200 for health checks."""
+    return {"status": "ok", "service": "kinochi-backend", "docs": "/docs"}
 
 
 # ── Health-check endpoint ────────────────────────────────────────

@@ -11,6 +11,7 @@ def slugify(text: str) -> str:
 
 from app.api.deps import get_db_session, get_current_admin
 from app.infrastructure.db.models.page import PageModel
+from app.core.cache import get_cache, set_cache, delete_cache_pattern
 
 router = APIRouter(prefix="/pages", tags=["pages"])
 
@@ -52,6 +53,7 @@ async def create_page(
     session.add(model)
     await session.commit()
     await session.refresh(model)
+    await delete_cache_pattern("cache:pages:*")
     return model
 
 @router.get("", response_model=PaginatedPagesResponse)
@@ -61,6 +63,11 @@ async def list_pages(
     session: AsyncSession = Depends(get_db_session)
 ):
     """List all pages (Public)."""
+    cache_key = f"cache:pages:list:{skip}:{limit}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
     from sqlalchemy import func
     
     count_query = select(func.count()).select_from(PageModel)
@@ -70,7 +77,10 @@ async def list_pages(
     result = await session.execute(query)
     items = result.scalars().all()
     
-    return {"items": items, "total": total}
+    response_data = {"items": [PageResponse.model_validate(item).model_dump() for item in items], "total": total}
+    await set_cache(cache_key, response_data, ttl_seconds=300)
+    
+    return response_data
 
 @router.get("/{slug}", response_model=PageResponse)
 async def get_page(
@@ -106,6 +116,7 @@ async def update_page(
         
     await session.commit()
     await session.refresh(page)
+    await delete_cache_pattern("cache:pages:*")
     return page
 
 @router.delete("/{page_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -122,3 +133,4 @@ async def delete_page(
         
     await session.delete(page)
     await session.commit()
+    await delete_cache_pattern("cache:pages:*")

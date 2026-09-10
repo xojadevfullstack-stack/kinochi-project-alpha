@@ -74,7 +74,8 @@ async def send_episode_to_user(bot: Bot, chat_id: int, episode: dict) -> bool:
         # Send video directly
         t = translations[0]
         from utils.movie_sender import send_video_translation
-        return await send_video_translation(bot, chat_id, t, caption, reply_markup=keyboard)
+        item_id = episode.get("id")
+        return await send_video_translation(bot, chat_id, t, caption, reply_markup=keyboard, item_id=item_id, item_type='E')
     else:
         # Send keyboard to choose studio
         from keyboards.translations import get_translations_keyboard

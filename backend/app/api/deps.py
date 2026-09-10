@@ -113,6 +113,39 @@ async def get_current_admin(request: Request, session: AsyncSession = Depends(ge
 
     return {"admin_id": admin.id, "email": admin.email, "role": admin.role}
 
+async def get_current_user(request: Request):
+    """
+    Dependency: validate access_token for regular users (from Telegram Auth).
+    Returns user dict. Raises 401 if token missing/invalid or role is not user.
+    """
+    access_token = request.cookies.get("user_access_token")
+
+    if not access_token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            access_token = auth_header[7:]
+
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Autentifikatsiya talab qilinadi",
+        )
+
+    payload = decode_token(access_token)
+    if not payload or payload.get("type") != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token yaroqsiz yoki muddati tugagan",
+        )
+
+    if payload.get("role") != "user":
+         raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Faqat foydalanuvchilar uchun",
+        )
+
+    return {"user_id": int(payload.get("sub")), "telegram_id": payload.get("telegram_id")}
+
 from fastapi import Header
 from app.core.config import settings
 import hmac

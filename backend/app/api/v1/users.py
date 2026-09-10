@@ -3,9 +3,18 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
 from pydantic import BaseModel
 
-from app.api.deps import get_user_service, get_current_admin
+from app.api.deps import get_user_service, get_current_admin, get_current_user, get_db_session
 from app.application.users.service import UserService
 from app.core.config import settings
+from app.infrastructure.db.models.watch_history import WatchHistoryModel
+from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
+from app.infrastructure.db.models.achievement import UserAchievementModel
+from app.core.recommendations import get_user_recommendations
+from app.core.achievements import ACHIEVEMENTS
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select, desc
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -58,6 +67,95 @@ async def register_or_update(
 ):
     """Register or update a user (Bot internal only — requires X-Bot-Secret header)."""
     return await service.register_or_update(**user_in.model_dump())
+
+@router.get("/me/history")
+async def get_my_history(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    user: dict = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Read-only watch history for the frontend."""
+    user_id = user["user_id"]
+    
+    # Query history
+    stmt = (
+        select(WatchHistoryModel)
+        .where(WatchHistoryModel.user_id == user_id)
+        .order_by(desc(WatchHistoryModel.last_watched_at))
+        .offset(skip)
+        .limit(limit)
+        .options(
+            selectinload(WatchHistoryModel.movie),
+            selectinload(WatchHistoryModel.episode).selectinload(EpisodeModel.season).selectinload(SeasonModel.series)
+        )
+    )
+    result = await session.execute(stmt)
+    history_records = result.scalars().all()
+    
+    # Format response
+    items = []
+    for record in history_records:
+        item_data = {
+            "id": record.id,
+            "status": record.status,
+            "last_watched_at": record.last_watched_at,
+        }
+        if record.movie:
+            item_data["type"] = "movie"
+            item_data["movie"] = {
+                "id": record.movie.id,
+                "title": record.movie.title,
+                "poster_url": record.movie.poster_url,
+                "code": record.movie.code
+            }
+        elif record.episode:
+            item_data["type"] = "episode"
+            item_data["episode"] = {
+                "id": record.episode.id,
+                "display_code": record.episode.display_code,
+                "code": record.episode.code,
+                "season_number": record.episode.season.season_number,
+                "episode_number": record.episode.episode_number,
+                "series_id": record.episode.season.series.id,
+                "series_title": record.episode.season.series.title,
+                "series_poster": record.episode.season.series.poster_url
+            }
+        items.append(item_data)
+        
+    return {"items": items, "total": len(items)} # Accurate total requires a separate count query, simplified for now.
+
+@router.get("/me/recommendations")
+async def get_my_recommendations(user: dict = Depends(get_current_user)):
+    """Get personalized recommendations based on watch history."""
+    items = await get_user_recommendations(user["user_id"])
+    return {"items": items}
+
+@router.get("/me/achievements")
+async def get_my_achievements(
+    user: dict = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Read-only achievements for the frontend."""
+    user_id = user["user_id"]
+    
+    stmt = (
+        select(UserAchievementModel)
+        .where(UserAchievementModel.user_id == user_id)
+        .order_by(desc(UserAchievementModel.earned_at))
+    )
+    result = await session.execute(stmt)
+    records = result.scalars().all()
+    
+    items = []
+    for record in records:
+        items.append({
+            "code": record.achievement_code,
+            "title": ACHIEVEMENTS.get(record.achievement_code, record.achievement_code),
+            "earned_at": record.earned_at
+        })
+        
+    return {"items": items, "total": len(items)}
 
 @router.get("", response_model=PaginatedUsersResponse)
 async def list_users(

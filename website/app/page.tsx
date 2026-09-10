@@ -2,6 +2,7 @@ import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import ShareButton from "@/components/ShareButton";
+import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
 
 export const revalidate = 60; 
 
@@ -241,6 +242,9 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      {/* Personalized Recommendations (Only visible if authenticated) */}
+      <RecommendationsSection />
 
       {/* Horizontal Scrolling Rows */}
       <div className="space-y-margin-desktop py-margin-desktop relative z-20 bg-background-obsidian">

@@ -1,9 +1,23 @@
 import logging
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from config import settings
 from keyboards.translations import get_translations_keyboard
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from app.core.watch_history import mark_movie_started, mark_episode_progress
+from app.core.achievements import ACHIEVEMENTS
 import html
+
+async def notify_achievements(bot: Bot, chat_id: int, unlocked_codes: list[str]):
+    if not unlocked_codes:
+        return
+    for code in unlocked_codes:
+        text = ACHIEVEMENTS.get(code, "Yangi yutuq!")
+        msg = f"🏆 <b>Tabriklaymiz! Yangi yutuq:</b>\n\n✨ {text}"
+        try:
+            await bot.send_message(chat_id, msg, parse_mode="HTML")
+        except Exception as e:
+            logging.warning(f"Failed to send achievement {code} to {chat_id}: {e}")
 
 async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
     """
@@ -32,7 +46,8 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
     if len(translations) == 1:
         # Send video directly
         t = translations[0]
-        return await send_video_translation(bot, chat_id, t, caption)
+        item_id = movie.get("id")
+        return await send_video_translation(bot, chat_id, t, caption, item_id=item_id, item_type=item_type)
     else:
         # Send keyboard to choose studio
         kb = get_translations_keyboard(item_type, item_code, translations)
@@ -45,22 +60,32 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
                 parse_mode="HTML"
             )
             return True
-        except TelegramBadRequest as e:
+        except (TelegramBadRequest, TelegramForbiddenError) as e:
             logging.warning(f"Failed to send keyboard for movie {item_code} to {chat_id}: {e}")
             return False
 
-async def send_video_translation(bot: Bot, chat_id: int, translation: dict, caption: str, reply_markup=None) -> bool:
+async def send_video_translation(bot: Bot, chat_id: int, translation: dict, caption: str, reply_markup=None, item_id: int = None, item_type: str = None) -> bool:
     file_id = translation.get("telegram_file_id")
     storage_msg_id = translation.get("storage_channel_message_id")
     
     success = False
     
+    # 0. Append Watch History button for movies if item_id is present
+    if item_id and item_type == 'M':
+        btn = InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_movie_{item_id}")
+        if reply_markup is None:
+            reply_markup = InlineKeyboardMarkup(inline_keyboard=[[btn]])
+        else:
+            inline_kb = reply_markup.inline_keyboard.copy()
+            inline_kb.append([btn])
+            reply_markup = InlineKeyboardMarkup(inline_keyboard=inline_kb)
+
     # 1. Try sending via telegram_file_id
     if file_id:
         try:
             await bot.send_video(chat_id=chat_id, video=file_id, caption=caption, parse_mode="HTML", reply_markup=reply_markup)
             success = True
-        except TelegramBadRequest as e:
+        except (TelegramBadRequest, TelegramForbiddenError) as e:
             logging.warning(f"Failed to send video via file_id {file_id} to {chat_id}: {e}")
             
     # 2. Fallback to copy from storage channel
@@ -75,7 +100,16 @@ async def send_video_translation(bot: Bot, chat_id: int, translation: dict, capt
                 reply_markup=reply_markup
             )
             success = True
-        except TelegramBadRequest as e:
+        except (TelegramBadRequest, TelegramForbiddenError) as e:
             logging.warning(f"Failed to copy message {storage_msg_id} from storage to {chat_id}: {e}")
 
+    # Log watch history if successfully sent
+    if success and item_id:
+        if item_type == 'M':
+            await mark_movie_started(chat_id, item_id)
+        elif item_type == 'E':
+            unlocked = await mark_episode_progress(chat_id, item_id)
+            if unlocked:
+                await notify_achievements(bot, chat_id, unlocked)
+            
     return success
