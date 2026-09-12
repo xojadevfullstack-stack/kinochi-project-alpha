@@ -125,19 +125,47 @@ async def handle_get_recommendation(callback: CallbackQuery):
 
     title = html.escape(item.get("title", "Noma'lum"))
     rating = item.get("imdb_rating") or item.get("tmdb_rating") or "N/A"
-    genres = ", ".join(item.get("genres", [])) if item.get("genres") else "Umumiy"
-    desc = html.escape(item.get("description") or "Tavsif mavjud emas.")
-    if len(desc) > 280:
-        desc = desc[:277] + "..."
 
-    type_name = "🎬 Film" if item_type == "movie" else "📺 Serial"
-    caption = (
-        f"🎲 <b>Siz uchun tavsiya:</b>\n\n"
-        f"{type_name}: <b>{title}</b>\n"
-        f"⭐️ Reyting: {rating}\n"
-        f"🎭 Janr: {genres}\n\n"
-        f"📝 <i>{desc}</i>"
-    )
+    # Safely format genres (prevent character-by-character string splitting)
+    raw_genres = item.get("genres")
+    if isinstance(raw_genres, list):
+        genres = ", ".join(str(g).strip() for g in raw_genres if g and str(g).strip())
+    elif isinstance(raw_genres, str) and raw_genres.strip():
+        cleaned = [g.strip() for g in raw_genres.split(",") if g.strip()]
+        genres = ", ".join(cleaned) if cleaned else raw_genres.strip()
+    elif item.get("categories"):
+        cats = item.get("categories")
+        if isinstance(cats, list):
+            genres = ", ".join(c.get("name", "") if isinstance(c, dict) else str(c) for c in cats)
+        else:
+            genres = str(cats)
+    else:
+        genres = "Umumiy"
+
+    desc = html.escape(item.get("description") or "Tavsif mavjud emas.")
+    if len(desc) > 350:
+        desc = desc[:347] + "..."
+
+    type_name = "🎬 <b>Film:</b>" if item_type == "movie" else "📺 <b>Serial:</b>"
+    
+    caption_lines = [
+        "🎲 <b>Siz uchun tavsiya:</b>\n",
+        f"{type_name} <b>{title}</b>",
+    ]
+    
+    year = item.get("release_year")
+    if year:
+        caption_lines.append(f"📅 <b>Yil:</b> {year}")
+        
+    if rating and str(rating) != "N/A":
+        caption_lines.append(f"⭐️ <b>Reyting:</b> {rating}")
+        
+    caption_lines.append(f"🎭 <b>Janr:</b> {genres}")
+    
+    if desc and desc != "Tavsif mavjud emas.":
+        caption_lines.append(f"\n📝 <b>Tavsif:</b>\n<i>{desc}</i>")
+        
+    caption = "\n".join(caption_lines)
 
     builder = InlineKeyboardBuilder()
     if item_type == "movie":
