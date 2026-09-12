@@ -27,6 +27,9 @@ async def run_bot():
     from handlers.catalog import router as catalog_router
     dp.include_router(catalog_router)
     
+    from handlers.reviews import router as reviews_router
+    dp.include_router(reviews_router)
+
     dp.include_router(search_router)
     
     from handlers.browsing import router as browsing_router
@@ -57,9 +60,6 @@ async def run_bot():
     
     from handlers.recommendation import router as recommendation_router
     dp.include_router(recommendation_router)
-    
-    from handlers.reviews import router as reviews_router
-    dp.include_router(reviews_router)
     
 
     retry_delay = 5

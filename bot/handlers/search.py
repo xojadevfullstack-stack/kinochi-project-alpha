@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.filters import StateFilter
 from aiogram.types import Message, CallbackQuery
 from services.api_client import api_client
 from keyboards.inline import build_search_results_keyboard
@@ -8,7 +9,7 @@ import html
 
 router = Router()
 
-@router.message(F.text & ~F.text.startswith("/") & (F.chat.type == "private"))
+@router.message(StateFilter(None), F.text & ~F.text.startswith("/") & (F.chat.type == "private"))
 async def handle_search_query(message: Message):
     query = message.text.strip()
     

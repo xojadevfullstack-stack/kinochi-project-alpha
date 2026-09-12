@@ -94,7 +94,8 @@ async def handle_view_movie_reviews(callback: CallbackQuery):
         text += "<i>Hozircha hech kim matnli fikr yozmagan. Birinchi bo'lib o'z fikringizni bildiring! 🍿</i>\n\n"
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✍️ Baholash va Fikr qoldirish", callback_data=f"rate_m_{code}")],
+        [InlineKeyboardButton(text="✍️ Fikr qoldirish", callback_data=f"ask_comm_m_{code}")],
+        [InlineKeyboardButton(text="⭐ Baholash (1-10)", callback_data=f"rate_m_{code}")],
         [InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")]
     ])
 
@@ -141,7 +142,8 @@ async def handle_view_series_reviews(callback: CallbackQuery):
         text += "<i>Hozircha hech kim matnli fikr yozmagan. Birinchi bo'lib o'z fikringizni bildiring! 🍿</i>\n\n"
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✍️ Baholash va Fikr qoldirish", callback_data=f"rate_s_{series_id}")],
+        [InlineKeyboardButton(text="✍️ Fikr qoldirish", callback_data=f"ask_comm_s_{series_id}")],
+        [InlineKeyboardButton(text="⭐ Baholash (1-10)", callback_data=f"rate_s_{series_id}")],
         [InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")]
     ])
 
@@ -204,15 +206,16 @@ async def handle_set_rating(callback: CallbackQuery, state: FSMContext):
     )
 
     skip_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="⏭ Fikr qoldirmaslik (O'tkazish)", callback_data="skip_comment")]
+        [InlineKeyboardButton(text="✍️ Fikr (sharh) yozish", callback_data=f"ask_comm_{target_type}_{target_id}")],
+        [InlineKeyboardButton(text="⏭ O'tkazish / Tugatish", callback_data="skip_comment")]
     ])
 
     text = f"🌟 <b>Sizning bahoingiz: {score}/10 qabul qilindi!</b>\n"
     if kinochi_score:
         text += f"💜 Yangi Kinochi reytingi: <b>{kinochi_score}/10</b> ({votes_count} ta ovoz)\n\n"
     text += (
-        "✍️ <i>Ushbu kino/serial haqida o'z fikringiz (sharh) ni yozib yuborishingiz mumkin.\n"
-        "Fikringiz saytda va botda boshqa foydalanuvchilarga ko'rinadi:</i>"
+        "💬 <i>Ushbu asar haqida o'z fikringiz (sharhingiz) bormi?\n"
+        "Pastdagi <b>«✍️ Fikr (sharh) yozish»</b> tugmasini bosing yoki to'g'ridan-to'g'ri o'z fikringizni chatga yozib yuboring:</i>"
     )
 
     try:
@@ -222,29 +225,105 @@ async def handle_set_rating(callback: CallbackQuery, state: FSMContext):
 
     await callback.answer()
 
-@router.message(ReviewStates.waiting_for_comment)
-async def handle_review_comment(message: Message, state: FSMContext):
-    data = await state.get_data()
-    comment_text = message.text
+@router.callback_query(F.data.startswith("ask_comm_"))
+async def handle_ask_comment(callback: CallbackQuery, state: FSMContext):
+    parts = callback.data.split("_")
+    target_type = parts[2] if len(parts) > 2 else "m"
+    target_id = parts[3] if len(parts) > 3 else ""
 
-    if not comment_text or len(comment_text.strip()) < 2:
-        await message.reply("Iltimos, sharhingizni matn ko'rinishida yozing yoki 'O'tkazish' tugmasini bosing.")
+    movie_id = None
+    series_id = None
+    title = "Film"
+
+    if target_type == "m":
+        if str(target_id).isdigit():
+            movie_id = int(target_id)
+            movie = await api_client.get_movie_by_id(movie_id)
+            if movie:
+                title = movie.get("title", "Film")
+        else:
+            movie = await api_client.get_movie_by_code(str(target_id))
+            if movie:
+                movie_id = movie.get("id")
+                title = movie.get("title", "Film")
+    elif target_type == "s":
+        try:
+            series_id = int(target_id)
+            series = await api_client.get_series_by_id(series_id)
+            if series:
+                title = series.get("title", "Serial")
+        except ValueError:
+            pass
+
+    current_data = await state.get_data()
+    rating = current_data.get("rating", 10)
+
+    await state.set_state(ReviewStates.waiting_for_comment)
+    await state.update_data(
+        target_type=target_type,
+        target_id=target_id,
+        movie_id=movie_id,
+        series_id=series_id,
+        rating=rating
+    )
+
+    cancel_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="skip_comment")]
+    ])
+
+    await callback.message.reply(
+        f"✍️ <b>«{html.escape(title)}»</b> haqida o'z fikringiz (sharh) ni yozib yuboring:\n\n"
+        f"<i>Xabaringiz kino nomi sifatida qidirilmaydi, balki to'g'ridan-to'g'ri sharh sifatida qabul qilinadi va saytda ham aks etadi!</i> 🍿",
+        parse_mode="HTML",
+        reply_markup=cancel_kb
+    )
+    await callback.answer()
+
+@router.message(ReviewStates.waiting_for_comment, F.text)
+async def handle_review_comment(message: Message, state: FSMContext):
+    comment_text = message.text.strip()
+
+    if not comment_text or len(comment_text) < 2:
+        await message.reply("Iltimos, sharhingizni matn ko'rinishida yozing yoki 'Bekor qilish' tugmasini bosing.")
         return
 
-    # Update review with comment
+    data = await state.get_data()
+    target_type = data.get("target_type")
+    target_id = data.get("target_id")
+    movie_id = data.get("movie_id")
+    series_id = data.get("series_id")
+    episode_id = data.get("episode_id")
+
+    if not movie_id and target_type == "m" and target_id:
+        if str(target_id).isdigit():
+            movie_id = int(target_id)
+        else:
+            movie = await api_client.get_movie_by_code(str(target_id))
+            if movie:
+                movie_id = movie.get("id")
+    elif not series_id and target_type == "s" and target_id:
+        try:
+            series_id = int(target_id)
+        except ValueError:
+            pass
+
+    # Save review with user comment
     await submit_review(
         user_id=message.from_user.id,
         rating=data.get("rating", 10),
         comment=comment_text[:1000],
-        movie_id=data.get("movie_id"),
-        series_id=data.get("series_id"),
-        episode_id=data.get("episode_id")
+        movie_id=movie_id,
+        series_id=series_id,
+        episode_id=episode_id
     )
 
     await state.clear()
+    
+    clean_preview = html.escape(comment_text[:250])
     await message.reply(
-        "✅ <b>Fikringiz va bahoingiz muvaffaqiyatli saqlandi!</b>\n\n"
-        "Sharhingiz uchun tashakkur, bu boshqa tomoshabinlar uchun juda foydali bo'ladi! 🍿",
+        "✅ <b>Fikringiz muvaffaqiyatli saqlandi!</b>\n\n"
+        f"💬 <b>Sizning sharhingiz:</b>\n«<i>{clean_preview}</i>»\n\n"
+        "Sharhingiz uchun tashakkur, u botda ham, saytda ham boshqa tomoshabinlarga ko'rinadi! 🍿",
         parse_mode="HTML"
     )
 
