@@ -187,19 +187,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
                       Yutuqlar
                     </Link>
-                    <Link
-                      href="/notifications"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center justify-between text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="material-symbols-outlined text-[20px] text-blue-400">notifications</span>
-                        Bildirishnomalar
-                      </div>
-                      {hasUnread && (
-                        <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-                      )}
-                    </Link>
                     <button 
                       onClick={() => {
                         logout();
@@ -486,24 +473,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       <span className="font-semibold text-base">Yutuqlar</span>
                     </div>
                     <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px]">chevron_right</span>
-                  </Link>
-
-                  <Link
-                    href="/notifications"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-blue-400/15 flex items-center justify-center text-blue-400">
-                        <span className="material-symbols-outlined text-[24px]">notifications</span>
-                      </div>
-                      <span className="font-semibold text-base">Bildirishnomalar</span>
-                    </div>
-                    {hasUnread ? (
-                      <span className="w-2.5 h-2.5 rounded-full bg-primary-container animate-pulse mr-2"></span>
-                    ) : (
-                      <span className="material-symbols-outlined text-text-secondary group-hover:text-blue-400 transition-colors text-[20px]">chevron_right</span>
-                    )}
                   </Link>
                 </div>
 
