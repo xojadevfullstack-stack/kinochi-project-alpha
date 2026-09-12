@@ -8,9 +8,11 @@ interface ShareButtonProps {
   url?: string;
   code?: string;
   botUsername?: string;
+  className?: string;
+  buttonText?: string;
 }
 
-export default function ShareButton({ title, text: _text, url = "", code, botUsername }: ShareButtonProps) {
+export default function ShareButton({ title, text: _text, url = "", code, botUsername, className, buttonText }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   // Determine site base URL (prefer real window.location, fallback to Vercel production URL)
@@ -102,6 +104,22 @@ export default function ShareButton({ title, text: _text, url = "", code, botUse
     window.open(tgShareUrl, "_blank", "noopener,noreferrer");
   };
 
+  const label = buttonText || "ULASHISH";
+
+  if (className) {
+    return (
+      <button 
+        onClick={handleShare}
+        className={`${className} ${copied ? "!bg-emerald-500/20 !border-emerald-500/50 !text-emerald-400" : ""}`}
+      >
+        <span className={`material-symbols-outlined text-[20px] transition-transform ${copied ? "text-emerald-400 scale-110" : ""}`}>
+          {copied ? "check_circle" : "share"}
+        </span>
+        <span>{copied ? "Nusxalandi!" : label}</span>
+      </button>
+    );
+  }
+
   return (
     <div className="relative inline-block w-full sm:w-auto">
       <button 
@@ -115,7 +133,7 @@ export default function ShareButton({ title, text: _text, url = "", code, botUse
         <span className={`material-symbols-outlined text-[20px] transition-transform ${copied ? "text-emerald-400 scale-110" : "group-hover:rotate-45"}`}>
           {copied ? "check_circle" : "share"}
         </span>
-        {copied ? "Havola nusxalandi!" : "ULASHISH"}
+        <span>{copied ? "Nusxalandi!" : label}</span>
       </button>
     </div>
   );

@@ -129,18 +129,6 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
               Yo'nalishni tanlang va qiziqarli kino yoki serial toping
             </p>
           </div>
-
-          {/* Next Button on Desktop */}
-          <button
-            onClick={handleNext}
-            disabled={isSpinning || filteredItems.length <= 1}
-            className="hidden md:inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-text-primary font-semibold text-sm transition-all border border-white/10 shadow-lg active:scale-95 cursor-pointer"
-          >
-            <span className={`material-symbols-outlined text-[20px] text-rating-gold ${isSpinning ? "animate-spin" : ""}`}>
-              autorenew
-            </span>
-            Keyingi tavsiya
-          </button>
         </div>
 
         {/* Category Pills */}
@@ -259,27 +247,26 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3 w-full sm:w-auto">
                 <Link
                   href={watchUrl}
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary-container text-white font-bold text-sm tracking-wide hover:bg-inverse-primary hover:shadow-[0_8px_25px_rgba(229,9,20,0.4)] transition-all active:scale-95"
+                  className="w-full sm:w-[180px] h-12 rounded-2xl bg-primary-container hover:bg-inverse-primary text-white font-bold text-sm tracking-wide flex items-center justify-center gap-2.5 shadow-lg shadow-primary-container/25 hover:shadow-primary-container/40 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     play_circle
                   </span>
-                  Tomosha qilish
+                  <span>Tomosha qilish</span>
                 </Link>
 
-                {/* Mobile Next Button */}
                 <button
                   onClick={handleNext}
                   disabled={isSpinning || filteredItems.length <= 1}
-                  className="inline-flex md:hidden items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-text-primary font-semibold text-sm transition-all border border-white/10 active:scale-95 cursor-pointer"
+                  className="w-full sm:w-[180px] h-12 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2.5 shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <span className={`material-symbols-outlined text-[20px] text-rating-gold ${isSpinning ? "animate-spin" : ""}`}>
                     autorenew
                   </span>
-                  Keyingi
+                  <span>Keyingi</span>
                 </button>
 
                 <ShareButton
@@ -287,6 +274,8 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   text={`${activeItem.title} ni bepul tomosha qiling!`}
                   url={watchUrl}
                   code={activeItem.is_series ? `s_${activeItem.id}` : (activeItem.code || String(activeItem.id))}
+                  className="w-full sm:w-[180px] h-12 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2.5 shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                  buttonText="Ulashish"
                 />
               </div>
             </div>
