@@ -111,41 +111,43 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               )}
             </div>
             
-            <div className={`absolute right-0 mt-2 w-72 bg-background-obsidian border border-white/10 rounded-xl p-4 shadow-2xl z-50 transition-all duration-200 ${profileDropdownOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible pointer-events-none -translate-y-2"}`}>
-              {status === "authenticated" ? (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                    <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-bold shrink-0">
-                      {user?.first_name?.charAt(0) || "U"}
+            {profileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-background-obsidian border border-white/10 rounded-xl p-4 shadow-2xl z-50">
+                {status === "authenticated" ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                      <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-bold shrink-0">
+                        {user?.first_name?.charAt(0) || "U"}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="font-bold text-text-primary truncate">{user?.first_name} {user?.last_name}</div>
+                        <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
+                      </div>
                     </div>
-                    <div className="overflow-hidden">
-                      <div className="font-bold text-text-primary truncate">{user?.first_name} {user?.last_name}</div>
-                      <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 transition-colors flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">logout</span>
+                      Tizimdan chiqish
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="text-sm font-medium text-text-primary text-center">Tizimga kirish</div>
+                    <div className="text-xs text-text-secondary text-center mb-2">
+                      Kino ko'rish tarixi va tavsiyalardan foydalanish uchun Telegram orqali kiring.
+                    </div>
+                    <div>
+                      <TelegramLoginWidget />
                     </div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      logout();
-                      setProfileDropdownOpen(false);
-                    }}
-                    className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 transition-colors flex items-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">logout</span>
-                    Tizimdan chiqish
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="text-sm font-medium text-text-primary text-center">Tizimga kirish</div>
-                  <div className="text-xs text-text-secondary text-center mb-2">
-                    Kino ko'rish tarixi va tavsiyalardan foydalanish uchun Telegram orqali kiring.
-                  </div>
-                  <div onClick={() => setProfileDropdownOpen(false)}>
-                    <TelegramLoginWidget />
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Toggle & Search */}
