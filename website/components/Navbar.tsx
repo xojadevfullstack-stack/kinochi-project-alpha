@@ -37,7 +37,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     { name: "Bosh sahifa", href: "/" },
     { name: "Kinolar", href: "/movies" },
     { name: "Seriallar", href: "/series" },
-    { name: "Tarix", href: "/history" },
     ...pages.map(p => ({ name: p.title, href: `/p/${p.slug}` }))
   ];
 
@@ -132,6 +131,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     >
                       <span className="material-symbols-outlined text-[20px] text-primary-container">history</span>
                       Ko'rish tarixi
+                    </Link>
+                    <Link
+                      href="/achievements"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
+                      Yutuqlar
                     </Link>
                     <button 
                       onClick={() => {
