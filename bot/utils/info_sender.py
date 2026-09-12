@@ -114,6 +114,17 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
             
     if current_row:
         rows.append(current_row)
+
+    # Check series watch progress and add "Ko'rib bo'ldim" button
+    try:
+        from app.core.watch_history import get_series_watch_status
+        status_info = await get_series_watch_status(chat_id, series_id)
+        if status_info.get("is_fully_completed"):
+            rows.append([InlineKeyboardButton(text="✅ To'liq ko'rilgan", callback_data="ignore_history")])
+        else:
+            rows.append([InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_series_{series_id}")])
+    except Exception as e:
+        rows.append([InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_series_{series_id}")])
         
     trailer_url = series.get("trailer_url")
     
