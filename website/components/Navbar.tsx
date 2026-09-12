@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useAuth } from "../lib/auth/AuthProvider";
+import TelegramLoginWidget from "./auth/TelegramLoginWidget";
 
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { status, user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Handle scroll for navbar background
   useEffect(() => {
@@ -96,8 +100,54 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <span className="material-symbols-outlined text-text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
           </div>
           
-          <div className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center">
-            <span className="material-symbols-outlined text-text-secondary">person</span>
+          <div className="relative">
+            <div 
+              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center">
+              {status === "authenticated" ? (
+                <span className="font-bold text-sm text-primary-container">{user?.first_name?.charAt(0) || "U"}</span>
+              ) : (
+                <span className="material-symbols-outlined text-text-secondary">person</span>
+              )}
+            </div>
+            
+            {profileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-background-obsidian border border-white/10 rounded-xl p-4 shadow-2xl z-50">
+                {status === "authenticated" ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                      <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-bold shrink-0">
+                        {user?.first_name?.charAt(0) || "U"}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="font-bold text-text-primary truncate">{user?.first_name} {user?.last_name}</div>
+                        <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        logout();
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 transition-colors flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">logout</span>
+                      Tizimdan chiqish
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="text-sm font-medium text-text-primary text-center">Tizimga kirish</div>
+                    <div className="text-xs text-text-secondary text-center mb-2">
+                      Kino ko'rish tarixi va tavsiyalardan foydalanish uchun Telegram orqali kiring.
+                    </div>
+                    <div onClick={() => setProfileDropdownOpen(false)}>
+                      <TelegramLoginWidget />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Toggle & Search */}
