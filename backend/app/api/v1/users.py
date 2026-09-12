@@ -68,6 +68,17 @@ async def register_or_update(
     """Register or update a user (Bot internal only — requires X-Bot-Secret header)."""
     return await service.register_or_update(**user_in.model_dump())
 
+@router.get("/me", response_model=UserResponse)
+async def get_my_profile(
+    user_data: dict = Depends(get_current_user),
+    service: UserService = Depends(get_user_service)
+):
+    """Get profile of the currently logged in user."""
+    user = await service.get_by_telegram_id(user_data["telegram_id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+    return user
+
 @router.get("/me/history")
 async def get_my_history(
     skip: int = Query(0, ge=0),
