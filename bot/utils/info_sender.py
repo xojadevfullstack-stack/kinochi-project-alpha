@@ -38,7 +38,10 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     
     buttons = [
         [InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")],
-        [InlineKeyboardButton(text="⭐ Baholash va Fikr", callback_data=f"rate_m_{code}")]
+        [
+            InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_m_{code}"),
+            InlineKeyboardButton(text="💬 Fikrlar", callback_data=f"reviews_m_{code}")
+        ]
     ]
     
     if trailer_url:
@@ -151,7 +154,10 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     except Exception as e:
         rows.append([InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_series_{series_id}")])
         
-    rows.append([InlineKeyboardButton(text="⭐ Baholash va Fikr", callback_data=f"rate_s_{series_id}")])
+    rows.append([
+        InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_s_{series_id}"),
+        InlineKeyboardButton(text="💬 Fikrlar", callback_data=f"reviews_s_{series_id}")
+    ])
 
     trailer_url = series.get("trailer_url")
     

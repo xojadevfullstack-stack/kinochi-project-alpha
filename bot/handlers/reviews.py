@@ -4,7 +4,7 @@ from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKe
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
-from app.core.reviews import submit_review
+from app.core.reviews import submit_review, get_reviews
 from services.api_client import api_client
 
 router = Router()
@@ -57,6 +57,95 @@ async def handle_rate_episode(callback: CallbackQuery):
         parse_mode="HTML",
         reply_markup=get_rating_keyboard("ep", ep_id)
     )
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("reviews_m_"))
+async def handle_view_movie_reviews(callback: CallbackQuery):
+    code = callback.data.replace("reviews_m_", "")
+    movie = await api_client.get_movie_by_code(code)
+    if not movie:
+        await callback.answer("Film topilmadi.", show_alert=True)
+        return
+
+    movie_id = movie.get("id")
+    res = await get_reviews(movie_id=movie_id, limit=5)
+    reviews_list = res.get("items", [])
+    total = res.get("total", 0)
+    avg_score = res.get("average_rating") or movie.get("kinochi_rating")
+    imdb_score = movie.get("imdb_rating") or "N/A"
+
+    title = html.escape(movie.get("title", "Film"))
+    text = f"🎬 <b>{title}</b> — Fikrlar va Sharhlar\n\n"
+    text += f"⭐ IMDb: <b>{imdb_score} / 10</b>\n"
+    if avg_score:
+        text += f"💜 Kinochi: <b>{avg_score} / 10</b> ({total} ta baho)\n\n"
+    else:
+        text += "💜 Kinochi: <i>Hozircha baholanmagan</i>\n\n"
+
+    comments_with_text = [r for r in reviews_list if r.get("comment")]
+    if comments_with_text:
+        text += f"💬 <b>Foydalanuvchilar fikrlari ({len(comments_with_text)} ta):</b>\n\n"
+        for r in comments_with_text[:5]:
+            u_name = html.escape(r.get("user_name") or "Tomoshabin")
+            c_text = html.escape(r.get("comment") or "")
+            r_val = r.get("rating", 10)
+            text += f"👤 <b>{u_name}</b> ({r_val} ⭐):\n«<i>{c_text}</i>»\n\n"
+    else:
+        text += "<i>Hozircha hech kim matnli fikr yozmagan. Birinchi bo'lib o'z fikringizni bildiring! 🍿</i>\n\n"
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✍️ Baholash va Fikr qoldirish", callback_data=f"rate_m_{code}")],
+        [InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")]
+    ])
+
+    await callback.message.reply(text=text, parse_mode="HTML", reply_markup=kb)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("reviews_s_"))
+async def handle_view_series_reviews(callback: CallbackQuery):
+    series_id_str = callback.data.replace("reviews_s_", "")
+    try:
+        series_id = int(series_id_str)
+    except ValueError:
+        await callback.answer("Xato ID.", show_alert=True)
+        return
+
+    series = await api_client.get_series_by_id(series_id)
+    if not series:
+        await callback.answer("Serial topilmadi.", show_alert=True)
+        return
+
+    res = await get_reviews(series_id=series_id, limit=5)
+    reviews_list = res.get("items", [])
+    total = res.get("total", 0)
+    avg_score = res.get("average_rating") or series.get("kinochi_rating")
+    imdb_score = series.get("imdb_rating") or "N/A"
+
+    title = html.escape(series.get("title", "Serial"))
+    text = f"📺 <b>{title}</b> — Fikrlar va Sharhlar\n\n"
+    text += f"⭐ IMDb: <b>{imdb_score} / 10</b>\n"
+    if avg_score:
+        text += f"💜 Kinochi: <b>{avg_score} / 10</b> ({total} ta baho)\n\n"
+    else:
+        text += "💜 Kinochi: <i>Hozircha baholanmagan</i>\n\n"
+
+    comments_with_text = [r for r in reviews_list if r.get("comment")]
+    if comments_with_text:
+        text += f"💬 <b>Foydalanuvchilar fikrlari ({len(comments_with_text)} ta):</b>\n\n"
+        for r in comments_with_text[:5]:
+            u_name = html.escape(r.get("user_name") or "Tomoshabin")
+            c_text = html.escape(r.get("comment") or "")
+            r_val = r.get("rating", 10)
+            text += f"👤 <b>{u_name}</b> ({r_val} ⭐):\n«<i>{c_text}</i>»\n\n"
+    else:
+        text += "<i>Hozircha hech kim matnli fikr yozmagan. Birinchi bo'lib o'z fikringizni bildiring! 🍿</i>\n\n"
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✍️ Baholash va Fikr qoldirish", callback_data=f"rate_s_{series_id}")],
+        [InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")]
+    ])
+
+    await callback.message.reply(text=text, parse_mode="HTML", reply_markup=kb)
     await callback.answer()
 
 @router.callback_query(F.data.startswith("setrate_"))
