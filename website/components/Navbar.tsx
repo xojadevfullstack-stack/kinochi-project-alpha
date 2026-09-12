@@ -9,7 +9,7 @@ import TelegramLoginWidget from "./auth/TelegramLoginWidget";
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { status, user, logout } = useAuth();
+  const { status, user, logout, loginDirect } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -136,12 +136,32 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="text-sm font-medium text-text-primary text-center">Tizimga kirish</div>
-                    <div className="text-xs text-text-secondary text-center mb-2">
-                      Kino ko'rish tarixi va tavsiyalardan foydalanish uchun Telegram orqali kiring.
+                  <div className="flex flex-col gap-3">
+                    <div className="text-sm font-bold text-text-primary text-center">Tizimga kirish</div>
+                    
+                    {/* 1-Click Instant Login */}
+                    <button
+                      onClick={async () => {
+                        try {
+                          await loginDirect();
+                          setProfileDropdownOpen(false);
+                        } catch (err) {
+                          console.error("Login failed:", err);
+                        }
+                      }}
+                      className="w-full py-2.5 px-4 bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-semibold rounded-lg text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">bolt</span>
+                      1-Bosishda Tezkor Kirish
+                    </button>
+
+                    <div className="relative flex py-1 items-center">
+                      <div className="flex-grow border-t border-white/10"></div>
+                      <span className="flex-shrink mx-2 text-[11px] text-text-secondary">yoki vidjet orqali</span>
+                      <div className="flex-grow border-t border-white/10"></div>
                     </div>
-                    <div>
+
+                    <div className="flex justify-center">
                       <TelegramLoginWidget />
                     </div>
                   </div>

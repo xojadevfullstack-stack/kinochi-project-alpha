@@ -1,6 +1,7 @@
 from aiogram import Router, F
-from aiogram.filters import CommandStart, CommandObject
+from aiogram.filters import CommandStart, CommandObject, Command
 from aiogram.types import Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from services.api_client import api_client
 from utils.info_sender import send_movie_info, send_series_info
 from aiogram.exceptions import TelegramBadRequest
@@ -71,3 +72,33 @@ async def cmd_start(message: Message, command: CommandObject):
         webapp_url = "https://kinochi-project-alpha.vercel.app/"
             
         await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_main_menu_inline(webapp_url))
+
+
+@router.message(Command("login"))
+async def cmd_login(message: Message):
+    """Generates an instant 1-click magic login URL for the website."""
+    await api_client.register_user(
+        telegram_id=message.from_user.id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name
+    )
+
+    try:
+        res = await api_client.client.post("/auth/dev-login", json={
+            "telegram_id": message.from_user.id,
+            "first_name": message.from_user.first_name or "Foydalanuvchi",
+            "username": message.from_user.username or "user"
+        })
+        token = res.json().get("access_token")
+        login_url = f"https://kinochi-project-alpha.vercel.app/?auth_token={token}"
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🌐 Saytga kirish (Avtomatik)", url=login_url)
+        await message.answer(
+            "✅ <b>Saytga kirish tayyor!</b>\n\nQuyidagi tugmani bosing va darhol shaxsiy profilingizga kiring:",
+            parse_mode="HTML",
+            reply_markup=builder.as_markup()
+        )
+    except Exception as e:
+        await message.answer("Xatolik yuz berdi, iltimos qayta urinib ko'ring.")
+

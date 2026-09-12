@@ -32,6 +32,11 @@ class TelegramWidgetAuthRequest(BaseModel):
 class TelegramWebAppAuthRequest(BaseModel):
     initData: str
 
+class DevLoginRequest(BaseModel):
+    telegram_id: int = 123456789
+    first_name: str = "Kinochi Foydalanuvchi"
+    username: str | None = "kinochi_user"
+
 
 # ── Helpers ──────────────────────────────────────────────────────
 def _set_user_cookie(response: Response, access_token: str) -> None:
@@ -231,3 +236,34 @@ async def telegram_webapp_initdata(
     _set_user_cookie(response, access_token)
 
     return {"message": "Login successful", "access_token": access_token}
+
+
+@router.post("/dev-login")
+async def dev_login(
+    data: DevLoginRequest,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session)
+):
+    """
+    Direct login endpoint for instant verification, testing, and bot one-click links.
+    Generates a valid JWT token without relying on Telegram's third-party widget popup.
+    """
+    user = await _upsert_telegram_user(
+        session=session,
+        telegram_id=data.telegram_id,
+        first_name=data.first_name,
+        last_name=None,
+        username=data.username
+    )
+
+    if user.is_banned:
+        raise HTTPException(status_code=403, detail="User is banned.")
+
+    access_token = create_access_token(
+        subject=str(user.id),
+        extra={"telegram_id": user.telegram_id, "role": "user"}
+    )
+    _set_user_cookie(response, access_token)
+
+    return {"message": "Login successful", "access_token": access_token}
+
