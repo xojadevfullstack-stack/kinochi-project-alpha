@@ -137,6 +137,15 @@ async def submit_review(
 
         await session.commit()
 
+        try:
+            from app.infrastructure.cache.redis import delete_cache_pattern
+            if movie_id:
+                await delete_cache_pattern("cache:movies:*")
+            elif series_id:
+                await delete_cache_pattern("cache:series:*")
+        except Exception:
+            pass
+
         return {
             "success": True,
             "review_id": review.id,

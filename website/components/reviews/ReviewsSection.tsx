@@ -103,7 +103,19 @@ export default function ReviewsSection({
 
       if (res && res.kinochi_rating !== undefined) {
         setKinochiRating(res.kinochi_rating);
-        setVotesCount(res.kinochi_votes_count || votesCount + 1);
+        const newVotes = res.kinochi_votes_count || votesCount + 1;
+        setVotesCount(newVotes);
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("kinochi:rating_updated", {
+              detail: {
+                rating: res.kinochi_rating,
+                votesCount: newVotes,
+              },
+            })
+          );
+        }
       }
 
       setStatusMessage({ type: "success", text: "Baho va fikringiz muvaffaqiyatli saqlandi! Rahmat." });

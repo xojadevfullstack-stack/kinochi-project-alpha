@@ -4,13 +4,14 @@ import Image from "next/image";
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
 import ReviewsSection from "@/components/reviews/ReviewsSection";
+import KinochiRatingBadge from "@/components/reviews/KinochiRatingBadge";
 import TrailerModal from "@/components/TrailerModal";
 
 type Props = {
   params: { code: string };
 };
 
-export const revalidate = 60; 
+export const revalidate = 0; 
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
@@ -102,13 +103,10 @@ export default async function MovieDetailsPage({ params }: Props) {
                 <span className="text-[10px] text-text-secondary font-normal">IMDb</span>
               </div>
 
-              <div className="flex items-center gap-1.5 text-primary-container bg-primary-container/10 px-3 py-1.5 rounded backdrop-blur-sm border border-primary-container/30 font-bold" title="Kinochi hamjamiyat reytingi">
-                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>hotel_class</span>
-                <span>{movie.kinochi_rating !== null && movie.kinochi_rating !== undefined ? `${movie.kinochi_rating}` : "Yangi"}</span>
-                <span className="text-[10px] text-primary-container/80 font-normal">
-                  {movie.kinochi_votes_count ? `(${movie.kinochi_votes_count})` : "Kinochi"}
-                </span>
-              </div>
+              <KinochiRatingBadge 
+                initialRating={movie.kinochi_rating} 
+                initialVotesCount={movie.kinochi_votes_count} 
+              />
 
               <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{movie.release_year || "2024"}</span>
               <span className="text-text-primary bg-white/10 px-3 py-1.5 rounded font-bold border border-white/10">KINO</span>
