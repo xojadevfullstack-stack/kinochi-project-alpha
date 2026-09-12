@@ -15,5 +15,6 @@ from app.infrastructure.db.models.translation import MovieTranslationModel, Epis
 from app.infrastructure.db.models.page import PageModel, page_movie_table, page_series_table
 from app.infrastructure.db.models.watch_history import WatchHistoryModel
 from app.infrastructure.db.models.achievement import UserAchievementModel
+from app.infrastructure.db.models.review import ReviewModel
 
-__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table", "WatchHistoryModel", "UserAchievementModel"]
+__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table", "WatchHistoryModel", "UserAchievementModel", "ReviewModel"]

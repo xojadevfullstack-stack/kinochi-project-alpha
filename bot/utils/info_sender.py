@@ -11,12 +11,23 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     desc = html.escape(movie.get("description") or "Ma'lumot mavjud emas.")
     year = movie.get("release_year")
     rating = movie.get("imdb_rating")
+    kinochi_rating = movie.get("kinochi_rating")
+    kinochi_votes = movie.get("kinochi_votes_count", 0)
     poster_url = movie.get("poster_url")
     code = movie.get("code")
     
     caption = f"🎬 <b>{title}</b>\n\n"
     if year: caption += f"📅 <b>Yil:</b> {year}\n"
-    if rating: caption += f"⭐ <b>IMDb:</b> {rating}\n"
+    if rating: 
+        caption += f"⭐ <b>IMDb:</b> {rating} / 10\n"
+    else:
+        caption += f"⭐ <b>IMDb:</b> N/A\n"
+
+    if kinochi_rating:
+        caption += f"💜 <b>Kinochi:</b> {kinochi_rating:.1f} / 10 ({kinochi_votes} ta ovoz)\n"
+    else:
+        caption += f"💜 <b>Kinochi:</b> Yangi\n"
+
     caption += f"\n📝 <b>Tavsif:</b> {desc}"
     
     # Cap description length to avoid Telegram limits
@@ -25,7 +36,10 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     
     trailer_url = movie.get("trailer_url")
     
-    buttons = [[InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")]]
+    buttons = [
+        [InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")],
+        [InlineKeyboardButton(text="⭐ Baholash va Fikr", callback_data=f"rate_m_{code}")]
+    ]
     
     if trailer_url:
         buttons.append([InlineKeyboardButton(text="🎬 Treyler", callback_data=f"trailer_m_{code}")])
@@ -84,6 +98,8 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     desc = html.escape(series.get("description") or "Ma'lumot mavjud emas.")
     year = series.get("release_year")
     rating = series.get("imdb_rating")
+    kinochi_rating = series.get("kinochi_rating")
+    kinochi_votes = series.get("kinochi_votes_count", 0)
     poster_url = series.get("poster_url")
     series_id = series.get("id")
     
@@ -91,7 +107,16 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     
     caption = f"🎬 <b>{title}</b>\n\n"
     if year: caption += f"📅 <b>Yil:</b> {year}\n"
-    if rating: caption += f"⭐ <b>IMDb:</b> {rating}\n"
+    if rating: 
+        caption += f"⭐ <b>IMDb:</b> {rating} / 10\n"
+    else:
+        caption += f"⭐ <b>IMDb:</b> N/A\n"
+
+    if kinochi_rating:
+        caption += f"💜 <b>Kinochi:</b> {kinochi_rating:.1f} / 10 ({kinochi_votes} ta ovoz)\n"
+    else:
+        caption += f"💜 <b>Kinochi:</b> Yangi\n"
+
     caption += f"\n📝 <b>Tavsif:</b> {desc}\n\n📚 <b>Fasllar:</b> Quyidan faslni tanlang:"
     
     if len(caption) > 1000:
@@ -126,6 +151,8 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     except Exception as e:
         rows.append([InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_series_{series_id}")])
         
+    rows.append([InlineKeyboardButton(text="⭐ Baholash va Fikr", callback_data=f"rate_s_{series_id}")])
+
     trailer_url = series.get("trailer_url")
     
     if trailer_url:

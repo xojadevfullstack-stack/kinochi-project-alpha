@@ -78,6 +78,8 @@ class MovieResponse(BaseModel):
     description: str | None = None
     imdb_rating: float | None = None
     tmdb_rating: float | None = None
+    kinochi_rating: float | None = None
+    kinochi_votes_count: int = 0
     genres: str | None = None
     cast: str | None = None
     director: str | None = None

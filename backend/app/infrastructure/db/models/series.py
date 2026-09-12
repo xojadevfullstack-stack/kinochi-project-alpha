@@ -26,6 +26,8 @@ class SeriesModel(Base):
     status: Mapped[str] = mapped_column(String(50), server_default="ongoing", nullable=False)
     
     imdb_rating: Mapped[float | None] = mapped_column(Float)
+    kinochi_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
+    kinochi_votes_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
     release_year: Mapped[int | None] = mapped_column(Integer, index=True)
     director: Mapped[str | None] = mapped_column(String(255))
     cast: Mapped[str | None] = mapped_column(Text)

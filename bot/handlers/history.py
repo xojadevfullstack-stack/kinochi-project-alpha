@@ -37,6 +37,16 @@ async def handle_complete_movie(callback: CallbackQuery):
     
     await callback.answer("Film ko'rilganlar ro'yxatiga qo'shildi!")
 
+    try:
+        from handlers.reviews import get_rating_keyboard
+        await callback.message.reply(
+            "🎬 <b>Film sizga yoqdimi?</b>\nUni 1 dan 10 gacha baholang va fikringizni bildiring:",
+            parse_mode="HTML",
+            reply_markup=get_rating_keyboard("m", movie_id)
+        )
+    except Exception:
+        pass
+
 @router.callback_query(F.data.startswith("history_complete_ep_"))
 async def handle_complete_episode(callback: CallbackQuery):
     ep_id_str = callback.data.replace("history_complete_ep_", "")
@@ -72,6 +82,16 @@ async def handle_complete_episode(callback: CallbackQuery):
 
     await callback.answer("Qism ko'rilganlar ro'yxatiga qo'shildi!")
 
+    try:
+        from handlers.reviews import get_rating_keyboard
+        await callback.message.reply(
+            "🍿 <b>Ushbu qism sizga yoqdimi?</b>\nUni 1 dan 10 gacha baholang va fikringizni bildiring:",
+            parse_mode="HTML",
+            reply_markup=get_rating_keyboard("ep", episode_id)
+        )
+    except Exception:
+        pass
+
 @router.callback_query(F.data.startswith("history_complete_series_"))
 async def handle_complete_series(callback: CallbackQuery):
     series_id_str = callback.data.replace("history_complete_series_", "")
@@ -105,6 +125,16 @@ async def handle_complete_series(callback: CallbackQuery):
                 await callback.message.edit_reply_markup(reply_markup=new_markup)
             except Exception:
                 pass
+
+        try:
+            from handlers.reviews import get_rating_keyboard
+            await callback.message.reply(
+                "📺 <b>Serial sizga yoqdimi?</b>\nUni 1 dan 10 gacha baholang va fikringizni bildiring:",
+                parse_mode="HTML",
+                reply_markup=get_rating_keyboard("s", series_id)
+            )
+        except Exception:
+            pass
 
     await callback.answer(message, show_alert=True)
 

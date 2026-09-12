@@ -58,6 +58,9 @@ async def run_bot():
     from handlers.recommendation import router as recommendation_router
     dp.include_router(recommendation_router)
     
+    from handlers.reviews import router as reviews_router
+    dp.include_router(reviews_router)
+    
 
     retry_delay = 5
     max_delay = 60

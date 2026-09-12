@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
-import Link from "next/link";
+import ReviewsSection from "@/components/reviews/ReviewsSection";
 import TrailerModal from "@/components/TrailerModal";
 
 type Props = {
@@ -96,13 +96,22 @@ export default async function MovieDetailsPage({ params }: Props) {
             
             {/* Badges Row */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-stack-md font-label-caps text-label-caps tracking-widest uppercase text-xs">
-              <div className="flex items-center gap-1 text-rating-gold bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5">
+              <div className="flex items-center gap-1.5 text-rating-gold bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5 font-bold" title="Rasmiy IMDb reytingi">
                 <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                 <span>{movie.imdb_rating || movie.tmdb_rating || "N/A"}</span>
+                <span className="text-[10px] text-text-secondary font-normal">IMDb</span>
               </div>
+
+              <div className="flex items-center gap-1.5 text-primary-container bg-primary-container/10 px-3 py-1.5 rounded backdrop-blur-sm border border-primary-container/30 font-bold" title="Kinochi hamjamiyat reytingi">
+                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>hotel_class</span>
+                <span>{movie.kinochi_rating !== null && movie.kinochi_rating !== undefined ? `${movie.kinochi_rating}` : "Yangi"}</span>
+                <span className="text-[10px] text-primary-container/80 font-normal">
+                  {movie.kinochi_votes_count ? `(${movie.kinochi_votes_count})` : "Kinochi"}
+                </span>
+              </div>
+
               <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{movie.release_year || "2024"}</span>
               <span className="text-text-primary bg-white/10 px-3 py-1.5 rounded font-bold border border-white/10">KINO</span>
-              <span className="text-white bg-primary-container px-3 py-1.5 rounded font-bold border border-primary-container">YANGI</span>
             </div>
             
             {/* Description */}
@@ -142,6 +151,15 @@ export default async function MovieDetailsPage({ params }: Props) {
           <TrailerModal trailerUrl={movie.trailer_url} posterUrl={movie.poster_url || ""} />
         </section>
       )}
+
+      {/* Reviews & Comments Section */}
+      <ReviewsSection
+        movieId={movie.id}
+        movieCode={movie.code}
+        imdbRating={movie.imdb_rating || movie.tmdb_rating}
+        initialKinochiRating={movie.kinochi_rating}
+        initialVotesCount={movie.kinochi_votes_count || 0}
+      />
     </>
   );
 }
