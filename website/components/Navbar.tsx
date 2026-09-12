@@ -37,6 +37,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     { name: "Bosh sahifa", href: "/" },
     { name: "Kinolar", href: "/movies" },
     { name: "Seriallar", href: "/series" },
+    { name: "Tarix", href: "/history" },
     ...pages.map(p => ({ name: p.title, href: `/p/${p.slug}` }))
   ];
 
@@ -124,12 +125,20 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                         <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
                       </div>
                     </div>
+                    <Link
+                      href="/history"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-primary-container">history</span>
+                      Ko'rish tarixi
+                    </Link>
                     <button 
                       onClick={() => {
                         logout();
                         setProfileDropdownOpen(false);
                       }}
-                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 transition-colors flex items-center gap-2"
+                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 px-2 transition-colors flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-[18px]">logout</span>
                       Tizimdan chiqish
@@ -143,7 +152,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <button
                       onClick={async () => {
                         try {
-                          await loginDirect();
+                          await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
                           setProfileDropdownOpen(false);
                         } catch (err) {
                           console.error("Login failed:", err);
@@ -152,7 +161,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       className="w-full py-2.5 px-4 bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-semibold rounded-lg text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[20px]">bolt</span>
-                      1-Bosishda Tezkor Kirish
+                      1-Bosishda Tezkor Kirish (XOJA)
                     </button>
 
                     <div className="relative flex py-1 items-center">
