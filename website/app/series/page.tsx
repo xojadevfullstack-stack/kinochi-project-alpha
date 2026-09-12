@@ -47,7 +47,7 @@ export default async function SeriesListPage({ searchParams }: { searchParams: {
         {/* Header & Categories */}
         <div className="mb-stack-lg">
           <div className="mb-stack-md">
-            <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">Barcha Seriallar</h1>
+            <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">Seriallar</h1>
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta seriallar kolleksiyamiz bilan tanishing.</p>
           </div>
           <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/series" />

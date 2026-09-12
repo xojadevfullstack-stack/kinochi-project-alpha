@@ -53,7 +53,7 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
         <div className="mb-stack-lg">
           <div className="mb-stack-md text-center md:text-left">
             <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">
-              Barcha Kinolar
+              Kinolar
             </h1>
             <p className="text-text-secondary font-body-lg text-body-lg">
               Bizning katta kinolar kolleksiyamiz bilan tanishing.
