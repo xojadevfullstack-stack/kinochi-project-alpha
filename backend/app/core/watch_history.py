@@ -137,3 +137,28 @@ async def mark_episode_progress(user_id: int, episode_id: int):
         
         unlocked = await evaluate_achievements(actual_uid)
         return unlocked
+
+async def mark_episode_completed(user_id: int, episode_id: int):
+    async with async_session_factory() as session:
+        actual_uid = await _get_actual_user_id(session, user_id)
+        stmt = insert(WatchHistoryModel).values(
+            user_id=actual_uid,
+            episode_id=episode_id,
+            status="completed"
+        )
+        stmt = stmt.on_conflict_do_update(
+            index_elements=['user_id', 'episode_id'],
+            index_where=WatchHistoryModel.episode_id.isnot(None),
+            set_=dict(
+                status="completed",
+                last_watched_at=stmt.excluded.last_watched_at
+            )
+        )
+        await session.execute(stmt)
+        await session.commit()
+        logger.info(f"Marked episode {episode_id} as completed for user {actual_uid} (identifier {user_id})")
+        await invalidate_recommendation_cache(actual_uid)
+        
+        unlocked = await evaluate_achievements(actual_uid)
+        return unlocked
+

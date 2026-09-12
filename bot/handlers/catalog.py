@@ -63,6 +63,46 @@ async def handle_back_to_main(callback: CallbackQuery):
         )
     await callback.answer()
 
+@router.callback_query(F.data == "catalog_all_movies")
+async def handle_catalog_all_movies(callback: CallbackQuery):
+    movies_data = await api_client.get_movies(limit=10)
+    items = movies_data.get("items", [])
+    if not items:
+        await callback.answer("Hozircha kinolar mavjud emas.", show_alert=True)
+        return
+    text = "🎬 <b>Kinolar ro'yxati:</b>\n<i>Quyidagi kinolardan birini tanlang:</i>"
+    markup = build_catalog_items_list(items, "movie")
+    try:
+        if callback.message.photo or callback.message.video:
+            await callback.message.delete()
+            await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+        else:
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    except Exception as e:
+        logger.warning(f"Error in handle_catalog_all_movies: {e}")
+        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+    await callback.answer()
+
+@router.callback_query(F.data == "catalog_all_series")
+async def handle_catalog_all_series(callback: CallbackQuery):
+    series_data = await api_client.get_series(limit=10)
+    items = series_data.get("items", [])
+    if not items:
+        await callback.answer("Hozircha seriallar mavjud emas.", show_alert=True)
+        return
+    text = "📺 <b>Seriallar ro'yxati:</b>\n<i>Quyidagi seriallardan birini tanlang:</i>"
+    markup = build_catalog_items_list(items, "series")
+    try:
+        if callback.message.photo or callback.message.video:
+            await callback.message.delete()
+            await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+        else:
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    except Exception as e:
+        logger.warning(f"Error in handle_catalog_all_series: {e}")
+        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+    await callback.answer()
+
 @router.callback_query(F.data.startswith("menu_page_"))
 async def handle_page_catalog(callback: CallbackQuery):
     page_id = int(callback.data.split("_")[-1])

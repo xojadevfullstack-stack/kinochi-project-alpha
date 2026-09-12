@@ -21,15 +21,15 @@ def build_episode_keyboard(episode: dict) -> InlineKeyboardMarkup:
     if nav_row:
         rows.append(nav_row)
         
-    # Row 2: Info
+    # Row 2: Complete button
+    ep_id = episode.get("id")
+    if ep_id:
+        rows.append([InlineKeyboardButton(text="✅ Qismni ko'rib bo'ldim", callback_data=f"history_complete_ep_{ep_id}")])
+
+    # Row 3: Info
     series_id = episode.get("series_id")
-    info_row = []
-    
     if series_id:
-        info_row.append(InlineKeyboardButton(text="Serial haqida", callback_data=f"series_info:{series_id}"))
-        
-    if info_row:
-        rows.append(info_row)
+        rows.append([InlineKeyboardButton(text="Serial haqida", callback_data=f"series_info:{series_id}")])
     
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

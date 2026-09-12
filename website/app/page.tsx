@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ShareButton from "@/components/ShareButton";
 import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
+import RandomRecommendationWidget from "@/components/recommendations/RandomRecommendationWidget";
 
 export const revalidate = 60; 
 
@@ -245,6 +246,13 @@ export default async function Home() {
 
       {/* Personalized Recommendations (Only visible if authenticated) */}
       <RecommendationsSection />
+
+      {/* Interactive Random Recommendation Generator */}
+      <RandomRecommendationWidget 
+        movies={latestMovies} 
+        series={latestSeries} 
+        pages={pagesData} 
+      />
 
       {/* Horizontal Scrolling Rows */}
       <div className="space-y-margin-desktop py-margin-desktop relative z-20 bg-background-obsidian">

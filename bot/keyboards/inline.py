@@ -59,10 +59,26 @@ def get_main_menu_inline(webapp_url: str) -> InlineKeyboardMarkup:
 
 def get_catalog_categories_inline(pages: list[dict] = None) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    
+    # Asosiy bo'limlar
+    builder.button(text="🎬 Kinolar", callback_data="catalog_all_movies")
+    builder.button(text="📺 Seriallar", callback_data="catalog_all_series")
+    
+    # Dinamik sahifalar (Admin panel va saytdan qo'shilgan)
     if pages:
         for page in pages:
             if page.get('is_active'):
-                builder.button(text=f"📂 {page.get('title')}", callback_data=f"menu_page_{page.get('id')}")
+                title = page.get('title', '')
+                icon = "📂"
+                t_lower = title.lower()
+                if "anime" in t_lower:
+                    icon = "🎌"
+                elif "dorama" in t_lower:
+                    icon = "🎭"
+                elif "mult" in t_lower:
+                    icon = "🧸"
+                builder.button(text=f"{icon} {title}", callback_data=f"menu_page_{page.get('id')}")
+                
     builder.button(text="🔙 Asosiy menyu", callback_data="menu_main")
     builder.adjust(2)
     return builder.as_markup()

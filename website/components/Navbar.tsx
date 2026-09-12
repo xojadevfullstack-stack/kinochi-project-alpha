@@ -96,9 +96,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               placeholder="Qidirish..." 
             />
           </form>
-          <div className="hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center">
-            <span className="material-symbols-outlined text-text-secondary text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
-          </div>
+          <Link 
+            href="/notifications"
+            className="relative hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center group"
+          >
+            <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
+            <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+          </Link>
           
           <div className="relative">
             <div 
@@ -139,6 +143,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     >
                       <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
                       Yutuqlar
+                    </Link>
+                    <Link
+                      href="/notifications"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-blue-400">notifications</span>
+                      Bildirishnomalar
                     </Link>
                     <button 
                       onClick={() => {
@@ -187,17 +199,27 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           </div>
 
           {/* Mobile Menu Toggle & Search */}
-          <div className="flex md:hidden items-center">
+          <div className="flex md:hidden items-center gap-1">
+            <Link 
+              href="/notifications"
+              className="text-text-primary p-2 relative"
+              aria-label="Bildirishnomalar"
+            >
+              <span className="material-symbols-outlined text-[26px]">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+            </Link>
             <Link 
               href="/search"
               className="text-text-primary p-2"
               onClick={() => setMobileMenuOpen(false)}
+              aria-label="Qidirish"
             >
               <span className="material-symbols-outlined text-[28px]">search</span>
             </Link>
             <button 
               className="text-text-primary p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Menyu"
             >
               <span className="material-symbols-outlined text-3xl">
                 {mobileMenuOpen ? "close" : "menu"}
@@ -211,9 +233,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       <div className={`md:hidden absolute top-0 left-0 w-full h-screen bg-background-obsidian/95 backdrop-blur-xl transition-transform duration-300 ease-in-out ${
         mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       }`}>
-        <div className="flex flex-col items-center justify-center h-full gap-8 px-6">
+        <div className="flex flex-col items-center justify-center h-full gap-6 px-6 overflow-y-auto py-20">
           {/* Mobile Search */}
-          <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-white/30 transition-all">
+          <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-white/30 transition-all mb-2">
             <span className="material-symbols-outlined text-text-secondary mr-3 text-[24px]">search</span>
             <input 
               type="text"
@@ -239,6 +261,33 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               </Link>
             );
           })}
+
+          <div className="w-full max-w-sm h-[1px] bg-white/10 my-2"></div>
+
+          <Link
+            href="/notifications"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 text-lg font-semibold tracking-wide text-text-secondary hover:text-primary-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[24px] text-blue-400">notifications</span>
+            Bildirishnomalar
+          </Link>
+          <Link
+            href="/history"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 text-lg font-semibold tracking-wide text-text-secondary hover:text-primary-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[24px] text-primary-container">history</span>
+            Ko'rish tarixi
+          </Link>
+          <Link
+            href="/achievements"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 text-lg font-semibold tracking-wide text-text-secondary hover:text-primary-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-[24px] text-amber-400">emoji_events</span>
+            Yutuqlar
+          </Link>
         </div>
       </div>
     </nav>
