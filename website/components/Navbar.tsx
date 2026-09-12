@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../lib/auth/AuthProvider";
 import TelegramLoginWidget from "./auth/TelegramLoginWidget";
 
@@ -15,6 +15,22 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close desktop profile dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    if (profileDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileDropdownOpen]);
 
   // Handle scroll for navbar background
   useEffect(() => {
@@ -104,9 +120,12 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
           </Link>
           
-          <div className="relative">
+          <div className="relative" ref={profileDropdownRef}>
             <div 
-              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              onClick={() => {
+                setProfileDropdownOpen(!profileDropdownOpen);
+                setMobileMenuOpen(false);
+              }}
               className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center">
               {status === "authenticated" ? (
                 <span className="font-bold text-sm text-primary-container">{user?.first_name?.charAt(0) || "U"}</span>
@@ -115,8 +134,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               )}
             </div>
             
+            {/* Desktop Dropdown */}
             {profileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-background-obsidian border border-white/10 rounded-xl p-4 shadow-2xl z-50">
+              <div className="hidden md:block absolute right-0 mt-2 w-72 bg-background-obsidian/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl z-50">
                 {status === "authenticated" ? (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3 border-b border-white/10 pb-3">
@@ -157,7 +177,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                         logout();
                         setProfileDropdownOpen(false);
                       }}
-                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 px-2 transition-colors flex items-center gap-2"
+                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 px-2 transition-colors flex items-center gap-2 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[18px]">logout</span>
                       Tizimdan chiqish
@@ -202,6 +222,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           <div className="flex md:hidden items-center gap-2">
             <Link 
               href="/notifications"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setProfileDropdownOpen(false);
+              }}
               className="text-text-primary p-2 relative"
               aria-label="Bildirishnomalar"
             >
@@ -209,8 +233,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
             </Link>
             <button 
-              className="text-text-primary p-2 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-              onClick={() => setMobileMenuOpen(true)}
+              className="text-text-primary p-2 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              onClick={() => {
+                setMobileMenuOpen(true);
+                setProfileDropdownOpen(false);
+              }}
               aria-label="Menyu"
             >
               <span className="material-symbols-outlined text-3xl">menu</span>
@@ -347,6 +374,143 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Profile Bottom Sheet Modal (Dedicated for Mobile / Telegram WebApp) */}
+      {profileDropdownOpen && (
+        <div className="md:hidden fixed inset-0 z-[110] flex flex-col justify-end">
+          {/* Backdrop overlay */}
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+            onClick={() => setProfileDropdownOpen(false)}
+          />
+
+          {/* Bottom Sheet Drawer */}
+          <div className="relative z-10 bg-background-obsidian/98 backdrop-blur-2xl border-t border-white/15 rounded-t-[32px] px-6 pt-4 pb-8 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto">
+            {/* Drag Handle Bar */}
+            <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mb-1 shrink-0" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+              <span className="text-lg font-bold text-text-primary tracking-wide">
+                {status === "authenticated" ? "Mening Profilim" : "Tizimga kirish"}
+              </span>
+              <button 
+                onClick={() => setProfileDropdownOpen(false)}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-text-primary flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Yopish"
+              >
+                <span className="material-symbols-outlined text-2xl">close</span>
+              </button>
+            </div>
+
+            {status === "authenticated" ? (
+              <div className="flex flex-col gap-4">
+                {/* User Info Card */}
+                <div className="flex items-center gap-3.5 p-4 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="w-13 h-13 rounded-full bg-primary-container/20 border-2 border-primary-container/40 flex items-center justify-center text-primary-container text-xl font-bold shrink-0">
+                    {user?.first_name?.charAt(0) || "U"}
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="font-bold text-lg text-text-primary truncate">
+                      {user?.first_name} {user?.last_name || ""}
+                    </div>
+                    <div className="text-xs text-text-secondary truncate mt-0.5">
+                      {user?.username ? `@${user.username}` : `ID: ${user?.id}`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions List */}
+                <div className="flex flex-col gap-2.5">
+                  <Link
+                    href="/history"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-primary-container/15 flex items-center justify-center text-primary-container">
+                        <span className="material-symbols-outlined text-[24px]">history</span>
+                      </div>
+                      <span className="font-semibold text-base">Ko'rish tarixi</span>
+                    </div>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container transition-colors text-[20px]">chevron_right</span>
+                  </Link>
+
+                  <Link
+                    href="/achievements"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-amber-400/15 flex items-center justify-center text-amber-400">
+                        <span className="material-symbols-outlined text-[24px]">emoji_events</span>
+                      </div>
+                      <span className="font-semibold text-base">Yutuqlar</span>
+                    </div>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px]">chevron_right</span>
+                  </Link>
+
+                  <Link
+                    href="/notifications"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-blue-400/15 flex items-center justify-center text-blue-400">
+                        <span className="material-symbols-outlined text-[24px]">notifications</span>
+                      </div>
+                      <span className="font-semibold text-base">Bildirishnomalar</span>
+                    </div>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-blue-400 transition-colors text-[20px]">chevron_right</span>
+                  </Link>
+                </div>
+
+                {/* Logout Button */}
+                <button 
+                  onClick={() => {
+                    logout();
+                    setProfileDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-sm transition-all border border-red-500/20 mt-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">logout</span>
+                  Tizimdan chiqish
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4 py-2">
+                <p className="text-sm text-text-secondary text-center">
+                  Ko'rish tarixi, yutuqlar va shaxsiy tavsiyalardan foydalanish uchun tizimga kiring:
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
+                      setProfileDropdownOpen(false);
+                    } catch (err) {
+                      console.error("Login failed:", err);
+                    }
+                  }}
+                  className="w-full py-3.5 px-4 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">bolt</span>
+                  1-Bosishda Tezkor Kirish (XOJA)
+                </button>
+
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-white/10"></div>
+                  <span className="flex-shrink mx-3 text-xs text-text-secondary">yoki Telegram orqali</span>
+                  <div className="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <div className="flex justify-center pb-2">
+                  <TelegramLoginWidget />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
