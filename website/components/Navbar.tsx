@@ -198,98 +198,158 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             )}
           </div>
 
-          {/* Mobile Menu Toggle & Search */}
-          <div className="flex md:hidden items-center gap-1">
+          {/* Mobile Menu Toggle */}
+          <div className="flex md:hidden items-center gap-2">
             <Link 
               href="/notifications"
               className="text-text-primary p-2 relative"
               aria-label="Bildirishnomalar"
             >
-              <span className="material-symbols-outlined text-[26px]">notifications</span>
+              <span className="material-symbols-outlined text-[24px]">notifications</span>
               <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
             </Link>
-            <Link 
-              href="/search"
-              className="text-text-primary p-2"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Qidirish"
-            >
-              <span className="material-symbols-outlined text-[28px]">search</span>
-            </Link>
             <button 
-              className="text-text-primary p-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-text-primary p-2 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+              onClick={() => setMobileMenuOpen(true)}
               aria-label="Menyu"
             >
-              <span className="material-symbols-outlined text-3xl">
-                {mobileMenuOpen ? "close" : "menu"}
-              </span>
+              <span className="material-symbols-outlined text-3xl">menu</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
-      <div className={`md:hidden absolute top-0 left-0 w-full h-screen bg-background-obsidian/95 backdrop-blur-xl transition-transform duration-300 ease-in-out ${
-        mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      }`}>
-        <div className="flex flex-col items-center justify-center h-full gap-6 px-6 overflow-y-auto py-20">
-          {/* Mobile Search */}
-          <form onSubmit={handleSearch} className="flex w-full max-w-sm items-center bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-white/30 transition-all mb-2">
-            <span className="material-symbols-outlined text-text-secondary mr-3 text-[24px]">search</span>
-            <input 
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-text-primary text-lg w-full outline-none placeholder:text-text-secondary" 
-              placeholder="Qidirish..." 
-            />
-          </form>
+      {/* Mobile Navigation Drawer (Full-screen overlay, perfectly structured) */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[100] bg-background-obsidian/98 backdrop-blur-2xl flex flex-col">
+          {/* Drawer Top Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+            <Link 
+              href="/" 
+              onClick={() => setMobileMenuOpen(false)} 
+              className="font-display-hero-mobile text-[26px] text-primary-container tracking-tighter"
+            >
+              Kinochi
+            </Link>
+            <button 
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-text-primary hover:bg-white/20 transition-colors cursor-pointer"
+              aria-label="Yopish"
+            >
+              <span className="material-symbols-outlined text-2xl">close</span>
+            </button>
+          </div>
 
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-            return (
+          {/* Drawer Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+            {/* Search Input */}
+            <form onSubmit={handleSearch} className="flex w-full items-center bg-white/10 rounded-xl px-4 py-3 border border-white/10 focus-within:border-primary-container transition-all">
+              <span className="material-symbols-outlined text-text-secondary mr-3 text-[22px]">search</span>
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-text-primary text-base w-full outline-none placeholder:text-text-secondary" 
+                placeholder="Kino yoki serial qidirish..." 
+              />
+            </form>
+
+            {/* Navigation Sections */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary px-1 mb-1">Bo'limlar</span>
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center px-4 py-3 rounded-xl text-lg font-bold tracking-wide transition-all ${
+                      isActive 
+                        ? "bg-primary-container text-white shadow-lg shadow-primary-container/20" 
+                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="h-[1px] bg-white/10 w-full my-1"></div>
+
+            {/* User Quick Links */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary px-1 mb-1">Foydalanuvchi</span>
               <Link
-                key={link.name}
-                href={link.href}
+                href="/notifications"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`text-2xl font-bold tracking-wide transition-colors ${
-                  isActive ? "text-primary-container" : "text-text-secondary"
-                }`}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
-                {link.name}
+                <span className="material-symbols-outlined text-[22px] text-blue-400">notifications</span>
+                Bildirishnomalar
               </Link>
-            );
-          })}
+              <Link
+                href="/history"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
+              >
+                <span className="material-symbols-outlined text-[22px] text-primary-container">history</span>
+                Ko'rish tarixi
+              </Link>
+              <Link
+                href="/achievements"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
+              >
+                <span className="material-symbols-outlined text-[22px] text-amber-400">emoji_events</span>
+                Yutuqlar
+              </Link>
+            </div>
 
-          <div className="w-full max-w-sm h-[1px] bg-white/10 my-2"></div>
-
-          <Link
-            href="/notifications"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 text-lg font-semibold tracking-wide text-text-secondary hover:text-primary-container transition-colors"
-          >
-            <span className="material-symbols-outlined text-[24px] text-blue-400">notifications</span>
-            Bildirishnomalar
-          </Link>
-          <Link
-            href="/history"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 text-lg font-semibold tracking-wide text-text-secondary hover:text-primary-container transition-colors"
-          >
-            <span className="material-symbols-outlined text-[24px] text-primary-container">history</span>
-            Ko'rish tarixi
-          </Link>
-          <Link
-            href="/achievements"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 text-lg font-semibold tracking-wide text-text-secondary hover:text-primary-container transition-colors"
-          >
-            <span className="material-symbols-outlined text-[24px] text-amber-400">emoji_events</span>
-            Yutuqlar
-          </Link>
+            {/* User Profile / Logout Section */}
+            <div className="mt-auto pt-4 border-t border-white/10">
+              {status === "authenticated" ? (
+                <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-bold">
+                      {user?.first_name?.charAt(0) || "U"}
+                    </div>
+                    <div className="overflow-hidden">
+                      <div className="font-bold text-sm text-text-primary truncate">{user?.first_name}</div>
+                      <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-xs text-red-400 hover:text-red-300 font-semibold px-3 py-1.5 rounded-lg bg-white/5 cursor-pointer"
+                  >
+                    Chiqish
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    try {
+                      await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
+                      setMobileMenuOpen(false);
+                    } catch (err) {
+                      console.error("Login failed:", err);
+                    }
+                  }}
+                  className="w-full py-3 px-4 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">bolt</span>
+                  1-Bosishda Kirish (XOJA)
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 }
