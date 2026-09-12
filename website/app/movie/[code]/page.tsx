@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title: `${movie.title} - Kinochi`,
         description: movie.description || `${movie.title} filmini bepul tomosha qiling.`,
-        url: `https://kinochi.uz/movie/${params.code}`,
+        url: `https://kinochi-project-alpha.vercel.app/movie/${params.code}`,
         images: movie.poster_url ? [
           {
             url: movie.poster_url,
@@ -126,7 +126,9 @@ export default async function MovieDetailsPage({ params }: Props) {
               <ShareButton 
                 title={movie.title} 
                 text={`${movie.title} filmini bepul tomosha qiling.`}
-                url={`https://kinochi.uz/movie/${movie.code}`}
+                url={`/movie/${movie.code}`}
+                code={movie.code}
+                botUsername={botUsername}
               />
             </div>
           </div>

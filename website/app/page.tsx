@@ -216,7 +216,9 @@ export default async function Home() {
                 <ShareButton 
                   title={heroItem.title} 
                   text={`${heroItem.title} ni bepul tomosha qiling.`}
-                  url={`https://kinochi.uz/${isHeroSeries ? 'series' : 'movie'}/${isHeroSeries ? heroItem.id : heroItem.code}`}
+                  url={`/${isHeroSeries ? 'series' : 'movie'}/${isHeroSeries ? heroItem.id : heroItem.code}`}
+                  code={isHeroSeries ? `s_${heroItem.id}` : heroItem.code}
+                  botUsername={botUsername}
                 />
               </div>
             </div>

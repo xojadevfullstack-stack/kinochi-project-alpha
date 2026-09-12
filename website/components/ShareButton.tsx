@@ -4,20 +4,57 @@ import { useState } from "react";
 
 interface ShareButtonProps {
   title: string;
-  text: string;
-  url: string;
+  text?: string;
+  url?: string;
+  code?: string;
+  botUsername?: string;
 }
 
-export default function ShareButton({ title, text, url }: ShareButtonProps) {
+export default function ShareButton({ title, text: _text, url = "", code, botUsername }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = async () => {
+  // Determine site base URL (prefer real window.location, fallback to Vercel production URL)
+  const getFullWebUrl = () => {
+    let siteBase = "https://kinochi-project-alpha.vercel.app";
+    if (typeof window !== "undefined" && window.location.origin) {
+      if (!window.location.origin.includes("localhost")) {
+        siteBase = window.location.origin;
+      }
+    }
+    let target = url || (typeof window !== "undefined" ? window.location.pathname : "");
+    if (target.startsWith("https://kinochi.uz")) {
+      target = target.replace("https://kinochi.uz", siteBase);
+    } else if (target.startsWith("/")) {
+      target = `${siteBase}${target}`;
+    } else if (!target.startsWith("http")) {
+      target = `${siteBase}/${target}`;
+    }
+    return target;
+  };
+
+  // Determine item code (movie code or series s_{id})
+  const getItemCode = (fullUrl: string) => {
+    if (code) return code;
+    const movieMatch = fullUrl.match(/\/movie\/([A-Za-z0-9_-]+)/);
+    if (movieMatch) return movieMatch[1];
+    const seriesMatch = fullUrl.match(/\/series\/([0-9]+)/);
+    if (seriesMatch) return `s_${seriesMatch[1]}`;
+    return null;
+  };
+
+  const handleShare = async () => {
+    const fullWebUrl = getFullWebUrl();
+    const itemCode = getItemCode(fullWebUrl);
+    const botUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+    const botLink = itemCode ? `https://t.me/${botUser}?start=${itemCode}` : `https://t.me/${botUser}`;
+
+    // 1. Copy URL to clipboard immediately
     try {
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(fullWebUrl);
       } else {
         const input = document.createElement("input");
-        input.value = url;
+        input.value = fullWebUrl;
         document.body.appendChild(input);
         input.select();
         document.execCommand("copy");
@@ -28,14 +65,16 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
     } catch (err) {
       console.error("Copy failed:", err);
     }
-  };
 
-  const handleShare = async () => {
-    // 1. Copy URL to clipboard immediately
-    await copyToClipboard();
+    // 2. Build Telegram share text with title, code, bot link and web link
+    const shareLines = [
+      `🎬 ${title}`,
+      itemCode ? `🔑 Kod: ${itemCode}` : null,
+      "",
+      `🍿 Botda tomosha qilish: ${botLink}`,
+    ].filter(line => line !== null).join("\n");
 
-    // 2. Build Telegram share URL
-    const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title + "\n" + (text || ""))}`;
+    const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(fullWebUrl)}&text=${encodeURIComponent(shareLines)}`;
 
     // 3. Check if inside Telegram WebApp
     const tg = typeof window !== "undefined" ? (window as any).Telegram?.WebApp : null;
@@ -48,10 +87,14 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
     const isMobile = typeof navigator !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent);
     if (isMobile && navigator.share) {
       try {
-        await navigator.share({ title, text, url });
+        await navigator.share({
+          title,
+          text: shareLines,
+          url: fullWebUrl
+        });
         return;
       } catch (err) {
-        // User cancelled or share failed
+        // Fallback or user dismissed
       }
     }
 

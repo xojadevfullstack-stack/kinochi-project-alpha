@@ -284,8 +284,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
                 <ShareButton
                   title={activeItem.title}
-                  text={`${activeItem.title} ni Kinochi portalida bepul tomosha qiling!`}
-                  url={`https://kinochi.uz${watchUrl}`}
+                  text={`${activeItem.title} ni bepul tomosha qiling!`}
+                  url={watchUrl}
+                  code={activeItem.is_series ? `s_${activeItem.id}` : (activeItem.code || String(activeItem.id))}
                 />
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { fetchApi } from '@/lib/api';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://kinochi.uz';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://kinochi-project-alpha.vercel.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes: MetadataRoute.Sitemap = [

@@ -17,11 +17,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Kinochi - Eng so'nggi kinolar va seriallar",
     description: "Kinochi Telegram boti orqali eng sara kinolarni bepul tomosha qiling. Eng katta kino katalogi.",
-    url: "https://kinochi.uz",
+    url: "https://kinochi-project-alpha.vercel.app",
     siteName: "Kinochi",
     images: [
       {
-        url: "https://kinochi.uz/default-og-image.jpg", 
+        url: "https://kinochi-project-alpha.vercel.app/default-og-image.jpg", 
         width: 1200,
         height: 630,
         alt: "Kinochi - Bosh sahifa",
