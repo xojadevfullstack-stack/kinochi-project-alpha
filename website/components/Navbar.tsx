@@ -15,7 +15,28 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Synchronize unread notification status
+  useEffect(() => {
+    const updateUnreadStatus = () => {
+      try {
+        const val = localStorage.getItem("kinochi_has_unread");
+        setHasUnread(val === "true");
+      } catch (e) {
+        setHasUnread(false);
+      }
+    };
+
+    updateUnreadStatus();
+    window.addEventListener("kinochi_notifications_updated", updateUnreadStatus);
+    window.addEventListener("storage", updateUnreadStatus);
+    return () => {
+      window.removeEventListener("kinochi_notifications_updated", updateUnreadStatus);
+      window.removeEventListener("storage", updateUnreadStatus);
+    };
+  }, []);
 
   // Close desktop profile dropdown on outside click
   useEffect(() => {
@@ -117,7 +138,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             className="relative hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center group"
           >
             <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+            {hasUnread && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+            )}
           </Link>
           
           <div className="relative" ref={profileDropdownRef}>
@@ -167,10 +190,15 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <Link
                       href="/notifications"
                       onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
+                      className="flex items-center justify-between text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
                     >
-                      <span className="material-symbols-outlined text-[20px] text-blue-400">notifications</span>
-                      Bildirishnomalar
+                      <div className="flex items-center gap-2.5">
+                        <span className="material-symbols-outlined text-[20px] text-blue-400">notifications</span>
+                        Bildirishnomalar
+                      </div>
+                      {hasUnread && (
+                        <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                      )}
                     </Link>
                     <button 
                       onClick={() => {
@@ -230,7 +258,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               aria-label="Bildirishnomalar"
             >
               <span className="material-symbols-outlined text-[24px]">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+              {hasUnread && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+              )}
             </Link>
             <button 
               className="text-text-primary p-2 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
@@ -311,10 +341,15 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <Link
                 href="/notifications"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
+                className="flex items-center justify-between px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
-                <span className="material-symbols-outlined text-[22px] text-blue-400">notifications</span>
-                Bildirishnomalar
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[22px] text-blue-400">notifications</span>
+                  Bildirishnomalar
+                </div>
+                {hasUnread && (
+                  <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                )}
               </Link>
               <Link
                 href="/history"
@@ -464,7 +499,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       </div>
                       <span className="font-semibold text-base">Bildirishnomalar</span>
                     </div>
-                    <span className="material-symbols-outlined text-text-secondary group-hover:text-blue-400 transition-colors text-[20px]">chevron_right</span>
+                    {hasUnread ? (
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary-container animate-pulse mr-2"></span>
+                    ) : (
+                      <span className="material-symbols-outlined text-text-secondary group-hover:text-blue-400 transition-colors text-[20px]">chevron_right</span>
+                    )}
                   </Link>
                 </div>
 

@@ -29,18 +29,30 @@ export default function NotificationsPage() {
       const list: NotificationItem[] = [];
 
       try {
+        // Read persisted read notification IDs from localStorage
+        let readIds = new Set<string>();
+        try {
+          const saved = localStorage.getItem("kinochi_read_notification_ids");
+          if (saved) {
+            readIds = new Set(JSON.parse(saved));
+          }
+        } catch (e) {
+          console.error("Failed to load read notifications from localStorage:", e);
+        }
+
         // 1. Fetch system broadcasts / announcements
         try {
           const bData = await fetchApi("/broadcasts?limit=5");
           if (bData && bData.items) {
             bData.items.forEach((b: any) => {
+              const id = `sys-${b.id}`;
               list.push({
-                id: `sys-${b.id}`,
+                id,
                 type: "system",
                 title: "📢 Tizim Yangiligi",
                 message: b.message_text,
                 created_at: b.created_at || new Date().toISOString(),
-                is_read: false,
+                is_read: readIds.has(id),
                 icon: "campaign",
               });
             });
@@ -52,35 +64,47 @@ export default function NotificationsPage() {
         // 2. Fetch personal watch history to generate tailored notifications
         if (status === "authenticated") {
           try {
-            const hData = await getHistory(0, 10);
+            const hData = await getHistory(0, 15);
             const historyItems: HistoryItem[] = hData.items || [];
 
-            // Personal alerts based on watched series/movies
-            historyItems.forEach((h, idx) => {
+            // Deduplicate: only generate 1 notification per unique movie and 1 per unique series!
+            const seenMovies = new Set<number>();
+            const seenSeries = new Set<number>();
+
+            for (const h of historyItems) {
               if (h.type === "movie" && h.movie) {
-                list.push({
-                  id: `rec-m-${h.movie.id}-${idx}`,
-                  type: "personal",
-                  title: `🎬 "${h.movie.title}" filmiga o'xshash premyeralar!`,
-                  message: `Siz yaqinda ushbu filmni tomosha qildingiz. Xuddi shu janrdagi yangi saralangan kinolarni ko'rishni tavsiya qilamiz.`,
-                  target_url: `/movie/${h.movie.code}`,
-                  created_at: h.last_watched_at,
-                  is_read: idx > 1,
-                  icon: "movie",
-                });
+                if (!seenMovies.has(h.movie.id)) {
+                  seenMovies.add(h.movie.id);
+                  const id = `rec-m-${h.movie.id}`;
+                  list.push({
+                    id,
+                    type: "personal",
+                    title: `🎬 "${h.movie.title}" filmiga o'xshash tavsiyalar`,
+                    message: `Siz yaqinda ushbu filmni ko'rdingiz. Sizga yoqishi mumkin bo'lgan shunga o'xshash saralangan kinolarni ko'rishni tavsiya qilamiz.`,
+                    target_url: `/movie/${h.movie.code}`,
+                    created_at: h.last_watched_at,
+                    is_read: readIds.has(id),
+                    icon: "movie",
+                  });
+                }
               } else if (h.type === "episode" && h.episode) {
-                list.push({
-                  id: `rec-e-${h.episode.id}-${idx}`,
-                  type: "personal",
-                  title: `📺 "${h.episode.series_title}" serialida yangi qismlar!`,
-                  message: `Siz ${h.episode.season_number}-faslni ko'rmoqdasiz. Davom ettirish uchun bosing!`,
-                  target_url: `/series/${h.episode.series_id}`,
-                  created_at: h.last_watched_at,
-                  is_read: false,
-                  icon: "live_tv",
-                });
+                const sId = h.episode.series_id;
+                if (sId && !seenSeries.has(sId)) {
+                  seenSeries.add(sId);
+                  const id = `rec-s-${sId}`;
+                  list.push({
+                    id,
+                    type: "personal",
+                    title: `📺 "${h.episode.series_title}" serialini davom ettirish`,
+                    message: `Siz ${h.episode.season_number}-fasl, ${h.episode.episode_number}-qismni tomosha qildingiz. Serialni davom ettirish uchun bosing!`,
+                    target_url: `/series/${sId}`,
+                    created_at: h.last_watched_at,
+                    is_read: readIds.has(id),
+                    icon: "live_tv",
+                  });
+                }
               }
-            });
+            }
           } catch (err) {
             console.error("Error loading personal alerts:", err);
           }
@@ -88,19 +112,27 @@ export default function NotificationsPage() {
 
         // 3. Fallback welcome notification if list is empty
         if (list.length === 0) {
+          const id = "sys-welcome";
           list.push({
-            id: "sys-welcome",
+            id,
             type: "system",
             title: "🎉 Kinochi platformasiga xush kelibsiz!",
             message: "Eng sara kinolar, seriallar, anime va doramalarni eng yuqori sifatda tomosha qiling.",
             target_url: "/",
             created_at: new Date().toISOString(),
-            is_read: false,
+            is_read: readIds.has(id),
             icon: "star",
           });
         }
 
         setNotifications(list);
+
+        // Synchronize unread status with localStorage
+        const hasUnread = list.some((n) => !n.is_read);
+        try {
+          localStorage.setItem("kinochi_has_unread", hasUnread ? "true" : "false");
+          window.dispatchEvent(new Event("kinochi_notifications_updated"));
+        } catch (e) {}
       } finally {
         setLoading(false);
       }
@@ -110,7 +142,37 @@ export default function NotificationsPage() {
   }, [status]);
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, is_read: true }));
+      try {
+        const allIds = updated.map((n) => n.id);
+        localStorage.setItem("kinochi_read_notification_ids", JSON.stringify(allIds));
+        localStorage.setItem("kinochi_has_unread", "false");
+        window.dispatchEvent(new Event("kinochi_notifications_updated"));
+      } catch (err) {
+        console.error("Failed to save read notifications:", err);
+      }
+      return updated;
+    });
+  };
+
+  const markItemAsRead = (id: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, is_read: true } : n));
+      try {
+        const saved: string[] = JSON.parse(localStorage.getItem("kinochi_read_notification_ids") || "[]");
+        if (!saved.includes(id)) {
+          saved.push(id);
+          localStorage.setItem("kinochi_read_notification_ids", JSON.stringify(saved));
+        }
+        const hasUnread = updated.some((n) => !n.is_read);
+        localStorage.setItem("kinochi_has_unread", hasUnread ? "true" : "false");
+        window.dispatchEvent(new Event("kinochi_notifications_updated"));
+      } catch (err) {
+        console.error("Failed to mark notification as read:", err);
+      }
+      return updated;
+    });
   };
 
   const filtered = notifications.filter((n) => {
@@ -206,7 +268,8 @@ export default function NotificationsPage() {
             {filtered.map((item) => (
               <div
                 key={item.id}
-                className={`rounded-2xl p-4 md:p-5 border transition-all flex items-start gap-4 ${
+                onClick={() => markItemAsRead(item.id)}
+                className={`rounded-2xl p-4 md:p-5 border transition-all flex items-start gap-4 cursor-pointer hover:border-primary-container/40 ${
                   item.is_read
                     ? "bg-surface-container/30 border-white/5 opacity-75"
                     : "bg-surface-container/80 border-primary-container/30 shadow-lg shadow-primary-container/5"
@@ -224,7 +287,14 @@ export default function NotificationsPage() {
 
                 <div className="flex-grow">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                    <h4 className="font-bold text-base text-white">{item.title}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-base text-white">{item.title}</h4>
+                      {!item.is_read && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-container text-on-primary-container">
+                          Yangi
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] text-text-secondary shrink-0">
                       {new Date(item.created_at).toLocaleDateString("uz-UZ", {
                         day: "numeric",
@@ -239,6 +309,7 @@ export default function NotificationsPage() {
                   {item.target_url && (
                     <Link
                       href={item.target_url}
+                      onClick={() => markItemAsRead(item.id)}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-container hover:text-primary-container/80 transition-colors"
                     >
                       <span>Tomosha qilish</span>
