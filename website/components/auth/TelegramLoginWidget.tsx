@@ -31,8 +31,7 @@ export default function TelegramLoginWidget() {
 
     // Create the script element dynamically
     const script = document.createElement("script");
-    // Add random param so the browser re-evaluates the script every time the dropdown opens
-    script.src = `https://telegram.org/js/telegram-widget.js?22&r=${Math.random()}`;
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
     script.async = true;
     script.setAttribute("data-telegram-login", botUsername);
     script.setAttribute("data-size", "large");
