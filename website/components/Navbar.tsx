@@ -101,14 +101,19 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   };
 
   const handleLinkClick = (href: string) => {
-    setMobileMenuOpen(false);
-    setProfileDropdownOpen(false);
     if (typeof window !== "undefined") {
       document.body.style.overflow = "";
     }
-    if (pathname !== href) {
-      router.push(href);
+    if (pathname === href) {
+      setMobileMenuOpen(false);
+      setProfileDropdownOpen(false);
+      return;
     }
+    router.push(href);
+    setTimeout(() => {
+      setMobileMenuOpen(false);
+      setProfileDropdownOpen(false);
+    }, 150);
   };
 
   const navLinks = [
