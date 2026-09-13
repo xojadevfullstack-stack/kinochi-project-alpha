@@ -248,14 +248,18 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                         <span className="material-symbols-outlined text-[20px] text-sky-400">history</span>
                         <span>Ko'rish tarixi</span>
                       </Link>
-                      <Link
+                      <a
                         href="/achievements"
-                        onClick={() => handleLinkClick("/achievements")}
-                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.href = "/achievements";
+                          }
+                        }}
+                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
-                        <span>Yutuqlar</span>
-                      </Link>
+                        <span className="material-symbols-outlined text-[20px] text-amber-400 pointer-events-none">emoji_events</span>
+                        <span className="pointer-events-none">Yutuqlar</span>
+                      </a>
                       <button
                         onClick={() => {
                           logout();
@@ -269,14 +273,18 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     </div>
                   ) : (
                     <div className="flex flex-col gap-3">
-                      <Link
+                      <a
                         href="/achievements"
-                        onClick={() => handleLinkClick("/achievements")}
-                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.href = "/achievements";
+                          }
+                        }}
+                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
-                        <span>Yutuqlar</span>
-                      </Link>
+                        <span className="material-symbols-outlined text-[20px] text-amber-400 pointer-events-none">emoji_events</span>
+                        <span className="pointer-events-none">Yutuqlar</span>
+                      </a>
                       <div className="border-t border-white/10 pt-2">
                         <p className="text-xs text-text-secondary text-center mb-2.5">
                           Tizimga kiring:
@@ -405,12 +413,18 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
         <div className="xl:hidden fixed inset-0 z-[110] flex flex-col justify-end overscroll-contain">
           {/* Backdrop overlay */}
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
-            onClick={() => setProfileDropdownOpen(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              setProfileDropdownOpen(false);
+            }}
           />
 
           {/* Bottom Sheet Drawer */}
-          <div className="relative z-10 bg-background-obsidian/98 backdrop-blur-2xl border-t border-white/15 rounded-t-[32px] px-6 pt-4 pb-8 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 max-h-[85vh] max-h-[85dvh] overflow-y-auto overscroll-contain">
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative z-20 bg-background-obsidian/98 backdrop-blur-2xl border-t border-white/15 rounded-t-[32px] px-6 pt-4 pb-8 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 max-h-[85vh] max-h-[85dvh] overflow-y-auto overscroll-contain pointer-events-auto"
+          >
             {/* Drag Handle Bar */}
             <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mb-1 shrink-0" />
 
@@ -420,7 +434,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 {status === "authenticated" ? "Mening Profilim" : "Tizimga kirish"}
               </span>
               <button 
-                onClick={() => setProfileDropdownOpen(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProfileDropdownOpen(false);
+                }}
                 className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-text-primary flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Yopish"
               >
@@ -447,19 +464,25 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
                 {/* Actions List */}
                 <div className="flex flex-col gap-2.5">
-                  <Link
+                  <a
                     href="/achievements"
-                    onClick={() => handleLinkClick("/achievements")}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (typeof window !== "undefined") {
+                        document.body.style.overflow = "";
+                        window.location.href = "/achievements";
+                      }
+                    }}
+                    className="relative z-30 pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-3.5 pointer-events-none">
                       <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
                         <span className="material-symbols-outlined text-[24px]">emoji_events</span>
                       </div>
                       <span className="font-semibold text-base">Yutuqlar</span>
                     </div>
-                    <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px]">chevron_right</span>
-                  </Link>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px] pointer-events-none">chevron_right</span>
+                  </a>
                 </div>
 
                 {/* Logout Button */}
@@ -476,19 +499,25 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               </div>
             ) : (
               <div className="flex flex-col gap-3.5 py-1">
-                <Link
+                <a
                   href="/achievements"
-                  onClick={() => handleLinkClick("/achievements")}
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (typeof window !== "undefined") {
+                      document.body.style.overflow = "";
+                      window.location.href = "/achievements";
+                    }
+                  }}
+                  className="relative z-30 pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                 >
-                  <div className="flex items-center gap-3.5">
+                  <div className="flex items-center gap-3.5 pointer-events-none">
                     <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
                       <span className="material-symbols-outlined text-[24px]">emoji_events</span>
                     </div>
                     <span className="font-semibold text-base">Yutuqlar</span>
                   </div>
-                  <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px]">chevron_right</span>
-                </Link>
+                  <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px] pointer-events-none">chevron_right</span>
+                </a>
 
                 <div className="border-t border-white/10 pt-2">
                   <p className="text-xs sm:text-sm text-text-secondary text-center mb-3">
