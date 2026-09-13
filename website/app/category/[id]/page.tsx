@@ -75,15 +75,24 @@ export default async function CategoryPage({ params }: { params: { id: string } 
             </h1>
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta kino kolleksiyamiz bilan tanishing.</p>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-            <Link href="/movies" className="px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10">Barchasi</Link>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 hide-scrollbar scroll-smooth">
+            <Link 
+              href="/movies" 
+              className="px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
+            >
+              Barchasi
+            </Link>
             {categories.map(cat => {
               const isActive = String(cat.id) === params.id;
               return (
                 <Link 
                   key={cat.id} 
                   href={`/category/${cat.id}`}
-                  className={`px-6 py-2 rounded-full font-label-caps text-xs uppercase tracking-widest font-bold whitespace-nowrap transition-colors ${isActive ? "bg-primary-container text-white shadow-[0_0_15px_rgba(229,9,20,0.5)]" : "bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"}`}
+                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
+                    isActive 
+                      ? "bg-primary-container text-white border-primary-container shadow-md shadow-primary-container/25 font-bold" 
+                      : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
+                  }`}
                 >
                   {cat.name}
                 </Link>

@@ -213,13 +213,13 @@ export default async function Home() {
                 {heroItem.description || "Telegram tarmog'idagi eng katta va qulay kino bazasi. O'zingiz yoqtirgan filmlarni toping va bepul tomosha qiling."}
               </p>
               
-              <div className="flex flex-row gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center w-full sm:w-auto">
                 <Link 
                   href={isHeroSeries ? `/series/${heroItem.id}` : `/movie/${heroItem.code}`}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 sm:gap-3 bg-primary-container text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 shadow-lg shadow-primary-container/20 hover:shadow-primary-container/30 transition-all duration-200 font-bold active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 shadow-lg shadow-primary-container/25 hover:shadow-primary-container/35 transition-all duration-200 font-bold active:scale-95 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[20px] sm:text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-                  <span>Tomosha qilish</span>
+                  <span className="material-symbols-outlined text-[20px] sm:text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+                  <span>TOMOSHA QILISH</span>
                 </Link>
                 <ShareButton 
                   title={heroItem.title} 
@@ -227,7 +227,7 @@ export default async function Home() {
                   url={`/${isHeroSeries ? 'series' : 'movie'}/${isHeroSeries ? heroItem.id : heroItem.code}`}
                   code={isHeroSeries ? `s_${heroItem.id}` : heroItem.code}
                   botUsername={botUsername}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest border border-white/10 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 font-bold active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest border border-white/15 hover:border-white/30 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 font-bold active:scale-95 shadow-md shadow-black/20 cursor-pointer"
                 />
               </div>
             </div>

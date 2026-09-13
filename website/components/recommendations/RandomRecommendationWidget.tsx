@@ -25,6 +25,22 @@ interface Props {
   pages?: any[];
 }
 
+function getPageIcon(title: string) {
+  const t = title.toLowerCase();
+  if (t.includes("anime")) return "🎌";
+  if (t.includes("dorama") || t.includes("koreys")) return "🎭";
+  if (t.includes("mult") || t.includes("kartun") || t.includes("bolalar")) return "🧸";
+  if (t.includes("marvel") || t.includes("dc") || t.includes("komiks")) return "🦸";
+  if (t.includes("turk")) return "🌙";
+  if (t.includes("retro") || t.includes("klassik")) return "📽️";
+  if (t.includes("top") || t.includes("hit") || t.includes("trend")) return "🔥";
+  if (t.includes("hujjatli") || t.includes("doc")) return "📜";
+  if (t.includes("fantastik")) return "🚀";
+  if (t.includes("jangari") || t.includes("jang")) return "⚔️";
+  if (t.includes("horror") || t.includes("qo'rqinchli")) return "👻";
+  return "📂";
+}
+
 export default function RandomRecommendationWidget({ movies = [], series = [], pages = [] }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -108,84 +124,79 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
   const watchUrl = activeItem?.is_series ? `/series/${activeItem.id}` : `/movie/${activeItem?.code || activeItem?.id}`;
 
+  const activePages = pages.filter((p) => p.is_active !== false);
+
   return (
     <section className="max-w-container-max mx-auto px-gutter my-10 relative z-20">
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/10 p-5 sm:p-8 backdrop-blur-md">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 sm:mb-8">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-surface-container/30 border border-white/10 p-5 sm:p-8 backdrop-blur-md">
+        {/* Section Header - Matching site style */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-text-secondary text-xs font-medium mb-2">
-              <span className="material-symbols-outlined text-[16px] text-primary-container">shuffle</span>
-              <span>Tavsiya Generator</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
-              Nima ko'rishni bilmayapsizmi?
+            <h2 className="font-headline-md text-xl sm:text-2xl md:text-3xl text-text-primary flex items-center gap-2.5 font-bold tracking-tight">
+              <span className="w-1 h-6 bg-rating-gold rounded-full block"></span>
+              Tasodifiy Tavsiya
             </h2>
             <p className="text-text-secondary text-xs sm:text-sm mt-1">
-              Yo'nalishni tanlang va qiziqarli kino yoki serial toping
+              Yo&apos;nalishni tanlang va qiziqarli kino yoki serialni kashf eting
             </p>
           </div>
         </div>
 
-        {/* Category Pills */}
+        {/* Category Pills - Identical to CatalogTypeNav */}
         <div className="relative mb-6 md:mb-8 -mx-1 px-1">
           <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 hide-scrollbar scroll-smooth">
             <button
               onClick={() => handleCategoryChange("all")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
                 selectedCategory === "all"
-                  ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
-                  : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
+                  ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                  : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]">apps</span>
-              Hammasi
+              <span>✨</span>
+              <span>Hammasi</span>
             </button>
 
             <button
               onClick={() => handleCategoryChange("movies")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
                 selectedCategory === "movies"
-                  ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
-                  : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
+                  ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                  : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]">movie</span>
-              Kinolar
+              <span>🎬</span>
+              <span>Kinolar</span>
             </button>
 
             <button
               onClick={() => handleCategoryChange("series")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
                 selectedCategory === "series"
-                  ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
-                  : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
+                  ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                  : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]">tv</span>
-              Seriallar
+              <span>📺</span>
+              <span>Seriallar</span>
             </button>
 
-            {pages.map((p) => {
+            {activePages.map((p) => {
               const pKey = `page_${p.id}`;
-              const titleLower = (p.title || "").toLowerCase();
-              let icon = "folder";
-              if (titleLower.includes("anime")) icon = "animation";
-              else if (titleLower.includes("dorama")) icon = "theater_comedy";
-              else if (titleLower.includes("mult")) icon = "smart_toy";
+              const icon = getPageIcon(p.title || "");
 
               return (
                 <button
                   key={p.id}
                   onClick={() => handleCategoryChange(pKey)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
                     selectedCategory === pKey
-                      ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
-                      : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
+                      ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                      : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">{icon}</span>
-                  {p.title}
+                  <span>{icon}</span>
+                  <span>{p.title}</span>
                 </button>
               );
             })}
@@ -240,31 +251,31 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                 {activeItem.title}
               </h3>
 
-              <p className="text-text-secondary text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 md:line-clamp-4 max-w-2xl mb-5 leading-relaxed font-normal">
+              <p className="text-text-secondary text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 md:line-clamp-4 max-w-2xl mb-6 leading-relaxed font-normal">
                 {activeItem.description || "Ushbu film haqida to'liq ma'lumot olish va tomosha qilish uchun pastdagi tugmani bosing."}
               </p>
 
-              {/* Action Buttons - Soft, eye-friendly styles */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
+              {/* Action Buttons - Fully unified with Hero & Movie details */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto">
                 <Link
                   href={watchUrl}
-                  className="flex-1 sm:flex-initial sm:min-w-[140px] h-11 px-5 rounded-xl bg-primary-container/90 hover:bg-primary-container text-white font-semibold text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer shadow-lg shadow-primary-container/20"
+                  className="flex-1 sm:flex-initial h-12 sm:h-14 px-6 sm:px-8 rounded-xl bg-primary-container hover:bg-inverse-primary text-white font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-lg shadow-primary-container/25 hover:shadow-primary-container/35 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     play_circle
                   </span>
-                  <span>Tomosha qilish</span>
+                  <span>TOMOSHA QILISH</span>
                 </Link>
 
                 <button
                   onClick={handleNext}
                   disabled={isSpinning || filteredItems.length <= 1}
-                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:hover:translate-y-0"
+                  className="flex-1 sm:flex-initial h-12 sm:h-14 px-5 sm:px-6 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:hover:translate-y-0"
                 >
                   <span className={`material-symbols-outlined text-[18px] text-rating-gold ${isSpinning ? "animate-spin" : ""}`}>
                     autorenew
                   </span>
-                  <span>Keyingi</span>
+                  <span>KEYINGI</span>
                 </button>
 
                 <ShareButton
@@ -272,8 +283,8 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   text={`${activeItem.title} ni bepul tomosha qiling!`}
                   url={watchUrl}
                   code={activeItem.is_series ? `s_${activeItem.id}` : (activeItem.code || String(activeItem.id))}
-                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-                  buttonText="Ulashish"
+                  className="flex-1 sm:flex-initial h-12 sm:h-14 px-5 sm:px-6 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  buttonText="ULASHISH"
                 />
               </div>
             </div>

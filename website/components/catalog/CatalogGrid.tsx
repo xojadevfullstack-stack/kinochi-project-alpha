@@ -58,14 +58,14 @@ export default function CatalogGrid({ initialItems, total, pageSlug }: Props) {
           <button 
             onClick={loadMore} 
             disabled={loading}
-            className="flex items-center gap-2 px-8 py-3 bg-surface-container hover:bg-surface-container-high border border-white/10 rounded-full font-label-caps text-sm tracking-widest font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 h-12 px-8 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-white/30 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold text-white shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 cursor-pointer"
           >
             {loading ? (
               <span className="w-5 h-5 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span>
             ) : (
               <span className="material-symbols-outlined text-[18px]">expand_more</span>
             )}
-            Yana yuklash
+            <span>YANA YUKLASH</span>
           </button>
         </div>
       )}

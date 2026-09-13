@@ -56,13 +56,13 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
           {/* 1. "Barchasi" Button */}
           <Link 
             href={baseUrl} 
-            className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-1.5 border ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border ${
               !currentCategory 
-                ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/25" 
+                ? "bg-primary-container text-white border-primary-container shadow-md shadow-primary-container/20 font-bold" 
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-[17px]">apps</span>
+            <span>✨</span>
             <span>Barchasi</span>
           </Link>
 
@@ -70,16 +70,16 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
           {categories.length > 0 && (
             <button
               onClick={() => setModalOpen(true)}
-              className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border flex items-center gap-1.5 cursor-pointer shadow-md shadow-black/20 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border flex items-center gap-2 cursor-pointer shadow-md shadow-black/20 ${
                 currentCategory
-                  ? "bg-white/15 text-white border-white/30"
+                  ? "bg-white/20 text-white border-white/30 font-bold"
                   : "bg-white/10 hover:bg-white/15 border-white/15 text-text-primary"
               }`}
               aria-label="Barcha janrlarni ko'rish"
             >
               <span className="material-symbols-outlined text-[18px] text-text-secondary">tune</span>
               <span>Barcha janrlar</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[11px] text-text-secondary font-bold">
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-md bg-white/10 text-[11px] text-text-secondary font-bold">
                 {categories.length}
               </span>
             </button>
@@ -92,9 +92,9 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
               <Link 
                 key={cat.id} 
                 href={`${baseUrl}?category=${cat.id}`}
-                className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
+                className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
                   isActive 
-                    ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/25" 
+                    ? "bg-primary-container text-white border-primary-container shadow-md shadow-primary-container/20 font-bold" 
                     : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                 }`}
               >

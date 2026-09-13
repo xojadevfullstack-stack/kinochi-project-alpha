@@ -124,13 +124,13 @@ export default function ShareButton({ title, text: _text, url = "", code, botUse
     <div className="relative inline-block w-full sm:w-auto">
       <button 
         onClick={handleShare}
-        className={`w-full sm:w-auto flex items-center justify-center gap-2 backdrop-blur-md border text-text-primary px-8 py-4 rounded-full font-label-caps text-xs uppercase tracking-widest transition-all duration-300 ease-out group font-bold ${
+        className={`w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer ${
           copied 
-            ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400" 
-            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30 hover:scale-105"
+            ? "bg-emerald-500/20 border border-emerald-500/50 text-emerald-400" 
+            : "bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30"
         }`}
       >
-        <span className={`material-symbols-outlined text-[20px] transition-transform ${copied ? "text-emerald-400 scale-110" : "group-hover:rotate-45"}`}>
+        <span className={`material-symbols-outlined text-[20px] transition-transform ${copied ? "text-emerald-400 scale-110" : ""}`}>
           {copied ? "check_circle" : "share"}
         </span>
         <span>{copied ? "Nusxalandi!" : label}</span>
