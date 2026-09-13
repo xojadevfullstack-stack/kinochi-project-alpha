@@ -144,7 +144,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       <nav 
         className={`fixed top-0 w-full z-50 transition-all duration-300 ease-out border-b ${
         isScrolled 
-          ? "bg-background-obsidian/90 backdrop-blur-lg border-white/10 shadow-2xl shadow-primary-container/10 py-3" 
+          ? "bg-background-obsidian/90 backdrop-blur-lg border-white/10 shadow-2xl shadow-black/60 py-3" 
           : "bg-gradient-to-b from-background-obsidian/80 to-transparent border-transparent py-5"
       }`}
       >
@@ -307,7 +307,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                             console.error("Login failed:", err);
                           }
                         }}
-                        className="w-full py-2.5 px-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-primary-container/20 cursor-pointer"
+                        className="w-full py-2.5 px-3 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 transition-all cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[18px]">bolt</span>
                         1-Bosishda Kirish (XOJA)
@@ -403,11 +403,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     onClick={() => handleLinkClick(link.href)}
                     className={`flex items-center px-4 py-3 rounded-xl text-lg font-bold tracking-wide transition-all ${
                       isActive 
-                        ? "bg-primary-container text-white shadow-lg shadow-primary-container/20" 
+                        ? "bg-white/10 text-white border border-white/15 shadow-md shadow-black/40 font-extrabold" 
                         : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                     }`}
                   >
-                    {link.name}
+                    {isActive && (
+                      <span className="w-1.5 h-5 bg-primary-container rounded-full mr-3 shrink-0"></span>
+                    )}
+                    <span>{link.name}</span>
                   </Link>
                 );
               })}
@@ -473,6 +476,28 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 {/* Actions List */}
                 <div className="flex flex-col gap-2.5">
                   <a
+                    href="/history"
+                    suppressHydrationWarning
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (typeof window !== "undefined") {
+                        document.body.style.overflow = "";
+                        window.location.href = "/history";
+                      }
+                    }}
+                    className="relative z-[9999] pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3.5 pointer-events-none">
+                      <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                        <span className="material-symbols-outlined text-[24px]">history</span>
+                      </div>
+                      <span className="font-semibold text-base">Ko'rish tarixi</span>
+                    </div>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-sky-400 transition-colors text-[20px] pointer-events-none">chevron_right</span>
+                  </a>
+
+                  <a
                     href="/achievements"
                     suppressHydrationWarning
                     onClick={(e) => {
@@ -510,6 +535,28 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             ) : (
               <div className="flex flex-col gap-3.5 py-1">
                 <a
+                  href="/history"
+                  suppressHydrationWarning
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof window !== "undefined") {
+                      document.body.style.overflow = "";
+                      window.location.href = "/history";
+                    }
+                  }}
+                  className="relative z-[9999] pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3.5 pointer-events-none">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                      <span className="material-symbols-outlined text-[24px]">history</span>
+                    </div>
+                    <span className="font-semibold text-base">Ko'rish tarixi</span>
+                  </div>
+                  <span className="material-symbols-outlined text-text-secondary group-hover:text-sky-400 transition-colors text-[20px] pointer-events-none">chevron_right</span>
+                </a>
+
+                <a
                   href="/achievements"
                   suppressHydrationWarning
                   onClick={(e) => {
@@ -545,7 +592,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       console.error("Login failed:", err);
                     }
                   }}
-                  className="w-full py-3.5 px-4 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
+                  className="w-full py-3.5 px-4 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px]">bolt</span>
                   1-Bosishda Tezkor Kirish (XOJA)

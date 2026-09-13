@@ -149,7 +149,7 @@ export default function AchievementsPage() {
             {/* Top row: Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
               <div className="flex items-start sm:items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/5 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0 shadow-[0_0_25px_rgba(251,191,36,0.15)]">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/5 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
                   <span className="material-symbols-outlined text-[32px]">emoji_events</span>
                 </div>
                 <div>
@@ -236,7 +236,7 @@ export default function AchievementsPage() {
             {loginDirect && (
               <button
                 onClick={() => loginDirect({ telegram_id: 1990156236, first_name: "XOJA" })}
-                className="w-full sm:w-auto px-5 py-2.5 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 shrink-0 cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 shrink-0 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-lg">bolt</span>
                 <span>Tezkor Kirish</span>

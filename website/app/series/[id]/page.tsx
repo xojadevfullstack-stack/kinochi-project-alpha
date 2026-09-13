@@ -93,7 +93,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
         <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
           {/* Left: Poster */}
           <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
-            <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-primary-container/20 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-primary-container/40 relative bg-surface-container-high">
+            <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-black/80 relative bg-surface-container-high">
               {series.poster_url ? (
                 <Image 
                   src={series.poster_url}
@@ -164,7 +164,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
               <TelegramWatchButton 
                 url={telegramDeepLink}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-primary-container/25 hover:shadow-primary-container/35 transition-all duration-200 group font-bold cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 group font-bold cursor-pointer"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -188,7 +188,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
       {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (
         <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
           <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
-            <span className="w-1.5 h-8 bg-primary-container rounded-full block"></span>
+            <span className="w-1.5 h-8 bg-rating-gold rounded-full block"></span>
             Treyler
           </h2>
           <TrailerModal trailerUrl={series.trailer_url} posterUrl={series.poster_url || ""} />
@@ -198,7 +198,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
       {/* Seasons & Episodes Section */}
       <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
         <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
-          <span className="w-1.5 h-8 bg-primary-container rounded-full block"></span>
+          <span className="w-1.5 h-8 bg-rating-gold rounded-full block"></span>
           Fasllar va Qismlar
         </h2>
         

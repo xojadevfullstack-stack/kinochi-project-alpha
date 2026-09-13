@@ -31,7 +31,7 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
       <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300"></div>
       
       {/* Top badges */}
-      <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-rating-gold flex items-center gap-1 border border-white/10">
+      <div className="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded text-rating-gold flex items-center gap-1 border border-white/10">
         <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
         <span className="font-label-caps text-xs font-bold">{item.imdb_rating || item.tmdb_rating || "N/A"}</span>
       </div>
@@ -39,13 +39,13 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
       {/* Top Left Badges Container (status badges only, no redundant noisy badges) */}
       <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
         {statusBadge === "completed" && (
-          <div className="px-2 py-0.5 bg-emerald-500/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
+          <div className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-md rounded text-white text-[10px] font-bold uppercase tracking-wider border border-emerald-400/30 flex items-center gap-1 shadow-sm shadow-black/40">
             <span className="material-symbols-outlined text-[12px]">check_circle</span>
             Ko'rilgan
           </div>
         )}
         {statusBadge === "in_progress" && (
-          <div className="px-2 py-0.5 bg-blue-500/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
+          <div className="px-2 py-0.5 bg-sky-500/90 backdrop-blur-md rounded text-white text-[10px] font-bold uppercase tracking-wider border border-sky-400/30 flex items-center gap-1 shadow-sm shadow-black/40">
             <span className="material-symbols-outlined text-[12px]">schedule</span>
             Davom etmoqda
           </div>

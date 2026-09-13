@@ -90,7 +90,7 @@ export default async function CategoryPage({ params }: { params: { id: string } 
                   href={`/category/${cat.id}`}
                   className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
                     isActive 
-                      ? "bg-primary-container text-white border-primary-container shadow-md shadow-primary-container/25 font-bold" 
+                      ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md" 
                       : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                   }`}
                 >

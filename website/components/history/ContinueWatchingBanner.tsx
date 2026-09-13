@@ -25,9 +25,9 @@ export default function ContinueWatchingBanner({ items }: { items: HistoryItem[]
   return (
     <Link 
       href={href} 
-      className="group relative flex w-full max-w-4xl mx-auto h-[160px] md:h-[220px] rounded-2xl overflow-hidden bg-surface-container hover:bg-surface-container-high transition-colors border border-white/10 hover:border-white/25 mb-10 shadow-lg hover:shadow-2xl"
+      className="group relative flex w-full max-w-4xl mx-auto h-[160px] md:h-[220px] rounded-2xl overflow-hidden bg-white/[0.04] hover:bg-white/[0.06] backdrop-blur-xl transition-all border border-white/10 hover:border-white/20 mb-10 shadow-lg hover:shadow-2xl"
     >
-      <div className="w-[110px] md:w-[150px] shrink-0 relative h-full bg-surface-container-high">
+      <div className="w-[110px] md:w-[150px] shrink-0 relative h-full bg-white/5">
         {posterUrl ? (
           <Image 
             src={posterUrl} 
@@ -41,12 +41,12 @@ export default function ContinueWatchingBanner({ items }: { items: HistoryItem[]
             <span className="material-symbols-outlined text-4xl opacity-30 text-white">image</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-surface-container group-hover:to-surface-container-high transition-colors"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background-obsidian/40 to-background-obsidian/80 transition-colors"></div>
       </div>
 
       <div className="flex-1 flex flex-col justify-center p-4 md:p-8 z-10 relative">
         <div className="flex items-center gap-2 mb-2">
-          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider border border-blue-500/30 flex items-center gap-1">
+          <span className="px-2 py-1 bg-sky-500/15 text-sky-400 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider border border-sky-500/25 flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px]">schedule</span>
             Davom eting
           </span>

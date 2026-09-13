@@ -65,7 +65,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
             href={baseUrl} 
             className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border ${
               !currentCategory 
-                ? "bg-primary-container text-white border-primary-container shadow-md shadow-primary-container/20 font-bold" 
+                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md" 
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
             }`}
           >
@@ -101,7 +101,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
                 href={`${baseUrl}?category=${cat.id}`}
                 className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
                   isActive 
-                    ? "bg-primary-container text-white border-primary-container shadow-md shadow-primary-container/20 font-bold" 
+                    ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md" 
                     : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                 }`}
               >
@@ -173,7 +173,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
                   onClick={() => handleSelectCategory(baseUrl)}
                   className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 border text-left flex items-center justify-between cursor-pointer ${
                     !currentCategory 
-                      ? "bg-primary-container text-white border-primary-container font-bold shadow-md shadow-primary-container/20" 
+                      ? "bg-white/20 text-white border-white/30 font-bold shadow-md shadow-black/20" 
                       : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                   }`}
                 >
@@ -191,7 +191,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
                       onClick={() => handleSelectCategory(`${baseUrl}?category=${cat.id}`)}
                       className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 border text-left flex items-center justify-between cursor-pointer ${
                         isActive 
-                          ? "bg-primary-container text-white border-primary-container font-bold shadow-md shadow-primary-container/20" 
+                          ? "bg-white/20 text-white border-white/30 font-bold shadow-md shadow-black/20" 
                           : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                       }`}
                     >

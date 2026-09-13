@@ -65,7 +65,7 @@ export default function TrailerModal({ trailerUrl, posterUrl, title }: TrailerMo
           href={trailerUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="px-6 py-3 bg-primary-container hover:bg-inverse-primary text-white rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-lg shadow-primary-container/25 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+          className="px-6 py-3 bg-primary-container hover:bg-inverse-primary text-white rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
         >
           Havolaga o'tish
         </a>
@@ -82,7 +82,7 @@ export default function TrailerModal({ trailerUrl, posterUrl, title }: TrailerMo
         <div className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-40 transition-opacity duration-500" 
              style={{ backgroundImage: `url('${posterUrl || ""}')` }}></div>
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-500">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-text-primary group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white group-hover:shadow-xl group-hover:shadow-primary-container/30 group-hover:scale-105 transition-all duration-300 ease-out">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-text-primary group-hover:bg-primary-container group-hover:border-primary-container group-hover:text-white group-hover:shadow-xl group-hover:shadow-black/50 group-hover:scale-105 transition-all duration-300 ease-out">
             <span className="material-symbols-outlined text-[40px] sm:text-[48px] ml-1.5" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
           </div>
         </div>

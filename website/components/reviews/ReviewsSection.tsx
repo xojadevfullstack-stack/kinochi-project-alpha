@@ -252,7 +252,7 @@ export default function ReviewsSection({
                         console.error("Login failed:", err);
                       }
                     }}
-                    className="px-6 py-3 bg-primary-container hover:bg-inverse-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-container/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                    className="px-6 py-3 bg-[#229ED9] hover:bg-[#1e8cc0] text-white rounded-xl font-bold text-sm shadow-md shadow-[#229ED9]/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
                     <span className="material-symbols-outlined text-[20px]">bolt</span>
                     1-Bosishda Kirish (Telegram)

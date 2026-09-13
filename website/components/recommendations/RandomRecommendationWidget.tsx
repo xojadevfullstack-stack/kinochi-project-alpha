@@ -259,7 +259,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto">
                 <Link
                   href={watchUrl}
-                  className="flex-1 sm:flex-initial h-12 sm:h-14 px-6 sm:px-8 rounded-xl bg-primary-container hover:bg-inverse-primary text-white font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-lg shadow-primary-container/25 hover:shadow-primary-container/35 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
+                  className="flex-1 sm:flex-initial h-12 sm:h-14 px-6 sm:px-8 rounded-xl bg-primary-container hover:bg-inverse-primary text-white font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     play_circle

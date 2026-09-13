@@ -179,7 +179,7 @@ export default async function Home() {
             <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl">
               <div className="mb-4 sm:mb-6 flex flex-col items-center md:items-start gap-2.5 sm:gap-4">
                 {/* Specific Premiere Label */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-label-caps text-[11px] sm:text-xs font-bold tracking-widest uppercase shadow-sm shadow-emerald-500/10 backdrop-blur-md">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-label-caps text-[11px] sm:text-xs font-bold tracking-widest uppercase backdrop-blur-md">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span>{isHeroSeries ? "Eng so'nggi serial" : "Eng so'nggi kino"}</span>
                 </div>
@@ -211,7 +211,7 @@ export default async function Home() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center w-full sm:w-auto">
                 <Link 
                   href={isHeroSeries ? `/series/${heroItem.id}` : `/movie/${heroItem.code}`}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 shadow-lg shadow-primary-container/25 hover:shadow-primary-container/35 transition-all duration-200 font-bold active:scale-95 cursor-pointer"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 font-bold active:scale-95 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px] sm:text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
                   <span>TOMOSHA QILISH</span>
