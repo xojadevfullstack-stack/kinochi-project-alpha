@@ -32,9 +32,17 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     updateUnreadStatus();
     window.addEventListener("kinochi_notifications_updated", updateUnreadStatus);
     window.addEventListener("storage", updateUnreadStatus);
+
+    const handleToggleProfile = () => {
+      setProfileDropdownOpen(prev => !prev);
+      setMobileMenuOpen(false);
+    };
+    window.addEventListener("kinochi_toggle_profile", handleToggleProfile);
+
     return () => {
       window.removeEventListener("kinochi_notifications_updated", updateUnreadStatus);
       window.removeEventListener("storage", updateUnreadStatus);
+      window.removeEventListener("kinochi_toggle_profile", handleToggleProfile);
     };
   }, []);
 

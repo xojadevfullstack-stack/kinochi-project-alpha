@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import BottomNav from "@/components/BottomNav";
 import { fetchApi } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import Script from "next/script";
@@ -67,12 +68,14 @@ export default async function RootLayout({
         <AuthProvider>
           <Navbar pages={pages} />
 
-          <main className="min-h-screen">
+          <main className="min-h-screen pb-20 xl:pb-0">
             {children}
           </main>
           
+          <BottomNav />
+
           {/* Simple Footer */}
-          <footer className="border-t border-white/10 mt-12 py-8 text-center text-text-secondary text-sm">
+          <footer className="border-t border-white/10 mt-12 py-8 pb-28 xl:pb-8 text-center text-text-secondary text-sm">
             <p>© {new Date().getFullYear()} Kinochi. Barcha huquqlar himoyalangan.</p>
           </footer>
         </AuthProvider>
