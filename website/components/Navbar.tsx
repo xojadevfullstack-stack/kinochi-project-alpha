@@ -98,19 +98,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     }
   };
 
-  const handleNavClick = (href: string) => {
-    router.push(href);
-    setTimeout(() => {
-      setProfileDropdownOpen(false);
+  const handleLinkClick = (href: string) => {
+    if (pathname === href) {
       setMobileMenuOpen(false);
-    }, 120);
-  };
-
-  const handleCloseDrawersDelayed = () => {
-    setTimeout(() => {
       setProfileDropdownOpen(false);
-      setMobileMenuOpen(false);
-    }, 120);
+    }
   };
 
   const navLinks = [
@@ -230,7 +222,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       </div>
                       <Link
                         href="/history"
-                        onClick={() => handleNavClick("/history")}
+                        onClick={() => handleLinkClick("/history")}
                         className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
                       >
                         <span className="material-symbols-outlined text-[20px] text-sky-400">history</span>
@@ -238,7 +230,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       </Link>
                       <Link
                         href="/achievements"
-                        onClick={() => handleNavClick("/achievements")}
+                        onClick={() => handleLinkClick("/achievements")}
                         className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
                       >
                         <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
@@ -294,7 +286,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           <div className="flex xl:hidden items-center gap-2.5">
             <Link 
               href="/notifications"
-              onClick={handleCloseDrawersDelayed}
+              onClick={() => handleLinkClick("/notifications")}
               className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-secondary hover:bg-white/10 cursor-pointer group"
               aria-label="Bildirishnomalar"
             >
@@ -325,7 +317,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
             <Link 
               href="/" 
-              onClick={handleCloseDrawersDelayed} 
+              onClick={() => handleLinkClick("/")} 
               className="font-display-hero-mobile text-[26px] text-primary-container tracking-tighter"
             >
               Kinochi
@@ -362,7 +354,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   <Link
                     key={link.name}
                     href={link.href}
-                    onClick={handleCloseDrawersDelayed}
+                    onClick={() => handleLinkClick(link.href)}
                     className={`flex items-center px-4 py-3 rounded-xl text-lg font-bold tracking-wide transition-all ${
                       isActive 
                         ? "bg-primary-container text-white shadow-lg shadow-primary-container/20" 
@@ -427,7 +419,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 <div className="flex flex-col gap-2.5">
                   <Link
                     href="/achievements"
-                    onClick={() => handleNavClick("/achievements")}
+                    onClick={() => handleLinkClick("/achievements")}
                     className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">

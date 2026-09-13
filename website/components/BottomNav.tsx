@@ -64,21 +64,33 @@ export default function BottomNav() {
         })}
 
         {/* Profile Button - Standardized icon matching other 4 tabs */}
-        <button
-          onClick={handleProfileClick}
-          className="flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl text-text-secondary hover:text-text-primary transition-all cursor-pointer group"
-          aria-label="Profil"
-        >
-          <div className="relative flex items-center justify-center">
-            <span 
-              className="material-symbols-outlined text-[23px] text-text-secondary group-hover:text-text-primary transition-colors"
-              style={{ fontVariationSettings: "'FILL' 0" }}
+        {(() => {
+          const isProfileActive = pathname === "/achievements";
+          return (
+            <button
+              onClick={handleProfileClick}
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer group ${
+                isProfileActive ? "text-primary-container font-bold" : "text-text-secondary hover:text-text-primary"
+              }`}
+              aria-label="Profil"
             >
-              person
-            </span>
-          </div>
-          <span className="text-[11px] tracking-tight">Profil</span>
-        </button>
+              <div className="relative flex items-center justify-center">
+                <span 
+                  className={`material-symbols-outlined text-[23px] transition-colors ${
+                    isProfileActive ? "text-primary-container" : "text-text-secondary group-hover:text-text-primary"
+                  }`}
+                  style={{ fontVariationSettings: isProfileActive ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  person
+                </span>
+                {isProfileActive && (
+                  <span className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full"></span>
+                )}
+              </div>
+              <span className="text-[11px] tracking-tight">Profil</span>
+            </button>
+          );
+        })()}
       </div>
     </nav>
   );
