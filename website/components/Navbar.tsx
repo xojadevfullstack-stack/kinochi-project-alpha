@@ -465,7 +465,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <div className="flex flex-col gap-4">
                 {/* User Info Card */}
                 <div className="flex items-center gap-3.5 p-4 bg-white/5 rounded-2xl border border-white/10">
-                  <div className="w-13 h-13 rounded-full bg-primary-container/20 border-2 border-primary-container/40 flex items-center justify-center text-primary-container text-xl font-bold shrink-0">
+                  <div className="w-12 h-12 rounded-full aspect-square bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary-container text-lg font-bold shrink-0">
                     {user?.first_name?.charAt(0) || "U"}
                   </div>
                   <div className="overflow-hidden">

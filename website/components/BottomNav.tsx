@@ -2,11 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "../lib/auth/AuthProvider";
-
 export default function BottomNav() {
   const pathname = usePathname();
-  const { status, user } = useAuth();
 
   const navItems = [
     { label: "Asosiy", href: "/", icon: "home" },
@@ -39,15 +36,15 @@ export default function BottomNav() {
             >
               <div className="relative flex items-center justify-center">
                 <span 
-                  className={`material-symbols-outlined text-[23px] transition-transform ${
-                    isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(229,9,20,0.8)]" : "group-hover:scale-105"
+                  className={`material-symbols-outlined text-[23px] transition-colors ${
+                    isActive ? "text-primary-container" : "text-text-secondary group-hover:text-text-primary"
                   }`}
                   style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
                 >
                   {item.icon}
                 </span>
                 {isActive && (
-                  <span className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full shadow-[0_0_6px_rgba(229,9,20,1)]"></span>
+                  <span className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full"></span>
                 )}
               </div>
               <span className="text-[11px] tracking-tight">{item.label}</span>
@@ -55,18 +52,19 @@ export default function BottomNav() {
           );
         })}
 
-        {/* Profile Button */}
+        {/* Profile Button - Standardized icon matching other 4 tabs */}
         <button
           onClick={handleProfileClick}
           className="flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl text-text-secondary hover:text-text-primary transition-all cursor-pointer group"
           aria-label="Profil"
         >
-          <div className="w-6 h-6 rounded-full overflow-hidden border border-white/20 group-hover:border-primary-container transition-colors bg-white/10 flex items-center justify-center text-[11px] font-bold text-primary-container">
-            {status === "authenticated" ? (
-              user?.first_name?.charAt(0) || "U"
-            ) : (
-              <span className="material-symbols-outlined text-[16px] text-text-secondary group-hover:text-primary-container">person</span>
-            )}
+          <div className="relative flex items-center justify-center">
+            <span 
+              className="material-symbols-outlined text-[23px] text-text-secondary group-hover:text-text-primary transition-colors"
+              style={{ fontVariationSettings: "'FILL' 0" }}
+            >
+              person
+            </span>
           </div>
           <span className="text-[11px] tracking-tight">Profil</span>
         </button>

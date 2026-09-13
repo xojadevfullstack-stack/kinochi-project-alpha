@@ -109,23 +109,19 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
   const watchUrl = activeItem?.is_series ? `/series/${activeItem.id}` : `/movie/${activeItem?.code || activeItem?.id}`;
 
   return (
-    <section className="max-w-container-max mx-auto px-gutter my-14 relative z-20">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/[0.07] to-white/[0.02] border border-white/10 p-6 md:p-10 backdrop-blur-xl shadow-2xl">
-        {/* Background Ambient Glow */}
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary-container/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
+    <section className="max-w-container-max mx-auto px-gutter my-10 relative z-20">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/10 p-5 sm:p-8 backdrop-blur-md">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container text-xs font-bold uppercase tracking-wider mb-2">
-              <span className="material-symbols-outlined text-[16px]">casino</span>
-              Tavsiya Generator
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-text-secondary text-xs font-medium mb-2">
+              <span className="material-symbols-outlined text-[16px] text-primary-container">shuffle</span>
+              <span>Tavsiya Generator</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-text-primary tracking-tight">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight">
               Nima ko'rishni bilmayapsizmi?
             </h2>
-            <p className="text-text-secondary text-sm md:text-base mt-1">
+            <p className="text-text-secondary text-xs sm:text-sm mt-1">
               Yo'nalishni tanlang va qiziqarli kino yoki serial toping
             </p>
           </div>
@@ -136,9 +132,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
           <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 hide-scrollbar scroll-smooth">
             <button
               onClick={() => handleCategoryChange("all")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                 selectedCategory === "all"
-                  ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/20"
+                  ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                   : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
               }`}
             >
@@ -148,9 +144,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
             <button
               onClick={() => handleCategoryChange("movies")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                 selectedCategory === "movies"
-                  ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/20"
+                  ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                   : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
               }`}
             >
@@ -160,9 +156,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
             <button
               onClick={() => handleCategoryChange("series")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                 selectedCategory === "series"
-                  ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/20"
+                  ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                   : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
               }`}
             >
@@ -182,9 +178,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                 <button
                   key={p.id}
                   onClick={() => handleCategoryChange(pKey)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                     selectedCategory === pKey
-                      ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/20"
+                      ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                       : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
                   }`}
                 >
@@ -198,9 +194,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
         {/* Featured Recommendation Card */}
         {activeItem && (
-          <div className="flex flex-col sm:flex-row gap-5 sm:gap-7 md:gap-10 items-center sm:items-start">
+          <div className="flex flex-col sm:flex-row gap-5 sm:gap-7 md:gap-8 items-center sm:items-start">
             {/* Poster */}
-            <div className="w-36 sm:w-44 md:w-56 lg:w-64 aspect-[2/3] shrink-0 rounded-2xl overflow-hidden relative shadow-2xl border border-white/10 group">
+            <div className="w-36 sm:w-44 md:w-52 aspect-[2/3] shrink-0 rounded-xl overflow-hidden relative shadow-lg border border-white/10 group">
               {activeItem.poster_url ? (
                 <Image
                   src={activeItem.poster_url}
@@ -213,7 +209,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   <span className="material-symbols-outlined text-5xl opacity-40">movie</span>
                 </div>
               )}
-              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/10 text-rating-gold text-xs font-bold flex items-center gap-1">
+              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-rating-gold text-xs font-bold flex items-center gap-1">
                 <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   star
                 </span>
@@ -225,36 +221,36 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
             <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left w-full">
               {/* Badges */}
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-white/10 text-text-secondary">
+                <span className="px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider bg-white/5 text-text-secondary border border-white/10">
                   {activeItem.is_series ? "Serial" : "Film"}
                 </span>
                 {activeItem.release_year && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-white/10 text-text-secondary">
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider bg-white/5 text-text-secondary border border-white/10">
                     {activeItem.release_year}
                   </span>
                 )}
                 {activeItem.genres && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-primary-container/10 text-primary-container border border-primary-container/20">
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-medium bg-white/5 text-text-secondary border border-white/10">
                     {activeItem.genres.split(",")[0]}
                   </span>
                 )}
               </div>
 
-              <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-text-primary tracking-tight mb-2 sm:mb-3">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-text-primary tracking-tight mb-2 sm:mb-2.5">
                 {activeItem.title}
               </h3>
 
-              <p className="text-text-secondary text-xs sm:text-sm md:text-base line-clamp-2 sm:line-clamp-3 md:line-clamp-4 max-w-2xl mb-5 sm:mb-6 leading-relaxed">
+              <p className="text-text-secondary text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 md:line-clamp-4 max-w-2xl mb-5 leading-relaxed font-normal">
                 {activeItem.description || "Ushbu film haqida to'liq ma'lumot olish va tomosha qilish uchun pastdagi tugmani bosing."}
               </p>
 
-              {/* Action Buttons - Fully responsive across mobile, 788px tablet & desktop */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+              {/* Action Buttons - Soft, eye-friendly styles */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
                 <Link
                   href={watchUrl}
-                  className="flex-1 sm:flex-initial sm:min-w-[140px] h-11 sm:h-12 px-4 rounded-xl bg-primary-container hover:bg-inverse-primary text-white font-bold text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-primary-container/25 hover:shadow-primary-container/40 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial sm:min-w-[140px] h-11 px-5 rounded-xl bg-primary-container/90 hover:bg-primary-container text-white font-semibold text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[18px] sm:text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     play_circle
                   </span>
                   <span>Tomosha qilish</span>
@@ -263,7 +259,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                 <button
                   onClick={handleNext}
                   disabled={isSpinning || filteredItems.length <= 1}
-                  className="flex-1 sm:flex-initial sm:min-w-[120px] h-11 sm:h-12 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40"
                 >
                   <span className={`material-symbols-outlined text-[18px] text-rating-gold ${isSpinning ? "animate-spin" : ""}`}>
                     autorenew
@@ -276,7 +272,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   text={`${activeItem.title} ni bepul tomosha qiling!`}
                   url={watchUrl}
                   code={activeItem.is_series ? `s_${activeItem.id}` : (activeItem.code || String(activeItem.id))}
-                  className="flex-1 sm:flex-initial sm:min-w-[120px] h-11 sm:h-12 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 shadow-lg shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
                   buttonText="Ulashish"
                 />
               </div>
