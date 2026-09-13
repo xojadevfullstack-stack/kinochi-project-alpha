@@ -128,7 +128,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
   return (
     <section className="max-w-container-max mx-auto px-gutter my-10 relative z-20">
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-surface-container/30 border border-white/10 p-5 sm:p-8 backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white/[0.04] sm:bg-white/5 border border-white/10 p-5 sm:p-8 backdrop-blur-xl">
         {/* Section Header - Matching site style */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
           <div>

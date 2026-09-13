@@ -135,7 +135,7 @@ export default function ReviewsSection({
     <section className="max-w-container-max mx-auto px-gutter py-12 border-t border-white/5">
       <div className="flex flex-col gap-8">
         {/* Section Header & Rating Overview Banner */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-surface-container/60 p-5 sm:p-6 md:p-8 rounded-3xl border border-white/5">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-6 md:p-8 rounded-3xl border border-white/10">
           <div className="space-y-1.5 max-w-xl">
             <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-rating-gold text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -232,7 +232,7 @@ export default function ReviewsSection({
 
         {/* Review Form Drawer / Panel */}
         {formOpen && (
-          <div className="bg-surface-container/80 p-5 sm:p-6 md:p-8 rounded-3xl border border-white/10 shadow-xl shadow-black/30 transition-all">
+          <div className="bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-6 md:p-8 rounded-3xl border border-white/10 shadow-xl shadow-black/30 transition-all">
             {status !== "authenticated" ? (
               <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
                 <span className="material-symbols-outlined text-5xl text-sky-400">lock</span>
@@ -370,7 +370,7 @@ export default function ReviewsSection({
               <div className="w-8 h-8 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
             </div>
           ) : reviews.length === 0 ? (
-            <div className="text-center py-12 bg-surface-container/30 rounded-3xl border border-white/5 p-6 flex flex-col items-center gap-2">
+            <div className="text-center py-12 bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col items-center gap-2">
               <span className="material-symbols-outlined text-5xl text-text-secondary/50">chat_bubble_outline</span>
               <p className="font-bold text-white">Hozircha sharhlar mavjud emas</p>
               <p className="text-xs text-text-secondary max-w-sm">
@@ -388,7 +388,7 @@ export default function ReviewsSection({
               {reviews.map((r) => (
                 <div
                   key={r.id}
-                  className="bg-surface-container/40 p-5 rounded-2xl border border-white/5 flex flex-col justify-between gap-3 hover:border-white/10 transition-all"
+                  className="bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 flex flex-col justify-between gap-3 hover:border-white/20 transition-all"
                 >
                   <div>
                     {/* Review Header */}
