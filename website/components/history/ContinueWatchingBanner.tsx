@@ -24,8 +24,8 @@ export default function ContinueWatchingBanner({ items }: { items: HistoryItem[]
 
   return (
     <Link 
-      href={href}
-      className="group relative flex w-full max-w-4xl mx-auto h-[160px] md:h-[220px] rounded-2xl overflow-hidden bg-surface-container hover:bg-surface-container-high transition-colors border border-white/10 hover:border-primary-container/50 mb-10 shadow-lg hover:shadow-[0_0_30px_rgba(229,9,20,0.2)]"
+      href={href} 
+      className="group relative flex w-full max-w-4xl mx-auto h-[160px] md:h-[220px] rounded-2xl overflow-hidden bg-surface-container hover:bg-surface-container-high transition-colors border border-white/10 hover:border-white/25 mb-10 shadow-lg hover:shadow-2xl"
     >
       <div className="w-[110px] md:w-[150px] shrink-0 relative h-full bg-surface-container-high">
         {posterUrl ? (

@@ -9,33 +9,29 @@ type Props = {
 
 export default function HistoryTabs({ activeTab, setActiveTab, inProgressCount, completedCount }: Props) {
   return (
-    <div className="flex items-center gap-4 border-b border-white/10 mb-6">
+    <div className="flex items-center gap-2 p-1.5 bg-white/[0.04] backdrop-blur-md rounded-2xl border border-white/10 mb-6 w-full sm:w-auto max-w-md">
       <button
         onClick={() => setActiveTab("in_progress")}
-        className={`pb-3 text-sm font-bold transition-all relative ${
+        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
           activeTab === "in_progress" 
-            ? "text-primary-container" 
-            : "text-text-secondary hover:text-white"
+            ? "bg-white/15 text-white border border-white/20 shadow-md backdrop-blur-md font-bold" 
+            : "text-text-secondary hover:text-text-primary hover:bg-white/5 border border-transparent"
         }`}
       >
-        Davom etayotgan ({inProgressCount})
-        {activeTab === "in_progress" && (
-          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-container rounded-t-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></span>
-        )}
+        <span className="material-symbols-outlined text-[17px]">schedule</span>
+        <span>Davom etayotgan ({inProgressCount})</span>
       </button>
 
       <button
         onClick={() => setActiveTab("completed")}
-        className={`pb-3 text-sm font-bold transition-all relative ${
+        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
           activeTab === "completed" 
-            ? "text-primary-container" 
-            : "text-text-secondary hover:text-white"
+            ? "bg-white/15 text-white border border-white/20 shadow-md backdrop-blur-md font-bold" 
+            : "text-text-secondary hover:text-text-primary hover:bg-white/5 border border-transparent"
         }`}
       >
-        Ko'rilgan ({completedCount})
-        {activeTab === "completed" && (
-          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-container rounded-t-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></span>
-        )}
+        <span className="material-symbols-outlined text-[17px]">check_circle</span>
+        <span>Ko&apos;rilgan ({completedCount})</span>
       </button>
     </div>
   );
