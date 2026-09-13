@@ -25,7 +25,10 @@ export default function BottomNav() {
     >
       <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const isKatalog = item.label === "Katalog";
+          const isActive = isKatalog
+            ? pathname.startsWith("/movies") || pathname.startsWith("/series") || pathname.startsWith("/p/") || pathname.startsWith("/category/") || pathname.startsWith("/catalog")
+            : pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}

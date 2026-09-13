@@ -53,7 +53,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
       {/* Horizontal Quick-Filter Bar */}
       <div className="relative w-full mb-6">
         <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 hide-scrollbar scroll-smooth">
-          {/* "Barchasi" Button */}
+          {/* 1. "Barchasi" Button */}
           <Link 
             href={baseUrl} 
             className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-1.5 border active:scale-95 ${
@@ -65,8 +65,27 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
             <span className="material-symbols-outlined text-[17px]">apps</span>
             <span>Barchasi</span>
           </Link>
+
+          {/* 2. "Barcha janrlar" Modal Trigger Button - Instantly visible on Mobile */}
+          {categories.length > 0 && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 border flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-black/20 ${
+                currentCategory
+                  ? "bg-white/15 text-white border-white/30"
+                  : "bg-white/10 hover:bg-white/15 border-white/15 text-text-primary"
+              }`}
+              aria-label="Barcha janrlarni ko'rish"
+            >
+              <span className="material-symbols-outlined text-[18px] text-text-secondary">tune</span>
+              <span>Barcha janrlar</span>
+              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[11px] text-text-secondary font-bold">
+                {categories.length}
+              </span>
+            </button>
+          )}
           
-          {/* Quick Category Chips */}
+          {/* 3. Quick Category Chips */}
           {displayQuickCategories.map(cat => {
             const isActive = currentCategory === String(cat.id);
             return (
@@ -83,21 +102,6 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
               </Link>
             );
           })}
-
-          {/* "Barcha janrlar" Modal Trigger Button */}
-          {categories.length > 0 && (
-            <button
-              onClick={() => setModalOpen(true)}
-              className="px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 bg-white/10 hover:bg-white/15 border border-white/15 text-text-primary flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-black/20"
-              aria-label="Barcha janrlarni ko'rish"
-            >
-              <span className="material-symbols-outlined text-[18px] text-text-secondary">tune</span>
-              <span>Barcha janrlar</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[11px] text-text-secondary">
-                {categories.length}
-              </span>
-            </button>
-          )}
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
+import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 
 export const dynamic = 'force-dynamic';
 
@@ -30,19 +31,22 @@ type Category = {
 export default async function MoviesListPage({ searchParams }: { searchParams: { category?: string } }) {
   let movies: Movie[] = [];
   let categories: Category[] = [];
+  let pages: any[] = [];
   
   try {
     const query = searchParams.category 
       ? `/movies?limit=50&category_id=${searchParams.category}&exclude_paged=true` 
       : "/movies?limit=50&exclude_paged=true";
-    const [moviesData, categoriesData] = await Promise.all([
+    const [moviesData, categoriesData, pagesData] = await Promise.all([
       fetchApi(query),
-      fetchApi("/categories")
+      fetchApi("/categories"),
+      fetchApi("/pages/")
     ]);
     movies = moviesData?.items || [];
     categories = categoriesData || [];
+    pages = pagesData?.items || pagesData || [];
   } catch (error) {
-    console.error("Failed to fetch movies or categories:", error);
+    console.error("Failed to fetch movies, categories or pages:", error);
   }
 
   return (
@@ -56,9 +60,14 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
               Kinolar
             </h1>
             <p className="text-text-secondary font-body-lg text-body-lg">
-              Bizning katta kinolar kolleksiyamiz bilan tanishing.
+              Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.
             </p>
           </div>
+
+          {/* Catalog Type Switcher (Kinolar / Seriallar / Anime / Dorama) */}
+          <CatalogTypeNav currentType="movies" pages={pages} />
+
+          {/* Category Filter */}
           <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/movies" />
         </div>
 

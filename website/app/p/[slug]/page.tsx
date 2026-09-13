@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
+import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 
 type Movie = {
   id: number;
@@ -48,9 +49,16 @@ export default async function DynamicPage({ params, searchParams }: { params: { 
   let movies: Movie[] = [];
   let seriesList: Series[] = [];
   let categories: Category[] = [];
+  let allPages: any[] = [];
   
   try {
-    page = await fetchApi(`/pages/${params.slug}`);
+    const [pageRes, allPagesRes] = await Promise.all([
+      fetchApi(`/pages/${params.slug}`),
+      fetchApi("/pages/")
+    ]);
+    page = pageRes;
+    allPages = allPagesRes?.items || allPagesRes || [];
+
     if (page && page.id) {
       let moviesQuery = `/movies?limit=50&page_id=${page.id}`;
       let seriesQuery = `/series?limit=50&page_id=${page.id}`;
@@ -87,10 +95,15 @@ export default async function DynamicPage({ params, searchParams }: { params: { 
         
         {/* Header */}
         <div className="mb-stack-lg">
-          <div className="mb-stack-md">
+          <div className="mb-stack-md text-center md:text-left">
             <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">{page.title}</h1>
-            <p className="text-text-secondary font-body-lg text-body-lg">Bizning maxsus to'plamlarimiz.</p>
+            <p className="text-text-secondary font-body-lg text-body-lg">Bizning maxsus to&apos;plamlarimiz.</p>
           </div>
+
+          {/* Catalog Type Switcher (Kinolar / Seriallar / Anime / Dorama) */}
+          <CatalogTypeNav currentType={params.slug} pages={allPages} />
+
+          {/* Category Filter */}
           <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl={`/p/${params.slug}`} />
         </div>
 

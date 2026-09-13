@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
+import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 
 export const dynamic = 'force-dynamic';
 
@@ -27,17 +28,20 @@ type Category = {
 export default async function SeriesListPage({ searchParams }: { searchParams: { category?: string } }) {
   let seriesList: Series[] = [];
   let categories: Category[] = [];
+  let pages: any[] = [];
   
   try {
     const query = searchParams.category ? `/series?limit=50&category_id=${searchParams.category}&exclude_paged=true` : "/series?limit=50&exclude_paged=true";
-    const [seriesData, categoriesData] = await Promise.all([
+    const [seriesData, categoriesData, pagesData] = await Promise.all([
       fetchApi(query),
-      fetchApi("/categories")
+      fetchApi("/categories"),
+      fetchApi("/pages/")
     ]);
     seriesList = seriesData.items || [];
     categories = categoriesData || [];
+    pages = pagesData?.items || pagesData || [];
   } catch (error) {
-    console.error("Failed to fetch series or categories:", error);
+    console.error("Failed to fetch series, categories or pages:", error);
   }
 
   return (
@@ -46,10 +50,15 @@ export default async function SeriesListPage({ searchParams }: { searchParams: {
         
         {/* Header & Categories */}
         <div className="mb-stack-lg">
-          <div className="mb-stack-md">
+          <div className="mb-stack-md text-center md:text-left">
             <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">Seriallar</h1>
-            <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta seriallar kolleksiyamiz bilan tanishing.</p>
+            <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.</p>
           </div>
+
+          {/* Catalog Type Switcher (Kinolar / Seriallar / Anime / Dorama) */}
+          <CatalogTypeNav currentType="series" pages={pages} />
+
+          {/* Category Filter */}
           <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/series" />
         </div>
 
