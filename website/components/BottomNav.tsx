@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { label: "Asosiy", href: "/", icon: "home" },
@@ -15,6 +17,13 @@ export default function BottomNav() {
   const handleProfileClick = () => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("kinochi_toggle_profile"));
+    }
+  };
+
+  const handleNav = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    if (pathname !== href) {
+      router.push(href);
     }
   };
 
@@ -33,6 +42,7 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={(e) => handleNav(e, item.href)}
               className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer relative group ${
                 isActive ? "text-primary-container font-bold" : "text-text-secondary hover:text-text-primary"
               }`}

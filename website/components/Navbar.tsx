@@ -98,6 +98,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     }
   };
 
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    setProfileDropdownOpen(false);
+    setMobileMenuOpen(false);
+    router.push(href);
+  };
+
   const navLinks = [
     { name: "Bosh sahifa", href: "/" },
     { name: "Kinolar", href: "/movies" },
@@ -113,132 +120,136 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           ? "bg-background-obsidian/90 backdrop-blur-lg border-white/10 shadow-2xl shadow-primary-container/10 py-3" 
           : "bg-gradient-to-b from-background-obsidian/80 to-transparent border-transparent py-5"
       }`}
-    >
-      <div className="max-w-container-max mx-auto px-gutter flex justify-between items-center">
-        {/* Left: Logo */}
-        <Link href="/" className="font-display-hero-mobile text-[28px] sm:text-[32px] text-primary-container tracking-tighter hover:scale-105 transition-transform z-50 relative shrink-0">
-          Kinochi
-        </Link>
-
-        {/* Center: Desktop Navigation */}
-        <div 
-          className="hidden xl:flex flex-1 justify-center items-center gap-6"
-          onMouseLeave={() => setHoveredLink(null)}
-        >
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-            const showLine = hoveredLink ? hoveredLink === link.name : isActive;
-            
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="relative group px-2 py-1 font-bold text-[15px] transition-colors"
-                onMouseEnter={() => setHoveredLink(link.name)}
-              >
-                <span className={`transition-colors duration-300 ${isActive ? "text-primary-container" : "text-on-secondary-container group-hover:text-text-primary"}`}>
-                  {link.name}
-                </span>
-                <span 
-                  className={`absolute -bottom-2 left-0 h-[2px] bg-primary-container transition-all duration-300 ${
-                    showLine ? "w-full opacity-100" : "w-0 opacity-0"
-                  }`}
-                />
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Right: Search & Profile */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-50 relative">
-          {/* Desktop/Tablet Search */}
-          <form onSubmit={handleSearch} className="hidden md:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-3.5 py-1.5 xl:px-4 xl:py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
-            <span className="material-symbols-outlined text-text-secondary mr-2 text-[18px] xl:text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
-            <input 
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-24 lg:w-40 xl:w-56 outline-none" 
-              placeholder="Qidirish..." 
-            />
-          </form>
-
-          {/* Desktop/Tablet Notifications */}
-          <Link 
-            href="/notifications"
-            className="relative hidden md:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 items-center justify-center group"
-          >
-            <span className="material-symbols-outlined text-text-secondary group-hover:text-white text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
-            {hasUnread && (
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-            )}
-          </Link>
+      >
+        <div className="max-w-container-max mx-auto px-gutter flex items-center justify-between">
           
-          {/* Profile Avatar Button (Uniform w-10 h-10 across all devices) */}
-          <div className="relative" ref={profileDropdownRef}>
-            <div 
-              onClick={() => {
-                if (window.innerWidth < 1280) {
-                  setMobileMenuOpen(true);
-                } else {
-                  setProfileDropdownOpen(!profileDropdownOpen);
-                }
-              }}
-              className="cursor-pointer"
+          {/* Left: Logo */}
+          <Link href="/" className="flex items-center gap-2 group z-50">
+            <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-text-primary group-hover:opacity-90 transition-opacity">
+              Kino<span className="text-primary-container">chi</span>
+            </span>
+          </Link>
+
+          {/* Center: Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-1 xl:gap-2">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              const isHovered = hoveredLink === link.href;
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onMouseEnter={() => setHoveredLink(link.href)}
+                  onMouseLeave={() => setHoveredLink(null)}
+                  className={`relative px-3.5 py-2 rounded-full text-sm font-label-caps transition-colors duration-200 tracking-wider ${
+                    isActive ? "text-text-primary font-bold" : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  <span className="relative z-10">{link.name}</span>
+                  
+                  {/* Active/Hover Background Pill */}
+                  <div
+                    className={`absolute inset-0 rounded-full transition-all duration-300 -z-0 ${
+                      isActive 
+                        ? "bg-white/10 border border-white/10 shadow-sm" 
+                        : isHovered 
+                        ? "bg-white/5 border border-white/5 scale-95" 
+                        : "opacity-0 scale-90"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Right: Search & Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-50 relative">
+            {/* Desktop/Tablet Search */}
+            <form onSubmit={handleSearch} className="hidden md:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-3.5 py-1.5 xl:px-4 xl:py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
+              <span className="material-symbols-outlined text-text-secondary mr-2 text-[18px] xl:text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-24 lg:w-40 xl:w-56 outline-none" 
+                placeholder="Qidirish..." 
+              />
+            </form>
+
+            {/* Desktop/Tablet Notifications */}
+            <Link 
+              href="/notifications"
+              className="relative hidden md:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 items-center justify-center group"
             >
-              {status === "authenticated" ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/10 flex items-center justify-center text-text-primary font-bold shadow-md shadow-black/20">
-                  {user?.first_name?.charAt(0) || "U"}
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/5 flex items-center justify-center text-text-secondary hover:text-text-primary shadow-sm">
-                  <span className="material-symbols-outlined text-[20px]">person</span>
-                </div>
+              <span className="material-symbols-outlined text-text-secondary group-hover:text-white text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
+              {hasUnread && (
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
               )}
-            </div>
+            </Link>
             
-            {/* Desktop Dropdown */}
-            {profileDropdownOpen && (
-              <div className="hidden xl:block absolute right-0 mt-2 w-72 bg-background-obsidian/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl z-50">
+            {/* Profile Avatar Button (Uniform w-10 h-10 across all devices) */}
+            <div className="relative" ref={profileDropdownRef}>
+              <div 
+                onClick={() => {
+                  setProfileDropdownOpen(prev => !prev);
+                  setMobileMenuOpen(false);
+                }}
+                className="cursor-pointer"
+              >
                 {status === "authenticated" ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                      <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold shrink-0">
-                        {user?.first_name?.charAt(0) || "U"}
-                      </div>
-                      <div className="overflow-hidden">
-                        <div className="font-bold text-text-primary truncate">{user?.first_name} {user?.last_name}</div>
-                        <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
-                      </div>
-                    </div>
-                    <Link
-                      href="/history"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
-                    >
-                      <span className="material-symbols-outlined text-[20px] text-sky-400">history</span>
-                      <span>Ko'rish tarixi</span>
-                    </Link>
-                    <Link
-                      href="/achievements"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
-                    >
-                      <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
-                      <span>Yutuqlar</span>
-                    </Link>
-                    <button 
-                      onClick={() => {
-                        logout();
-                        setProfileDropdownOpen(false);
-                      }}
-                      className="text-left text-sm text-text-secondary hover:text-white font-medium py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer mt-1 border-t border-white/5"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">logout</span>
-                      <span>Tizimdan chiqish</span>
-                    </button>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/10 flex items-center justify-center text-text-primary font-bold shadow-md shadow-black/20">
+                    {user?.first_name?.charAt(0) || "U"}
                   </div>
                 ) : (
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/5 flex items-center justify-center text-text-secondary hover:text-text-primary shadow-sm">
+                    <span className="material-symbols-outlined text-[20px]">person</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Desktop Dropdown */}
+              {profileDropdownOpen && (
+                <div className="hidden xl:block absolute right-0 mt-2 w-72 bg-background-obsidian/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl z-50">
+                  {status === "authenticated" ? (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                        <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold shrink-0">
+                          {user?.first_name?.charAt(0) || "U"}
+                        </div>
+                        <div className="overflow-hidden">
+                          <div className="font-bold text-text-primary truncate">{user?.first_name} {user?.last_name}</div>
+                          <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
+                        </div>
+                      </div>
+                      <Link
+                        href="/history"
+                        onClick={(e) => handleNavClick(e, "/history")}
+                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-sky-400">history</span>
+                        <span>Ko'rish tarixi</span>
+                      </Link>
+                      <Link
+                        href="/achievements"
+                        onClick={(e) => handleNavClick(e, "/achievements")}
+                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
+                        <span>Yutuqlar</span>
+                      </Link>
+                      <button 
+                        onClick={() => {
+                          logout();
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="text-left text-sm text-text-secondary hover:text-white font-medium py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer mt-1 border-t border-white/5"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">logout</span>
+                        <span>Tizimdan chiqish</span>
+                      </button>
+                    </div>
+                  ) : (
                   <div className="flex flex-col gap-3">
                     <div className="text-sm font-bold text-text-primary text-center">Tizimga kirish</div>
                     
@@ -368,32 +379,32 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary px-1 mb-1">Foydalanuvchi</span>
               <Link
                 href="/notifications"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => handleNavClick(e, "/notifications")}
                 className="flex items-center justify-between px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-[22px] text-blue-400">notifications</span>
-                  Bildirishnomalar
+                  <span>Bildirishnomalar</span>
                 </div>
                 {hasUnread && (
-                  <span className="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 )}
               </Link>
               <Link
                 href="/history"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => handleNavClick(e, "/history")}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
-                <span className="material-symbols-outlined text-[22px] text-primary-container">history</span>
-                Ko'rish tarixi
+                <span className="material-symbols-outlined text-[22px] text-sky-400">history</span>
+                <span>Ko'rish tarixi</span>
               </Link>
               <Link
                 href="/achievements"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => handleNavClick(e, "/achievements")}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
                 <span className="material-symbols-outlined text-[22px] text-amber-400">emoji_events</span>
-                Yutuqlar
+                <span>Yutuqlar</span>
               </Link>
             </div>
 
@@ -490,8 +501,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 <div className="flex flex-col gap-2.5">
                   <Link
                     href="/history"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
+                    onClick={(e) => handleNavClick(e, "/history")}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">
                       <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center text-sky-400">
@@ -504,8 +515,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
                   <Link
                     href="/achievements"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
+                    onClick={(e) => handleNavClick(e, "/achievements")}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">
                       <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
