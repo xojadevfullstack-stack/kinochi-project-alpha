@@ -62,6 +62,26 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Prevent background scrolling when mobile menu or mobile profile modal is open
+  useEffect(() => {
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1280;
+    const shouldLock = mobileMenuOpen || (profileDropdownOpen && isMobile);
+
+    if (shouldLock) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [mobileMenuOpen, profileDropdownOpen]);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
+  }, [pathname]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -78,8 +98,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   ];
 
   return (
-    <nav 
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ease-out border-b ${
+    <>
+      <nav 
+        className={`fixed top-0 w-full z-50 transition-all duration-300 ease-out border-b ${
         isScrolled 
           ? "bg-background-obsidian/90 backdrop-blur-lg border-white/10 shadow-2xl shadow-primary-container/10 py-3" 
           : "bg-gradient-to-b from-background-obsidian/80 to-transparent border-transparent py-5"
@@ -93,7 +114,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
         {/* Center: Desktop Navigation */}
         <div 
-          className="hidden md:flex flex-1 justify-center items-center gap-8"
+          className="hidden xl:flex flex-1 justify-center items-center gap-6"
           onMouseLeave={() => setHoveredLink(null)}
         >
           {navLinks.map((link) => {
@@ -121,9 +142,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
         </div>
 
         {/* Right: Search & Profile */}
-        <div className="flex items-center gap-3 md:gap-4 shrink-0 z-50 relative">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 z-50 relative">
           {/* Desktop Search */}
-          <form onSubmit={handleSearch} className="hidden md:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-4 py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
+          <form onSubmit={handleSearch} className="hidden xl:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-4 py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
             <span className="material-symbols-outlined text-text-secondary mr-2 text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
             <input 
               type="text"
@@ -133,33 +154,36 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               placeholder="Qidirish..." 
             />
           </form>
+
+          {/* Desktop Notifications */}
           <Link 
             href="/notifications"
-            className="relative hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center group"
+            className="relative hidden xl:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center group"
           >
             <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
             {hasUnread && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
             )}
           </Link>
           
+          {/* Profile Avatar Button (Uniform w-10 h-10 across all devices) */}
           <div className="relative" ref={profileDropdownRef}>
             <div 
               onClick={() => {
                 setProfileDropdownOpen(!profileDropdownOpen);
                 setMobileMenuOpen(false);
               }}
-              className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center">
+              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center shrink-0">
               {status === "authenticated" ? (
                 <span className="font-bold text-sm text-primary-container">{user?.first_name?.charAt(0) || "U"}</span>
               ) : (
-                <span className="material-symbols-outlined text-text-secondary">person</span>
+                <span className="material-symbols-outlined text-text-secondary text-[22px]">person</span>
               )}
             </div>
             
             {/* Desktop Dropdown */}
             {profileDropdownOpen && (
-              <div className="hidden md:block absolute right-0 mt-2 w-72 bg-background-obsidian/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl z-50">
+              <div className="hidden xl:block absolute right-0 mt-2 w-72 bg-background-obsidian/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl z-50">
                 {status === "authenticated" ? (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3 border-b border-white/10 pb-3">
@@ -233,39 +257,40 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile & Tablet Notification & Menu Buttons (< xl) */}
+          <div className="flex xl:hidden items-center gap-2.5">
             <Link 
               href="/notifications"
               onClick={() => {
                 setMobileMenuOpen(false);
                 setProfileDropdownOpen(false);
               }}
-              className="text-text-primary p-2 relative"
+              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-primary group"
               aria-label="Bildirishnomalar"
             >
-              <span className="material-symbols-outlined text-[24px]">notifications</span>
+              <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">notifications</span>
               {hasUnread && (
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
               )}
             </Link>
             <button 
-              className="text-text-primary p-2 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container transition-colors bg-white/5 flex items-center justify-center text-text-primary hover:bg-white/10 cursor-pointer"
               onClick={() => {
                 setMobileMenuOpen(true);
                 setProfileDropdownOpen(false);
               }}
               aria-label="Menyu"
             >
-              <span className="material-symbols-outlined text-3xl">menu</span>
+              <span className="material-symbols-outlined text-[22px]">menu</span>
             </button>
           </div>
         </div>
       </div>
+    </nav>
 
       {/* Mobile Navigation Drawer (Full-screen overlay, perfectly structured) */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] bg-background-obsidian/98 backdrop-blur-2xl flex flex-col">
+        <div className="xl:hidden fixed inset-0 z-[100] bg-background-obsidian/98 backdrop-blur-2xl flex flex-col overscroll-contain">
           {/* Drawer Top Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
             <Link 
@@ -285,7 +310,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           </div>
 
           {/* Drawer Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 flex flex-col gap-5">
             {/* Search Input */}
             <form onSubmit={handleSearch} className="flex w-full items-center bg-white/10 rounded-xl px-4 py-3 border border-white/10 focus-within:border-primary-container transition-all">
               <span className="material-symbols-outlined text-text-secondary mr-3 text-[22px]">search</span>
@@ -402,15 +427,15 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
       {/* Mobile Profile Bottom Sheet Modal (Dedicated for Mobile / Telegram WebApp) */}
       {profileDropdownOpen && (
-        <div className="md:hidden fixed inset-0 z-[110] flex flex-col justify-end">
+        <div className="xl:hidden fixed inset-0 z-[110] flex flex-col justify-end overscroll-contain">
           {/* Backdrop overlay */}
           <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity touch-none"
             onClick={() => setProfileDropdownOpen(false)}
           />
 
           {/* Bottom Sheet Drawer */}
-          <div className="relative z-10 bg-background-obsidian/98 backdrop-blur-2xl border-t border-white/15 rounded-t-[32px] px-6 pt-4 pb-8 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto">
+          <div className="relative z-10 bg-background-obsidian/98 backdrop-blur-2xl border-t border-white/15 rounded-t-[32px] px-6 pt-4 pb-8 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 max-h-[85vh] max-h-[85dvh] overflow-y-auto overscroll-contain">
             {/* Drag Handle Bar */}
             <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mb-1 shrink-0" />
 
@@ -522,6 +547,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 }
