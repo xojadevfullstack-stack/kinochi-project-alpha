@@ -48,7 +48,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="uz" className="dark">
+    <html lang="uz" className="dark" suppressHydrationWarning>
       <head>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -65,7 +65,7 @@ export default async function RootLayout({
           }
         `}</style>
       </head>
-      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`}>
+      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`} suppressHydrationWarning>
         <AuthProvider>
           <TelegramInit />
           <Navbar pages={pages} />

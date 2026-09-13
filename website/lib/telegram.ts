@@ -1,4 +1,4 @@
-﻿// Telegram WebApp Utilities and Helpers
+// Telegram WebApp Utilities and Helpers
 
 export function getTelegramWebApp() {
   if (typeof window === "undefined") return null;
@@ -16,12 +16,15 @@ export function initTelegram() {
       if (typeof tg.expand === "function") {
         tg.expand();
       }
-      // Set theme colors to match obsidian dark
-      if (typeof tg.setHeaderColor === "function") {
-        tg.setHeaderColor("#0d0d12");
-      }
-      if (typeof tg.setBackgroundColor === "function") {
-        tg.setBackgroundColor("#0d0d12");
+      // Set theme colors only if supported by Telegram WebApp version (>= 6.1)
+      const isAtLeast61 = typeof tg.isVersionAtLeast === "function" ? tg.isVersionAtLeast("6.1") : false;
+      if (isAtLeast61) {
+        if (typeof tg.setHeaderColor === "function") {
+          tg.setHeaderColor("#0d0d12");
+        }
+        if (typeof tg.setBackgroundColor === "function") {
+          tg.setBackgroundColor("#0d0d12");
+        }
       }
     } catch (e) {
       console.warn("Telegram WebApp initialization error:", e);

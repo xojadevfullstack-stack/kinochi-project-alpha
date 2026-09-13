@@ -16,7 +16,12 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Synchronize unread notification status
   useEffect(() => {
@@ -409,7 +414,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       )}
 
       {/* Mobile Profile Bottom Sheet Modal (Dedicated for Mobile / Telegram WebApp) */}
-      {profileDropdownOpen && (
+      {isMounted && profileDropdownOpen && (
         <div className="xl:hidden fixed inset-0 z-[110] flex flex-col justify-end overscroll-contain">
           {/* Backdrop overlay */}
           <div 
@@ -466,14 +471,16 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 <div className="flex flex-col gap-2.5">
                   <a
                     href="/achievements"
+                    suppressHydrationWarning
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       if (typeof window !== "undefined") {
                         document.body.style.overflow = "";
                         window.location.href = "/achievements";
                       }
                     }}
-                    className="relative z-30 pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                    className="relative z-[9999] pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5 pointer-events-none">
                       <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
@@ -501,14 +508,16 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <div className="flex flex-col gap-3.5 py-1">
                 <a
                   href="/achievements"
+                  suppressHydrationWarning
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     if (typeof window !== "undefined") {
                       document.body.style.overflow = "";
                       window.location.href = "/achievements";
                     }
                   }}
-                  className="relative z-30 pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                  className="relative z-[9999] pointer-events-auto flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                 >
                   <div className="flex items-center gap-3.5 pointer-events-none">
                     <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
