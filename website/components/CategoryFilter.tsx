@@ -56,7 +56,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
           {/* 1. "Barchasi" Button */}
           <Link 
             href={baseUrl} 
-            className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-1.5 border active:scale-95 ${
+            className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-1.5 border ${
               !currentCategory 
                 ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/25" 
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
@@ -70,7 +70,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
           {categories.length > 0 && (
             <button
               onClick={() => setModalOpen(true)}
-              className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 border flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-black/20 ${
+              className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border flex items-center gap-1.5 cursor-pointer shadow-md shadow-black/20 ${
                 currentCategory
                   ? "bg-white/15 text-white border-white/30"
                   : "bg-white/10 hover:bg-white/15 border-white/15 text-text-primary"
@@ -92,7 +92,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
               <Link 
                 key={cat.id} 
                 href={`${baseUrl}?category=${cat.id}`}
-                className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 border active:scale-95 ${
+                className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
                   isActive 
                     ? "bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/25" 
                     : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
@@ -129,7 +129,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
               </div>
               <button 
                 onClick={() => setModalOpen(false)}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-text-primary flex items-center justify-center transition-colors cursor-pointer"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-text-primary flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
                 aria-label="Yopish"
               >
                 <span className="material-symbols-outlined text-2xl">close</span>
@@ -148,23 +148,26 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
                   className="bg-transparent border-none text-sm text-text-primary placeholder:text-text-secondary w-full outline-none"
                 />
                 {filterQuery && (
-                  <button onClick={() => setFilterQuery("")} className="text-text-secondary hover:text-white text-xs">
-                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  <button 
+                    onClick={() => setFilterQuery("")}
+                    className="text-text-secondary hover:text-text-primary p-0.5 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Scrollable Genres Grid */}
-            <div className="overflow-y-auto flex-1 py-2 pr-1 hide-scrollbar overscroll-contain">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {/* Category Grid */}
+            <div className="overflow-y-auto flex-1 pr-1 -mr-1 custom-scrollbar py-2">
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                 {/* Reset to All */}
                 <button
                   onClick={() => {
                     router.push(baseUrl);
                     setModalOpen(false);
                   }}
-                  className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
+                  className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 border text-left flex items-center justify-between cursor-pointer ${
                     !currentCategory 
                       ? "bg-primary-container text-white border-primary-container font-bold shadow-md shadow-primary-container/20" 
                       : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
@@ -185,7 +188,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
                         router.push(`${baseUrl}?category=${cat.id}`);
                         setModalOpen(false);
                       }}
-                      className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all border text-left flex items-center justify-between cursor-pointer ${
+                      className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 border text-left flex items-center justify-between cursor-pointer ${
                         isActive 
                           ? "bg-primary-container text-white border-primary-container font-bold shadow-md shadow-primary-container/20" 
                           : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"

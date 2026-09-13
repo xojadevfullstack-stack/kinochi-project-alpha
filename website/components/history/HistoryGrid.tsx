@@ -34,7 +34,7 @@ export default function HistoryGrid({
         </p>
         <Link
           href="/movies"
-          className="h-11 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm border border-white/15 flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-black/20 cursor-pointer"
+          className="h-11 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm border border-white/15 flex items-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-md shadow-black/20 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[18px]">movie</span>
           <span>Katalogni ochish</span>

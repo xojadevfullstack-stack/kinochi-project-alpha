@@ -48,8 +48,12 @@ const MovieRow = ({ title, items, isSeries = false, isDynamicPage = false, pageS
           <span className="w-1 h-6 bg-rating-gold rounded-full block"></span>
           {title}
         </h2>
-        <Link href={isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies")} className="text-text-secondary hover:text-text-primary text-sm font-semibold transition-colors">
-          Barchasi
+        <Link 
+          href={isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies")} 
+          className="text-text-secondary hover:text-text-primary text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1 group"
+        >
+          <span>Barchasi</span>
+          <span className="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">chevron_right</span>
         </Link>
       </div>
       <div className="flex gap-4 overflow-x-auto snap-x hide-scrollbar px-gutter pb-8 pt-4">
@@ -212,7 +216,7 @@ export default async function Home() {
               <div className="flex flex-row gap-3 w-full sm:w-auto">
                 <Link 
                   href={isHeroSeries ? `/series/${heroItem.id}` : `/movie/${heroItem.code}`}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 sm:gap-3 bg-primary-container text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:-translate-y-0.5 shadow-lg shadow-primary-container/20 hover:shadow-primary-container/30 transition-all duration-300 font-bold active:scale-95 cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 sm:gap-3 bg-primary-container text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 shadow-lg shadow-primary-container/20 hover:shadow-primary-container/30 transition-all duration-200 font-bold active:scale-95 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px] sm:text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
                   <span>Tomosha qilish</span>
@@ -223,7 +227,7 @@ export default async function Home() {
                   url={`/${isHeroSeries ? 'series' : 'movie'}/${isHeroSeries ? heroItem.id : heroItem.code}`}
                   code={isHeroSeries ? `s_${heroItem.id}` : heroItem.code}
                   botUsername={botUsername}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest border border-white/10 transition-all font-bold active:scale-95 cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest border border-white/10 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 font-bold active:scale-95 cursor-pointer"
                 />
               </div>
             </div>

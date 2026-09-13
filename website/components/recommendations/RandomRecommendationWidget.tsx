@@ -132,7 +132,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
           <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 hide-scrollbar scroll-smooth">
             <button
               onClick={() => handleCategoryChange("all")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                 selectedCategory === "all"
                   ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                   : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
@@ -144,7 +144,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
             <button
               onClick={() => handleCategoryChange("movies")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                 selectedCategory === "movies"
                   ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                   : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
@@ -156,7 +156,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
 
             <button
               onClick={() => handleCategoryChange("series")}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                 selectedCategory === "series"
                   ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                   : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
@@ -178,7 +178,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                 <button
                   key={p.id}
                   onClick={() => handleCategoryChange(pKey)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 shrink-0 flex items-center gap-2 border cursor-pointer active:scale-95 ${
                     selectedCategory === pKey
                       ? "bg-primary-container/20 text-white border-primary-container/50 font-semibold"
                       : "bg-white/5 text-text-secondary border-white/10 hover:bg-white/10 hover:text-text-primary"
@@ -248,7 +248,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
                 <Link
                   href={watchUrl}
-                  className="flex-1 sm:flex-initial sm:min-w-[140px] h-11 px-5 rounded-xl bg-primary-container/90 hover:bg-primary-container text-white font-semibold text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial sm:min-w-[140px] h-11 px-5 rounded-xl bg-primary-container/90 hover:bg-primary-container text-white font-semibold text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer shadow-lg shadow-primary-container/20"
                 >
                   <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     play_circle
@@ -259,7 +259,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                 <button
                   onClick={handleNext}
                   disabled={isSpinning || filteredItems.length <= 1}
-                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40"
+                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:hover:translate-y-0"
                 >
                   <span className={`material-symbols-outlined text-[18px] text-rating-gold ${isSpinning ? "animate-spin" : ""}`}>
                     autorenew
@@ -272,7 +272,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   text={`${activeItem.title} ni bepul tomosha qiling!`}
                   url={watchUrl}
                   code={activeItem.is_series ? `s_${activeItem.id}` : (activeItem.code || String(activeItem.id))}
-                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="flex-1 sm:flex-initial sm:min-w-[110px] h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-semibold text-xs sm:text-sm tracking-wide border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
                   buttonText="Ulashish"
                 />
               </div>

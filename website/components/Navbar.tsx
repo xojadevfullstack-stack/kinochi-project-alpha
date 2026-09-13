@@ -166,7 +166,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           {/* Desktop Notifications */}
           <Link 
             href="/notifications"
-            className="relative hidden xl:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 items-center justify-center group"
+            className="relative hidden xl:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 items-center justify-center group"
           >
             <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
             {hasUnread && (
@@ -181,7 +181,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 setProfileDropdownOpen(!profileDropdownOpen);
                 setMobileMenuOpen(false);
               }}
-              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-colors cursor-pointer bg-white/5 flex items-center justify-center shrink-0">
+              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 flex items-center justify-center shrink-0">
               {status === "authenticated" ? (
                 <span className="font-bold text-sm text-primary-container">{user?.first_name?.charAt(0) || "U"}</span>
               ) : (

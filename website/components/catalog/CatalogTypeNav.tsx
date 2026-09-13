@@ -46,7 +46,7 @@ export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeN
             <Link
               key={item.key}
               href={item.href}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-2 border active:scale-95 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border ${
                 isActive
                   ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
@@ -65,7 +65,7 @@ export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeN
             <Link
               key={page.slug}
               href={`/p/${page.slug}`}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 flex items-center gap-2 border active:scale-95 ${
+              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border ${
                 isActive
                   ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
