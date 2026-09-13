@@ -184,9 +184,10 @@ export default async function Home() {
             {/* Glassmorphic Info Card */}
             <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl">
               <div className="mb-4 sm:mb-6 flex flex-col items-center md:items-start gap-2.5 sm:gap-4">
-                {/* Specific Label */}
-                <div className="inline-block px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-text-secondary font-label-caps text-[11px] sm:text-xs font-semibold tracking-widest uppercase">
-                  {isHeroSeries ? "Eng so'nggi serial" : "Eng so'nggi kino"}
+                {/* Specific Premiere Label */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-label-caps text-[11px] sm:text-xs font-bold tracking-widest uppercase shadow-sm shadow-emerald-500/10 backdrop-blur-md">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>{isHeroSeries ? "Eng so'nggi serial" : "Eng so'nggi kino"}</span>
                 </div>
                 
                 <h1 className="font-display-hero text-3xl sm:text-5xl md:text-6xl text-text-primary drop-shadow-2xl tracking-tight leading-tight">
