@@ -20,6 +20,13 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
   const [modalOpen, setModalOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState("");
 
+  const handleSelectCategory = (url: string) => {
+    router.push(url);
+    setTimeout(() => {
+      setModalOpen(false);
+    }, 100);
+  };
+
   // Lock scroll when modal is open
   useEffect(() => {
     if (modalOpen) {
@@ -163,10 +170,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
               <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                 {/* Reset to All */}
                 <button
-                  onClick={() => {
-                    router.push(baseUrl);
-                    setModalOpen(false);
-                  }}
+                  onClick={() => handleSelectCategory(baseUrl)}
                   className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 border text-left flex items-center justify-between cursor-pointer ${
                     !currentCategory 
                       ? "bg-primary-container text-white border-primary-container font-bold shadow-md shadow-primary-container/20" 
@@ -184,10 +188,7 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => {
-                        router.push(`${baseUrl}?category=${cat.id}`);
-                        setModalOpen(false);
-                      }}
+                      onClick={() => handleSelectCategory(`${baseUrl}?category=${cat.id}`)}
                       className={`p-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:-translate-y-0.5 active:scale-95 border text-left flex items-center justify-between cursor-pointer ${
                         isActive 
                           ? "bg-primary-container text-white border-primary-container font-bold shadow-md shadow-primary-container/20" 

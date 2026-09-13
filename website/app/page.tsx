@@ -21,12 +21,6 @@ type Movie = {
   created_at?: string;
 };
 
-type Category = {
-  id: number;
-  name: string;
-  is_active: boolean;
-};
-
 type Series = {
   id: number;
   title: string;

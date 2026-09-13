@@ -98,11 +98,19 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     }
   };
 
-  const handleNavClick = (e: React.MouseEvent, href: string) => {
-    e.preventDefault();
-    setProfileDropdownOpen(false);
-    setMobileMenuOpen(false);
+  const handleNavClick = (href: string) => {
     router.push(href);
+    setTimeout(() => {
+      setProfileDropdownOpen(false);
+      setMobileMenuOpen(false);
+    }, 120);
+  };
+
+  const handleCloseDrawersDelayed = () => {
+    setTimeout(() => {
+      setProfileDropdownOpen(false);
+      setMobileMenuOpen(false);
+    }, 120);
   };
 
   const navLinks = [
@@ -225,7 +233,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       </div>
                       <Link
                         href="/history"
-                        onClick={(e) => handleNavClick(e, "/history")}
+                        onClick={() => handleNavClick("/history")}
                         className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
                       >
                         <span className="material-symbols-outlined text-[20px] text-sky-400">history</span>
@@ -233,7 +241,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       </Link>
                       <Link
                         href="/achievements"
-                        onClick={(e) => handleNavClick(e, "/achievements")}
+                        onClick={() => handleNavClick("/achievements")}
                         className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
                       >
                         <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
@@ -289,10 +297,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           <div className="flex xl:hidden items-center gap-2.5">
             <Link 
               href="/notifications"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setProfileDropdownOpen(false);
-              }}
+              onClick={handleCloseDrawersDelayed}
               className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-secondary hover:bg-white/10 cursor-pointer group"
               aria-label="Bildirishnomalar"
             >
@@ -323,7 +328,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
             <Link 
               href="/" 
-              onClick={() => setMobileMenuOpen(false)} 
+              onClick={handleCloseDrawersDelayed} 
               className="font-display-hero-mobile text-[26px] text-primary-container tracking-tighter"
             >
               Kinochi
@@ -360,7 +365,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   <Link
                     key={link.name}
                     href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={handleCloseDrawersDelayed}
                     className={`flex items-center px-4 py-3 rounded-xl text-lg font-bold tracking-wide transition-all ${
                       isActive 
                         ? "bg-primary-container text-white shadow-lg shadow-primary-container/20" 
@@ -380,7 +385,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary px-1 mb-1">Foydalanuvchi</span>
               <Link
                 href="/notifications"
-                onClick={(e) => handleNavClick(e, "/notifications")}
+                onClick={() => handleNavClick("/notifications")}
                 className="flex items-center justify-between px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
                 <div className="flex items-center gap-3">
@@ -393,7 +398,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               </Link>
               <Link
                 href="/history"
-                onClick={(e) => handleNavClick(e, "/history")}
+                onClick={() => handleNavClick("/history")}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
                 <span className="material-symbols-outlined text-[22px] text-sky-400">history</span>
@@ -401,7 +406,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               </Link>
               <Link
                 href="/achievements"
-                onClick={(e) => handleNavClick(e, "/achievements")}
+                onClick={() => handleNavClick("/achievements")}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
               >
                 <span className="material-symbols-outlined text-[22px] text-amber-400">emoji_events</span>
@@ -458,7 +463,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
         <div className="xl:hidden fixed inset-0 z-[110] flex flex-col justify-end overscroll-contain">
           {/* Backdrop overlay */}
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity touch-none"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
             onClick={() => setProfileDropdownOpen(false)}
           />
 
@@ -502,7 +507,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 <div className="flex flex-col gap-2.5">
                   <Link
                     href="/history"
-                    onClick={(e) => handleNavClick(e, "/history")}
+                    onClick={() => handleNavClick("/history")}
                     className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">
@@ -516,7 +521,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
                   <Link
                     href="/achievements"
-                    onClick={(e) => handleNavClick(e, "/achievements")}
+                    onClick={() => handleNavClick("/achievements")}
                     className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
                   >
                     <div className="flex items-center gap-3.5">

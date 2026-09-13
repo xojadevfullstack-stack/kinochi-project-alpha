@@ -3,6 +3,7 @@ import { Inter, Outfit, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
+import TelegramInit from "@/components/TelegramInit";
 import { fetchApi } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import Script from "next/script";
@@ -66,6 +67,7 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`}>
         <AuthProvider>
+          <TelegramInit />
           <Navbar pages={pages} />
 
           <main className="min-h-screen pb-20 xl:pb-0">

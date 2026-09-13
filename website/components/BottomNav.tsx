@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const navItems = [
     { label: "Asosiy", href: "/", icon: "home" },
@@ -20,10 +19,9 @@ export default function BottomNav() {
     }
   };
 
-  const handleNav = (e: React.MouseEvent, href: string) => {
-    e.preventDefault();
-    if (pathname !== href) {
-      router.push(href);
+  const handleNav = (href: string) => {
+    if (pathname === href && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -42,7 +40,7 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={(e) => handleNav(e, item.href)}
+              onClick={() => handleNav(item.href)}
               className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer relative group ${
                 isActive ? "text-primary-container font-bold" : "text-text-secondary hover:text-text-primary"
               }`}
