@@ -81,6 +81,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       return () => {
         document.body.style.overflow = prevOverflow;
       };
+    } else {
+      document.body.style.overflow = "";
     }
   }, [mobileMenuOpen, profileDropdownOpen]);
 
@@ -99,9 +101,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   };
 
   const handleLinkClick = (href: string) => {
-    if (pathname === href) {
-      setMobileMenuOpen(false);
-      setProfileDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
+    if (typeof window !== "undefined") {
+      document.body.style.overflow = "";
+    }
+    if (pathname !== href) {
+      router.push(href);
     }
   };
 
@@ -249,9 +255,19 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     </div>
                   ) : (
                     <div className="flex flex-col gap-3">
-                      <p className="text-xs text-text-secondary text-center">
-                        Tizimga kiring:
-                      </p>
+                      <Link
+                        href="/achievements"
+                        onClick={() => handleLinkClick("/achievements")}
+                        className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
+                      >
+                        <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
+                        <span>Yutuqlar</span>
+                      </Link>
+                      <div className="border-t border-white/10 pt-2">
+                        <p className="text-xs text-text-secondary text-center mb-2.5">
+                          Tizimga kiring:
+                        </p>
+                      </div>
                       <button
                         onClick={async () => {
                           try {
@@ -445,10 +461,26 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 py-2">
-                <p className="text-sm text-text-secondary text-center">
-                  Ko'rish tarixi, yutuqlar va shaxsiy tavsiyalardan foydalanish uchun tizimga kiring:
-                </p>
+              <div className="flex flex-col gap-3.5 py-1">
+                <Link
+                  href="/achievements"
+                  onClick={() => handleLinkClick("/achievements")}
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                      <span className="material-symbols-outlined text-[24px]">emoji_events</span>
+                    </div>
+                    <span className="font-semibold text-base">Yutuqlar</span>
+                  </div>
+                  <span className="material-symbols-outlined text-text-secondary group-hover:text-amber-400 transition-colors text-[20px]">chevron_right</span>
+                </Link>
+
+                <div className="border-t border-white/10 pt-2">
+                  <p className="text-xs sm:text-sm text-text-secondary text-center mb-3">
+                    Ko'rish tarixi, shaxsiy medallar va tavsiyalardan foydalanish uchun tizimga kiring:
+                  </p>
+                </div>
                 <button
                   onClick={async () => {
                     try {
