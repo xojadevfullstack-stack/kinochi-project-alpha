@@ -109,6 +109,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       setProfileDropdownOpen(false);
       return;
     }
+
+    // Inside Telegram WebApp, direct navigation ensures rock-solid transition without WebView touch drops
+    const tg = typeof window !== "undefined" && (window as any).Telegram?.WebApp;
+    if (tg && tg.initData) {
+      window.location.href = href;
+      return;
+    }
+
     router.push(href);
     setTimeout(() => {
       setMobileMenuOpen(false);
