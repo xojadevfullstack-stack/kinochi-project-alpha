@@ -12,18 +12,15 @@ export default function HistoryPage() {
   const { status, environment: env } = useAuth();
   
   const [items, setItems] = useState<HistoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"in_progress" | "completed">("in_progress");
   const userSwitchedTab = useRef(false);
 
   useEffect(() => {
     if (status === "authenticated") {
-      setLoading(true);
       getHistory(0, 100) // Fetching a reasonable amount for the client-side filter
         .then(res => {
           const historyItems = res.items || [];
           setItems(historyItems);
-          setLoading(false);
 
           // Intelligent UX Default: if user hasn't manually switched tab,
           // and has 0 in-progress but has completed items, switch to completed!
@@ -37,10 +34,7 @@ export default function HistoryPage() {
         })
         .catch(err => {
           console.error(err);
-          setLoading(false);
         });
-    } else if (status === "unauthenticated") {
-      setLoading(false);
     }
   }, [status]);
 
@@ -48,14 +42,6 @@ export default function HistoryPage() {
     userSwitchedTab.current = true;
     setActiveTab(tab);
   };
-
-  if (status === "loading" || (status === "authenticated" && loading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background-obsidian">
-        <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-rating-gold animate-spin"></div>
-      </div>
-    );
-  }
 
   if (status === "unauthenticated") {
     return (
