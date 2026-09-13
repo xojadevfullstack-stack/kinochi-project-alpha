@@ -45,10 +45,10 @@ const MovieRow = ({ title, items, isSeries = false, isDynamicPage = false, pageS
     <section className="max-w-container-max mx-auto mb-16">
       <div className="px-gutter mb-stack-md flex items-center justify-between">
         <h2 className="font-headline-md text-headline-md text-text-primary flex items-center gap-2">
-          <span className="w-1 h-6 bg-primary-container rounded-full block"></span>
+          <span className="w-1 h-6 bg-rating-gold rounded-full block"></span>
           {title}
         </h2>
-        <Link href={isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies")} className="text-text-secondary hover:text-primary-container text-sm font-bold transition-colors">
+        <Link href={isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies")} className="text-text-secondary hover:text-text-primary text-sm font-semibold transition-colors">
           Barchasi
         </Link>
       </div>
@@ -59,7 +59,7 @@ const MovieRow = ({ title, items, isSeries = false, isDynamicPage = false, pageS
           <Link 
             href={itemIsSeries ? `/series/${item.id}` : `/movie/${item.code}`} 
             key={itemIsSeries ? `s-${item.id}` : `m-${item.code}`} 
-            className="w-[160px] md:w-[240px] shrink-0 snap-start group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
+            className="w-[160px] md:w-[240px] shrink-0 snap-start group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
           >
             {item.poster_url ? (
               <Image 
@@ -181,7 +181,7 @@ export default async function Home() {
             <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl">
               <div className="mb-4 sm:mb-6 flex flex-col items-center md:items-start gap-2.5 sm:gap-4">
                 {/* Specific Label */}
-                <div className="inline-block px-3.5 py-1 rounded-full bg-primary-container/20 border border-primary-container/50 text-primary-container font-label-caps text-[11px] sm:text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(229,9,20,0.2)]">
+                <div className="inline-block px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-text-secondary font-label-caps text-[11px] sm:text-xs font-semibold tracking-widest uppercase">
                   {isHeroSeries ? "Eng so'nggi serial" : "Eng so'nggi kino"}
                 </div>
                 
@@ -212,7 +212,7 @@ export default async function Home() {
               <div className="flex flex-row gap-3 w-full sm:w-auto">
                 <Link 
                   href={isHeroSeries ? `/series/${heroItem.id}` : `/movie/${heroItem.code}`}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 sm:gap-3 bg-primary-container text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(229,9,20,0.5)] transition-all duration-300 font-bold active:scale-95 cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 sm:gap-3 bg-primary-container text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:-translate-y-0.5 shadow-lg shadow-primary-container/20 hover:shadow-primary-container/30 transition-all duration-300 font-bold active:scale-95 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px] sm:text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
                   <span>Tomosha qilish</span>

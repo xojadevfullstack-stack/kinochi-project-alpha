@@ -103,7 +103,7 @@ export default async function CategoryPage({ params }: { params: { id: string } 
               <Link 
                 href={`/movie/${movie.code}`} 
                 key={movie.code} 
-                className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
+                className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
               >
                 {movie.poster_url ? (
                   <Image 

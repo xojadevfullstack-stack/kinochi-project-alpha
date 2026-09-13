@@ -51,7 +51,7 @@ export default function ContinueWatchingBanner({ items }: { items: HistoryItem[]
             Davom eting
           </span>
           {isSeries && (
-            <span className="px-2 py-1 bg-primary-container/20 text-primary-container rounded text-[10px] md:text-xs font-bold uppercase tracking-wider border border-primary-container/30">
+            <span className="px-2 py-1 bg-white/10 text-text-secondary rounded text-[10px] md:text-xs font-semibold uppercase tracking-wider border border-white/10">
               Serial
             </span>
           )}

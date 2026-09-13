@@ -88,10 +88,10 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
           {categories.length > 0 && (
             <button
               onClick={() => setModalOpen(true)}
-              className="px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 bg-white/10 hover:bg-white/15 border border-white/15 text-text-primary flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-black/20"
+              className="px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 bg-white/10 hover:bg-white/15 border border-white/15 text-text-primary flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-md shadow-black/20"
               aria-label="Barcha janrlarni ko'rish"
             >
-              <span className="material-symbols-outlined text-[18px] text-primary-container">tune</span>
+              <span className="material-symbols-outlined text-[18px] text-text-secondary">tune</span>
               <span>Barcha janrlar</span>
               <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/10 text-[11px] text-text-secondary">
                 {categories.length}
@@ -104,21 +104,21 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
       {/* Modal / Bottom Sheet for All Genres */}
       {modalOpen && (
         <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
-          {/* Backdrop overlay */}
+          {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
-            onClick={() => setModalOpen(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity" 
+            onClick={() => setModalOpen(false)} 
           />
 
-          {/* Modal Container */}
-          <div className="relative z-10 w-full sm:max-w-2xl bg-background-obsidian/98 backdrop-blur-2xl border-t sm:border border-white/15 rounded-t-[28px] sm:rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[80vh] animate-in slide-in-from-bottom duration-300">
+          {/* Dialog Container */}
+          <div className="relative w-full sm:max-w-2xl max-h-[85vh] bg-background-obsidian/95 border border-white/15 rounded-t-3xl sm:rounded-3xl shadow-2xl backdrop-blur-2xl flex flex-col p-5 sm:p-6 z-10 overflow-hidden">
             {/* Mobile Drag Indicator */}
             <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 shrink-0 sm:hidden" />
 
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[24px] text-primary-container">tune</span>
+                <span className="material-symbols-outlined text-[22px] text-text-secondary">tune</span>
                 <h3 className="font-extrabold text-lg sm:text-xl text-text-primary">
                   Janrlar va kategoriyalar
                 </h3>

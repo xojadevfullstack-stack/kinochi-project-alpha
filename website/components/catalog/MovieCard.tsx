@@ -9,7 +9,7 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
   return (
     <Link 
       href={href} 
-      className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
+      className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
     >
       {item.poster_url ? (
         <Image 
@@ -36,21 +36,16 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
         <span className="font-label-caps text-xs font-bold">{item.imdb_rating || item.tmdb_rating || "N/A"}</span>
       </div>
 
-      {/* Top Left Badges Container */}
-      <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-        {isSeries && (
-          <div className="px-2 py-1 bg-primary-container/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10">
-            Serial
-          </div>
-        )}
+      {/* Top Left Badges Container (status badges only, no redundant noisy badges) */}
+      <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
         {statusBadge === "completed" && (
-          <div className="px-2 py-1 bg-green-500/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
+          <div className="px-2 py-0.5 bg-emerald-500/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
             <span className="material-symbols-outlined text-[12px]">check_circle</span>
             Ko'rilgan
           </div>
         )}
         {statusBadge === "in_progress" && (
-          <div className="px-2 py-1 bg-blue-500/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
+          <div className="px-2 py-0.5 bg-blue-500/80 backdrop-blur-sm rounded text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1">
             <span className="material-symbols-outlined text-[12px]">schedule</span>
             Davom etmoqda
           </div>
@@ -71,7 +66,7 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
             </span>
           )}
         </div>
-        <h3 className="font-body-lg text-sm md:text-[16px] font-bold leading-tight text-white mb-1 group-hover:text-primary-container transition-colors line-clamp-2">
+        <h3 className="font-body-lg text-sm md:text-[16px] font-bold leading-tight text-white mb-1 group-hover:text-white transition-colors line-clamp-2">
           {item.title}
         </h3>
       </div>

@@ -106,12 +106,12 @@ export default async function DynamicPage({ params, searchParams }: { params: { 
               <Link 
                 href={`/movie/${movie.code}`} 
                 key={`movie-${movie.code}`} 
-                className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
+                className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
               >
                 {movie.poster_url ? (
                   <Image 
                     src={movie.poster_url} 
-                    alt={movie.title}
+                    alt={movie.title} 
                     fill
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
                     className="object-cover"
@@ -145,7 +145,7 @@ export default async function DynamicPage({ params, searchParams }: { params: { 
               <Link 
                 href={`/series/${s.id}`} 
                 key={`series-${s.id}`} 
-                className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
+                className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
               >
                 {s.poster_url ? (
                   <Image 

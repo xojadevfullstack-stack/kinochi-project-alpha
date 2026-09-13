@@ -95,7 +95,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                 <Link 
                   href={linkUrl} 
                   key={key} 
-                  className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.3)] ring-1 ring-white/5 hover:ring-primary-container"
+                  className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
                 >
                   {item.poster_url ? (
                     <Image 
