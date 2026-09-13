@@ -196,8 +196,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               )}
             </Link>
             
-            {/* Profile Avatar Button (Uniform w-10 h-10 across all devices) */}
-            <div className="relative" ref={profileDropdownRef}>
+            {/* Profile Avatar Button (Desktop-only; on mobile BottomNav has dedicated Profil tab) */}
+            <div className="relative hidden xl:block" ref={profileDropdownRef}>
               <div 
                 onClick={() => {
                   setProfileDropdownOpen(prev => !prev);
@@ -505,20 +505,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
                 {/* Actions List */}
                 <div className="flex flex-col gap-2.5">
-                  <Link
-                    href="/history"
-                    onClick={() => handleNavClick("/history")}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                        <span className="material-symbols-outlined text-[24px]">history</span>
-                      </div>
-                      <span className="font-semibold text-base">Ko'rish tarixi</span>
-                    </div>
-                    <span className="material-symbols-outlined text-text-secondary group-hover:text-sky-400 transition-colors text-[20px]">chevron_right</span>
-                  </Link>
-
                   <Link
                     href="/achievements"
                     onClick={() => handleNavClick("/achievements")}
