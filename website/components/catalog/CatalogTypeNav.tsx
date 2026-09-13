@@ -4,6 +4,7 @@ interface PageItem {
   id: number | string;
   title: string;
   slug: string;
+  is_active?: boolean;
 }
 
 interface CatalogTypeNavProps {
@@ -14,8 +15,16 @@ interface CatalogTypeNavProps {
 function getPageIcon(title: string) {
   const t = title.toLowerCase();
   if (t.includes("anime")) return "🎌";
-  if (t.includes("dorama")) return "🎭";
-  if (t.includes("mult")) return "🧸";
+  if (t.includes("dorama") || t.includes("koreys")) return "🎭";
+  if (t.includes("mult") || t.includes("kartun") || t.includes("bolalar")) return "🧸";
+  if (t.includes("marvel") || t.includes("dc") || t.includes("komiks")) return "🦸";
+  if (t.includes("turk")) return "🌙";
+  if (t.includes("retro") || t.includes("klassik")) return "📽️";
+  if (t.includes("top") || t.includes("hit") || t.includes("trend")) return "🔥";
+  if (t.includes("hujjatli") || t.includes("doc")) return "📜";
+  if (t.includes("fantastik")) return "🚀";
+  if (t.includes("jangari") || t.includes("jang")) return "⚔️";
+  if (t.includes("horror") || t.includes("qo'rqinchli")) return "👻";
   return "📂";
 }
 
@@ -24,6 +33,8 @@ export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeN
     { label: "Kinolar", href: "/movies", icon: "🎬", key: "movies" },
     { label: "Seriallar", href: "/series", icon: "📺", key: "series" },
   ];
+
+  const activePages = pages.filter((p) => p.is_active !== false);
 
   return (
     <div className="relative w-full mb-4">
@@ -47,8 +58,8 @@ export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeN
           );
         })}
 
-        {/* Dynamic Pages: Anime, Dorama, etc. */}
-        {pages.map((page) => {
+        {/* Dynamic Pages: Anime, Dorama, and any page added via Admin Panel */}
+        {activePages.map((page) => {
           const isActive = currentType === page.slug;
           return (
             <Link
