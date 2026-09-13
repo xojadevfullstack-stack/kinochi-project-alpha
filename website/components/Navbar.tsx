@@ -179,10 +179,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               />
             </form>
 
-            {/* Desktop/Tablet Notifications */}
+            {/* Desktop Notifications (xl and above) */}
             <Link 
               href="/notifications"
-              className="relative hidden md:flex w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 items-center justify-center text-text-secondary hover:bg-white/10 cursor-pointer group"
+              onClick={() => handleLinkClick("/notifications")}
+              className="relative hidden xl:flex w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 items-center justify-center text-text-secondary hover:bg-white/10 cursor-pointer group"
               aria-label="Bildirishnomalar"
             >
               <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">notifications</span>
