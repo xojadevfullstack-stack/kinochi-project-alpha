@@ -158,60 +158,64 @@ export default async function Home() {
   return (
     <>
       {heroItem && (
-        <section className="relative w-full min-h-[100svh] md:min-h-[85vh] flex items-center pt-24 pb-16 overflow-hidden">
-          {/* Main Background Image - slightly zoomed and blurred for a creative backdrop */}
-          <div className="absolute inset-0 w-full h-full bg-background-obsidian">
+        <section className="relative w-full pt-20 pb-6 md:pt-28 md:pb-16 md:min-h-[85vh] md:flex md:items-center overflow-hidden">
+          {/* Main Background Image - with cinematic gradient blur and transparency */}
+          <div className="absolute inset-0 w-full h-full bg-background-obsidian pointer-events-none">
             {heroItem.poster_url && (
               <Image 
                 src={heroItem.poster_url}
                 alt={heroItem.title}
                 fill
                 priority
-                className="object-cover opacity-40 scale-110 blur-sm"
+                className="object-cover opacity-50 sm:opacity-40 scale-105 blur-sm sm:blur-md transition-all duration-700"
                 style={{ objectPosition: 'center 20%' }}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/80 to-background-obsidian/30"></div>
+            {/* Cinematic multi-stop gradient overlay: dark top for navbar, transparent middle for art, dark bottom to blend */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background-obsidian/90 via-background-obsidian/40 to-background-obsidian sm:hidden"></div>
+            <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/80 to-background-obsidian/30"></div>
           </div>
           
-          <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center gap-12 mt-10">
-            {/* Left: Glassmorphic Info Card */}
-            <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left bg-white/5 backdrop-blur-xl p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl">
-              <div className="mb-6 flex flex-col items-center md:items-start gap-4">
-                {/* Specific Label Requested by User */}
-                <div className="inline-block px-4 py-1.5 rounded-full bg-primary-container/20 border border-primary-container/50 text-primary-container font-label-caps text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(229,9,20,0.2)] animate-pulse">
+          <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center gap-6 md:gap-12 mt-4 md:mt-8">
+            {/* Glassmorphic Info Card */}
+            <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl">
+              <div className="mb-4 sm:mb-6 flex flex-col items-center md:items-start gap-2.5 sm:gap-4">
+                {/* Specific Label */}
+                <div className="inline-block px-3.5 py-1 rounded-full bg-primary-container/20 border border-primary-container/50 text-primary-container font-label-caps text-[11px] sm:text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(229,9,20,0.2)]">
                   {isHeroSeries ? "Eng so'nggi serial" : "Eng so'nggi kino"}
                 </div>
                 
-                <h1 className="font-display-hero text-4xl sm:text-5xl md:text-6xl text-text-primary drop-shadow-2xl tracking-tight leading-tight">
+                <h1 className="font-display-hero text-3xl sm:text-5xl md:text-6xl text-text-primary drop-shadow-2xl tracking-tight leading-tight">
                   {heroItem.title}
                 </h1>
               </div>
               
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
-                <div className="flex items-center gap-1 text-rating-gold bg-black/40 px-3 py-1 rounded-md backdrop-blur-sm border border-white/10">
-                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  <span className="font-bold text-sm">{heroItem.imdb_rating || heroItem.tmdb_rating || "N/A"}</span>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 mb-4 sm:mb-6">
+                <div className="flex items-center gap-1 text-rating-gold bg-black/50 px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/10 text-xs sm:text-sm">
+                  <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="font-bold">{heroItem.imdb_rating || heroItem.tmdb_rating || "N/A"}</span>
                 </div>
                 {heroItem.release_year && (
-                  <span className="text-text-secondary bg-white/10 backdrop-blur-sm px-3 py-1 rounded-md border border-white/10 text-sm font-medium">{heroItem.release_year}</span>
+                  <span className="text-text-secondary bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/10 text-xs sm:text-sm font-medium">
+                    {heroItem.release_year}
+                  </span>
                 )}
-                <span className="text-text-primary bg-white/10 backdrop-blur-sm px-3 py-1 rounded-md border border-white/10 text-sm font-medium">
+                <span className="text-text-primary bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/10 text-xs sm:text-sm font-medium">
                   {isHeroSeries ? heroItem.categories?.[0]?.name || "Serial" : heroItem.genres?.split(',')[0] || "Kino"}
                 </span>
               </div>
               
-              <p className="font-body-lg text-lg text-text-secondary mb-8 leading-relaxed line-clamp-3">
+              <p className="font-body-lg text-sm sm:text-base md:text-lg text-text-secondary mb-6 md:mb-8 leading-relaxed line-clamp-2 sm:line-clamp-3">
                 {heroItem.description || "Telegram tarmog'idagi eng katta va qulay kino bazasi. O'zingiz yoqtirgan filmlarni toping va bepul tomosha qiling."}
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <div className="flex flex-row gap-3 w-full sm:w-auto">
                 <Link 
                   href={isHeroSeries ? `/series/${heroItem.id}` : `/movie/${heroItem.code}`}
-                  className="flex items-center justify-center gap-3 bg-primary-container text-white px-8 py-4 rounded-xl font-label-caps text-sm uppercase tracking-widest hover:bg-inverse-primary hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(229,9,20,0.5)] transition-all duration-300 font-bold"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 sm:gap-3 bg-primary-container text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(229,9,20,0.5)] transition-all duration-300 font-bold active:scale-95 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-                  Tomosha qilish
+                  <span className="material-symbols-outlined text-[20px] sm:text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+                  <span>Tomosha qilish</span>
                 </Link>
                 <ShareButton 
                   title={heroItem.title} 
@@ -219,6 +223,7 @@ export default async function Home() {
                   url={`/${isHeroSeries ? 'series' : 'movie'}/${isHeroSeries ? heroItem.id : heroItem.code}`}
                   code={isHeroSeries ? `s_${heroItem.id}` : heroItem.code}
                   botUsername={botUsername}
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest border border-white/10 transition-all font-bold active:scale-95 cursor-pointer"
                 />
               </div>
             </div>
