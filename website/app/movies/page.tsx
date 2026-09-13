@@ -116,7 +116,7 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
                       </span>
                     )}
                   </div>
-                  <h3 className="font-display text-[18px] font-bold leading-tight text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                  <h3 className="font-display text-[18px] font-bold leading-tight text-white mb-1 group-hover:text-white transition-colors line-clamp-2">
                     {movie.title}
                   </h3>
                 </div>

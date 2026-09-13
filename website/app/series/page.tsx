@@ -101,7 +101,7 @@ export default async function SeriesListPage({ searchParams }: { searchParams: {
                     <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{(series as any).categories?.[0]?.name || "Serial"}</span>
                     {(series as any).release_year && <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">{(series as any).release_year}</span>}
                   </div>
-                  <h3 className="font-display text-[18px] font-bold leading-tight text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                  <h3 className="font-display text-[18px] font-bold leading-tight text-white mb-1 group-hover:text-white transition-colors line-clamp-2">
                     {series.title}
                   </h3>
                 </div>
