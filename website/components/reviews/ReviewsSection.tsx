@@ -135,69 +135,78 @@ export default function ReviewsSection({
     <section className="max-w-container-max mx-auto px-gutter py-12 border-t border-white/5">
       <div className="flex flex-col gap-8">
         {/* Section Header & Rating Overview Banner */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-surface-container/60 p-6 md:p-8 rounded-3xl border border-white/5">
-          <div>
-            <div className="flex items-center gap-2.5 mb-2">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-surface-container/60 p-5 sm:p-6 md:p-8 rounded-3xl border border-white/5">
+          <div className="space-y-1.5 max-w-xl">
+            <div className="flex items-center gap-2.5">
               <span className="material-symbols-outlined text-rating-gold text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                 stars
               </span>
-              <h2 className="text-2xl md:text-3xl font-display-hero font-bold text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-display-hero font-bold text-white tracking-tight">
                 Baholar va Sharhlar
               </h2>
             </div>
-            <p className="text-sm text-text-secondary max-w-xl">
+            <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
               Ushbu asar haqida tomoshabinlar va mutaxassislar fikrlari. Siz ham o'z bahoyingizni qoldiring!
             </p>
           </div>
 
-          {/* Score Badges Comparison */}
-          <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-            {/* IMDb Badge */}
-            <div className="flex items-center gap-3 bg-black/40 px-5 py-3 rounded-2xl border border-white/10">
-              <div className="w-10 h-10 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-400 font-black text-xs shrink-0">
-                IMDb
-              </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-rating-gold text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    star
-                  </span>
-                  <span className="text-lg font-bold text-white">
-                    {imdbRating ? `${imdbRating}` : "N/A"}
-                  </span>
-                  <span className="text-xs text-text-secondary">/10</span>
+          {/* Score Badges Comparison & Action Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full lg:w-auto">
+            {/* 2-Column Responsive Score Cards */}
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full sm:w-auto">
+              {/* IMDb Badge */}
+              <div className="flex items-center gap-2.5 sm:gap-3.5 bg-black/40 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-white/10 shadow-sm">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-amber-400 font-black text-[11px] sm:text-xs shrink-0 tracking-wider">
+                  IMDb
                 </div>
-                <span className="text-[11px] text-text-secondary uppercase tracking-wider font-semibold">Rasmiy IMDb</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-rating-gold text-[15px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      star
+                    </span>
+                    <span className="text-sm sm:text-lg font-bold text-white tracking-tight">
+                      {imdbRating ? `${imdbRating}` : "N/A"}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-white/40">/10</span>
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] text-white/50 uppercase tracking-wider font-semibold block truncate">
+                    Rasmiy IMDb
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Kinochi Community Badge */}
-            <div className="flex items-center gap-3 bg-sky-500/10 px-5 py-3 rounded-2xl border border-sky-500/20 shadow-lg shadow-sky-500/5">
-              <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400 font-black text-xs shrink-0">
-                Kinochi
-              </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sky-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    hotel_class
-                  </span>
-                  <span className="text-lg font-bold text-white">
-                    {kinochiRating !== null ? `${kinochiRating}` : "Yangi"}
-                  </span>
-                  {kinochiRating !== null && <span className="text-xs text-text-secondary">/10</span>}
+              {/* Kinochi Community Badge */}
+              <div className="flex items-center gap-2.5 sm:gap-3.5 bg-sky-500/10 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-sky-500/20 shadow-sm shadow-sky-500/5">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 font-black text-[10px] sm:text-[11px] shrink-0 tracking-wider">
+                  Kinochi
                 </div>
-                <span className="text-[11px] text-text-secondary font-semibold">
-                  {votesCount > 0 ? `${votesCount} ta ovoz` : "Hali baholanmagan"}
-                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sky-400 text-[15px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      hotel_class
+                    </span>
+                    <span className="text-sm sm:text-lg font-bold text-white tracking-tight truncate">
+                      {kinochiRating !== null ? `${kinochiRating}` : "Yangi"}
+                    </span>
+                    {kinochiRating !== null && <span className="text-[10px] sm:text-xs text-white/40">/10</span>}
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] text-sky-400/80 font-semibold block truncate">
+                    {votesCount > 0 ? `${votesCount} ta ovoz` : "Baholanmagan"}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Action button */}
             <button
               onClick={() => setFormOpen(!formOpen)}
-              className="ml-auto lg:ml-0 flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-bold text-sm transition-all shadow-lg shadow-primary-container/20 cursor-pointer"
+              className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm tracking-wide uppercase transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+                formOpen
+                  ? "bg-white/15 hover:bg-white/20 text-white border border-white/20"
+                  : "bg-white hover:bg-white/90 text-slate-950 shadow-white/10"
+              }`}
             >
-              <span className="material-symbols-outlined text-[20px]">
+              <span className="material-symbols-outlined text-[18px]">
                 {formOpen ? "close" : "rate_review"}
               </span>
               <span>{alreadyReviewed ? "Bahoni yangilash" : "Fikr bildirish"}</span>
@@ -223,10 +232,10 @@ export default function ReviewsSection({
 
         {/* Review Form Drawer / Panel */}
         {formOpen && (
-          <div className="bg-surface-container/80 p-6 md:p-8 rounded-3xl border border-primary-container/30 shadow-xl shadow-primary-container/5 transition-all">
+          <div className="bg-surface-container/80 p-5 sm:p-6 md:p-8 rounded-3xl border border-white/10 shadow-xl shadow-black/30 transition-all">
             {status !== "authenticated" ? (
               <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-                <span className="material-symbols-outlined text-5xl text-primary-container">lock</span>
+                <span className="material-symbols-outlined text-5xl text-sky-400">lock</span>
                 <div>
                   <h3 className="text-lg font-bold text-white">Fikr va baho qoldirish uchun tizimga kiring</h3>
                   <p className="text-sm text-text-secondary mt-1">
@@ -249,7 +258,7 @@ export default function ReviewsSection({
 
                   {/* Selected rating badge */}
                   <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/10 shrink-0">
-                    <span className="text-xs font-bold text-primary-container">
+                    <span className="text-xs font-bold text-amber-400">
                       {RATING_LABELS[activeRating] || `${activeRating}/10`}
                     </span>
                   </div>
@@ -291,7 +300,7 @@ export default function ReviewsSection({
                     rows={4}
                     maxLength={1000}
                     placeholder="Asar sizga qanday taassurot qoldirdi? Aktyorlar mahorati, syujet va voqealar haqida nima deya olasiz?.."
-                    className="w-full bg-background-obsidian/80 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-text-secondary focus:border-primary-container focus:outline-none transition-all resize-none"
+                    className="w-full bg-background-obsidian/80 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-text-secondary focus:border-sky-500/50 focus:outline-none transition-all resize-none"
                   />
                   <span className="text-[11px] text-text-secondary text-right">
                     {commentText.length} / 1000 belgi
@@ -310,11 +319,11 @@ export default function ReviewsSection({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-6 py-2.5 rounded-xl text-sm font-bold bg-primary-container hover:bg-primary-container/80 text-on-primary-container transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-primary-container/20"
+                    className="px-6 py-2.5 rounded-xl text-sm font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-sky-500/20"
                   >
                     {submitting ? (
                       <>
-                        <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"></div>
+                        <div className="w-4 h-4 rounded-full border-2 border-black/30 border-t-black animate-spin"></div>
                         <span>Saqlanmoqda...</span>
                       </>
                     ) : (
@@ -334,14 +343,14 @@ export default function ReviewsSection({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary-container text-xl">comment</span>
+              <span className="material-symbols-outlined text-sky-400 text-xl">comment</span>
               Foydalanuvchilar fikrlari ({reviews.length})
             </h3>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 rounded-full border-2 border-primary-container border-t-transparent animate-spin"></div>
+              <div className="w-8 h-8 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
             </div>
           ) : reviews.length === 0 ? (
             <div className="text-center py-12 bg-surface-container/30 rounded-3xl border border-white/5 p-6 flex flex-col items-center gap-2">
@@ -352,7 +361,7 @@ export default function ReviewsSection({
               </p>
               <button
                 onClick={() => setFormOpen(true)}
-                className="mt-2 text-xs font-bold text-primary-container hover:underline cursor-pointer"
+                className="mt-2 text-xs font-bold text-sky-400 hover:text-sky-300 hover:underline cursor-pointer"
               >
                 + Fikr qoldirish
               </button>
@@ -368,7 +377,7 @@ export default function ReviewsSection({
                     {/* Review Header */}
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-primary-container/20 text-primary-container font-bold text-sm flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-sky-500/15 border border-sky-500/20 text-sky-400 font-bold text-sm flex items-center justify-center shrink-0">
                           {r.user_name.charAt(0).toUpperCase()}
                         </div>
                         <div className="overflow-hidden">
