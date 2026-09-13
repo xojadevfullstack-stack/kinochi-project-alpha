@@ -198,12 +198,12 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 className="cursor-pointer"
               >
                 {status === "authenticated" ? (
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/10 flex items-center justify-center text-text-primary font-bold shadow-md shadow-black/20">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 bg-white/10 flex items-center justify-center text-text-primary hover:text-primary-container font-bold shadow-md shadow-black/20 group">
                     {user?.first_name?.charAt(0) || "U"}
                   </div>
                 ) : (
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/5 flex items-center justify-center text-text-secondary hover:text-text-primary shadow-sm">
-                    <span className="material-symbols-outlined text-[20px]">person</span>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 bg-white/5 flex items-center justify-center text-text-secondary hover:text-primary-container shadow-sm group">
+                    <span className="material-symbols-outlined text-[20px] group-hover:text-primary-container transition-colors">person</span>
                   </div>
                 )}
               </div>
@@ -238,51 +238,51 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                         <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
                         <span>Yutuqlar</span>
                       </Link>
-                      <button 
+                      <button
                         onClick={() => {
                           logout();
                           setProfileDropdownOpen(false);
                         }}
-                        className="text-left text-sm text-text-secondary hover:text-white font-medium py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer mt-1 border-t border-white/5"
+                        className="flex items-center gap-2.5 text-sm text-red-400 hover:text-red-300 py-2 px-2.5 rounded-xl hover:bg-red-500/10 transition-all font-medium text-left cursor-pointer border-t border-white/5 pt-3"
                       >
-                        <span className="material-symbols-outlined text-[18px]">logout</span>
-                        <span>Tizimdan chiqish</span>
+                        <span className="material-symbols-outlined text-[20px]">logout</span>
+                        <span>Chiqish</span>
                       </button>
                     </div>
                   ) : (
-                  <div className="flex flex-col gap-3">
-                    <div className="text-sm font-bold text-text-primary text-center">Tizimga kirish</div>
-                    
-                    {/* 1-Click Instant Login */}
-                    <button
-                      onClick={async () => {
-                        try {
-                          await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
-                          setProfileDropdownOpen(false);
-                        } catch (err) {
-                          console.error("Login failed:", err);
-                        }
-                      }}
-                      className="w-full py-2.5 px-4 bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-semibold rounded-lg text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">bolt</span>
-                      1-Bosishda Tezkor Kirish (XOJA)
-                    </button>
+                    <div className="flex flex-col gap-3">
+                      <p className="text-xs text-text-secondary text-center">
+                        Tizimga kiring:
+                      </p>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
+                            setProfileDropdownOpen(false);
+                          } catch (err) {
+                            console.error("Login failed:", err);
+                          }
+                        }}
+                        className="w-full py-2.5 px-3 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-primary-container/20 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">bolt</span>
+                        1-Bosishda Kirish (XOJA)
+                      </button>
 
-                    <div className="relative flex py-1 items-center">
-                      <div className="flex-grow border-t border-white/10"></div>
-                      <span className="flex-shrink mx-2 text-[11px] text-text-secondary">yoki vidjet orqali</span>
-                      <div className="flex-grow border-t border-white/10"></div>
-                    </div>
+                      <div className="relative flex py-1 items-center">
+                        <div className="flex-grow border-t border-white/10"></div>
+                        <span className="flex-shrink mx-2 text-[11px] text-text-secondary">yoki vidjet orqali</span>
+                        <div className="flex-grow border-t border-white/10"></div>
+                      </div>
 
-                    <div className="flex justify-center">
-                      <TelegramLoginWidget />
+                      <div className="flex justify-center">
+                        <TelegramLoginWidget />
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
 
           {/* Mobile & Tablet Notification & Menu Buttons (< xl) */}
           <div className="flex xl:hidden items-center gap-2.5">
@@ -292,7 +292,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 setMobileMenuOpen(false);
                 setProfileDropdownOpen(false);
               }}
-              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-primary group"
+              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-primary group"
               aria-label="Bildirishnomalar"
             >
               <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">notifications</span>
@@ -301,14 +301,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               )}
             </Link>
             <button 
-              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container transition-colors bg-white/5 flex items-center justify-center text-text-primary hover:bg-white/10 cursor-pointer"
+              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center text-text-primary hover:bg-white/10 cursor-pointer group"
               onClick={() => {
                 setMobileMenuOpen(true);
                 setProfileDropdownOpen(false);
               }}
               aria-label="Menyu"
             >
-              <span className="material-symbols-outlined text-[22px]">menu</span>
+              <span className="material-symbols-outlined text-[22px] group-hover:text-primary-container transition-colors">menu</span>
             </button>
           </div>
         </div>
