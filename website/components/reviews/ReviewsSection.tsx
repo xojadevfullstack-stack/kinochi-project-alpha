@@ -172,13 +172,13 @@ export default function ReviewsSection({
             </div>
 
             {/* Kinochi Community Badge */}
-            <div className="flex items-center gap-3 bg-primary-container/10 px-5 py-3 rounded-2xl border border-primary-container/30 shadow-lg shadow-primary-container/5">
-              <div className="w-10 h-10 rounded-xl bg-primary-container/30 flex items-center justify-center text-primary-container font-black text-xs shrink-0">
+            <div className="flex items-center gap-3 bg-sky-500/10 px-5 py-3 rounded-2xl border border-sky-500/20 shadow-lg shadow-sky-500/5">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400 font-black text-xs shrink-0">
                 Kinochi
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary-container text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span className="material-symbols-outlined text-sky-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     hotel_class
                   </span>
                   <span className="text-lg font-bold text-white">

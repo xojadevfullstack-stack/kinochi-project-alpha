@@ -117,11 +117,18 @@ export default async function SeriesDetailsPage({ params }: Props) {
             </h1>
             
             {/* Badges Row */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 sm:mb-stack-md font-label-caps text-label-caps tracking-widest uppercase text-xs">
-              <div className="flex items-center gap-1.5 text-rating-gold bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5 font-bold" title="Rasmiy IMDb reytingi">
-                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                <span>{series.imdb_rating || "N/A"}</span>
-                <span className="text-[10px] text-text-secondary font-normal">IMDb</span>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-2.5 mb-3 sm:mb-stack-md">
+              <div 
+                className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-sm font-medium text-xs" 
+                title="Rasmiy IMDb reytingi"
+              >
+                <span className="material-symbols-outlined text-[15px] text-rating-gold" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  star
+                </span>
+                <span className="text-white font-bold tracking-tight">
+                  {series.imdb_rating ? Number(series.imdb_rating).toFixed(1) : "N/A"}
+                </span>
+                <span className="text-[10px] text-text-secondary font-normal uppercase tracking-wider">IMDb</span>
               </div>
 
               <KinochiRatingBadge 
@@ -129,8 +136,22 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 initialVotesCount={series.kinochi_votes_count} 
               />
 
-              <span className="text-text-secondary bg-white/5 px-3 py-1.5 rounded border border-white/5">{series.release_year || "Yil no'malum"}</span>
-              <span className="text-text-primary bg-white/10 px-3 py-1.5 rounded font-bold border border-white/10">SERIAL</span>
+              <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/10 text-white/90 text-xs font-medium shadow-sm">
+                <span className="material-symbols-outlined text-[13px] text-white/40">calendar_today</span>
+                <span>{series.release_year || "Yil no'malum"}</span>
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.08] backdrop-blur-md border border-white/15 text-white text-[11px] font-bold tracking-wider uppercase shadow-sm">
+                <span className="material-symbols-outlined text-[14px] text-white/60">live_tv</span>
+                <span>SERIAL</span>
+              </div>
+
+              {series.categories?.[0]?.name && (
+                <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/10 text-text-secondary text-xs font-medium shadow-sm">
+                  <span className="material-symbols-outlined text-[13px] text-white/40">category</span>
+                  <span>{series.categories[0].name}</span>
+                </div>
+              )}
             </div>
             
             {/* Description */}

@@ -36,16 +36,19 @@ export default function KinochiRatingBadge({ initialRating, initialVotesCount = 
 
   return (
     <div 
-      className="flex items-center gap-1.5 text-primary-container bg-primary-container/10 px-3 py-1.5 rounded backdrop-blur-sm border border-primary-container/30 font-bold transition-all" 
+      className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-sky-500/10 backdrop-blur-md border border-sky-500/20 text-white shadow-sm hover:border-sky-500/35 transition-colors font-medium text-xs" 
       title="Kinochi hamjamiyat reytingi"
     >
-      <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+      <span className="material-symbols-outlined text-[15px] text-sky-400" style={{ fontVariationSettings: "'FILL' 1" }}>
         hotel_class
       </span>
-      <span>{hasRating ? Number(rating).toFixed(1) : "Yangi"}</span>
-      <span className="text-[10px] text-primary-container/80 font-normal">
+      <span className="text-sky-200 font-bold tracking-tight">
+        {hasRating ? Number(rating).toFixed(1) : "Yangi"}
+      </span>
+      <span className="text-[10px] text-sky-400/80 font-normal uppercase tracking-wider">
         {votesCount > 0 ? `(${votesCount})` : "Kinochi"}
       </span>
     </div>
   );
 }
+
