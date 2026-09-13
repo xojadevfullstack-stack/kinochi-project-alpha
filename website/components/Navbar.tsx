@@ -188,11 +188,12 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             {/* Desktop/Tablet Notifications */}
             <Link 
               href="/notifications"
-              className="relative hidden md:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 items-center justify-center group"
+              className="relative hidden md:flex w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 items-center justify-center text-text-secondary hover:bg-white/10 cursor-pointer group"
+              aria-label="Bildirishnomalar"
             >
-              <span className="material-symbols-outlined text-text-secondary group-hover:text-white text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
+              <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">notifications</span>
               {hasUnread && (
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
               )}
             </Link>
             
@@ -376,83 +377,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   </Link>
                 );
               })}
-            </div>
-
-            <div className="h-[1px] bg-white/10 w-full my-1"></div>
-
-            {/* User Quick Links */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary px-1 mb-1">Foydalanuvchi</span>
-              <Link
-                href="/notifications"
-                onClick={() => handleNavClick("/notifications")}
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[22px] text-blue-400">notifications</span>
-                  <span>Bildirishnomalar</span>
-                </div>
-                {hasUnread && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                )}
-              </Link>
-              <Link
-                href="/history"
-                onClick={() => handleNavClick("/history")}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
-              >
-                <span className="material-symbols-outlined text-[22px] text-sky-400">history</span>
-                <span>Ko'rish tarixi</span>
-              </Link>
-              <Link
-                href="/achievements"
-                onClick={() => handleNavClick("/achievements")}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-base font-medium text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all"
-              >
-                <span className="material-symbols-outlined text-[22px] text-amber-400">emoji_events</span>
-                <span>Yutuqlar</span>
-              </Link>
-            </div>
-
-            {/* User Profile / Logout Section */}
-            <div className="mt-auto pt-4 border-t border-white/10">
-              {status === "authenticated" ? (
-                <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-bold">
-                      {user?.first_name?.charAt(0) || "U"}
-                    </div>
-                    <div className="overflow-hidden">
-                      <div className="font-bold text-sm text-text-primary truncate">{user?.first_name}</div>
-                      <div className="text-xs text-text-secondary truncate">@{user?.username || user?.id}</div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      logout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="text-xs text-red-400 hover:text-red-300 font-semibold px-3 py-1.5 rounded-lg bg-white/5 cursor-pointer"
-                  >
-                    Chiqish
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={async () => {
-                    try {
-                      await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
-                      setMobileMenuOpen(false);
-                    } catch (err) {
-                      console.error("Login failed:", err);
-                    }
-                  }}
-                  className="w-full py-3 px-4 bg-primary-container hover:bg-primary-container/90 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[20px]">bolt</span>
-                  1-Bosishda Kirish (XOJA)
-                </button>
-              )}
             </div>
           </div>
         </div>
