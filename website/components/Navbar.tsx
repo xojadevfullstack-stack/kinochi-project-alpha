@@ -125,8 +125,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           
           {/* Left: Logo */}
           <Link href="/" className="flex items-center gap-2 group z-50">
-            <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-text-primary group-hover:opacity-90 transition-opacity">
-              Kino<span className="text-primary-container">chi</span>
+            <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-primary-container group-hover:opacity-90 transition-opacity">
+              Kinochi
             </span>
           </Link>
 
@@ -195,16 +195,17 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   setProfileDropdownOpen(prev => !prev);
                   setMobileMenuOpen(false);
                 }}
-                className="cursor-pointer"
+                className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center text-text-secondary hover:bg-white/10 cursor-pointer group"
+                aria-label="Profil"
               >
                 {status === "authenticated" ? (
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 bg-white/10 flex items-center justify-center text-text-primary hover:text-primary-container font-bold shadow-md shadow-black/20 group">
+                  <span className="font-bold text-sm text-text-secondary group-hover:text-primary-container transition-colors">
                     {user?.first_name?.charAt(0) || "U"}
-                  </div>
+                  </span>
                 ) : (
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 bg-white/5 flex items-center justify-center text-text-secondary hover:text-primary-container shadow-sm group">
-                    <span className="material-symbols-outlined text-[20px] group-hover:text-primary-container transition-colors">person</span>
-                  </div>
+                  <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">
+                    person
+                  </span>
                 )}
               </div>
               
@@ -292,7 +293,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 setMobileMenuOpen(false);
                 setProfileDropdownOpen(false);
               }}
-              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-primary group"
+              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center relative text-text-secondary hover:bg-white/10 cursor-pointer group"
               aria-label="Bildirishnomalar"
             >
               <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">notifications</span>
@@ -301,14 +302,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               )}
             </Link>
             <button 
-              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center text-text-primary hover:bg-white/10 cursor-pointer group"
+              className="w-10 h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-colors bg-white/5 flex items-center justify-center text-text-secondary hover:bg-white/10 cursor-pointer group"
               onClick={() => {
                 setMobileMenuOpen(true);
                 setProfileDropdownOpen(false);
               }}
               aria-label="Menyu"
             >
-              <span className="material-symbols-outlined text-[22px] group-hover:text-primary-container transition-colors">menu</span>
+              <span className="material-symbols-outlined text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">menu</span>
             </button>
           </div>
         </div>
