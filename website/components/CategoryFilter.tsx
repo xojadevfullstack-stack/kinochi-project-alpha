@@ -208,14 +208,8 @@ export default function CategoryFilter({ categories, currentCategory, baseUrl }:
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-3 mt-2 border-t border-white/10 flex justify-between items-center text-xs text-text-secondary shrink-0">
+            <div className="pt-3 mt-2 border-t border-white/10 flex items-center justify-between text-xs text-text-secondary shrink-0">
               <span>Jami {categories.length} ta kategoriya</span>
-              <button 
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-text-primary font-bold transition-all cursor-pointer"
-              >
-                Yopish
-              </button>
             </div>
           </div>
         </div>
