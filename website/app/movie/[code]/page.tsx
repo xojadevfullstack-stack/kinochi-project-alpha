@@ -54,7 +54,7 @@ export default async function MovieDetailsPage({ params }: Props) {
 
   return (
     <>
-      <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-32 pb-16 overflow-hidden">
+      <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-20 sm:pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden">
         {/* Background Blur & Gradient Overlays */}
         <div className="absolute inset-0 bg-background-obsidian">
            {movie.poster_url ? (
@@ -68,9 +68,9 @@ export default async function MovieDetailsPage({ params }: Props) {
         <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block"></div>
         
         {/* Content Container */}
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-margin-desktop">
+        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
           {/* Left: Poster */}
-          <div className="w-full md:w-1/3 lg:w-[400px] shrink-0 mt-stack-lg md:mt-0 relative group perspective-1000">
+          <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
             <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-primary-container/20 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-primary-container/40 relative bg-surface-container-high">
               {movie.poster_url ? (
                 <Image 
@@ -91,12 +91,12 @@ export default async function MovieDetailsPage({ params }: Props) {
           
           {/* Right: Movie Info */}
           <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero text-4xl sm:text-[48px] md:text-display-hero text-text-primary mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-text-primary mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
               {movie.title}
             </h1>
             
             {/* Badges Row */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-stack-md font-label-caps text-label-caps tracking-widest uppercase text-xs">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 mb-3 sm:mb-stack-md font-label-caps text-label-caps tracking-widest uppercase text-xs">
               <div className="flex items-center gap-1.5 text-rating-gold bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5 font-bold" title="Rasmiy IMDb reytingi">
                 <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                 <span>{movie.imdb_rating || movie.tmdb_rating || "N/A"}</span>
@@ -113,7 +113,7 @@ export default async function MovieDetailsPage({ params }: Props) {
             </div>
             
             {/* Description */}
-            <p className="font-body-lg text-body-lg text-text-secondary mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed">
+            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-text-secondary mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
               {movie.description || "Ushbu kino haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             

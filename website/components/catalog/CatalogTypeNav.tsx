@@ -12,26 +12,26 @@ interface CatalogTypeNavProps {
   pages?: PageItem[];
 }
 
-function getPageIcon(title: string) {
+function getPageIcon(title: string): string {
   const t = title.toLowerCase();
-  if (t.includes("anime")) return "🎌";
-  if (t.includes("dorama") || t.includes("koreys")) return "🎭";
-  if (t.includes("mult") || t.includes("kartun") || t.includes("bolalar")) return "🧸";
-  if (t.includes("marvel") || t.includes("dc") || t.includes("komiks")) return "🦸";
-  if (t.includes("turk")) return "🌙";
-  if (t.includes("retro") || t.includes("klassik")) return "📽️";
-  if (t.includes("top") || t.includes("hit") || t.includes("trend")) return "🔥";
-  if (t.includes("hujjatli") || t.includes("doc")) return "📜";
-  if (t.includes("fantastik")) return "🚀";
-  if (t.includes("jangari") || t.includes("jang")) return "⚔️";
-  if (t.includes("horror") || t.includes("qo'rqinchli")) return "👻";
-  return "📂";
+  if (t.includes("anime")) return "animation";
+  if (t.includes("dorama") || t.includes("koreys")) return "theater_comedy";
+  if (t.includes("mult") || t.includes("kartun") || t.includes("bolalar")) return "smart_toy";
+  if (t.includes("marvel") || t.includes("dc") || t.includes("komiks")) return "shield";
+  if (t.includes("turk")) return "language";
+  if (t.includes("retro") || t.includes("klassik")) return "videocam";
+  if (t.includes("top") || t.includes("hit") || t.includes("trend")) return "local_fire_department";
+  if (t.includes("hujjatli") || t.includes("doc")) return "history_edu";
+  if (t.includes("fantastik")) return "rocket_launch";
+  if (t.includes("jangari") || t.includes("jang")) return "military_tech";
+  if (t.includes("horror") || t.includes("qo'rqinchli")) return "skull";
+  return "category";
 }
 
 export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeNavProps) {
   const baseItems = [
-    { label: "Kinolar", href: "/movies", icon: "🎬", key: "movies" },
-    { label: "Seriallar", href: "/series", icon: "📺", key: "series" },
+    { label: "Kinolar", href: "/movies", icon: "movie", key: "movies" },
+    { label: "Seriallar", href: "/series", icon: "tv", key: "series" },
   ];
 
   const activePages = pages.filter((p) => p.is_active !== false);
@@ -52,7 +52,7 @@ export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeN
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span className="text-[15px]">{item.icon}</span>
+              <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
               <span>{item.label}</span>
             </Link>
           );
@@ -71,7 +71,7 @@ export default function CatalogTypeNav({ currentType, pages = [] }: CatalogTypeN
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span className="text-[15px]">{getPageIcon(page.title)}</span>
+              <span className="material-symbols-outlined text-[18px]">{getPageIcon(page.title)}</span>
               <span>{page.title}</span>
             </Link>
           );

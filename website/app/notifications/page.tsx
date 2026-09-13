@@ -49,7 +49,7 @@ export default function NotificationsPage() {
               list.push({
                 id,
                 type: "system",
-                title: "📢 Tizim Yangiligi",
+                title: "Tizim Yangiligi",
                 message: b.message_text,
                 created_at: b.created_at || new Date().toISOString(),
                 is_read: readIds.has(id),
@@ -79,7 +79,7 @@ export default function NotificationsPage() {
                   list.push({
                     id,
                     type: "personal",
-                    title: `🎬 "${h.movie.title}" filmiga o'xshash tavsiyalar`,
+                    title: `"${h.movie.title}" filmiga o'xshash tavsiyalar`,
                     message: `Siz yaqinda ushbu filmni ko'rdingiz. Sizga yoqishi mumkin bo'lgan shunga o'xshash saralangan kinolarni ko'rishni tavsiya qilamiz.`,
                     target_url: `/movie/${h.movie.code}`,
                     created_at: h.last_watched_at,
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
                   list.push({
                     id,
                     type: "personal",
-                    title: `📺 "${h.episode.series_title}" serialini davom ettirish`,
+                    title: `"${h.episode.series_title}" serialini davom ettirish`,
                     message: `Siz ${h.episode.season_number}-fasl, ${h.episode.episode_number}-qismni tomosha qildingiz. Serialni davom ettirish uchun bosing!`,
                     target_url: `/series/${sId}`,
                     created_at: h.last_watched_at,
@@ -116,7 +116,7 @@ export default function NotificationsPage() {
           list.push({
             id,
             type: "system",
-            title: "🎉 Kinochi platformasiga xush kelibsiz!",
+            title: "Kinochi platformasiga xush kelibsiz!",
             message: "Eng sara kinolar, seriallar, anime va doramalarni eng yuqori sifatda tomosha qiling.",
             target_url: "/",
             created_at: new Date().toISOString(),
@@ -189,16 +189,17 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-display-hero font-bold text-white flex items-center gap-3">
-              <span className="material-symbols-outlined text-4xl text-primary-container">notifications</span>
-              Bildirishnomalar
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display-hero font-bold text-white flex items-center gap-3">
+              <span className="material-symbols-outlined text-3xl sm:text-4xl text-white/90">notifications</span>
+              <span>Bildirishnomalar</span>
               {unreadCount > 0 && (
-                <span className="text-xs bg-primary-container text-on-primary-container font-bold px-2.5 py-1 rounded-full">
-                  {unreadCount} ta yangi
+                <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold px-3 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>{unreadCount} ta yangi</span>
                 </span>
               )}
             </h1>
-            <p className="text-text-secondary mt-1">
+            <p className="text-text-secondary text-sm mt-1">
               Siz yoqtirgan janrlar bo'yicha yangi kinolar va muhim e'lonlar
             </p>
           </div>
@@ -206,54 +207,54 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="text-xs text-primary-container hover:text-primary-container/80 font-semibold flex items-center gap-1 self-start sm:self-auto transition-colors"
+              className="text-xs text-text-secondary hover:text-white font-medium flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all self-start sm:self-auto cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">done_all</span>
-              Barchasini o'qilgan deb belgilash
+              <span>Barchasini o'qilgan deb belgilash</span>
             </button>
           )}
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 border-b border-white/10 pb-4 mb-6 overflow-x-auto">
+        <div className="flex gap-2 pb-4 mb-6 overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
               activeTab === "all"
-                ? "bg-primary-container text-on-primary-container"
-                : "bg-surface-container/60 text-text-secondary hover:text-white"
+                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
             }`}
           >
-            Barchasi ({notifications.length})
+            <span>Barchasi ({notifications.length})</span>
           </button>
           <button
             onClick={() => setActiveTab("personal")}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
               activeTab === "personal"
-                ? "bg-primary-container text-on-primary-container"
-                : "bg-surface-container/60 text-text-secondary hover:text-white"
+                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">person</span>
-            Shaxsiy tavsiyalar ({notifications.filter((n) => n.type === "personal").length})
+            <span className="material-symbols-outlined text-[18px] text-sky-400">person</span>
+            <span>Shaxsiy tavsiyalar ({notifications.filter((n) => n.type === "personal").length})</span>
           </button>
           <button
             onClick={() => setActiveTab("system")}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
               activeTab === "system"
-                ? "bg-primary-container text-on-primary-container"
-                : "bg-surface-container/60 text-text-secondary hover:text-white"
+                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
+                : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">campaign</span>
-            Tizim yangiliklari ({notifications.filter((n) => n.type === "system").length})
+            <span className="material-symbols-outlined text-[18px] text-amber-400">campaign</span>
+            <span>Tizim yangiliklari ({notifications.filter((n) => n.type === "system").length})</span>
           </button>
         </div>
 
         {/* Content */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-container"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white/40"></div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 bg-surface-container/20 rounded-3xl border border-white/5 p-8">
@@ -269,28 +270,28 @@ export default function NotificationsPage() {
               <div
                 key={item.id}
                 onClick={() => markItemAsRead(item.id)}
-                className={`rounded-2xl p-4 md:p-5 border transition-all flex items-start gap-4 cursor-pointer hover:border-primary-container/40 ${
+                className={`rounded-2xl p-4 md:p-5 border transition-all duration-200 flex items-start gap-4 cursor-pointer hover:scale-[1.005] ${
                   item.is_read
-                    ? "bg-surface-container/30 border-white/5 opacity-75"
-                    : "bg-surface-container/80 border-primary-container/30 shadow-lg shadow-primary-container/5"
+                    ? "bg-white/[0.02] border-white/5 opacity-75 hover:opacity-100 hover:border-white/15"
+                    : "bg-white/[0.06] border-white/20 shadow-xl shadow-black/25 hover:border-white/30"
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center ${
+                  className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center border ${
                     item.type === "personal"
-                      ? "bg-primary-container/20 text-primary-container"
-                      : "bg-amber-400/20 text-amber-400"
+                      ? "bg-sky-500/15 border-sky-500/25 text-sky-400"
+                      : "bg-amber-400/15 border-amber-400/25 text-amber-400"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
                 </div>
 
-                <div className="flex-grow">
+                <div className="flex-grow min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="font-bold text-base text-white">{item.title}</h4>
                       {!item.is_read && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-container text-on-primary-container">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
                           Yangi
                         </span>
                       )}
@@ -310,7 +311,7 @@ export default function NotificationsPage() {
                     <Link
                       href={item.target_url}
                       onClick={() => markItemAsRead(item.id)}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-container hover:text-primary-container/80 transition-colors"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-primary hover:text-white bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/25 px-3 py-1.5 rounded-xl transition-all"
                     >
                       <span>Tomosha qilish</span>
                       <span className="material-symbols-outlined text-[14px]">arrow_forward</span>

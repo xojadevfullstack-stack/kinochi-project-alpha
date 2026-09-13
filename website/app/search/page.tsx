@@ -62,10 +62,10 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           </p>
         </div>
 
-        {/* Mobile Search Input directly on the page for convenience */}
-        <div className="mb-8 md:hidden">
-          <form action="/search" method="GET" className="flex items-center bg-white/5 rounded-full px-4 py-2 border border-white/10 focus-within:border-white/30 transition-all">
-            <span className="material-symbols-outlined text-text-secondary mr-2">search</span>
+        {/* In-page Search Input for fast query refinement on all screens */}
+        <div className="mb-8 max-w-2xl">
+          <form action="/search" method="GET" className="flex items-center bg-white/5 hover:bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-white/30 focus-within:bg-white/10 transition-all shadow-inner">
+            <span className="material-symbols-outlined text-text-secondary mr-3 text-[22px]">search</span>
             <input 
               type="text" 
               name="q"

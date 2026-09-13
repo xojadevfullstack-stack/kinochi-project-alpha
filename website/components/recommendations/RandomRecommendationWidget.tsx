@@ -25,20 +25,20 @@ interface Props {
   pages?: any[];
 }
 
-function getPageIcon(title: string) {
+function getPageIcon(title: string): string {
   const t = title.toLowerCase();
-  if (t.includes("anime")) return "🎌";
-  if (t.includes("dorama") || t.includes("koreys")) return "🎭";
-  if (t.includes("mult") || t.includes("kartun") || t.includes("bolalar")) return "🧸";
-  if (t.includes("marvel") || t.includes("dc") || t.includes("komiks")) return "🦸";
-  if (t.includes("turk")) return "🌙";
-  if (t.includes("retro") || t.includes("klassik")) return "📽️";
-  if (t.includes("top") || t.includes("hit") || t.includes("trend")) return "🔥";
-  if (t.includes("hujjatli") || t.includes("doc")) return "📜";
-  if (t.includes("fantastik")) return "🚀";
-  if (t.includes("jangari") || t.includes("jang")) return "⚔️";
-  if (t.includes("horror") || t.includes("qo'rqinchli")) return "👻";
-  return "📂";
+  if (t.includes("anime")) return "animation";
+  if (t.includes("dorama") || t.includes("koreys")) return "theater_comedy";
+  if (t.includes("mult") || t.includes("kartun") || t.includes("bolalar")) return "smart_toy";
+  if (t.includes("marvel") || t.includes("dc") || t.includes("komiks")) return "shield";
+  if (t.includes("turk")) return "language";
+  if (t.includes("retro") || t.includes("klassik")) return "videocam";
+  if (t.includes("top") || t.includes("hit") || t.includes("trend")) return "local_fire_department";
+  if (t.includes("hujjatli") || t.includes("doc")) return "history_edu";
+  if (t.includes("fantastik")) return "rocket_launch";
+  if (t.includes("jangari") || t.includes("jang")) return "military_tech";
+  if (t.includes("horror") || t.includes("qo'rqinchli")) return "skull";
+  return "category";
 }
 
 export default function RandomRecommendationWidget({ movies = [], series = [], pages = [] }: Props) {
@@ -153,7 +153,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span>✨</span>
+              <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
               <span>Hammasi</span>
             </button>
 
@@ -165,7 +165,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span>🎬</span>
+              <span className="material-symbols-outlined text-[18px]">movie</span>
               <span>Kinolar</span>
             </button>
 
@@ -177,7 +177,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
               }`}
             >
-              <span>📺</span>
+              <span className="material-symbols-outlined text-[18px]">tv</span>
               <span>Seriallar</span>
             </button>
 
@@ -195,7 +195,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                       : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
                   }`}
                 >
-                  <span>{icon}</span>
+                  <span className="material-symbols-outlined text-[18px]">{icon}</span>
                   <span>{p.title}</span>
                 </button>
               );

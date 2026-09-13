@@ -150,27 +150,27 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
         </div>
 
         {/* Right: Search & Profile */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 z-50 relative">
-          {/* Desktop Search */}
-          <form onSubmit={handleSearch} className="hidden xl:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-4 py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
-            <span className="material-symbols-outlined text-text-secondary mr-2 text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-50 relative">
+          {/* Desktop/Tablet Search */}
+          <form onSubmit={handleSearch} className="hidden md:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-3.5 py-1.5 xl:px-4 xl:py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
+            <span className="material-symbols-outlined text-text-secondary mr-2 text-[18px] xl:text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-32 lg:w-48 outline-none" 
+              className="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-24 lg:w-40 xl:w-56 outline-none" 
               placeholder="Qidirish..." 
             />
           </form>
 
-          {/* Desktop Notifications */}
+          {/* Desktop/Tablet Notifications */}
           <Link 
             href="/notifications"
-            className="relative hidden xl:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 items-center justify-center group"
+            className="relative hidden md:flex w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 items-center justify-center group"
           >
-            <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
+            <span className="material-symbols-outlined text-text-secondary group-hover:text-white text-[20px] transition-colors" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
             {hasUnread && (
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
             )}
           </Link>
           
@@ -178,14 +178,22 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           <div className="relative" ref={profileDropdownRef}>
             <div 
               onClick={() => {
-                setProfileDropdownOpen(!profileDropdownOpen);
-                setMobileMenuOpen(false);
+                if (window.innerWidth < 1280) {
+                  setMobileMenuOpen(true);
+                } else {
+                  setProfileDropdownOpen(!profileDropdownOpen);
+                }
               }}
-              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-primary-container transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer bg-white/5 flex items-center justify-center shrink-0">
+              className="cursor-pointer"
+            >
               {status === "authenticated" ? (
-                <span className="font-bold text-sm text-primary-container">{user?.first_name?.charAt(0) || "U"}</span>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 hover:border-white/30 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/10 flex items-center justify-center text-text-primary font-bold shadow-md shadow-black/20">
+                  {user?.first_name?.charAt(0) || "U"}
+                </div>
               ) : (
-                <span className="material-symbols-outlined text-text-secondary text-[22px]">person</span>
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-200 hover:scale-105 active:scale-95 bg-white/5 flex items-center justify-center text-text-secondary hover:text-text-primary shadow-sm">
+                  <span className="material-symbols-outlined text-[20px]">person</span>
+                </div>
               )}
             </div>
             
@@ -195,7 +203,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 {status === "authenticated" ? (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container font-bold shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold shrink-0">
                         {user?.first_name?.charAt(0) || "U"}
                       </div>
                       <div className="overflow-hidden">
@@ -206,28 +214,28 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <Link
                       href="/history"
                       onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
+                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
                     >
-                      <span className="material-symbols-outlined text-[20px] text-primary-container">history</span>
-                      Ko'rish tarixi
+                      <span className="material-symbols-outlined text-[20px] text-sky-400">history</span>
+                      <span>Ko'rish tarixi</span>
                     </Link>
                     <Link
                       href="/achievements"
                       onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-primary-container py-2 px-2 rounded-lg hover:bg-white/5 transition-all font-medium"
+                      className="flex items-center gap-2.5 text-sm text-text-primary hover:text-white py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all font-medium group"
                     >
                       <span className="material-symbols-outlined text-[20px] text-amber-400">emoji_events</span>
-                      Yutuqlar
+                      <span>Yutuqlar</span>
                     </Link>
                     <button 
                       onClick={() => {
                         logout();
                         setProfileDropdownOpen(false);
                       }}
-                      className="text-left text-sm text-red-400 hover:text-red-300 font-medium py-1 px-2 transition-colors flex items-center gap-2 cursor-pointer"
+                      className="text-left text-sm text-text-secondary hover:text-white font-medium py-2 px-2.5 rounded-xl hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer mt-1 border-t border-white/5"
                     >
                       <span className="material-symbols-outlined text-[18px]">logout</span>
-                      Tizimdan chiqish
+                      <span>Tizimdan chiqish</span>
                     </button>
                   </div>
                 ) : (
@@ -465,7 +473,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <div className="flex flex-col gap-4">
                 {/* User Info Card */}
                 <div className="flex items-center gap-3.5 p-4 bg-white/5 rounded-2xl border border-white/10">
-                  <div className="w-12 h-12 rounded-full aspect-square bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary-container text-lg font-bold shrink-0">
+                  <div className="w-12 h-12 rounded-full aspect-square bg-white/10 border border-white/20 flex items-center justify-center text-white text-lg font-bold shrink-0 shadow-inner">
                     {user?.first_name?.charAt(0) || "U"}
                   </div>
                   <div className="overflow-hidden">
@@ -486,12 +494,12 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-primary-container/15 flex items-center justify-center text-primary-container">
+                      <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center text-sky-400">
                         <span className="material-symbols-outlined text-[24px]">history</span>
                       </div>
                       <span className="font-semibold text-base">Ko'rish tarixi</span>
                     </div>
-                    <span className="material-symbols-outlined text-text-secondary group-hover:text-primary-container transition-colors text-[20px]">chevron_right</span>
+                    <span className="material-symbols-outlined text-text-secondary group-hover:text-sky-400 transition-colors text-[20px]">chevron_right</span>
                   </Link>
 
                   <Link
@@ -500,7 +508,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-text-primary group"
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-amber-400/15 flex items-center justify-center text-amber-400">
+                      <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/20 flex items-center justify-center text-amber-400">
                         <span className="material-symbols-outlined text-[24px]">emoji_events</span>
                       </div>
                       <span className="font-semibold text-base">Yutuqlar</span>
@@ -515,10 +523,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     logout();
                     setProfileDropdownOpen(false);
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-sm transition-all border border-red-500/20 mt-1 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white font-semibold text-sm transition-all border border-white/10 hover:border-white/20 mt-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px]">logout</span>
-                  Tizimdan chiqish
+                  <span>Tizimdan chiqish</span>
                 </button>
               </div>
             ) : (
