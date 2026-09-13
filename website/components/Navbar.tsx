@@ -51,9 +51,12 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     };
   }, []);
 
-  // Close desktop profile dropdown on outside click
+  // Close desktop profile dropdown on outside click (desktop only)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (typeof window !== "undefined" && window.innerWidth < 1280) {
+        return; // Mobile has its own backdrop overlay; do not intercept mousedown
+      }
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
       }
