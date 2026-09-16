@@ -177,7 +177,7 @@ async def create_season(
     series_id: int,
     season_in: SeasonCreate,
     service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_admin_or_bot)
 ):
     """Create a new season for a series (Admin only)."""
     if season_in.series_id != series_id:
@@ -295,7 +295,7 @@ async def update_episode(
     episode_id: int,
     episode_in: EpisodeUpdate,
     service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
+    admin: dict = Depends(get_admin_or_bot)
 ):
     """Update an episode (Admin only)."""
     episode = await service.update_episode(episode_id, episode_in)

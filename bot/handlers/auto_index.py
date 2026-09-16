@@ -23,140 +23,120 @@ def get_source_lock(chat_id: int, topic_id: int | None) -> asyncio.Lock:
         source_locks[key] = asyncio.Lock()
     return source_locks[key]
 
-# Regex patterns for episode number extraction
-EPISODE_PATTERNS = [
-    # 1. 'qism 8', 'qismi 8', 'seriya 8', 'qism: 8', 'chast 8'
-    r'\b(?:qism|qismi|seriya|seriyasi|chast)[\s\-_:]*(\d{1,3})\b',
-    # 2. '8-qism', '8 qism', '8_qism', '8-seriya'
+# Regex patterns for explicit episode number in caption ONLY (no filename matching)
+CAPTION_EPISODE_PATTERNS = [
+    # 1. '8-qism', '8 qism', '8_qism', '8-seriya', '8 seriya'
     r'(?:^|[^a-zA-Z0-9])(\d{1,3})[\s\-_]*(?:qism|qismi|seriya|seriyasi|chast)\b',
-    # 3. Xalqaro formatlar: S01E08, s1e1, E08, Ep 8, Episode 8
+    # 2. 'qism 8', 'qismi 8', 'seriya 8', 'qism: 8', 'chast 8'
+    r'\b(?:qism|qismi|seriya|seriyasi|chast)[\s\-_:]*(\d{1,3})\b',
+    # 3. S01E08, s1e1, E08, Ep 8, Episode 8
     r'(?:^|[^a-zA-Z0-9])S\d+[\s\-_]*E(\d{1,3})(?:[^a-zA-Z0-9]|$)',
     r'(?:^|[^a-zA-Z0-9])E(?:p(?:isode)?)?\.?\s*(\d{1,3})(?:[^a-zA-Z0-9]|$)',
-    # 4. Faqat bitta sondan iborat matn: '8'
+    # 4. Faqat bitta sondan iborat qisqa xabar: '8'
     r'^\s*(\d{1,3})\s*$',
-    # 5. Fayl nomi formatlari: '08.mp4', '08_...mp4', 'Serial_08.mkv'
-    r'(?:^|[^\d])0*(\d{1,3})\.(?:mp4|mkv|mov|avi|webm)$',
-    r'^0*(\d{1,3})[\.\-_]',
-    r'[\.\-_]0*(\d{1,3})\.(?:mp4|mkv|mov|avi|webm)$',
 ]
 
-SEASON_PATTERNS = [
+CAPTION_SEASON_PATTERNS = [
     r'(?:^|[^a-zA-Z0-9])(\d{1,3})[\s\-_]*(?:mavsum|fasl|sezon|season)\b',
     r'\b(?:mavsum|fasl|sezon|season)[\s\-_:]*(\d{1,3})\b',
     r'(?:^|[^a-zA-Z0-9])S(\d{1,3})[\s\-_]*E\d+(?:[^a-zA-Z0-9]|$)',
 ]
 
-def extract_episode_num(caption: str | None, file_name: str | None) -> int | None:
-    # 1. Check caption first (deliberate user label)
-    if caption:
-        for pat in EPISODE_PATTERNS[:5]:
-            m = re.search(pat, caption, re.IGNORECASE)
-            if m:
-                return int(m.group(1))
-    # 2. Check file_name
-    if file_name:
-        for pat in EPISODE_PATTERNS:
-            m = re.search(pat, file_name, re.IGNORECASE)
-            if m:
-                return int(m.group(1))
+def extract_episode_num_from_caption(caption: str | None) -> int | None:
+    """Faqatgina caption'dan aniq qism raqamini oladi (file_name tekshirilmaydi)."""
+    if not caption:
+        return None
+    for pat in CAPTION_EPISODE_PATTERNS:
+        m = re.search(pat, caption, re.IGNORECASE)
+        if m:
+            return int(m.group(1))
     return None
 
-def extract_season_num(caption: str | None, file_name: str | None) -> int | None:
-    if caption:
-        for pat in SEASON_PATTERNS:
-            m = re.search(pat, caption, re.IGNORECASE)
-            if m:
-                return int(m.group(1))
-    if file_name:
-        for pat in SEASON_PATTERNS:
-            m = re.search(pat, file_name, re.IGNORECASE)
-            if m:
-                return int(m.group(1))
+def extract_season_num_from_caption(caption: str | None) -> int | None:
+    """Caption'dan mavsum raqamini aniqlash."""
+    if not caption:
+        return None
+    for pat in CAPTION_SEASON_PATTERNS:
+        m = re.search(pat, caption, re.IGNORECASE)
+        if m:
+            return int(m.group(1))
     return None
 
-async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int | None = None):
-    chat_id = message.chat.id
-    topic_id = message.message_thread_id
-
-    # Extract file_id and file_name from video or document
-    file_name = None
+def extract_media_info(message: Message) -> tuple[str | None, str | None]:
+    """Videodan telegram_file_id va file_name oladi."""
     if message.video:
-        telegram_file_id = message.video.file_id
-        file_name = message.video.file_name
+        return message.video.file_id, message.video.file_name
     elif message.document:
         mime_type = message.document.mime_type or ""
-        if not mime_type.startswith("video/"):
-            await message.reply(f"❌ Yuborilgan fayl video emas (mime: {mime_type}).")
-            return
-        telegram_file_id = message.document.file_id
-        file_name = message.document.file_name
-    else:
-        await message.reply("❌ Yuborilgan xabar video yoki document emas.")
+        if mime_type.startswith("video/"):
+            return message.document.file_id, message.document.file_name
+    return None, None
+
+
+async def process_movie_message(message: Message, bot: Bot, movie: dict):
+    telegram_file_id, _ = extract_media_info(message)
+    if not telegram_file_id:
+        try:
+            await message.reply("❌ Yuborilgan fayl video emas yoki video formati qo'llab-quvvatlanmaydi.")
+        except Exception:
+            pass
         return
 
-    caption = message.caption or ""
-
-    # 1. Fresh lookup: Series by source
-    url = f"/series/by-source?chat_id={chat_id}"
-    if topic_id:
-        url += f"&topic_id={topic_id}"
-    resp = await api_client.client.get(url)
-    if resp.status_code == 404:
-        # 1.b Look up Movie by source
-        movie_url = f"/movies/by-source?chat_id={chat_id}"
-        if topic_id:
-            movie_url += f"&topic_id={topic_id}"
-        resp_movie = await api_client.client.get(movie_url)
-        if resp_movie.status_code == 404:
-            return
-        try:
-            resp_movie.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Error fetching movie by source: {e}")
-            await message.reply(f"❌ Kino backenddan qidirilayotganda tizimli xato (Status: {e.response.status_code})")
-            return
-        movie = resp_movie.json()
-
-        # Copy video to storage channel
-        try:
-            storage_msg = await bot.copy_message(
-                chat_id=settings.STORAGE_CHANNEL_ID,
-                from_chat_id=chat_id,
-                message_id=message.message_id
-            )
-            storage_msg_id = storage_msg.message_id
-        except Exception as e:
-            logger.error(f"Cannot copy message to storage: {e}")
-            await message.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki ruxsat yo'q).")
-            return
-
-        # Link video to movie
-        try:
-            resp = await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
-                "message_id": storage_msg_id,
-                "language": "Asosiy",
-                "telegram_file_id": telegram_file_id
-            })
-            resp.raise_for_status()
-            await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
-        except Exception as e:
-            logger.error(f"Error linking video for movie {movie['id']}: {e}")
-            await message.reply(f"❌ Kino bazaga qo'shildi, lekin videoni ulashda xatolik yuz berdi: {e}")
-        return
-
+    # Copy video to storage channel
     try:
-        resp.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Error fetching series by source: {e}")
-        await message.reply(f"❌ Serial backenddan qidirilayotganda tizimli xato (Status: {e.response.status_code})")
+        storage_msg = await bot.copy_message(
+            chat_id=settings.STORAGE_CHANNEL_ID,
+            from_chat_id=message.chat.id,
+            message_id=message.message_id
+        )
+        storage_msg_id = storage_msg.message_id
+    except Exception as e:
+        logger.error(f"Cannot copy movie message to storage: {e}")
+        try:
+            await message.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki ruxsat yo'q).")
+        except Exception:
+            pass
         return
-    series = resp.json()
 
-    # 2. Get or create Season (supports explicit season from caption if present)
-    target_season_num = extract_season_num(caption, file_name)
+    # Link video to movie
+    try:
+        resp = await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
+            "message_id": storage_msg_id,
+            "language": "Asosiy",
+            "telegram_file_id": telegram_file_id
+        })
+        resp.raise_for_status()
+        await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
+    except Exception as e:
+        logger.error(f"Error linking video for movie {movie['id']}: {e}")
+        try:
+            await message.reply(f"❌ Kino bazaga qo'shildi, lekin videoni ulashda xatolik yuz berdi: {e}")
+        except Exception:
+            pass
+
+
+async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
+    storage_channel_id = settings.STORAGE_CHANNEL_ID
+    if not storage_channel_id:
+        logger.warning("STORAGE_CHANNEL_ID is not set.")
+        for msg in messages:
+            try:
+                await msg.reply("❌ STORAGE_CHANNEL_ID sozlanmagan! Videoni saqlab bo'lmaydi.")
+            except Exception:
+                pass
+        return
+
     seasons = series.get("seasons", [])
-    season = None
+    
+    # Check if any message in batch specifies an explicit season in caption
+    target_season_num = None
+    for msg in messages:
+        s_num = extract_season_num_from_caption(msg.caption)
+        if s_num is not None:
+            target_season_num = s_num
+            break
 
+    season = None
     if target_season_num is not None:
         season = next((s for s in seasons if s.get("season_number") == target_season_num), None)
         if not season:
@@ -172,62 +152,61 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
                 seasons.append(season)
             except Exception as e:
                 logger.error(f"Error creating season {target_season_num}: {e}")
-                await message.reply(f"❌ {target_season_num}-mavsumni yaratishda tizimli xato yuz berdi.")
+                for msg in messages:
+                    try:
+                        await msg.reply(f"❌ {target_season_num}-mavsumni yaratishda xato: {e}")
+                    except Exception:
+                        pass
                 return
     else:
         ongoing_seasons = [s for s in seasons if s.get("status") == "ongoing"]
         if ongoing_seasons:
             season = ongoing_seasons[-1]
+        elif seasons:
+            season = seasons[-1]
         else:
-            next_season_num = max([s.get("season_number", 0) for s in seasons], default=0) + 1
+            # First season creation
             try:
                 resp = await api_client.client.post(f"/series/{series['id']}/seasons", json={
                     "series_id": series['id'],
-                    "season_number": next_season_num,
-                    "title": f"Mavsum {next_season_num}",
+                    "season_number": 1,
+                    "title": "Mavsum 1",
                     "status": "ongoing"
                 })
                 resp.raise_for_status()
                 season = resp.json()
                 seasons.append(season)
             except Exception as e:
-                logger.error(f"Error creating season: {e}")
-                await message.reply("❌ Yangi mavsum (season) yaratishda tizimli xato yuz berdi.")
+                logger.error(f"Error creating Season 1: {e}")
+                for msg in messages:
+                    try:
+                        await msg.reply(f"❌ 1-mavsumni yaratishda xato: {e}")
+                    except Exception:
+                        pass
                 return
 
     season_id = season['id']
 
-    # 3. Fresh fetch of episodes for this season inside lock
+    # Fetch existing episodes in this season
     try:
         resp = await api_client.client.get(f"/series/seasons/{season_id}/episodes")
         resp.raise_for_status()
         episodes = resp.json()
     except Exception as e:
-        logger.error(f"Error fetching episodes: {e}")
-        await message.reply("❌ Qismlarni (episodes) yuklashda tizimli xato yuz berdi.")
+        logger.error(f"Error fetching episodes for season {season_id}: {e}")
+        for msg in messages:
+            try:
+                await msg.reply(f"❌ Qismlarni yuklashda tizimli xato: {e}")
+            except Exception:
+                pass
         return
 
-    # 4. Hybrid Episode Number Resolution:
-    # First, try to extract episode number from caption or filename
-    ep_num = pre_extracted_ep if pre_extracted_ep is not None else extract_episode_num(caption, file_name)
-    # Second, if neither caption nor filename has a number (clean video forward), use sequential forward order
-    if ep_num is None:
-        existing_nums = [e.get("episode_number", 0) for e in episodes]
-        ep_num = max(existing_nums, default=0) + 1
-        logger.info(f"Hybrid Mode: auto-assigned sequential episode number {ep_num} for msg {message.message_id}")
+    existing_nums = [e.get("episode_number") for e in episodes if e.get("episode_number") is not None]
+    current_max_ep = max(existing_nums, default=0)
 
-    storage_channel_id = settings.STORAGE_CHANNEL_ID
-    if not storage_channel_id:
-        logger.warning("STORAGE_CHANNEL_ID is not set. Cannot index.")
-        await message.reply("❌ STORAGE_CHANNEL_ID sozlanmagan! Videoni saqlab bo'lmaydi.")
-        return
-
-    # Check if this episode already exists in the season (Upsert logic)
-    existing_ep = next((e for e in episodes if e.get("episode_number") == ep_num), None)
-
-    # If first episode ever of series or season, send poster/title
-    is_first_series_ep = (len(seasons) == 1 and len(episodes) == 0 and not existing_ep)
-    is_first_season_ep = (len(episodes) == 0 and not existing_ep)
+    # First series/season banner in storage channel
+    is_first_series_ep = (len(seasons) == 1 and len(episodes) == 0)
+    is_first_season_ep = (len(episodes) == 0)
 
     if is_first_series_ep:
         title_str = series.get('title') or "Noma'lum"
@@ -235,79 +214,143 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
         if series.get('description'):
             post_caption += f"{series.get('description')}\n"
         poster_url = series.get('poster_url')
-        if poster_url:
-            await bot.send_photo(storage_channel_id, photo=poster_url, caption=post_caption, parse_mode="Markdown")
-        else:
-            await bot.send_message(storage_channel_id, text=post_caption, parse_mode="Markdown")
+        try:
+            if poster_url:
+                await bot.send_photo(storage_channel_id, photo=poster_url, caption=post_caption, parse_mode="Markdown")
+            else:
+                await bot.send_message(storage_channel_id, text=post_caption, parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Could not send series banner to storage: {e}")
     elif is_first_season_ep:
         season_title = season.get('title') or f"{season.get('season_number', 1)}-mavsum"
-        await bot.send_message(storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
-
-    # Copy video to storage channel with clean standardized caption (no random external channel ads)
-    try:
-        s_num = season.get('season_number', 1)
-        storage_caption = f"🍿 <b>{series.get('title', '')}</b>\n📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
-        msg = await bot.copy_message(
-            storage_channel_id,
-            from_chat_id=chat_id,
-            message_id=message.message_id,
-            caption=storage_caption,
-            parse_mode="HTML"
-        )
-        storage_msg_id = msg.message_id
-    except TelegramBadRequest as e:
-        logger.error(f"Cannot copy message to storage: {e}")
-        await message.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki noto'g'ri).")
-        return
-
-    # Episode Creation or Retrieval with dual-layer conflict defense
-    is_update = False
-    if existing_ep:
-        episode = existing_ep
-        is_update = True
-    else:
-        code = str(uuid.uuid4())[:8]
         try:
-            resp = await api_client.client.post(f"/series/seasons/{season_id}/episodes", json={
-                "season_id": season_id,
-                "episode_number": ep_num,
-                "title": f"{ep_num}-qism",
-                "code": code
+            await bot.send_message(storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Could not send season banner to storage: {e}")
+
+    # Process each message sequentially
+    s_num = season.get('season_number', 1)
+    series_title = series.get('title', '')
+
+    for msg in messages:
+        telegram_file_id, _ = extract_media_info(msg)
+        if not telegram_file_id:
+            try:
+                await msg.reply("❌ Yuborilgan fayl video emas yoki video formati qo'llab-quvvatlanmaydi.")
+            except Exception:
+                pass
+            continue
+
+        # Sequential resolution:
+        explicit_ep = extract_episode_num_from_caption(msg.caption)
+        if explicit_ep is not None:
+            ep_num = explicit_ep
+            current_max_ep = max(current_max_ep, ep_num)
+        else:
+            current_max_ep += 1
+            ep_num = current_max_ep
+
+        # Storage caption: clean standardized caption
+        storage_caption = f"🍿 <b>{series_title}</b>\n📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
+
+        # Copy to storage channel
+        try:
+            copied = await bot.copy_message(
+                chat_id=storage_channel_id,
+                from_chat_id=msg.chat.id,
+                message_id=msg.message_id,
+                caption=storage_caption,
+                parse_mode="HTML"
+            )
+            storage_msg_id = copied.message_id
+        except TelegramBadRequest as e:
+            logger.error(f"Cannot copy message {msg.message_id} to storage: {e}")
+            try:
+                await msg.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki ruxsat yo'q).")
+            except Exception:
+                pass
+            continue
+
+        # Episode Creation or Retrieval (Upsert)
+        existing_ep = next((e for e in episodes if e.get("episode_number") == ep_num), None)
+        is_update = False
+
+        if existing_ep:
+            episode = existing_ep
+            is_update = True
+        else:
+            code = str(uuid.uuid4())[:8]
+            try:
+                resp = await api_client.client.post(f"/series/seasons/{season_id}/episodes", json={
+                    "season_id": season_id,
+                    "episode_number": ep_num,
+                    "title": f"{ep_num}-qism",
+                    "code": code
+                })
+                resp.raise_for_status()
+                episode = resp.json()
+                episodes.append(episode)
+            except httpx.HTTPStatusError as e:
+                # Concurrent conflict defense
+                if e.response.status_code in (400, 409):
+                    refetch = await api_client.client.get(f"/series/seasons/{season_id}/episodes")
+                    refetch.raise_for_status()
+                    episodes = refetch.json()
+                    episode = next((e for e in episodes if e.get("episode_number") == ep_num), None)
+                    if not episode:
+                        logger.error(f"Failed to resolve episode {ep_num} conflict: {e}")
+                        try:
+                            await msg.reply(f"❌ {ep_num}-qismni yaratishda xatolik yuz berdi: {e}")
+                        except Exception:
+                            pass
+                        continue
+                    is_update = True
+                else:
+                    logger.error(f"HTTP error creating episode {ep_num}: {e}")
+                    try:
+                        await msg.reply(f"❌ {ep_num}-qismni yaratishda xatolik yuz berdi: {e}")
+                    except Exception:
+                        pass
+                    continue
+            except Exception as e:
+                logger.error(f"Unexpected error creating episode {ep_num}: {e}")
+                try:
+                    await msg.reply(f"❌ {ep_num}-qismni yaratishda xatolik yuz berdi: {e}")
+                except Exception:
+                    pass
+                continue
+
+        # Link video to episode
+        try:
+            resp = await api_client.client.post(f"/series/episodes/{episode['id']}/link-video", json={
+                "message_id": storage_msg_id,
+                "language": "Asosiy",
+                "telegram_file_id": telegram_file_id
             })
             resp.raise_for_status()
-            episode = resp.json()
-        except httpx.HTTPStatusError as e:
-            # Layer 2 defense: in case of 400/409 duplicate conflict, re-fetch and upsert
-            if e.response.status_code in (400, 409):
-                logger.warning(f"Episode {ep_num} creation conflicted ({e.response.status_code}), re-fetching: {e}")
-                refetch = await api_client.client.get(f"/series/seasons/{season_id}/episodes")
-                refetch.raise_for_status()
-                episodes = refetch.json()
-                episode = next((e for e in episodes if e.get("episode_number") == ep_num), None)
-                if not episode:
-                    raise
-                is_update = True
-            else:
-                raise
+        except Exception as e:
+            logger.error(f"Error linking video for episode {episode['id']}: {e}")
+            try:
+                await msg.reply(f"❌ {ep_num}-qism videosini ulashda xatolik yuz berdi: {e}")
+            except Exception:
+                pass
+            continue
 
-    # Link video to episode
-    try:
-        resp = await api_client.client.post(f"/series/episodes/{episode['id']}/link-video", json={
-            "message_id": storage_msg_id,
-            "language": "Asosiy",
-            "telegram_file_id": telegram_file_id
-        })
-        resp.raise_for_status()
-    except Exception as e:
-        logger.error(f"Error linking video for episode {episode['id']}: {e}")
-        await message.reply(f"❌ Qism bazada mavjud, lekin videoni ulashda xatolik yuz berdi: {e}")
-        return
-
-    # Check if season is complete
-    expected_count = season.get("episode_count")
-    if expected_count and ep_num >= expected_count:
+        # Notify in source chat
+        ep_code = episode.get("display_code") or episode.get("code") or ""
         try:
-            resp = await api_client.client.put(f"/series/seasons/{season_id}", json={
+            if is_update:
+                await msg.reply(f"🔄 <b>{ep_num}-qism</b> videosi yangilandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
+            else:
+                await msg.reply(f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
+        except Exception as e:
+            logger.warning(f"Could not send reply to msg {msg.message_id}: {e}")
+
+    # Check if season is complete (only if all expected episodes are present)
+    expected_count = season.get("episode_count")
+    if expected_count and len(episodes) >= expected_count and season.get("status") != "completed":
+        try:
+            await api_client.client.put(f"/series/seasons/{season_id}", json={
                 "season_number": season.get("season_number"),
                 "title": season.get("title"),
                 "description": season.get("description"),
@@ -315,17 +358,8 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
                 "episode_count": expected_count,
                 "status": "completed"
             })
-            resp.raise_for_status()
         except Exception as e:
-            logger.error(f"Error completing season: {e}")
-            await message.reply(f"⚠️ Mavsum yakunlandi deb belgilashda xato: {e}")
-
-    # Notify in source chat
-    ep_code = episode.get("display_code") or episode.get("code") or code
-    if is_update:
-        await message.reply(f"🔄 <b>{ep_num}-qism</b> videosi yangilandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
-    else:
-        await message.reply(f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
+            logger.warning(f"Error marking season {season_id} as completed: {e}")
 
 
 # ── BATCH BUFFER AGGREGATOR & DEBOUNCE ───────────────────────────────────────
@@ -347,7 +381,6 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
     except asyncio.CancelledError:
         return
 
-    # Extract chat_id and topic_id
     parts = source_key.split(":")
     chat_id = int(parts[0])
     topic_id = int(parts[1]) if len(parts) > 1 and parts[1] != "0" else None
@@ -359,33 +392,49 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
         if not batch or not batch.messages:
             return
 
-        messages = batch.messages
+        # 1. Telegram xabarlarini message_id bo'yicha o'sish tartibida saralash (1-qismdan boshlab)
+        messages = sorted(batch.messages, key=lambda m: m.message_id)
 
-        # Extract episode number for each video and sort ascending (1, 2, 3... 10)
-        items = []
-        for msg in messages:
-            fn = msg.video.file_name if msg.video else (msg.document.file_name if msg.document else "")
-            ep_num = extract_episode_num(msg.caption, fn)
-            # Tuple: (sort_key, message_id, ep_num, msg)
-            items.append((ep_num if ep_num is not None else 999999, msg.message_id, ep_num, msg))
+        # 2. Source orqali Series yoki Movie qidirish
+        url = f"/series/by-source?chat_id={chat_id}"
+        if topic_id:
+            url += f"&topic_id={topic_id}"
+        resp = await api_client.client.get(url)
 
-        # Strictly sort ascending by episode number, preserving message order for ties
-        items.sort(key=lambda x: (x[0], x[1]))
-
-        # Process each item sequentially with failure isolation
-        for _, _, ep_num, msg in items:
+        if resp.status_code == 404:
+            # Movie tekshirish
+            movie_url = f"/movies/by-source?chat_id={chat_id}"
+            if topic_id:
+                movie_url += f"&topic_id={topic_id}"
+            resp_movie = await api_client.client.get(movie_url)
+            if resp_movie.status_code == 404:
+                return
             try:
-                await process_single_video(msg, bot, pre_extracted_ep=ep_num)
+                resp_movie.raise_for_status()
+                movie = resp_movie.json()
             except Exception as e:
-                logger.error(f"Error processing video msg {msg.message_id} in batch: {e}", exc_info=True)
-                ep_label = f"{ep_num}-qism" if ep_num is not None else f"Xabar #{msg.message_id}"
+                logger.error(f"Error fetching movie by source: {e}")
+                return
+
+            for msg in messages:
+                await process_movie_message(msg, bot, movie)
+            return
+
+        try:
+            resp.raise_for_status()
+            series = resp.json()
+        except Exception as e:
+            logger.error(f"Error fetching series by source: {e}")
+            for msg in messages:
                 try:
-                    await msg.reply(
-                        f"❌ <b>{ep_label}</b>ni saqlashda xatolik yuz berdi: {e}\n<i>Qolgan qismlar davom ettirilmoqda...</i>",
-                        parse_mode="HTML"
-                    )
+                    await msg.reply(f"❌ Serial backenddan qidirilayotganda tizimli xato: {e}")
                 except Exception:
                     pass
+            return
+
+        # 3. Series uchun qismlarni ketma-ket indekslash
+        await process_series_batch(messages, bot, series)
+
 
 async def enqueue_video_message(message: Message, bot: Bot):
     chat_id = message.chat.id
