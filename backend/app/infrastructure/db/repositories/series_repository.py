@@ -236,10 +236,33 @@ class SeriesRepository:
         return list(result.scalars().all())
 
     async def create_episode(self, episode_data: dict) -> EpisodeModel:
-        episode = EpisodeModel(**episode_data)
-        self.session.add(episode)
-        await self.session.flush()
-        return await self.get_episode_by_id(episode.id)
+        from sqlalchemy.exc import IntegrityError
+        # Pre-check if episode with same (season_id, episode_number) already exists
+        stmt = (
+            select(EpisodeModel)
+            .options(selectinload(EpisodeModel.translations))
+            .where(
+                EpisodeModel.season_id == episode_data["season_id"],
+                EpisodeModel.episode_number == episode_data["episode_number"]
+            )
+        )
+        res = await self.session.execute(stmt)
+        existing = res.scalar_one_or_none()
+        if existing:
+            return existing
+
+        try:
+            episode = EpisodeModel(**episode_data)
+            self.session.add(episode)
+            await self.session.flush()
+            return await self.get_episode_by_id(episode.id)
+        except IntegrityError:
+            await self.session.rollback()
+            res = await self.session.execute(stmt)
+            existing = res.scalar_one_or_none()
+            if existing:
+                return existing
+            raise
 
     async def update_episode(self, episode_id: int, update_data: EpisodeUpdate | dict) -> EpisodeModel | None:
         episode = await self.get_episode_by_id(episode_id)
