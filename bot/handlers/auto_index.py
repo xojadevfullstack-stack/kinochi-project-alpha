@@ -152,19 +152,7 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
         return
     series = resp.json()
 
-    # 2. Extract Episode number using Regex
-    ep_num = pre_extracted_ep if pre_extracted_ep is not None else extract_episode_num(caption, file_name)
-    if ep_num is None:
-        logger.warning(f"Could not extract episode number from caption='{caption}' file_name='{file_name}'")
-        await message.reply(
-            "⚠️ <b>Qism raqamini aniqlab bo'lmadi!</b>\n\n"
-            "Xabar matnida (caption) yoki fayl nomida qism raqami topilmadi.\n"
-            "<i>Iltimos, xabarga <code>1-qism</code> deb yozing yoki fayl nomini (masalan: <code>01.mp4</code>) to'g'rilab qayta yuboring.</i>",
-            parse_mode="HTML"
-        )
-        return
-
-    # 3. Get or create Season (supports explicit season from caption if present)
+    # 2. Get or create Season (supports explicit season from caption if present)
     target_season_num = extract_season_num(caption, file_name)
     seasons = series.get("seasons", [])
     season = None
@@ -209,7 +197,7 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
 
     season_id = season['id']
 
-    # 4. Fresh fetch of episodes for this season inside lock
+    # 3. Fresh fetch of episodes for this season inside lock
     try:
         resp = await api_client.client.get(f"/series/seasons/{season_id}/episodes")
         resp.raise_for_status()
@@ -218,6 +206,15 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
         logger.error(f"Error fetching episodes: {e}")
         await message.reply("❌ Qismlarni (episodes) yuklashda tizimli xato yuz berdi.")
         return
+
+    # 4. Hybrid Episode Number Resolution:
+    # First, try to extract episode number from caption or filename
+    ep_num = pre_extracted_ep if pre_extracted_ep is not None else extract_episode_num(caption, file_name)
+    # Second, if neither caption nor filename has a number (clean video forward), use sequential forward order
+    if ep_num is None:
+        existing_nums = [e.get("episode_number", 0) for e in episodes]
+        ep_num = max(existing_nums, default=0) + 1
+        logger.info(f"Hybrid Mode: auto-assigned sequential episode number {ep_num} for msg {message.message_id}")
 
     storage_channel_id = settings.STORAGE_CHANNEL_ID
     if not storage_channel_id:
@@ -246,9 +243,17 @@ async def process_single_video(message: Message, bot: Bot, pre_extracted_ep: int
         season_title = season.get('title') or f"{season.get('season_number', 1)}-mavsum"
         await bot.send_message(storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
 
-    # Copy video to storage
+    # Copy video to storage channel with clean standardized caption (no random external channel ads)
     try:
-        msg = await bot.copy_message(storage_channel_id, from_chat_id=chat_id, message_id=message.message_id)
+        s_num = season.get('season_number', 1)
+        storage_caption = f"🍿 <b>{series.get('title', '')}</b>\n📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
+        msg = await bot.copy_message(
+            storage_channel_id,
+            from_chat_id=chat_id,
+            message_id=message.message_id,
+            caption=storage_caption,
+            parse_mode="HTML"
+        )
         storage_msg_id = msg.message_id
     except TelegramBadRequest as e:
         logger.error(f"Cannot copy message to storage: {e}")
