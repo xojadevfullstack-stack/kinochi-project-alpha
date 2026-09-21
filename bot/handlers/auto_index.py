@@ -187,26 +187,43 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
     season_id = season['id']
 
-    # Fetch existing episodes in this season
-    try:
-        resp = await api_client.client.get(f"/series/seasons/{season_id}/episodes")
-        resp.raise_for_status()
-        episodes = resp.json()
-    except Exception as e:
-        logger.error(f"Error fetching episodes for season {season_id}: {e}")
+    # ── BOSQICH A — RESERVE (copy_message'dan OLDIN, hech qanday Telegram network chaqiruvisiz) ──
+    reservation_items = []
+    for msg in messages:
+        explicit_ep = extract_episode_num_from_caption(msg.caption)
+        reservation_items.append({
+            "source_message_id": msg.message_id,
+            "explicit_episode_number": explicit_ep,
+            "title": f"{explicit_ep}-qism" if explicit_ep else None
+        })
+
+    recv_ts = time.time()
+    reserved_episodes = await api_client.reserve_episodes(season_id, reservation_items)
+    if not reserved_episodes:
+        logger.error(f"Failed to reserve episodes for season {season_id}")
         for msg in messages:
             try:
-                await msg.reply(f"❌ Qismlarni yuklashda tizimli xato: {e}")
+                await msg.reply("❌ Qismlarni DB'da band qilishda tizimli xato yuz berdi.")
             except Exception:
                 pass
         return
 
-    existing_nums = [e.get("episode_number") for e in episodes if e.get("episode_number") is not None]
-    current_max_ep = max(existing_nums, default=0)
+    # Map reserved episodes by source_message_id
+    reserved_map = {item["source_message_id"]: item for item in reserved_episodes}
+
+    # Logging: [ORDER_AUDIT] status=RESERVED
+    for item in reserved_episodes:
+        logger.info(
+            f"[ORDER_AUDIT] msg_id={item['source_message_id']} | "
+            f"recv_ts={recv_ts:.3f} | "
+            f"reserved_ep={item['episode_number']} | "
+            f"code={item['display_code']} | "
+            f"status=RESERVED"
+        )
 
     # First series/season banner in storage channel
-    is_first_series_ep = (len(seasons) == 1 and len(episodes) == 0)
-    is_first_season_ep = (len(episodes) == 0)
+    is_first_series_ep = (len(seasons) == 1 and reserved_episodes and reserved_episodes[0]["episode_number"] == 1 and not reserved_episodes[0].get("is_update"))
+    is_first_season_ep = (reserved_episodes and reserved_episodes[0]["episode_number"] == 1 and not reserved_episodes[0].get("is_update"))
 
     if is_first_series_ep:
         title_str = series.get('title') or "Noma'lum"
@@ -228,29 +245,28 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         except Exception as e:
             logger.warning(f"Could not send season banner to storage: {e}")
 
-    # Process each message sequentially
+    # ── BOSQICH B — UPLOAD (endi xavfsiz parallel yoki ketma-ket, order bazada band) ──
     s_num = season.get('season_number', 1)
     series_title = series.get('title', '')
 
     for msg in messages:
+        reserved_info = reserved_map.get(msg.message_id)
+        if not reserved_info:
+            continue
+
+        ep_num = reserved_info["episode_number"]
+        ep_id = reserved_info["id"]
+        ep_code = reserved_info["display_code"]
+        is_update = reserved_info.get("is_update", False)
+
         telegram_file_id, _ = extract_media_info(msg)
         if not telegram_file_id:
             try:
-                await msg.reply("❌ Yuborilgan fayl video emas yoki video formati qo'llab-quvvatlanmaydi.")
+                await msg.reply(f"❌ <b>{ep_num}-qism</b>: Yuborilgan fayl video emas.", parse_mode="HTML")
             except Exception:
                 pass
             continue
 
-        # Sequential resolution:
-        explicit_ep = extract_episode_num_from_caption(msg.caption)
-        if explicit_ep is not None:
-            ep_num = explicit_ep
-            current_max_ep = max(current_max_ep, ep_num)
-        else:
-            current_max_ep += 1
-            ep_num = current_max_ep
-
-        # Storage caption: clean standardized caption
         storage_caption = f"🍿 <b>{series_title}</b>\n📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
 
         # Copy to storage channel
@@ -263,92 +279,46 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 parse_mode="HTML"
             )
             storage_msg_id = copied.message_id
-        except TelegramBadRequest as e:
-            logger.error(f"Cannot copy message {msg.message_id} to storage: {e}")
+        except Exception as e:
+            logger.error(f"[ORDER_AUDIT] msg_id={msg.message_id} | status=FAILED | error={e}")
             try:
-                await msg.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki ruxsat yo'q).")
+                await msg.reply(
+                    f"⚠️ <b>{ep_num}-qism</b> bazada band qilindi ({ep_code}), lekin videoni Storage kanalga ko'chirishda xatolik: {e}",
+                    parse_mode="HTML"
+                )
             except Exception:
                 pass
             continue
 
-        # Episode Creation or Retrieval (Upsert)
-        existing_ep = next((e for e in episodes if e.get("episode_number") == ep_num), None)
-        is_update = False
-
-        if existing_ep:
-            episode = existing_ep
-            is_update = True
-        else:
-            code = str(uuid.uuid4())[:8]
-            try:
-                resp = await api_client.client.post(f"/series/seasons/{season_id}/episodes", json={
-                    "season_id": season_id,
-                    "episode_number": ep_num,
-                    "title": f"{ep_num}-qism",
-                    "code": code
-                })
-                resp.raise_for_status()
-                episode = resp.json()
-                episodes.append(episode)
-            except httpx.HTTPStatusError as e:
-                # Concurrent conflict defense
-                if e.response.status_code in (400, 409):
-                    refetch = await api_client.client.get(f"/series/seasons/{season_id}/episodes")
-                    refetch.raise_for_status()
-                    episodes = refetch.json()
-                    episode = next((e for e in episodes if e.get("episode_number") == ep_num), None)
-                    if not episode:
-                        logger.error(f"Failed to resolve episode {ep_num} conflict: {e}")
-                        try:
-                            await msg.reply(f"❌ {ep_num}-qismni yaratishda xatolik yuz berdi: {e}")
-                        except Exception:
-                            pass
-                        continue
-                    is_update = True
-                else:
-                    logger.error(f"HTTP error creating episode {ep_num}: {e}")
-                    try:
-                        await msg.reply(f"❌ {ep_num}-qismni yaratishda xatolik yuz berdi: {e}")
-                    except Exception:
-                        pass
-                    continue
-            except Exception as e:
-                logger.error(f"Unexpected error creating episode {ep_num}: {e}")
-                try:
-                    await msg.reply(f"❌ {ep_num}-qismni yaratishda xatolik yuz berdi: {e}")
-                except Exception:
-                    pass
-                continue
-
-        # Link video to episode
+        # Link video to reserved episode
         try:
-            resp = await api_client.client.post(f"/series/episodes/{episode['id']}/link-video", json={
+            resp = await api_client.client.post(f"/series/episodes/{ep_id}/link-video", json={
                 "message_id": storage_msg_id,
                 "language": "Asosiy",
                 "telegram_file_id": telegram_file_id
             })
             resp.raise_for_status()
-        except Exception as e:
-            logger.error(f"Error linking video for episode {episode['id']}: {e}")
-            try:
-                await msg.reply(f"❌ {ep_num}-qism videosini ulashda xatolik yuz berdi: {e}")
-            except Exception:
-                pass
-            continue
-
-        # Notify in source chat
-        ep_code = episode.get("display_code") or episode.get("code") or ""
-        try:
+            logger.info(
+                f"[ORDER_AUDIT] msg_id={msg.message_id} | "
+                f"db_write_ts={time.time():.3f} | "
+                f"final_ep={ep_num} | "
+                f"code={ep_code} | "
+                f"status=DB_COMMITTED"
+            )
             if is_update:
                 await msg.reply(f"🔄 <b>{ep_num}-qism</b> videosi yangilandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
             else:
                 await msg.reply(f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
         except Exception as e:
-            logger.warning(f"Could not send reply to msg {msg.message_id}: {e}")
+            logger.error(f"Error linking video for episode {ep_id}: {e}")
+            try:
+                await msg.reply(f"❌ <b>{ep_num}-qism</b> videosini ulashda xatolik yuz berdi: {e}", parse_mode="HTML")
+            except Exception:
+                pass
 
     # Check if season is complete (only if all expected episodes are present)
     expected_count = season.get("episode_count")
-    if expected_count and len(episodes) >= expected_count and season.get("status") != "completed":
+    if expected_count and len(reserved_episodes) >= expected_count and season.get("status") != "completed":
         try:
             await api_client.client.put(f"/series/seasons/{season_id}", json={
                 "season_number": season.get("season_number"),
@@ -360,6 +330,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
             })
         except Exception as e:
             logger.warning(f"Error marking season {season_id} as completed: {e}")
+
 
 
 # ── BATCH BUFFER AGGREGATOR & DEBOUNCE ───────────────────────────────────────

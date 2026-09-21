@@ -310,3 +310,83 @@ class SeriesRepository:
         await self.session.delete(episode)
         await self.session.flush()
         return True
+
+    async def reserve_episodes_atomic(self, season_id: int, items: list[dict]) -> list[dict]:
+        """
+        BOSQICH A: Atomik tarzda season qatorini qulflaydi (SELECT ... FOR UPDATE)
+        va berilgan items (sorted by message_id) uchun episode_number'larni
+        ketma-ket bazada yaratib/band qilib qaytaradi.
+        Hech qanday tashqi network await bo'lmaydi.
+        """
+        import uuid
+
+        # 1. Season qatorini FOR UPDATE bilan qulflash
+        stmt = (
+            select(SeasonModel)
+            .where(SeasonModel.id == season_id)
+            .with_for_update()
+        )
+        res = await self.session.execute(stmt)
+        season = res.scalar_one_or_none()
+        if not season:
+            raise ValueError(f"Season with ID {season_id} not found")
+
+        # 2. Mavjud barcha qismlarni o'qish (lock ichida)
+        episodes_stmt = (
+            select(EpisodeModel)
+            .where(EpisodeModel.season_id == season_id)
+            .order_by(EpisodeModel.episode_number)
+        )
+        episodes_res = await self.session.execute(episodes_stmt)
+        existing_episodes = list(episodes_res.scalars().all())
+        existing_by_num = {e.episode_number: e for e in existing_episodes}
+        current_max = max(existing_by_num.keys(), default=0)
+
+        reserved_results = []
+
+        for item in items:
+            source_msg_id = item.get("source_message_id")
+            explicit_ep = item.get("explicit_episode_number")
+            title = item.get("title")
+
+            if explicit_ep is not None:
+                ep_num = explicit_ep
+                current_max = max(current_max, ep_num)
+            else:
+                current_max += 1
+                ep_num = current_max
+
+            if ep_num in existing_by_num:
+                ep = existing_by_num[ep_num]
+                if source_msg_id:
+                    ep.source_message_id = source_msg_id
+                is_update = True
+            else:
+                code = uuid.uuid4().hex[:8]
+                display_code = f"S{season.season_number}-CH{ep_num}"
+                ep = EpisodeModel(
+                    season_id=season_id,
+                    episode_number=ep_num,
+                    code=code,
+                    display_code=display_code,
+                    title=title or f"{ep_num}-qism",
+                    source_message_id=source_msg_id
+                )
+                self.session.add(ep)
+                existing_by_num[ep_num] = ep
+                is_update = False
+
+            await self.session.flush()
+
+            reserved_results.append({
+                "id": ep.id,
+                "episode_number": ep.episode_number,
+                "code": ep.code,
+                "display_code": ep.display_code,
+                "source_message_id": source_msg_id,
+                "season_number": season.season_number,
+                "is_update": is_update
+            })
+
+        return reserved_results
+

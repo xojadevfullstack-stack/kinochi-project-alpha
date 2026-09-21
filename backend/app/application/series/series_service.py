@@ -217,3 +217,6 @@ class SeriesService:
     async def delete_episode_translation(self, translation_id: int) -> bool:
         return await self.repository.delete_episode_translation(translation_id)
 
+    async def reserve_episodes(self, season_id: int, items: list[dict]) -> list[dict]:
+        return await self.repository.reserve_episodes_atomic(season_id, items)
+

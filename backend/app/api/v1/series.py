@@ -276,6 +276,45 @@ async def create_episode(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+class EpisodeReservationItem(BaseModel):
+    source_message_id: int
+    explicit_episode_number: int | None = None
+    title: str | None = None
+
+class ReserveEpisodesRequest(BaseModel):
+    items: list[EpisodeReservationItem]
+
+class ReservedEpisodeResponse(BaseModel):
+    id: int
+    episode_number: int
+    code: str
+    display_code: str
+    source_message_id: int | None = None
+    season_number: int
+    is_update: bool = False
+
+@router.post("/seasons/{season_id}/reserve-episodes", response_model=List[ReservedEpisodeResponse])
+async def reserve_episodes(
+    season_id: int,
+    request: ReserveEpisodesRequest,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """
+    BOSQICH A: Atomik tarzda season qatorini qulflab (SELECT ... FOR UPDATE),
+    qismlarni oldindan band qilish. Hech qanday Telegram network chaqiruvisiz.
+    """
+    try:
+        items_dict = [item.model_dump() for item in request.items]
+        return await service.reserve_episodes(season_id, items_dict)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error reserving episodes for season {season_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Qismlarni band qilishda xatolik.")
+
+
+
 @router.get("/seasons/{season_id}/episodes", response_model=List[Episode])
 @limiter.limit("120/minute")
 async def list_episodes(

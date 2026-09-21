@@ -106,6 +106,19 @@ class APIClient:
             logger.error(f"Error creating episode {episode_number} for season {season_id}: {e}")
             return None
 
+    async def reserve_episodes(self, season_id: int, items: list[dict]) -> Optional[list[dict]]:
+        try:
+            response = await self.client.post(
+                f"/series/seasons/{season_id}/reserve-episodes",
+                json={"items": items}
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"Error reserving episodes for season {season_id}: {e}")
+            return None
+
+
     async def get_active_channels(self) -> list[Dict[str, Any]]:
         try:
             response = await self.client.get("/channels/active")
