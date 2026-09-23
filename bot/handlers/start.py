@@ -24,6 +24,10 @@ async def cmd_start(message: Message, command: CommandObject):
     if args and args.strip():
         code = args.strip()
         
+        # Check if it's login
+        if code.lower() == "login":
+            return await cmd_login(message)
+        
         # Check if it's a series ID (starts with s_)
         if code.startswith("s_"):
             series_id = code[2:]
