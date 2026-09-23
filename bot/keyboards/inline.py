@@ -53,6 +53,11 @@ def get_main_menu_inline(webapp_url: str) -> InlineKeyboardMarkup:
     builder.button(text="🔍 Qidirish (Qanday?)", callback_data="help_search")
     builder.button(text="📂 Katalog", callback_data="menu_catalog")
     builder.button(text="🎲 Tavsiya", callback_data="menu_random")
+    
+    # WebApp URL must be HTTPS for Telegram
+    if not webapp_url or not webapp_url.startswith("https://"):
+        webapp_url = "https://kinochi-project-alpha.vercel.app/"
+
     builder.button(text="🌐 Saytga o'tish", web_app=WebAppInfo(url=webapp_url))
     builder.adjust(1, 2, 1)
     return builder.as_markup()

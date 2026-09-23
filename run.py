@@ -56,11 +56,11 @@ async def main():
     setup_global_logging()
     logging.info("CHECKPOINT 1: run.py main() boshlandi")
     
-    # Patch BACKEND_API_URL to use the correct port dynamically if running locally
+    # Patch BACKEND_API_URL to use the correct port dynamically if running locally/on Render
     port = os.environ.get("PORT", "8000")
-    backend_url = os.environ.get("BACKEND_API_URL", "http://localhost:8000/api/v1")
-    if "localhost:8000" in backend_url or "127.0.0.1:8000" in backend_url:
-        os.environ["BACKEND_API_URL"] = backend_url.replace(":8000", f":{port}")
+    backend_url = os.environ.get("BACKEND_API_URL", "http://127.0.0.1:8000/api/v1")
+    if "localhost" in backend_url or "127.0.0.1" in backend_url:
+        os.environ["BACKEND_API_URL"] = f"http://127.0.0.1:{port}/api/v1"
     
     # Lazy import to avoid import errors before sys.path is set
     from bot.main import run_bot

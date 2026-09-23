@@ -198,4 +198,41 @@ class APIClient:
             logger.error(f"Error fetching pages: {e}")
             return {"items": [], "total": 0}
 
+    async def generate_login_token(self, telegram_id: int, first_name: Optional[str] = None, username: Optional[str] = None) -> Optional[str]:
+        """
+        Requests an access_token from /auth/dev-login.
+        First tries internal configured client, then falls back to public Render backend if needed.
+        """
+        payload = {
+            "telegram_id": telegram_id,
+            "first_name": first_name or "Foydalanuvchi",
+            "username": username or "user"
+        }
+        
+        # 1. Try via self.client
+        try:
+            response = await self.client.post("/auth/dev-login", json=payload)
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                if token:
+                    return token
+            logger.warning(f"Internal /auth/dev-login returned status {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.warning(f"Internal /auth/dev-login failed: {e}. Trying public fallback...")
+
+        # 2. Fallback via public Render backend directly
+        public_url = "https://kinochi-project-alpha.onrender.com/api/v1/auth/dev-login"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as fallback_client:
+                response = await fallback_client.post(public_url, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    return data.get("access_token")
+                logger.error(f"Fallback /auth/dev-login returned status {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.error(f"Fallback /auth/dev-login failed: {e}")
+
+        return None
+
 api_client = APIClient()
