@@ -104,12 +104,11 @@ export default function SeriesListPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    const payload = {
-      ...form,
-      source_id: form.source_id === "" ? null : form.source_id
-    };
-
     try {
+      const payload = {
+        ...form,
+        source_id: form.source_id === "" ? null : form.source_id
+      };
       if (editingId) {
         await fetchApi(`/series/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       } else {
@@ -118,12 +117,12 @@ export default function SeriesListPage() {
       handleCancel();
       loadSeries();
     } catch (e: any) {
-      setErrorMsg("Saqlashda xato: " + (e.message || "Noma'lum xato"));
+      setErrorMsg(e.message || "Xato yuz berdi");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Ushbu serialni o'chirasizmi? (Uning barcha mavsumlari va qismlari ham o'chib ketadi!)")) return;
+    if (!confirm("Ushbu serialni o'chirasizmi? (Uning barcha mavsum va qismlari ham o'chib ketishi mumkin!)")) return;
     try {
       await fetchApi(`/series/${id}`, { method: "DELETE" });
       loadSeries();
@@ -143,17 +142,31 @@ export default function SeriesListPage() {
       release_year: s.release_year || 2024,
       director: s.director || "",
       cast: s.cast || "",
-      category_ids: s.categories ? s.categories.map((c) => c.id) : [],
+      category_ids: s.categories.map((c) => c.id),
       page_ids: s.pages ? s.pages.map((p) => p.id) : [],
       source_id: s.source_id || "",
       status: s.status || "ongoing",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setErrorMsg(null);
-    setForm({ title: "", description: "", poster_url: "", trailer_url: "", imdb_rating: 0, release_year: 2024, director: "", cast: "", category_ids: [], page_ids: [], source_id: "", status: "ongoing" });
+    setForm({
+      title: "",
+      description: "",
+      poster_url: "",
+      trailer_url: "",
+      imdb_rating: 0,
+      release_year: 2024,
+      director: "",
+      cast: "",
+      category_ids: [],
+      page_ids: [],
+      source_id: "",
+      status: "ongoing",
+    });
   };
 
   const handleCategoryChange = (id: number) => {
@@ -174,96 +187,149 @@ export default function SeriesListPage() {
     });
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Yuklanmoqda...</div>;
+  if (loading) return <div className="p-8 text-center text-text-secondary">Yuklanmoqda...</div>;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-text-primary">Seriallar Boshqaruvi</h1>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">Seriallar</h1>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">Seriallar, mavsumlar va qismlarni boshqarish</p>
+        </div>
       </div>
-
-      <div className="metric-card p-6 rounded-xl mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-text-primary">
-          {editingId ? "Serialni tahrirlash" : "Yangi serial qo'shish"}
+      
+      {/* Form Card */}
+      <div className="metric-card p-4 sm:p-6 rounded-2xl mb-8">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-text-primary flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary-container">
+            {editingId ? "edit" : "add_circle"}
+          </span>
+          {editingId ? "Serialni tahrirlash" : "Yangi Serial qo'shish"}
         </h2>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Sarlavha</label><input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
-          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Ta'rif</label><textarea className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
-          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} /></div>
-          <div className="md:col-span-2"><label className="block text-sm font-medium text-text-secondary mb-1">Treyler URL (YouTube yoki to'g'ridan-to'g'ri link, majburiy emas)</label><input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container" placeholder="https://youtube.com/watch?v=..." value={form.trailer_url} onChange={e => setForm({...form, trailer_url: e.target.value})} /></div>
+        
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Sarlavha</label>
+            <input
+              type="text"
+              required
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              placeholder="Serial nomi..."
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Tavsif</label>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              placeholder="Serial haqida qisqacha..."
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label>
+            <input
+              type="text"
+              placeholder="https://..."
+              value={form.poster_url}
+              onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Treyler URL (YouTube yoki havola, majburiy emas)</label>
+            <input
+              type="text"
+              placeholder="https://youtube.com/watch?v=..."
+              value={form.trailer_url}
+              onChange={(e) => setForm({ ...form, trailer_url: e.target.value })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+            />
+          </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Rejissyor</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Rejissyor</label>
             <input
               type="text"
               value={form.director}
               onChange={(e) => setForm({ ...form, director: e.target.value })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Yil</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Yil</label>
             <input
               type="number"
               value={form.release_year}
-              onChange={(e) => setForm({ ...form, release_year: parseInt(e.target.value) })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+              onChange={(e) => setForm({ ...form, release_year: parseInt(e.target.value) || 2024 })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             />
           </div>
+
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Aktyorlar</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Aktyorlar</label>
             <input
               type="text"
               value={form.cast}
               onChange={(e) => setForm({ ...form, cast: e.target.value })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Reyting (IMDb)</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Reyting (IMDb)</label>
             <input
               type="number"
               step="0.1"
               min="0"
               max="10"
               value={form.imdb_rating}
-              onChange={(e) => setForm({ ...form, imdb_rating: parseFloat(e.target.value) })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+              onChange={(e) => setForm({ ...form, imdb_rating: parseFloat(e.target.value) || 0 })}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             />
           </div>
           
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Manba (Source)</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Manba (Source)</label>
             <select
               value={form.source_id}
               onChange={(e) => setForm({ ...form, source_id: e.target.value === "" ? "" : parseInt(e.target.value) })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             >
               <option value="">Manba tanlanmagan</option>
               {sources.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.type})</option>
               ))}
             </select>
-            {errorMsg && <p className="text-red-400 text-sm mt-1">{errorMsg}</p>}
+            {errorMsg && <p className="text-red-400 text-xs sm:text-sm mt-1">{errorMsg}</p>}
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-1">Status (Holati)</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Status (Holati)</label>
             <select
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-2.5 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             >
               <option value="ongoing">Davom etmoqda</option>
               <option value="completed">Tugallangan</option>
             </select>
           </div>
 
+          {/* Categories */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-2">Kategoriyalar</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">Kategoriyalar</label>
             <div className="flex flex-wrap gap-2">
               {categories.map(c => (
-                <label key={c.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer text-text-primary hover:bg-white/5 transition-colors">
+                <label key={c.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-2 rounded-xl cursor-pointer text-text-primary hover:bg-white/5 transition-colors text-xs sm:text-sm min-h-[38px]">
                   <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.category_ids.includes(c.id)} onChange={() => handleCategoryChange(c.id)} />
                   {c.name}
                 </label>
@@ -271,11 +337,12 @@ export default function SeriesListPage() {
             </div>
           </div>
           
+          {/* Pages */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-text-secondary mb-2">Sahifalar</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">Sahifalar</label>
             <div className="flex flex-wrap gap-2">
               {pages.map(p => (
-                <label key={p.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer text-text-primary hover:bg-white/5 transition-colors">
+                <label key={p.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-2 rounded-xl cursor-pointer text-text-primary hover:bg-white/5 transition-colors text-xs sm:text-sm min-h-[38px]">
                   <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.page_ids.includes(p.id)} onChange={() => handlePageChange(p.id)} />
                   {p.title}
                 </label>
@@ -283,18 +350,19 @@ export default function SeriesListPage() {
             </div>
           </div>
 
-          <div className="md:col-span-2 flex gap-3 pt-2">
+          {/* Action buttons */}
+          <div className="md:col-span-2 flex flex-col sm:flex-row gap-3 pt-3">
             <button
               type="submit"
-              className="bg-primary-container text-white px-6 py-2.5 rounded-lg font-medium hover:scale-105 transition-all"
+              className="bg-primary-container text-white px-6 py-3 rounded-xl font-medium hover:scale-[1.02] active:scale-95 transition-all text-sm w-full sm:w-auto text-center min-h-[44px]"
             >
-              Saqlash
+              {editingId ? "O'zgarishlarni saqlash" : "Serialni saqlash"}
             </button>
             {editingId && (
               <button
                 type="button"
                 onClick={handleCancel}
-                className="bg-white/5 border border-white/10 text-text-primary px-6 py-2.5 rounded-lg font-medium hover:bg-white/10 transition-all"
+                className="bg-white/5 border border-white/10 text-text-primary px-6 py-3 rounded-xl font-medium hover:bg-white/10 active:scale-95 transition-all text-sm w-full sm:w-auto text-center min-h-[44px]"
               >
                 Bekor qilish
               </button>
@@ -303,58 +371,67 @@ export default function SeriesListPage() {
         </form>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Series Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {seriesList.map((s) => (
-          <div key={s.id} className="metric-card rounded-xl overflow-hidden flex flex-col group border border-white/5">
+          <div key={s.id} className="metric-card rounded-2xl overflow-hidden flex flex-col group border border-white/5 shadow-lg">
             {s.poster_url && (
-              <div className="h-48 w-full bg-surface-container-lowest overflow-hidden relative">
-                <img src={s.poster_url} alt={s.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent opacity-80"></div>
+              <div className="h-44 sm:h-48 w-full bg-surface-container-lowest overflow-hidden relative">
+                <img src={s.poster_url} alt={s.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent opacity-90"></div>
               </div>
             )}
-            <div className="p-5 flex-1 flex flex-col relative z-10 -mt-8 bg-surface-container-high">
-              <h3 className="text-lg font-bold text-text-primary mb-2 truncate">{s.title}</h3>
+            <div className={`p-4 sm:p-5 flex-1 flex flex-col relative z-10 ${s.poster_url ? "-mt-8" : ""} bg-surface-container-high rounded-t-xl`}>
+              <h3 className="text-base sm:text-lg font-bold text-text-primary mb-2 truncate">{s.title}</h3>
+              
               {s.categories && s.categories.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
+                <div className="flex flex-wrap gap-1 mb-2.5">
                   {s.categories.map((c) => (
                     <span
                       key={c.id}
-                      className="inline-block bg-primary-container/20 text-primary-container border border-primary-container/30 text-xs px-2.5 py-1 rounded-full font-medium"
+                      className="inline-block bg-primary-container/20 text-primary-container border border-primary-container/30 text-[11px] px-2 py-0.5 rounded-full font-medium"
                     >
                       {c.name}
                     </span>
                   ))}
                 </div>
               )}
+              
               {s.source && (
-                <span className="text-tertiary-fixed text-sm mb-3 flex items-center gap-1 font-medium">
+                <span className="text-tertiary-fixed text-xs sm:text-sm mb-2 flex items-center gap-1 font-medium">
                   📦 Manba: {s.source.name}
                 </span>
               )}
-              <span className={`text-sm mb-3 font-medium ${s.status === 'completed' ? 'text-green-400' : 'text-yellow-400'}`}>
+              
+              <span className={`text-xs sm:text-sm mb-2 font-medium ${s.status === 'completed' ? 'text-green-400' : 'text-yellow-400'}`}>
                 {s.status === 'completed' ? '✅ Tugallangan' : '🔄 Davom etmoqda'}
               </span>
-              <p className="text-sm text-text-secondary mb-4 line-clamp-3">{s.description || "Tavsif yo'q"}</p>
-              <div className="mt-auto flex justify-between items-center gap-2">
+              
+              <p className="text-xs sm:text-sm text-text-secondary mb-4 line-clamp-3">{s.description || "Tavsif yo'q"}</p>
+              
+              <div className="mt-auto flex items-center gap-2 pt-2 border-t border-white/5">
                 <Link
                   href={`/series/${s.id}`}
-                  className="flex-1 bg-surface-container-lowest border border-white/10 text-text-primary hover:text-white hover:border-white/30 text-center px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-white/5"
+                  className="flex-1 bg-surface-container-lowest border border-white/10 text-text-primary hover:text-white hover:border-white/30 text-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all hover:bg-white/5 min-h-[40px] flex items-center justify-center gap-1"
                 >
+                  <span className="material-symbols-outlined text-[18px]">layers</span>
                   Mavsumlar
                 </Link>
                 <button
                   onClick={() => handleEdit(s)}
-                  className="p-2 text-text-secondary hover:text-tertiary-fixed hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/10"
+                  className="p-2.5 text-text-secondary hover:text-tertiary-fixed hover:bg-white/5 rounded-xl transition-colors border border-white/5 min-h-[40px] min-w-[40px] flex items-center justify-center"
                   title="Tahrirlash"
+                  aria-label="Tahrirlash"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  <span className="material-symbols-outlined text-[18px]">edit</span>
                 </button>
                 <button
                   onClick={() => handleDelete(s.id)}
-                  className="p-2 text-text-secondary hover:text-primary-container hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/10"
+                  className="p-2.5 text-text-secondary hover:text-primary-container hover:bg-white/5 rounded-xl transition-colors border border-white/5 min-h-[40px] min-w-[40px] flex items-center justify-center"
                   title="O'chirish"
+                  aria-label="O'chirish"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
                 </button>
               </div>
             </div>
@@ -363,8 +440,8 @@ export default function SeriesListPage() {
       </div>
       
       {seriesList.length === 0 && (
-        <div className="text-center py-12 metric-card rounded-xl border border-white/10">
-          <p className="text-text-secondary">Hali hech qanday serial qo'shilmagan.</p>
+        <div className="text-center py-12 metric-card rounded-2xl border border-white/10">
+          <p className="text-text-secondary text-sm">Hali hech qanday serial qo'shilmagan.</p>
         </div>
       )}
     </div>

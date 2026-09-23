@@ -100,7 +100,20 @@ async def get_current_admin(request: Request, session: AsyncSession = Depends(ge
             detail="Token yaroqsiz yoki muddati tugagan",
         )
 
+    token_role = payload.get("role")
+    if token_role not in ("admin", "superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Faqat administratorlar uchun",
+        )
+
     admin_id = payload.get("sub")
+    if not admin_id or not str(admin_id).isdigit():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Noto'g'ri token subyekti",
+        )
+
     result = await session.execute(
         select(AdminUserModel).where(AdminUserModel.id == int(admin_id))
     )

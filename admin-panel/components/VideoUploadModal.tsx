@@ -260,26 +260,27 @@ export default function VideoUploadModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-container-low rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 overflow-hidden">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-surface-container-low rounded-2xl shadow-2xl w-full max-w-lg border border-white/10 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-text-primary">Video yuklash yoki ulash</h3>
+        <div className="px-4 sm:px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0">
+          <h3 className="text-base sm:text-lg font-bold text-text-primary">Video yuklash yoki ulash</h3>
           <button
             onClick={handleClose}
             disabled={phase === "uploading" || phase === "processing"}
-            className="text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30"
+            className="p-1 rounded-lg text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30"
+            aria-label="Yopish"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
           {/* Studiya nomi */}
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+          <div className="mb-4 sm:mb-5">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5">
               Studiya nomi (Til)
             </label>
             <input
@@ -288,17 +289,17 @@ export default function VideoUploadModal({
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               disabled={phase !== "idle" && phase !== "failed"}
-              className="w-full bg-surface-container border border-white/10 rounded-xl p-3 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none placeholder-text-secondary/50 transition-all disabled:opacity-50"
+              className="w-full bg-surface-container border border-white/10 rounded-xl p-3 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none placeholder-text-secondary/50 text-sm transition-all disabled:opacity-50"
             />
           </div>
 
           {/* Method tanlash */}
-          <label className="block text-sm font-medium text-text-secondary mb-3">Video manbasini tanlang</label>
-          <div className="flex gap-1 mb-5 bg-surface-container rounded-xl p-1">
+          <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">Video manbasini tanlang</label>
+          <div className="flex gap-1 mb-4 sm:mb-5 bg-surface-container rounded-xl p-1">
             <button
               onClick={() => setUploadMethod("file")}
               disabled={phase !== "idle" && phase !== "failed"}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all min-h-[40px] ${
                 uploadMethod === "file"
                   ? "bg-white/10 text-text-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-white/5"
@@ -310,7 +311,7 @@ export default function VideoUploadModal({
             <button
               onClick={() => setUploadMethod("message")}
               disabled={phase !== "idle" && phase !== "failed"}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all min-h-[40px] ${
                 uploadMethod === "message"
                   ? "bg-white/10 text-text-primary shadow-sm"
                   : "text-text-secondary hover:text-text-primary hover:bg-white/5"
@@ -324,20 +325,20 @@ export default function VideoUploadModal({
           {/* File input yoki Message ID */}
           {uploadMethod === "file" ? (
             <div className="mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <label className="block text-sm font-medium text-text-secondary mb-2">Video faylni tanlang</label>
+              <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">Video faylni tanlang</label>
               <input
                 type="file"
                 accept="video/*"
                 ref={fileInputRef}
                 disabled={phase !== "idle" && phase !== "failed"}
-                className="w-full bg-surface-container border border-white/10 rounded-xl p-2.5 text-text-primary file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-container file:text-text-primary hover:file:bg-primary-container/90 focus:outline-none cursor-pointer file:transition-colors file:cursor-pointer transition-all disabled:opacity-50"
+                className="w-full bg-surface-container border border-white/10 rounded-xl p-2 text-text-primary file:mr-3 file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-medium file:bg-primary-container file:text-text-primary hover:file:bg-primary-container/90 focus:outline-none cursor-pointer transition-all disabled:opacity-50 text-xs sm:text-sm"
               />
-              <p className="text-xs text-text-secondary/60 mt-2">Maksimal fayl hajmi: 2 GB</p>
+              <p className="text-[11px] text-text-secondary/60 mt-1.5">Maksimal fayl hajmi: 2 GB</p>
               {renderProgress()}
             </div>
           ) : (
             <div className="mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5">
                 Storage kanaldagi xabar IDsi yoki Linki
               </label>
               <input
@@ -345,22 +346,22 @@ export default function VideoUploadModal({
                 placeholder="Masalan: 45 yoki https://t.me/c/123/45"
                 value={messageId}
                 onChange={(e) => setMessageId(e.target.value)}
-                className="w-full bg-surface-container border border-white/10 rounded-xl p-3 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none placeholder-text-secondary/50 transition-all font-mono text-sm"
+                className="w-full bg-surface-container border border-white/10 rounded-xl p-3 text-text-primary focus:border-primary-container focus:ring-1 focus:ring-primary-container focus:outline-none placeholder-text-secondary/50 transition-all font-mono text-xs sm:text-sm"
               />
-              <p className="mt-3 text-xs text-text-secondary/70 flex items-start gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-primary-container mt-0.5">info</span>
-                Video yuklangan bazadagi postning IDsini yoki uning to'liq linkini kiriting.
+              <p className="mt-2 text-xs text-text-secondary/70 flex items-start gap-1.5">
+                <span className="material-symbols-outlined text-[14px] text-primary-container mt-0.5 shrink-0">info</span>
+                Video yuklangan bazadagi postning IDsini yoki to'liq havolasini kiriting.
               </p>
               {renderProgress()}
             </div>
           )}
 
           {/* Buttons */}
-          <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-white/10">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 mt-5 pt-4 border-t border-white/10">
             <button
               onClick={handleClose}
               disabled={phase === "uploading" || phase === "processing"}
-              className="px-5 py-2.5 text-sm font-medium text-text-secondary bg-transparent border border-white/10 rounded-xl hover:bg-white/5 hover:text-text-primary transition-all disabled:opacity-30"
+              className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-medium text-text-secondary bg-transparent border border-white/10 rounded-xl hover:bg-white/5 hover:text-text-primary transition-all disabled:opacity-30 min-h-[42px]"
             >
               {phase === "done" ? "Yopish" : "Bekor qilish"}
             </button>
@@ -368,7 +369,7 @@ export default function VideoUploadModal({
               <button
                 onClick={submitVideo}
                 disabled={isSubmitDisabled}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-primary-container border border-transparent rounded-xl hover:opacity-90 disabled:opacity-40 flex items-center gap-2 transition-all"
+                className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-medium text-white bg-primary-container border border-transparent rounded-xl hover:opacity-90 disabled:opacity-40 flex items-center justify-center gap-2 transition-all min-h-[42px]"
               >
                 {(phase === "uploading" || phase === "processing") ? (
                   <>

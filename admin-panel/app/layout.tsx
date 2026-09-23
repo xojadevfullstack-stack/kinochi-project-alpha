@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import AdminShell from "@/components/AdminShell";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -11,13 +11,19 @@ export const metadata: Metadata = {
   description: "Admin panel for Kinochi Bot",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="uz" className="dark">
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
         <style>{`
@@ -37,9 +43,7 @@ export default function RootLayout({
           }
           
           .metric-card:hover {
-            transform: translateY(-4px);
             border-color: rgba(229, 9, 20, 0.3);
-            box-shadow: 0 8px 32px rgba(229, 9, 20, 0.15);
           }
 
           .data-table-row {
@@ -50,15 +54,29 @@ export default function RootLayout({
           .data-table-row:hover {
             background-color: rgba(255, 255, 255, 0.05);
           }
+
+          /* Custom mobile-friendly scrollbar for tables */
+          .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 9999px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(229, 9, 20, 0.4);
+          }
         `}</style>
       </head>
-      <body className={`${inter.variable} ${outfit.variable} bg-background-obsidian text-text-primary min-h-screen flex antialiased font-sans`}>
-        <Sidebar />
-        <main className="ml-[280px] flex-1 min-h-screen p-margin-desktop bg-background-obsidian relative overflow-y-auto">
-          {/* Subtle Background Glow */}
-          <div className="absolute top-0 left-1/4 w-[800px] h-[400px] bg-primary-container/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <body className={`${inter.variable} ${outfit.variable} bg-background-obsidian text-text-primary min-h-screen antialiased font-sans`}>
+        <AdminShell>
           {children}
-        </main>
+        </AdminShell>
       </body>
     </html>
   );
