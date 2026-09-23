@@ -4,18 +4,18 @@ import React, { useEffect, useRef } from "react";
 import { useAuth, TelegramWidgetAuthData } from "../../lib/auth/AuthProvider";
 
 export default function TelegramLoginWidget() {
-  const { loginWithWidget, environment, status } = useAuth();
+  const { loginWithWidget, environment, status, resetAuthStatus } = useAuth();
   const widgetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Only render widget if environment is browser and we are not authenticated
-    if (environment !== "browser" || status === "authenticated") {
+    if (environment !== "browser" || status === "authenticated" || status === "loading" || status === "error") {
       return;
     }
 
     const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME;
     if (!botUsername) {
-      console.error("NEXT_PUBLIC_BOT_USERNAME is not defined in environment variables");
+      console.warn("NEXT_PUBLIC_BOT_USERNAME is not defined in environment variables");
       return;
     }
 
@@ -44,7 +44,6 @@ export default function TelegramLoginWidget() {
     }
 
     return () => {
-      // Cleanup
       delete (window as any).onTelegramAuth;
       if (widgetRef.current) {
         widgetRef.current.innerHTML = "";
@@ -56,13 +55,32 @@ export default function TelegramLoginWidget() {
     return null; // Do not show in WebApp
   }
 
-  if (status === "loading") {
-    return <div className="text-gray-400">Loading Telegram Login...</div>;
-  }
-  
-  if (status === "error") {
-    return <div className="text-red-500 text-sm">Failed to login. Please try again.</div>;
-  }
+  return (
+    <div className="flex flex-col items-center justify-center my-2 min-h-[44px] text-center w-full">
+      {status === "loading" && (
+        <div className="text-xs text-text-secondary py-2 flex items-center justify-center gap-2">
+          <span className="inline-block w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span>
+          <span>Telegram Login yuklanmoqda...</span>
+        </div>
+      )}
 
-  return <div ref={widgetRef} className="flex justify-center my-4 min-h-[40px]" />;
+      {status === "error" && (
+        <div className="flex flex-col items-center gap-2 py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20 max-w-xs my-1">
+          <p className="text-red-400 text-xs font-medium">Kirishda xatolik yuz berdi</p>
+          <button
+            type="button"
+            onClick={() => resetAuthStatus()}
+            className="text-xs px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium cursor-pointer"
+          >
+            Qayta urinish
+          </button>
+        </div>
+      )}
+
+      <div
+        ref={widgetRef}
+        className={`flex justify-center w-full ${status === "loading" || status === "error" ? "hidden" : ""}`}
+      />
+    </div>
+  );
 }

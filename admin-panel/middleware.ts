@@ -42,12 +42,20 @@ export async function middleware(request: NextRequest) {
 
   // access_token cookie borligini tekshirish
   const tokenCookie = request.cookies.get("access_token");
-  if (!tokenCookie) {
+  if (!tokenCookie || !tokenCookie.value) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Token mavjudligi yetarli, API so'rovlarida backend asosiysini tekshiradi.
+  // Token imzosini va muddatini tekshirish
+  const isValid = await verifyToken(tokenCookie.value);
+  if (!isValid) {
+    const loginUrl = new URL("/login", request.url);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("access_token");
+    return response;
+  }
+
   return NextResponse.next();
 }
 

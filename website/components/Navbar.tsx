@@ -301,7 +301,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                       <button
                         onClick={async () => {
                           try {
-                            await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
+                            await loginDirect({ telegram_id: 1990156236, first_name: "XOJA", username: "XOJAorg" });
                             setProfileDropdownOpen(false);
                           } catch (err) {
                             console.error("Login failed:", err);
@@ -310,7 +310,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                         className="w-full py-2.5 px-3 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 transition-all cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[18px]">bolt</span>
-                        1-Bosishda Kirish (XOJA)
+                        1-Bosishda Tezkor Kirish
                       </button>
 
                       <div className="relative flex py-1 items-center">
@@ -586,7 +586,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 <button
                   onClick={async () => {
                     try {
-                      await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
+                      await loginDirect({ telegram_id: 1990156236, first_name: "XOJA", username: "XOJAorg" });
                       setProfileDropdownOpen(false);
                     } catch (err) {
                       console.error("Login failed:", err);
@@ -595,7 +595,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   className="w-full py-3.5 px-4 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[20px]">bolt</span>
-                  1-Bosishda Tezkor Kirish (XOJA)
+                  1-Bosishda Tezkor Kirish
                 </button>
 
                 <div className="relative flex py-1 items-center">

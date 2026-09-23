@@ -42,12 +42,13 @@ class DevLoginRequest(BaseModel):
 def _set_user_cookie(response: Response, access_token: str) -> None:
     # Set httpOnly cookie for the user JWT
     secure = settings.APP_ENV != "development"
+    samesite = "none" if secure else "lax"
     response.set_cookie(
         key="user_access_token",
         value=access_token,
         httponly=True,
         secure=secure,
-        samesite="lax",
+        samesite=samesite,
         path="/",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
@@ -65,9 +66,12 @@ async def _upsert_telegram_user(
 
     if user:
         # Update details if needed
-        user.first_name = first_name or user.first_name
-        user.last_name = last_name or user.last_name
-        user.username = username or user.username
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if username and not (username == "kinochi_user" and user.username):
+            user.username = username
     else:
         user = UserModel(
             telegram_id=telegram_id,
@@ -84,7 +88,7 @@ async def _upsert_telegram_user(
 
 # ── Endpoints ────────────────────────────────────────────────────
 @router.post("/telegram-login")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def telegram_login_widget(
     data: TelegramWidgetAuthRequest,
     response: Response,
@@ -146,7 +150,7 @@ async def telegram_login_widget(
 
 
 @router.post("/telegram-webapp")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def telegram_webapp_initdata(
     data: TelegramWebAppAuthRequest,
     response: Response,

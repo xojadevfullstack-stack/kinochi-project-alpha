@@ -31,8 +31,9 @@ interface AuthContextValue {
   token: string | null;
   status: "loading" | "authenticated" | "unauthenticated" | "error";
   loginWithWidget: (widgetData: TelegramWidgetAuthData) => Promise<void>;
-  loginDirect: (data?: { telegram_id?: number; first_name?: string }) => Promise<void>;
+  loginDirect: (data?: { telegram_id?: number; first_name?: string; username?: string }) => Promise<void>;
   logout: () => void;
+  resetAuthStatus: () => void;
   environment: Environment;
 }
 
@@ -153,14 +154,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginDirect = async (customData?: { telegram_id?: number; first_name?: string }) => {
+  const loginDirect = async (customData?: { telegram_id?: number; first_name?: string; username?: string }) => {
     try {
       setStatus("loading");
-      const payload = {
+      const payload: Record<string, any> = {
         telegram_id: customData?.telegram_id || 123456789,
         first_name: customData?.first_name || "Kinochi Foydalanuvchi",
-        username: "kinochi_user"
       };
+      if (customData?.username) {
+        payload.username = customData.username;
+      }
       const authResponse = await fetchApi("/auth/dev-login", {
         method: "POST",
         body: JSON.stringify(payload),
@@ -182,6 +185,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetAuthStatus = () => {
+    setStatus("unauthenticated");
+  };
+
   const logout = () => {
     clearToken();
     setTokenState(null);
@@ -191,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, status, loginWithWidget, loginDirect, logout, environment }}
+      value={{ user, token, status, loginWithWidget, loginDirect, logout, resetAuthStatus, environment }}
     >
       {children}
     </AuthContext.Provider>

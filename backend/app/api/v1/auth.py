@@ -29,7 +29,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Cookie settings
 _COOKIE_DOMAIN = None  # None = same domain
 _COOKIE_SECURE = settings.APP_ENV != "development"  # HTTPS only in prod
-_COOKIE_SAMESITE = "lax"  # lax for dev (cross-port), strict for prod
+_COOKIE_SAMESITE = "none" if settings.APP_ENV != "development" else "lax"
 _COOKIE_PATH = "/"
 
 
@@ -115,6 +115,7 @@ async def login(
     return {
         "message": "Tizimga kirildi",
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "admin": AdminMeResponse.model_validate(admin).model_dump(),
     }
 
@@ -134,6 +135,8 @@ async def refresh(
 ):
     """Use refresh_token cookie to issue new access_token."""
     refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        refresh_token = request.headers.get("X-Refresh-Token")
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token topilmadi")
 
@@ -159,6 +162,7 @@ async def refresh(
     return {
         "message": "Token yangilandi",
         "access_token": new_access,
+        "refresh_token": new_refresh,
     }
 
 

@@ -1,8 +1,40 @@
-const RENDER_BASE_URL = "https://kinochi-project-alpha.onrender.com";
-const API_URL = `${RENDER_BASE_URL}/api/v1`;
-const DIRECT_API_URL = `${RENDER_BASE_URL}/api/v1`;
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const RENDER_BASE_URL = BASE_API_URL.replace(/\/api\/v1\/?$/, "");
+const API_URL = BASE_API_URL;
+const DIRECT_API_URL = BASE_API_URL;
 
 export const HEALTH_URL = `${RENDER_BASE_URL}/health`;
+
+async function getOrRefreshToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  let token = localStorage.getItem("access_token");
+  if (!token) {
+    try {
+      const storedRefreshToken = localStorage.getItem("refresh_token");
+      const refreshHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (storedRefreshToken) {
+        refreshHeaders["X-Refresh-Token"] = storedRefreshToken;
+      }
+      const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: refreshHeaders,
+      });
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        if (refreshData.access_token) {
+          token = refreshData.access_token;
+          localStorage.setItem("access_token", token as string);
+          document.cookie = `access_token=${token}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+          if (refreshData.refresh_token) {
+            localStorage.setItem("refresh_token", refreshData.refresh_token);
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return token;
+}
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_URL}${endpoint}`;
@@ -11,20 +43,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     "Content-Type": "application/json",
   };
 
-  let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-
-  if (!token && typeof window !== "undefined") {
-    try {
-      const refreshRes = await fetch(`${API_URL}/auth/refresh`, { method: "POST", credentials: "include" });
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        if (refreshData.access_token) {
-          token = refreshData.access_token;
-          localStorage.setItem("access_token", token as string);
-        }
-      }
-    } catch (e) {}
-  }
+  const token = await getOrRefreshToken();
 
   const headers: any = {
     ...defaultHeaders,
@@ -48,7 +67,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     });
   } catch (networkError: any) {
     // "Failed to fetch" — server o'chiq yoki internet yo'q
-    throw new Error("Server bilan ulanib bo'lmadi. Server ishlaydimi? (Render uxlab qolgan bo'lishi mumkin — bir oz kuting va qayta urinib ko'ring.)");
+    throw new Error("Server bilan ulanib bo'lmadi. Backend server ishlaydimi? Bir oz kuting va qayta urinib ko'ring.");
   }
 
   if (!response.ok) {
@@ -73,32 +92,11 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
 /**
  * Katta fayllarni (video, rasm) yuklash uchun maxsus funksiya.
  * Vercel'ning 4.5MB chegarasini chetlab o'tib, to'g'ridan-to'g'ri
- * Render'ga yuboradi.
+ * Backend'ga yuboradi.
  */
 export async function fetchApiUpload(endpoint: string, options: RequestInit = {}) {
   const url = `${DIRECT_API_URL}${endpoint}`;
-
-  // localStorage'dan tokenni olib, Authorization header'ga qo'shamiz
-  let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  
-  if (!token && typeof window !== "undefined") {
-    // Keshda token bo'lmasa, uni backenddan refresh orqali olishga harakat qilamiz
-    try {
-      const refreshRes = await fetch(`${API_URL}/auth/refresh`, { 
-        method: "POST",
-        credentials: "include"
-      });
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        if (refreshData.access_token) {
-          token = refreshData.access_token;
-          localStorage.setItem("access_token", token as string);
-        }
-      }
-    } catch (e) {
-      // Ignore
-    }
-  }
+  const token = await getOrRefreshToken();
 
   const headers: any = { ...(options.headers || {}) };
   if (token) {
@@ -139,23 +137,7 @@ export function uploadWithProgress(
 ): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const url = `${DIRECT_API_URL}${endpoint}`;
-    let token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    
-    if (!token && typeof window !== "undefined") {
-      try {
-        const refreshRes = await fetch(`${API_URL}/auth/refresh`, { 
-          method: "POST",
-          credentials: "include"
-        });
-        if (refreshRes.ok) {
-          const refreshData = await refreshRes.json();
-          if (refreshData.access_token) {
-            token = refreshData.access_token;
-            localStorage.setItem("access_token", token as string);
-          }
-        }
-      } catch (e) {}
-    }
+    const token = await getOrRefreshToken();
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
@@ -198,8 +180,7 @@ export function uploadWithProgress(
 
     xhr.onerror = () => {
       reject(new Error(
-        "Server bilan ulanib bo'lmadi. Render uyquda bo'lishi mumkin — " +
-        "bir oz kuting (30 sek) va qayta urinib ko'ring."
+        "Server bilan ulanib bo'lmadi. Backend server ishlayotganligini tekshiring."
       ));
     };
     
@@ -219,4 +200,3 @@ export function uploadWithProgress(
     xhr.send(formData);
   });
 }
-

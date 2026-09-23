@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const API_URL = "https://kinochi-project-alpha.onrender.com/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const HEALTH_URL = API_URL.replace(/\/api\/v1\/?$/, "") + "/health";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,9 +13,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Vercel/Render free tier: server uxlab qolgan bo'lsa uyg'otish uchun
+  // Free tier yoki uxlab qolgan serverni uyg'otish uchun sahifa ochilganda ping jo'natamiz
   useEffect(() => {
-    fetch(`${API_URL}/health`).catch(() => {});
+    fetch(HEALTH_URL).catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,23 +33,26 @@ export default function LoginPage() {
 
       if (!res.ok) {
         if (res.status === 504 || res.status === 502) {
-          setError("Server uyqudan uyg'onmoqda... Yana bir marta 'Kirish' tugmasini bosing.");
+          setError("Server uyqudan uyg'onmoqda... Bir oz kutib, yana bir marta 'Kirish' tugmasini bosing.");
           return;
         }
         const data = await res.json().catch(() => ({}));
-        setError(data.detail || "Tizimga kirishda xatolik yuz berdi");
+        setError(data.detail || "Email yoki parol noto'g'ri");
         return;
       }
 
       const data = await res.json();
       if (data.access_token) {
         localStorage.setItem("access_token", data.access_token);
+        if (data.refresh_token) {
+          localStorage.setItem("refresh_token", data.refresh_token);
+        }
         document.cookie = `access_token=${data.access_token}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
       }
 
       router.push("/");
     } catch (err) {
-      setError("Serverga ulanib bo'lmadi");
+      setError("Serverga ulanib bo'lmadi. Backend ishga tushirilganligini tekshiring.");
     } finally {
       setLoading(false);
     }

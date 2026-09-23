@@ -247,7 +247,7 @@ export default function ReviewsSection({
                     type="button"
                     onClick={async () => {
                       try {
-                        await loginDirect({ telegram_id: 1990156236, first_name: "XOJA" });
+                        await loginDirect({ telegram_id: 1990156236, first_name: "XOJA", username: "XOJAorg" });
                       } catch (err) {
                         console.error("Login failed:", err);
                       }

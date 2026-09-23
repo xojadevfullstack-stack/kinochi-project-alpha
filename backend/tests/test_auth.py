@@ -93,3 +93,18 @@ async def test_login_wrong_password():
         
         # Cleanup
         app.dependency_overrides.pop(get_db_session, None)
+
+
+@pytest.mark.asyncio
+async def test_user_token_blocked_from_admin():
+    user_token = create_access_token(
+        subject="1",
+        extra={"telegram_id": 1990156236, "role": "user"}
+    )
+    
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        response = await ac.get("/api/v1/users", headers={"Authorization": f"Bearer {user_token}"})
+        
+    assert response.status_code == 403
+    assert "administratorlar" in response.json()["detail"].lower()

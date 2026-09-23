@@ -69,7 +69,7 @@ async def cmd_start(message: Message, command: CommandObject):
             "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
         )
         
-        webapp_url = "https://kinochi-project-alpha.vercel.app/"
+        webapp_url = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app/").rstrip("/") + "/"
             
         await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_main_menu_inline(webapp_url))
 
@@ -91,7 +91,8 @@ async def cmd_login(message: Message):
             "username": message.from_user.username or "user"
         })
         token = res.json().get("access_token")
-        login_url = f"https://kinochi-project-alpha.vercel.app/?auth_token={token}"
+        base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+        login_url = f"{base_site}/?auth_token={token}"
         builder = InlineKeyboardBuilder()
         builder.button(text="🌐 Saytga kirish (Avtomatik)", url=login_url)
         await message.answer(

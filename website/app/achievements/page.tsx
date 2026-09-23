@@ -235,7 +235,7 @@ export default function AchievementsPage() {
             </div>
             {loginDirect && (
               <button
-                onClick={() => loginDirect({ telegram_id: 1990156236, first_name: "XOJA" })}
+                onClick={() => loginDirect({ telegram_id: 1990156236, first_name: "XOJA", username: "XOJAorg" })}
                 className="w-full sm:w-auto px-5 py-2.5 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 shrink-0 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-lg">bolt</span>
