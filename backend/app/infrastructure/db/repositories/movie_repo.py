@@ -148,13 +148,23 @@ class MovieRepositoryImpl(IMovieRepository):
         return True
 
     async def add_translation(self, movie_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> Movie | None:
-        translation = MovieTranslationModel(
-            movie_id=movie_id,
-            language=language,
-            telegram_file_id=telegram_file_id,
-            storage_channel_message_id=storage_channel_message_id
+        stmt = select(MovieTranslationModel).where(
+            MovieTranslationModel.movie_id == movie_id,
+            MovieTranslationModel.language == language
         )
-        self.session.add(translation)
+        res = await self.session.execute(stmt)
+        existing_tr = res.scalar_one_or_none()
+        if existing_tr:
+            existing_tr.telegram_file_id = telegram_file_id
+            existing_tr.storage_channel_message_id = storage_channel_message_id
+        else:
+            translation = MovieTranslationModel(
+                movie_id=movie_id,
+                language=language,
+                telegram_file_id=telegram_file_id,
+                storage_channel_message_id=storage_channel_message_id
+            )
+            self.session.add(translation)
         await self.session.flush()
         return await self.get_by_id(movie_id)
 

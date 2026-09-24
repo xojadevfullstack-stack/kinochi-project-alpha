@@ -277,13 +277,23 @@ class SeriesRepository:
         return await self.get_episode_by_id(episode.id)
 
     async def add_episode_translation(self, episode_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> EpisodeModel | None:
-        translation = EpisodeTranslationModel(
-            episode_id=episode_id,
-            language=language,
-            telegram_file_id=telegram_file_id,
-            storage_channel_message_id=storage_channel_message_id
+        stmt = select(EpisodeTranslationModel).where(
+            EpisodeTranslationModel.episode_id == episode_id,
+            EpisodeTranslationModel.language == language
         )
-        self.session.add(translation)
+        res = await self.session.execute(stmt)
+        existing_tr = res.scalar_one_or_none()
+        if existing_tr:
+            existing_tr.telegram_file_id = telegram_file_id
+            existing_tr.storage_channel_message_id = storage_channel_message_id
+        else:
+            translation = EpisodeTranslationModel(
+                episode_id=episode_id,
+                language=language,
+                telegram_file_id=telegram_file_id,
+                storage_channel_message_id=storage_channel_message_id
+            )
+            self.session.add(translation)
         await self.session.flush()
         return await self.get_episode_by_id(episode_id)
 

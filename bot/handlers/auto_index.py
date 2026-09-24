@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import dataclass, field
 import httpx
 from aiogram import Router, F, Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 from aiogram.types import Message
 from config import settings
 from services.api_client import api_client
@@ -73,6 +73,98 @@ def extract_media_info(message: Message) -> tuple[str | None, str | None]:
     return None, None
 
 
+async def safe_copy_message_with_retry(
+    bot: Bot,
+    chat_id: int | str,
+    from_chat_id: int | str,
+    message_id: int,
+    caption: str | None = None,
+    parse_mode: str | None = "HTML",
+    notify_msg: Message | None = None,
+    item_label: str = "video",
+    max_retries: int = 5
+) -> Message:
+    """
+    Kanalga xabarni nusxalash (copy_message). Telegram Flood control (429 Too Many Requests)
+    cheklovi yuz berganda avtomatik kutiladi va qayta uriniladi.
+    """
+    for attempt in range(max_retries):
+        try:
+            return await bot.copy_message(
+                chat_id=chat_id,
+                from_chat_id=from_chat_id,
+                message_id=message_id,
+                caption=caption,
+                parse_mode=parse_mode
+            )
+        except TelegramRetryAfter as e:
+            wait_seconds = int(e.retry_after) + 2
+            logger.warning(
+                f"[FLOOD_CONTROL] Telegram Flood control hit: retry after {wait_seconds}s "
+                f"(attempt {attempt + 1}/{max_retries}) for msg_id={message_id}"
+            )
+            wait_msg = None
+            if notify_msg:
+                try:
+                    wait_msg = await notify_msg.reply(
+                        f"⏳ <b>Telegram cheklovi (Flood control):</b> {item_label} Storage kanalga ko'chirilishi uchun "
+                        f"Telegram {wait_seconds} soniya tanaffus talab qildi.\n"
+                        f"Kutilmoqda, vaqt tugagach yuklash avtomatik davom etadi...",
+                        parse_mode="HTML"
+                    )
+                except Exception:
+                    pass
+
+            await asyncio.sleep(wait_seconds)
+
+            if wait_msg:
+                try:
+                    await wait_msg.delete()
+                except Exception:
+                    pass
+        except Exception:
+            raise
+
+    raise Exception(f"Telegram flood control cheklovi sababli {max_retries} marta urinishdan so'ng ham yuklab bo'lmadi.")
+
+
+async def safe_send_message_with_retry(
+    bot: Bot,
+    chat_id: int | str,
+    text: str,
+    parse_mode: str | None = "Markdown",
+    max_retries: int = 3
+):
+    for attempt in range(max_retries):
+        try:
+            return await bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode)
+        except TelegramRetryAfter as e:
+            wait_seconds = int(e.retry_after) + 2
+            logger.warning(f"[FLOOD_CONTROL] send_message retry after {wait_seconds}s")
+            await asyncio.sleep(wait_seconds)
+        except Exception:
+            raise
+
+
+async def safe_send_photo_with_retry(
+    bot: Bot,
+    chat_id: int | str,
+    photo: str,
+    caption: str | None = None,
+    parse_mode: str | None = "Markdown",
+    max_retries: int = 3
+):
+    for attempt in range(max_retries):
+        try:
+            return await bot.send_photo(chat_id=chat_id, photo=photo, caption=caption, parse_mode=parse_mode)
+        except TelegramRetryAfter as e:
+            wait_seconds = int(e.retry_after) + 2
+            logger.warning(f"[FLOOD_CONTROL] send_photo retry after {wait_seconds}s")
+            await asyncio.sleep(wait_seconds)
+        except Exception:
+            raise
+
+
 async def process_movie_message(message: Message, bot: Bot, movie: dict):
     telegram_file_id, _ = extract_media_info(message)
     if not telegram_file_id:
@@ -82,18 +174,22 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
             pass
         return
 
-    # Copy video to storage channel
+    # Copy video to storage channel with flood control retry
     try:
-        storage_msg = await bot.copy_message(
+        storage_msg = await safe_copy_message_with_retry(
+            bot=bot,
             chat_id=settings.STORAGE_CHANNEL_ID,
             from_chat_id=message.chat.id,
-            message_id=message.message_id
+            message_id=message.message_id,
+            notify_msg=message,
+            item_label="Kino",
+            max_retries=5
         )
         storage_msg_id = storage_msg.message_id
     except Exception as e:
         logger.error(f"Cannot copy movie message to storage: {e}")
         try:
-            await message.reply("❌ Videoni Storage kanalga ko'chirib bo'lmadi (Bot admin emas yoki ruxsat yo'q).")
+            await message.reply(f"❌ Videoni Storage kanalga ko'chirib bo'lmadi: {e}")
         except Exception:
             pass
         return
@@ -233,15 +329,17 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         poster_url = series.get('poster_url')
         try:
             if poster_url:
-                await bot.send_photo(storage_channel_id, photo=poster_url, caption=post_caption, parse_mode="Markdown")
+                await safe_send_photo_with_retry(bot, storage_channel_id, photo=poster_url, caption=post_caption, parse_mode="Markdown")
             else:
-                await bot.send_message(storage_channel_id, text=post_caption, parse_mode="Markdown")
+                await safe_send_message_with_retry(bot, storage_channel_id, text=post_caption, parse_mode="Markdown")
+            await asyncio.sleep(1.0)
         except Exception as e:
             logger.warning(f"Could not send series banner to storage: {e}")
     elif is_first_season_ep:
         season_title = season.get('title') or f"{season.get('season_number', 1)}-mavsum"
         try:
-            await bot.send_message(storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
+            await safe_send_message_with_retry(bot, storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
+            await asyncio.sleep(1.0)
         except Exception as e:
             logger.warning(f"Could not send season banner to storage: {e}")
 
@@ -249,7 +347,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
     s_num = season.get('season_number', 1)
     series_title = series.get('title', '')
 
-    for msg in messages:
+    for idx, msg in enumerate(messages):
         reserved_info = reserved_map.get(msg.message_id)
         if not reserved_info:
             continue
@@ -269,14 +367,18 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
         storage_caption = f"🍿 <b>{series_title}</b>\n📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
 
-        # Copy to storage channel
+        # Copy to storage channel with flood control retry
         try:
-            copied = await bot.copy_message(
+            copied = await safe_copy_message_with_retry(
+                bot=bot,
                 chat_id=storage_channel_id,
                 from_chat_id=msg.chat.id,
                 message_id=msg.message_id,
                 caption=storage_caption,
-                parse_mode="HTML"
+                parse_mode="HTML",
+                notify_msg=msg,
+                item_label=f"{ep_num}-qism",
+                max_retries=5
             )
             storage_msg_id = copied.message_id
         except Exception as e:
@@ -315,6 +417,10 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 await msg.reply(f"❌ <b>{ep_num}-qism</b> videosini ulashda xatolik yuz berdi: {e}", parse_mode="HTML")
             except Exception:
                 pass
+
+        # Throttle between consecutive copies to stay within Telegram rate limits (~20 msgs/min)
+        if idx < len(messages) - 1:
+            await asyncio.sleep(2.0)
 
     # Check if season is complete (only if all expected episodes are present)
     expected_count = season.get("episode_count")
