@@ -35,9 +35,9 @@ class ReviewModel(Base):
 
     # Relationships
     user = relationship("UserModel", backref="reviews", lazy="selectin")
-    movie = relationship("MovieModel", backref="reviews")
-    series = relationship("SeriesModel", backref="reviews")
-    episode = relationship("EpisodeModel", backref="reviews")
+    movie = relationship("MovieModel", back_populates="reviews", passive_deletes=True)
+    series = relationship("SeriesModel", back_populates="reviews", passive_deletes=True)
+    episode = relationship("EpisodeModel", back_populates="reviews", passive_deletes=True)
 
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 10", name="check_valid_rating_range"),

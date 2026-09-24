@@ -52,6 +52,10 @@ class SeriesModel(Base):
         secondary="page_series", back_populates="series", lazy="selectin"
     )
 
+    reviews: Mapped[list["ReviewModel"]] = relationship(
+        back_populates="series", cascade="all, delete-orphan", passive_deletes=True
+    )
+
 class SeasonModel(Base):
     __tablename__ = "seasons"
 
@@ -96,5 +100,13 @@ class EpisodeModel(Base):
     season: Mapped["SeasonModel"] = relationship(back_populates="episodes")
 
     translations: Mapped[list["EpisodeTranslationModel"]] = relationship(
-        back_populates="episode", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="episode", cascade="all, delete-orphan", lazy="selectin", passive_deletes=True
+    )
+
+    reviews: Mapped[list["ReviewModel"]] = relationship(
+        back_populates="episode", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+    watch_history: Mapped[list["WatchHistoryModel"]] = relationship(
+        back_populates="episode", cascade="all, delete-orphan", passive_deletes=True
     )

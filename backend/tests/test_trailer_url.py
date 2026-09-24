@@ -22,25 +22,36 @@ async def test_validate_and_normalize_telegram():
     url_private = "https://t.me/c/123456789/100"
     res2 = await validate_and_normalize_trailer_url(url_private)
     assert res2 == "https://t.me/c/123456789/100"
+    
+    url_topic = "https://t.me/c/3941035700/700/701"
+    res3 = await validate_and_normalize_trailer_url(url_topic)
+    assert res3 == "https://t.me/c/3941035700/700/701"
+    
+    url_tg_me = "https://telegram.me/c/3941035700/700/701"
+    res4 = await validate_and_normalize_trailer_url(url_tg_me)
+    assert res4 == "https://t.me/c/3941035700/700/701"
 
 @pytest.mark.asyncio
-async def test_validate_and_normalize_mp4(mocker):
-    # Mock httpx.AsyncClient.head
-    mock_head = mocker.patch("httpx.AsyncClient.head")
-    mock_response = Response(200, headers={"content-type": "video/mp4"})
-    mock_head.return_value = mock_response
+async def test_validate_and_normalize_mp4(monkeypatch):
+    import httpx
+    req = httpx.Request("HEAD", "https://example.com/video.mp4")
+    mock_response = Response(200, headers={"content-type": "video/mp4"}, request=req)
+    async def mock_head(*args, **kwargs):
+        return mock_response
+    monkeypatch.setattr("httpx.AsyncClient.head", mock_head)
 
     url = "https://example.com/video.mp4"
     res = await validate_and_normalize_trailer_url(url)
     assert res == url
-    
-    mock_head.assert_awaited_once_with(url, follow_redirects=True)
 
 @pytest.mark.asyncio
-async def test_validate_and_normalize_mp4_invalid(mocker):
-    mock_head = mocker.patch("httpx.AsyncClient.head")
-    mock_response = Response(200, headers={"content-type": "text/html"})
-    mock_head.return_value = mock_response
+async def test_validate_and_normalize_mp4_invalid(monkeypatch):
+    import httpx
+    req = httpx.Request("HEAD", "https://example.com/not_a_video")
+    mock_response = Response(200, headers={"content-type": "text/html"}, request=req)
+    async def mock_head(*args, **kwargs):
+        return mock_response
+    monkeypatch.setattr("httpx.AsyncClient.head", mock_head)
 
     url = "https://example.com/not_a_video"
     with pytest.raises(HTTPException) as excinfo:

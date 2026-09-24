@@ -66,6 +66,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       headers,
     });
   } catch (networkError: any) {
+    console.error("fetchApi network error:", networkError);
     // "Failed to fetch" — server o'chiq yoki internet yo'q
     throw new Error("Server bilan ulanib bo'lmadi. Backend server ishlaydimi? Bir oz kuting va qayta urinib ko'ring.");
   }

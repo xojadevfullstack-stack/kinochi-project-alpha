@@ -247,11 +247,12 @@ export default function SeriesListPage() {
             <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Treyler URL (YouTube yoki havola, majburiy emas)</label>
             <input
               type="text"
-              placeholder="https://youtube.com/watch?v=..."
+              placeholder="https://youtube.com/watch?v=... yoki Telegram xabar havolasi"
               value={form.trailer_url}
               onChange={(e) => setForm({ ...form, trailer_url: e.target.value })}
               className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             />
+            <p className="text-xs text-text-secondary mt-1">YouTube havolasi yoki Telegram kanaldagi video xabari havolasi (masalan: https://t.me/kanal/123 yoki https://t.me/c/.../701)</p>
           </div>
 
           <div>
@@ -309,7 +310,6 @@ export default function SeriesListPage() {
                 <option key={s.id} value={s.id}>{s.name} ({s.type})</option>
               ))}
             </select>
-            {errorMsg && <p className="text-red-400 text-xs sm:text-sm mt-1">{errorMsg}</p>}
           </div>
 
           <div className="md:col-span-2">
@@ -349,6 +349,12 @@ export default function SeriesListPage() {
               ))}
             </div>
           </div>
+
+          {errorMsg && (
+            <div className="md:col-span-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
+              {errorMsg}
+            </div>
+          )}
 
           {/* Action buttons */}
           <div className="md:col-span-2 flex flex-col sm:flex-row gap-3 pt-3">

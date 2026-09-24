@@ -25,34 +25,39 @@ async def send_trailer(bot: Bot, chat_id: int, trailer_url: str):
         return
         
     # 2. Telegram link
-    tg_match = re.search(r't\.me/(c/)?([^/]+)/(\d+)', trailer_url)
-    if tg_match:
-        is_private = bool(tg_match.group(1))
-        chat_identifier = tg_match.group(2)
-        message_id = int(tg_match.group(3))
+    tg_domain_match = re.search(r'(?:t\.me|telegram\.me|telegram\.dog)/([^\s?#]+)', trailer_url)
+    if tg_domain_match:
+        path = tg_domain_match.group(1).strip('/')
+        parts = [p for p in path.split('/') if p]
+        is_private = (parts[0] == 'c')
         
-        if is_private:
+        from_chat_id = None
+        message_id = None
+        
+        if is_private and len(parts) >= 3 and parts[1].isdigit() and parts[-1].isdigit():
+            chat_identifier = parts[1]
             from_chat_id = f"-100{chat_identifier}"
-        else:
-            if chat_identifier.isdigit() or chat_identifier.startswith('-'):
-                from_chat_id = chat_identifier
-            else:
-                from_chat_id = f"@{chat_identifier}"
-                
-        try:
-            await bot.copy_message(
-                chat_id=chat_id,
-                from_chat_id=from_chat_id,
-                message_id=message_id
-            )
-        except (TelegramBadRequest, TelegramForbiddenError) as e:
-            logger.warning(f"Failed to copy trailer from {from_chat_id}: {e}")
-            await bot.send_message(
-                chat_id=chat_id,
-                text="⚠️ <b>Treyler hozircha mavjud emas</b> yoki unga kirish huquqi yo'q.",
-                parse_mode="HTML"
-            )
-        return
+            message_id = int(parts[-1])
+        elif not is_private and len(parts) >= 2 and parts[-1].isdigit():
+            chat_identifier = parts[0]
+            from_chat_id = chat_identifier if (chat_identifier.isdigit() or chat_identifier.startswith('-')) else f"@{chat_identifier}"
+            message_id = int(parts[-1])
+            
+        if from_chat_id and message_id:
+            try:
+                await bot.copy_message(
+                    chat_id=chat_id,
+                    from_chat_id=from_chat_id,
+                    message_id=message_id
+                )
+            except (TelegramBadRequest, TelegramForbiddenError) as e:
+                logger.warning(f"Failed to copy trailer from {from_chat_id} (msg {message_id}): {e}")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text="⚠️ <b>Treyler hozircha mavjud emas</b> yoki unga kirish huquqi yo'q.",
+                    parse_mode="HTML"
+                )
+            return
         
     # 3. MP4 Direct link
     if trailer_url.endswith(".mp4") or "http" in trailer_url:

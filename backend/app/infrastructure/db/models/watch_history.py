@@ -31,8 +31,8 @@ class WatchHistoryModel(Base):
 
     # Relationships
     user = relationship("UserModel", backref="watch_history")
-    movie = relationship("MovieModel")
-    episode = relationship("EpisodeModel")
+    movie = relationship("MovieModel", back_populates="watch_history", passive_deletes=True)
+    episode = relationship("EpisodeModel", back_populates="watch_history", passive_deletes=True)
 
     __table_args__ = (
         CheckConstraint(
