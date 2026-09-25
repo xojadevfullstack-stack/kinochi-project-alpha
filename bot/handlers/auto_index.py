@@ -408,9 +408,19 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 f"status=DB_COMMITTED"
             )
             if is_update:
-                await msg.reply(f"🔄 <b>{ep_num}-qism</b> videosi yangilandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
+                await msg.reply(
+                    f"🔄 <b>{ep_num}-qism</b> videosi yangilandi.\n"
+                    f"🔑 Qism kodi: <code>{ep_code}</code>\n"
+                    f"📺 Serial kodi: <code>s_{series['id']}</code>",
+                    parse_mode="HTML"
+                )
             else:
-                await msg.reply(f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi. Kod: <code>{ep_code}</code>", parse_mode="HTML")
+                await msg.reply(
+                    f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi.\n"
+                    f"🔑 Qism kodi: <code>{ep_code}</code>\n"
+                    f"📺 Serial kodi: <code>s_{series['id']}</code>",
+                    parse_mode="HTML"
+                )
         except Exception as e:
             logger.error(f"Error linking video for episode {ep_id}: {e}")
             try:

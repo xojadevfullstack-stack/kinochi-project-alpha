@@ -54,6 +54,11 @@ def format_episode_caption(episode: dict) -> str:
         display_text = f"📌 {display_code}"
         
     caption = f"🍿 <b>{series_title}</b>\n{display_text}"
+    if display_code:
+        caption += f"\n🔑 <b>Qism kodi:</b> <code>{display_code}</code>"
+    series_id = episode.get("series_id")
+    if series_id:
+        caption += f"\n📺 <b>Serial kodi:</b> <code>s_{series_id}</code>"
     if desc:
         caption += f"\n\n📝 <i>{desc}</i>"
         

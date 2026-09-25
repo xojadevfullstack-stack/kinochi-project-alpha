@@ -125,6 +125,20 @@ async def get_series_by_source(
         raise HTTPException(status_code=404, detail="Series not found")
     return series
 
+
+@router.get("/code/{code}", response_model=Series)
+@limiter.limit("120/minute")
+async def get_series_by_code(
+    request: Request,
+    code: str,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get series by code or ID (e.g. s_30, s30, 30) (Public)."""
+    series = await service.get_series_by_code(code)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series
+
 @router.get("/{series_id}", response_model=Series)
 @limiter.limit("120/minute")
 async def get_series(

@@ -4,8 +4,14 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from config import settings
 from keyboards.translations import get_translations_keyboard
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from app.core.watch_history import mark_movie_started, mark_episode_progress
-from app.core.achievements import ACHIEVEMENTS
+try:
+    from app.core.watch_history import mark_movie_started, mark_episode_progress
+    from app.core.achievements import ACHIEVEMENTS
+except ImportError:
+    async def mark_movie_started(*args, **kwargs): pass
+    async def mark_episode_progress(*args, **kwargs): return []
+    ACHIEVEMENTS = {}
+
 import html
 
 async def notify_achievements(bot: Bot, chat_id: int, unlocked_codes: list[str]):

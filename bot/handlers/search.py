@@ -23,30 +23,17 @@ async def handle_search_query(message: Message):
         await message.answer(f"🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>{settings.WEBSITE_URL}</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
         return
         
-    # Do not search if query is too short
+    # 1. Avval so'rovni kino, serial yoki qism kodi/ID si sifatida tekshiramiz
+    from utils.code_resolver import resolve_and_send_content
+    found = await resolve_and_send_content(message.bot, message.from_user.id, query)
+    if found:
+        return
+
+    # 2. Agar kod topilmasa va matn juda qisqa bo'lsa
     if len(query) < 2:
         await message.answer("❌ <b>Qidiruv xatosi:</b> Kengroq natija olish uchun kamida 2 ta harf kiriting!", parse_mode="HTML")
         return
-        
-    from utils.info_sender import send_movie_info, send_series_info
-    
-    # First, try to see if the query is a code
-    movie = await api_client.get_movie_by_code(query)
-    if movie:
-        success = await send_movie_info(message.bot, message.from_user.id, movie)
-        if not success:
-            await message.answer("Kechirasiz, xatolik yuz berdi.")
-        return
-        
-    episode = await api_client.get_episode_by_code(query)
-    if episode:
-        # If they searched episode code directly, we should fetch the series and show series info to let them select season/episode, or just show season info?
-        # A better approach: if they search an episode code, they probably just want to watch it directly. Let's send the episode video directly since it's an exact episode code.
-        from utils.episode_sender import send_episode_to_user
-        success = await send_episode_to_user(message.bot, message.from_user.id, episode)
-        if not success:
-            await message.answer("Kechirasiz, ushbu qism videosi hali yuklanmagan yoki xatolik yuz berdi.")
-        return
+
         
     # Send search request to backend for movies and series
     movie_result = await api_client.search_movies(query=query, limit=10)

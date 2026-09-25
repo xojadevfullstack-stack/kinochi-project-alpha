@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
@@ -60,6 +60,25 @@ class SeriesRepository:
         ).where(SeriesModel.id == series_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_series_by_code(self, code: str) -> SeriesModel | None:
+        clean_code = str(code).strip()
+        series_id = None
+        if clean_code.isdigit():
+            series_id = int(clean_code)
+        elif clean_code.lower().startswith("s_") and clean_code[2:].isdigit():
+            series_id = int(clean_code[2:])
+        elif clean_code.lower().startswith("s") and clean_code[1:].isdigit():
+            series_id = int(clean_code[1:])
+        elif clean_code.lower().startswith("series_") and clean_code[7:].isdigit():
+            series_id = int(clean_code[7:])
+        elif clean_code.lower().startswith("serial_") and clean_code[7:].isdigit():
+            series_id = int(clean_code[7:])
+            
+        if series_id is not None:
+            return await self.get_series_by_id(series_id)
+        return None
+
 
     async def get_series_by_source(self, chat_id: int, topic_id: int | None) -> SeriesModel | None:
         from app.infrastructure.db.models.source import SourceModel
@@ -179,9 +198,21 @@ class SeriesRepository:
         return result.scalar_one_or_none()
 
     async def get_episode_by_code(self, code: str) -> EpisodeModel | None:
-        stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(EpisodeModel.code == code)
+        clean_code = str(code).strip()
+        norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
+        db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
+        
+        where_conditions = [
+            func.lower(EpisodeModel.code) == func.lower(clean_code),
+            func.lower(EpisodeModel.display_code) == func.lower(clean_code),
+            db_norm == norm_code
+        ]
+        if clean_code.isdigit():
+            where_conditions.append(EpisodeModel.id == int(clean_code))
+
+        stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(or_(*where_conditions))
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_episode_with_context_by_code(self, code: str):
         """
@@ -189,16 +220,29 @@ class SeriesRepository:
         Bu get_episode_detail_by_code uchun N+1 muammosini bartaraf etadi.
         Returns: (episode, season, series) yoki (None, None, None)
         """
+        clean_code = str(code).strip()
+        norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
+        db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
+        
+        where_conditions = [
+            func.lower(EpisodeModel.code) == func.lower(clean_code),
+            func.lower(EpisodeModel.display_code) == func.lower(clean_code),
+            db_norm == norm_code
+        ]
+        if clean_code.isdigit():
+            where_conditions.append(EpisodeModel.id == int(clean_code))
+
         # 1. Episode + translations va season_id'ni ol
         stmt = (
             select(EpisodeModel)
             .options(selectinload(EpisodeModel.translations))
-            .where(EpisodeModel.code == code)
+            .where(or_(*where_conditions))
         )
         result = await self.session.execute(stmt)
-        episode = result.scalar_one_or_none()
+        episode = result.scalars().first()
         if not episode:
             return None, None, None
+
 
         # 2. Season + uning barcha episodes (navigatsiya uchun)
         season_stmt = (

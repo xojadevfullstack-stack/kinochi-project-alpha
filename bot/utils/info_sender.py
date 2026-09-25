@@ -17,6 +17,7 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     code = movie.get("code")
     
     caption = f"🎬 <b>{title}</b>\n\n"
+    if code: caption += f"🔑 <b>Kino kodi:</b> <code>{code}</code>\n"
     if year: caption += f"📅 <b>Yil:</b> {year}\n"
     if rating: 
         caption += f"⭐ <b>IMDb:</b> {rating} / 10\n"
@@ -109,6 +110,7 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     seasons = series.get("seasons", [])
     
     caption = f"🎬 <b>{title}</b>\n\n"
+    if series_id: caption += f"🔑 <b>Serial kodi:</b> <code>s_{series_id}</code>\n"
     if year: caption += f"📅 <b>Yil:</b> {year}\n"
     if rating: 
         caption += f"⭐ <b>IMDb:</b> {rating} / 10\n"

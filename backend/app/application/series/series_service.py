@@ -35,6 +35,13 @@ class SeriesService:
             return None
         return Series.model_validate(series_model)
 
+    async def get_series_by_code(self, code: str) -> Series | None:
+        series_model = await self.repository.get_series_by_code(code)
+        if not series_model:
+            return None
+        return Series.model_validate(series_model)
+
+
     async def get_series_by_source(self, chat_id: int, topic_id: int | None) -> Series | None:
         series_model = await self.repository.get_series_by_source(chat_id, topic_id)
         if not series_model:

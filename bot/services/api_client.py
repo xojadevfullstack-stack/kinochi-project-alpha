@@ -33,14 +33,19 @@ class APIClient:
             return {}
 
     async def get_movie_by_code(self, code: str) -> Optional[Dict[str, Any]]:
+        clean_code = str(code).strip()
         try:
-            response = await self.client.get(f"/movies/code/{code}")
+            response = await self.client.get(f"/movies/code/{clean_code}")
             if response.status_code == 404:
+                if clean_code.isdigit():
+                    return await self.get_movie_by_id(int(clean_code))
                 return None
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Error fetching movie {code}: {e}")
+            if clean_code.isdigit():
+                return await self.get_movie_by_id(int(clean_code))
             return None
 
     async def get_movie_by_id(self, movie_id: int) -> Optional[Dict[str, Any]]:
@@ -55,8 +60,9 @@ class APIClient:
             return None
 
     async def get_episode_by_code(self, code: str) -> Optional[Dict[str, Any]]:
+        clean_code = str(code).strip()
         try:
-            response = await self.client.get(f"/series/episodes/code/{code}")
+            response = await self.client.get(f"/series/episodes/code/{clean_code}")
             if response.status_code == 404:
                 return None
             response.raise_for_status()
@@ -75,6 +81,32 @@ class APIClient:
         except httpx.HTTPError as e:
             logger.error(f"Error fetching series {series_id}: {e}")
             return None
+
+    async def get_series_by_code(self, code: str) -> Optional[Dict[str, Any]]:
+        clean_code = str(code).strip()
+        # Direct check if it's numeric or s_id / s{id} / series_{id} / serial_{id}
+        if clean_code.isdigit():
+            return await self.get_series_by_id(int(clean_code))
+        lower_code = clean_code.lower()
+        if lower_code.startswith("s_") and lower_code[2:].isdigit():
+            return await self.get_series_by_id(int(lower_code[2:]))
+        if lower_code.startswith("s") and lower_code[1:].isdigit():
+            return await self.get_series_by_id(int(lower_code[1:]))
+        if lower_code.startswith("series_") and lower_code[7:].isdigit():
+            return await self.get_series_by_id(int(lower_code[7:]))
+        if lower_code.startswith("serial_") and lower_code[7:].isdigit():
+            return await self.get_series_by_id(int(lower_code[7:]))
+
+        try:
+            response = await self.client.get(f"/series/code/{clean_code}")
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"Error fetching series by code {code}: {e}")
+            return None
+
 
     async def get_series_by_source(self, chat_id: int, topic_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
         try:

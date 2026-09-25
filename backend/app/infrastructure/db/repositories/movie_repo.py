@@ -50,14 +50,22 @@ class MovieRepositoryImpl(IMovieRepository):
         return self._to_domain(model) if model else None
 
     async def get_by_code(self, code: str) -> Movie | None:
+        clean_code = code.strip()
+        where_conditions = [
+            func.lower(MovieModel.code) == func.lower(clean_code)
+        ]
+        if clean_code.isdigit():
+            where_conditions.append(MovieModel.id == int(clean_code))
+
         stmt = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
-        ).where(MovieModel.code == code)
+        ).where(or_(*where_conditions))
         result = await self.session.execute(stmt)
-        model = result.scalar_one_or_none()
+        model = result.scalars().first()
         return self._to_domain(model) if model else None
+
 
     async def get_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
         stmt = select(MovieModel).options(
