@@ -22,6 +22,8 @@ class UserRepositoryImpl(IUserRepository):
             if user.username is not None: model.username = user.username
             if user.first_name is not None: model.first_name = user.first_name
             if user.last_name is not None: model.last_name = user.last_name
+            if model.is_banned:
+                model.is_banned = False
         else:
             model = UserModel(
                 telegram_id=user.telegram_id,

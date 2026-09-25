@@ -39,12 +39,18 @@ async def process_broadcast(broadcast_id: int, message_text: str):
                     break
 
                 for user in users:
-                    success = await telegram_client.send_message(chat_id=user.telegram_id, text=message_text)
+                    res = await telegram_client.send_message(chat_id=user.telegram_id, text=message_text)
 
-                    if success:
+                    if res.success:
                         sent_count += 1
                     else:
                         failed_count += 1
+                        if res.is_unreachable:
+                            logger.info(f"User {user.telegram_id} is unreachable ({res.error}), auto-banning to prune from future broadcasts.")
+                            try:
+                                await user_repo.set_ban_status(user.telegram_id, is_banned=True)
+                            except Exception as ban_err:
+                                logger.warning(f"Could not auto-ban unreachable user {user.telegram_id}: {ban_err}")
 
                     total_processed += 1
 

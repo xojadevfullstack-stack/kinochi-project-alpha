@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
+import TelegramLoginWidget from "@/components/auth/TelegramLoginWidget";
 
 interface Achievement {
   code: string;
@@ -90,7 +91,7 @@ function getUserRank(unlocked: number, total: number) {
 }
 
 export default function AchievementsPage() {
-  const { status, loginDirect } = useAuth();
+  const { status } = useAuth();
   const [unlocked, setUnlocked] = useState<Record<string, Achievement>>({});
   const [filter, setFilter] = useState<"all" | "unlocked" | "locked">("all");
 
@@ -233,15 +234,9 @@ export default function AchievementsPage() {
                 </p>
               </div>
             </div>
-            {loginDirect && (
-              <button
-                onClick={() => loginDirect({ telegram_id: 1990156236, first_name: "XOJA", username: "XOJAorg" })}
-                className="w-full sm:w-auto px-5 py-2.5 bg-[#229ED9] hover:bg-[#1e8cc0] text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-[#229ED9]/20 shrink-0 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-lg">bolt</span>
-                <span>Tezkor Kirish</span>
-              </button>
-            )}
+            <div className="w-full sm:w-auto shrink-0">
+              <TelegramLoginWidget />
+            </div>
           </div>
         )}
 

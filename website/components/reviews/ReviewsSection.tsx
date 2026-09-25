@@ -37,7 +37,7 @@ export default function ReviewsSection({
   initialKinochiRating,
   initialVotesCount = 0,
 }: ReviewsSectionProps) {
-  const { status, user, environment, loginDirect } = useAuth();
+  const { status, user } = useAuth();
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -242,24 +242,9 @@ export default function ReviewsSection({
                     Telegram orqali 1 ta bosishda hisobingizga kiring va o'z sharhingizni qoldiring.
                   </p>
                 </div>
-                {environment === "telegram_webapp" ? (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await loginDirect({ telegram_id: 1990156236, first_name: "XOJA", username: "XOJAorg" });
-                      } catch (err) {
-                        console.error("Login failed:", err);
-                      }
-                    }}
-                    className="px-6 py-3 bg-[#229ED9] hover:bg-[#1e8cc0] text-white rounded-xl font-bold text-sm shadow-md shadow-[#229ED9]/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">bolt</span>
-                    1-Bosishda Kirish (Telegram)
-                  </button>
-                ) : (
+                <div className="w-full max-w-xs">
                   <TelegramLoginWidget />
-                )}
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">

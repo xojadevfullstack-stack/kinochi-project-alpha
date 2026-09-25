@@ -127,6 +127,17 @@ export default function BroadcastsPage() {
           <p className="text-xs sm:text-sm text-text-secondary mt-1">Bot foydalanuvchilariga ommaviy xabarlar yuborish (Broadcast)</p>
         </div>
       </div>
+
+      {/* Info Notice Banner */}
+      <div className="bg-surface-container-high/40 border border-white/10 rounded-2xl p-4 mb-6 flex items-start gap-3">
+        <span className="material-symbols-outlined text-rating-gold text-xl flex-shrink-0 mt-0.5">info</span>
+        <div className="text-xs text-text-secondary space-y-1">
+          <p className="text-text-primary font-medium">Xabarnoma yuborish haqida eslatma:</p>
+          <p>
+            Xabarlar barcha faol foydalanuvchilarga ketma-ket yuboriladi. Agar ayrim foydalanuvchilarda xato qayd etilsa, bu odatda ular botni to‘xtatgani (bloklagani) yoki akkauntini o‘chirgani sababli yuz beradi. Tizim bunday nofaol hisoblarni kelgusi xabarlardan avtomatik chetlatadi.
+          </p>
+        </div>
+      </div>
       
       {/* Create Broadcast Form */}
       <div className="metric-card p-4 sm:p-6 rounded-2xl mb-6">
@@ -220,13 +231,39 @@ export default function BroadcastsPage() {
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs text-text-secondary">
                     <div className="flex items-center gap-1.5 font-mono">
                       <span className="font-bold text-text-primary">{b.sent_count} / {b.total_recipients}</span>
-                      {b.failed_count > 0 && <span className="text-red-400 text-[11px]">({b.failed_count} xato)</span>}
+                      {b.failed_count > 0 && (
+                        <span 
+                          className="text-red-400 text-[11px] cursor-help underline decoration-dotted" 
+                          title={`${b.failed_count} ta foydalanuvchiga yetkazilmadi (Botni to'xtatgan, Telegram akkauntini o'chirgan yoki test hisoblar)`}
+                        >
+                          ({b.failed_count} xato)
+                        </span>
+                      )}
                     </div>
                     {b.status === "sending" || b.status === "completed" ? (
-                      <div className="w-full bg-surface-container-high rounded-full h-1.5 mt-2 overflow-hidden border border-white/5">
-                        <div className="bg-primary-container h-1.5 rounded-full" style={{ width: `${b.total_recipients > 0 ? Math.min(100, Math.round((b.sent_count + b.failed_count) / b.total_recipients * 100)) : 0}%` }}></div>
+                      <div className="w-full bg-surface-container-high rounded-full h-1.5 mt-2 overflow-hidden border border-white/5 flex">
+                        <div 
+                          className="bg-green-500 h-1.5 transition-all" 
+                          style={{ width: `${b.total_recipients > 0 ? Math.min(100, Math.round(b.sent_count / b.total_recipients * 100)) : 0}%` }}
+                          title={`Muvaffaqiyatli yetkazildi: ${b.sent_count}`}
+                        ></div>
+                        {b.failed_count > 0 && (
+                          <div 
+                            className="bg-red-500 h-1.5 transition-all" 
+                            style={{ width: `${b.total_recipients > 0 ? Math.min(100, Math.round(b.failed_count / b.total_recipients * 100)) : 0}%` }}
+                            title={`Yetkazilmadi (bot bloklangan/nofaol): ${b.failed_count}`}
+                          ></div>
+                        )}
                       </div>
                     ) : null}
+                    {b.failed_count > 0 && (
+                      <span 
+                        className="text-[10px] text-text-secondary block mt-1" 
+                        title="Botni to'xtatgan yoki nofaol foydalanuvchilar"
+                      >
+                        (bot bloklangan/nofaol)
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
                     {b.status === "draft" && (

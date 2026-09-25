@@ -8,6 +8,21 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+class SendMessageResult:
+    def __init__(self, success: bool, error: Optional[str] = None, is_unreachable: bool = False):
+        self.success = success
+        self.error = error
+        self.is_unreachable = is_unreachable
+
+    def __bool__(self) -> bool:
+        return self.success
+
+    def __iter__(self):
+        yield self.success
+        yield self.error
+        yield self.is_unreachable
+
+
 class TelegramClient:
     def __init__(self):
         self.bot_token = settings.BOT_TOKEN
@@ -157,38 +172,79 @@ class TelegramClient:
                 logger.error(f"Telegram get_video generic error: {str(e)}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Kutilmagan xatolik yuz berdi.")
 
-    async def send_message(self, chat_id: int, text: str) -> bool:
+    async def send_message(self, chat_id: int, text: str) -> SendMessageResult:
         if not self.bot_token:
             logger.error("BOT_TOKEN is missing")
-            return False
-            
+            return SendMessageResult(False, error="BOT_TOKEN is missing")
+
         url = f"{self.base_url}/sendMessage"
-        data = {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML"
-        }
-        
+
         async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(url, json=data, timeout=10.0)
-                response.raise_for_status()
-                
-                result = response.json()
-                if not result.get("ok"):
-                    logger.error(f"Failed to send message to {chat_id}: {result.get('description')}")
-                    return False
-                return True
-                
-            except httpx.HTTPStatusError as e:
-                try:
-                    detail = e.response.json().get('description', e.response.text)
-                except:
-                    detail = e.response.text
-                logger.warning(f"HTTP error sending message to {chat_id} ({e.response.status_code}): {detail}")
-                return False
-            except Exception as e:
-                logger.error(f"Generic error sending message to {chat_id}: {str(e)}")
-                return False
+            # First try HTML mode. If HTML syntax error occurs, retry with plain text (parse_mode=None).
+            for parse_mode in ["HTML", None]:
+                data = {"chat_id": chat_id, "text": text}
+                if parse_mode:
+                    data["parse_mode"] = parse_mode
+
+                for attempt in range(3):
+                    try:
+                        response = await client.post(url, json=data, timeout=10.0)
+
+                        if response.status_code == 429:
+                            retry_after = 3
+                            try:
+                                retry_after = response.json().get("parameters", {}).get("retry_after", 3)
+                            except Exception:
+                                pass
+                            logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
+                            await asyncio.sleep(retry_after + 1)
+                            continue
+
+                        response.raise_for_status()
+                        result = response.json()
+                        if not result.get("ok"):
+                            desc = result.get("description", "Unknown error")
+                            logger.error(f"Failed to send message to {chat_id}: {desc}")
+                            is_unreachable = any(k in desc.lower() for k in ["blocked", "deactivated", "not found"])
+                            return SendMessageResult(False, error=desc, is_unreachable=is_unreachable)
+
+                        return SendMessageResult(True)
+
+                    except httpx.HTTPStatusError as e:
+                        try:
+                            detail = e.response.json().get("description", e.response.text)
+                        except Exception:
+                            detail = e.response.text
+
+                        # If HTML parse error and we tried HTML, fallback to plain text
+                        if e.response.status_code == 400 and "can't parse entities" in detail.lower() and parse_mode == "HTML":
+                            logger.warning(f"HTML parse error sending message to {chat_id}. Retrying as plain text...")
+                            break  # exit retry loop to try next parse_mode
+
+                        if e.response.status_code == 429:
+                            retry_after = 3
+                            try:
+                                retry_after = e.response.json().get("parameters", {}).get("retry_after", 3)
+                            except Exception:
+                                pass
+                            logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
+                            await asyncio.sleep(retry_after + 1)
+                            continue
+
+                        is_unreachable = (
+                            e.response.status_code == 403
+                            or "blocked" in detail.lower()
+                            or "deactivated" in detail.lower()
+                            or "chat not found" in detail.lower()
+                        )
+                        logger.warning(f"HTTP error sending message to {chat_id} ({e.response.status_code}): {detail}")
+                        return SendMessageResult(False, error=detail, is_unreachable=is_unreachable)
+
+                    except Exception as e:
+                        logger.error(f"Generic error sending message to {chat_id}: {str(e)}")
+                        return SendMessageResult(False, error=str(e), is_unreachable=False)
+
+            return SendMessageResult(False, error="Failed after attempts", is_unreachable=False)
 
 telegram_client = TelegramClient()
+

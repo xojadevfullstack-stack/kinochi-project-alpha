@@ -16,22 +16,10 @@ export interface User {
   language_code?: string;
 }
 
-export interface TelegramWidgetAuthData {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  auth_date: number;
-  hash: string;
-}
-
 interface AuthContextValue {
   user: User | null;
   token: string | null;
   status: "loading" | "authenticated" | "unauthenticated" | "error";
-  loginWithWidget: (widgetData: TelegramWidgetAuthData) => Promise<void>;
-  loginDirect: (data?: { telegram_id?: number; first_name?: string; username?: string }) => Promise<void>;
   logout: () => void;
   resetAuthStatus: () => void;
   environment: Environment;
@@ -130,61 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const loginWithWidget = async (widgetData: TelegramWidgetAuthData) => {
-    try {
-      setStatus("loading");
-      const authResponse = await fetchApi("/auth/telegram-login", {
-        method: "POST",
-        body: JSON.stringify(widgetData),
-      });
-
-      if (authResponse.access_token) {
-        setToken(authResponse.access_token);
-        setTokenState(authResponse.access_token);
-        const userData = await fetchApi("/users/me");
-        setUser(userData);
-        setStatus("authenticated");
-      } else {
-        setStatus("unauthenticated");
-      }
-    } catch (error) {
-      console.error("Widget login failed:", error);
-      setStatus("error");
-      throw error; // Let the component handle UI feedback
-    }
-  };
-
-  const loginDirect = async (customData?: { telegram_id?: number; first_name?: string; username?: string }) => {
-    try {
-      setStatus("loading");
-      const payload: Record<string, any> = {
-        telegram_id: customData?.telegram_id || 123456789,
-        first_name: customData?.first_name || "Kinochi Foydalanuvchi",
-      };
-      if (customData?.username) {
-        payload.username = customData.username;
-      }
-      const authResponse = await fetchApi("/auth/dev-login", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      if (authResponse.access_token) {
-        setToken(authResponse.access_token);
-        setTokenState(authResponse.access_token);
-        const userData = await fetchApi("/users/me");
-        setUser(userData);
-        setStatus("authenticated");
-      } else {
-        setStatus("unauthenticated");
-      }
-    } catch (error) {
-      console.error("Direct login failed:", error);
-      setStatus("error");
-      throw error;
-    }
-  };
-
   const resetAuthStatus = () => {
     setStatus("unauthenticated");
   };
@@ -198,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, status, loginWithWidget, loginDirect, logout, resetAuthStatus, environment }}
+      value={{ user, token, status, logout, resetAuthStatus, environment }}
     >
       {children}
     </AuthContext.Provider>

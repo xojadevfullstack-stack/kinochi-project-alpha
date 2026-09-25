@@ -5,7 +5,8 @@ import ShareButton from "@/components/ShareButton";
 import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
 import RandomRecommendationWidget from "@/components/recommendations/RandomRecommendationWidget";
 
-export const revalidate = 60; 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0; 
 
 type Movie = {
   id: number;
@@ -19,6 +20,8 @@ type Movie = {
   poster_url: string | null;
   code: string;
   created_at?: string;
+  page_title?: string;
+  page_slug?: string;
 };
 
 type Series = {
@@ -30,6 +33,18 @@ type Series = {
   release_year: number | null;
   categories?: any[];
   created_at?: string;
+  page_title?: string;
+  page_slug?: string;
+};
+
+const getHeroBadgeLabel = (item: any, isSeries: boolean): string => {
+  const pageTitle = item?.page_title || item?.pages?.[0]?.title;
+  if (pageTitle) {
+    const trimmed = pageTitle.trim();
+    const singular = trimmed.replace(/(lar|ler)$/i, "").toLowerCase();
+    return `Eng so'nggi ${singular}`;
+  }
+  return isSeries ? "Eng so'nggi serial" : "Eng so'nggi kino";
 };
 
 const MovieRow = ({ title, items, isSeries = false, isDynamicPage = false, pageSlug = "" }: { title: string, items: any[], isSeries?: boolean, isDynamicPage?: boolean, pageSlug?: string }) => {
@@ -118,8 +133,18 @@ export default async function Home() {
       ]);
       
       const combined = [
-        ...(pageMovies?.items || []),
-        ...(pageSeries?.items || []).map((s: any) => ({ ...s, is_series: true }))
+        ...(pageMovies?.items || []).map((m: any) => ({
+          ...m,
+          is_series: false,
+          page_title: page.title,
+          page_slug: page.slug
+        })),
+        ...(pageSeries?.items || []).map((s: any) => ({
+          ...s,
+          is_series: true,
+          page_title: page.title,
+          page_slug: page.slug
+        }))
       ];
       
       combined.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
@@ -134,24 +159,24 @@ export default async function Home() {
     console.error("Error fetching data for home page:", error);
   }
 
-  let heroItem: any = null;
-  let isHeroSeries = false;
-  
-  if (latestMovies.length > 0 && latestSeries.length > 0) {
-    const movieDate = new Date(latestMovies[0].created_at || 0).getTime();
-    const seriesDate = new Date(latestSeries[0].created_at || 0).getTime();
-    if (seriesDate > movieDate) {
-      heroItem = latestSeries[0];
-      isHeroSeries = true;
-    } else {
-      heroItem = latestMovies[0];
+  // Gather all recent items across unpaged movies, unpaged series, and all custom pages (multfilmlar, dramalar, etc.)
+  const allRecentItems: any[] = [
+    ...latestMovies.map(m => ({ ...m, is_series: false })),
+    ...latestSeries.map(s => ({ ...s, is_series: true })),
+    ...pagesData.flatMap(p => p.items || [])
+  ];
+
+  allRecentItems.sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    if (timeB !== timeA) {
+      return timeB - timeA;
     }
-  } else if (latestMovies.length > 0) {
-    heroItem = latestMovies[0];
-  } else if (latestSeries.length > 0) {
-    heroItem = latestSeries[0];
-    isHeroSeries = true;
-  }
+    return (b.id || 0) - (a.id || 0);
+  });
+
+  const heroItem = allRecentItems[0] || null;
+  const isHeroSeries = heroItem ? (heroItem.is_series ?? !heroItem.code) : false;
 
   return (
     <>
@@ -161,8 +186,8 @@ export default async function Home() {
           <div className="absolute inset-0 w-full h-full bg-background-obsidian pointer-events-none">
             {heroItem.poster_url && (
               <Image 
-                src={heroItem.poster_url}
-                alt={heroItem.title}
+                src={heroItem.poster_url} 
+                alt={heroItem.title} 
                 fill
                 priority
                 className="object-cover opacity-50 sm:opacity-40 scale-105 blur-sm sm:blur-md transition-all duration-700"
@@ -181,7 +206,7 @@ export default async function Home() {
                 {/* Specific Premiere Label */}
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-label-caps text-[11px] sm:text-xs font-bold tracking-widest uppercase backdrop-blur-md">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>{isHeroSeries ? "Eng so'nggi serial" : "Eng so'nggi kino"}</span>
+                  <span>{getHeroBadgeLabel(heroItem, isHeroSeries)}</span>
                 </div>
                 
                 <h1 className="font-display-hero text-3xl sm:text-5xl md:text-6xl text-text-primary drop-shadow-2xl tracking-tight leading-tight">
@@ -200,7 +225,7 @@ export default async function Home() {
                   </span>
                 )}
                 <span className="text-text-primary bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-lg border border-white/10 text-xs sm:text-sm font-medium">
-                  {isHeroSeries ? heroItem.categories?.[0]?.name || "Serial" : heroItem.genres?.split(',')[0] || "Kino"}
+                  {heroItem.page_title || (isHeroSeries ? heroItem.categories?.[0]?.name || "Serial" : heroItem.genres?.split(',')[0] || "Kino")}
                 </span>
               </div>
               
