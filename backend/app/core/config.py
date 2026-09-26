@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     """Application settings, populated from env vars / .env file."""
 
     # ── General ──────────────────────────────────────────────────
-    PROJECT_NAME: str = "Kinochi"
+    PROJECT_NAME: str = "MediaPlus"
     VERSION: str = "0.1.0"
     APP_ENV: str = "development"          # development | staging | production
     DEBUG: bool = False

@@ -1,3 +1,4 @@
+import html
 import logging
 import re
 import time
@@ -174,6 +175,17 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
             pass
         return
 
+    movie_title = html.escape(movie.get("title") or "Noma'lum kino")
+    movie_code = movie.get("code")
+    release_year = movie.get("release_year")
+
+    caption_lines = [f"🍿 <b>{movie_title}</b>"]
+    if movie_code:
+        caption_lines.append(f"🔑 <b>Kodi:</b> <code>{movie_code}</code>")
+    if release_year:
+        caption_lines.append(f"📅 <b>Yili:</b> {release_year}")
+    storage_caption = "\n".join(caption_lines)
+
     # Copy video to storage channel with flood control retry
     try:
         storage_msg = await safe_copy_message_with_retry(
@@ -181,6 +193,8 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
             chat_id=settings.STORAGE_CHANNEL_ID,
             from_chat_id=message.chat.id,
             message_id=message.message_id,
+            caption=storage_caption,
+            parse_mode="HTML",
             notify_msg=message,
             item_label="Kino",
             max_retries=5
@@ -345,7 +359,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
     # ── BOSQICH B — UPLOAD (endi xavfsiz parallel yoki ketma-ket, order bazada band) ──
     s_num = season.get('season_number', 1)
-    series_title = series.get('title', '')
+    series_title = html.escape(series.get('title', ''))
 
     for idx, msg in enumerate(messages):
         reserved_info = reserved_map.get(msg.message_id)
@@ -365,7 +379,17 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 pass
             continue
 
-        storage_caption = f"🍿 <b>{series_title}</b>\n📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
+        caption_lines = [
+            f"🍿 <b>{series_title}</b>",
+            f"📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
+        ]
+        if ep_code:
+            caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{ep_code}</code>")
+        if series.get("id"):
+            caption_lines.append(f"📺 <b>Serial kodi:</b> <code>s_{series['id']}</code>")
+        if series.get("release_year"):
+            caption_lines.append(f"📅 <b>Yili:</b> {series['release_year']}")
+        storage_caption = "\n".join(caption_lines)
 
         # Copy to storage channel with flood control retry
         try:

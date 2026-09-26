@@ -87,7 +87,7 @@ function getUserRank(unlocked: number, total: number) {
   if (unlocked < total) {
     return { title: "Kino Eksperti", desc: "Barcha asosiy janr va seriallarni zabt etgan", icon: "workspace_premium" };
   }
-  return { title: "Kinochi Afsonasi", desc: "Barcha yutuqlarni 100% ochgan mutlaq chempion!", icon: "hotel_class" };
+  return { title: "MediaPlus Afsonasi", desc: "Barcha yutuqlarni 100% ochgan mutlaq chempion!", icon: "hotel_class" };
 }
 
 export default function AchievementsPage() {

@@ -35,7 +35,7 @@ async def cmd_start(message: Message, command: CommandObject):
         return
     else:
         welcome_text = (
-            "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
+            "👋 <b>MediaPlus botiga xush kelibsiz!</b>\n\n"
             "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
             "🎥 Kinoni ko'rish uchun menyudan tanlang yoki izlang!\n\n"
             "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"

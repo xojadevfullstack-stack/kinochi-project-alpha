@@ -34,6 +34,7 @@ class TelegramClient:
         tmp_path: str,
         filename: str,
         mime_type: str = "video/mp4",
+        caption: Optional[str] = None,
         on_progress: Optional[Callable[[int], None]] = None,
     ) -> Tuple[str, int]:
         """
@@ -44,6 +45,7 @@ class TelegramClient:
             tmp_path:    Disk'dagi vaqtinchalik fayl yo'li (/tmp/...)
             filename:    Original fayl nomi
             mime_type:   Video MIME turi
+            caption:     (ixtiyoriy) Video ostidagi qisqa matn
             on_progress: (ixtiyoriy) 0-100 oralig'ida progress callback
         """
         if not self.bot_token or not self.storage_channel_id:
@@ -51,7 +53,7 @@ class TelegramClient:
         if not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:
             raise HTTPException(status_code=500, detail="TELEGRAM_API_ID yoki TELEGRAM_API_HASH topilmadi (.env).")
 
-        from pyrogram import Client
+        from pyrogram import Client, enums
         
         app = Client(
             "kinochi_uploader",
@@ -77,6 +79,8 @@ class TelegramClient:
                     chat_id=chat_id,
                     video=tmp_path,
                     file_name=filename,
+                    caption=caption,
+                    parse_mode=enums.ParseMode.HTML if caption else None,
                     progress=progress
                 )
                 

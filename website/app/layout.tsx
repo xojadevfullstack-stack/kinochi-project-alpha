@@ -14,19 +14,19 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: '--font-space
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: '--font-jetbrains-mono' });
 
 export const metadata: Metadata = {
-  title: "Kinochi - Eng so'nggi kinolar va seriallar",
+  title: "MediaPlus - Eng so'nggi kinolar va seriallar",
   description: "Telegram tarmog'idagi eng katta va qulay kino bazasi",
   openGraph: {
-    title: "Kinochi - Eng so'nggi kinolar va seriallar",
-    description: "Kinochi Telegram boti orqali eng sara kinolarni bepul tomosha qiling. Eng katta kino katalogi.",
+    title: "MediaPlus - Eng so'nggi kinolar va seriallar",
+    description: "MediaPlus orqali eng sara kinolarni bepul tomosha qiling. Eng katta kino katalogi.",
     url: "https://kinochi-project-alpha.vercel.app",
-    siteName: "Kinochi",
+    siteName: "MediaPlus",
     images: [
       {
         url: "https://kinochi-project-alpha.vercel.app/default-og-image.jpg", 
         width: 1200,
         height: 630,
-        alt: "Kinochi - Bosh sahifa",
+        alt: "MediaPlus - Bosh sahifa",
       },
     ],
     locale: "uz_UZ",

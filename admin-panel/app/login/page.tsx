@@ -65,7 +65,7 @@ export default function LoginPage() {
           <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full border-2 border-primary-container bg-surface-container-high flex justify-center items-center mb-3 sm:mb-4">
              <span className="material-symbols-outlined text-primary-container text-2xl sm:text-3xl">admin_panel_settings</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary-container">Kinochi Admin</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary-container">MediaPlus Admin</h1>
           <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">Boshqaruv paneliga kirish</p>
         </div>
 

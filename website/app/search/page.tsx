@@ -11,12 +11,12 @@ export async function generateMetadata({ searchParams }: { searchParams: { q?: s
   const type = searchParams.type === "series" ? "seriallar" : "kinolar";
   if (!query) {
     return {
-      title: "Qidiruv va Kashf etish - Kinochi",
+      title: "Qidiruv va Kashf etish - MediaPlus",
       description: "Eng so'nggi kinolar, seriallar, anime va doramalarni qidiring va tomosha qiling.",
     };
   }
   return {
-    title: `"${query}" qidiruv natijalari - Kinochi`,
+    title: `"${query}" qidiruv natijalari - MediaPlus`,
     description: `"${query}" bo'yicha topilgan barcha ${type} ro'yxati.`,
   };
 }

@@ -8,7 +8,7 @@ import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: "Seriallar - Kinochi",
+  title: "Seriallar - MediaPlus",
   description: "Eng so'nggi va qiziqarli seriallarni tomosha qiling.",
 };
 

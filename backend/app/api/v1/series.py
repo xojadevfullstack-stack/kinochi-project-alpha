@@ -409,6 +409,30 @@ async def upload_episode_video(
             pass
         raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
 
+    ep_data = await service.get_episode_by_id(episode_id)
+    if not ep_data:
+        raise HTTPException(status_code=404, detail="Qism topilmadi.")
+
+    ep_caption = None
+    ep_detail = await service.get_episode_detail_by_code(ep_data.code)
+    if ep_detail:
+        import html
+        s_title = html.escape(ep_detail.series_title or "Serial")
+        s_num = ep_detail.season_number or 1
+        e_num = ep_detail.episode_number
+        caption_lines = [
+            f"🍿 <b>{s_title}</b>",
+            f"📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
+        ]
+        if ep_detail.display_code:
+            caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{ep_detail.display_code}</code>")
+        if ep_detail.series_id:
+            caption_lines.append(f"📺 <b>Serial kodi:</b> <code>s_{ep_detail.series_id}</code>")
+            series_obj = await service.get_series_by_id(ep_detail.series_id)
+            if series_obj and series_obj.release_year:
+                caption_lines.append(f"📅 <b>Yili:</b> {series_obj.release_year}")
+        ep_caption = "\n".join(caption_lines)
+
     job_id = await job_manager.create_job(meta={"episode_id": episode_id, "language": language})
 
     async def _background_upload():
@@ -421,6 +445,7 @@ async def upload_episode_video(
                 tmp_path=tmp_path,
                 filename=file.filename or "video.mp4",
                 mime_type=file.content_type or "video/mp4",
+                caption=ep_caption,
                 on_progress=lambda p: asyncio.ensure_future(_on_progress(p)),
             )
 

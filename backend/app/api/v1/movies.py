@@ -304,6 +304,10 @@ async def upload_movie_video(
             detail="Faqat video fayllar ruxsat etiladi (MIME turi video/* bo'lishi kerak)."
         )
 
+    movie = await service.get_movie(movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Kino topilmadi.")
+
     # ── Faylni vaqtinchalik joyga saqlash (tez, Render'ning 100s limitiga tushmaydi) ──
     # OS ni o'zining temp papkasi ishlatiladi
     suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
@@ -338,10 +342,19 @@ async def upload_movie_video(
             async def _on_progress(pct: int):
                 await job_manager.set_progress(job_id, pct)
 
+            import html
+            caption_lines = [f"🍿 <b>{html.escape(movie.title)}</b>"]
+            if movie.code:
+                caption_lines.append(f"🔑 <b>Kodi:</b> <code>{movie.code}</code>")
+            if movie.release_year:
+                caption_lines.append(f"📅 <b>Yili:</b> {movie.release_year}")
+            storage_caption = "\n".join(caption_lines)
+
             file_id, message_id = await telegram_client.send_video_to_storage(
                 tmp_path=tmp_path,
                 filename=file.filename or "video.mp4",
                 mime_type=file.content_type or "video/mp4",
+                caption=storage_caption,
                 on_progress=lambda p: asyncio.ensure_future(_on_progress(p)),
             )
 

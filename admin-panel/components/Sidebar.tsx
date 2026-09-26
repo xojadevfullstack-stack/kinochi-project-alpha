@@ -52,7 +52,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             <span className="material-symbols-outlined text-primary-container text-xl">admin_panel_settings</span>
           </div>
           <div>
-            <h1 className="font-headline-md text-lg text-primary-container leading-none">Kinochi Admin</h1>
+            <h1 className="font-headline-md text-lg text-primary-container leading-none">MediaPlus Admin</h1>
             <p className="font-label-caps text-[9px] text-text-secondary mt-1 uppercase tracking-widest">System Controller</p>
           </div>
         </div>

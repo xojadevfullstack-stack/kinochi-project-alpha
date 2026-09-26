@@ -152,8 +152,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           
           {/* Left: Logo */}
           <Link href="/" className="flex items-center gap-2 group z-50">
-            <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-primary-container group-hover:opacity-90 transition-opacity">
-              Kinochi
+            <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-white group-hover:opacity-90 transition-opacity">
+              Media<span className="text-primary-container">Plus</span>
             </span>
           </Link>
 
@@ -341,9 +341,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <Link 
               href="/" 
               onClick={() => handleLinkClick("/")} 
-              className="font-display-hero-mobile text-[26px] text-primary-container tracking-tighter"
+              className="font-display-hero-mobile text-[26px] font-black tracking-tighter text-white"
             >
-              Kinochi
+              Media<span className="text-primary-container">Plus</span>
             </Link>
             <button 
               onClick={() => setMobileMenuOpen(false)}
