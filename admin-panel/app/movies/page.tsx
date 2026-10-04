@@ -287,9 +287,16 @@ export default function MoviesPage() {
     if (!confirm("O'chirilsinmi?")) return;
     try {
       await fetchApi(`/movies/${id}`, { method: "DELETE" });
+      setMovies((prev) => prev.filter((m) => m.id !== id));
+      setSuccessMsg("Kino muvaffaqiyatli o'chirildi!");
       loadMovies();
     } catch (e: any) {
-      alert("O'chirishda xato: " + e.message);
+      if (e.message && e.message.includes("Movie not found")) {
+        setMovies((prev) => prev.filter((m) => m.id !== id));
+        setSuccessMsg("Kino allaqachon o'chirilgan.");
+      } else {
+        alert("O'chirishda xato: " + e.message);
+      }
     }
   };
 

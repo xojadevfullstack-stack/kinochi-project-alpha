@@ -289,9 +289,16 @@ export default function SeriesListPage() {
       return;
     try {
       await fetchApi(`/series/${id}`, { method: "DELETE" });
+      setSeriesList((prev) => prev.filter((s) => s.id !== id));
+      setSuccessMsg("Serial muvaffaqiyatli o'chirildi!");
       loadSeries();
     } catch (e: any) {
-      alert("O'chirishda xato: " + e.message);
+      if (e.message && e.message.includes("Series not found")) {
+        setSeriesList((prev) => prev.filter((s) => s.id !== id));
+        setSuccessMsg("Serial allaqachon o'chirilgan.");
+      } else {
+        alert("O'chirishda xato: " + e.message);
+      }
     }
   };
 

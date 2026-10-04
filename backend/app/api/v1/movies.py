@@ -453,6 +453,7 @@ async def delete_movie(
     success = await service.delete_movie(movie_id)
     if not success:
         raise HTTPException(status_code=404, detail="Movie not found")
+    await delete_cache_pattern("cache:movies:*")
 
 
 @router.post("/{movie_id}/open-topic")
