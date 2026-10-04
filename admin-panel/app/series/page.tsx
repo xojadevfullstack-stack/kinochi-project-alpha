@@ -57,6 +57,11 @@ export default function SeriesListPage() {
   // Telegram topic states
   const [autoOpenTopic, setAutoOpenTopic] = useState(true);
   const [openingTopicId, setOpeningTopicId] = useState<number | null>(null);
+  const [titleVariants, setTitleVariants] = useState<{
+    uz?: string;
+    orig?: string;
+    ru?: string;
+  } | null>(null);
 
   const initialForm = {
     title: "",
@@ -170,6 +175,12 @@ export default function SeriesListPage() {
             `TMDb bo'yicha: ${details.number_of_seasons} ta fasl (${details.number_of_episodes || "?"} qism)`
           );
         }
+
+        setTitleVariants({
+          uz: details.uz_title || details.title,
+          orig: details.original_title,
+          ru: details.raw_title,
+        });
 
         setForm((prev) => ({
           ...prev,
@@ -306,6 +317,7 @@ export default function SeriesListPage() {
     setEditingId(s.id);
     setDuplicateWarning(null);
     setTmdbSeasonsHint(null);
+    setTitleVariants(null);
     setForm({
       title: s.title,
       description: s.description || "",
@@ -333,6 +345,7 @@ export default function SeriesListPage() {
     setShowTmdbResults(false);
     setDuplicateWarning(null);
     setTmdbSeasonsHint(null);
+    setTitleVariants(null);
   };
 
   const handleCategoryChange = (id: number) => {
@@ -625,6 +638,52 @@ export default function SeriesListPage() {
               className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
               placeholder="Serial nomi..."
             />
+            {titleVariants && (titleVariants.orig || titleVariants.ru) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[11px] text-text-secondary">Sarlavha variantlari:</span>
+                {titleVariants.uz && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.uz! }))}
+                    className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                      form.title === titleVariants.uz
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                    }`}
+                  >
+                    🇺🇿 O'zbekcha: {titleVariants.uz}
+                  </button>
+                )}
+                {titleVariants.orig && titleVariants.orig !== titleVariants.uz && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.orig! }))}
+                    className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                      form.title === titleVariants.orig
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                    }`}
+                  >
+                    🌐 Original: {titleVariants.orig}
+                  </button>
+                )}
+                {titleVariants.ru &&
+                  titleVariants.ru !== titleVariants.uz &&
+                  titleVariants.ru !== titleVariants.orig && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.ru! }))}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                        form.title === titleVariants.ru
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                      }`}
+                    >
+                      🇷🇺 Ruscha: {titleVariants.ru}
+                    </button>
+                  )}
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-2">

@@ -55,6 +55,11 @@ export default function MoviesPage() {
   } | null>(null);
   const [autoOpenTopic, setAutoOpenTopic] = useState(true);
   const [openingTopicId, setOpeningTopicId] = useState<number | null>(null);
+  const [titleVariants, setTitleVariants] = useState<{
+    uz?: string;
+    orig?: string;
+    ru?: string;
+  } | null>(null);
 
   const initialForm = {
     title: "",
@@ -164,6 +169,12 @@ export default function MoviesPage() {
             )
           );
         }
+
+        setTitleVariants({
+          uz: details.uz_title || details.title,
+          orig: details.original_title,
+          ru: details.raw_title,
+        });
 
         setForm((prev) => ({
           ...prev,
@@ -320,6 +331,7 @@ export default function MoviesPage() {
     }
     setEditingId(m.id);
     setDuplicateWarning(null);
+    setTitleVariants(null);
     setForm({
       title: m.title,
       description: m.description,
@@ -347,6 +359,7 @@ export default function MoviesPage() {
     setTmdbResults([]);
     setShowTmdbResults(false);
     setDuplicateWarning(null);
+    setTitleVariants(null);
   };
 
   const openVideoModal = (id: number) => {
@@ -640,6 +653,52 @@ export default function MoviesPage() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Kino nomi..."
             />
+            {titleVariants && (titleVariants.orig || titleVariants.ru) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[11px] text-text-secondary">Sarlavha variantlari:</span>
+                {titleVariants.uz && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.uz! }))}
+                    className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                      form.title === titleVariants.uz
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                    }`}
+                  >
+                    🇺🇿 O'zbekcha: {titleVariants.uz}
+                  </button>
+                )}
+                {titleVariants.orig && titleVariants.orig !== titleVariants.uz && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.orig! }))}
+                    className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                      form.title === titleVariants.orig
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                    }`}
+                  >
+                    🌐 Original: {titleVariants.orig}
+                  </button>
+                )}
+                {titleVariants.ru &&
+                  titleVariants.ru !== titleVariants.uz &&
+                  titleVariants.ru !== titleVariants.orig && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.ru! }))}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                        form.title === titleVariants.ru
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                      }`}
+                    >
+                      🇷🇺 Ruscha: {titleVariants.ru}
+                    </button>
+                  )}
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-2">

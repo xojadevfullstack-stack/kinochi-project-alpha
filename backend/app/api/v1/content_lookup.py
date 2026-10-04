@@ -73,6 +73,16 @@ async def get_content_details(
     details["description"] = translated_desc
     details["is_translated"] = is_translated
 
+    # 2. Translate title to Uzbek
+    raw_title = details.get("title") or ""
+    orig_title = details.get("original_title") or ""
+    translated_title, is_title_translated = await translator_service.translate_title_to_uzbek(raw_title, orig_title)
+    details["uz_title"] = translated_title or raw_title
+    details["raw_title"] = raw_title
+    details["original_title"] = orig_title
+    details["title"] = translated_title if translated_title else raw_title
+    details["is_title_translated"] = is_title_translated
+
     # 2. Map genres to Uzbek
     uz_genres = map_tmdb_genres(details.get("genres_raw", []))
     details["genres"] = ", ".join(uz_genres) if uz_genres else details.get("genres_str", "")
