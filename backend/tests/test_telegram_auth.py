@@ -7,6 +7,13 @@ from urllib.parse import urlencode
 
 from app.main import app
 from app.core.config import settings
+from app.api.limiter import limiter
+
+@pytest.fixture(autouse=True)
+def manage_limiter():
+    limiter.enabled = False
+    yield
+    limiter.enabled = True
 
 @pytest.mark.asyncio
 async def test_telegram_login_widget_success(monkeypatch):

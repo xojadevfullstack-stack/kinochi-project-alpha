@@ -33,6 +33,7 @@ class MovieCreate(BaseModel):
     description: str | None = None
     imdb_rating: float | None = Field(None, ge=0, le=10)
     tmdb_rating: float | None = Field(None, ge=0, le=10)
+    tmdb_id: int | None = None
     genres: str | None = None
     cast: str | None = None
     director: str | None = None
@@ -51,6 +52,7 @@ class MovieUpdate(BaseModel):
     description: str | None = None
     imdb_rating: float | None = Field(None, ge=0, le=10)
     tmdb_rating: float | None = Field(None, ge=0, le=10)
+    tmdb_id: int | None = None
     genres: str | None = None
     cast: str | None = None
     director: str | None = None
@@ -78,6 +80,7 @@ class MovieResponse(BaseModel):
     description: str | None = None
     imdb_rating: float | None = None
     tmdb_rating: float | None = None
+    tmdb_id: int | None = None
     kinochi_rating: float | None = None
     kinochi_votes_count: int = 0
     genres: str | None = None
@@ -450,4 +453,80 @@ async def delete_movie(
     success = await service.delete_movie(movie_id)
     if not success:
         raise HTTPException(status_code=404, detail="Movie not found")
+
+
+@router.post("/{movie_id}/open-topic")
+@limiter.limit("10/minute")
+async def open_movie_topic(
+    request: Request,
+    movie_id: int,
+    service: MovieService = Depends(get_movie_service),
+    admin: dict = Depends(get_current_admin),
+):
+    """Create a Telegram forum topic for a movie and link it as source (Admin only)."""
+    import html
+    from app.core.config import settings
+
+    movie = await service.get_movie_by_id(movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Kino topilmadi.")
+
+    def _make_source_link(cid: int | None, tid: int | None) -> str | None:
+        if not cid:
+            return None
+        c_str = str(cid).replace("-100", "")
+        return f"https://t.me/c/{c_str}/{tid}" if tid else f"https://t.me/c/{c_str}"
+
+    # Idempotent check
+    if movie.source_topic_id and movie.source_chat_id:
+        return {
+            "success": True,
+            "already_existed": True,
+            "chat_id": movie.source_chat_id,
+            "topic_id": movie.source_topic_id,
+            "source_link": _make_source_link(movie.source_chat_id, movie.source_topic_id),
+            "message": "Bu kino uchun Topic allaqachon ochilgan.",
+        }
+
+    target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+    if not target_chat_id:
+        raise HTTPException(
+            status_code=400,
+            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi kerak).",
+        )
+
+    year_str = f" ({movie.release_year})" if movie.release_year else ""
+    topic_name = f"🎬 {movie.title}{year_str}"
+
+    # 1. Create topic in Telegram
+    thread_id = await telegram_client.create_forum_topic(chat_id=target_chat_id, name=topic_name)
+
+    # 2. Send intro message into topic
+    welcome_text = (
+        f"🎬 <b>{html.escape(movie.title)}</b>{year_str}\n"
+        f"🔑 <b>Kod:</b> <code>{movie.code}</code>\n\n"
+        f"⬇️ <i>Kino videosini shu yerga tashlang. Bot uni avtomatik saqlaydi va indekslaydi.</i>"
+    )
+    await telegram_client.send_topic_message(
+        chat_id=target_chat_id,
+        message_thread_id=thread_id,
+        text=welcome_text,
+        parse_mode="HTML",
+    )
+
+    # 3. Update movie source in DB
+    updated_movie = await service.update_movie(
+        movie_id=movie.id,
+        source_chat_id=int(target_chat_id),
+        source_topic_id=thread_id,
+    )
     await delete_cache_pattern("cache:movies:*")
+
+    return {
+        "success": True,
+        "already_existed": False,
+        "chat_id": target_chat_id,
+        "topic_id": thread_id,
+        "source_link": _make_source_link(int(target_chat_id), thread_id),
+        "message": "Topic muvaffaqiyatli ochildi va kinoga ulandi.",
+    }

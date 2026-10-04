@@ -1,4 +1,5 @@
 """API v1 — Series endpoints."""
+import html
 import logging
 import asyncio
 import os
@@ -7,7 +8,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 from pydantic import BaseModel
 
-from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot, get_db_session
 from app.application.series.series_service import SeriesService
 from app.domain.series.entities import (
     Series, SeriesCreate, SeriesUpdate, PaginatedSeriesResponse,
@@ -190,6 +192,7 @@ async def delete_series(
 async def create_season(
     series_id: int,
     season_in: SeasonCreate,
+    announce_in_topic: bool = Query(False, description="Telegram forum topicga ajratgich xabar yuborish"),
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_admin_or_bot)
 ):
@@ -198,9 +201,32 @@ async def create_season(
         raise HTTPException(status_code=400, detail="Series ID mismatch")
     
     try:
-        return await service.create_season(season_in)
+        season = await service.create_season(season_in)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+    if announce_in_topic:
+        series = await service.get_series_by_id(series_id)
+        if series and series.source and series.source.chat_id and series.source.topic_id:
+            title_suffix = f" ({html.escape(season.title)})" if season.title and season.title not in (f"Mavsum {season.season_number}", f"{season.season_number}-mavsum", f"{season.season_number}-fasl") else ""
+            separator_text = (
+                f"━━━━━━━━━━━━━━\n"
+                f"📺 <b>{season.season_number}-FASL</b>{title_suffix}\n"
+                f"━━━━━━━━━━━━━━\n"
+                f"<i>Bu yozuvdan keyingi videolar {season.season_number}-faslga qo'shiladi.</i>"
+            )
+            try:
+                await telegram_client.send_topic_message(
+                    chat_id=series.source.chat_id,
+                    message_thread_id=series.source.topic_id,
+                    text=separator_text,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send season separator to Telegram topic: {e}")
+
+    await delete_cache_pattern("cache:series:*")
+    return season
 
 
 @router.get("/{series_id}/seasons", response_model=List[Season])
@@ -241,6 +267,7 @@ async def update_season(
     season = await service.update_season(season_id, season_in)
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
+    await delete_cache_pattern("cache:series:*")
     return season
 
 
@@ -254,6 +281,53 @@ async def delete_season(
     success = await service.delete_season(season_id)
     if not success:
         raise HTTPException(status_code=404, detail="Season not found")
+    await delete_cache_pattern("cache:series:*")
+
+
+@router.post("/{series_id}/seasons/{season_id}/announce")
+async def announce_season_in_topic(
+    series_id: int,
+    season_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """Post season separator banner into series Telegram forum topic (Admin only)."""
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Serial topilmadi.")
+
+    season = await service.get_season_by_id(season_id)
+    if not season or season.series_id != series_id:
+        raise HTTPException(status_code=404, detail="Fasl topilmadi.")
+
+    if not series.source or not series.source.chat_id or not series.source.topic_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Ushbu serial uchun Telegram guruhi/topik biriktirilmagan."
+        )
+
+    title_suffix = f" ({html.escape(season.title)})" if season.title and season.title not in (f"Mavsum {season.season_number}", f"{season.season_number}-mavsum", f"{season.season_number}-fasl") else ""
+    separator_text = (
+        f"━━━━━━━━━━━━━━\n"
+        f"📺 <b>{season.season_number}-FASL</b>{title_suffix}\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"<i>Bu yozuvdan keyingi videolar {season.season_number}-faslga qo'shiladi.</i>"
+    )
+
+    await telegram_client.send_topic_message(
+        chat_id=series.source.chat_id,
+        message_thread_id=series.source.topic_id,
+        text=separator_text,
+        parse_mode="HTML"
+    )
+
+    return {
+        "success": True,
+        "chat_id": series.source.chat_id,
+        "topic_id": series.source.topic_id,
+        "season_number": season.season_number,
+        "message": f"{season.season_number}-fasl ajratgichi Telegram topicga muvaffaqiyatli yuborildi."
+    }
 
 
 # --- EPISODES ---
@@ -542,4 +616,84 @@ async def delete_episode_translation(
     success = await service.delete_episode_translation(translation_id)
     if not success:
         raise HTTPException(status_code=404, detail="Translation not found")
+
+
+@router.post("/{series_id}/open-topic")
+@limiter.limit("10/minute")
+async def open_series_topic(
+    request: Request,
+    series_id: int,
+    service: SeriesService = Depends(get_series_service),
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """Create a Telegram forum topic for a series and link it as source (Admin only)."""
+    import html
+    from app.core.config import settings
+    from app.infrastructure.telegram.telegram_client import telegram_client
+    from app.infrastructure.db.repositories.source_repository import SourceRepository
+
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Serial topilmadi.")
+
+    # Idempotent check
+    if series.source_id and getattr(series, "source", None):
+        return {
+            "success": True,
+            "already_existed": True,
+            "source_id": series.source_id,
+            "chat_id": series.source.chat_id,
+            "topic_id": series.source.topic_id,
+            "message": "Bu serial uchun Topic allaqachon mavjud.",
+        }
+
+    target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+    if not target_chat_id:
+        raise HTTPException(
+            status_code=400,
+            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi kerak).",
+        )
+
+    year_str = f" ({series.release_year})" if series.release_year else ""
+    topic_name = f"📺 {series.title}{year_str}"
+
+    # 1. Create topic in Telegram
+    thread_id = await telegram_client.create_forum_topic(chat_id=target_chat_id, name=topic_name)
+
+    # 2. Send intro message into topic
+    welcome_text = (
+        f"📺 <b>{html.escape(series.title)}</b>{year_str}\n"
+        f"🔑 <b>Serial ID:</b> <code>s_{series.id}</code>\n\n"
+        f"⬇️ <i>Serial qismlarini shu yerga tashlang. Bot qismlarni avtomatik indekslaydi.</i>"
+    )
+    await telegram_client.send_topic_message(
+        chat_id=target_chat_id,
+        message_thread_id=thread_id,
+        text=welcome_text,
+        parse_mode="HTML",
+    )
+
+    # 3. Create Source record in series_sources table
+    source_repo = SourceRepository(db)
+    source = await source_repo.create_source({
+        "name": f"{series.title} (Topic)",
+        "type": "superguruh",
+        "chat_id": int(target_chat_id),
+        "topic_id": thread_id,
+    })
+
+    # 4. Link source to series
+    await service.update_series(series_id, {"source_id": source.id})
+    await delete_cache_pattern("cache:series:*")
+
+    return {
+        "success": True,
+        "already_existed": False,
+        "source_id": source.id,
+        "chat_id": target_chat_id,
+        "topic_id": thread_id,
+        "message": "Topic muvaffaqiyatli ochildi va serialga ulandi.",
+    }
+
 

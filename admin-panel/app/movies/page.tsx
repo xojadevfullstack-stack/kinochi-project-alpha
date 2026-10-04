@@ -15,6 +15,7 @@ type Movie = {
   director: string | null;
   cast: string | null;
   imdb_rating: number | null;
+  tmdb_id?: number | null;
   poster_url: string | null;
   trailer_url: string | null;
   release_year: number;
@@ -23,6 +24,8 @@ type Movie = {
   categories: Category[];
   pages: PageItem[];
   source_id?: number | null;
+  source_chat_id?: number | null;
+  source_topic_id?: number | null;
   source_link?: string | null;
   translations: { id: number; language: string; telegram_file_id: string }[];
 };
@@ -35,24 +38,49 @@ export default function MoviesPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
-  
+
   // Video Modal states
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoMovieId, setVideoMovieId] = useState<number | null>(null);
 
+  // TMDb Lookup & Duplicates states
+  const [tmdbSearchQuery, setTmdbSearchQuery] = useState("");
+  const [tmdbSearching, setTmdbSearching] = useState(false);
+  const [tmdbResults, setTmdbResults] = useState<any[]>([]);
+  const [showTmdbResults, setShowTmdbResults] = useState(false);
+  const [fetchingTmdbDetails, setFetchingTmdbDetails] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    exact: any[];
+    similar: any[];
+  } | null>(null);
+  const [autoOpenTopic, setAutoOpenTopic] = useState(true);
+  const [openingTopicId, setOpeningTopicId] = useState<number | null>(null);
+
   const initialForm = {
-    title: "", description: "", genres: "", release_year: 2024, duration_minutes: 120, poster_url: "", trailer_url: "",
-    director: "", cast: "", imdb_rating: 0,
+    title: "",
+    description: "",
+    genres: "",
+    tmdb_id: null as number | null,
+    release_year: new Date().getFullYear(),
+    duration_minutes: 120,
+    poster_url: "",
+    trailer_url: "",
+    director: "",
+    cast: "",
+    imdb_rating: 0,
     category_ids: [] as number[],
     page_ids: [] as number[],
-    source_id: "" as number | ""
+    source_id: "" as number | "",
   };
 
   const [form, setForm] = useState(initialForm);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([loadMovies(), loadCategories(), loadPages(), loadSources()]).then(() => setLoading(false));
+    Promise.all([loadMovies(), loadCategories(), loadPages(), loadSources()]).then(() =>
+      setLoading(false)
+    );
   }, []);
 
   const loadSources = async () => {
@@ -86,34 +114,165 @@ export default function MoviesPage() {
     try {
       const data = await fetchApi("/pages");
       if (data && data.items) {
-          setPages(data.items);
+        setPages(data.items);
       } else if (Array.isArray(data)) {
-          setPages(data);
+        setPages(data);
       }
     } catch (e: any) {
       console.error(e);
     }
   };
 
+  // TMDb Search
+  const handleTmdbSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!tmdbSearchQuery.trim()) return;
+    setTmdbSearching(true);
+    setErrorMsg(null);
+    setDuplicateWarning(null);
+    try {
+      const data = await fetchApi(
+        `/content-lookup/search?query=${encodeURIComponent(
+          tmdbSearchQuery.trim()
+        )}&content_type=movie`
+      );
+      setTmdbResults(data || []);
+      setShowTmdbResults(true);
+    } catch (err: any) {
+      setErrorMsg("TMDb qidiruvda xatolik: " + err.message);
+    } finally {
+      setTmdbSearching(false);
+    }
+  };
+
+  // TMDb Selection
+  const handleSelectTmdbMovie = async (movieItem: any) => {
+    setFetchingTmdbDetails(true);
+    setErrorMsg(null);
+    setDuplicateWarning(null);
+    try {
+      const details = await fetchApi(
+        `/content-lookup/details/movie/${movieItem.id}`
+      );
+      if (details) {
+        // Match suggested categories with available categories
+        const matchedCategoryIds: number[] = [];
+        if (Array.isArray(details.suggested_category_ids)) {
+          matchedCategoryIds.push(
+            ...details.suggested_category_ids.filter((catId: number) =>
+              categories.some((c) => c.id === catId)
+            )
+          );
+        }
+
+        setForm((prev) => ({
+          ...prev,
+          title: details.title || movieItem.title || prev.title,
+          description: details.description || prev.description,
+          tmdb_id: details.tmdb_id || movieItem.id,
+          poster_url: details.poster_url || prev.poster_url,
+          trailer_url: details.trailer_url || prev.trailer_url,
+          genres: details.genres ? details.genres.join(", ") : prev.genres,
+          director: details.director || prev.director,
+          cast: details.cast || prev.cast,
+          release_year: details.release_year || prev.release_year,
+          duration_minutes:
+            details.runtime || details.duration_minutes || prev.duration_minutes,
+          imdb_rating: details.vote_average
+            ? Math.round(details.vote_average * 10) / 10
+            : prev.imdb_rating,
+          category_ids: Array.from(
+            new Set([...prev.category_ids, ...matchedCategoryIds])
+          ),
+        }));
+
+        // Duplicate check
+        try {
+          const dupRes = await fetchApi(
+            `/content-lookup/duplicates?tmdb_id=${movieItem.id}&title=${encodeURIComponent(
+              details.title || ""
+            )}&original_title=${encodeURIComponent(
+              details.original_title || ""
+            )}&year=${details.release_year || ""}`
+          );
+          if (
+            dupRes &&
+            ((dupRes.exact && dupRes.exact.length > 0) ||
+              (dupRes.similar && dupRes.similar.length > 0))
+          ) {
+            setDuplicateWarning(dupRes);
+          }
+        } catch (dupErr) {
+          console.error("Duplicate check error:", dupErr);
+        }
+      }
+      setShowTmdbResults(false);
+    } catch (err: any) {
+      setErrorMsg("TMDb ma'lumotlarini olishda xatolik: " + err.message);
+    } finally {
+      setFetchingTmdbDetails(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setSuccessMsg(null);
+
     const payload = {
       ...form,
       runtime: form.duration_minutes,
-      source_id: form.source_id === "" ? null : form.source_id
+      source_id: form.source_id === "" ? null : form.source_id,
     };
 
     try {
       if (editingId) {
-        await fetchApi(`/movies/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
+        await fetchApi(`/movies/${editingId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        setSuccessMsg("Kino muvaffaqiyatli tahrirlandi!");
       } else {
-        await fetchApi("/movies", { method: "POST", body: JSON.stringify(payload) });
+        const created = await fetchApi("/movies", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        if (autoOpenTopic && created?.id) {
+          try {
+            await fetchApi(`/movies/${created.id}/open-topic`, { method: "POST" });
+            setSuccessMsg(
+              `Kino saqlandi va Telegram'da topic ochildi! (Kod: #${created.code})`
+            );
+          } catch (topicErr: any) {
+            setErrorMsg(
+              `Kino saqlandi (#${created.code}), lekin Telegram'da topic ochilmadi: ${topicErr.message}`
+            );
+          }
+        } else {
+          setSuccessMsg(
+            `Kino muvaffaqiyatli saqlandi! (Kod: #${created.code})`
+          );
+        }
       }
       handleCancel();
       loadMovies();
     } catch (e: any) {
       setErrorMsg(e.message || "Xato yuz berdi");
+    }
+  };
+
+  const handleOpenTopic = async (movieId: number) => {
+    setOpeningTopicId(movieId);
+    setErrorMsg(null);
+    try {
+      const res = await fetchApi(`/movies/${movieId}/open-topic`, { method: "POST" });
+      setSuccessMsg(res.message || "Topic muvaffaqiyatli ochildi!");
+      loadMovies();
+    } catch (e: any) {
+      alert("Topic ochishda xatolik: " + e.message);
+    } finally {
+      setOpeningTopicId(null);
     }
   };
 
@@ -139,24 +298,30 @@ export default function MoviesPage() {
 
   const handleEdit = (m: Movie) => {
     let matchedSourceId: number | "" = "";
-    if ((m as any).source_chat_id) {
-       const source = sources.find(s => s.chat_id === (m as any).source_chat_id && s.topic_id === (m as any).source_topic_id);
-       if (source) matchedSourceId = source.id;
+    if (m.source_chat_id) {
+      const source = sources.find(
+        (s) => s.chat_id === m.source_chat_id && s.topic_id === m.source_topic_id
+      );
+      if (source) matchedSourceId = source.id;
     }
     setEditingId(m.id);
+    setDuplicateWarning(null);
     setForm({
-      title: m.title, description: m.description, genres: m.genres, 
-      release_year: m.release_year, duration_minutes: m.runtime || m.duration_minutes,
+      title: m.title,
+      description: m.description,
+      genres: m.genres,
+      tmdb_id: m.tmdb_id || null,
+      release_year: m.release_year,
+      duration_minutes: m.runtime || m.duration_minutes,
       poster_url: m.poster_url || "",
       trailer_url: m.trailer_url || "",
       director: m.director || "",
       cast: m.cast || "",
       imdb_rating: m.imdb_rating || 0,
-      category_ids: m.categories?.map(c => c.id) || [],
-      page_ids: m.pages?.map(p => p.id) || [],
-      source_id: matchedSourceId
+      category_ids: m.categories?.map((c) => c.id) || [],
+      page_ids: m.pages?.map((p) => p.id) || [],
+      source_id: matchedSourceId,
     });
-    // Smooth scroll up to form on mobile
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -164,6 +329,10 @@ export default function MoviesPage() {
     setEditingId(null);
     setErrorMsg(null);
     setForm(initialForm);
+    setTmdbSearchQuery("");
+    setTmdbResults([]);
+    setShowTmdbResults(false);
+    setDuplicateWarning(null);
   };
 
   const openVideoModal = (id: number) => {
@@ -177,35 +346,56 @@ export default function MoviesPage() {
   };
 
   const handleCategoryChange = (id: number) => {
-    setForm(prev => {
-      const ids = prev.category_ids.includes(id) 
-        ? prev.category_ids.filter(x => x !== id)
+    setForm((prev) => {
+      const ids = prev.category_ids.includes(id)
+        ? prev.category_ids.filter((x) => x !== id)
         : [...prev.category_ids, id];
       return { ...prev, category_ids: ids };
     });
   };
 
   const handlePageChange = (id: number) => {
-    setForm(prev => {
-      const ids = prev.page_ids.includes(id) 
-        ? prev.page_ids.filter(x => x !== id)
+    setForm((prev) => {
+      const ids = prev.page_ids.includes(id)
+        ? prev.page_ids.filter((x) => x !== id)
         : [...prev.page_ids, id];
       return { ...prev, page_ids: ids };
     });
   };
 
-  if (loading) return <div className="p-8 text-center text-text-secondary">Yuklanmoqda...</div>;
+  if (loading)
+    return <div className="p-8 text-center text-text-secondary">Yuklanmoqda...</div>;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">Kinolar</h1>
-          <p className="text-xs sm:text-sm text-text-secondary mt-1">Kinolarni qo'shish, video yuklash va boshqarish</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight">
+            Kinolar
+          </h1>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            Kinolarni avtomatik qidirish, qo'shish va Telegram topic ochish
+          </p>
         </div>
       </div>
-      
+
+      {/* Success Notification */}
+      {successMsg && (
+        <div className="mb-6 p-4 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl text-xs sm:text-sm text-emerald-300 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-emerald-400">check_circle</span>
+            <span>{successMsg}</span>
+          </div>
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-emerald-400 hover:text-emerald-200 p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Form Card */}
       <div className="metric-card p-4 sm:p-6 rounded-2xl mb-8">
         <h2 className="text-lg sm:text-xl font-semibold mb-4 text-text-primary flex items-center gap-2">
@@ -214,68 +404,380 @@ export default function MoviesPage() {
           </span>
           {editingId ? "Kinoni tahrirlash" : "Yangi Kino qo'shish"}
         </h2>
-        
+
+        {/* TMDb Search & Auto-fill Block */}
+        {!editingId && (
+          <div className="mb-6 bg-surface-container-high/40 border border-primary-container/30 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary-container text-xl">
+                  auto_awesome
+                </span>
+                <span className="text-sm font-semibold text-text-primary">
+                  TMDb orqali tezkor qidirish va to'ldirish
+                </span>
+              </div>
+              <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                O'zbekcha tarjima bilan
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  className="w-full bg-surface-container-lowest border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/60 focus:ring-2 focus:ring-primary-container focus:border-primary-container"
+                  placeholder="Kino nomi yoki TMDb ID (masalan: Avatar, Interstellar, 19995)..."
+                  value={tmdbSearchQuery}
+                  onChange={(e) => setTmdbSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleTmdbSearch();
+                    }
+                  }}
+                />
+                <span className="material-symbols-outlined absolute left-3 top-2.5 text-text-secondary text-lg">
+                  search
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTmdbSearch()}
+                disabled={tmdbSearching || !tmdbSearchQuery.trim()}
+                className="bg-primary-container hover:bg-primary-container/80 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 min-h-[40px] shrink-0"
+              >
+                {tmdbSearching ? (
+                  <>
+                    <span className="animate-spin material-symbols-outlined text-sm">
+                      progress_activity
+                    </span>
+                    <span>Qidirilmoqda...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">travel_explore</span>
+                    <span>Qidirish</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* TMDb Results Dropdown */}
+            {showTmdbResults && (
+              <div className="mt-3 bg-surface-container-lowest border border-white/10 rounded-xl p-2 max-h-72 overflow-y-auto custom-scrollbar">
+                <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-white/5">
+                  <span className="text-xs text-text-secondary">
+                    Topilgan natijalar ({tmdbResults.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowTmdbResults(false)}
+                    className="text-xs text-text-secondary hover:text-white px-1.5 py-0.5 rounded"
+                  >
+                    Yopish ✕
+                  </button>
+                </div>
+                {tmdbResults.length === 0 ? (
+                  <div className="p-3 text-center text-xs text-text-secondary">
+                    Hech qanday film topilmadi
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {tmdbResults.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {item.poster_url ? (
+                            <img
+                              src={item.poster_url}
+                              alt={item.title}
+                              className="w-10 h-14 object-cover rounded shadow shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-14 bg-surface-container-high rounded flex items-center justify-center text-text-secondary text-xs shrink-0">
+                              Rasm yo'q
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-text-primary truncate">
+                              {item.title}
+                            </div>
+                            <div className="text-xs text-text-secondary flex items-center gap-2 mt-0.5">
+                              {item.original_title && item.original_title !== item.title && (
+                                <span className="truncate">({item.original_title})</span>
+                              )}
+                              <span>{item.release_year || "Yil noma'lum"}</span>
+                              {item.vote_average ? (
+                                <span className="text-rating-gold">
+                                  ★ {item.vote_average.toFixed(1)}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectTmdbMovie(item)}
+                          disabled={fetchingTmdbDetails}
+                          className="bg-primary-container/20 hover:bg-primary-container text-primary hover:text-white border border-primary-container/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0"
+                        >
+                          {fetchingTmdbDetails ? "Yuklanmoqda..." : "Tanlash"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {fetchingTmdbDetails && (
+              <div className="mt-3 p-3 bg-surface-container-lowest border border-white/5 rounded-xl flex items-center justify-center gap-2 text-xs text-primary-container">
+                <span className="animate-spin material-symbols-outlined text-sm">
+                  progress_activity
+                </span>
+                <span>TMDb ma'lumotlari olinmoqda va o'zbek tiliga tarjima qilinmoqda...</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Duplicate Warnings */}
+        {duplicateWarning && (
+          <div className="mb-6 space-y-2">
+            {duplicateWarning.exact && duplicateWarning.exact.length > 0 && (
+              <div className="bg-red-500/15 border border-red-500/40 rounded-xl p-3.5 text-xs text-red-300 flex items-start gap-2.5">
+                <span className="material-symbols-outlined text-red-400 text-lg shrink-0">
+                  error
+                </span>
+                <div>
+                  <div className="font-bold text-red-200">
+                    ⛔ Diqqat: Ushbu film bazada allaqachon mavjud (Aniq dublikat)!
+                  </div>
+                  <div className="mt-1 space-y-0.5">
+                    {duplicateWarning.exact.map((d: any, idx: number) => (
+                      <div key={idx} className="text-red-300">
+                        • <b>{d.title}</b> ({d.year || "Yil noma'lum"}) — Kod:{" "}
+                        <code className="bg-black/30 px-1 py-0.5 rounded">#{d.code}</code> (
+                        {d.type === "movie" ? "Kino" : "Serial"})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {duplicateWarning.similar &&
+              duplicateWarning.similar.length > 0 &&
+              (!duplicateWarning.exact || duplicateWarning.exact.length === 0) && (
+                <div className="bg-amber-500/15 border border-amber-500/40 rounded-xl p-3.5 text-xs text-amber-300 flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-amber-400 text-lg shrink-0">
+                    warning
+                  </span>
+                  <div>
+                    <div className="font-bold text-amber-200">
+                      ⚠️ O'xshash nomdagi film yoki serial(lar) topildi:
+                    </div>
+                    <div className="mt-1 space-y-0.5">
+                      {duplicateWarning.similar.map((s: any, idx: number) => (
+                        <div key={idx} className="text-amber-300">
+                          • <b>{s.title}</b> ({s.year || "Yil noma'lum"}) — Kod:{" "}
+                          <code className="bg-black/30 px-1 py-0.5 rounded">
+                            #{s.code || s.id}
+                          </code>{" "}
+                          ({s.type === "movie" ? "Kino" : "Serial"})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Sarlavha</label>
-            <input required type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Kino nomi..." />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Sarlavha
+            </label>
+            <input
+              required
+              type="text"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Kino nomi..."
+            />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Ta'rif</label>
-            <textarea rows={3} className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Kino haqida qisqacha..." />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Ta'rif (O'zbek tilida)
+            </label>
+            <textarea
+              rows={3}
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Kino haqida qisqacha..."
+            />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Poster URL (rasm havolasi)</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" placeholder="https://..." value={form.poster_url} onChange={e => setForm({...form, poster_url: e.target.value})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Poster URL (rasm havolasi)
+            </label>
+            <input
+              type="text"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              placeholder="https://..."
+              value={form.poster_url}
+              onChange={(e) => setForm({ ...form, poster_url: e.target.value })}
+            />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Treyler URL (YouTube yoki havola, majburiy emas)</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" placeholder="https://youtube.com/watch?v=..." value={form.trailer_url} onChange={e => setForm({...form, trailer_url: e.target.value})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Treyler URL (YouTube yoki havola, majburiy emas)
+            </label>
+            <input
+              type="text"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              placeholder="https://youtube.com/watch?v=..."
+              value={form.trailer_url}
+              onChange={(e) => setForm({ ...form, trailer_url: e.target.value })}
+            />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Janrlar</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" placeholder="Jangari, Drama..." value={form.genres} onChange={e => setForm({...form, genres: e.target.value})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Janrlar
+            </label>
+            <input
+              type="text"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              placeholder="Jangari, Drama..."
+              value={form.genres}
+              onChange={(e) => setForm({ ...form, genres: e.target.value })}
+            />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Rejissyor</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.director} onChange={e => setForm({...form, director: e.target.value})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Rejissyor
+            </label>
+            <input
+              type="text"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.director}
+              onChange={(e) => setForm({ ...form, director: e.target.value })}
+            />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Aktyorlar</label>
-            <input type="text" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.cast} onChange={e => setForm({...form, cast: e.target.value})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Aktyorlar
+            </label>
+            <input
+              type="text"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.cast}
+              onChange={(e) => setForm({ ...form, cast: e.target.value })}
+            />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Yil</label>
-            <input type="number" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.release_year} onChange={e => setForm({...form, release_year: parseInt(e.target.value) || 2024})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Yil
+            </label>
+            <input
+              type="number"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.release_year}
+              onChange={(e) =>
+                setForm({ ...form, release_year: parseInt(e.target.value) || 2024 })
+              }
+            />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Davomiylik (daqiqa)</label>
-            <input type="number" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: parseInt(e.target.value) || 120})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Davomiylik (daqiqa)
+            </label>
+            <input
+              type="number"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.duration_minutes}
+              onChange={(e) =>
+                setForm({ ...form, duration_minutes: parseInt(e.target.value) || 120 })
+              }
+            />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Reyting (IMDb)</label>
-            <input type="number" step="0.1" min="0" max="10" className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" value={form.imdb_rating} onChange={e => setForm({...form, imdb_rating: parseFloat(e.target.value) || 0})} />
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Reyting (IMDb)
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              value={form.imdb_rating}
+              onChange={(e) =>
+                setForm({ ...form, imdb_rating: parseFloat(e.target.value) || 0 })
+              }
+            />
           </div>
-          
+
+          {/* Telegram Auto Topic Option (For new movies) */}
+          {!editingId && (
+            <div className="md:col-span-2 bg-surface-container-high/40 border border-white/10 rounded-xl p-3.5">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoOpenTopic}
+                  onChange={(e) => setAutoOpenTopic(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container"
+                />
+                <div>
+                  <div className="text-sm font-medium text-text-primary flex items-center gap-1.5">
+                    <span>Telegram guruhida avtomatik Topic ochilsin</span>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                      Tavsiya etiladi
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Kino saqlanishi bilan birga Telegram forum guruhida kino nomi va yili bilan alohida topic yaratiladi va kino kodi xabar sifatida yuboriladi.
+                  </p>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {/* Manual Source Selection */}
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Manba (Source)</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Manba (Source)
+            </label>
             <select
               value={form.source_id}
-              onChange={(e) => setForm({ ...form, source_id: e.target.value === "" ? "" : parseInt(e.target.value) })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  source_id: e.target.value === "" ? "" : parseInt(e.target.value),
+                })
+              }
               className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
             >
-              <option value="">Manba tanlanmagan</option>
-              {sources.map(s => (
-                <option key={s.id} value={s.id}>{s.name} ({s.type})</option>
+              <option value="">Manba tanlanmagan (yoki avtomatik topic ochiladi)</option>
+              {sources.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.type})
+                </option>
               ))}
             </select>
             {errorMsg && <p className="text-red-400 text-xs sm:text-sm mt-1">{errorMsg}</p>}
@@ -283,11 +785,21 @@ export default function MoviesPage() {
 
           {/* Categories */}
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">Kategoriyalar</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
+              Kategoriyalar
+            </label>
             <div className="flex flex-wrap gap-2">
-              {categories.map(c => (
-                <label key={c.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-2 rounded-xl cursor-pointer text-text-primary hover:bg-white/5 transition-colors text-xs sm:text-sm min-h-[38px]">
-                  <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.category_ids.includes(c.id)} onChange={() => handleCategoryChange(c.id)} />
+              {categories.map((c) => (
+                <label
+                  key={c.id}
+                  className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-2 rounded-xl cursor-pointer text-text-primary hover:bg-white/5 transition-colors text-xs sm:text-sm min-h-[38px]"
+                >
+                  <input
+                    type="checkbox"
+                    className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container"
+                    checked={form.category_ids.includes(c.id)}
+                    onChange={() => handleCategoryChange(c.id)}
+                  />
                   {c.name}
                 </label>
               ))}
@@ -296,24 +808,41 @@ export default function MoviesPage() {
 
           {/* Pages */}
           <div className="md:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">Sahifalar</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-2">
+              Sahifalar
+            </label>
             <div className="flex flex-wrap gap-2">
-              {pages.map(p => (
-                <label key={p.id} className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-2 rounded-xl cursor-pointer text-text-primary hover:bg-white/5 transition-colors text-xs sm:text-sm min-h-[38px]">
-                  <input type="checkbox" className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container" checked={form.page_ids.includes(p.id)} onChange={() => handlePageChange(p.id)} />
+              {pages.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center bg-surface-container-lowest border border-white/10 px-3 py-2 rounded-xl cursor-pointer text-text-primary hover:bg-white/5 transition-colors text-xs sm:text-sm min-h-[38px]"
+                >
+                  <input
+                    type="checkbox"
+                    className="mr-2 w-4 h-4 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container"
+                    checked={form.page_ids.includes(p.id)}
+                    onChange={() => handlePageChange(p.id)}
+                  />
                   {p.title}
                 </label>
               ))}
             </div>
           </div>
-          
+
           {/* Submit / Cancel Buttons */}
           <div className="md:col-span-2 flex flex-col sm:flex-row gap-3 mt-3">
-            <button type="submit" className="bg-primary-container text-white px-6 py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-medium text-sm w-full sm:w-auto text-center min-h-[44px]">
+            <button
+              type="submit"
+              className="bg-primary-container text-white px-6 py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-all font-medium text-sm w-full sm:w-auto text-center min-h-[44px]"
+            >
               {editingId ? "O'zgarishlarni saqlash" : "Kinoni saqlash"}
             </button>
             {editingId && (
-              <button type="button" onClick={handleCancel} className="bg-white/5 border border-white/10 text-text-primary px-6 py-3 rounded-xl hover:bg-white/10 active:scale-95 transition-all font-medium text-sm w-full sm:w-auto text-center min-h-[44px]">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bg-white/5 border border-white/10 text-text-primary px-6 py-3 rounded-xl hover:bg-white/10 active:scale-95 transition-all font-medium text-sm w-full sm:w-auto text-center min-h-[44px]"
+              >
                 Bekor qilish
               </button>
             )}
@@ -324,53 +853,131 @@ export default function MoviesPage() {
       {/* Movies List Table */}
       <div className="metric-card rounded-2xl overflow-hidden shadow-xl">
         <div className="p-4 sm:p-5 border-b border-white/5 bg-[#1a0908]/80 flex items-center justify-between">
-          <h3 className="font-display font-bold text-base sm:text-lg text-text-primary">Mavjud kinolar ro'yxati ({movies.length})</h3>
+          <h3 className="font-display font-bold text-base sm:text-lg text-text-primary">
+            Mavjud kinolar ro'yxati ({movies.length})
+          </h3>
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
           <table className="min-w-[700px] w-full text-left border-collapse">
             <thead className="bg-surface-container-lowest border-b border-white/10">
               <tr>
-                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Kod</th>
-                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Sarlavha</th>
-                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Manba</th>
-                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">Video</th>
-                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider text-right">Amallar</th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                  Kod
+                </th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                  Sarlavha
+                </th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                  Manba / Topic
+                </th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                  Video
+                </th>
+                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider text-right">
+                  Amallar
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-sm">
-              {movies.map(m => (
+              {movies.map((m) => (
                 <tr key={m.id} className="data-table-row">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap font-bold text-primary-container text-base">
                     #{m.code}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-text-primary font-medium">
                     <div className="flex flex-col">
-                      <span>{m.title}</span>
-                      <span className="text-xs text-text-secondary">{m.release_year} • {m.duration_minutes || m.runtime} daq</span>
+                      <div className="flex items-center gap-2">
+                        <span>{m.title}</span>
+                        {m.tmdb_id && (
+                          <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.2 rounded font-mono">
+                            TMDb
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-text-secondary">
+                        {m.release_year} • {m.duration_minutes || m.runtime} daq
+                      </span>
                     </div>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-xs text-text-secondary">
-                    {m.source_link ? (
-                      <a href={m.source_link} target="_blank" rel="noreferrer" className="text-tertiary-fixed hover:text-white transition-colors inline-flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-lg" title={m.source_link}>
-                        🔗 Link
-                      </a>
-                    ) : "-"}
+                    {m.source_topic_id ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg font-medium">
+                          <span className="material-symbols-outlined text-[14px]">
+                            forum
+                          </span>
+                          Topic #{m.source_topic_id}
+                        </span>
+                        {m.source_link && (
+                          <a
+                            href={m.source_link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-tertiary-fixed hover:text-white transition-colors"
+                            title={m.source_link}
+                          >
+                            🔗
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenTopic(m.id)}
+                          disabled={openingTopicId === m.id}
+                          className="inline-flex items-center gap-1 text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 px-2 py-1 rounded-lg transition-colors"
+                          title="Telegram'da topic ochish"
+                        >
+                          {openingTopicId === m.id ? (
+                            <span className="animate-spin material-symbols-outlined text-[14px]">
+                              progress_activity
+                            </span>
+                          ) : (
+                            <span className="material-symbols-outlined text-[14px]">
+                              add_comment
+                            </span>
+                          )}
+                          Topic ochish
+                        </button>
+                        {m.source_link && (
+                          <a
+                            href={m.source_link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-tertiary-fixed hover:text-white transition-colors"
+                            title={m.source_link}
+                          >
+                            🔗 Link
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 sm:px-6 py-4">
                     {m.translations && m.translations.length > 0 ? (
                       <div className="flex flex-col gap-1.5 min-w-[120px]">
                         {m.translations.map((t) => (
-                          <div key={t.id} className="flex items-center justify-between bg-surface-container-high border border-white/10 px-2 py-1 rounded-lg text-xs text-text-secondary">
+                          <div
+                            key={t.id}
+                            className="flex items-center justify-between bg-surface-container-high border border-white/10 px-2 py-1 rounded-lg text-xs text-text-secondary"
+                          >
                             <span>✅ {t.language}</span>
-                            <button onClick={() => handleDeleteTranslation(t.id)} className="text-rating-gold hover:text-red-400 ml-2 p-0.5 transition-colors" title="Videoni o'chirish">
+                            <button
+                              onClick={() => handleDeleteTranslation(t.id)}
+                              className="text-rating-gold hover:text-red-400 ml-2 p-0.5 transition-colors"
+                              title="Videoni o'chirish"
+                            >
                               ✕
                             </button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-rating-gold font-bold text-xs bg-rating-gold/10 px-2 py-1 rounded-lg">❌ Yo'q</span>
+                      <span className="text-rating-gold font-bold text-xs bg-rating-gold/10 px-2 py-1 rounded-lg">
+                        ❌ Yo'q
+                      </span>
                     )}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
@@ -380,22 +987,24 @@ export default function MoviesPage() {
                           Yuklanmoqda...
                         </span>
                       ) : (
-                        <button 
-                          onClick={() => openVideoModal(m.id)} 
+                        <button
+                          onClick={() => openVideoModal(m.id)}
                           className="text-xs font-bold bg-tertiary-container/20 text-tertiary hover:bg-tertiary-container/40 border border-tertiary-container/40 px-3 py-1.5 rounded-lg transition-all min-h-[32px] inline-flex items-center gap-1"
                         >
-                          <span className="material-symbols-outlined text-[16px]">upload</span>
+                          <span className="material-symbols-outlined text-[16px]">
+                            upload
+                          </span>
                           Video
                         </button>
                       )}
-                      <button 
-                        onClick={() => handleEdit(m)} 
+                      <button
+                        onClick={() => handleEdit(m)}
                         className="text-xs bg-white/5 border border-white/10 hover:bg-white/15 text-text-primary px-3 py-1.5 rounded-lg transition-colors min-h-[32px]"
                       >
                         Tahrirlash
                       </button>
-                      <button 
-                        onClick={() => handleDelete(m.id)} 
+                      <button
+                        onClick={() => handleDelete(m.id)}
                         className="text-xs bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors min-h-[32px]"
                       >
                         O'chirish
@@ -406,7 +1015,12 @@ export default function MoviesPage() {
               ))}
               {movies.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">Hech qanday kino topilmadi</td>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-text-secondary"
+                  >
+                    Hech qanday kino topilmadi
+                  </td>
                 </tr>
               )}
             </tbody>

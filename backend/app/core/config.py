@@ -58,6 +58,12 @@ class Settings(BaseSettings):
     # Internal secret for bot → backend API calls (POST /users/register, etc.)
     BOT_API_SECRET: str = ""
 
+    # ── Content Automation ───────────────────────────────────────────
+    TMDB_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    AUTO_TOPIC_CHAT_ID: int | None = None
+    AUTO_CONTENT_ENABLED: bool = True
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

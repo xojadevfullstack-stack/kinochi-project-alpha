@@ -15,6 +15,7 @@ class Movie(BaseModel):
     description: str | None = None
     imdb_rating: float | None = Field(None, ge=0, le=10)
     tmdb_rating: float | None = Field(None, ge=0, le=10)
+    tmdb_id: int | None = None
     kinochi_rating: float | None = None
     kinochi_votes_count: int = 0
     genres: str | None = None # Comma-separated string or list, keeping simple for now

@@ -250,5 +250,70 @@ class TelegramClient:
 
             return SendMessageResult(False, error="Failed after attempts", is_unreachable=False)
 
+    async def create_forum_topic(self, chat_id: int | str, name: str) -> int:
+        """
+        Telegram superguruhda yangi forum topic ochadi.
+        Qaytaradi: message_thread_id (int).
+        """
+        if not self.bot_token:
+            raise HTTPException(status_code=500, detail="Telegram BOT_TOKEN sozlanmagan.")
+
+        url = f"{self.base_url}/createForumTopic"
+        safe_name = name.strip()[:128]
+        payload = {"chat_id": chat_id, "name": safe_name}
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            try:
+                resp = await client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("ok"):
+                        return data["result"]["message_thread_id"]
+                    desc = data.get("description", "Noma'lum xato")
+                    raise HTTPException(status_code=400, detail=f"Topic ochib bo'lmadi: {desc}")
+                elif resp.status_code == 400:
+                    detail = resp.json().get("description", resp.text)
+                    if "not enough rights" in detail.lower():
+                        raise HTTPException(status_code=403, detail="Botda guruhda Topic ochish huquqi (Manage Topics) yo'q.")
+                    elif "not a forum" in detail.lower():
+                        raise HTTPException(status_code=400, detail="Guruhda Forum (Topics) funksiyasi yoqilmagan.")
+                    raise HTTPException(status_code=400, detail=f"Telegram xatosi: {detail}")
+                elif resp.status_code == 401:
+                    raise HTTPException(status_code=500, detail="Telegram BOT_TOKEN yaroqsiz (Unauthorized).")
+                else:
+                    raise HTTPException(status_code=resp.status_code, detail=f"Telegram API xatosi: {resp.text}")
+            except httpx.RequestError as e:
+                logger.error(f"Telegram create_forum_topic request error: {e}")
+                raise HTTPException(status_code=502, detail="Telegram API bilan bog'lanishda tarmoq xatosi.")
+
+    async def send_topic_message(
+        self, chat_id: int | str, message_thread_id: int, text: str, parse_mode: str = "HTML"
+    ) -> int:
+        """
+        Topic ichiga xabar yuboradi.
+        Qaytaradi: yuborilgan xabarning message_id si (0 agar xato bo'lsa).
+        """
+        if not self.bot_token:
+            return 0
+
+        url = f"{self.base_url}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "message_thread_id": message_thread_id,
+            "text": text,
+            "parse_mode": parse_mode,
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            try:
+                resp = await client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("ok"):
+                        return data["result"]["message_id"]
+                return 0
+            except Exception as e:
+                logger.warning(f"send_topic_message error: {e}")
+                return 0
+
 telegram_client = TelegramClient()
 

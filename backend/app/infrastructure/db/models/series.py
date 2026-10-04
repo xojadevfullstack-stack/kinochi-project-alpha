@@ -26,6 +26,7 @@ class SeriesModel(Base):
     status: Mapped[str] = mapped_column(String(50), server_default="ongoing", nullable=False)
     
     imdb_rating: Mapped[float | None] = mapped_column(Float)
+    tmdb_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
     kinochi_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     kinochi_votes_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
     release_year: Mapped[int | None] = mapped_column(Integer, index=True)
@@ -41,7 +42,10 @@ class SeriesModel(Base):
     )
 
     seasons: Mapped[list["SeasonModel"]] = relationship(
-        back_populates="series", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="series",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="SeasonModel.season_number",
     )
 
     categories: Mapped[list["CategoryModel"]] = relationship(
@@ -72,7 +76,10 @@ class SeasonModel(Base):
 
     series: Mapped["SeriesModel"] = relationship(back_populates="seasons")
     episodes: Mapped[list["EpisodeModel"]] = relationship(
-        back_populates="season", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="season",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="EpisodeModel.episode_number",
     )
 
 class EpisodeModel(Base):
