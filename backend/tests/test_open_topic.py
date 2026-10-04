@@ -25,6 +25,7 @@ async def test_open_movie_topic_success():
          patch("app.api.v1.movies.delete_cache_pattern", new_callable=AsyncMock):
 
         mock_srv = AsyncMock()
+        mock_srv.get_movie.return_value = mock_movie
         mock_srv.get_movie_by_id.return_value = mock_movie
         mock_srv.update_movie.return_value = mock_movie
         mock_create_topic.return_value = 555
@@ -60,6 +61,7 @@ async def test_open_movie_topic_already_existed():
     )
 
     mock_srv = AsyncMock()
+    mock_srv.get_movie.return_value = mock_movie
     mock_srv.get_movie_by_id.return_value = mock_movie
 
     from app.api.deps import get_movie_service

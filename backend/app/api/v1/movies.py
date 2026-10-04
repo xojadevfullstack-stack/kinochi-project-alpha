@@ -467,7 +467,7 @@ async def open_movie_topic(
     import html
     from app.core.config import settings
 
-    movie = await service.get_movie_by_id(movie_id)
+    movie = await service.get_movie(movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Kino topilmadi.")
 

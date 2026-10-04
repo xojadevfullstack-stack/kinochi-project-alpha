@@ -69,6 +69,9 @@ class MovieService:
     async def get_movie(self, movie_id: int) -> Movie | None:
         return await self.movie_repo.get_by_id(movie_id)
 
+    async def get_movie_by_id(self, movie_id: int) -> Movie | None:
+        return await self.movie_repo.get_by_id(movie_id)
+
     async def get_movie_by_code(self, code: str) -> Movie | None:
         return await self.movie_repo.get_by_code(code)
 
