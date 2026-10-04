@@ -28,6 +28,12 @@ async def search_content(
     admin: dict = Depends(get_current_admin),
 ) -> list[dict[str, Any]]:
     """Search for movies or TV series on TMDb."""
+    if not tmdb_client.api_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="TMDb API kaliti serverda sozlanmagan (backend/.env faylida TMDB_API_KEY ko'rsatilib, backend qayta ishga tushirilishi kerak).",
+        )
+
     search_query = (q or query or "").strip()
     if not search_query:
         return []
@@ -47,6 +53,12 @@ async def get_content_details(
     admin: dict = Depends(get_current_admin),
 ) -> dict[str, Any]:
     """Fetch complete metadata for a movie or series from TMDb, with Uzbek translation."""
+    if not tmdb_client.api_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="TMDb API kaliti serverda sozlanmagan (backend/.env faylida TMDB_API_KEY ko'rsatilishi kerak).",
+        )
+
     ctype = "tv" if content_type in ("tv", "series") else "movie"
     details = await tmdb_client.get_details(tmdb_id=tmdb_id, content_type=ctype)
     if not details:

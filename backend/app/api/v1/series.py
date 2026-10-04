@@ -637,6 +637,12 @@ async def open_series_topic(
     if not series:
         raise HTTPException(status_code=404, detail="Serial topilmadi.")
 
+    def _make_source_link(cid: int | None, tid: int | None) -> str | None:
+        if not cid:
+            return None
+        c_str = str(cid).replace("-100", "")
+        return f"https://t.me/c/{c_str}/{tid}" if tid else f"https://t.me/c/{c_str}"
+
     # Idempotent check
     if series.source_id and getattr(series, "source", None):
         return {
@@ -645,6 +651,7 @@ async def open_series_topic(
             "source_id": series.source_id,
             "chat_id": series.source.chat_id,
             "topic_id": series.source.topic_id,
+            "source_link": _make_source_link(series.source.chat_id, series.source.topic_id),
             "message": "Bu serial uchun Topic allaqachon mavjud.",
         }
 
@@ -693,6 +700,7 @@ async def open_series_topic(
         "source_id": source.id,
         "chat_id": target_chat_id,
         "topic_id": thread_id,
+        "source_link": _make_source_link(int(target_chat_id), thread_id),
         "message": "Topic muvaffaqiyatli ochildi va serialga ulandi.",
     }
 

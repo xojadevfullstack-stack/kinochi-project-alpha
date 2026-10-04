@@ -172,7 +172,11 @@ export default function MoviesPage() {
           tmdb_id: details.tmdb_id || movieItem.id,
           poster_url: details.poster_url || prev.poster_url,
           trailer_url: details.trailer_url || prev.trailer_url,
-          genres: details.genres ? details.genres.join(", ") : prev.genres,
+          genres: details.genres
+            ? Array.isArray(details.genres)
+              ? details.genres.join(", ")
+              : String(details.genres)
+            : prev.genres,
           director: details.director || prev.director,
           cast: details.cast || prev.cast,
           release_year: details.release_year || prev.release_year,
@@ -390,6 +394,22 @@ export default function MoviesPage() {
           <button
             onClick={() => setSuccessMsg(null)}
             className="text-emerald-400 hover:text-emerald-200 p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Error Notification */}
+      {errorMsg && (
+        <div className="mb-6 p-4 bg-red-500/15 border border-red-500/30 rounded-2xl text-xs sm:text-sm text-red-300 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-red-400">error</span>
+            <span>{errorMsg}</span>
+          </div>
+          <button
+            onClick={() => setErrorMsg(null)}
+            className="text-red-400 hover:text-red-200 p-1"
           >
             ✕
           </button>

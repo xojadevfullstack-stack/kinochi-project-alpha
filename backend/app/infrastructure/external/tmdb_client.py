@@ -16,24 +16,32 @@ TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
 
 class TMDbClient:
     def __init__(self, api_key: str | None = None):
-        self.api_key = (api_key or settings.TMDB_API_KEY).strip()
+        self._api_key = api_key
+
+    @property
+    def api_key(self) -> str:
+        if self._api_key is not None:
+            return self._api_key.strip()
+        return (settings.TMDB_API_KEY or "").strip()
 
     def _get_headers_and_params(self) -> tuple[dict[str, str], dict[str, str]]:
         headers = {"Accept": "application/json"}
         params: dict[str, str] = {}
-        if not self.api_key:
+        key = self.api_key
+        if not key:
             return headers, params
 
-        if self.api_key.startswith("ey") or len(self.api_key) > 50:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+        if key.startswith("ey") or len(key) > 50:
+            headers["Authorization"] = f"Bearer {key}"
         else:
-            params["api_key"] = self.api_key
+            params["api_key"] = key
         return headers, params
 
     async def search(self, query: str, content_type: str = "movie") -> list[dict[str, Any]]:
         """
         Search for movies or TV shows on TMDb.
         content_type: 'movie' or 'tv'
+        Supports both title keywords and direct TMDb numeric IDs.
         """
         if not self.api_key:
             logger.warning("TMDB_API_KEY is not configured.")
@@ -49,6 +57,30 @@ class TMDbClient:
         if cached:
             return cached
 
+        items: list[dict[str, Any]] = []
+        seen_ids: set[int] = set()
+
+        # If query is purely numeric, first check direct TMDb ID lookup
+        if clean_query.isdigit():
+            try:
+                direct_id = int(clean_query)
+                direct_data = await self.get_details(direct_id, content_type=endpoint_type)
+                if direct_data:
+                    items.append({
+                        "id": direct_data["tmdb_id"],
+                        "tmdb_id": direct_data["tmdb_id"],
+                        "content_type": direct_data["content_type"],
+                        "title": direct_data["title"],
+                        "original_title": direct_data.get("original_title"),
+                        "release_year": direct_data.get("release_year"),
+                        "poster_url": direct_data.get("poster_url"),
+                        "overview": direct_data.get("overview") or "",
+                        "vote_average": direct_data.get("tmdb_rating") or 0.0,
+                    })
+                    seen_ids.add(direct_id)
+            except Exception as e:
+                logger.warning(f"Direct TMDb ID search failed for {clean_query}: {e}")
+
         headers, base_params = self._get_headers_and_params()
         params = {**base_params, "query": clean_query, "language": "ru-RU"}
 
@@ -57,11 +89,12 @@ class TMDbClient:
                 resp = await client.get(f"{TMDB_BASE_URL}/search/{endpoint_type}", headers=headers, params=params)
                 if resp.status_code != 200:
                     logger.error(f"TMDb search failed ({resp.status_code}): {resp.text}")
-                    return []
-                data = resp.json()
+                    data = {"results": []}
+                else:
+                    data = resp.json()
             except Exception as e:
                 logger.error(f"TMDb search request error: {e}")
-                return []
+                data = {"results": []}
 
         results = data.get("results", [])
         # If no results found in Russian, try international/English search
@@ -75,8 +108,12 @@ class TMDbClient:
                 except Exception as e:
                     logger.error(f"TMDb search fallback request error: {e}")
 
-        items = []
         for item in results:
+            item_id = item["id"]
+            if item_id in seen_ids:
+                continue
+            seen_ids.add(item_id)
+
             title = item.get("title") if endpoint_type == "movie" else item.get("name")
             orig_title = item.get("original_title") if endpoint_type == "movie" else item.get("original_name")
             release_date = item.get("release_date") if endpoint_type == "movie" else item.get("first_air_date")
@@ -88,8 +125,8 @@ class TMDbClient:
             poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
 
             items.append({
-                "id": item["id"],
-                "tmdb_id": item["id"],
+                "id": item_id,
+                "tmdb_id": item_id,
                 "content_type": "series" if endpoint_type == "tv" else "movie",
                 "title": title or orig_title or "Noma'lum",
                 "original_title": orig_title,
@@ -99,8 +136,9 @@ class TMDbClient:
                 "vote_average": round(item.get("vote_average", 0.0), 1),
             })
 
-        # Cache search result for 1 hour (3600 seconds)
-        await set_cache(cache_key, items, ttl_seconds=3600)
+        # Cache only when results are found (do not cache empty transient failures)
+        if items:
+            await set_cache(cache_key, items, ttl_seconds=3600)
         return items
 
     async def get_details(self, tmdb_id: int, content_type: str = "movie") -> dict[str, Any] | None:

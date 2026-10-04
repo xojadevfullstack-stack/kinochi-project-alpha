@@ -376,6 +376,22 @@ export default function SeriesListPage() {
         </div>
       )}
 
+      {/* Error Notification */}
+      {errorMsg && (
+        <div className="mb-6 p-4 bg-red-500/15 border border-red-500/30 rounded-2xl text-xs sm:text-sm text-red-300 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-red-400">error</span>
+            <span>{errorMsg}</span>
+          </div>
+          <button
+            onClick={() => setErrorMsg(null)}
+            className="text-red-400 hover:text-red-200 p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Form Card */}
       <div className="metric-card p-4 sm:p-6 rounded-2xl mb-8">
         <h2 className="text-lg sm:text-xl font-semibold mb-4 text-text-primary flex items-center gap-2">
