@@ -242,6 +242,7 @@ class TMDbClient:
             "release_year": year,
             "runtime": runtime,
             "tmdb_rating": tmdb_rating,
+            "vote_average": tmdb_rating,
             "poster_url": poster_url,
             "trailer_url": trailer_url,
             "director": director_str,

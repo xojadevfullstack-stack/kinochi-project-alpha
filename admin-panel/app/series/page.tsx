@@ -181,9 +181,12 @@ export default function SeriesListPage() {
           director: details.director || prev.director,
           cast: details.cast || prev.cast,
           release_year: details.release_year || prev.release_year,
-          imdb_rating: details.vote_average
-            ? Math.round(details.vote_average * 10) / 10
-            : prev.imdb_rating,
+          imdb_rating:
+            details.tmdb_rating ??
+            details.vote_average ??
+            (tvItem.vote_average
+              ? Math.round(tvItem.vote_average * 10) / 10
+              : prev.imdb_rating),
           category_ids: Array.from(
             new Set([...prev.category_ids, ...matchedCategoryIds])
           ),

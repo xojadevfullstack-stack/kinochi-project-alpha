@@ -182,9 +182,12 @@ export default function MoviesPage() {
           release_year: details.release_year || prev.release_year,
           duration_minutes:
             details.runtime || details.duration_minutes || prev.duration_minutes,
-          imdb_rating: details.vote_average
-            ? Math.round(details.vote_average * 10) / 10
-            : prev.imdb_rating,
+          imdb_rating:
+            details.tmdb_rating ??
+            details.vote_average ??
+            (movieItem.vote_average
+              ? Math.round(movieItem.vote_average * 10) / 10
+              : prev.imdb_rating),
           category_ids: Array.from(
             new Set([...prev.category_ids, ...matchedCategoryIds])
           ),
