@@ -497,19 +497,34 @@ class TelethonModeratorPipeline:
                 # Bot tugmasini bosish
                 click_id = card_msg.id
                 await card_msg.click(target_r_idx, target_c_idx)
+                await asyncio.sleep(1.2)
 
-                # Video yoki sifat menyusini tezkor poller bilan kutish (0.35s)
-                def is_ep_or_quality(msgs):
-                    for nm in msgs:
-                        if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
-                            return True
-                        if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
-                            return True
-                    return False
-
-                ep_reply_msgs = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, interval=0.35, condition=is_ep_or_quality)
                 ep_video_msg = None
                 quality_msg = None
+
+                # 1. Asilmedia bot xabarni joyida (in-place) yangilab sifat tugmalarini chiqarishini tekshirish
+                try:
+                    refreshed_card = await self.client.get_messages(target_bot, ids=card_msg.id)
+                    if refreshed_card and refreshed_card.buttons and any(b for row in refreshed_card.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
+                        quality_msg = refreshed_card
+                        card_msg = refreshed_card
+                        logger.info(f"ℹ️ Sifat tugmalari in-place kartada topildi: {[b.text for r in quality_msg.buttons for b in r]}")
+                except Exception as ref_err:
+                    logger.debug(f"Card message yangilanishini tekshirishda xatolik: {ref_err}")
+
+                # 2. Agar in-place yangilanmagan bo'lsa, yangi xabarlardan video yoki sifat menyusini kutish
+                if not quality_msg:
+                    def is_ep_or_quality(msgs):
+                        for nm in msgs:
+                            if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
+                                return True
+                            if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
+                                return True
+                        return False
+
+                    ep_reply_msgs = await poll_new_messages(self.client, target_bot, click_id, timeout=6.0, interval=0.35, condition=is_ep_or_quality)
+                else:
+                    ep_reply_msgs = []
 
                 for nm in ep_reply_msgs:
                     if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
@@ -631,6 +646,21 @@ class TelethonModeratorPipeline:
 
                 uploaded_count += 1
                 logger.info(f"✅ {ep_num}-qism to'liq yuklandi va bazaga bog'landi! (Storage Msg: {storage_msg.id})")
+
+                # Keyingi qism uchun qismlar ro'yxatiga qaytish (⬅️ Qismlar tugmasi)
+                try:
+                    latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
+                    if latest_card and latest_card.buttons:
+                        for b_r, b_row in enumerate(latest_card.buttons):
+                            for b_c, b_btn in enumerate(b_row):
+                                if "qismlar" in b_btn.text.lower() or "orqaga" in b_btn.text.lower():
+                                    logger.info("⬅️ Keyingi qism uchun qismlar ro'yxatiga qaytilmoqda...")
+                                    await latest_card.click(b_r, b_c)
+                                    await asyncio.sleep(1.0)
+                                    card_msg = await self.client.get_messages(target_bot, ids=card_msg.id)
+                                    break
+                except Exception as b_err:
+                    pass
 
                 # Telegram FloodWait dan saqlanish uchun xavfsiz qisqa tanaffus
                 await asyncio.sleep(1.0)
