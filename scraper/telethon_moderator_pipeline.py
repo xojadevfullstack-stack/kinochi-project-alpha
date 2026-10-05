@@ -451,13 +451,52 @@ class TelethonModeratorPipeline:
                 logger.info(f"⏭ {ep_num}-qism allaqachon mavjud, o'tkazib yuborildi.")
                 continue
 
-            r_idx, c_idx, btn_name = episodes_map[ep_num]
+            # Avval card_msg holatini tekshiramiz: agar hozir sifat menyusi yoki "⬅️ Qismlar" ko'rinayotgan bo'lsa, qismlar ro'yxatiga qaytamiz
+            try:
+                latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
+                if latest_card and latest_card.buttons:
+                    went_back = False
+                    for b_r, b_row in enumerate(latest_card.buttons):
+                        for b_c, b in enumerate(b_row):
+                            if "qismlar" in b.text.lower() or "ortga" in b.text.lower() or "back" in b.text.lower():
+                                await latest_card.click(b_r, b_c)
+                                await asyncio.sleep(1.2)
+                                went_back = True
+                                break
+                        if went_back:
+                            break
+                    if went_back:
+                        latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
+                    card_msg = latest_card
+            except Exception as e:
+                logger.debug(f"Qismlar ro'yxatiga qaytishda xatolik: {e}")
+
+            # ep_num tugmasini joriy menyudan dinamik aniqlaymiz
+            target_r_idx, target_c_idx = None, None
+            btn_name = str(ep_num)
+            for row_idx, row in enumerate(card_msg.buttons or []):
+                for col_idx, btn in enumerate(row):
+                    t = btn.text.strip()
+                    if t == str(ep_num) or t.startswith(f"{ep_num}-") or t.startswith(f"{ep_num} "):
+                        target_r_idx, target_c_idx, btn_name = row_idx, col_idx, btn.text
+                        break
+                if target_r_idx is not None:
+                    break
+
+            if target_r_idx is None:
+                # Agar dinamik topilmasa, boshlang'ich xaritadan olamiz
+                if ep_num in episodes_map:
+                    target_r_idx, target_c_idx, btn_name = episodes_map[ep_num]
+                else:
+                    logger.warning(f"⚠️ {ep_num}-qism tugmasi topilmadi, o'tkazib yuborildi.")
+                    continue
+
             logger.info(f"\n--- 📺 {ep_num}-qism yuklanmoqda ({btn_name}) [{uploaded_count + 1}/{total_episodes}] ---")
 
             try:
                 # Bot tugmasini bosish
                 click_id = card_msg.id
-                await card_msg.click(r_idx, c_idx)
+                await card_msg.click(target_r_idx, target_c_idx)
 
                 # Video yoki sifat menyusini tezkor poller bilan kutish (0.35s)
                 def is_ep_or_quality(msgs):
