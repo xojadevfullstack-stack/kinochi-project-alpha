@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useTransition } from "react";
 import { fetchApi } from "@/lib/api";
 
 interface ProgressData {
@@ -20,11 +20,11 @@ interface ScraperStatus {
   task_type: string;
   current_action: string;
   current_item: { title?: string; code?: string } | null;
-  progress: ProgressData;
+  progress?: ProgressData;
   started_at: string | null;
   elapsed_seconds: number;
-  logs: LogEntry[];
-  stats: {
+  logs?: LogEntry[];
+  stats?: {
     total: number;
     pending: number;
     completed: number;
@@ -50,13 +50,14 @@ interface QueueItem {
 }
 
 export default function ScraperPage() {
-  // Real-time Status state
+  // ── Status State ──────────────────────────────────────────
   const [status, setStatus] = useState<ScraperStatus | null>(null);
   const [isPolling, setIsPolling] = useState(true);
   const [autoScrollLogs, setAutoScrollLogs] = useState(true);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const terminalLogsBoxRef = useRef<HTMLDivElement>(null);
 
-  // Queue state
+  // ── Queue State ───────────────────────────────────────────
   const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [queuePage, setQueuePage] = useState(1);
@@ -66,7 +67,7 @@ export default function ScraperPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingQueue, setLoadingQueue] = useState(false);
 
-  // Forms state
+  // ── Action / Form States ──────────────────────────────────
   const [parseSource, setParseSource] = useState("uzmovi");
   const [parsePages, setParsePages] = useState(3);
   const [downloadTarget, setDownloadTarget] = useState("uzmovi");
@@ -74,36 +75,35 @@ export default function ScraperPage() {
   const [downloadCodes, setDownloadCodes] = useState("");
   const [downloadMediaType, setDownloadMediaType] = useState("all");
 
-  // Action busy states
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  // Active Control Tab
   const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "tools">("grabber");
 
-  const [statusError, setStatusError] = useState<string | null>(null);
+  // Trackers to prevent stale async responses
   const queueReqId = useRef(0);
   const statusInFlight = useRef(false);
   const wasRunning = useRef(false);
 
-  // ── Fetch Status periodically ────────────────────────────
+  // ── Fetch Status ──────────────────────────────────────────
   const fetchStatus = async () => {
-    if (statusInFlight.current) return; // never stack requests on a slow backend
+    if (statusInFlight.current) return;
     statusInFlight.current = true;
     try {
       const data = await fetchApi("/scraper/status");
       setStatus(data);
       setStatusError(null);
     } catch (err: any) {
+      // Do not spam loud error if it's transient
+      console.warn("Status fetch warning:", err?.message);
       setStatusError(err?.message || "Statusni olib bo'lmadi");
     } finally {
       statusInFlight.current = false;
     }
   };
 
-  // ── Fetch Queue Items ────────────────────────────────────
+  // ── Fetch Queue Items ─────────────────────────────────────
   const fetchQueue = async (page = queuePage) => {
-    const reqId = ++queueReqId.current; // only the latest request may update the UI
+    const reqId = ++queueReqId.current;
     setLoadingQueue(true);
     try {
       const queryParams = new URLSearchParams({
@@ -118,7 +118,6 @@ export default function ScraperPage() {
       const data = await fetchApi(`/scraper/queue?${queryParams.toString()}`);
       if (reqId !== queueReqId.current) return;
 
-      // Page vanished (e.g. last item on it was deleted) -> go back one page
       if ((data.items || []).length === 0 && page > 1 && data.total_pages < page) {
         fetchQueue(Math.max(1, data.total_pages));
         return;
@@ -128,63 +127,73 @@ export default function ScraperPage() {
       setQueuePage(data.page || 1);
       setQueueTotalPages(data.total_pages || 1);
     } catch (err: any) {
-      if (reqId === queueReqId.current) console.error("Queue fetch error:", err);
+      if (reqId === queueReqId.current) {
+        console.error("Queue fetch error:", err);
+      }
     } finally {
-      if (reqId === queueReqId.current) setLoadingQueue(false);
+      if (reqId === queueReqId.current) {
+        setLoadingQueue(false);
+      }
     }
   };
 
   // Initial load
   useEffect(() => {
     fetchStatus();
+    fetchQueue(1);
   }, []);
 
-  // Status polling (2s) — only toggles the interval, doesn't reload the queue
+  // Status Polling (2 seconds)
   useEffect(() => {
     if (!isPolling) return;
     const interval = setInterval(fetchStatus, 2000);
     return () => clearInterval(interval);
   }, [isPolling]);
 
-  // Refresh queue while a job is running (every 4s)
+  // Queue Polling while process is running (every 4 seconds)
   useEffect(() => {
     if (!status?.is_running) return;
     const qInterval = setInterval(() => fetchQueue(queuePage), 4000);
     return () => clearInterval(qInterval);
   }, [status?.is_running, queuePage, statusFilter, sourceFilter, searchQuery]);
 
-  // One final queue refresh the moment a job finishes
+  // Refresh queue when job completes
   useEffect(() => {
     const running = !!status?.is_running;
-    if (wasRunning.current && !running) fetchQueue(queuePage);
+    if (wasRunning.current && !running) {
+      fetchQueue(queuePage);
+    }
     wasRunning.current = running;
   }, [status?.is_running]);
 
-  // Filters change (also covers the initial queue load)
+  // Search Debounce (350ms)
   useEffect(() => {
-    fetchQueue(1);
-  }, [statusFilter, sourceFilter]);
+    const timer = setTimeout(() => {
+      fetchQueue(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery, statusFilter, sourceFilter]);
 
-  // Auto-scroll terminal
+  // Terminal Auto-scroll (Without jumping entire window)
   useEffect(() => {
-    if (autoScrollLogs && terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (autoScrollLogs && terminalLogsBoxRef.current) {
+      terminalLogsBoxRef.current.scrollTop = terminalLogsBoxRef.current.scrollHeight;
     }
   }, [status?.logs, autoScrollLogs]);
 
-  // Format elapsed time
+  // Format elapsed time (MM:SS)
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // ── Handlers ─────────────────────────────────────────────
   const showToast = (type: "success" | "error", text: string) => {
     setActionMsg({ type, text });
-    setTimeout(() => setActionMsg(null), 5000);
+    setTimeout(() => setActionMsg(null), 4500);
   };
 
+  // ── Handlers ──────────────────────────────────────────────
   const handleStartParse = async () => {
     setActionLoading(true);
     try {
@@ -192,7 +201,7 @@ export default function ScraperPage() {
         method: "POST",
         body: JSON.stringify({
           source: parseSource,
-          pages: Number(parsePages),
+          pages: Math.max(1, Number(parsePages) || 1),
         }),
       });
       showToast("success", res.message || "Katalog yig'ish boshlandi!");
@@ -211,7 +220,7 @@ export default function ScraperPage() {
         method: "POST",
         body: JSON.stringify({
           target: downloadTarget,
-          limit: Number(downloadLimit),
+          limit: Math.max(1, Number(downloadLimit) || 1),
           codes: downloadCodes.trim() || null,
           media_type: downloadMediaType,
         }),
@@ -222,6 +231,20 @@ export default function ScraperPage() {
       showToast("error", e.message || "Xatolik yuz berdi");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleGrabSingleItem = async (itemId: string, itemTitle: string) => {
+    if (status?.is_running) {
+      showToast("error", "Boshqa jarayon allaqachon ishlayapti. Avval uni kuting yoki to'xtating.");
+      return;
+    }
+    try {
+      const res = await fetchApi(`/scraper/queue/${itemId}/grab-now`, { method: "POST" });
+      showToast("success", res.message || `'${itemTitle}' yuklash boshlandi!`);
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Yuklab bo'lmadi");
     }
   };
 
@@ -260,7 +283,7 @@ export default function ScraperPage() {
   const handleRetryItem = async (id: string) => {
     try {
       await fetchApi(`/scraper/queue/${id}/retry`, { method: "POST" });
-      showToast("success", `${id} qayta navbatga qo'yildi`);
+      showToast("success", "Element qayta navbatga qo'yildi");
       fetchQueue(queuePage);
       fetchStatus();
     } catch (e: any) {
@@ -272,7 +295,7 @@ export default function ScraperPage() {
     if (!confirm(`Ushbu element navbatdan o'chirilsinmi? (${id})`)) return;
     try {
       await fetchApi(`/scraper/queue/${id}`, { method: "DELETE" });
-      showToast("success", `${id} navbatdan o'chirildi`);
+      showToast("success", "Element navbatdan o'chirildi");
       fetchQueue(queuePage);
       fetchStatus();
     } catch (e: any) {
@@ -293,7 +316,7 @@ export default function ScraperPage() {
   };
 
   const handleClearByStatus = async (st: string) => {
-    if (!confirm(`Barcha '${st}' statusidagi elementlar navbatdan butunlay o'chirilsinmi?`)) return;
+    if (!confirm(`Barcha '${st}' statusidagi elementlar navbatdan o'chirilsinmi?`)) return;
     try {
       const res = await fetchApi("/scraper/queue/clear-by-status", {
         method: "POST",
@@ -308,7 +331,7 @@ export default function ScraperPage() {
   };
 
   const stats = status?.stats || {
-    total: 0,
+    total: queueTotal || 0,
     pending: 0,
     completed: 0,
     already_exists: 0,
@@ -316,11 +339,12 @@ export default function ScraperPage() {
     in_progress: 0,
   };
 
-  const isRunning = status?.is_running ?? false;
+  const isRunning = Boolean(status?.is_running);
+  const currentPercentage = Math.min(100, Math.max(0, status?.progress?.percentage ?? 0));
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Toast Notification */}
+      {/* Toast Alert */}
       {actionMsg && (
         <div
           className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm font-medium transition-all ${
@@ -336,7 +360,7 @@ export default function ScraperPage() {
         </div>
       )}
 
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-5">
         <div>
           <div className="flex items-center gap-3">
@@ -359,7 +383,7 @@ export default function ScraperPage() {
                 )}
               </h1>
               <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-                Saytlardan avtomatlashtirilgan katalog yig'ish, Telegram botlardan videolarni grab qilish va jarayon monitoringi
+                Katalog yig'ish, Telegram botlardan videolarni yuklash va to'liq jonli monitoring
               </p>
             </div>
           </div>
@@ -374,10 +398,10 @@ export default function ScraperPage() {
                 ? "bg-white/5 border-white/10 text-emerald-400 hover:bg-white/10"
                 : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10"
             }`}
-            title={isPolling ? "Avtomatik yangilanishni to'xtatish" : "Avtomatik yangilanishni yoqish"}
+            title={isPolling ? "Avto-yangilanishni to'xtatish" : "Avto-yangilanishni yoqish"}
           >
             <span className={`material-symbols-outlined text-sm ${isPolling ? "animate-spin" : ""}`}>sync</span>
-            <span>{isPolling ? "Avto-yangilanish: Faol (2s)" : "Avto-yangilanish: To'xtatilgan"}</span>
+            <span>{isPolling ? "Jonli Kuzatuv (2s)" : "Kuzatuv To'xtatilgan"}</span>
           </button>
 
           <button
@@ -393,27 +417,21 @@ export default function ScraperPage() {
         </div>
       </div>
 
-      {statusError && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl px-4 py-3 text-sm flex items-start gap-3">
-          <span className="material-symbols-outlined text-xl shrink-0">warning</span>
-          <div>
-            <p className="font-semibold">Scraper holatini olib bo'lmadi</p>
-            <p className="text-xs text-red-300/80 mt-0.5">{statusError}</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── 1. ACTIVE PROCESS MONITOR (KATTA VIZUAL PANEL) ─────────── */}
+      {/* ── 1. REAL-TIME MISSION CONTROL ───────────────────────────── */}
       <div className="bg-surface-container-lowest/80 border border-white/10 rounded-2xl p-5 sm:p-6 backdrop-blur-md relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary-container/10 rounded-full blur-3xl pointer-events-none -z-0" />
 
         <div className="relative z-10 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className={`p-2.5 rounded-xl flex items-center justify-center ${
-                isRunning ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 text-zinc-400 border border-white/10"
-              }`}>
-                <span className={`material-symbols-outlined text-2xl ${isRunning ? "animate-pulse" : ""}`}>
+              <span
+                className={`p-2.5 rounded-xl flex items-center justify-center ${
+                  isRunning
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    : "bg-white/5 text-zinc-400 border border-white/10"
+                }`}
+              >
+                <span className={`material-symbols-outlined text-2xl ${isRunning ? "animate-spin" : ""}`}>
                   {isRunning ? "hourglass_top" : "check_circle"}
                 </span>
               </span>
@@ -424,7 +442,7 @@ export default function ScraperPage() {
                 <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                   {isRunning ? (
                     <>
-                      <span className="capitalize">{status?.task_type}</span> vazifasi bajarilmoqda
+                      <span className="capitalize">{status?.task_type || "Jarayon"}</span> vazifasi bajarilmoqda
                     </>
                   ) : (
                     "Tizim hozir kutish rejimida"
@@ -433,9 +451,9 @@ export default function ScraperPage() {
               </div>
             </div>
 
-            {/* Time and Stop Button */}
+            {/* Time & Stop Button */}
             <div className="flex items-center gap-3">
-              {status?.started_at && (
+              {isRunning && status?.elapsed_seconds !== undefined && (
                 <div className="px-3 py-1.5 rounded-lg bg-black/40 border border-white/5 text-xs text-zinc-300 font-mono flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm text-zinc-400">timer</span>
                   <span>{formatTime(status.elapsed_seconds)}</span>
@@ -458,7 +476,11 @@ export default function ScraperPage() {
           <div className="bg-black/40 border border-white/10 rounded-xl p-4 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isRunning ? "bg-emerald-400 animate-ping" : "bg-zinc-500"
+                  }`}
+                ></span>
                 <span className="text-xs text-text-secondary uppercase tracking-wider font-semibold">
                   Ayni damda bajarilayotgan amal:
                 </span>
@@ -480,7 +502,9 @@ export default function ScraperPage() {
               <span className="material-symbols-outlined text-primary-container shrink-0 text-xl">
                 {isRunning ? "arrow_forward" : "task_alt"}
               </span>
-              <p className="truncate">{status?.current_action || "Hozirda hech qanday fon vazifasi bajarilmayapti."}</p>
+              <p className="truncate">
+                {status?.current_action || "Hozirda hech qanday fon vazifasi bajarilmayapti."}
+              </p>
             </div>
 
             {/* Progress Bar ("Qanchalik tugatdan") */}
@@ -488,20 +512,26 @@ export default function ScraperPage() {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-text-secondary">
                   Jarayon bajarilishi:{" "}
-                  <strong className="text-white">
-                    {status?.progress.current ?? 0} / {status?.progress.total ?? 0}
-                  </strong>
+                  {isRunning && (status?.progress?.total ?? 0) > 0 ? (
+                    <strong className="text-white">
+                      {status?.progress?.current ?? 0} / {status?.progress?.total ?? 0} ta
+                    </strong>
+                  ) : isRunning ? (
+                    <span className="text-zinc-400">Davom etmoqda...</span>
+                  ) : (
+                    <span className="text-zinc-500">Tayyor</span>
+                  )}
                 </span>
                 <span className="font-mono font-bold text-primary-container">
-                  {status?.progress.percentage ?? 0}%
+                  {isRunning ? `${currentPercentage}%` : "100%"}
                 </span>
               </div>
               <div className="w-full h-3 bg-white/5 border border-white/10 rounded-full overflow-hidden p-0.5">
                 <div
                   className="h-full bg-gradient-to-r from-red-600 via-primary-container to-amber-500 rounded-full transition-all duration-500 relative"
-                  style={{ width: `${Math.min(100, Math.max(0, status?.progress.percentage ?? 0))}%` }}
+                  style={{ width: `${isRunning ? currentPercentage : 0}%` }}
                 >
-                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
+                  {isRunning && <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />}
                 </div>
               </div>
             </div>
@@ -509,10 +539,10 @@ export default function ScraperPage() {
         </div>
       </div>
 
-      {/* ── 2. STATISTICAL METRICS OVERVIEW (6 KARTALAR) ───────────── */}
+      {/* ── 2. METRICS OVERVIEW (6 CARDS) ──────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {/* Total */}
-        <div className="bg-surface-container-lowest/60 border border-white/5 p-4 rounded-xl flex flex-col justify-between">
+        <div className="bg-surface-container-lowest/60 border border-white/5 p-4 rounded-xl flex flex-col justify-between hover:border-white/10 transition-colors">
           <div className="flex items-center justify-between text-text-secondary">
             <span className="text-xs font-semibold uppercase tracking-wider">Jami Navbat</span>
             <span className="material-symbols-outlined text-lg">format_list_bulleted</span>
@@ -521,7 +551,7 @@ export default function ScraperPage() {
         </div>
 
         {/* Pending */}
-        <div className="bg-surface-container-lowest/60 border border-amber-500/20 p-4 rounded-xl flex flex-col justify-between">
+        <div className="bg-surface-container-lowest/60 border border-amber-500/20 p-4 rounded-xl flex flex-col justify-between hover:border-amber-500/40 transition-colors">
           <div className="flex items-center justify-between text-amber-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Kutilmoqda</span>
             <span className="material-symbols-outlined text-lg">pending_actions</span>
@@ -530,7 +560,7 @@ export default function ScraperPage() {
         </div>
 
         {/* Completed */}
-        <div className="bg-surface-container-lowest/60 border border-emerald-500/20 p-4 rounded-xl flex flex-col justify-between">
+        <div className="bg-surface-container-lowest/60 border border-emerald-500/20 p-4 rounded-xl flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
           <div className="flex items-center justify-between text-emerald-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Bajarildi</span>
             <span className="material-symbols-outlined text-lg">check_circle</span>
@@ -539,7 +569,7 @@ export default function ScraperPage() {
         </div>
 
         {/* Already exists */}
-        <div className="bg-surface-container-lowest/60 border border-sky-500/20 p-4 rounded-xl flex flex-col justify-between">
+        <div className="bg-surface-container-lowest/60 border border-sky-500/20 p-4 rounded-xl flex flex-col justify-between hover:border-sky-500/40 transition-colors">
           <div className="flex items-center justify-between text-sky-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Bazada Bor</span>
             <span className="material-symbols-outlined text-lg">dataset_linked</span>
@@ -548,7 +578,7 @@ export default function ScraperPage() {
         </div>
 
         {/* Failed */}
-        <div className="bg-surface-container-lowest/60 border border-red-500/20 p-4 rounded-xl flex flex-col justify-between">
+        <div className="bg-surface-container-lowest/60 border border-red-500/20 p-4 rounded-xl flex flex-col justify-between hover:border-red-500/40 transition-colors">
           <div className="flex items-center justify-between text-red-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Xatolik</span>
             <span className="material-symbols-outlined text-lg">error</span>
@@ -557,7 +587,7 @@ export default function ScraperPage() {
         </div>
 
         {/* In progress */}
-        <div className="bg-surface-container-lowest/60 border border-primary-container/20 p-4 rounded-xl flex flex-col justify-between">
+        <div className="bg-surface-container-lowest/60 border border-primary-container/20 p-4 rounded-xl flex flex-col justify-between hover:border-primary-container/40 transition-colors">
           <div className="flex items-center justify-between text-primary-container">
             <span className="text-xs font-semibold uppercase tracking-wider">Yuklanmoqda</span>
             <span className="material-symbols-outlined text-lg">autorenew</span>
@@ -566,9 +596,9 @@ export default function ScraperPage() {
         </div>
       </div>
 
-      {/* ── 3. ACTIONS & LIVE LOGS (IKKI USTUNLI ZONA) ─────────────── */}
+      {/* ── 3. ACTIONS & LIVE CONSOLE TERMINAL ──────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Control Panel (5 columns) */}
+        {/* Left: Control Panel (5 cols) */}
         <div className="lg:col-span-5 bg-surface-container-lowest/60 border border-white/10 rounded-2xl p-5 flex flex-col space-y-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
@@ -603,12 +633,12 @@ export default function ScraperPage() {
             </div>
           </div>
 
-          {/* TAB 1: GRABBER (TELEGRAM BOTDAN YUKLASH) */}
+          {/* TAB 1: GRABBER */}
           {activeTab === "grabber" && (
             <div className="space-y-4 flex-1 flex flex-col justify-between">
               <div className="space-y-3">
                 <p className="text-xs text-text-secondary">
-                  Telegram botlaridan videolarni avtomatik qidirish, yuklab olish, kanalga joylash va saytga ulash.
+                  Telegram botlaridan videolarni qidirish, yuklash, kanalga joylash va saytga ulash.
                 </p>
 
                 {/* Target Bot */}
@@ -633,7 +663,7 @@ export default function ScraperPage() {
                       min={1}
                       max={100}
                       value={downloadLimit}
-                      onChange={(e) => setDownloadLimit(Number(e.target.value))}
+                      onChange={(e) => setDownloadLimit(Math.max(1, parseInt(e.target.value, 10) || 1))}
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary-container"
                     />
                   </div>
@@ -684,12 +714,12 @@ export default function ScraperPage() {
             </div>
           )}
 
-          {/* TAB 2: PARSER (SAYTDAN KATALOG YIG'ISH) */}
+          {/* TAB 2: PARSER */}
           {activeTab === "parser" && (
             <div className="space-y-4 flex-1 flex flex-col justify-between">
               <div className="space-y-3">
                 <p className="text-xs text-text-secondary">
-                  Saytlar katalogidan eng so'nggi film va seriallar ro'yxatini parallel ravishda yig'ish va navbatga qo'shish.
+                  Saytlar katalogidan eng so'nggi kinolarni parallel ravishda yig'ish va navbatga qo'shish.
                 </p>
 
                 {/* Source Selection */}
@@ -715,11 +745,11 @@ export default function ScraperPage() {
                     min={1}
                     max={20}
                     value={parsePages}
-                    onChange={(e) => setParsePages(Number(e.target.value))}
+                    onChange={(e) => setParsePages(Math.max(1, parseInt(e.target.value, 10) || 1))}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary-container"
                   />
                   <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                    Har bir sahifada ~10-15 ta film bo'ladi. Barchasi parallel va dublikatlardan tozalangan holda qo'shiladi.
+                    Har bir sahifada ~10-15 ta film bo'ladi. Dublikatlardan tozalangan holda saqlanadi.
                   </span>
                 </div>
               </div>
@@ -739,12 +769,12 @@ export default function ScraperPage() {
             </div>
           )}
 
-          {/* TAB 3: TOOLS & MAINTENANCE */}
+          {/* TAB 3: TOOLS */}
           {activeTab === "tools" && (
             <div className="space-y-3 flex-1 flex flex-col justify-between">
               <div className="space-y-2.5">
                 <p className="text-xs text-text-secondary mb-2">
-                  Navbatni optimallashtirish, xatolarni tozalash va dublikatlarni qayta tekshirish amallari.
+                  Navbatni tozalash, xatolarni tiklash va dublikatlarni qayta tekshirish amallari.
                 </p>
 
                 {/* Clean Duplicates */}
@@ -757,7 +787,7 @@ export default function ScraperPage() {
                     <span className="material-symbols-outlined text-sky-400 text-lg">find_replace</span>
                     <div>
                       <div className="font-bold text-white">Dublikatlarni tozalash</div>
-                      <div className="text-[11px] text-zinc-400">Navbatni bazadagi kinolar bilan qayta tekshiradi</div>
+                      <div className="text-[11px] text-zinc-400">Navbatni bazadagi kinolar bilan qayta solishtiradi</div>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
@@ -773,7 +803,7 @@ export default function ScraperPage() {
                     <span className="material-symbols-outlined text-amber-400 text-lg">replay</span>
                     <div>
                       <div className="font-bold text-white">Xatolarni qayta navbatga qo'yish</div>
-                      <div className="text-[11px] text-zinc-400">Barcha failed elementlarni pending holatiga o'tkazadi</div>
+                      <div className="text-[11px] text-zinc-400">Barcha failed elementlarni pending holatiga qaytaradi</div>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
@@ -789,7 +819,7 @@ export default function ScraperPage() {
                     <span className="material-symbols-outlined text-emerald-400 text-lg">mop</span>
                     <div>
                       <div className="font-bold text-white">Bajarilganlarni tozalash</div>
-                      <div className="text-[11px] text-zinc-400">Yuklab olingan elementlarni ro'yxatdan o'chiradi</div>
+                      <div className="text-[11px] text-zinc-400">Yuklab bo'lingan elementlarni ro'yxatdan o'chiradi</div>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
@@ -805,7 +835,7 @@ export default function ScraperPage() {
                     <span className="material-symbols-outlined text-zinc-400 text-lg">delete_sweep</span>
                     <div>
                       <div className="font-bold text-white">Bazada borlarni tozalash</div>
-                      <div className="text-[11px] text-zinc-400">Bazada allaqachon mavjud bo'lganlarni navbatdan olib tashlaydi</div>
+                      <div className="text-[11px] text-zinc-400">Bazada allaqachon mavjud bo'lganlarni olib tashlaydi</div>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
@@ -815,7 +845,7 @@ export default function ScraperPage() {
           )}
         </div>
 
-        {/* Right: Live Terminal Logs (7 columns) */}
+        {/* Right: Live Terminal Logs (7 cols) */}
         <div className="lg:col-span-7 bg-[#0b0f19] border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-2xl h-[420px]">
           {/* Terminal Top Bar */}
           <div className="bg-[#111726] px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
@@ -837,7 +867,7 @@ export default function ScraperPage() {
                     ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                     : "bg-white/5 border-white/10 text-zinc-400"
                 }`}
-                title="Skrollni doimo pastga ushlab turish"
+                title="Loglar kelganda oxiriga avtomatik tushish"
               >
                 Auto-scroll: {autoScrollLogs ? "ON" : "OFF"}
               </button>
@@ -851,8 +881,11 @@ export default function ScraperPage() {
             </div>
           </div>
 
-          {/* Terminal Content */}
-          <div className="flex-1 p-3 sm:p-4 font-mono text-xs overflow-y-auto space-y-1 select-text">
+          {/* Terminal Logs Content */}
+          <div
+            ref={terminalLogsBoxRef}
+            className="flex-1 p-3 sm:p-4 font-mono text-xs overflow-y-auto space-y-1 select-text scroll-smooth"
+          >
             {status?.logs && status.logs.length > 0 ? (
               status.logs.map((log, i) => {
                 let color = "text-zinc-300";
@@ -873,14 +906,13 @@ export default function ScraperPage() {
                 <span>Hozircha loglar mavjud emas. Jarayon boshlanganda barcha loglar jonli ko'rinadi.</span>
               </div>
             )}
-            <div ref={terminalEndRef} />
           </div>
         </div>
       </div>
 
-      {/* ── 4. QUEUE TABLE EXPLORER (NAVBAT RO'YXATI VA FILTRLAR) ───── */}
+      {/* ── 4. QUEUE EXPLORER TABLE ────────────────────────────────── */}
       <div className="bg-surface-container-lowest/60 border border-white/10 rounded-2xl p-5 space-y-4">
-        {/* Header & Controls */}
+        {/* Header & Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/5 pb-4">
           <div>
             <h2 className="text-base font-bold text-white flex items-center gap-2">
@@ -888,11 +920,11 @@ export default function ScraperPage() {
               Navbatdagi Filmlar va Seriallar ({queueTotal} ta)
             </h2>
             <p className="text-xs text-text-secondary mt-0.5">
-              Yuklanishi kutilayotgan, bajarilgan yoki tekshiruvdan o'tgan barcha elementlar
+              Yuklanishi kutilayotgan, bajarilgan yoki dublikat deb topilgan barcha elementlar
             </p>
           </div>
 
-          {/* Search Input */}
+          {/* Search Box */}
           <div className="flex items-center gap-2">
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-2.5 text-zinc-500 text-lg">search</span>
@@ -901,27 +933,26 @@ export default function ScraperPage() {
                 placeholder="Qidiruv (nomi, kodi)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") fetchQueue(1);
-                }}
-                className="pl-9 pr-3 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary-container w-60"
+                className="pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary-container w-64"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-white"
+                  title="Qidiruvni tozalash"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              )}
             </div>
-            <button
-              onClick={() => fetchQueue(1)}
-              className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 text-xs font-semibold"
-            >
-              Qidirish
-            </button>
           </div>
         </div>
 
-        {/* Filters Tabs */}
+        {/* Filter Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Status filter buttons */}
           <div className="flex flex-wrap items-center gap-1.5">
             {[
-              { id: "all", label: "Barchasi" },
+              { id: "all", label: `Barchasi (${stats.total})` },
               { id: "pending", label: `Kutilmoqda (${stats.pending})` },
               { id: "in_progress", label: `Jarayonda (${stats.in_progress})` },
               { id: "completed", label: `Bajarildi (${stats.completed})` },
@@ -942,7 +973,7 @@ export default function ScraperPage() {
             ))}
           </div>
 
-          {/* Source filter dropdown */}
+          {/* Source Filter */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-text-secondary">Manba:</span>
             <select
@@ -957,7 +988,7 @@ export default function ScraperPage() {
           </div>
         </div>
 
-        {/* Table Container */}
+        {/* Table */}
         <div className="overflow-x-auto rounded-xl border border-white/5">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
@@ -967,7 +998,7 @@ export default function ScraperPage() {
                 <th className="py-3 px-4">Yili</th>
                 <th className="py-3 px-4">Manba</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Izoh / Xatolik</th>
+                <th className="py-3 px-4">Izoh / Sabab</th>
                 <th className="py-3 px-4 text-right">Amallar</th>
               </tr>
             </thead>
@@ -1010,6 +1041,9 @@ export default function ScraperPage() {
                             <img
                               src={item.poster_url}
                               alt={item.title}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
                               className="w-10 h-14 object-cover rounded-md border border-white/10 shrink-0"
                             />
                           ) : (
@@ -1029,9 +1063,13 @@ export default function ScraperPage() {
 
                       {/* Media type */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                          item.media_type === "series" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            item.media_type === "series"
+                              ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                          }`}
+                        >
                           {item.media_type === "series" ? "Serial" : "Kino"}
                         </span>
                         {item.media_type === "series" && item.episodes_count && (
@@ -1066,10 +1104,15 @@ export default function ScraperPage() {
                         </span>
                       </td>
 
-                      {/* Error / note */}
+                      {/* Error / Reason */}
                       <td className="py-3 px-4 max-w-xs truncate">
                         {item.error_message ? (
-                          <span className={`text-[11px] ${item.status === 'failed' ? 'text-red-400' : 'text-zinc-400'}`}>
+                          <span
+                            className={`text-[11px] ${
+                              item.status === "failed" ? "text-red-400 font-medium" : "text-zinc-400"
+                            }`}
+                            title={item.error_message}
+                          >
                             {item.error_message}
                           </span>
                         ) : (
@@ -1080,11 +1123,21 @@ export default function ScraperPage() {
                       {/* Actions */}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Direct Grab Button */}
+                          <button
+                            disabled={isRunning}
+                            onClick={() => handleGrabSingleItem(item.id, item.title)}
+                            className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/30 hover:text-emerald-200 text-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            title="Aynan ushbu kinoni hozir yuklash"
+                          >
+                            <span className="material-symbols-outlined text-base">play_arrow</span>
+                          </button>
+
                           {item.status !== "pending" && (
                             <button
                               onClick={() => handleRetryItem(item.id)}
                               className="p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-amber-500/20 hover:border-amber-500/40 hover:text-amber-300 text-zinc-400 transition-all"
-                              title="Qayta navbatga qo'yish"
+                              title="Qayta kutilayotgan holatga o'tkazish"
                             >
                               <span className="material-symbols-outlined text-base">replay</span>
                             </button>

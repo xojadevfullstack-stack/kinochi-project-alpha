@@ -562,6 +562,11 @@ class TelethonModeratorPipeline:
                 f"[{dup_check.matched_type}] '{dup_check.matched_title}' "
                 f"(ID: {dup_check.matched_id}, Kod: {dup_check.matched_code}). O'tkazib yuborildi."
             )
+            QueueManager().update_status(
+                item.id,
+                "already_exists",
+                error_message=f"Bazada mavjud: {dup_check.reason} (ID: {dup_check.matched_id})"
+            )
             return False
 
         # Metadata enrichmentni video botdan olinayotganda orqa fonda PARALLEL boshlaymiz!
@@ -648,6 +653,11 @@ class TelethonModeratorPipeline:
                 f"⚠️ [DUBLIKAT] '{caption_title}' bazada mavjud: "
                 f"[{dup_check.matched_type}] '{dup_check.matched_title}' "
                 f"(ID: {dup_check.matched_id}, Kod: {dup_check.matched_code}). O'tkazib yuborildi."
+            )
+            QueueManager().update_status(
+                item.id,
+                "already_exists",
+                error_message=f"Bazada mavjud: {dup_check.reason} (ID: {dup_check.matched_id})"
             )
             return False
 
@@ -1021,13 +1031,25 @@ class TelethonModeratorPipeline:
 
         # 4. Video kelishini tezkor kutamiz
         logger.info("Video xabari kelishi kutilmoqda...")
+        def is_valid_vid(m):
+            if not m.file:
+                return False
+            if m.file.name and m.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                return True
+            if getattr(m, 'video', None) is not None:
+                return True
+            mime = getattr(getattr(m, 'document', None), 'mime_type', '')
+            return bool(mime and mime.startswith('video/'))
+
         def has_asil_video(msgs):
-            return any(vm.file and vm.file.name and vm.file.name.endswith(('.mp4', '.mkv', '.avi')) for vm in msgs)
+            return any(is_valid_vid(vm) for vm in msgs)
+
         video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_asil_video)
         for vm in video_replies:
-            if vm.file and vm.file.name and vm.file.name.endswith(('.mp4', '.mkv', '.avi')):
+            if is_valid_vid(vm):
+                v_name = vm.file.name or f"video_{vm.id}.mp4"
                 size_mb = round(vm.file.size / (1024 * 1024), 1)
-                logger.info(f"🎬 Video keldi: {vm.file.name} ({size_mb} MB) [Msg ID: {vm.id}]")
+                logger.info(f"🎬 Video keldi: {v_name} ({size_mb} MB) [Msg ID: {vm.id}]")
                 if size_mb > max_file_size_mb and "480p" in quality_btns and chosen[2] != quality_btns["480p"][2]:
                     logger.warning(f"⚠️ Video hajmi ({size_mb}MB) 2GB dan katta! 480p tanlanmoqda...")
                     f_r, f_c, f_name = quality_btns["480p"]

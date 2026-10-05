@@ -155,9 +155,23 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     await asyncio.sleep(2.0)
         else:
             qm = QueueManager()
+            downloaded_count = 0
             for idx, item in enumerate(pending, 1):
                 media_label = "SERIAL" if item.media_type == "series" else "KINO"
-                print(f"\n[{idx}/{len(pending)}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
+
+                # Pre-check duplicate in DB
+                dup = await checker.check(
+                    title=item.title,
+                    year=item.year,
+                    original_title=item.original_title,
+                    media_type=item.media_type
+                )
+                if dup.is_duplicate:
+                    qm.update_status(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
+                    print(f"⏭️ [{media_label}] '{item.title}' bazada mavjud: [{dup.matched_type}] '{dup.matched_title}' (ID: {dup.matched_id}). O'tkazib yuborildi.")
+                    continue
+
+                print(f"\n[{downloaded_count + 1}/{limit}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
                 qm.update_status(item.id, "in_progress")
                 
                 try:
@@ -168,10 +182,16 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
 
                 if success:
                     qm.update_status(item.id, "completed")
+                    downloaded_count += 1
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
-                    qm.update_status(item.id, "failed", error_message="Video olinmadi yoki xatolik")
-                    print(f"⚠️ Yuklab bo'lmadi: {item.title}")
+                    fresh = qm.items.get(item.id)
+                    if not (fresh and fresh.status == "already_exists"):
+                        qm.update_status(item.id, "failed", error_message="Video olinmadi yoki xatolik")
+                        print(f"⚠️ Yuklab bo'lmadi: {item.title}")
+
+                if downloaded_count >= limit:
+                    break
 
                 # Telegram flood limitiga tushmaslik uchun xavfsiz qisqa kutish
                 if idx < len(pending):

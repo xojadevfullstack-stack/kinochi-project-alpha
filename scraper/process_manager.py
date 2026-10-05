@@ -153,7 +153,13 @@ class ProcessManager:
                 self.process = proc
 
             assert proc.stdout is not None
-            for line in proc.stdout:
+            while True:
+                line = proc.stdout.readline()
+                if not line:
+                    if proc.poll() is not None:
+                        break
+                    time.sleep(0.05)
+                    continue
                 self._parse_line(line)
             try:
                 proc.stdout.close()

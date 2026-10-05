@@ -192,3 +192,28 @@ def delete_queue_item(item_id: str, admin=Depends(require_scraper)):
     if not QueueManager().delete_item(item_id):
         raise HTTPException(status_code=404, detail="Element topilmadi")
     return {"success": True, "message": f"{item_id} o'chirildi."}
+
+
+@router.post("/queue/{item_id}/grab-now")
+def grab_now(item_id: str, admin=Depends(require_scraper)):
+    """Aynan bitta film yoki serialni navbatdan darhol yuklashni boshlash."""
+    qm = QueueManager()
+    item = qm.items.get(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Element navbatda topilmadi")
+
+    # Extract code from id (e.g. uzmovi_8997 -> 8997)
+    code = None
+    if "_" in item.id:
+        parts = item.id.split("_", 1)
+        if len(parts) > 1 and parts[1].isdigit():
+            code = parts[1]
+
+    return _ensure_ok(
+        ProcessManager().start_download(
+            target=item.source,
+            limit=1,
+            codes=code,
+            media_type=item.media_type
+        )
+    )
