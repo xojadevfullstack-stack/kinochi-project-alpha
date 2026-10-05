@@ -230,23 +230,56 @@ class TelethonModeratorPipeline:
                     click_id = m.id
                     await m.click(r_idx, c_idx)
 
-                    # Qismlar menyusi chiqishini tezkor kutish
-                    def has_episodes(msgs):
-                        return any(nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()) for nm in msgs)
+                    # Qismlar yoki fasllar menyusi chiqishini tezkor kutish
+                    def has_episodes_or_seasons(msgs):
+                        return any(nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower()) for nm in msgs)
 
-                    nm_list = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, condition=has_episodes)
+                    nm_list = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, condition=has_episodes_or_seasons)
                     for nm in nm_list:
-                        if nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()):
-                            card_msg = nm
+                        if nm.buttons:
+                            m = nm
                             break
-                break
+
+            # Agar xabarda fasllar (1-fasl, 2-fasl) tugmalari bo'lsa
+            has_seasons = any(
+                ("fasl" in b.text.lower() or "mavsum" in b.text.lower())
+                for row in (m.buttons or []) for b in row
+            )
+            if has_seasons:
+                season_btn = None
+                for row_idx, row in enumerate(m.buttons):
+                    for col_idx, btn in enumerate(row):
+                        b_text = btn.text.lower()
+                        if "1-fasl" in b_text or "1-mavsum" in b_text or "1 fasl" in b_text:
+                            season_btn = (row_idx, col_idx, btn.text)
+                            break
+                        elif ("fasl" in b_text or "mavsum" in b_text) and not season_btn:
+                            season_btn = (row_idx, col_idx, btn.text)
+                    if season_btn and ("1-fasl" in season_btn[2].lower() or "1-mavsum" in season_btn[2].lower()):
+                        break
+
+                if season_btn:
+                    r_idx, c_idx, b_name = season_btn
+                    logger.info(f"Fasl tanlanmoqda: '{b_name}'...")
+                    await m.click(r_idx, c_idx)
+                    await asyncio.sleep(1.5)
+                    # Xabar joyida (in-place) yangilanganini tekshirish
+                    try:
+                        updated_m = await self.client.get_messages(target_bot, ids=m.id)
+                        if updated_m and updated_m.buttons and any(
+                            b for row in updated_m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()
+                        ):
+                            card_msg = updated_m
+                            break
+                    except Exception:
+                        pass
 
             if any(b for row in m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()):
                 card_msg = m
                 break
 
         if not card_msg or not card_msg.buttons:
-            async for nm in self.client.iter_messages(target_bot, limit=3):
+            async for nm in self.client.iter_messages(target_bot, limit=4):
                 if nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()):
                     card_msg = nm
                     break
@@ -916,10 +949,12 @@ class TelethonModeratorPipeline:
         if code:
             search_query = str(code).strip()
         elif item:
-            num_match = re.search(r'\d+', item.id)
-            if num_match and len(num_match.group(0)) <= 6:
-                search_query = num_match.group(0)
-            else:
+            if item.source == "asilmedia":
+                num_match = re.search(r'\d+', item.id)
+                if num_match and len(num_match.group(0)) <= 6:
+                    search_query = num_match.group(0)
+
+            if not search_query:
                 clean_name = item.title.split('/')[0].split('|')[0].strip()
                 clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
                 clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
@@ -932,6 +967,13 @@ class TelethonModeratorPipeline:
         if not is_uzmovie:
             return await self._fetch_asilmedia_video(query=search_query, year=item.year if item else None)
 
+        # UzmovieTV_Bot raqamli kodlar bilan ishlaydi. Agar so'rov matn bo'lsa, Asilmedia botiga yo'naltiramiz
+        if not search_query.isdigit():
+            logger.info(f"UzmovieTV_Bot matnli so'rov qabul qilmaydi. '{search_query}' filmi @asilmediabot orqali qidirilmoqda...")
+            res_video = await self._fetch_asilmedia_video(query=search_query, year=item.year if item else None)
+            if res_video:
+                return res_video
+
         # UzmovieTV_Bot flow
         logger.info(f"[{target_bot}] botiga so'rov yuborilmoqda: '{search_query}'...")
         sent = await self.client.send_message(target_bot, search_query)
@@ -941,6 +983,15 @@ class TelethonModeratorPipeline:
         for m in recent:
             if m.file:
                 return m
+
+        # Agar UzmovieTV_Bot da topilmasa, film nomi bo'yicha Asilmediada sinab ko'rish
+        if item and item.title:
+            clean_name = item.title.split('/')[0].split('|')[0].strip()
+            clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
+            clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
+            if clean_name and clean_name != search_query:
+                logger.info(f"UzmovieTV_Bot dan olinmadi. Zaxira tarzida @asilmediabot dan '{clean_name}' qidirilmoqda...")
+                return await self._fetch_asilmedia_video(query=clean_name, year=item.year)
 
         return None
 
