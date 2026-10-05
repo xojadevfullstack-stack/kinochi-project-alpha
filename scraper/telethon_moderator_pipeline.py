@@ -669,6 +669,20 @@ class TelethonModeratorPipeline:
         year = meta["release_year"]
         year_str = f" ({year})" if year else ""
 
+        # ── Sifat nazorati (Quality Guard) ──
+        # Agar sarlavha "Kino", "Film" kabi noaniq bo'lsa, bazaga va kanalga xato kirmasligi uchun to'xtatiladi
+        GENERIC_WORDS = {"kino", "film", "serial", "tarjima kino", "premyera", "yangi kino", "noma'lum", "movie"}
+        if (title.strip().lower() in GENERIC_WORDS or len(title.strip()) < 3) and item.status != "manually_verified":
+            logger.warning(
+                f"⚠️ [MODERATSIYA]: '{title}' nomi yetarli emas. Baza va kanal buzilmasligi uchun 'needs_review' holatiga o'tkazildi."
+            )
+            QueueManager().update_status(
+                item.id,
+                "needs_review",
+                error_message=f"⚠️ Nomi noaniq ('{title}'). Moderatsiya bo'limida to'g'ri nomini kiriting."
+            )
+            return False
+
         # ── 2. PostgreSQL bazasida kino yaratish ──
         logger.info(f"ℹ️ 2-QADAM: Websayt bazasiga yangi kino qo'shilmoqda: '{title}'...")
         async with async_session_factory() as session:

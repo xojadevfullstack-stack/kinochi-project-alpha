@@ -43,7 +43,7 @@ interface QueueItem {
   media_type: string;
   url: string;
   poster_url?: string | null;
-  status: "pending" | "in_progress" | "completed" | "failed" | "already_exists";
+  status: "pending" | "in_progress" | "completed" | "failed" | "already_exists" | "needs_review";
   episodes_count?: number | null;
   downloaded_episodes: number;
   error_message?: string | null;
@@ -77,7 +77,33 @@ export default function ScraperPage() {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "tools">("grabber");
+  const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "moderation" | "tools">("grabber");
+
+  // ── Moderation & Manual Edit States ───────────────────────
+  const [reviewItems, setReviewItems] = useState<{ db_movies: any[]; queue_items: any[] }>({
+    db_movies: [],
+    queue_items: [],
+  });
+  const [loadingReview, setLoadingReview] = useState(false);
+  const [editingItem, setEditingItem] = useState<{
+    isDb: boolean;
+    id: string | number;
+    title: string;
+    original_title?: string;
+    release_year?: number;
+    poster_url?: string;
+    trailer_url?: string;
+    description?: string;
+    genres?: string;
+    code?: string;
+    imdb_rating?: number;
+    tmdb_id?: number;
+    media_type?: string;
+  } | null>(null);
+  const [tmdbSearchQuery, setTmdbSearchQuery] = useState("");
+  const [tmdbResults, setTmdbResults] = useState<any[]>([]);
+  const [searchingTmdb, setSearchingTmdb] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Trackers to prevent stale async responses
   const queueReqId = useRef(0);
@@ -141,7 +167,114 @@ export default function ScraperPage() {
   useEffect(() => {
     fetchStatus();
     fetchQueue(1);
+    fetchIncomplete();
   }, []);
+
+  // ── Fetch Incomplete / Review Items ───────────────────────
+  const fetchIncomplete = async () => {
+    setLoadingReview(true);
+    try {
+      const data = await fetchApi("/scraper/incomplete-movies");
+      setReviewItems(data || { db_movies: [], queue_items: [] });
+    } catch (err: any) {
+      console.warn("fetchIncomplete error:", err);
+    } finally {
+      setLoadingReview(false);
+    }
+  };
+
+  const openEditModal = (item: any) => {
+    setEditingItem(item);
+    setTmdbSearchQuery(item.title && item.title !== "Kino" && item.title !== "Film" ? item.title : "");
+    setTmdbResults([]);
+  };
+
+  const handleSearchTmdb = async () => {
+    if (!tmdbSearchQuery.trim()) return;
+    setSearchingTmdb(true);
+    try {
+      const results = await fetchApi(`/content-lookup/search?q=${encodeURIComponent(tmdbSearchQuery.trim())}`);
+      setTmdbResults(Array.isArray(results) ? results : []);
+    } catch (err: any) {
+      setActionMsg({ type: "error", text: "TMDb qidiruv xatosi: " + (err?.message || "") });
+    } finally {
+      setSearchingTmdb(false);
+    }
+  };
+
+  const handleSelectTmdbMovie = (m: any) => {
+    if (!editingItem) return;
+    setEditingItem({
+      ...editingItem,
+      title: m.title || m.name || editingItem.title,
+      original_title: m.original_title || m.original_name || "",
+      release_year: m.release_year || (m.release_date ? parseInt(m.release_date.slice(0, 4), 10) : editingItem.release_year),
+      poster_url: m.poster_url || (m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : editingItem.poster_url),
+      description: m.overview || editingItem.description || "",
+      genres: m.genres ? (Array.isArray(m.genres) ? m.genres.join(", ") : m.genres) : editingItem.genres,
+      imdb_rating: m.vote_average || editingItem.imdb_rating,
+      tmdb_id: m.id || m.tmdb_id,
+    });
+    setTmdbResults([]);
+  };
+
+  const handleSaveEdit = async (grabImmediately = false) => {
+    if (!editingItem) return;
+    setSavingEdit(true);
+    try {
+      if (editingItem.isDb) {
+        await fetchApi(`/scraper/db-movies/${editingItem.id}/fix`, {
+          method: "POST",
+          body: JSON.stringify({
+            title: editingItem.title,
+            original_title: editingItem.original_title,
+            release_year: editingItem.release_year,
+            description: editingItem.description,
+            poster_url: editingItem.poster_url,
+            trailer_url: editingItem.trailer_url,
+            genres: editingItem.genres,
+            imdb_rating: editingItem.imdb_rating,
+            tmdb_id: editingItem.tmdb_id,
+          }),
+        });
+        setActionMsg({ type: "success", text: `Film #${editingItem.id} bazada yangilandi!` });
+      } else {
+        await fetchApi(`/scraper/queue/${editingItem.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            title: editingItem.title,
+            year: editingItem.release_year,
+            poster_url: editingItem.poster_url,
+            original_title: editingItem.original_title,
+            media_type: editingItem.media_type || "movie",
+            status: "pending",
+          }),
+        });
+        setActionMsg({ type: "success", text: `${editingItem.title} navbatda yangilandi!` });
+        if (grabImmediately) {
+          await handleGrabSingleItem(String(editingItem.id), editingItem.title);
+        }
+      }
+      setEditingItem(null);
+      fetchIncomplete();
+      fetchQueue();
+    } catch (err: any) {
+      setActionMsg({ type: "error", text: "Saqlashda xatolik: " + (err?.message || "") });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteDbMovie = async (movieId: number) => {
+    if (!confirm("Haqiqatan ham ushbu filmni bazadan butunlay o'chirmoqchimisiz?")) return;
+    try {
+      await fetchApi(`/scraper/db-movies/${movieId}`, { method: "DELETE" });
+      setActionMsg({ type: "success", text: `Film #${movieId} bazadan o'chirildi.` });
+      fetchIncomplete();
+    } catch (err: any) {
+      setActionMsg({ type: "error", text: "O'chirishda xatolik: " + (err?.message || "") });
+    }
+  };
 
   // Status Polling (2 seconds)
   useEffect(() => {
@@ -623,6 +756,24 @@ export default function ScraperPage() {
                 Parser
               </button>
               <button
+                onClick={() => {
+                  setActiveTab("moderation");
+                  fetchIncomplete();
+                }}
+                className={`px-3 py-1 rounded-lg transition-all font-medium flex items-center gap-1.5 ${
+                  activeTab === "moderation"
+                    ? "bg-amber-500 text-black font-bold shadow"
+                    : "text-amber-400 hover:text-amber-300"
+                }`}
+              >
+                <span>Moderatsiya</span>
+                {reviewItems.db_movies.length + reviewItems.queue_items.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {reviewItems.db_movies.length + reviewItems.queue_items.length}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setActiveTab("tools")}
                 className={`px-3 py-1 rounded-lg transition-all font-medium ${
                   activeTab === "tools" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
@@ -843,6 +994,168 @@ export default function ScraperPage() {
               </div>
             </div>
           )}
+
+          {/* TAB 4: MODERATSIYA / CHALA KINOLAR */}
+          {activeTab === "moderation" && (
+            <div className="space-y-3 flex-1 flex flex-col justify-between overflow-y-auto max-h-[340px] pr-1">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-text-secondary">
+                    Nomi noaniq (&quot;Kino&quot;) yoki tavsifi to&apos;liq bo&apos;lmagan filmlar nazorati:
+                  </p>
+                  <button
+                    onClick={fetchIncomplete}
+                    disabled={loadingReview}
+                    className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white"
+                    title="Yangilash"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${loadingReview ? "animate-spin" : ""}`}>
+                      refresh
+                    </span>
+                  </button>
+                </div>
+
+                {reviewItems.db_movies.length === 0 && reviewItems.queue_items.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <span className="material-symbols-outlined text-2xl text-emerald-400 mb-1">verified</span>
+                    <p className="text-xs font-semibold text-emerald-300">Barcha kinolar tekshirilgan!</p>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Hozirda moderatsiya talab qiluvchi chala kinolar mavjud emas.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Database Incomplete Movies */}
+                    {reviewItems.db_movies.map((m) => (
+                      <div
+                        key={`db-${m.id}`}
+                        className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {m.poster_url ? (
+                            <img
+                              src={m.poster_url}
+                              alt=""
+                              className="w-9 h-12 rounded object-cover border border-white/10 shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-9 h-12 rounded bg-black/40 border border-white/10 flex items-center justify-center shrink-0 text-zinc-500">
+                              <span className="material-symbols-outlined text-base">movie</span>
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-white text-xs truncate">{m.title}</span>
+                              <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/30 text-red-200 uppercase font-mono">
+                                BAZADA #{m.id}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-amber-300 truncate mt-0.5">
+                              ⚠️ Kodi: {m.code} | Yili: {m.release_year || "Yo'q"} | Tavsif:{" "}
+                              {m.description ? m.description.slice(0, 30) + "..." : "Mavjud emas"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() =>
+                              openEditModal({
+                                isDb: true,
+                                id: m.id,
+                                title: m.title,
+                                original_title: m.original_title || "",
+                                release_year: m.release_year,
+                                description: m.description || "",
+                                poster_url: m.poster_url || "",
+                                genres: m.genres || "",
+                                code: m.code,
+                                imdb_rating: m.imdb_rating,
+                                tmdb_id: m.tmdb_id,
+                              })
+                            }
+                            className="p-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1"
+                            title="TMDb orqali to'g'rilash"
+                          >
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                            To&apos;g&apos;rilash
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDbMovie(m.id)}
+                            className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 text-xs"
+                            title="Bazadan o'chirish"
+                          >
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Queue Needs Review Items */}
+                    {reviewItems.queue_items.map((q) => (
+                      <div
+                        key={`q-${q.id}`}
+                        className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {q.poster_url ? (
+                            <img
+                              src={q.poster_url}
+                              alt=""
+                              className="w-9 h-12 rounded object-cover border border-white/10 shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-9 h-12 rounded bg-black/40 border border-white/10 flex items-center justify-center shrink-0 text-zinc-500">
+                              <span className="material-symbols-outlined text-base">movie</span>
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-white text-xs truncate">{q.title}</span>
+                              <span className="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/30 text-amber-200 uppercase font-mono">
+                                NAVBATDA
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                              {q.error_message || "⚠️ Nomi yoki tavsifi noaniq"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() =>
+                              openEditModal({
+                                isDb: false,
+                                id: q.id,
+                                title: q.title,
+                                original_title: q.original_title || "",
+                                release_year: q.year,
+                                poster_url: q.poster_url || "",
+                                media_type: q.media_type,
+                                code: q.id,
+                              })
+                            }
+                            className="p-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1"
+                            title="Tahrirlash va TMDb dan qidirish"
+                          >
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                            To&apos;g&apos;rilash
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Live Terminal Logs (7 cols) */}
@@ -955,6 +1268,7 @@ export default function ScraperPage() {
               { id: "all", label: `Barchasi (${stats.total})` },
               { id: "pending", label: `Kutilmoqda (${stats.pending})` },
               { id: "in_progress", label: `Jarayonda (${stats.in_progress})` },
+              { id: "needs_review", label: "⚠️ Moderatsiya" },
               { id: "completed", label: `Bajarildi (${stats.completed})` },
               { id: "already_exists", label: `Bazada Bor (${stats.already_exists})` },
               { id: "failed", label: `Xatolik (${stats.failed})` },
@@ -1027,6 +1341,9 @@ export default function ScraperPage() {
                   } else if (item.status === "already_exists") {
                     badgeClass = "bg-sky-500/20 text-sky-300 border-sky-500/30";
                     statusText = "Bazada Bor";
+                  } else if (item.status === "needs_review") {
+                    badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold";
+                    statusText = "⚠️ Moderatsiya";
                   } else if (item.status === "pending") {
                     badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30";
                     statusText = "Kutilmoqda";
@@ -1133,6 +1450,26 @@ export default function ScraperPage() {
                             <span className="material-symbols-outlined text-base">play_arrow</span>
                           </button>
 
+                          {/* Edit / Moderation Button */}
+                          <button
+                            onClick={() =>
+                              openEditModal({
+                                isDb: false,
+                                id: item.id,
+                                title: item.title,
+                                original_title: item.original_title || "",
+                                release_year: item.year || undefined,
+                                poster_url: item.poster_url || "",
+                                media_type: item.media_type,
+                                code: item.id,
+                              })
+                            }
+                            className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/30 hover:text-blue-200 text-blue-400 transition-all"
+                            title="TMDb orqali ma'lumotlarini to'g'rilash"
+                          >
+                            <span className="material-symbols-outlined text-base">edit</span>
+                          </button>
+
                           {item.status !== "pending" && (
                             <button
                               onClick={() => handleRetryItem(item.id)}
@@ -1192,6 +1529,247 @@ export default function ScraperPage() {
           </div>
         )}
       </div>
+
+      {/* ── MODAL: MANUAL EDIT & TMDB SEARCH ── */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#121316] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-amber-400">tune</span>
+                  Film Ma&apos;lumotlarini To&apos;g&apos;rilash (Moderatsiya)
+                </h3>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  {editingItem.isDb ? `Bazada mavjud film: ID #${editingItem.id}` : `Navbatdagi element: ${editingItem.id}`}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingItem(null)}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-zinc-400 hover:text-white"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* TMDb Live Search */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+              <label className="block text-xs font-bold text-amber-300">
+                🔍 TMDb dan to&apos;g&apos;ri film nomini qidirish
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Masalan: Substansiya yoki The Substance"
+                  value={tmdbSearchQuery}
+                  onChange={(e) => setTmdbSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearchTmdb();
+                  }}
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleSearchTmdb}
+                  disabled={searchingTmdb || !tmdbSearchQuery.trim()}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  {searchingTmdb ? (
+                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">search</span>
+                  )}
+                  Qidirish
+                </button>
+              </div>
+
+              {/* TMDb Search Results Dropdown/List */}
+              {tmdbResults.length > 0 && (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1 pt-2 border-t border-white/10">
+                  <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    Mos kelgan natijalar (Tanlash uchun bosing):
+                  </span>
+                  {tmdbResults.map((res: any) => (
+                    <div
+                      key={res.id}
+                      onClick={() => handleSelectTmdbMovie(res)}
+                      className="p-2.5 rounded-xl bg-white/5 hover:bg-amber-500/10 border border-white/5 hover:border-amber-500/30 cursor-pointer flex items-center gap-3 transition-all"
+                    >
+                      {res.poster_path ? (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w200${res.poster_path}`}
+                          alt=""
+                          className="w-8 h-12 object-cover rounded shrink-0 border border-white/10"
+                        />
+                      ) : (
+                        <div className="w-8 h-12 rounded bg-zinc-800 flex items-center justify-center shrink-0 text-zinc-500">
+                          <span className="material-symbols-outlined text-sm">image</span>
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white truncate">{res.title || res.name}</span>
+                          <span className="text-[11px] text-zinc-400 font-mono">
+                            ({res.release_date?.slice(0, 4) || res.first_air_date?.slice(0, 4) || "Noma'lum"})
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                          {res.overview || "Tavsif mavjud emas"}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20 shrink-0">
+                        Tanlash
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">
+                    Film Nomi (O&apos;zbekcha)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.title}
+                    onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">
+                    Asl Nomi (Original Title)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.original_title || ""}
+                    onChange={(e) => setEditingItem({ ...editingItem, original_title: e.target.value })}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Yili</label>
+                  <input
+                    type="number"
+                    value={editingItem.release_year || ""}
+                    onChange={(e) =>
+                      setEditingItem({
+                        ...editingItem,
+                        release_year: parseInt(e.target.value, 10) || undefined,
+                      })
+                    }
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Janrlari</label>
+                  <input
+                    type="text"
+                    placeholder="Jangari, Drama"
+                    value={editingItem.genres || ""}
+                    onChange={(e) => setEditingItem({ ...editingItem, genres: e.target.value })}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">IMDb Reyting</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value={editingItem.imdb_rating || ""}
+                    onChange={(e) =>
+                      setEditingItem({
+                        ...editingItem,
+                        imdb_rating: parseFloat(e.target.value) || undefined,
+                      })
+                    }
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">Poster URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editingItem.poster_url || ""}
+                    onChange={(e) => setEditingItem({ ...editingItem, poster_url: e.target.value })}
+                    className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                  {editingItem.poster_url && (
+                    <img
+                      src={editingItem.poster_url}
+                      alt=""
+                      className="w-8 h-10 object-cover rounded border border-white/10 shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">Film Tavsifi (Overview)</label>
+                <textarea
+                  rows={3}
+                  value={editingItem.description || ""}
+                  onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2 border-t border-white/10 pt-4">
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-zinc-400 hover:text-white"
+              >
+                Bekor qilish
+              </button>
+
+              {!editingItem.isDb && (
+                <button
+                  type="button"
+                  disabled={savingEdit || !editingItem.title.trim()}
+                  onClick={() => handleSaveEdit(true)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">play_arrow</span>
+                  Saqlash va Darhol Yuklash
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={savingEdit || !editingItem.title.trim()}
+                onClick={() => handleSaveEdit(false)}
+                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
+              >
+                {savingEdit ? (
+                  <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-sm">check</span>
+                )}
+                {editingItem.isDb ? "Bazada Saqlash va Yangilash" : "Navbatda Saqlash"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

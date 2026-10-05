@@ -5,7 +5,13 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from pydantic import BaseModel, Field
 
-from app.api.deps import get_current_admin
+from dataclasses import asdict
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_admin, get_db_session
+from app.infrastructure.db.models.movie import MovieModel
+from app.core.cache import delete_cache_pattern
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +46,7 @@ router = APIRouter(prefix="/scraper", tags=["scraper"])
 
 SOURCES = ("uzmovi", "asilmedia")
 MEDIA_TYPES = ("all", "movie", "series")
-STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists")
+STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists", "needs_review")
 
 
 class ParseRequest(BaseModel):
@@ -217,3 +223,152 @@ def grab_now(item_id: str, admin=Depends(require_scraper)):
             media_type=item.media_type
         )
     )
+
+
+class UpdateQueueItemRequest(BaseModel):
+    title: str = Field(..., min_length=2)
+    year: Optional[int] = None
+    poster_url: Optional[str] = None
+    original_title: Optional[str] = None
+    media_type: Optional[str] = "movie"
+    status: Optional[str] = "pending"
+
+
+class FixDbMovieRequest(BaseModel):
+    title: str = Field(..., min_length=2)
+    original_title: Optional[str] = None
+    release_year: Optional[int] = None
+    description: Optional[str] = None
+    poster_url: Optional[str] = None
+    trailer_url: Optional[str] = None
+    genres: Optional[str] = None
+    imdb_rating: Optional[float] = None
+    tmdb_id: Optional[int] = None
+
+
+@router.get("/incomplete-movies")
+async def get_incomplete_movies(
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(require_scraper),
+):
+    """Bazada yoki navbatda nomi/tavsifi to'liq bo'lmagan, moderatsiya talab qiluvchi kinolar."""
+    # 1. DB items
+    res = await db.execute(
+        select(MovieModel)
+        .where(
+            (func.lower(MovieModel.title).in_(["kino", "film", "serial", "tarjima kino", "premyera", "noma'lum"]))
+            | (func.length(MovieModel.title) < 4)
+            | (MovieModel.description == None)
+            | (func.length(MovieModel.description) < 20)
+        )
+        .order_by(MovieModel.id.desc())
+        .limit(50)
+    )
+    db_movies = res.scalars().all()
+
+    # 2. Queue items
+    qm = QueueManager()
+    queue_items = []
+    suspicious_words = {"kino", "film", "serial", "tarjima kino", "premyera", "noma'lum", "movie"}
+    for item in qm.items.values():
+        if (
+            item.status == "needs_review"
+            or item.title.lower().strip() in suspicious_words
+            or len(item.title.strip()) < 4
+        ):
+            queue_items.append(item)
+
+    return {
+        "db_movies": [
+            {
+                "id": m.id,
+                "code": m.code,
+                "title": m.title,
+                "original_title": m.original_title,
+                "release_year": m.release_year,
+                "description": m.description,
+                "poster_url": m.poster_url,
+                "genres": m.genres,
+                "imdb_rating": m.imdb_rating,
+                "tmdb_id": m.tmdb_id,
+            }
+            for m in db_movies
+        ],
+        "queue_items": [asdict(it) for it in queue_items],
+    }
+
+
+@router.put("/queue/{item_id}")
+def update_queue_item(
+    item_id: str,
+    req: UpdateQueueItemRequest,
+    admin=Depends(require_scraper),
+):
+    """Navbatdagi element ma'lumotlarini (nomi, yili, posteri) qo'lda to'g'rilash va tayyorlash."""
+    qm = QueueManager()
+    success = qm.update_item_details(
+        item_id=item_id,
+        title=req.title,
+        year=req.year,
+        poster_url=req.poster_url,
+        original_title=req.original_title,
+        media_type=req.media_type or "movie",
+        status=req.status or "pending",
+        error_message=None,
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Element topilmadi")
+    return {"success": True, "message": f"{item_id} muvaffaqiyatli yangilandi va navbatga qo'yildi."}
+
+
+@router.post("/db-movies/{movie_id}/fix")
+async def fix_db_movie(
+    movie_id: int,
+    req: FixDbMovieRequest,
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(require_scraper),
+):
+    """Bazada chala bo'lib qolgan kinoni (masalan 'Kino') qo'lda yoki TMDb orqali to'g'rilash."""
+    movie = await db.get(MovieModel, movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Film bazada topilmadi")
+
+    movie.title = req.title
+    if req.original_title is not None:
+        movie.original_title = req.original_title
+    if req.release_year is not None:
+        movie.release_year = req.release_year
+    if req.description is not None:
+        movie.description = req.description
+    if req.poster_url is not None:
+        movie.poster_url = req.poster_url
+    if req.trailer_url is not None:
+        movie.trailer_url = req.trailer_url
+    if req.genres is not None:
+        movie.genres = req.genres
+    if req.imdb_rating is not None:
+        movie.imdb_rating = req.imdb_rating
+    if req.tmdb_id is not None:
+        movie.tmdb_id = req.tmdb_id
+
+    await db.commit()
+    await db.refresh(movie)
+    await delete_cache_pattern("*")
+    return {"success": True, "message": f"'{movie.title}' (ID: {movie_id}) muvaffaqiyatli yangilandi!"}
+
+
+@router.delete("/db-movies/{movie_id}")
+async def delete_db_movie(
+    movie_id: int,
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(require_scraper),
+):
+    """Bazada yaroqsiz bo'lib qolgan kinoni butunlay o'chirish."""
+    movie = await db.get(MovieModel, movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Film bazada topilmadi")
+    await db.delete(movie)
+    await db.commit()
+    await delete_cache_pattern("*")
+    return {"success": True, "message": f"Film #{movie_id} bazadan o'chirildi."}
+

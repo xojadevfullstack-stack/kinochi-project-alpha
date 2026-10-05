@@ -152,12 +152,34 @@ class QueueManager:
                 return True
             return False
 
-    def retry_item(self, item_id: str) -> bool:
+    def update_item_details(
+        self,
+        item_id: str,
+        title: Optional[str] = None,
+        year: Optional[int] = None,
+        poster_url: Optional[str] = None,
+        media_type: Optional[str] = None,
+        original_title: Optional[str] = None,
+        status: Optional[str] = "pending",
+        error_message: Optional[str] = None,
+    ) -> bool:
         with _FILE_LOCK:
             self.load()
             if item_id in self.items:
-                self.items[item_id].status = "pending"
-                self.items[item_id].error_message = None
+                item = self.items[item_id]
+                if title:
+                    item.title = title
+                if year is not None:
+                    item.year = year
+                if poster_url is not None:
+                    item.poster_url = poster_url
+                if media_type is not None:
+                    item.media_type = media_type
+                if original_title is not None:
+                    item.original_title = original_title
+                if status is not None:
+                    item.status = status
+                item.error_message = error_message
                 self.save()
                 return True
             return False
