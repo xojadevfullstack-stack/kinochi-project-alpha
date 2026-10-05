@@ -145,7 +145,15 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
             if found_img:
                 src = found_img.get("src") or found_img.get("data-src")
                 if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
-                    poster_url = src if src.startswith("http") else f"https://asilmedia.org{src}"
+                    src = src.strip()
+                    if src.startswith("//"):
+                        poster_url = f"https:{src}"
+                    elif src.startswith("http://") or src.startswith("https://"):
+                        poster_url = src
+                    elif src.startswith("/"):
+                        poster_url = f"https://asilmedia.org{src}"
+                    else:
+                        poster_url = f"https://asilmedia.org/{src}"
                     break
             curr = curr.parent
 

@@ -389,6 +389,14 @@ async def enrich_movie_smart(
             final_cat_ids.append(cat_map[gname])
     metadata["category_ids"] = list(set(final_cat_ids))
 
+    # Poster URL sini tekshirish va to'liq HTTPS qilib formatlash
+    if metadata.get("poster_url"):
+        p = str(metadata["poster_url"]).strip()
+        if p.startswith("//"):
+            metadata["poster_url"] = f"https:{p}"
+        elif p.startswith("/"):
+            metadata["poster_url"] = f"https://asilmedia.org{p}"
+
     return metadata
 
 
