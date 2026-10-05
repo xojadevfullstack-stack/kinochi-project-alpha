@@ -154,10 +154,23 @@ class DuplicateChecker:
 
         try:
             raw_movies = await conn.fetch(
-                "SELECT id, title, original_title, release_year, code, tmdb_id FROM movies"
+                """
+                SELECT m.id, m.title, m.original_title, m.release_year, m.code, m.tmdb_id 
+                FROM movies m
+                WHERE EXISTS (SELECT 1 FROM movie_translations mt WHERE mt.movie_id = m.id)
+                """
             )
             raw_series = await conn.fetch(
-                "SELECT id, title, release_year, tmdb_id FROM series"
+                """
+                SELECT s.id, s.title, s.release_year, s.tmdb_id 
+                FROM series s
+                WHERE EXISTS (
+                    SELECT 1 FROM seasons sea 
+                    JOIN episodes ep ON ep.season_id = sea.id 
+                    JOIN episode_translations et ON et.episode_id = ep.id 
+                    WHERE sea.series_id = s.id
+                )
+                """
             )
 
             self._movies = []

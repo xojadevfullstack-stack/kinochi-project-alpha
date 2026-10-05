@@ -639,6 +639,20 @@ class TelethonModeratorPipeline:
                 logger.error(f"❌ {ep_num}-qismni yuklashda xatolik: {ep_err}")
                 await asyncio.sleep(2.0)
 
+        if uploaded_count == 0 and not existing_series_id and series_id:
+            logger.warning(f"⚠️ Serialga birorta ham qism yuklanmadi. Baza toza saqlanishi uchun Serial (ID: {series_id}) o'chirilmoqda...")
+            try:
+                from sqlalchemy import text
+                async with async_session_factory() as cleanup_session:
+                    await cleanup_session.execute(text("DELETE FROM series_category WHERE series_id = :sid"), {"sid": series_id})
+                    await cleanup_session.execute(text("DELETE FROM page_series WHERE series_id = :sid"), {"sid": series_id})
+                    await cleanup_session.execute(text("DELETE FROM seasons WHERE series_id = :sid"), {"sid": series_id})
+                    await cleanup_session.execute(text("DELETE FROM series WHERE id = :sid"), {"sid": series_id})
+                    await cleanup_session.commit()
+                logger.info(f"🧹 Chala qolgan serial (ID: {series_id}) tozalandi.")
+            except Exception as se_err:
+                logger.warning(f"Chala serialni tozalashda xatolik: {se_err}")
+
         logger.info(f"\n🎉 Serial yakunlandi: {title} | {uploaded_count} ta yangi qism yuklandi.")
         return uploaded_count > 0
 
@@ -886,6 +900,17 @@ class TelethonModeratorPipeline:
         )
         if not topic_video_msg:
             logger.error("Videoni Topic ichiga yuklab bo'lmadi!")
+            # Bo'sh qolgan filmni bazadan xavfsiz tozalash
+            try:
+                from sqlalchemy import text
+                async with async_session_factory() as cleanup_session:
+                    await cleanup_session.execute(text("DELETE FROM movie_category WHERE movie_id = :mid"), {"mid": movie_id})
+                    await cleanup_session.execute(text("DELETE FROM page_movie WHERE movie_id = :mid"), {"mid": movie_id})
+                    await cleanup_session.execute(text("DELETE FROM movies WHERE id = :mid"), {"mid": movie_id})
+                    await cleanup_session.commit()
+                logger.info(f"🧹 Chala qolgan film (ID: {movie_id}) bazadan muvaffaqiyatli tozalandi.")
+            except Exception as cl_err:
+                logger.warning(f"Chala filmni tozalashda xatolik: {cl_err}")
             return False
         logger.info(f"✅ Video Topic ichiga muvaffaqiyatli joylashtirildi! (Message ID: {topic_video_msg.id})")
 
@@ -905,8 +930,8 @@ class TelethonModeratorPipeline:
             caption=storage_caption
         )
         if not storage_msg:
-            logger.warning("Storage kanalga ko'chirishda xatolik yuz berdi, lekin video Topicda bor.")
-            return True
+            logger.warning("Storage kanalga ko'chirishda xatolik yuz berdi, lekin video Topicda bor. Topic videosi bog'lanadi.")
+            storage_msg = topic_video_msg
 
         # Video faylni websayt bazasiga ulash
         bot_file_id = None
@@ -1199,11 +1224,12 @@ class TelethonModeratorPipeline:
         file_path = None
         try:
             peer = await self.client.get_input_entity(target_chat)
-            # Server-side copy (juda tez, agar ruxsat berilgan bo'lsa):
+            # Server-side copy (juda tez va tejamkor):
             try:
+                media_to_send = getattr(video_msg.media, "document", video_msg.media) if hasattr(video_msg, "media") and video_msg.media else video_msg
                 sent_msg = await self.client.send_file(
                     peer,
-                    file=video_msg.media,
+                    file=media_to_send,
                     caption=caption,
                     reply_to=reply_to,
                     supports_streaming=True,
@@ -1215,7 +1241,7 @@ class TelethonModeratorPipeline:
             except Exception as copy_err:
                 logger.info(f"Server-side nusxalab bo'lmadi ({copy_err}), yuklab yuklash usuli bajarilmoqda...")
 
-            # Yuklab yuklash (himoyalangan botlar uchun yagona to'g'ri MTProto yo'li)
+            # Yuklab yuklash (himoyalangan botlar uchun MTProto yo'li)
             downloads_dir = os.path.join(BASE_DIR, "scraper", "downloads")
             os.makedirs(downloads_dir, exist_ok=True)
 
@@ -1243,7 +1269,11 @@ class TelethonModeratorPipeline:
                 )
             except Exception as dl_err:
                 logger.warning(f"Fast download da xatolik ({dl_err}), standart usulga o'tilmoqda...")
-                file_path = await self.client.download_media(video_msg, file=downloads_dir, progress_callback=dl_progress)
+                try:
+                    file_path = await self.client.download_media(video_msg, file=downloads_dir, progress_callback=dl_progress)
+                except Exception as std_err:
+                    logger.error(f"Standart download da ham xatolik: {std_err}")
+                    file_path = None
 
             if not file_path or not os.path.exists(file_path):
                 logger.error("Videoni yuklab olib bo'lmadi!")
