@@ -339,8 +339,8 @@ class TelethonModeratorPipeline:
                 source = SourceModel(
                     name=title,
                     type="superguruh",
-                    chat_id=int(target_chat),
-                    topic_id=int(thread_id)
+                    chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
+                    topic_id=int(thread_id) if thread_id else None
                 )
                 session.add(source)
                 await session.flush()
@@ -720,16 +720,21 @@ class TelethonModeratorPipeline:
             f"⬇️ <i>Kino videosi shu yerga yuklanmoqda...</i>"
         )
         try:
-            if meta.get("poster_url"):
+            poster_to_send = meta.get("poster_url")
+            if not poster_to_send and card_msg and getattr(card_msg, "photo", None):
+                poster_to_send = card_msg.photo
+
+            if poster_to_send:
                 try:
                     await self.client.send_file(
                         target_chat,
-                        file=meta["poster_url"],
+                        file=poster_to_send,
                         caption=welcome_text,
                         reply_to=thread_id,
                         parse_mode="html"
                     )
-                except Exception:
+                except Exception as pe:
+                    logger.warning(f"Poster yuborishda xatolik: {pe}, matn yuborilmoqda...")
                     await self.client.send_message(
                         target_chat,
                         message=welcome_text,
@@ -752,7 +757,7 @@ class TelethonModeratorPipeline:
             service = MovieService(repo)
             await service.update_movie(
                 movie_id=movie_id,
-                source_chat_id=int(target_chat),
+                source_chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
                 source_topic_id=thread_id
             )
             await session.commit()
@@ -982,6 +987,8 @@ class TelethonModeratorPipeline:
         if not card_msg or not card_msg.buttons:
             logger.warning(f"[@{bot}] Film kartasi yoki sifat tugmalari topilmadi.")
             return None
+
+        self._last_card_msg = card_msg
 
         # 3. Sifat tugmasini tanlash va bosish
         quality_btns = {}

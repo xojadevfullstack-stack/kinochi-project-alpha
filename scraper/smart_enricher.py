@@ -139,18 +139,6 @@ def clean_movie_title(raw_title: str) -> str:
     return t or raw_title.strip()
 
 
-async def enrich_movie_smart(
-    raw_title: str,
-    year: Optional[int] = None,
-    source_poster: Optional[str] = None,
-    source_desc: Optional[str] = None,
-    source_genres: Optional[str] = None,
-    caption: Optional[str] = None,
-    media_type: str = "movie",
-    item_url: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    AI (Gemini) + TMDb orqali film/serialni to'liq ma'lumotlar, poster, treyler,
 def normalize_title_tokens(t: Optional[str]) -> set:
     if not t:
         return set()
