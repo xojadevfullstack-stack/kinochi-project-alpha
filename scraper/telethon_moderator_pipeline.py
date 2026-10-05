@@ -32,7 +32,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from telethon import TelegramClient, utils
-from telethon.sessions import MemorySession
+from telethon.sessions import MemorySession, StringSession
 from telethon.crypto import AuthKey
 from telethon.tl.functions.messages import CreateForumTopicRequest
 from telethon.tl.types import Message
@@ -41,6 +41,7 @@ from scraper.fast_telethon import fast_download, fast_upload
 from scraper.config import (
     TELEGRAM_API_ID,
     TELEGRAM_API_HASH,
+    TELEGRAM_STRING_SESSION,
     BOT_TOKEN,
     STORAGE_CHANNEL_ID,
     AUTO_TOPIC_CHAT_ID,
@@ -64,32 +65,56 @@ from app.core.cache import delete_cache_pattern
 
 logger = logging.getLogger(__name__)
 
+FALLBACK_USERBOT_SESSION = (
+    "1ApWapzMBuyF503SKFe7YvecikokTfoWvtlnlzunbRRik8mht2VtaJve7uOtwuKwQBdXkvZ_0cOn-SBVZ2jHcHJuRhdcGiVBnP_Yg0_dEVOJT6jjvVhbwepZFPTn4HkwyVqG2Z7h-HFpXRYo4HboCGLR0QCYVx8KrKVQYTK44Sxiai6atXQ7klb6tKg_Nq8S2u3x23V82J3SVM6bROoGvltvZKMZ2n9suDPUSWtg9612fCtTqsH6ohVEq-jeWUt099pWYWCBnn_yTlWiZWdhflktlGP4nD4PL52JdQDz1zUilq1B9KFsLq8DQW3jbfYzbpAzz6175F_Ve3xuD2-wsBd8--H08Is0="
+)
+
 
 def create_telethon_client(session_path: str = None) -> TelegramClient:
+    """
+    Telethon mijozini yaratadi:
+    1. Environment variable (TELEGRAM_STRING_SESSION) orqali (Docker va Cloud serverlar uchun).
+    2. Mavjud va to'g'ri .session fayl orqali.
+    3. Zaxira sessiya orqali (fayl bo'lmaganda yoki buzilganda ham uzluksiz ishlash uchun).
+    """
+    raw_str_session = (
+        os.environ.get("TELEGRAM_STRING_SESSION")
+        or TELEGRAM_STRING_SESSION
+        or os.environ.get("USERBOT_SESSION_STRING")
+        or os.environ.get("TELETHON_SESSION")
+    )
+    if raw_str_session and str(raw_str_session).strip():
+        logger.info("Telethon mijozini TELEGRAM_STRING_SESSION orqali yuklash...")
+        return TelegramClient(StringSession(str(raw_str_session).strip()), TELEGRAM_API_ID, TELEGRAM_API_HASH)
+
     session_file = session_path or os.path.join(BASE_DIR, "scraper", "kinochi_userbot.session")
     if not session_file.endswith(".session"):
         session_file += ".session"
 
-    conn = sqlite3.connect(session_file)
-    c = conn.cursor()
-    c.execute("SELECT dc_id, auth_key FROM sessions")
-    row = c.fetchone()
-    conn.close()
+    if os.path.exists(session_file) and os.path.getsize(session_file) > 100:
+        try:
+            conn = sqlite3.connect(session_file)
+            c = conn.cursor()
+            c.execute("SELECT dc_id, auth_key FROM sessions")
+            row = c.fetchone()
+            conn.close()
 
-    if not row:
-        raise ValueError(f"Session faylidan ma'lumot olinmadi: {session_file}")
+            if row:
+                dc_id, auth_key_bytes = row
+                dc_ips = {
+                    1: "149.154.175.53",
+                    2: "149.154.167.51",
+                    4: "149.154.167.91",
+                }
+                session = MemorySession()
+                session.set_dc(dc_id, dc_ips.get(dc_id, "149.154.167.51"), 443)
+                session.auth_key = AuthKey(data=auth_key_bytes)
+                return TelegramClient(session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+        except Exception as e:
+            logger.warning(f"Session faylidan o'qishda xatolik: {e}")
 
-    dc_id, auth_key_bytes = row
-    dc_ips = {
-        1: "149.154.175.53",
-        2: "149.154.167.51",
-        4: "149.154.167.91",
-    }
-    session = MemorySession()
-    session.set_dc(dc_id, dc_ips.get(dc_id, "149.154.167.51"), 443)
-    session.auth_key = AuthKey(data=auth_key_bytes)
-
-    return TelegramClient(session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+    logger.info("Zaxira Telegram StringSession orqali ulanmoqda...")
+    return TelegramClient(StringSession(FALLBACK_USERBOT_SESSION), TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 
 async def poll_new_messages(

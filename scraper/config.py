@@ -27,6 +27,7 @@ def _parse_chat_id(val, default: int = 0):
 
 TELEGRAM_API_ID = _parse_int(os.environ.get("TELEGRAM_API_ID"), 0)
 TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH", "")
+TELEGRAM_STRING_SESSION = os.environ.get("TELEGRAM_STRING_SESSION", "")
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 STORAGE_CHANNEL_ID = _parse_chat_id(os.environ.get("STORAGE_CHANNEL_ID"), 0)

@@ -173,9 +173,14 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
     return items
 
 def parse_uzmovi_page(page_url: str) -> List[QueueItem]:
+    import ssl
     try:
-        req = urllib.request.Request(page_url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        target_url = page_url.replace("uzmovi.com", "uzmovi.net")
+        req = urllib.request.Request(target_url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
         return _extract_uzmovi_items_from_html(html)
     except Exception as e:
@@ -183,9 +188,13 @@ def parse_uzmovi_page(page_url: str) -> List[QueueItem]:
         return []
 
 def parse_asilmedia_page(page_url: str) -> List[QueueItem]:
+    import ssl
     try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(page_url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=12) as resp:
+        with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
         return _extract_asilmedia_items_from_html(html)
     except Exception as e:
@@ -193,20 +202,36 @@ def parse_asilmedia_page(page_url: str) -> List[QueueItem]:
         return []
 
 async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str) -> List[QueueItem]:
+    target_url = page_url.replace("uzmovi.com", "uzmovi.net")
+    if "/tarjima-kinolar/" in target_url:
+        target_url = target_url.replace("/tarjima-kinolar/", "/tarjima-kinolarri/")
+    elif target_url.endswith("/tarjima-kinolar"):
+        target_url = target_url.replace("/tarjima-kinolar", "/tarjima-kinolarri")
+
     try:
-        async with session.get(page_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+        async with session.get(target_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
                 return _extract_uzmovi_items_from_html(html)
             else:
-                logger.warning(f"Uzmovi HTTP {resp.status} for {page_url}")
+                logger.warning(f"Uzmovi HTTP {resp.status} for {target_url}")
     except Exception as e:
-        logger.error(f"Async error scraping Uzmovi {page_url}: {e}")
+        logger.error(f"Async error scraping Uzmovi {target_url}: {e}")
+        # Agar uzmovi.net xato bersa, uzmovi.com orqali sinab ko'rish
+        if "uzmovi.net" in target_url:
+            fb_url = target_url.replace("uzmovi.net", "uzmovi.com")
+            try:
+                async with session.get(fb_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+                    if resp.status == 200:
+                        html = await resp.text(errors="ignore")
+                        return _extract_uzmovi_items_from_html(html)
+            except Exception as e2:
+                logger.error(f"Fallback Uzmovi error: {e2}")
     return []
 
 async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: str) -> List[QueueItem]:
     try:
-        async with session.get(page_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+        async with session.get(page_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
                 return _extract_asilmedia_items_from_html(html)

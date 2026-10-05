@@ -34,7 +34,7 @@ async def cmd_parse(source: str, max_pages: int):
     urls = []
     for page in range(1, max_pages + 1):
         if source == "uzmovi":
-            url = f"https://uzmovi.com/tarjima-kinolar/page/{page}/" if page > 1 else "https://uzmovi.com/tarjima-kinolar"
+            url = f"https://uzmovi.net/tarjima-kinolarri/page/{page}/" if page > 1 else "https://uzmovi.net/tarjima-kinolarri"
         elif source == "asilmedia":
             url = f"https://asilmedia.org/page/{page}/" if page > 1 else "https://asilmedia.org/"
         else:
