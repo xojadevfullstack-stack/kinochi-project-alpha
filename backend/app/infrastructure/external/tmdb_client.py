@@ -227,7 +227,19 @@ class TMDbClient:
         genres_list = [{"id": g.get("id"), "name": g.get("name")} for g in genres_raw]
         genres_names = ", ".join([g.get("name") for g in genres_raw if g.get("name")])
 
+        # Original / clean poster lookup (avoid Russian text overlays on posters)
         poster_path = data.get("poster_path")
+        try:
+            en_params = {**base_params, "language": "en-US"}
+            async with httpx.AsyncClient(timeout=6.0) as client_en:
+                resp_en = await client_en.get(f"{TMDB_BASE_URL}/{endpoint_type}/{tmdb_id}", headers=headers, params=en_params)
+                if resp_en.status_code == 200:
+                    en_data = resp_en.json()
+                    if en_data.get("poster_path"):
+                        poster_path = en_data["poster_path"]
+        except Exception:
+            pass
+
         poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
 
         vote_avg = data.get("vote_average")

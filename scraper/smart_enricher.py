@@ -139,6 +139,72 @@ def clean_movie_title(raw_title: str) -> str:
     return t or raw_title.strip()
 
 
+def clean_synopsis_text(raw_text: Optional[str], fallback_title: str = "", media_type: str = "movie") -> str:
+    """
+    Telegram botlaridagi barcha ortiqcha axlatlarni tozalaydi:
+    - Emojilar va sarlavhalar (🎬, ➖➖, Davlat:, Til:, IMDb:, Janr:, Sifat:, Kino kodi:, Bot orqali:)
+    - Pastki tugma va menyu yozuvlari (1-fasl qismni tanlang, Sifatni tanlang, t.me/, kanalimiz)
+    - Ruscha takroriy matnlar (Uzbek matnidan keyin ruscha kelgan qismlarni qirqib tashlaydi)
+    - Markdown simvollari (**, __, `, ~)
+    Natijada faqat sof o'zbek tilidagi chiroyli tavsif qoladi.
+    """
+    if not raw_text or not str(raw_text).strip():
+        return f"🍿 {fallback_title} {'seriali' if media_type == 'series' else 'kinofilmi'} o'zbek tilida."
+
+    lines = str(raw_text).strip().split("\n")
+    cleaned_lines = []
+    
+    header_keywords = [
+        "davlat:", "til:", "yil:", "imdb:", "janr:", "sifat:", "davomiyligi:",
+        "kino kodi:", "film kodi:", "kod:", "bot orqali", "premyera!", "premyera",
+        "yuklangan:", "ovoz beruvchilar:", "format:", "barcha qismlar", "rejissyor:"
+    ]
+    footer_keywords = [
+        "qismni tanlang", "sifatni tanlang", "kino videosi", "yuklanmoqda",
+        "kanalimiz", "botimiz", "do'stlarga ulashing", "t.me/", "fasl", "qism"
+    ]
+
+    for line in lines:
+        l_str = line.strip()
+        if not l_str:
+            continue
+        
+        # Ajratuvchi chiziqlar (➖➖, – –, ---, ===)
+        if re.search(r'[\u2796\u2500\u2014\u2013\-_*=]{3,}', l_str):
+            continue
+
+        # Sarlavha yoki ost-sarlavha qatorlari (__Original Title__, **Title**)
+        if re.match(r'^(__|\*\*).+(__|\*\*)$', l_str) and len(l_str) < 60:
+            continue
+        
+        lower = l_str.lower()
+        if any(lower.startswith(emoji) for emoji in ["🎬", "🌐", "🎙", "📅", "⭐", "🎭", "⏱", "🆔", "📥", "📺", "📀", "💿", "🗣", "🎞", "🖥", "🔥", "👇", "👉", "⬇️"]):
+            continue
+        if any(hk in lower for hk in header_keywords if len(lower) < 100):
+            continue
+        if any(fk in lower for fk in footer_keywords if len(lower) < 100):
+            continue
+
+        cleaned_lines.append(l_str)
+
+    synopsis = " ".join(cleaned_lines).strip()
+    synopsis = re.sub(r'[*_~`#]', '', synopsis)
+
+    # Ruscha qismini ajratib qirqish (odatda o'zbekcha matndan keyin ruscha matn takrorlanadi)
+    cyrillic_match = re.search(r'([А-Яа-яЁё]{4,})', synopsis)
+    if cyrillic_match:
+        start_pos = cyrillic_match.start()
+        latin_prefix = synopsis[:start_pos].strip()
+        if len(latin_prefix) > 30:
+            synopsis = latin_prefix.rstrip(' .–—,;:') + "."
+
+    synopsis = re.sub(r'\s+', ' ', synopsis).strip()
+    if len(synopsis) < 25:
+        return f"🍿 {fallback_title} {'seriali' if media_type == 'series' else 'kinofilmi'} o'zbek tilida."
+
+    return synopsis
+
+
 def normalize_title_tokens(t: Optional[str]) -> set:
     if not t:
         return set()
@@ -221,12 +287,12 @@ async def enrich_movie_smart(
 
     detected_type = "series" if (media_type == "series" or any(w in raw_title.lower() for w in ["serial", "dorama", "mavsum"])) else "movie"
 
-    # Default description: if source_desc or caption contains full synopsis, use it!
+    # Default description: if source_desc or caption contains full synopsis, clean it!
     clean_default_desc = ""
     if source_desc and len(source_desc.strip()) > 30:
-        clean_default_desc = source_desc.strip()
+        clean_default_desc = clean_synopsis_text(source_desc, clean_title, detected_type)
     elif caption and len(caption.strip()) > 30:
-        clean_default_desc = caption.strip()
+        clean_default_desc = clean_synopsis_text(caption, clean_title, detected_type)
     else:
         clean_default_desc = f"🍿 {clean_title} {'seriali' if detected_type == 'series' else 'kinofilmi'} o'zbek tilida."
 
@@ -265,8 +331,10 @@ async def enrich_movie_smart(
             metadata["original_title"] = ai_info["original_title"]
         if ai_info.get("release_year") and not year:
             metadata["release_year"] = ai_info["release_year"]
-        if ai_info.get("description") and len(ai_info["description"]) > len(metadata["description"]):
-            metadata["description"] = ai_info["description"]
+        if ai_info.get("description") and len(ai_info["description"].strip()) > 20:
+            cleaned_ai_desc = clean_synopsis_text(ai_info["description"], clean_title, detected_type)
+            if cleaned_ai_desc and not cleaned_ai_desc.startswith("🍿"):
+                metadata["description"] = cleaned_ai_desc
         if ai_info.get("genres"):
             metadata["genres"] = ", ".join(ai_info["genres"])
             for g in ai_info["genres"]:
@@ -346,13 +414,13 @@ async def enrich_movie_smart(
                     for g in tmdb_uz_genres:
                         matched_cat_names.add(g.strip().lower())
 
-                # Tavsifni o'zbekchaga tarjima qilish (faqat tavsif juda qisqa bo'lsa)
-                if not metadata.get("description") or len(metadata["description"]) < 50:
+                # Tavsifni o'zbekchaga tarjima qilish (faqat tavsif juda qisqa bo'lsa yoki shablon bo'lsa)
+                if not metadata.get("description") or len(metadata["description"]) < 50 or metadata["description"].startswith("🍿"):
                     raw_overview = details.get("overview") or ""
                     if raw_overview:
                         trans_desc, _ = await translator_service.translate_to_uzbek(raw_overview)
                         if trans_desc:
-                            metadata["description"] = trans_desc
+                            metadata["description"] = clean_synopsis_text(trans_desc, clean_title, detected_type)
 
                 metadata["source_used"] = "tmdb"
                 logger.info(f"✅ TMDb tasdiqlangan ma'lumot berdi (ID: {tmdb_id}, Poster: {metadata['poster_url']})")
@@ -396,6 +464,9 @@ async def enrich_movie_smart(
             metadata["poster_url"] = f"https:{p}"
         elif p.startswith("/"):
             metadata["poster_url"] = f"https://asilmedia.org{p}"
+
+    # Yakuniy tavsifni to'liq tozalash va standartlashtirish
+    metadata["description"] = clean_synopsis_text(metadata.get("description", ""), clean_title, detected_type)
 
     return metadata
 
