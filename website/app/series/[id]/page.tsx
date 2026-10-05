@@ -147,12 +147,18 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 <span>SERIAL</span>
               </div>
 
-              {series.categories?.[0]?.name && (
-                <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/10 text-text-secondary text-xs font-medium shadow-sm">
-                  <span className="material-symbols-outlined text-[13px] text-white/40">category</span>
-                  <span>{series.categories[0].name}</span>
-                </div>
-              )}
+              {series.categories && series.categories.length > 0 ? (
+                series.categories.map((cat: any) => (
+                  <a
+                    key={cat.id}
+                    href={`/category/${cat.id}`}
+                    className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] backdrop-blur-md border border-white/10 text-text-secondary hover:text-white text-xs font-medium shadow-sm transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[13px] text-white/40">category</span>
+                    <span>{cat.name}</span>
+                  </a>
+                ))
+              ) : null}
             </div>
             
             {/* Description */}

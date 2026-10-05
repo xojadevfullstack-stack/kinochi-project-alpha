@@ -36,6 +36,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     { name: "Sahifalar", href: "/pages", icon: "pages" },
     { name: "Kanallar", href: "/channels", icon: "hub" },
     { name: "Manbalar", href: "/sources", icon: "source" },
+    { name: "Parser & Grabber", href: "/scraper", icon: "smart_toy" },
     { name: "Xabarnomalar", href: "/broadcasts", icon: "podcasts" },
   ];
 

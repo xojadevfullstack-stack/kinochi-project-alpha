@@ -869,6 +869,13 @@ export default function MoviesPage() {
                 </option>
               ))}
             </select>
+            {editingId && movies.find((m) => m.id === editingId)?.source_topic_id && (
+              <div className="mt-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">forum</span>
+                Telegram 'manba' guruhidagi faol Topic:{" "}
+                <b>#{movies.find((m) => m.id === editingId)?.source_topic_id}</b>
+              </div>
+            )}
             {errorMsg && <p className="text-red-400 text-xs sm:text-sm mt-1">{errorMsg}</p>}
           </div>
 

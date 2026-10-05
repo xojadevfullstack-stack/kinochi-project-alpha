@@ -134,7 +134,15 @@ class TelegramClient:
         async with httpx.AsyncClient() as client:
             try:
                 # 1. Forward the message to get the Message object
-                response = await client.post(url_forward, json=data_forward, timeout=10.0)
+                response = None
+                for attempt in range(2):
+                    try:
+                        response = await client.post(url_forward, json=data_forward, timeout=60.0)
+                        break
+                    except (httpx.ReadTimeout, httpx.ConnectTimeout):
+                        if attempt == 1:
+                            raise
+                        await asyncio.sleep(1.0)
                 result = response.json()
                 
                 if not response.is_success or not result.get("ok"):

@@ -20,7 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper
 from app.api.limiter import limiter
 
 # ── Lifespan (startup / shutdown hooks) ──────────────────────────
@@ -123,6 +123,7 @@ app.include_router(telegram_auth.router, prefix="/api/v1")
 app.include_router(reviews.router, prefix="/api/v1")
 app.include_router(statistics.router, prefix="/api/v1")
 app.include_router(content_lookup.router, prefix="/api/v1")
+app.include_router(scraper.router, prefix="/api/v1")
 
 # ── CORS ─────────────────────────────────────────────────────────
 app.add_middleware(

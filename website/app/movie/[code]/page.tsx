@@ -126,14 +126,53 @@ export default async function MovieDetailsPage({ params }: Props) {
                 <span>KINO</span>
               </div>
 
-              {(movie.genres?.split(',')[0]?.trim() || movie.categories?.[0]?.name) && (
-                <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/10 text-text-secondary text-xs font-medium shadow-sm">
-                  <span className="material-symbols-outlined text-[13px] text-white/40">category</span>
-                  <span>{movie.genres?.split(',')[0]?.trim() || movie.categories?.[0]?.name}</span>
-                </div>
-              )}
+              {/* Categories & Genres */}
+              {movie.categories && movie.categories.length > 0 ? (
+                movie.categories.map((cat: any) => (
+                  <a
+                    key={cat.id}
+                    href={`/category/${cat.id}`}
+                    className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] backdrop-blur-md border border-white/10 text-text-secondary hover:text-white text-xs font-medium shadow-sm transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[13px] text-white/40">category</span>
+                    <span>{cat.name}</span>
+                  </a>
+                ))
+              ) : movie.genres ? (
+                movie.genres.split(",").map((g: string, idx: number) => {
+                  const cleanG = g.trim();
+                  if (!cleanG) return null;
+                  return (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.06] backdrop-blur-md border border-white/10 text-text-secondary text-xs font-medium shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[13px] text-white/40">category</span>
+                      <span>{cleanG}</span>
+                    </div>
+                  );
+                })
+              ) : null}
             </div>
             
+            {/* Meta details: Director & Cast */}
+            {(movie.director || movie.cast) && (
+              <div className="flex flex-col gap-1 text-xs text-text-secondary mb-3 text-center md:text-left">
+                {movie.director && (
+                  <div>
+                    <span className="text-white/50 font-medium">Rejissyor:</span>{" "}
+                    <span className="text-white/90 font-medium">{movie.director}</span>
+                  </div>
+                )}
+                {movie.cast && (
+                  <div>
+                    <span className="text-white/50 font-medium">Bosh rollarda:</span>{" "}
+                    <span className="text-white/90 font-medium">{movie.cast}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Description */}
             <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-text-secondary mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
               {movie.description || "Ushbu kino haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
