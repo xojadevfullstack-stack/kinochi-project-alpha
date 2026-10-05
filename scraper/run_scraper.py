@@ -49,12 +49,15 @@ async def cmd_parse(source: str, max_pages: int):
             tasks = [parse_uzmovi_page_async(session, u) for u in urls]
         else:
             tasks = [parse_asilmedia_page_async(session, u) for u in urls]
-        pages_results = await asyncio.gather(*tasks)
+        pages_results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_items = []
-    for p_idx, items in enumerate(pages_results, 1):
-        all_items.extend(items)
-        print(f"📄 Sahifa {p_idx}: {len(items)} ta element yuklandi.")
+    for p_idx, res in enumerate(pages_results, 1):
+        if isinstance(res, Exception):
+            print(f"⚠️ Sahifa {p_idx} yuklanmadi: {res}")
+            continue
+        all_items.extend(res)
+        print(f"📄 Sahifa {p_idx}: {len(res)} ta element yuklandi.")
 
     # Dublikatlarni parallel tekshirish (1 soniyada yuzlab kinolar tekshiriladi)
     print(f"🔄 {len(all_items)} ta kino/serial bazadagi dublikatlarga parallel tekshirilmoqda...")
@@ -62,10 +65,12 @@ async def cmd_parse(source: str, max_pages: int):
         checker.check(item.title, year=item.year, original_title=item.original_title, media_type=item.media_type)
         for item in all_items
     ]
-    dup_results = await asyncio.gather(*dup_tasks)
+    dup_results = await asyncio.gather(*dup_tasks, return_exceptions=True)
 
     duplicates_detected = 0
     for item, dup_res in zip(all_items, dup_results):
+        if isinstance(dup_res, Exception):
+            continue
         if dup_res.is_duplicate:
             item.status = "already_exists"
             item.error_message = f"Bazada mavjud: {dup_res.reason} (ID: {dup_res.matched_id})"
@@ -117,6 +122,9 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
     client = create_telethon_client()
     try:
         await client.connect()
+        if not await client.is_user_authorized():
+            print("\n❌ Telegram client avtorizatsiyadan o'tmagan! kinochi_userbot.session faylini tekshiring.")
+            return
     except Exception as e:
         print(f"\n❌ Telegram clientni ishga tushirishda xatolik: {e}")
         return
@@ -128,7 +136,12 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             qm = QueueManager()
             for idx, c in enumerate(code_list, 1):
                 print(f"\n[{idx}/{len(code_list)}] 🎬 Kod #{c} bo'yicha moderator sikli boshlanmoqda...")
-                success = await pipeline.run_by_code(code=c, target_bot=bot_username)
+                try:
+                    success = await pipeline.run_by_code(code=c, target_bot=bot_username)
+                except Exception as ex:
+                    print(f"❌ Kod #{c} da kutilmagan xatolik: {ex}")
+                    success = False
+
                 if success:
                     print(f"✅ Kod #{c} muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi.")
                     for qid in [f"asilmedia_{c}", f"uzmovi_{c}"]:
@@ -147,7 +160,12 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 print(f"\n[{idx}/{len(pending)}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
                 qm.update_status(item.id, "in_progress")
                 
-                success = await pipeline.run_item(item, target_bot=bot_username)
+                try:
+                    success = await pipeline.run_item(item, target_bot=bot_username)
+                except Exception as ex:
+                    print(f"❌ '{item.title}' yuklashda kutilmagan xatolik: {ex}")
+                    success = False
+
                 if success:
                     qm.update_status(item.id, "completed")
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")

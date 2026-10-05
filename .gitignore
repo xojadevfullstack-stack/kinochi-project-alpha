@@ -41,3 +41,17 @@ node_modules/
 .next/
 out/
 *.tsbuildinfo
+
+# Scraper runtime data / secrets
+*.session
+*.session-journal
+scraper/scraper_queue.json
+scraper/*.tmp
+scraper/downloads/
+downloads/
+scraper/*.bak
+backend/*.json
+backend/*summary*.txt
+backend/results.txt
+backend/unknown_errors.txt
+unknown_errors.txt

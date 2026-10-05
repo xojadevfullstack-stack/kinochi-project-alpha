@@ -9,61 +9,80 @@ from typing import Dict, Any, List, Optional
 from scraper.queue_manager import QueueManager
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-VENV_PYTHON = os.path.join(ROOT_DIR, "backend", ".venv", "Scripts", "python.exe")
-if not os.path.exists(VENV_PYTHON):
-    VENV_PYTHON = sys.executable
+SCRAPER_SCRIPT = os.path.join(ROOT_DIR, "scraper", "run_scraper.py")
+
+
+def _find_python() -> str:
+    candidates = [
+        os.path.join(ROOT_DIR, "backend", ".venv", "Scripts", "python.exe"),
+        os.path.join(ROOT_DIR, "backend", ".venv", "bin", "python"),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return sys.executable
+
+
+VENV_PYTHON = _find_python()
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
 
 class ProcessManager:
     _instance = None
-    _lock = threading.Lock()
+    _singleton_lock = threading.Lock()
 
     def __new__(cls):
         if cls._instance is None:
-            with cls._lock:
+            with cls._singleton_lock:
                 if cls._instance is None:
-                    cls._instance = super(ProcessManager, cls).__new__(cls)
-                    cls._instance._init()
+                    inst = super(ProcessManager, cls).__new__(cls)
+                    inst._init()
+                    cls._instance = inst
         return cls._instance
 
     def _init(self):
+        # Re-entrant: helper methods are called while the lock is already held.
+        self._lock = threading.RLock()
         self.process: Optional[subprocess.Popen] = None
-        self.reader_thread: Optional[threading.Thread] = None
         self.is_running: bool = False
-        self.task_type: str = "idle"  # "parse", "download", "clean_duplicates", "idle"
+        self.stop_requested: bool = False
+        self.task_type: str = "idle"
         self.current_action: str = "Tizim tayyor"
         self.current_item: Optional[Dict[str, Any]] = None
-        self.progress: Dict[str, Any] = {
-            "current": 0,
-            "total": 0,
-            "percentage": 0.0
-        }
+        self.progress: Dict[str, Any] = {"current": 0, "total": 0, "percentage": 0.0}
         self.started_at: Optional[float] = None
         self.finished_at: Optional[float] = None
         self.logs: List[Dict[str, Any]] = []
-        self.max_logs: int = 250
-        self.qm = QueueManager()
+        self.max_logs: int = 300
 
+    # ── logging ──────────────────────────────────────────────
     def _add_log(self, message: str, level: str = "info"):
         ts = datetime.datetime.now().strftime("%H:%M:%S")
         with self._lock:
-            self.logs.append({
-                "timestamp": ts,
-                "message": message,
-                "level": level
-            })
+            self.logs.append({"timestamp": ts, "message": message, "level": level})
             if len(self.logs) > self.max_logs:
-                self.logs.pop(0)
+                del self.logs[: len(self.logs) - self.max_logs]
+
+    def _set_progress(self, current: int, total: int):
+        total = max(total, 0)
+        current = max(current, 0)
+        if total and current > total:
+            current = total
+        self.progress["current"] = current
+        self.progress["total"] = total
+        self.progress["percentage"] = round(current / total * 100, 1) if total > 0 else 0.0
 
     def _parse_line(self, line: str):
-        line = line.strip()
+        line = _ANSI_RE.sub("", line).strip()
         if not line:
             return
 
-        level = "info"
         lower = line.lower()
-        if "❌" in line or "xatolik" in lower or "error" in lower or "failed" in lower:
+        level = "info"
+        if "❌" in line or "traceback" in lower or "xatolik" in lower or "error" in lower:
             level = "error"
-        elif "⚠️" in line or "ogohlantirish" in lower or "warning" in lower:
+        elif "⚠️" in line or "warning" in lower or "yuklab bo'lmadi" in lower:
             level = "warning"
         elif "✅" in line or "muvaffaqiyatli" in lower or "yakunlandi" in lower:
             level = "success"
@@ -71,217 +90,212 @@ class ProcessManager:
         self._add_log(line, level=level)
 
         with self._lock:
-            # 1. Check for progress pattern [idx/total]
-            # e.g.: [1/5] 🎬 Kod #15 bo'yicha ... or [3/20] 🚀 [KINO] 'Avatar' ...
-            prog_match = re.search(r"\[(\d+)\/(\d+)\]", line)
-            if prog_match:
-                curr = int(prog_match.group(1))
-                tot = int(prog_match.group(2))
-                self.progress["current"] = curr
-                self.progress["total"] = tot
-                self.progress["percentage"] = round((curr / tot) * 100, 1) if tot > 0 else 0.0
+            prog = re.search(r"\[(\d+)/(\d+)\]", line)
+            if prog:
+                self._set_progress(int(prog.group(1)) - 1, int(prog.group(2)))
+                title = re.search(r"'([^']+)'", line)
+                code = re.search(r"Kod #(\w+)", line)
+                if title:
+                    self.current_item = {"title": title.group(1)}
+                elif code:
+                    self.current_item = {"code": code.group(1)}
+                self.current_action = line
+                return
 
-            # 2. Check for current item/action details
-            if "bo'yicha sikl boshlanmoqda" in line or "bo'yicha moderator sikli boshlanmoqda" in line:
+            page = re.search(r"Sahifa (\d+):", line)
+            if page and self.task_type == "parse":
+                total = self.progress["total"] or int(page.group(1))
+                self._set_progress(int(page.group(1)), total)
                 self.current_action = line
-                # Try to extract title
-                title_match = re.search(r"'([^']+)'", line)
-                if title_match:
-                    self.current_item = {"title": title_match.group(1)}
-                elif "Kod #" in line:
-                    code_match = re.search(r"Kod #(\w+)", line)
-                    if code_match:
-                        self.current_item = {"code": code_match.group(1)}
-            elif "Sahifa " in line and "element yuklandi" in line:
+            elif "muvaffaqiyatli saqlandi" in lower or "yuklab bo'lmadi" in lower:
+                # finished the current item -> count it as done
+                self._set_progress(self.progress["current"] + 1, self.progress["total"])
                 self.current_action = line
-            elif "parallel katalog yig'ish boshlanmoqda" in line:
-                self.current_action = line
-            elif "dublikatlarga parallel tekshirilmoqda" in line:
+            elif "dublikatlarga" in lower and "tekshirilmoqda" in lower:
                 self.current_action = "Bazadagi dublikatlarga tekshirilmoqda..."
-            elif "Muvaffaqiyatli saqlandi" in line:
+            elif "katalog yig'ish boshlanmoqda" in lower:
                 self.current_action = line
-            elif "Yuklab bo'lmadi" in line:
-                self.current_action = line
-            elif "tanaffus" in line:
+            elif "tanaffus" in lower:
                 self.current_action = "Telegram flood-wait oldini olish uchun tanaffus..."
+            elif "yuklash boshlanmoqda" in lower:
+                total = re.search(r"(\d+) ta", line)
+                if total:
+                    self._set_progress(0, int(total.group(1)))
+                self.current_action = line
 
+    # ── worker ───────────────────────────────────────────────
     def _run_worker(self, cmd_args: List[str], task_name: str, expected_total: int = 0):
-        self.is_running = True
-        self.task_type = task_name
-        self.started_at = time.time()
-        self.finished_at = None
-        self.progress = {
-            "current": 0,
-            "total": expected_total,
-            "percentage": 0.0
-        }
-        self.current_action = f"{task_name.upper()} jarayoni ishga tushirildi..."
-        self._add_log(f"🚀 Jarayon boshlandi: {' '.join(cmd_args)}", level="info")
-
+        # NOTE: caller (_launch) has already set is_running/progress under lock.
+        return_code: Optional[int] = None
         try:
-            # Set unbuffered python output
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
             env["PYTHONIOENCODING"] = "utf-8"
 
-            self.process = subprocess.Popen(
+            creationflags = 0
+            if sys.platform == "win32":
+                creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+            proc = subprocess.Popen(
                 cmd_args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
                 bufsize=1,
                 cwd=ROOT_DIR,
-                env=env
+                env=env,
+                creationflags=creationflags,
             )
-
-            for line in iter(self.process.stdout.readline, ''):
-                if not line:
-                    break
-                self._parse_line(line)
-
-            self.process.stdout.close()
-            return_code = self.process.wait()
-            
             with self._lock:
-                if return_code == 0:
-                    self._add_log(f"🏁 Jarayon muvaffaqiyatli yakunlandi (Exit code: 0)", level="success")
-                    self.current_action = "Muvaffaqiyatli yakunlandi"
-                    self.progress["percentage"] = 100.0
-                elif return_code < 0 or return_code == 15: # Terminated
+                self.process = proc
+
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                self._parse_line(line)
+            try:
+                proc.stdout.close()
+            except Exception:
+                pass
+            return_code = proc.wait()
+        except Exception as e:
+            self._add_log(f"❌ Subprocess xatosi: {e}", level="error")
+            with self._lock:
+                self.current_action = f"Tizim xatosi: {e}"
+        finally:
+            # Items left "in_progress" by a stopped/crashed run must not stay stuck.
+            try:
+                reset = QueueManager().reset_stuck_in_progress()
+                if reset:
+                    self._add_log(f"♻️ {reset} ta qotib qolgan element 'kutilmoqda' holatiga qaytarildi.", level="info")
+            except Exception as e:
+                self._add_log(f"⚠️ Navbatni tiklashda xatolik: {e}", level="warning")
+
+            with self._lock:
+                if self.stop_requested:
                     self._add_log("⏹️ Jarayon admin tomonidan to'xtatildi", level="warning")
                     self.current_action = "To'xtatildi"
-                else:
-                    self._add_log(f"❌ Jarayon xatolik bilan yakunlandi (Exit code: {return_code})", level="error")
-                    self.current_action = f"Xatolik yuz berdi (code: {return_code})"
-        except Exception as e:
-            self._add_log(f"❌ Subprocess xatosi: {str(e)}", level="error")
-            self.current_action = f"Tizim xatosi: {str(e)}"
-        finally:
-            with self._lock:
+                elif return_code == 0:
+                    self._add_log("🏁 Jarayon muvaffaqiyatli yakunlandi", level="success")
+                    self.current_action = "Muvaffaqiyatli yakunlandi"
+                    self.current_item = None
+                    if task_name != "clean_duplicates" or self.progress["total"]:
+                        self._set_progress(self.progress["total"], self.progress["total"])
+                    if not self.progress["total"]:
+                        self.progress["percentage"] = 100.0
+                elif return_code is not None:
+                    self._add_log(f"❌ Jarayon xatolik bilan yakunlandi (exit code: {return_code})", level="error")
+                    self.current_action = f"Xatolik yuz berdi (exit code: {return_code})"
                 self.is_running = False
                 self.finished_at = time.time()
                 self.process = None
+                self.stop_requested = False
 
-    def start_parse(self, source: str = "uzmovi", pages: int = 3) -> Dict[str, Any]:
+    def _launch(self, cmd: List[str], task_name: str, expected_total: int, ok_message: str) -> Dict[str, Any]:
         with self._lock:
             if self.is_running:
                 return {"success": False, "message": "Boshqa jarayon allaqachon ishlayapti!"}
+            # Claim the slot synchronously -> no double-start race.
+            self.is_running = True
+            self.stop_requested = False
+            self.task_type = task_name
+            self.started_at = time.time()
+            self.finished_at = None
+            self.current_item = None
+            self.current_action = f"{task_name} jarayoni ishga tushirilmoqda..."
+            self._set_progress(0, expected_total)
+            self._add_log(f"🚀 Jarayon boshlandi: {task_name}", level="info")
 
-        script_path = os.path.join(ROOT_DIR, "scraper", "run_scraper.py")
-        cmd = [
-            VENV_PYTHON,
-            script_path,
-            "--parse",
-            "--source", source,
-            "--pages", str(pages)
-        ]
+        try:
+            t = threading.Thread(target=self._run_worker, args=(cmd, task_name, expected_total), daemon=True)
+            t.start()
+        except Exception as e:
+            with self._lock:
+                self.is_running = False
+            return {"success": False, "message": f"Jarayonni ishga tushirib bo'lmadi: {e}"}
+        return {"success": True, "message": ok_message}
 
-        self.reader_thread = threading.Thread(
-            target=self._run_worker,
-            args=(cmd, "parse", pages),
-            daemon=True
-        )
-        self.reader_thread.start()
-        return {"success": True, "message": f"{source} manbasidan {pages} ta sahifa yig'ish boshlandi."}
+    # ── public API ───────────────────────────────────────────
+    def start_parse(self, source: str = "uzmovi", pages: int = 3) -> Dict[str, Any]:
+        if source not in ("uzmovi", "asilmedia"):
+            return {"success": False, "message": "Noma'lum manba."}
+        pages = max(1, min(int(pages), 20))
+        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--parse", "--source", source, "--pages", str(pages)]
+        return self._launch(cmd, "parse", pages, f"{source} manbasidan {pages} ta sahifa yig'ish boshlandi.")
 
     def start_download(
         self,
         target: str = "uzmovi",
         limit: int = 5,
         codes: Optional[str] = None,
-        media_type: str = "all"
+        media_type: str = "all",
     ) -> Dict[str, Any]:
-        with self._lock:
-            if self.is_running:
-                return {"success": False, "message": "Boshqa jarayon allaqachon ishlayapti!"}
+        if target not in ("uzmovi", "asilmedia"):
+            return {"success": False, "message": "Noma'lum maqsadli bot."}
+        if media_type not in ("all", "movie", "series"):
+            return {"success": False, "message": "Noma'lum media turi."}
+        limit = max(1, min(int(limit), 100))
 
-        script_path = os.path.join(ROOT_DIR, "scraper", "run_scraper.py")
-        cmd = [
-            VENV_PYTHON,
-            script_path,
-            "--download",
-            "--target", target,
-            "--limit", str(limit),
-            "--media-type", media_type
-        ]
+        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--download", "--target", target,
+               "--limit", str(limit), "--media-type", media_type]
+        expected = limit
         if codes and codes.strip():
-            cmd.extend(["--codes", codes.strip()])
-
-        expected_count = limit
-        if codes and codes.strip():
-            expected_count = len([c for c in codes.split(",") if c.strip()])
-
-        self.reader_thread = threading.Thread(
-            target=self._run_worker,
-            args=(cmd, "download", expected_count),
-            daemon=True
-        )
-        self.reader_thread.start()
-        return {"success": True, "message": f"Telegram grabber ishga tushirildi (Maqsad: {target})."}
+            clean = codes.strip()
+            if not re.fullmatch(r"[0-9A-Za-z,\- ]+", clean):
+                return {"success": False, "message": "Kodlar formati noto'g'ri (masalan: 15 yoki 1-5 yoki 10,12)."}
+            cmd.extend(["--codes", clean.replace(" ", "")])
+            expected = 0  # real total is announced by the scraper's own output
+        return self._launch(cmd, "download", expected, f"Telegram grabber ishga tushirildi (Maqsad: {target}).")
 
     def start_clean_duplicates(self) -> Dict[str, Any]:
-        with self._lock:
-            if self.is_running:
-                return {"success": False, "message": "Boshqa jarayon allaqachon ishlayapti!"}
-
-        script_path = os.path.join(ROOT_DIR, "scraper", "run_scraper.py")
-        cmd = [
-            VENV_PYTHON,
-            script_path,
-            "--clean-duplicates"
-        ]
-
-        self.reader_thread = threading.Thread(
-            target=self._run_worker,
-            args=(cmd, "clean_duplicates", 0),
-            daemon=True
-        )
-        self.reader_thread.start()
-        return {"success": True, "message": "Dublikatlarni tozalash jarayoni boshlandi."}
+        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--clean-duplicates"]
+        return self._launch(cmd, "clean_duplicates", 0, "Dublikatlarni tozalash jarayoni boshlandi.")
 
     def stop_process(self) -> Dict[str, Any]:
         with self._lock:
-            if not self.is_running or not self.process:
+            proc = self.process
+            if not self.is_running or proc is None or proc.poll() is not None:
                 return {"success": False, "message": "Hozirda faol jarayon yo'q."}
+            self.stop_requested = True
+            self.current_action = "To'xtatilmoqda..."
+            self._add_log("⚠️ Jarayonga to'xtatish signali yuborildi...", level="warning")
 
+        try:
+            proc.terminate()
+        except Exception as e:
+            return {"success": False, "message": f"To'xtatishda xatolik: {e}"}
+
+        def kill_if_alive():
+            time.sleep(5)
             try:
-                self.process.terminate()
-                self._add_log("⚠️ Jarayonga to'xtatish signali (terminate) yuborildi...", level="warning")
-                # Wait briefly
-                def kill_if_alive():
-                    time.sleep(3)
-                    if self.process and self.process.poll() is None:
-                        self.process.kill()
-                        self._add_log("🛑 Jarayon majburiy to'xtatildi (killed).", level="warning")
-                threading.Thread(target=kill_if_alive, daemon=True).start()
-                return {"success": True, "message": "Jarayonni to'xtatish so'rovi berildi."}
-            except Exception as e:
-                return {"success": False, "message": f"To'xtatishda xatolik: {str(e)}"}
+                if proc.poll() is None:
+                    proc.kill()
+                    self._add_log("🛑 Jarayon majburiy to'xtatildi (kill).", level="warning")
+            except Exception:
+                pass
+
+        threading.Thread(target=kill_if_alive, daemon=True).start()
+        return {"success": True, "message": "Jarayonni to'xtatish so'rovi berildi."}
 
     def get_status(self) -> Dict[str, Any]:
-        qm = QueueManager()
-        stats = qm.stats()
-
-        elapsed = 0
-        if self.started_at:
-            if self.is_running:
-                elapsed = int(time.time() - self.started_at)
-            elif self.finished_at:
-                elapsed = int(self.finished_at - self.started_at)
-
+        stats = QueueManager().stats()
         with self._lock:
+            elapsed = 0
+            if self.started_at:
+                end = time.time() if self.is_running else (self.finished_at or time.time())
+                elapsed = int(end - self.started_at)
             return {
                 "is_running": self.is_running,
                 "task_type": self.task_type,
                 "current_action": self.current_action,
-                "current_item": self.current_item,
+                "current_item": dict(self.current_item) if self.current_item else None,
                 "progress": dict(self.progress),
                 "started_at": datetime.datetime.fromtimestamp(self.started_at).isoformat() if self.started_at else None,
                 "elapsed_seconds": elapsed,
                 "logs": list(self.logs),
-                "stats": stats
+                "stats": stats,
             }
 
     def clear_logs(self):

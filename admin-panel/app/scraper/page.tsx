@@ -81,18 +81,29 @@ export default function ScraperPage() {
   // Active Control Tab
   const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "tools">("grabber");
 
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const queueReqId = useRef(0);
+  const statusInFlight = useRef(false);
+  const wasRunning = useRef(false);
+
   // ── Fetch Status periodically ────────────────────────────
   const fetchStatus = async () => {
+    if (statusInFlight.current) return; // never stack requests on a slow backend
+    statusInFlight.current = true;
     try {
       const data = await fetchApi("/scraper/status");
       setStatus(data);
+      setStatusError(null);
     } catch (err: any) {
-      console.error("Status fetch error:", err);
+      setStatusError(err?.message || "Statusni olib bo'lmadi");
+    } finally {
+      statusInFlight.current = false;
     }
   };
 
   // ── Fetch Queue Items ────────────────────────────────────
   const fetchQueue = async (page = queuePage) => {
+    const reqId = ++queueReqId.current; // only the latest request may update the UI
     setLoadingQueue(true);
     try {
       const queryParams = new URLSearchParams({
@@ -105,43 +116,51 @@ export default function ScraperPage() {
         queryParams.append("search", searchQuery.trim());
       }
       const data = await fetchApi(`/scraper/queue?${queryParams.toString()}`);
+      if (reqId !== queueReqId.current) return;
+
+      // Page vanished (e.g. last item on it was deleted) -> go back one page
+      if ((data.items || []).length === 0 && page > 1 && data.total_pages < page) {
+        fetchQueue(Math.max(1, data.total_pages));
+        return;
+      }
       setQueueItems(data.items || []);
       setQueueTotal(data.total || 0);
       setQueuePage(data.page || 1);
       setQueueTotalPages(data.total_pages || 1);
     } catch (err: any) {
-      console.error("Queue fetch error:", err);
+      if (reqId === queueReqId.current) console.error("Queue fetch error:", err);
     } finally {
-      setLoadingQueue(false);
+      if (reqId === queueReqId.current) setLoadingQueue(false);
     }
   };
 
-  // Periodic Polling
+  // Initial load
   useEffect(() => {
     fetchStatus();
-    fetchQueue(1);
+  }, []);
 
-    const interval = setInterval(() => {
-      if (isPolling) {
-        fetchStatus();
-      }
-    }, 2000);
-
+  // Status polling (2s) — only toggles the interval, doesn't reload the queue
+  useEffect(() => {
+    if (!isPolling) return;
+    const interval = setInterval(fetchStatus, 2000);
     return () => clearInterval(interval);
   }, [isPolling]);
 
-  // If status is running, reload queue on complete or progress
+  // Refresh queue while a job is running (every 4s)
   useEffect(() => {
-    if (status?.is_running) {
-      // Periodic queue reload while running to show items transitioning
-      const qInterval = setInterval(() => {
-        fetchQueue(queuePage);
-      }, 5000);
-      return () => clearInterval(qInterval);
-    }
+    if (!status?.is_running) return;
+    const qInterval = setInterval(() => fetchQueue(queuePage), 4000);
+    return () => clearInterval(qInterval);
   }, [status?.is_running, queuePage, statusFilter, sourceFilter, searchQuery]);
 
-  // Filters change
+  // One final queue refresh the moment a job finishes
+  useEffect(() => {
+    const running = !!status?.is_running;
+    if (wasRunning.current && !running) fetchQueue(queuePage);
+    wasRunning.current = running;
+  }, [status?.is_running]);
+
+  // Filters change (also covers the initial queue load)
   useEffect(() => {
     fetchQueue(1);
   }, [statusFilter, sourceFilter]);
@@ -373,6 +392,16 @@ export default function ScraperPage() {
           </button>
         </div>
       </div>
+
+      {statusError && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl px-4 py-3 text-sm flex items-start gap-3">
+          <span className="material-symbols-outlined text-xl shrink-0">warning</span>
+          <div>
+            <p className="font-semibold">Scraper holatini olib bo'lmadi</p>
+            <p className="text-xs text-red-300/80 mt-0.5">{statusError}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── 1. ACTIVE PROCESS MONITOR (KATTA VIZUAL PANEL) ─────────── */}
       <div className="bg-surface-container-lowest/80 border border-white/10 rounded-2xl p-5 sm:p-6 backdrop-blur-md relative overflow-hidden shadow-2xl">
