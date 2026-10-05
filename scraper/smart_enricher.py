@@ -51,8 +51,12 @@ async def gemini_identify_movie(
     default_type = "series" if media_type == "series" else "movie"
 
     prompt = f"""
-Senga o'zbek tilidagi film yoki serial nomi va qo'shimcha ma'lumot beriladi. {type_hint_str}
-Vazifang: Ushbu kino/serialni aniqlab, uning original nomi, inglizcha nomi, yili, janrlari, rejissyori, aktyorlari va o'zbek tilida qiziqarli tavsifini (sinopsis) yozish.
+Senga o'zbek tilidagi film yoki serial nomi va qo'shimcha ma'lumot (caption/tavsif) beriladi. {type_hint_str}
+QAT'IY QOIDALAR:
+1. Agar qo'shimcha matnda (caption) haqiqiy syujet/tavsif yozilgan bo'lsa, uni O'ZGARTIRMA! Filmni boshqa mashhur Gollivud kinosi (masalan: Bad Boys, Agent X, Under Paris) deb o'ylab xato qilib yuborma!
+2. Agar davlat (masalan: Qozog'iston, Hindiston, Rossiya, O'zbekiston, Ispaniya) ko'rsatilgan bo'lsa, o'sha davlat kinosi deb tahlil qil.
+3. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil yoki o'zbekcha nomini qoldir.
+4. "description" maydoniga albatta berilgan filmning HAQIQIY syujetini o'zbek tilida to'liq va ravon yoz.
 
 Film/Serial nomi: '{raw_title}'
 Yil taxmini: {year_hint or 'Noma\'lum'}
@@ -63,18 +67,18 @@ Faqat va faqat quyidagi JSON formatida javob ber:
 ```json
 {{
   "clean_uz_title": "Toza O'zbekcha Nomi",
-  "original_title": "Original Title",
-  "search_title_en": "English Title",
-  "search_title_ru": "Russian Title",
+  "original_title": null,
+  "search_title_en": null,
+  "search_title_ru": null,
   "media_type": "{default_type}",
-  "release_year": 2024,
-  "description": "O'zbek tilidagi qiziqarli va professional qisqacha tavsif...",
+  "release_year": {year_hint or 2024},
+  "description": "Berilgan haqiqiy kino syujetiga asoslangan o'zbekcha qiziqarli tavsif...",
   "genres": ["Janr 1", "Janr 2"],
   "director": "Rejissyor ismi",
-  "cast": "Aktyor 1, Aktyor 2, Aktyor 3",
+  "cast": "Aktyorlar",
   "runtime": 100,
-  "imdb_rating": 7.5,
-  "trailer_query": "English Title 2024 trailer"
+  "imdb_rating": 6.5,
+  "trailer_query": null
 }}
 ```
 """
@@ -147,16 +151,101 @@ async def enrich_movie_smart(
 ) -> Dict[str, Any]:
     """
     AI (Gemini) + TMDb orqali film/serialni to'liq ma'lumotlar, poster, treyler,
+def normalize_title_tokens(t: Optional[str]) -> set:
+    if not t:
+        return set()
+    t = t.lower()
+    t = re.sub(r'[^\w\s]', ' ', t)
+    stop_words = {'the', 'a', 'an', 'and', 'of', 'in', 'on', 'at', 'to', 'for', 'va', 'kino', 'film', 'uzbek', 'tilida', 'hd', 'rus'}
+    return {w for w in t.split() if len(w) >= 2 and w not in stop_words}
+
+
+def is_valid_tmdb_match(
+    candidate: Dict[str, Any],
+    query: str,
+    target_year: Optional[int] = None,
+    expected_original_title: Optional[str] = None
+) -> bool:
+    cand_title = candidate.get("title") or candidate.get("name") or ""
+    cand_orig = candidate.get("original_title") or candidate.get("original_name") or ""
+    cand_year = candidate.get("release_year") or candidate.get("year")
+
+    # 1. Year check: If target_year is known, difference must not exceed 2 years.
+    # (Prevents 1924 silent films from matching 2024 films!)
+    if target_year and cand_year:
+        try:
+            if abs(int(cand_year) - int(target_year)) > 2:
+                return False
+        except (ValueError, TypeError):
+            pass
+
+    # 2. Title similarity check
+    query_tokens = normalize_title_tokens(query)
+    orig_tokens = normalize_title_tokens(expected_original_title)
+    cand_tokens = normalize_title_tokens(cand_title) | normalize_title_tokens(cand_orig)
+
+    if not cand_tokens:
+        return False
+
+    for target_set in [orig_tokens, query_tokens]:
+        if not target_set:
+            continue
+        overlap = target_set.intersection(cand_tokens)
+        if len(overlap) / len(target_set) >= 0.5:
+            return True
+
+    # Exact or substring check on compact strings (min 4 chars)
+    q_clean = re.sub(r'[^\w]', '', query.lower())
+    orig_clean = re.sub(r'[^\w]', '', (expected_original_title or '').lower())
+    c_clean = re.sub(r'[^\w]', '', cand_title.lower())
+    co_clean = re.sub(r'[^\w]', '', cand_orig.lower())
+
+    for t in [q_clean, orig_clean]:
+        if len(t) >= 4:
+            if t in c_clean or t in co_clean or c_clean in t or co_clean in t:
+                return True
+
+    return False
+
+
+async def enrich_movie_smart(
+    raw_title: str,
+    year: Optional[int] = None,
+    source_poster: Optional[str] = None,
+    source_desc: Optional[str] = None,
+    source_genres: Optional[str] = None,
+    caption: Optional[str] = None,
+    media_type: str = "movie",
+    item_url: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    AI (Gemini) + TMDb orqali film/serialni to'liq ma'lumotlar, poster, treyler,
     rejissyor, aktyorlar va kategoriyalar bilan to'ldirish.
+    Xatolik va begona kinolarga almashtirilib ketishining oldi olingan.
     """
     clean_title = clean_movie_title(raw_title)
 
+    # Normalize source_poster URL
+    if source_poster and source_poster.startswith("/"):
+        source_poster = f"https://asilmedia.org{source_poster}"
+    if source_poster and not source_poster.startswith("http"):
+        source_poster = None
+
     detected_type = "series" if (media_type == "series" or any(w in raw_title.lower() for w in ["serial", "dorama", "mavsum"])) else "movie"
+
+    # Default description: if source_desc or caption contains full synopsis, use it!
+    clean_default_desc = ""
+    if source_desc and len(source_desc.strip()) > 30:
+        clean_default_desc = source_desc.strip()
+    elif caption and len(caption.strip()) > 30:
+        clean_default_desc = caption.strip()
+    else:
+        clean_default_desc = f"🍿 {clean_title} {'seriali' if detected_type == 'series' else 'kinofilmi'} o'zbek tilida."
 
     metadata: Dict[str, Any] = {
         "title": clean_title or raw_title,
         "original_title": None,
-        "description": source_desc or f"🍿 {clean_title} {'seriali' if detected_type == 'series' else 'kinofilmi'} o'zbek tilida.",
+        "description": clean_default_desc,
         "poster_url": source_poster,
         "trailer_url": None,
         "release_year": year,
@@ -168,7 +257,7 @@ async def enrich_movie_smart(
         "director": None,
         "runtime": 120,
         "category_ids": [],
-        "source_used": "fallback",
+        "source_used": "source",
         "media_type": detected_type
     }
 
@@ -177,9 +266,9 @@ async def enrich_movie_smart(
     matched_cat_names = set()
 
     # 1. Gemini orqali kinoni tanib olish
-    ai_info = await gemini_identify_movie(raw_title=clean_title, year_hint=year, caption=caption, media_type=detected_type)
+    ai_info = await gemini_identify_movie(raw_title=clean_title, year_hint=year, caption=caption or source_desc, media_type=detected_type)
     if ai_info:
-        logger.info(f"🤖 Gemini filmni aniqladi: '{ai_info.get('search_title_en')}' ({ai_info.get('release_year')})")
+        logger.info(f"🤖 Gemini tahlili: '{ai_info.get('search_title_en') or ai_info.get('clean_uz_title')}' ({ai_info.get('release_year')})")
         if ai_info.get("clean_uz_title"):
             clean_ai = ai_info["clean_uz_title"].strip()
             if clean_ai:
@@ -188,7 +277,7 @@ async def enrich_movie_smart(
             metadata["original_title"] = ai_info["original_title"]
         if ai_info.get("release_year") and not year:
             metadata["release_year"] = ai_info["release_year"]
-        if ai_info.get("description"):
+        if ai_info.get("description") and len(ai_info["description"]) > len(metadata["description"]):
             metadata["description"] = ai_info["description"]
         if ai_info.get("genres"):
             metadata["genres"] = ", ".join(ai_info["genres"])
@@ -217,28 +306,27 @@ async def enrich_movie_smart(
 
     matched_tmdb = None
     target_year = metadata["release_year"] or year
+    expected_orig = ai_info.get("original_title") if ai_info else None
 
     for query, ctype in search_queries:
+        if not query or len(query.strip()) < 2:
+            continue
         for search_type in [ctype, "movie" if ctype == "tv" else "tv"]:
             try:
                 results = await tmdb_client.search(query=query, content_type=search_type)
                 if results:
-                    if target_year:
-                        for res in results:
-                            res_year = res.get("release_year") or res.get("year")
-                            if res_year and abs(res_year - target_year) <= 1:
-                                matched_tmdb = res
-                                break
-                    if not matched_tmdb:
-                        matched_tmdb = results[0]
-                    if matched_tmdb:
-                        break
+                    for res in results:
+                        if is_valid_tmdb_match(candidate=res, query=query, target_year=target_year, expected_original_title=expected_orig):
+                            matched_tmdb = res
+                            break
             except Exception as e:
                 logger.warning(f"TMDb search error query '{query}' ({search_type}): {e}")
+            if matched_tmdb:
+                break
         if matched_tmdb:
             break
 
-    # 3. TMDb tafsilotlarini yuklash
+    # 3. TMDb tafsilotlarini yuklash (Faqatgina 100% mos kelgandagina!)
     if matched_tmdb and matched_tmdb.get("id"):
         tmdb_id = matched_tmdb["id"]
         tmdb_type = matched_tmdb.get("content_type", "movie")
@@ -246,7 +334,9 @@ async def enrich_movie_smart(
             details = await tmdb_client.get_details(tmdb_id=tmdb_id, content_type=tmdb_type)
             if details:
                 metadata["tmdb_id"] = tmdb_id
-                metadata["poster_url"] = details.get("poster_url") or metadata["poster_url"]
+                # TMDb posteri faqat mavjud bo'lsa olinadi, lekin source_poster bor bo'lsa uni yo'qotmaymiz
+                if details.get("poster_url"):
+                    metadata["poster_url"] = details["poster_url"]
                 metadata["trailer_url"] = details.get("trailer_url") or metadata["trailer_url"]
                 metadata["release_year"] = details.get("release_year") or metadata["release_year"]
                 metadata["runtime"] = details.get("runtime") or metadata["runtime"]
@@ -268,17 +358,20 @@ async def enrich_movie_smart(
                     for g in tmdb_uz_genres:
                         matched_cat_names.add(g.strip().lower())
 
-                # Tavsifni o'zbekchaga tarjima qilish
-                raw_overview = details.get("overview") or ""
-                if raw_overview:
-                    trans_desc, _ = await translator_service.translate_to_uzbek(raw_overview)
-                    if trans_desc:
-                        metadata["description"] = trans_desc
+                # Tavsifni o'zbekchaga tarjima qilish (faqat tavsif juda qisqa bo'lsa)
+                if not metadata.get("description") or len(metadata["description"]) < 50:
+                    raw_overview = details.get("overview") or ""
+                    if raw_overview:
+                        trans_desc, _ = await translator_service.translate_to_uzbek(raw_overview)
+                        if trans_desc:
+                            metadata["description"] = trans_desc
 
                 metadata["source_used"] = "tmdb"
-                logger.info(f"✅ TMDb muvaffaqiyatli ma'lumot berdi (ID: {tmdb_id}, Poster: {metadata['poster_url']})")
+                logger.info(f"✅ TMDb tasdiqlangan ma'lumot berdi (ID: {tmdb_id}, Poster: {metadata['poster_url']})")
         except Exception as e:
             logger.warning(f"TMDb get_details error: {e}")
+    else:
+        logger.info("ℹ️ TMDb dan to'g'ri keluvchi kino topilmadi. Sayt/botning asl ma'lumotlari va posteri saqlanadi.")
 
     # 4. Agar poster topilmagan bo'lsa va item_url mavjud bo'lsa, saytdagi og:image ni olamiz
     if not metadata["poster_url"] and item_url:

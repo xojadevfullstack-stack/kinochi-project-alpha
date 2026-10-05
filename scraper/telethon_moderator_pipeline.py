@@ -121,6 +121,7 @@ class TelethonModeratorPipeline:
     def __init__(self, client: TelegramClient, duplicate_checker: DuplicateChecker):
         self.client = client
         self.dup_checker = duplicate_checker
+        self._last_card_msg: Optional[Message] = None
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi."""
@@ -569,23 +570,13 @@ class TelethonModeratorPipeline:
             )
             return False
 
-        # Metadata enrichmentni video botdan olinayotganda orqa fonda PARALLEL boshlaymiz!
-        enrich_task = asyncio.create_task(enrich_movie_smart(
-            raw_title=item.title,
-            year=item.year,
-            source_poster=item.poster_url,
-            media_type=item.media_type,
-            item_url=item.url
-        ))
-
-        # 2. Botdan video olish
+        # 2. Botdan video olish (video_msg va card_msg olinadi)
         video_msg = await self._fetch_video(item=item, target_bot=target_bot)
         if not video_msg:
             logger.warning(f"❌ '{item.title}' bo'yicha @{target_bot} dan video olinmadi.")
-            enrich_task.cancel()
             return False
 
-        return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, prefetched_enrich_task=enrich_task)
+        return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
 
     async def run_by_code(self, code: str, target_bot: str = "asilmediabot") -> bool:
         logger.info("\n" + "="*55)
@@ -619,25 +610,27 @@ class TelethonModeratorPipeline:
             media_type="movie"
         )
 
-        return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot)
+        return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
 
     async def _process_pipeline(
         self,
         item: QueueItem,
         video_msg: Message,
         target_bot: str,
-        prefetched_enrich_task: Optional[asyncio.Task] = None
+        card_msg: Optional[Message] = None
     ) -> bool:
-        caption = video_msg.text or ""
-        caption_title_m = re.search(r'🎬\s*([^\n\r–]+)', caption)
+        card_text = card_msg.text if (card_msg and card_msg.text) else ""
+        full_context_caption = card_text or video_msg.text or ""
+
+        caption_title_m = re.search(r'🎬\s*([^\n\r–]+)', full_context_caption)
         caption_title = clean_movie_title(caption_title_m.group(1)) if caption_title_m else clean_movie_title(item.title)
 
         caption_year = item.year
-        year_m = re.search(r'Yil:\s*(\d{4})', caption, re.I)
+        year_m = re.search(r'Yil:\s*(\d{4})', full_context_caption, re.I)
         if year_m:
             caption_year = int(year_m.group(1))
         elif not caption_year:
-            year_fallback = re.search(r'\b(19\d{2}|20\d{2})\b', caption)
+            year_fallback = re.search(r'\b(19\d{2}|20\d{2})\b', full_context_caption)
             if year_fallback:
                 caption_year = int(year_fallback.group(1))
 
@@ -661,24 +654,16 @@ class TelethonModeratorPipeline:
             )
             return False
 
-        # ── 1. AI + TMDb boyitish (Agar parallel tayyorlangan bo'lsa darhol olinadi) ──
-        if prefetched_enrich_task:
-            if prefetched_enrich_task.done() and not prefetched_enrich_task.cancelled():
-                meta = prefetched_enrich_task.result()
-                logger.info("⚡ 1-QADAM: AI + TMDb ma'lumotlari oldindan parallel tayyorlab qo'yilgan!")
-            else:
-                logger.info("ℹ️ 1-QADAM: Background AI + TMDb ma'lumotlari kutilmoqda...")
-                meta = await prefetched_enrich_task
-        else:
-            logger.info("ℹ️ 1-QADAM: Kino ma'lumotlari AI (Gemini) + TMDb orqali shakllantirilmoqda...")
-            meta = await enrich_movie_smart(
-                raw_title=caption_title or item.title,
-                year=caption_year,
-                source_poster=item.poster_url,
-                source_desc=caption or None,
-                caption=caption,
-                item_url=item.url
-            )
+        # ── 1. AI + TMDb boyitish (To'liq bot konteksti bilan) ──
+        logger.info("ℹ️ 1-QADAM: Kino ma'lumotlari AI (Gemini) + TMDb orqali shakllantirilmoqda...")
+        meta = await enrich_movie_smart(
+            raw_title=caption_title or item.title,
+            year=caption_year,
+            source_poster=item.poster_url,
+            source_desc=card_text or None,
+            caption=full_context_caption,
+            item_url=item.url
+        )
 
         title = meta["title"]
         year = meta["release_year"]
@@ -880,6 +865,7 @@ class TelethonModeratorPipeline:
         target_bot: str = "asilmediabot",
         code: Optional[str] = None
     ) -> Optional[Message]:
+        self._last_card_msg = None
         is_uzmovie = "uzmovie" in target_bot.lower()
 
         search_query = ""
