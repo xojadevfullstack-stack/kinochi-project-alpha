@@ -258,41 +258,88 @@ class TelegramClient:
 
             return SendMessageResult(False, error="Failed after attempts", is_unreachable=False)
 
+    async def _create_topic_via_userbot(self, chat_id: int | str, name: str) -> Optional[int]:
+        try:
+            from scraper.telethon_moderator_pipeline import create_telethon_client
+            from telethon.tl.functions.messages import CreateForumTopicRequest
+            import random
+
+            client = create_telethon_client()
+            await client.connect()
+            try:
+                cid = int(chat_id) if (isinstance(chat_id, int) or (isinstance(chat_id, str) and chat_id.lstrip('-').isdigit())) else chat_id
+                peer = await client.get_input_entity(cid)
+                r_id = random.randint(1, 2**31 - 1)
+                res = await client(CreateForumTopicRequest(
+                    peer=peer,
+                    title=name.strip()[:128],
+                    random_id=r_id
+                ))
+                for u in getattr(res, 'updates', []):
+                    if hasattr(u, 'message') and hasattr(u.message, 'id'):
+                        return u.message.id
+                    elif hasattr(u, 'id'):
+                        return u.id
+            finally:
+                await client.disconnect()
+        except Exception as e:
+            logger.error(f"Userbot create_forum_topic fallback xatosi: {e}")
+        return None
+
+    async def _send_topic_msg_via_userbot(self, chat_id: int | str, message_thread_id: int, text: str) -> int:
+        try:
+            from scraper.telethon_moderator_pipeline import create_telethon_client
+            client = create_telethon_client()
+            await client.connect()
+            try:
+                cid = int(chat_id) if (isinstance(chat_id, int) or (isinstance(chat_id, str) and chat_id.lstrip('-').isdigit())) else chat_id
+                sent = await client.send_message(
+                    cid,
+                    message=text,
+                    reply_to=message_thread_id,
+                    parse_mode="html"
+                )
+                if sent:
+                    return sent.id
+            finally:
+                await client.disconnect()
+        except Exception as e:
+            logger.error(f"Userbot send_topic_message fallback xatosi: {e}")
+        return 0
+
     async def create_forum_topic(self, chat_id: int | str, name: str) -> int:
         """
         Telegram superguruhda yangi forum topic ochadi.
+        Bot API ishlamasa avtomatik Userbot (Telethon) orqali ochadi.
         Qaytaradi: message_thread_id (int).
         """
-        if not self.bot_token:
-            raise HTTPException(status_code=500, detail="Telegram BOT_TOKEN sozlanmagan.")
-
-        url = f"{self.base_url}/createForumTopic"
         safe_name = name.strip()[:128]
-        payload = {"chat_id": chat_id, "name": safe_name}
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        # 1. Bot API orqali urinib ko'rish
+        if self.bot_token:
+            url = f"{self.base_url}/createForumTopic"
+            payload = {"chat_id": chat_id, "name": safe_name}
             try:
-                resp = await client.post(url, json=payload)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data.get("ok"):
-                        return data["result"]["message_thread_id"]
-                    desc = data.get("description", "Noma'lum xato")
-                    raise HTTPException(status_code=400, detail=f"Topic ochib bo'lmadi: {desc}")
-                elif resp.status_code == 400:
-                    detail = resp.json().get("description", resp.text)
-                    if "not enough rights" in detail.lower():
-                        raise HTTPException(status_code=403, detail="Botda guruhda Topic ochish huquqi (Manage Topics) yo'q.")
-                    elif "not a forum" in detail.lower():
-                        raise HTTPException(status_code=400, detail="Guruhda Forum (Topics) funksiyasi yoqilmagan.")
-                    raise HTTPException(status_code=400, detail=f"Telegram xatosi: {detail}")
-                elif resp.status_code == 401:
-                    raise HTTPException(status_code=500, detail="Telegram BOT_TOKEN yaroqsiz (Unauthorized).")
-                else:
-                    raise HTTPException(status_code=resp.status_code, detail=f"Telegram API xatosi: {resp.text}")
-            except httpx.RequestError as e:
-                logger.error(f"Telegram create_forum_topic request error: {e}")
-                raise HTTPException(status_code=502, detail="Telegram API bilan bog'lanishda tarmoq xatosi.")
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        if data.get("ok"):
+                            return data["result"]["message_thread_id"]
+                    logger.warning(f"Telegram Bot API orqali topic ochib bo'lmadi (HTTP {resp.status_code}: {resp.text}). Userbot'ga o'tilmoqda...")
+            except Exception as e:
+                logger.warning(f"Telegram Bot API so'rovida xatolik: {e}. Userbot'ga o'tilmoqda...")
+
+        # 2. Userbot fallback
+        userbot_tid = await self._create_topic_via_userbot(chat_id=chat_id, name=safe_name)
+        if userbot_tid:
+            logger.info(f"✅ Forum Topic Userbot orqali ochildi (Thread ID: {userbot_tid})")
+            return userbot_tid
+
+        raise HTTPException(
+            status_code=400,
+            detail="Topic ochib bo'lmadi. Bot yoki Userbotda guruhda 'Manage Topics' huquqi borligini tekshiring."
+        )
 
     async def send_topic_message(
         self, chat_id: int | str, message_thread_id: int, text: str, parse_mode: str = "HTML"
@@ -301,27 +348,30 @@ class TelegramClient:
         Topic ichiga xabar yuboradi.
         Qaytaradi: yuborilgan xabarning message_id si (0 agar xato bo'lsa).
         """
-        if not self.bot_token:
-            return 0
-
-        url = f"{self.base_url}/sendMessage"
-        payload = {
-            "chat_id": chat_id,
-            "message_thread_id": message_thread_id,
-            "text": text,
-            "parse_mode": parse_mode,
-        }
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        if self.bot_token:
+            url = f"{self.base_url}/sendMessage"
+            payload = {
+                "chat_id": chat_id,
+                "message_thread_id": message_thread_id,
+                "text": text,
+                "parse_mode": parse_mode,
+            }
             try:
-                resp = await client.post(url, json=payload)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    if data.get("ok"):
-                        return data["result"]["message_id"]
-                return 0
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        if data.get("ok"):
+                            return data["result"]["message_id"]
             except Exception as e:
-                logger.warning(f"send_topic_message error: {e}")
-                return 0
+                logger.warning(f"send_topic_message Bot API error: {e}")
+
+        # Userbot fallback
+        return await self._send_topic_msg_via_userbot(
+            chat_id=chat_id,
+            message_thread_id=message_thread_id,
+            text=text
+        )
 
 telegram_client = TelegramClient()
 

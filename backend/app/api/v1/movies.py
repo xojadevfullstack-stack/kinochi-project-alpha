@@ -521,6 +521,22 @@ async def open_movie_topic(
         source_chat_id=int(target_chat_id),
         source_topic_id=thread_id,
     )
+
+    try:
+        from app.infrastructure.db.repositories.source_repository import SourceRepository
+        source_repo = SourceRepository(service.repository.session)
+        existing_src = await source_repo.get_by_chat_and_topic(int(target_chat_id), thread_id)
+        if not existing_src:
+            await source_repo.create_source({
+                "name": f"{movie.title} (Topic)",
+                "type": "superguruh",
+                "chat_id": int(target_chat_id),
+                "topic_id": thread_id,
+            })
+            await service.repository.session.commit()
+    except Exception as e:
+        logger.warning(f"Could not auto-register source record for movie: {e}")
+
     await delete_cache_pattern("cache:movies:*")
 
     return {

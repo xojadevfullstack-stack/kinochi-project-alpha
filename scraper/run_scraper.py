@@ -95,15 +95,23 @@ def parse_codes_arg(codes_str: str) -> list:
             res.append(p)
     return res
 
-async def cmd_download(limit: int, target: str, codes: str = None, media_type: str = "all"):
+async def cmd_download(limit: int, target: str, codes: str = None, media_type: str = "all", item_id: str = None):
     checker = DuplicateChecker()
     await checker.refresh_cache(force=True)
 
     bot_username = TARGET_BOTS.get(target, target)
-
-    code_list = parse_codes_arg(codes) if codes else []
+    code_list = parse_codes_arg(codes) if (codes and not item_id) else []
     
-    if code_list:
+    if item_id:
+        qm = QueueManager()
+        target_item = qm.items.get(item_id)
+        if not target_item:
+            print(f"❌ Element #{item_id} navbatda topilmadi!")
+            return
+        pending = [target_item]
+        bot_username = TARGET_BOTS.get(target_item.source, bot_username)
+        print(f"\n🚀 Aniq element yuklanmoqda: [{target_item.media_type.upper()}] '{target_item.title}' (Bot: @{bot_username})...")
+    elif code_list:
         print(f"\n🚀 {len(code_list)} ta film kodi bo'yicha yuklash boshlanmoqda (Maqsadli bot: @{bot_username}, Kodlar: {', '.join(code_list)})...")
     else:
         qm = QueueManager()
@@ -243,6 +251,7 @@ def main():
     parser.add_argument("--codes", type=str, default=None, help="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15,20)")
     parser.add_argument("--clean-duplicates", action="store_true", help="Navbatdagi mavjud bazadagi dublikatlarni tozalash")
     parser.add_argument("--media-type", type=str, default="all", choices=["all", "movie", "series"], help="Media turi (all, movie yoki series)")
+    parser.add_argument("--item-id", type=str, default=None, help="Navbatdagi aniq bitta element ID si (masalan: asilmedia_18509)")
     parser.add_argument("--stats", action="store_true", help="Navbat holatini ko'rish")
 
     args = parser.parse_args()
@@ -254,7 +263,7 @@ def main():
     elif args.parse:
         asyncio.run(cmd_parse(args.source, args.pages))
     elif args.download:
-        asyncio.run(cmd_download(args.limit, args.target, args.codes, args.media_type))
+        asyncio.run(cmd_download(args.limit, args.target, args.codes, args.media_type, args.item_id))
     else:
         parser.print_help()
 

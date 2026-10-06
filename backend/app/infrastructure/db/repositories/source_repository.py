@@ -16,6 +16,14 @@ class SourceRepository:
     async def get_source_by_id(self, source_id: int) -> SourceModel | None:
         return await self.session.get(SourceModel, source_id)
 
+    async def get_by_chat_and_topic(self, chat_id: int, topic_id: int | None) -> SourceModel | None:
+        stmt = select(SourceModel).where(
+            SourceModel.chat_id == chat_id,
+            SourceModel.topic_id == topic_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def create_source(self, data: dict) -> SourceModel:
         source = SourceModel(**data)
         self.session.add(source)

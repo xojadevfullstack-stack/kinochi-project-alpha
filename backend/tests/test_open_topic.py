@@ -20,8 +20,9 @@ async def test_open_movie_topic_success():
     )
 
     with patch("app.api.v1.movies.get_movie_service") as mock_get_srv, \
-         patch("app.infrastructure.telegram.telegram_client.telegram_client.create_forum_topic", new_callable=AsyncMock) as mock_create_topic, \
-         patch("app.infrastructure.telegram.telegram_client.telegram_client.send_topic_message", new_callable=AsyncMock) as mock_send_msg, \
+         patch("app.core.config.settings.AUTO_TOPIC_CHAT_ID", -1001234567), \
+         patch("app.api.v1.movies.telegram_client.create_forum_topic", new_callable=AsyncMock) as mock_create_topic, \
+         patch("app.api.v1.movies.telegram_client.send_topic_message", new_callable=AsyncMock) as mock_send_msg, \
          patch("app.api.v1.movies.delete_cache_pattern", new_callable=AsyncMock):
 
         mock_srv = AsyncMock()
@@ -93,8 +94,9 @@ async def test_open_series_topic_success():
         updated_at=datetime.now(),
     )
 
-    with patch("app.infrastructure.telegram.telegram_client.telegram_client.create_forum_topic", new_callable=AsyncMock) as mock_create_topic, \
-         patch("app.infrastructure.telegram.telegram_client.telegram_client.send_topic_message", new_callable=AsyncMock) as mock_send_msg, \
+    with patch("app.core.config.settings.AUTO_TOPIC_CHAT_ID", -1001234567), \
+         patch("app.api.v1.series.telegram_client.create_forum_topic", new_callable=AsyncMock) as mock_create_topic, \
+         patch("app.api.v1.series.telegram_client.send_topic_message", new_callable=AsyncMock) as mock_send_msg, \
          patch("app.api.v1.series.delete_cache_pattern", new_callable=AsyncMock), \
          patch("app.infrastructure.db.repositories.source_repository.SourceRepository.create_source", new_callable=AsyncMock) as mock_create_source:
 

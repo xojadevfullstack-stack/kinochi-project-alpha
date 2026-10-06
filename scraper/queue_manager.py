@@ -132,11 +132,22 @@ class QueueManager:
                 self.save()
             return added
 
-    def update_status(self, item_id: str, status: str, error_message: Optional[str] = None):
+    def update_status(
+        self,
+        item_id: str,
+        status: str,
+        error_message: Optional[str] = None,
+        episodes_count: Optional[int] = None,
+        downloaded_episodes: Optional[int] = None,
+    ):
         with _FILE_LOCK:
             self.load()
             if item_id in self.items:
                 self.items[item_id].status = status
+                if episodes_count is not None:
+                    self.items[item_id].episodes_count = episodes_count
+                if downloaded_episodes is not None:
+                    self.items[item_id].downloaded_episodes = downloaded_episodes
                 if error_message is not None:
                     self.items[item_id].error_message = error_message
                 elif status in ("completed", "pending", "in_progress"):
@@ -221,6 +232,20 @@ class QueueManager:
             return len(to_delete)
 
     # ── queries ──────────────────────────────────────────────
+    def get_item(self, item_id: str) -> Optional[QueueItem]:
+        with _FILE_LOCK:
+            self.load()
+            return self.items.get(item_id)
+
+    def get_item_by_code(self, code: str) -> Optional[QueueItem]:
+        with _FILE_LOCK:
+            self.load()
+            clean_code = str(code).strip()
+            for item in self.items.values():
+                if item.id.endswith(f"_{clean_code}") or item.id == clean_code:
+                    return item
+            return None
+
     def get_pending(self, limit: int = 50, source: Optional[str] = None, media_type: Optional[str] = None) -> List[QueueItem]:
         pending = [
             item for item in self.items.values()

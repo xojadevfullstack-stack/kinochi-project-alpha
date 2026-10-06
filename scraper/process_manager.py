@@ -237,6 +237,7 @@ class ProcessManager:
         limit: int = 5,
         codes: Optional[str] = None,
         media_type: str = "all",
+        item_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         if target not in ("uzmovi", "asilmedia"):
             return {"success": False, "message": "Noma'lum maqsadli bot."}
@@ -247,7 +248,10 @@ class ProcessManager:
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--download", "--target", target,
                "--limit", str(limit), "--media-type", media_type]
         expected = limit
-        if codes and codes.strip():
+        if item_id and item_id.strip():
+            cmd.extend(["--item-id", item_id.strip()])
+            expected = 1
+        elif codes and codes.strip():
             clean = codes.strip()
             if not re.fullmatch(r"[0-9A-Za-z,\- ]+", clean):
                 return {"success": False, "message": "Kodlar formati noto'g'ri (masalan: 15 yoki 1-5 yoki 10,12)."}

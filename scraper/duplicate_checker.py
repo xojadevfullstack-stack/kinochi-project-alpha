@@ -95,6 +95,13 @@ def extract_title_variants(raw_title: str) -> List[str]:
         part_clean = part.strip()
         if part_clean:
             variants.add(part_clean)
+
+    # Ko'p tilli aralash sarlavhalar uchun birinchi 1-2 so'zni variant qilish (masalan "Yengilmas Nepobedimyj Invincible" -> "Yengilmas")
+    words = [w for w in cleaned_raw.split() if len(w) >= 2]
+    if words:
+        variants.add(words[0])
+        if len(words) >= 2:
+            variants.add(f"{words[0]} {words[1]}")
             
     return [v for v in variants if len(v) >= 2]
 
@@ -157,19 +164,12 @@ class DuplicateChecker:
                 """
                 SELECT m.id, m.title, m.original_title, m.release_year, m.code, m.tmdb_id 
                 FROM movies m
-                WHERE EXISTS (SELECT 1 FROM movie_translations mt WHERE mt.movie_id = m.id)
                 """
             )
             raw_series = await conn.fetch(
                 """
                 SELECT s.id, s.title, s.release_year, s.tmdb_id 
                 FROM series s
-                WHERE EXISTS (
-                    SELECT 1 FROM seasons sea 
-                    JOIN episodes ep ON ep.season_id = sea.id 
-                    JOIN episode_translations et ON et.episode_id = ep.id 
-                    WHERE sea.series_id = s.id
-                )
                 """
             )
 
@@ -306,15 +306,27 @@ class DuplicateChecker:
                     db_year = item.get("release_year")
                     if year and db_year and abs(year - db_year) > 2:
                         continue
+        # ── 4. Containment / Prefix match (Aralash tilli sarlavhalar uchun) ──
+        for item in db_items:
+            item_slug = item.get("slug")
+            if not item_slug or len(item_slug) < 3:
+                continue
+            for cand_slug in candidate_slugs:
+                if not cand_slug:
+                    continue
+                if cand_slug == item_slug or cand_slug.startswith(item_slug) or item_slug in cand_slug or item_slug.startswith(cand_slug):
+                    db_year = item.get("release_year")
+                    if year and db_year and abs(year - db_year) > 2:
+                        continue
                     return DuplicateCheckResult(
                         is_duplicate=True,
-                        match_type="token_overlap",
+                        match_type="prefix_match",
                         matched_id=item["id"],
                         matched_title=item["title"],
-                        matched_year=item.get("release_year"),
+                        matched_year=db_year,
                         matched_type=item["type"],
                         matched_code=item.get("code"),
-                        reason=f"So'zlar mosligi {int(overlap_ratio*100)}% ('{item['title']}')"
+                        reason=f"Nomi mos keldi ('{item['title']}', Yili: {db_year})"
                     )
 
         return DuplicateCheckResult(is_duplicate=False)

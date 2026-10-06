@@ -213,42 +213,67 @@ def normalize_title_tokens(t: Optional[str]) -> set:
     stop_words = {'the', 'a', 'an', 'and', 'of', 'in', 'on', 'at', 'to', 'for', 'va', 'kino', 'film', 'uzbek', 'tilida', 'hd', 'rus'}
     return {w for w in t.split() if len(w) >= 2 and w not in stop_words}
 
+def latin_to_cyrillic(text: Optional[str]) -> str:
+    """O'zbekcha/ruscha lotin matnni kirillga o'giradi (TMDb ru-RU qidiruvi uchun)."""
+    if not text:
+        return ""
+    table = {
+        'sh': 'ш', 'ch': 'ч', 'yo': 'ё', 'yu': 'ю', 'ya': 'я', 'ye': 'е', 'oʻ': 'ў', "o'": 'ў', "o`": 'ў', "gʻ": 'ғ', "g'": 'ғ',
+        'a': 'а', 'b': 'б', 'v': 'в', 'g': 'г', 'd': 'д', 'e': 'е', 'z': 'з', 'i': 'и',
+        'j': 'ж', 'k': 'к', 'l': 'л', 'm': 'м', 'n': 'н', 'o': 'о', 'p': 'п', 'r': 'р',
+        's': 'с', 't': 'т', 'u': 'у', 'f': 'ф', 'x': 'х', 'y': 'й', 'q': 'қ', 'h': 'ҳ',
+        'ts': 'ц'
+    }
+    t = text.lower()
+    for k, v in table.items():
+        t = t.replace(k, v)
+    return t
 
-def is_valid_tmdb_match(
+
+def score_tmdb_candidate(
     candidate: Dict[str, Any],
     query: str,
     target_year: Optional[int] = None,
     expected_original_title: Optional[str] = None
-) -> bool:
+) -> float:
+    """
+    TMDb nomzodini baholaydi (yuqori ball = aniq moslik).
+    Posteri bor, yili mos kelgan va nomi to'liq tushgan filmlar ustunlikka ega bo'ladi.
+    """
     cand_title = candidate.get("title") or candidate.get("name") or ""
     cand_orig = candidate.get("original_title") or candidate.get("original_name") or ""
     cand_year = candidate.get("release_year") or candidate.get("year")
+    poster_url = candidate.get("poster_url")
 
-    # 1. Year check: If target_year is known, difference must not exceed 2 years.
-    # (Prevents 1924 silent films from matching 2024 films!)
+    # 1. Yil tekshiruvi: Agar target_year berilgan bo'lsa, oraliq 2 yildan oshmasligi shart!
     if target_year and cand_year:
         try:
-            if abs(int(cand_year) - int(target_year)) > 2:
-                return False
+            diff = abs(int(cand_year) - int(target_year))
+            if diff > 2:
+                return -1.0
         except (ValueError, TypeError):
             pass
 
-    # 2. Title similarity check
+    # 2. Sarlavha o'xshashligi
     query_tokens = normalize_title_tokens(query)
     orig_tokens = normalize_title_tokens(expected_original_title)
     cand_tokens = normalize_title_tokens(cand_title) | normalize_title_tokens(cand_orig)
 
     if not cand_tokens:
-        return False
+        return -1.0
 
+    match_found = False
+    title_overlap = 0.0
     for target_set in [orig_tokens, query_tokens]:
         if not target_set:
             continue
         overlap = target_set.intersection(cand_tokens)
-        if len(overlap) / len(target_set) >= 0.5:
-            return True
+        ratio = len(overlap) / len(target_set)
+        if ratio >= 0.4:
+            match_found = True
+            title_overlap = max(title_overlap, ratio)
 
-    # Exact or substring check on compact strings (min 4 chars)
+    # Substring tekshiruvi (kamida 4 ta belgi)
     q_clean = re.sub(r'[^\w]', '', query.lower())
     orig_clean = re.sub(r'[^\w]', '', (expected_original_title or '').lower())
     c_clean = re.sub(r'[^\w]', '', cand_title.lower())
@@ -257,9 +282,55 @@ def is_valid_tmdb_match(
     for t in [q_clean, orig_clean]:
         if len(t) >= 4:
             if t in c_clean or t in co_clean or c_clean in t or co_clean in t:
-                return True
+                match_found = True
+                title_overlap = max(title_overlap, 0.8)
 
-    return False
+    if not match_found:
+        return -1.0
+
+    # Asosiy ball
+    score = title_overlap * 50.0
+
+    # Poster tekshiruvi: posteri bor nomzodlarga katta bonus, posteri yo'q nomzodlarga jazo
+    if poster_url:
+        score += 30.0
+    else:
+        score -= 40.0
+
+    # Yil balli
+    if target_year and cand_year:
+        try:
+            diff = abs(int(cand_year) - int(target_year))
+            if diff == 0:
+                score += 30.0
+            elif diff == 1:
+                score += 15.0
+            elif diff == 2:
+                score += 5.0
+        except (ValueError, TypeError):
+            pass
+    elif target_year and not cand_year:
+        score -= 15.0
+
+    # Original nomning to'liq mos kelishi
+    if expected_original_title and cand_orig:
+        if expected_original_title.strip().lower() == cand_orig.strip().lower():
+            score += 40.0
+
+    # Reyting bonusi
+    vote_avg = candidate.get("vote_average") or 0.0
+    score += min(float(vote_avg), 10.0)
+
+    return score
+
+
+def is_valid_tmdb_match(
+    candidate: Dict[str, Any],
+    query: str,
+    target_year: Optional[int] = None,
+    expected_original_title: Optional[str] = None
+) -> bool:
+    return score_tmdb_candidate(candidate, query, target_year, expected_original_title) > 0.0
 
 
 async def enrich_movie_smart(
@@ -360,7 +431,13 @@ async def enrich_movie_smart(
     if clean_title not in [q[0] for q in search_queries]:
         search_queries.append((clean_title, default_tmdb_type))
 
+    # Ruscha/O'zbekcha kirillcha transliteratsiyasini ham qo'shamiz (masalan "Adrenalin" -> "адреналин")
+    cyr_clean = latin_to_cyrillic(clean_title)
+    if cyr_clean and cyr_clean not in [q[0] for q in search_queries]:
+        search_queries.append((cyr_clean, default_tmdb_type))
+
     matched_tmdb = None
+    best_score = 0.0
     target_year = metadata["release_year"] or year
     expected_orig = ai_info.get("original_title") if ai_info else None
 
@@ -372,14 +449,23 @@ async def enrich_movie_smart(
                 results = await tmdb_client.search(query=query, content_type=search_type)
                 if results:
                     for res in results:
-                        if is_valid_tmdb_match(candidate=res, query=query, target_year=target_year, expected_original_title=expected_orig):
+                        score = score_tmdb_candidate(
+                            candidate=res,
+                            query=query,
+                            target_year=target_year,
+                            expected_original_title=expected_orig
+                        )
+                        if score > best_score:
+                            best_score = score
                             matched_tmdb = res
-                            break
+                            # Agar posteri bor va yuqori mos kelgan bo'lsa darhol to'xtatish
+                            if score >= 90.0:
+                                break
             except Exception as e:
                 logger.warning(f"TMDb search error query '{query}' ({search_type}): {e}")
-            if matched_tmdb:
+            if best_score >= 90.0:
                 break
-        if matched_tmdb:
+        if best_score >= 90.0:
             break
 
     # 3. TMDb tafsilotlarini yuklash (Faqatgina 100% mos kelgandagina!)

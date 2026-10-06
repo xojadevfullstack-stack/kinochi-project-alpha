@@ -36,6 +36,7 @@ from telethon.sessions import MemorySession, StringSession
 from telethon.crypto import AuthKey
 from telethon.tl.functions.messages import CreateForumTopicRequest
 from telethon.tl.types import Message
+from telethon.errors import FloodWaitError
 from scraper.fast_telethon import fast_download, fast_upload
 
 from scraper.config import (
@@ -117,6 +118,42 @@ def create_telethon_client(session_path: str = None) -> TelegramClient:
     return TelegramClient(StringSession(FALLBACK_USERBOT_SESSION), TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 
+def is_bot_flood_text(text: Optional[str]) -> bool:
+    if not text:
+        return False
+    t = text.lower()
+    return any(p in t for p in [
+        "biroz sekinroq",
+        "bir daqiqadan so'ng",
+        "daqiqadan so'ng urinib",
+        "sekinroq",
+        "juda ko'p so'rov",
+        "flood",
+        "kutib turing",
+        "biroz kuting"
+    ])
+
+
+def get_flood_wait_seconds(msg_or_msgs: Any) -> int:
+    if not msg_or_msgs:
+        return 0
+    msgs = msg_or_msgs if isinstance(msg_or_msgs, list) else [msg_or_msgs]
+    for m in msgs:
+        text = getattr(m, "text", None) or getattr(m, "message", None) or (m if isinstance(m, str) else "")
+        if not text:
+            continue
+        t = str(text).lower()
+        if is_bot_flood_text(t):
+            m_sec = re.search(r'(\d+)\s*(?:soniya|sekund)', t)
+            if m_sec:
+                return int(m_sec.group(1)) + 5
+            m_min = re.search(r'(\d+)\s*(?:daqiqa|minut)', t)
+            if m_min:
+                return int(m_min.group(1)) * 60 + 5
+            return 65  # Default "Bir daqiqadan so'ng urinib ko'ring" -> 60s + 5s zaxira
+    return 0
+
+
 async def poll_new_messages(
     client: TelegramClient,
     chat: str,
@@ -128,15 +165,28 @@ async def poll_new_messages(
     """
     Bot xabarlarini 0.35 soniyalik interval bilan tezkor kuzatadi.
     Bot javob bergan millisekundda darhol natijani qaytaradi (blind sleep yo'q).
+    Agar botdan flood xabari kelsa, timeoutni kutmasdan darhol qaytaradi.
     """
     start_time = time.time()
     while time.time() - start_time < timeout:
         await asyncio.sleep(interval)
         msgs = []
-        async for m in client.iter_messages(chat, limit=8):
-            if m.id > after_id:
-                msgs.append(m)
+        try:
+            async for m in client.iter_messages(chat, limit=8):
+                if m.id > after_id:
+                    msgs.append(m)
+        except FloodWaitError as e:
+            logger.warning(f"Telegram FloodWaitError: {e.seconds} soniya kutilmoqda...")
+            await asyncio.sleep(e.seconds + 2)
+            continue
+        except Exception:
+            pass
+
         if msgs:
+            # Agar bot flood / sekinroq xabari yuborgan bo'lsa, timeout tugashini kutmasdan darhol qaytarish
+            for m in msgs:
+                if is_bot_flood_text(m.text):
+                    return msgs
             if condition is None or condition(msgs):
                 return msgs
     return []
@@ -147,6 +197,24 @@ class TelethonModeratorPipeline:
         self.client = client
         self.dup_checker = duplicate_checker
         self._last_card_msg: Optional[Message] = None
+
+    async def safe_click(self, msg: Message, row: int, col: int) -> tuple[bool, int]:
+        """
+        Tugmani xavfsiz bosadi.
+        Qaytaradi: (success: bool, flood_wait_seconds: int)
+        """
+        try:
+            res = await msg.click(row, col)
+            if res and hasattr(res, 'message') and res.message:
+                wait_s = get_flood_wait_seconds(res.message)
+                if wait_s > 0:
+                    return False, wait_s
+            return True, 0
+        except FloodWaitError as e:
+            return False, e.seconds + 5
+        except Exception as e:
+            logger.debug(f"Click callback xabari: {e}")
+            return True, 0
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi."""
@@ -202,6 +270,7 @@ class TelethonModeratorPipeline:
         )
 
         card_msg = None
+        season_entries = []
         for m in recent_msgs:
             if not m.buttons:
                 continue
@@ -240,71 +309,43 @@ class TelethonModeratorPipeline:
                             m = nm
                             break
 
-            # Agar xabarda fasllar (1-fasl, 2-fasl) tugmalari bo'lsa
-            has_seasons = any(
-                ("fasl" in b.text.lower() or "mavsum" in b.text.lower())
-                for row in (m.buttons or []) for b in row
-            )
-            if has_seasons:
-                season_btn = None
-                for row_idx, row in enumerate(m.buttons):
-                    for col_idx, btn in enumerate(row):
-                        b_text = btn.text.lower()
-                        if "1-fasl" in b_text or "1-mavsum" in b_text or "1 fasl" in b_text:
-                            season_btn = (row_idx, col_idx, btn.text)
-                            break
-                        elif ("fasl" in b_text or "mavsum" in b_text) and not season_btn:
-                            season_btn = (row_idx, col_idx, btn.text)
-                    if season_btn and ("1-fasl" in season_btn[2].lower() or "1-mavsum" in season_btn[2].lower()):
-                        break
+            # Fasllar (1-fasl, 2-fasl) yoki qismlar tugmalarini aniqlash
+            for row_idx, row in enumerate(m.buttons or []):
+                for col_idx, btn in enumerate(row):
+                    b_lower = btn.text.strip().lower()
+                    m_s = re.search(r'(\d+)\s*[-_]?\s*(?:fasl|mavsum|sezon|season)', b_lower)
+                    if m_s:
+                        season_entries.append((int(m_s.group(1)), row_idx, col_idx, btn.text.strip()))
+                    else:
+                        m_s2 = re.search(r'(?:fasl|mavsum|sezon|season)\s*(\d+)', b_lower)
+                        if m_s2:
+                            season_entries.append((int(m_s2.group(1)), row_idx, col_idx, btn.text.strip()))
 
-                if season_btn:
-                    r_idx, c_idx, b_name = season_btn
-                    logger.info(f"Fasl tanlanmoqda: '{b_name}'...")
-                    await m.click(r_idx, c_idx)
-                    await asyncio.sleep(1.5)
-                    # Xabar joyida (in-place) yangilanganini tekshirish
-                    try:
-                        updated_m = await self.client.get_messages(target_bot, ids=m.id)
-                        if updated_m and updated_m.buttons and any(
-                            b for row in updated_m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()
-                        ):
-                            card_msg = updated_m
-                            break
-                    except Exception:
-                        pass
-
-            if any(b for row in m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()):
+            if any(b for row in m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()):
                 card_msg = m
                 break
 
         if not card_msg or not card_msg.buttons:
             async for nm in self.client.iter_messages(target_bot, limit=4):
-                if nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower()):
+                if nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()):
                     card_msg = nm
+                    for row_idx, row in enumerate(nm.buttons):
+                        for col_idx, btn in enumerate(row):
+                            b_lower = btn.text.strip().lower()
+                            m_s = re.search(r'(\d+)\s*[-_]?\s*(?:fasl|mavsum|sezon|season)', b_lower)
+                            if m_s and not any(s[0] == int(m_s.group(1)) for s in season_entries):
+                                season_entries.append((int(m_s.group(1)), row_idx, col_idx, btn.text.strip()))
                     break
 
         if not card_msg or not card_msg.buttons:
-            logger.warning(f"[@{target_bot}] Serial qismlari tugmalari topilmadi!")
+            logger.warning(f"[@{target_bot}] Serial qismlari yoki fasllari tugmalari topilmadi!")
             return False
 
-        # Qismlar tugmalarini yig'ish
-        episodes_map = {}  # ep_num -> (r_idx, c_idx, btn_text)
-        for r_idx, row in enumerate(card_msg.buttons):
-            for c_idx, btn in enumerate(row):
-                t = btn.text.strip()
-                if t.isdigit():
-                    episodes_map[int(t)] = (r_idx, c_idx, t)
-                else:
-                    m_num = re.search(r'(\d+)\s*[-_]?\s*qism', t, re.I)
-                    if m_num:
-                        episodes_map[int(m_num.group(1))] = (r_idx, c_idx, t)
-
-        if not episodes_map:
-            logger.warning("Serialda raqamlangan qism tugmalari topilmadi!")
-            return False
-
-        logger.info(f"🎬 Botda {len(episodes_map)} ta qism topildi: {sorted(list(episodes_map.keys()))}")
+        if season_entries:
+            season_entries.sort(key=lambda x: x[0])
+            logger.info(f"🎬 Botda {len(season_entries)} ta mavsum topildi: {[s[3] for s in season_entries]}")
+        else:
+            season_entries = [(1, None, None, "1-Mavsum")]
 
         # 3. Serial ma'lumotlarini AI + TMDb orqali boyitish
         caption = card_msg.text or ""
@@ -319,9 +360,24 @@ class TelethonModeratorPipeline:
         year = meta["release_year"] or item.year
         year_str = f" ({year})" if year else ""
 
-        # 4. Bazada serial va Forum Topic yaratish (agar yo'q bo'lsa)
+        # 4. Bazada serial va Forum Topic yaratish / tekshirish
         series_id = existing_series_id
-        season_id = None
+
+        # Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
+        if not series_id:
+            sec_dup = await self.dup_checker.check(
+                title=title,
+                year=year,
+                original_title=meta.get("original_title"),
+                media_type="series",
+                tmdb_id=meta.get("tmdb_id")
+            )
+            if sec_dup.is_duplicate:
+                logger.info(
+                    f"ℹ️ Serial (boyitilgandan so'ng) bazada topildi: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). "
+                    f"Yangi serial/topic ochilmaydi, mavjudiga ulanadi."
+                )
+                series_id = sec_dup.matched_id
         thread_id = None
         target_chat = AUTO_TOPIC_CHAT_ID
 
@@ -331,29 +387,29 @@ class TelethonModeratorPipeline:
 
             if series_id:
                 db_series = await series_service.get_series_by_id(series_id)
-                if db_series:
-                    if db_series.source and db_series.source.topic_id:
-                        thread_id = db_series.source.topic_id
-                    if db_series.seasons:
-                        season_id = db_series.seasons[0].id
-
-                if not season_id and series_id:
-                    created_season = await series_service.create_season(SeasonCreate(
-                        series_id=series_id,
-                        season_number=1,
-                        title="1-Mavsum"
-                    ))
-                    season_id = created_season.id
-                    await session.commit()
+                if db_series and db_series.source and db_series.source.topic_id:
+                    thread_id = db_series.source.topic_id
 
                 if not thread_id:
                     topic_name = f"🎬 {title} (Serial){year_str}"
                     logger.info(f"ℹ️ Mavjud serial uchun Forum Topic ochilmoqda: '{topic_name}'...")
                     thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
-                    if thread_id and db_series and db_series.source_id:
-                        src = await session.get(SourceModel, db_series.source_id)
-                        if src:
-                            src.topic_id = thread_id
+                    if thread_id and db_series:
+                        if db_series.source_id:
+                            src = await session.get(SourceModel, db_series.source_id)
+                            if src:
+                                src.topic_id = thread_id
+                                await session.commit()
+                        else:
+                            src = SourceModel(
+                                name=title,
+                                type="superguruh",
+                                chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
+                                topic_id=int(thread_id)
+                            )
+                            session.add(src)
+                            await session.flush()
+                            db_series.source_id = src.id
                             await session.commit()
 
             if not series_id:
@@ -420,254 +476,409 @@ class TelethonModeratorPipeline:
                 )
                 created_series = await series_service.create_series(series_data)
                 series_id = created_series.id
-
-                # Season 1 yaratish
-                created_season = await series_service.create_season(SeasonCreate(
-                    series_id=series_id,
-                    season_number=1,
-                    title="1-Mavsum"
-                ))
-                season_id = created_season.id
                 await session.commit()
-                logger.info(f"✅ Serial bazada muvaffaqiyatli yaratildi (Series ID: {series_id}, Season ID: {season_id})")
+                logger.info(f"✅ Serial bazada muvaffaqiyatli yaratildi (Series ID: {series_id})")
 
-        # 5. Mavjud qismlarni aniqlash (qayta yuklamaslik uchun)
-        existing_eps = set()
-        async with async_session_factory() as session:
-            series_repo = SeriesRepository(session)
-            s_model = await series_repo.get_season_by_id(season_id)
-            if s_model and s_model.episodes:
-                for ep in s_model.episodes:
-                    if ep.translations:
-                        existing_eps.add(ep.episode_number)
-
-        # 6. Har bir qismni ketma-ket yuklash
-        total_episodes = len(episodes_map)
+        # 5. Har bir mavsum va qismlarni ketma-ket yuklash
         uploaded_count = 0
         storage_chat = STORAGE_CHANNEL_ID
 
-        for ep_num in sorted(episodes_map.keys()):
-            if ep_num in existing_eps:
-                logger.info(f"⏭ {ep_num}-qism allaqachon mavjud, o'tkazib yuborildi.")
+        for s_num, s_r_idx, s_c_idx, s_b_name in season_entries:
+            logger.info(f"\n==========================================")
+            logger.info(f"📺 MAVSUM {s_num}: '{s_b_name}'")
+            logger.info(f"==========================================")
+
+            # Bazada Mavsumni olish yoki yaratish
+            season_id = None
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                all_seasons = await series_repo.get_seasons_by_series(series_id)
+                matched_season = next((s for s in all_seasons if s.season_number == s_num), None)
+                if not matched_season:
+                    created_season = await series_service.create_season(SeasonCreate(
+                        series_id=series_id,
+                        season_number=s_num,
+                        title=f"{s_num}-Mavsum"
+                    ))
+                    season_id = created_season.id
+                else:
+                    season_id = matched_season.id
+                await session.commit()
+
+            # Agar mavsum tugmalari mavjud bo'lsa
+            if len(season_entries) > 1 or s_r_idx is not None:
+                try:
+                    latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
+                    if latest_card and latest_card.buttons:
+                        card_msg = latest_card
+
+                    # 1. Agar joriy karta mavsum tugmalarini ko'rsatmayotgan bo'lsa (masalan qismlar ko'rinib turgan bo'lsa),
+                    # "Ortga / Fasllar" tugmasi orqali mavsumlar ro'yxatiga qaytamiz
+                    has_season_buttons = any(
+                        re.search(r'\b(?:\d+[-_]?\s*(?:fasl|mavsum)|(?:fasl|mavsum)\s*\d+)\b', b.text.lower())
+                        for row in (card_msg.buttons or []) for b in row
+                    )
+                    if not has_season_buttons:
+                        for b_r, b_row in enumerate(card_msg.buttons or []):
+                            for b_c, b in enumerate(b_row):
+                                if any(w in b.text.lower() for w in ["fasllar", "mavsumlar", "ortga", "orqaga", "◀️", "back"]):
+                                    logger.info(f"Mavsumlar menyusiga qaytish bosilmoqda: '{b.text}'...")
+                                    await self.safe_click(card_msg, b_r, b_c)
+                                    await asyncio.sleep(2.5)
+                                    card_msg = await self.client.get_messages(target_bot, ids=card_msg.id)
+                                    break
+
+                    # 2. s_num mavsum tugmasini joriy kartadan matn bo'yicha qidiramiz
+                    season_btn_pos = None
+                    for b_r, b_row in enumerate(card_msg.buttons or []):
+                        for b_c, b in enumerate(b_row):
+                            b_t = b.text.lower()
+                            if f"{s_num}-fasl" in b_t or f"{s_num}-mavsum" in b_t or f"{s_num} fasl" in b_t or f"{s_num} mavsum" in b_t or f"fasl {s_num}" in b_t or f"mavsum {s_num}" in b_t:
+                                season_btn_pos = (b_r, b_c, b.text)
+                                break
+                        if season_btn_pos:
+                            break
+
+                    if not season_btn_pos and s_r_idx is not None:
+                        season_btn_pos = (s_r_idx, s_c_idx, s_b_name)
+
+                    if season_btn_pos:
+                        sr, sc, s_name = season_btn_pos
+                        logger.info(f"Fasl tugmasi bosilmoqda: '{s_name}'...")
+                        await asyncio.sleep(2.0)
+                        _, s_flood = await self.safe_click(card_msg, sr, sc)
+                        if s_flood > 0:
+                            logger.warning(f"⏳ [@{target_bot}] Fasl bosishda flood ({s_flood}s). Kutilmoqda...")
+                            await asyncio.sleep(s_flood)
+                            await self.safe_click(card_msg, sr, sc)
+                        await asyncio.sleep(2.5)
+                        refreshed = await self.client.get_messages(target_bot, ids=card_msg.id)
+                        if refreshed and refreshed.buttons:
+                            card_msg = refreshed
+                except Exception as s_err:
+                    logger.debug(f"Fasl tugmasini bosishda xatolik: {s_err}")
+
+            # Ushbu mavsum qismlari tugmalarini yig'ish
+            episodes_grid_msg_id = card_msg.id
+            episodes_map = {}
+            for r_idx, row in enumerate(card_msg.buttons or []):
+                for c_idx, btn in enumerate(row):
+                    t = btn.text.strip()
+                    if t.isdigit():
+                        episodes_map[int(t)] = (r_idx, c_idx, t)
+                    else:
+                        m_num = re.search(r'(\d+)\s*[-_]?\s*qism', t, re.I)
+                        if m_num:
+                            episodes_map[int(m_num.group(1))] = (r_idx, c_idx, t)
+
+            if not episodes_map:
+                logger.warning(f"⚠️ {s_num}-mavsum uchun raqamlangan qism tugmalari topilmadi.")
                 continue
 
-            # Avval card_msg holatini tekshiramiz: agar hozir sifat menyusi yoki "⬅️ Qismlar" ko'rinayotgan bo'lsa, qismlar ro'yxatiga qaytamiz
-            try:
-                latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
-                if latest_card and latest_card.buttons:
-                    went_back = False
-                    for b_r, b_row in enumerate(latest_card.buttons):
-                        for b_c, b in enumerate(b_row):
-                            if "qismlar" in b.text.lower() or "ortga" in b.text.lower() or "back" in b.text.lower():
-                                await latest_card.click(b_r, b_c)
-                                await asyncio.sleep(1.2)
-                                went_back = True
-                                break
-                        if went_back:
-                            break
-                    if went_back:
-                        latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
-                    card_msg = latest_card
-            except Exception as e:
-                logger.debug(f"Qismlar ro'yxatiga qaytishda xatolik: {e}")
+            logger.info(f"🎬 {s_num}-mavsumda {len(episodes_map)} ta qism topildi: {sorted(list(episodes_map.keys()))}")
 
-            # ep_num tugmasini joriy menyudan dinamik aniqlaymiz
-            target_r_idx, target_c_idx = None, None
-            btn_name = str(ep_num)
-            for row_idx, row in enumerate(card_msg.buttons or []):
-                for col_idx, btn in enumerate(row):
-                    t = btn.text.strip()
-                    if t == str(ep_num) or t.startswith(f"{ep_num}-") or t.startswith(f"{ep_num} "):
-                        target_r_idx, target_c_idx, btn_name = row_idx, col_idx, btn.text
-                        break
-                if target_r_idx is not None:
-                    break
+            # Bazada mavjud qismlarni aniqlash
+            existing_eps = set()
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                s_model = await series_repo.get_season_by_id(season_id)
+                if s_model and s_model.episodes:
+                    for ep in s_model.episodes:
+                        if ep.translations:
+                            existing_eps.add(ep.episode_number)
 
-            if target_r_idx is None:
-                # Agar dinamik topilmasa, boshlang'ich xaritadan olamiz
-                if ep_num in episodes_map:
-                    target_r_idx, target_c_idx, btn_name = episodes_map[ep_num]
-                else:
-                    logger.warning(f"⚠️ {ep_num}-qism tugmasi topilmadi, o'tkazib yuborildi.")
+            total_eps_in_season = len(episodes_map)
+
+            for ep_num in sorted(episodes_map.keys()):
+                if ep_num in existing_eps:
+                    logger.info(f"⏭ {s_num}-Mavsum, {ep_num}-qism allaqachon mavjud, o'tkazib yuborildi.")
                     continue
 
-            logger.info(f"\n--- 📺 {ep_num}-qism yuklanmoqda ({btn_name}) [{uploaded_count + 1}/{total_episodes}] ---")
+                # Anti-flood: Har bir qism oldidan kamida 3.5 soniya tanaffus
+                await asyncio.sleep(3.5)
 
-            try:
-                # Bot tugmasini bosish
-                click_id = card_msg.id
-                await card_msg.click(target_r_idx, target_c_idx)
-                await asyncio.sleep(1.2)
-
-                ep_video_msg = None
-                quality_msg = None
-
-                # 1. Asilmedia bot xabarni joyida (in-place) yangilab sifat tugmalarini chiqarishini tekshirish
                 try:
-                    refreshed_card = await self.client.get_messages(target_bot, ids=card_msg.id)
-                    if refreshed_card and refreshed_card.buttons and any(b for row in refreshed_card.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
-                        quality_msg = refreshed_card
-                        card_msg = refreshed_card
-                        logger.info(f"ℹ️ Sifat tugmalari in-place kartada topildi: {[b.text for r in quality_msg.buttons for b in r]}")
-                except Exception as ref_err:
-                    logger.debug(f"Card message yangilanishini tekshirishda xatolik: {ref_err}")
+                    # Asosiy qismlar kartasini tiklash
+                    card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                    has_numbers = any(b for row in (card_msg.buttons or []) for b in row if b.text.strip().isdigit())
+                    if not has_numbers and card_msg and card_msg.buttons:
+                        for b_r, b_row in enumerate(card_msg.buttons):
+                            for b_c, b in enumerate(b_row):
+                                if any(w in b.text.lower() for w in ["qismlar", "ortga", "orqaga", "back"]):
+                                    await self.safe_click(card_msg, b_r, b_c)
+                                    await asyncio.sleep(2.5)
+                                    card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                                    break
+                except Exception as e:
+                    logger.debug(f"Qismlar ro'yxatini tiklashda xatolik: {e}")
 
-                # 2. Agar in-place yangilanmagan bo'lsa, yangi xabarlardan video yoki sifat menyusini kutish
-                if not quality_msg:
-                    def is_ep_or_quality(msgs):
-                        for nm in msgs:
-                            if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
-                                return True
-                            if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
-                                return True
-                        return False
-
-                    ep_reply_msgs = await poll_new_messages(self.client, target_bot, click_id, timeout=6.0, interval=0.35, condition=is_ep_or_quality)
-                else:
-                    ep_reply_msgs = []
-
-                for nm in ep_reply_msgs:
-                    if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
-                        f_lower = (nm.file.name or "").lower()
-                        t_lower = (nm.text or "").lower()
-                        if f"{ep_num}-qism" in f_lower or f"{ep_num}-qism" in t_lower or f"{ep_num} qism" in t_lower or total_episodes == 1:
-                            ep_video_msg = nm
+                # ep_num tugmasini joriy menyudan aniqlash
+                target_r_idx, target_c_idx = None, None
+                btn_name = str(ep_num)
+                for row_idx, row in enumerate(card_msg.buttons or []):
+                    for col_idx, btn in enumerate(row):
+                        t = btn.text.strip()
+                        if t == str(ep_num) or t.startswith(f"{ep_num}-") or t.startswith(f"{ep_num} "):
+                            target_r_idx, target_c_idx, btn_name = row_idx, col_idx, btn.text
                             break
-                    if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
-                        quality_msg = nm
+                    if target_r_idx is not None:
                         break
 
-                # Agar sifat menyusi chiqqan bo'lsa
-                if quality_msg and not ep_video_msg:
-                    q_btns = {}
-                    for q_r, q_row in enumerate(quality_msg.buttons):
-                        for q_c, q_b in enumerate(q_row):
-                            t = q_b.text.lower()
-                            if "720" in t:
-                                q_btns["720p"] = (q_r, q_c, q_b.text)
-                            elif "1080" in t:
-                                q_btns["1080p"] = (q_r, q_c, q_b.text)
-                            elif "480" in t:
-                                q_btns["480p"] = (q_r, q_c, q_b.text)
-                    chosen_q = q_btns.get("720p") or q_btns.get("1080p") or q_btns.get("480p")
-                    if chosen_q:
-                        q_r, q_c, q_name = chosen_q
-                        logger.info(f"Sifat tugmasi tanlanmoqda: '{q_name}'...")
-                        q_click_id = quality_msg.id
-                        await quality_msg.click(q_r, q_c)
+                if target_r_idx is None:
+                    if ep_num in episodes_map:
+                        orig_r, orig_c, orig_name = episodes_map[ep_num]
+                        if (
+                            card_msg.buttons
+                            and orig_r < len(card_msg.buttons)
+                            and orig_c < len(card_msg.buttons[orig_r])
+                            and card_msg.buttons[orig_r][orig_c].text.strip() == str(ep_num)
+                        ):
+                            target_r_idx, target_c_idx, btn_name = orig_r, orig_c, orig_name
 
-                        def has_final_video(msgs):
-                            return any(vm.file and vm.file.name and vm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')) for vm in msgs)
+                if target_r_idx is None:
+                    logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism tugmasi menyuda topilmadi, o'tkazib yuborildi.")
+                    continue
 
-                        v_list = await poll_new_messages(self.client, target_bot, q_click_id, timeout=18.0, interval=0.4, condition=has_final_video)
-                        for vm in v_list:
-                            if vm.file and vm.file.name and vm.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
-                                ep_video_msg = vm
+                logger.info(f"\n--- 📺 {s_num}-Mavsum, {ep_num}-qism yuklanmoqda ({btn_name}) [{uploaded_count + 1}/{total_eps_in_season}] ---")
+
+                try:
+                    ep_video_msg = None
+
+                    # Har bir qism uchun 3 martagacha urinish (anti-flood bilan)
+                    for ep_attempt in range(3):
+                        click_id = card_msg.id
+                        success, click_flood = await self.safe_click(card_msg, target_r_idx, target_c_idx)
+                        if click_flood > 0:
+                            logger.warning(
+                                f"⏳ [@{target_bot}] Anti-flood chegarasi ({click_flood}s). "
+                                f"Kutib turamiz ({ep_attempt + 1}/3)..."
+                            )
+                            await asyncio.sleep(click_flood)
+                            card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                            continue
+
+                        await asyncio.sleep(2.5)
+
+                        quality_msg = None
+                        try:
+                            refreshed_card = await self.client.get_messages(target_bot, ids=card_msg.id)
+                            if refreshed_card and refreshed_card.buttons:
+                                if any(b for row in refreshed_card.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
+                                    quality_msg = refreshed_card
+                                    card_msg = refreshed_card
+                                    logger.info(f"ℹ️ Sifat tugmalari in-place kartada topildi: {[b.text for r in quality_msg.buttons for b in r]}")
+                        except Exception as ref_err:
+                            logger.debug(f"Card message yangilanishini tekshirishda xatolik: {ref_err}")
+
+                        if not quality_msg:
+                            def is_ep_or_quality(msgs):
+                                for nm in msgs:
+                                    if is_bot_flood_text(nm.text):
+                                        return True
+                                    if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                                        return True
+                                    if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
+                                        return True
+                                return False
+
+                            ep_reply_msgs = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, interval=0.35, condition=is_ep_or_quality)
+                        else:
+                            ep_reply_msgs = []
+
+                        # Flood tekshiruvi:
+                        flood_wait = get_flood_wait_seconds(ep_reply_msgs)
+                        if flood_wait > 0:
+                            logger.warning(
+                                f"⏳ [@{target_bot}] Bot xabarida flood chegarasi: 'Biroz sekinroq. Bir daqiqadan so'ng urinib ko'ring.' "
+                                f"{flood_wait} soniya kutilmoqda ({ep_attempt + 1}/3)..."
+                            )
+                            await asyncio.sleep(flood_wait)
+                            card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                            continue
+
+                        for nm in ep_reply_msgs:
+                            if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                                f_lower = (nm.file.name or "").lower()
+                                t_lower = (nm.text or "").lower()
+                                if f"{ep_num}-qism" in f_lower or f"{ep_num}-qism" in t_lower or f"{ep_num} qism" in t_lower or total_eps_in_season == 1:
+                                    ep_video_msg = nm
+                                    break
+                            if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
+                                quality_msg = nm
                                 break
 
-                # Fallback: oxirgi xabarlardan shu qism videosini tekshirish
-                if not ep_video_msg:
-                    async for fallback_m in self.client.iter_messages(target_bot, limit=10):
-                        if fallback_m.file and fallback_m.file.name and fallback_m.file.name.lower().endswith(('.mp4', '.mkv', '.avi')):
-                            f_name_lower = (fallback_m.file.name or "").lower()
-                            f_text_lower = (fallback_m.text or "").lower()
-                            if f"{ep_num}-qism" in f_name_lower or f"{ep_num}-qism" in f_text_lower or f"{ep_num} qism" in f_text_lower or total_episodes == 1:
-                                ep_video_msg = fallback_m
-                                logger.info(f"ℹ️ Zaxiradagi xabarlardan {ep_num}-qism videosi topildi (Msg ID: {ep_video_msg.id})")
-                                break
+                        if quality_msg and not ep_video_msg:
+                            q_btns = {}
+                            for q_r, q_row in enumerate(quality_msg.buttons):
+                                for q_c, q_b in enumerate(q_row):
+                                    t = q_b.text.lower()
+                                    if "720" in t:
+                                        q_btns["720p"] = (q_r, q_c, q_b.text)
+                                    elif "1080" in t:
+                                        q_btns["1080p"] = (q_r, q_c, q_b.text)
+                                    elif "480" in t:
+                                        q_btns["480p"] = (q_r, q_c, q_b.text)
+                            chosen_q = q_btns.get("720p") or q_btns.get("1080p") or q_btns.get("480p")
+                            if chosen_q:
+                                q_r, q_c, q_name = chosen_q
+                                logger.info(f"Sifat tugmasi tanlanmoqda: '{q_name}'...")
+                                q_click_id = quality_msg.id
+                                await asyncio.sleep(2.0)
+                                _, q_flood = await self.safe_click(quality_msg, q_r, q_c)
+                                if q_flood > 0:
+                                    logger.warning(f"⏳ [@{target_bot}] Sifat tugmasida flood ({q_flood}s)...")
+                                    await asyncio.sleep(q_flood)
 
-                if not ep_video_msg:
-                    logger.warning(f"❌ {ep_num}-qism videosi botdan qabul qilinmadi!")
-                    continue
+                                def has_final_video(msgs):
+                                    return any(
+                                        is_bot_flood_text(vm.text) or (vm.file and vm.file.name and vm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')))
+                                        for vm in msgs
+                                    )
 
-                # Topic ichiga yuklash
-                ep_caption = (
-                    f"🎬 <b>{html.escape(title)}</b>\n"
-                    f"🔢 <b>1-Mavsum, {ep_num}-Qism</b>"
-                )
-                topic_msg = await self._upload_video_to_chat(
-                    video_msg=ep_video_msg,
-                    target_chat=target_chat,
-                    reply_to=thread_id,
-                    caption=ep_caption
-                )
-                if not topic_msg:
-                    logger.error(f"❌ {ep_num}-qism Topicga yuklanmadi!")
-                    continue
+                                v_list = await poll_new_messages(self.client, target_bot, q_click_id, timeout=18.0, interval=0.4, condition=has_final_video)
+                                v_flood = get_flood_wait_seconds(v_list)
+                                if v_flood > 0:
+                                    logger.warning(f"⏳ [@{target_bot}] Video kutishda flood: {v_flood}s kutilmoqda...")
+                                    await asyncio.sleep(v_flood)
 
-                # Storage kanalga server-side nusxalash
-                storage_caption = (
-                    f"🎬 <b>{html.escape(title)}</b>\n"
-                    f"🔢 <b>1-Mavsum, {ep_num}-Qism</b>\n"
-                    + (f"📅 <b>Yili:</b> {year}\n" if year else "")
-                )
-                storage_msg = await self._upload_video_to_chat(
-                    video_msg=topic_msg,
-                    target_chat=storage_chat,
-                    reply_to=None,
-                    caption=storage_caption
-                )
-                if not storage_msg:
-                    logger.error(f"❌ {ep_num}-qism Storage kanalga nusxalanmadi!")
-                    continue
+                                for vm in v_list:
+                                    if vm.file and vm.file.name and vm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                                        ep_video_msg = vm
+                                        break
 
-                # Bazada Episode yaratish va bog'lash
-                async with async_session_factory() as session:
-                    series_repo = SeriesRepository(session)
-                    series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                        if not ep_video_msg:
+                            async for fallback_m in self.client.iter_messages(target_bot, limit=10):
+                                if fallback_m.file and fallback_m.file.name and fallback_m.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                                    f_name_lower = (fallback_m.file.name or "").lower()
+                                    f_text_lower = (fallback_m.text or "").lower()
+                                    if f"{ep_num}-qism" in f_name_lower or f"{ep_num}-qism" in f_text_lower or f"{ep_num} qism" in f_text_lower or total_eps_in_season == 1:
+                                        ep_video_msg = fallback_m
+                                        logger.info(f"ℹ️ Zaxiradagi xabarlardan {ep_num}-qism videosi topildi (Msg ID: {ep_video_msg.id})")
+                                        break
 
-                    ep_entity = await series_service.create_episode(EpisodeCreate(
-                        season_id=season_id,
-                        episode_number=ep_num,
-                        title=f"{ep_num}-qism"
-                    ))
-                    ep_id = ep_entity.id
+                        if ep_video_msg:
+                            break
 
-                    ep_bot_file_id = None
+                        logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism ({ep_attempt + 1}/3) urinishda olinmadi, 4 soniyadan so'ng qayta uriniladi...")
+                        await asyncio.sleep(4.0)
+                        card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+
+                    if not ep_video_msg:
+                        logger.warning(f"❌ {s_num}-Mavsum, {ep_num}-qism videosi botdan qabul qilinmadi!")
+                        continue
+
+                    # Topic ichiga yuklash
+                    ep_caption = (
+                        f"🎬 <b>{html.escape(title)}</b>\n"
+                        f"🔢 <b>{s_num}-Mavsum, {ep_num}-Qism</b>"
+                    )
+                    topic_msg = await self._upload_video_to_chat(
+                        video_msg=ep_video_msg,
+                        target_chat=target_chat,
+                        reply_to=thread_id,
+                        caption=ep_caption
+                    )
+                    if not topic_msg:
+                        logger.error(f"❌ {ep_num}-qism Topicga yuklanmadi!")
+                        continue
+
+                    # Storage kanalga nusxalash
+                    storage_caption = (
+                        f"🎬 <b>{html.escape(title)}</b>\n"
+                        f"🔢 <b>{s_num}-Mavsum, {ep_num}-Qism</b>\n"
+                        + (f"📅 <b>Yili:</b> {year}\n" if year else "")
+                    )
+                    storage_msg = await self._upload_video_to_chat(
+                        video_msg=topic_msg,
+                        target_chat=storage_chat,
+                        reply_to=None,
+                        caption=storage_caption
+                    )
+                    if not storage_msg:
+                        logger.error(f"❌ {ep_num}-qism Storage kanalga nusxalanmadi!")
+                        continue
+
+                    # Bazada Episode yaratish va bog'lash
+                    async with async_session_factory() as session:
+                        series_repo = SeriesRepository(session)
+                        series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+
+                        ep_entity = await series_service.create_episode(EpisodeCreate(
+                            season_id=season_id,
+                            episode_number=ep_num,
+                            title=f"{ep_num}-qism"
+                        ))
+                        ep_id = ep_entity.id
+
+                        ep_bot_file_id = None
+                        try:
+                            from telethon.utils import pack_bot_file_id
+                            if storage_msg and storage_msg.media:
+                                ep_bot_file_id = pack_bot_file_id(storage_msg.media)
+                        except Exception:
+                            pass
+
+                        await series_repo.add_episode_translation(
+                            episode_id=ep_id,
+                            language="Asosiy",
+                            telegram_file_id=ep_bot_file_id,
+                            storage_channel_message_id=storage_msg.id
+                        )
+                        await session.commit()
+
                     try:
-                        from telethon.utils import pack_bot_file_id
-                        if storage_msg and storage_msg.media:
-                            ep_bot_file_id = pack_bot_file_id(storage_msg.media)
+                        await delete_cache_pattern("cache:series:*")
                     except Exception:
                         pass
 
-                    await series_repo.add_episode_translation(
-                        episode_id=ep_id,
-                        language="Asosiy",
-                        telegram_file_id=ep_bot_file_id,
-                        storage_channel_message_id=storage_msg.id
-                    )
-                    await session.commit()
+                    uploaded_count += 1
+                    logger.info(f"✅ {s_num}-Mavsum, {ep_num}-qism to'liq yuklandi va bazaga bog'landi! (Storage Msg: {storage_msg.id})")
 
-                try:
-                    await delete_cache_pattern("cache:series:*")
-                except Exception:
-                    pass
+                    # Navbat statusini yangilash
+                    try:
+                        QueueManager().update_status(
+                            item.id,
+                            "in_progress",
+                            downloaded_episodes=uploaded_count,
+                            episodes_count=total_eps_in_season
+                        )
+                    except Exception:
+                        pass
 
-                uploaded_count += 1
-                logger.info(f"✅ {ep_num}-qism to'liq yuklandi va bazaga bog'landi! (Storage Msg: {storage_msg.id})")
+                    # Keyingi qism uchun qismlar ro'yxatiga qaytish
+                    try:
+                        latest_card = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                        if latest_card and latest_card.buttons:
+                            for b_r, b_row in enumerate(latest_card.buttons):
+                                for b_c, b_btn in enumerate(b_row):
+                                    if any(w in b_btn.text.lower() for w in ["qismlar", "orqaga", "ortga"]):
+                                        await self.safe_click(latest_card, b_r, b_c)
+                                        await asyncio.sleep(2.0)
+                                        card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                                        break
+                    except Exception:
+                        pass
 
-                # Keyingi qism uchun qismlar ro'yxatiga qaytish (⬅️ Qismlar tugmasi)
+                    await asyncio.sleep(3.5)
+                except Exception as ep_err:
+                    logger.error(f"❌ {ep_num}-qismni yuklashda xatolik: {ep_err}")
+                    await asyncio.sleep(3.5)
+
+            # Agar keyingi mavsum mavjud bo'lsa, mavsumlar menyusiga qaytish
+            if len(season_entries) > 1 and s_num != season_entries[-1][0]:
                 try:
                     latest_card = await self.client.get_messages(target_bot, ids=card_msg.id)
                     if latest_card and latest_card.buttons:
                         for b_r, b_row in enumerate(latest_card.buttons):
                             for b_c, b_btn in enumerate(b_row):
-                                if "qismlar" in b_btn.text.lower() or "orqaga" in b_btn.text.lower():
-                                    logger.info("⬅️ Keyingi qism uchun qismlar ro'yxatiga qaytilmoqda...")
+                                if "fasl" in b_btn.text.lower() or "mavsum" in b_btn.text.lower() or "orqaga" in b_btn.text.lower():
                                     await latest_card.click(b_r, b_c)
                                     await asyncio.sleep(1.0)
                                     card_msg = await self.client.get_messages(target_bot, ids=card_msg.id)
                                     break
-                except Exception as b_err:
+                except Exception:
                     pass
-
-                # Telegram FloodWait dan saqlanish uchun xavfsiz qisqa tanaffus
-                await asyncio.sleep(1.0)
-
-            except Exception as ep_err:
-                logger.error(f"❌ {ep_num}-qismni yuklashda xatolik: {ep_err}")
-                await asyncio.sleep(2.0)
 
         if uploaded_count == 0 and not existing_series_id and series_id:
             logger.warning(f"⚠️ Serialga birorta ham qism yuklanmadi. Baza toza saqlanishi uchun Serial (ID: {series_id}) o'chirilmoqda...")
@@ -714,24 +925,68 @@ class TelethonModeratorPipeline:
         # 2. Botdan video olish (video_msg va card_msg olinadi)
         video_msg = await self._fetch_video(item=item, target_bot=target_bot)
         if not video_msg:
+            # Agar bot serial tugmalarini qaytargan bo'lsa, avtomatik serial deb hisoblab serial siklini bajaramiz
+            if self._last_card_msg and self._last_card_msg.buttons:
+                has_eps = any(
+                    b for row in self._last_card_msg.buttons for b in row
+                    if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()
+                )
+                if has_eps:
+                    logger.info(f"ℹ️ '{item.title}' aslida serial ekanligi aniqlandi! Serial sikliga yo'naltirilmoqda...")
+                    item.media_type = "series"
+                    return await self.run_single_series(item=item, target_bot=target_bot)
             logger.warning(f"❌ '{item.title}' bo'yicha @{target_bot} dan video olinmadi.")
             return False
 
         return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
 
     async def run_by_code(self, code: str, target_bot: str = "asilmediabot") -> bool:
+        clean_code = str(code).strip()
         logger.info("\n" + "="*55)
-        logger.info(f"🎬 MODERATOR SIKLI: KOD #{code} | BOT: @{target_bot}")
+        logger.info(f"🎬 MODERATOR SIKLI: KOD #{clean_code} | BOT: @{target_bot}")
         logger.info("="*55)
 
-        video_msg = await self._fetch_video(code=code, target_bot=target_bot)
+        # 0. Navbatdan ushbu kodga tegishli item bormi tekshiramiz
+        qm = QueueManager()
+        queued_item = qm.get_item_by_code(clean_code)
+        if queued_item and queued_item.media_type == "series":
+            logger.info(f"ℹ️ Kod #{clean_code} navbatda serial sifatida qayd etilgan ('{queued_item.title}'). Serial sikliga yo'naltirilmoqda...")
+            return await self.run_single_series(item=queued_item, target_bot=target_bot)
+
+        video_msg = await self._fetch_video(code=clean_code, target_bot=target_bot)
         if not video_msg:
-            logger.warning(f"❌ Kod #{code} bo'yicha botdan video olinmadi.")
+            if self._last_card_msg and self._last_card_msg.buttons:
+                has_eps = any(
+                    b for row in self._last_card_msg.buttons for b in row
+                    if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()
+                )
+                if has_eps:
+                    logger.info(f"ℹ️ Kod #{clean_code} bot tomonidan serial sifatida aniqlandi. Serial sikliga yo'naltirilmoqda...")
+                    raw_text = self._last_card_msg.text or ""
+                    caption_title_m = re.search(r'🎬\s*([^\n\r–]+)', raw_text)
+                    raw_title = caption_title_m.group(1).strip() if caption_title_m else f"Serial #{clean_code}"
+                    raw_title = clean_movie_title(raw_title)
+
+                    caption_year = None
+                    year_m = re.search(r'Yil:\s*(\d{4})', raw_text, re.I)
+                    if year_m:
+                        caption_year = int(year_m.group(1))
+
+                    series_item = queued_item or QueueItem(
+                        id=f"{target_bot.lower()}_{clean_code}",
+                        source="asilmedia" if "asil" in target_bot.lower() else "uzmovi",
+                        title=raw_title,
+                        year=caption_year,
+                        media_type="series"
+                    )
+                    return await self.run_single_series(item=series_item, target_bot=target_bot)
+
+            logger.warning(f"❌ Kod #{clean_code} bo'yicha botdan video olinmadi.")
             return False
 
         caption = video_msg.text or ""
         caption_title_m = re.search(r'🎬\s*([^\n\r–]+)', caption)
-        raw_title = caption_title_m.group(1).strip() if caption_title_m else f"Film #{code}"
+        raw_title = caption_title_m.group(1).strip() if caption_title_m else f"Film #{clean_code}"
         raw_title = clean_movie_title(raw_title)
 
         caption_year = None
@@ -743,8 +998,8 @@ class TelethonModeratorPipeline:
             if year_fallback:
                 caption_year = int(year_fallback.group(1))
 
-        item = QueueItem(
-            id=f"{target_bot.lower()}_{code}",
+        item = queued_item or QueueItem(
+            id=f"{target_bot.lower()}_{clean_code}",
             source="asilmedia" if "asil" in target_bot.lower() else "uzmovi",
             title=raw_title,
             year=caption_year,
@@ -809,6 +1064,26 @@ class TelethonModeratorPipeline:
         title = meta["title"]
         year = meta["release_year"]
         year_str = f" ({year})" if year else ""
+
+        # Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
+        sec_dup = await self.dup_checker.check(
+            title=title,
+            year=year,
+            original_title=meta.get("original_title"),
+            media_type="movie",
+            tmdb_id=meta.get("tmdb_id")
+        )
+        if sec_dup.is_duplicate:
+            logger.warning(
+                f"⚠️ [DUBLIKAT (boyitishdan so'ng)] '{title}' bazada mavjud: "
+                f"[{sec_dup.matched_type}] '{sec_dup.matched_title}' (ID: {sec_dup.matched_id}). O'tkazib yuborildi."
+            )
+            QueueManager().update_status(
+                item.id,
+                "already_exists",
+                error_message=f"Bazada mavjud: {sec_dup.reason} (ID: {sec_dup.matched_id})"
+            )
+            return False
 
         # ── Sifat nazorati (Quality Guard) ──
         # Agar sarlavha "Kino", "Film" kabi noaniq bo'lsa, bazaga va kanalga xato kirmasligi uchun to'xtatiladi
@@ -1169,6 +1444,13 @@ class TelethonModeratorPipeline:
                     break
 
         if not card_msg or not card_msg.buttons:
+            for m in recent_msgs:
+                if m.buttons:
+                    has_series_btn = any(b for row in m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower())
+                    if has_series_btn:
+                        self._last_card_msg = m
+                        logger.info(f"[@{bot}] Serial kartasi/tugmalari aniqlandi.")
+                        return None
             logger.warning(f"[@{bot}] Film kartasi yoki sifat tugmalari topilmadi.")
             return None
 
@@ -1204,7 +1486,12 @@ class TelethonModeratorPipeline:
         r_idx, c_idx, q_name = chosen
         logger.info(f"Sifat tugmasi bosilmoqda: '{q_name}'...")
         quality_click_id = card_msg.id
-        await card_msg.click(r_idx, c_idx)
+        await asyncio.sleep(2.0)
+        _, q_flood = await self.safe_click(card_msg, r_idx, c_idx)
+        if q_flood > 0:
+            logger.warning(f"⏳ [@{bot}] Sifat bosishda flood cheklovi: {q_flood} soniya kutilmoqda...")
+            await asyncio.sleep(q_flood)
+            await self.safe_click(card_msg, r_idx, c_idx)
 
         # 4. Video kelishini tezkor kutamiz
         logger.info("Video xabari kelishi kutilmoqda...")
@@ -1219,9 +1506,16 @@ class TelethonModeratorPipeline:
             return bool(mime and mime.startswith('video/'))
 
         def has_asil_video(msgs):
-            return any(is_valid_vid(vm) for vm in msgs)
+            return any(is_bot_flood_text(vm.text) or is_valid_vid(vm) for vm in msgs)
 
         video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_asil_video)
+        v_flood = get_flood_wait_seconds(video_replies)
+        if v_flood > 0:
+            logger.warning(f"⏳ [@{bot}] Video kutishda flood: {v_flood}s kutilmoqda...")
+            await asyncio.sleep(v_flood)
+            await self.safe_click(card_msg, r_idx, c_idx)
+            video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_asil_video)
+
         for vm in video_replies:
             if is_valid_vid(vm):
                 v_name = vm.file.name or f"video_{vm.id}.mp4"
@@ -1231,7 +1525,8 @@ class TelethonModeratorPipeline:
                     logger.warning(f"⚠️ Video hajmi ({size_mb}MB) 2GB dan katta! 480p tanlanmoqda...")
                     f_r, f_c, f_name = quality_btns["480p"]
                     f_click_id = vm.id
-                    await card_msg.click(f_r, f_c)
+                    await asyncio.sleep(2.0)
+                    await self.safe_click(card_msg, f_r, f_c)
                     f_replies = await poll_new_messages(self.client, bot, f_click_id, timeout=15.0, interval=0.4, condition=has_asil_video)
                     for f_vm in f_replies:
                         if f_vm.file and f_vm.id != vm.id:
