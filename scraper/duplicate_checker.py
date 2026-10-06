@@ -215,7 +215,9 @@ class DuplicateChecker:
         title: str,
         year: Optional[int] = None,
         original_title: Optional[str] = None,
-        media_type: Optional[str] = None
+        media_type: Optional[str] = None,
+        tmdb_id: Optional[int] = None,
+        **kwargs
     ) -> DuplicateCheckResult:
         """
         Berilgan kino yoki serial bazada mavjudligini tekshiradi.
@@ -238,6 +240,26 @@ class DuplicateChecker:
             db_items = self._series
         else:
             db_items = self._movies + self._series
+
+        # ── 0. TMDb ID bo'yicha tekshirish (100% aniq moslik) ──
+        if tmdb_id:
+            try:
+                target_tmdb = int(tmdb_id)
+                for item in db_items:
+                    db_tmdb = item.get("tmdb_id")
+                    if db_tmdb and int(db_tmdb) == target_tmdb:
+                        return DuplicateCheckResult(
+                            is_duplicate=True,
+                            match_type="tmdb_id",
+                            matched_id=item["id"],
+                            matched_title=item["title"],
+                            matched_year=item.get("release_year"),
+                            matched_type=item["type"],
+                            matched_code=item.get("code"),
+                            reason=f"TMDb ID to'liq mos keldi (ID: {tmdb_id})"
+                        )
+            except (ValueError, TypeError):
+                pass
 
         # ── 1. To'g'ridan-to'g'ri Slug bo'yicha tekshirish (Variantlar bilan) ──
         for cand_slug in candidate_slugs:

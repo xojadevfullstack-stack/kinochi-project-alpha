@@ -218,11 +218,25 @@ class TelethonModeratorPipeline:
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi."""
+        # Item manbasiga qarab mos botni avtomatik aniqlash:
+        # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot) da ishlaydi
+        effective_bot = target_bot
+        if getattr(item, "source", None) == "asilmedia":
+            effective_bot = "asilmediabot"
+        elif getattr(item, "source", None) == "uzmovi":
+            effective_bot = "UzmovieTV_Bot"
+
         if item.media_type == "series":
-            return await self.run_single_series(item=item, target_bot=target_bot)
-        return await self.run_single_movie(item=item, target_bot=target_bot)
+            return await self.run_single_series(item=item, target_bot=effective_bot)
+        return await self.run_single_movie(item=item, target_bot=effective_bot)
 
     async def run_single_series(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
+        # Agar item manbasi boshqa bot bo'lsa, mos botga to'g'rilash
+        if getattr(item, "source", None) == "asilmedia":
+            target_bot = "asilmediabot"
+        elif getattr(item, "source", None) == "uzmovi":
+            target_bot = "UzmovieTV_Bot"
+
         logger.info("\n" + "="*55)
         logger.info(f"📺 SERIAL MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
         logger.info("="*55)
@@ -252,9 +266,9 @@ class TelethonModeratorPipeline:
         is_asilmedia = "asilmedia" in target_bot.lower()
         search_query = clean_query
         num_match = re.search(r'\d+', item.id)
-        if is_uzmovie and num_match and len(num_match.group(0)) <= 6:
+        if is_uzmovie and getattr(item, "source", None) == "uzmovi" and num_match and len(num_match.group(0)) <= 6:
             search_query = num_match.group(0)
-        elif is_asilmedia and num_match and len(num_match.group(0)) <= 6:
+        elif is_asilmedia and getattr(item, "source", None) == "asilmedia" and num_match and len(num_match.group(0)) <= 6:
             search_query = f"/start {num_match.group(0)}"
 
         logger.info(f"[@{target_bot}] botiga serial bo'yicha so'rov: '{search_query}'...")
@@ -338,7 +352,14 @@ class TelethonModeratorPipeline:
                     break
 
         if not card_msg or not card_msg.buttons:
+            for m in recent_msgs:
+                if m.buttons and any("tayyor bo'lganda" in b.text.lower() for row in m.buttons for b in row):
+                    err_msg = "Serial hali botga yuklanmagan (Tez kunda / 'Tayyor bo'lganda yuboring')"
+                    logger.warning(f"[@{target_bot}] {err_msg}")
+                    QueueManager().update_status(item.id, "failed", error_message=err_msg)
+                    return False
             logger.warning(f"[@{target_bot}] Serial qismlari yoki fasllari tugmalari topilmadi!")
+            QueueManager().update_status(item.id, "failed", error_message=f"[@{target_bot}] Serial tugmalari topilmadi")
             return False
 
         if season_entries:
@@ -898,6 +919,12 @@ class TelethonModeratorPipeline:
         return uploaded_count > 0
 
     async def run_single_movie(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
+        # Agar item manbasi boshqa bot bo'lsa, mos botga to'g'rilash
+        if getattr(item, "source", None) == "asilmedia":
+            target_bot = "asilmediabot"
+        elif getattr(item, "source", None) == "uzmovi":
+            target_bot = "UzmovieTV_Bot"
+
         logger.info("\n" + "="*55)
         logger.info(f"🎬 MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
         logger.info("="*55)
@@ -935,7 +962,15 @@ class TelethonModeratorPipeline:
                     logger.info(f"ℹ️ '{item.title}' aslida serial ekanligi aniqlandi! Serial sikliga yo'naltirilmoqda...")
                     item.media_type = "series"
                     return await self.run_single_series(item=item, target_bot=target_bot)
+
+            if getattr(self, "_last_unreleased_notice", None):
+                msg = self._last_unreleased_notice
+                self._last_unreleased_notice = None
+                QueueManager().update_status(item.id, "failed", error_message=msg)
+                return False
+
             logger.warning(f"❌ '{item.title}' bo'yicha @{target_bot} dan video olinmadi.")
+            QueueManager().update_status(item.id, "failed", error_message=f"[@{target_bot}] dan video olinmadi")
             return False
 
         return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
@@ -1312,13 +1347,22 @@ class TelethonModeratorPipeline:
         code: Optional[str] = None
     ) -> Optional[Message]:
         self._last_card_msg = None
-        is_uzmovie = "uzmovie" in target_bot.lower()
+        actual_bot = target_bot
+        if item and getattr(item, "source", None) == "asilmedia":
+            actual_bot = "asilmediabot"
+        elif item and getattr(item, "source", None) == "uzmovi":
+            actual_bot = "UzmovieTV_Bot"
+        is_uzmovie = "uzmovie" in actual_bot.lower()
 
         search_query = ""
         if code:
             search_query = str(code).strip()
         elif item:
-            if item.source == "asilmedia":
+            if item.source == "asilmedia" and not is_uzmovie:
+                num_match = re.search(r'\d+', item.id)
+                if num_match and len(num_match.group(0)) <= 6:
+                    search_query = num_match.group(0)
+            elif item.source == "uzmovi" and is_uzmovie:
                 num_match = re.search(r'\d+', item.id)
                 if num_match and len(num_match.group(0)) <= 6:
                     search_query = num_match.group(0)
@@ -1450,6 +1494,11 @@ class TelethonModeratorPipeline:
                     if has_series_btn:
                         self._last_card_msg = m
                         logger.info(f"[@{bot}] Serial kartasi/tugmalari aniqlandi.")
+                        return None
+                    has_pending = any("tayyor bo'lganda" in b.text.lower() or "saqlash" in b.text.lower() for row in m.buttons for b in row) or ("yuklanmoqda" in (m.text or "").lower())
+                    if has_pending:
+                        self._last_unreleased_notice = "Film hali botga yuklanmagan (Tez kunda / 'Tayyor bo'lganda yuboring' holatida)"
+                        logger.warning(f"[@{bot}] {self._last_unreleased_notice}")
                         return None
             logger.warning(f"[@{bot}] Film kartasi yoki sifat tugmalari topilmadi.")
             return None

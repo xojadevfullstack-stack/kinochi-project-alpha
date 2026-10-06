@@ -186,6 +186,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     success = await pipeline.run_item(item, target_bot=bot_username)
                 except Exception as ex:
                     print(f"❌ '{item.title}' yuklashda kutilmagan xatolik: {ex}")
+                    qm.update_status(item.id, "failed", error_message=f"Kutilmagan xatolik: {ex}")
                     success = False
 
                 if success:
@@ -194,8 +195,13 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
                     fresh = qm.items.get(item.id)
-                    if not (fresh and fresh.status == "already_exists"):
-                        qm.update_status(item.id, "failed", error_message="Video olinmadi yoki xatolik")
+                    if not (fresh and fresh.status in ("already_exists", "needs_review", "failed")):
+                        err_msg = fresh.error_message if (fresh and fresh.error_message) else "Video olinmadi yoki xatolik"
+                        qm.update_status(item.id, "failed", error_message=err_msg)
+                        print(f"⚠️ Yuklab bo'lmadi: {item.title} ({err_msg})")
+                    elif fresh and fresh.status == "failed" and fresh.error_message:
+                        print(f"⚠️ Yuklab bo'lmadi: {item.title} ({fresh.error_message})")
+                    else:
                         print(f"⚠️ Yuklab bo'lmadi: {item.title}")
 
                 if downloaded_count >= limit:

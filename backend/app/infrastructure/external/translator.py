@@ -12,10 +12,9 @@ from app.core.cache import get_cache, set_cache
 logger = logging.getLogger(__name__)
 
 GEMINI_MODELS = [
-    "gemini-3.5-flash-lite",
-    "gemini-3.8-flash",
-    "gemini-flash-latest",
     "gemini-flash-lite-latest",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
 ]
 
 
