@@ -76,6 +76,17 @@ def extract_title_variants(raw_title: str) -> List[str]:
     variants = set()
     cleaned_raw = raw_title.strip()
     variants.add(cleaned_raw)
+
+    try:
+        from scraper.title_cleaner import clean_scraped_title
+        smart_clean = clean_scraped_title(raw_title)
+        if smart_clean.get("title"):
+            variants.add(smart_clean["title"])
+        for v in smart_clean.get("variants", []):
+            if v and len(v) >= 2:
+                variants.add(v)
+    except Exception:
+        pass
     
     # Qavs ichidagi nomni ajratib olish (masalan, original nom)
     bracket_match = re.findall(r'\((.*?)\)', cleaned_raw)

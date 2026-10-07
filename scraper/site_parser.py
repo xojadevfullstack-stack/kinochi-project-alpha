@@ -13,6 +13,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
+from .title_cleaner import clean_scraped_title, clean_movie_title_simple
+
 def clean_text(text: str) -> str:
     if not text:
         return ""
@@ -20,43 +22,61 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 def extract_clean_title(raw_text: str, slug: str = "") -> str:
-    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-    filtered = []
-    for line in lines:
-        l_lower = line.lower()
-        if any(x in l_lower for x in ['yangi premyera', 'tomosha qilish', 'top ', '-o\'rin', '-o‘rin', '-orin', 'skachat']):
-            continue
-        if l_lower in ['film', 'serial', 'dorama', 'multfilm']:
-            continue
-        filtered.append(line)
-
-    candidate = " ".join(filtered) if filtered else ""
-
-    # Cut off year or typical Uzbek movie site keywords
-    if candidate:
-        candidate = re.sub(r'\s+\b(19\d{2}|20\d{2})\b.*$', '', candidate).strip()
-        candidate = re.sub(r'\s+(?:premyera|uzbek|o[\'’`]?zbek|tilida|barcha qismlar|onlayn|ko[\'’`]?rish|koreys filmi|xitoy seriali|turk serial|tas-ix|skachat|filmi|full hd|hd|barcha).*$', '', candidate, flags=re.IGNORECASE).strip()
-        candidate = re.sub(r'[\/\-:\s]+$', '', candidate).strip()
-
-    is_bad_candidate = (
-        not candidate 
-        or len(candidate) < 2 
-        or candidate.lower() in ["tomosha qilish", "bosh sahifa", "aloqa"]
-        or bool(re.match(r'^[+\-]?\d+\s+(?:1080p|720p|480p)', candidate, re.IGNORECASE))
-        or 'tarjima kinolar' in candidate.lower() 
-        or 'treylerlar' in candidate.lower()
-    )
-    if is_bad_candidate and slug:
-        slug_clean = re.sub(r'^(?:\d+[\-_])+', '', slug)
-        slug_clean = re.sub(r'[\-_](?:premyera|uzbek|ozbek|tilida|onlayn|korish|barcha|qismlar|tas|ix|skachat|full|hd|kino|tarjima).*$', '', slug_clean, flags=re.IGNORECASE)
-        slug_clean = re.sub(r'[\-_]\b(19\d{2}|20\d{2})\b.*$', '', slug_clean)
-        candidate = " ".join(slug_clean.split("-")).strip().title()
-
-    return candidate
+    res = clean_scraped_title(raw_text, url_or_slug=slug)
+    return res["title"]
 
 def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
+    articles = soup.find_all("article", class_=lambda c: c and "shortstory" in c)
+    seen_ids = set()
+
+    # Agar article lar mavjud bo'lsa - aniq katalog kartalarini olamiz (sidebar reyting raqamlari tushmaydi)
+    if articles:
+        for art in articles:
+            link = art.find("a", class_="short-images-link") or (art.find("h4").find("a") if art.find("h4") else None)
+            if not link or not link.get("href"):
+                continue
+
+            href = link["href"]
+            m = re.search(r'/(\d+)-([a-zA-Z0-9_\-]+)\.html', href)
+            if not m:
+                continue
+
+            item_id_num = m.group(1)
+            if item_id_num in seen_ids:
+                continue
+            seen_ids.add(item_id_num)
+
+            raw_title = link.get("title") or link.get_text().strip()
+            cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
+            if not cleaned["title"] or len(cleaned["title"]) < 2:
+                continue
+
+            is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama|multiserial)', href + " " + raw_title, re.IGNORECASE))
+            media_type = "series" if is_series else "movie"
+
+            img = art.find("img")
+            poster_url = None
+            if img:
+                src = img.get("src") or img.get("data-src")
+                if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
+                    poster_url = src if src.startswith("http") else f"https://uzmovi.net{src}"
+
+            full_url = href if href.startswith("http") else f"https://uzmovi.net{href}"
+            items.append(QueueItem(
+                id=f"uzmovi_{item_id_num}",
+                source="uzmovi",
+                title=cleaned["title"],
+                original_title=None,
+                year=cleaned["year"],
+                media_type=media_type,
+                url=full_url,
+                poster_url=poster_url
+            ))
+        return items
+
+    # Fallback: oddiy linklar bo'yicha
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if not href.endswith(".html"):
@@ -67,42 +87,40 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
             continue
 
         item_id_num = m.group(1)
-        raw_title = clean_text(a.get_text())
+        if item_id_num in seen_ids:
+            continue
+
+        # Sidebar va TOP reyting bloklarini chetlab o'tish
+        parents_str = " ".join(p.get("class", []) if isinstance(p.get("class"), list) else [str(p.get("class", ""))] for p in a.parents)
+        if any(skip in parents_str.lower() for skip in ["sidebar", "top-", "rating"]):
+            continue
+
+        raw_title = a.get("title") or a.get_text().strip()
         if not raw_title or len(raw_title) < 2 or raw_title.lower() in ["bosh sahifa", "aloqa", "sayt qoidasi"]:
             continue
 
+        cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
+        if not cleaned["title"] or len(cleaned["title"]) < 2:
+            continue
+
+        seen_ids.add(item_id_num)
         is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama)', href + " " + raw_title, re.IGNORECASE))
         media_type = "series" if is_series else "movie"
 
-        year_match = re.search(r'\b(19\d{2}|20\d{2})\b', raw_title)
-        year = int(year_match.group(1)) if year_match else None
-
-        clean_title = extract_clean_title(a.get_text(), slug=m.group(2))
-        if not clean_title or len(clean_title) < 2:
-            continue
-
         poster_url = None
-        curr = a
-        for _ in range(4):
-            if not curr:
-                break
-            found_img = curr.find("img")
-            if found_img:
-                src = found_img.get("src") or found_img.get("data-src")
-                if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
-                    poster_url = src if src.startswith("http") else f"https://uzmovi.com{src}"
-                    break
-            curr = curr.parent
+        img = a.find("img") or (a.parent.find("img") if a.parent else None)
+        if img:
+            src = img.get("src") or img.get("data-src")
+            if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
+                poster_url = src if src.startswith("http") else f"https://uzmovi.net{src}"
 
-        item_id = f"uzmovi_{item_id_num}"
-        full_url = href if href.startswith("http") else f"https://uzmovi.com{href}"
-
+        full_url = href if href.startswith("http") else f"https://uzmovi.net{href}"
         items.append(QueueItem(
-            id=item_id,
+            id=f"uzmovi_{item_id_num}",
             source="uzmovi",
-            title=clean_title,
+            title=cleaned["title"],
             original_title=None,
-            year=year,
+            year=cleaned["year"],
             media_type=media_type,
             url=full_url,
             poster_url=poster_url
@@ -112,6 +130,8 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
 def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
+    seen_ids = set()
+
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if not href.endswith(".html"):
@@ -122,50 +142,51 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
             continue
 
         item_id_num = m.group(1)
-        raw_title = clean_text(a.get_text())
+        if item_id_num in seen_ids:
+            continue
+
+        card = a.find_parent(["article", "div"], class_=lambda c: c and "card" in c)
+        title_el = card.find(class_=lambda x: x and "title" in x) if card else None
+        img = (card.find("img") if card else None) or a.find("img")
+
+        raw_title = (
+            (title_el.get_text().strip() if title_el else None)
+            or (img.get("alt") if img else None)
+            or a.get("title")
+            or a.get_text().strip()
+        )
+
         if not raw_title or len(raw_title) < 2 or raw_title.lower() in ["tomosha qilish", "bosh sahifa", "aloqa", "qoidalar"]:
-            raw_title = clean_text(a.get("title", "")) or clean_text(m.group(2).replace("-", " "))
+            raw_title = m.group(2).replace("-", " ").title()
+
+        cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
+        if not cleaned["title"] or len(cleaned["title"]) < 2:
+            continue
+
+        seen_ids.add(item_id_num)
 
         is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama|multiserial)', href + " " + raw_title, re.IGNORECASE))
         media_type = "series" if is_series else "movie"
 
-        year_match = re.search(r'\b(19\d{2}|20\d{2})\b', raw_title)
-        year = int(year_match.group(1)) if year_match else None
-
-        clean_title = extract_clean_title(a.get_text(), slug=m.group(2))
-        if not clean_title or len(clean_title) < 2:
-            clean_title = clean_text(a.get("title", "")) or clean_text(m.group(2).replace("-", " ")).title()
-
         poster_url = None
-        curr = a
-        for _ in range(4):
-            if not curr:
-                break
-            found_img = curr.find("img")
-            if found_img:
-                src = found_img.get("src") or found_img.get("data-src")
-                if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
-                    src = src.strip()
-                    if src.startswith("//"):
-                        poster_url = f"https:{src}"
-                    elif src.startswith("http://") or src.startswith("https://"):
-                        poster_url = src
-                    elif src.startswith("/"):
-                        poster_url = f"https://asilmedia.org{src}"
-                    else:
-                        poster_url = f"https://asilmedia.org/{src}"
-                    break
-            curr = curr.parent
+        if img:
+            src = img.get("src") or img.get("data-src")
+            if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
+                src = src.strip()
+                if src.startswith("//"):
+                    poster_url = f"https:{src}"
+                elif src.startswith("http"):
+                    poster_url = src
+                else:
+                    poster_url = f"https://asilmedia.org{src if src.startswith('/') else '/' + src}"
 
-        item_id = f"asilmedia_{item_id_num}"
         full_url = href if href.startswith("http") else f"https://asilmedia.org{href}"
-
         items.append(QueueItem(
-            id=item_id,
+            id=f"asilmedia_{item_id_num}",
             source="asilmedia",
-            title=clean_title,
+            title=cleaned["title"],
             original_title=None,
-            year=year,
+            year=cleaned["year"],
             media_type=media_type,
             url=full_url,
             poster_url=poster_url

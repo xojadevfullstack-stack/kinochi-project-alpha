@@ -107,36 +107,14 @@ def clean_movie_title(raw_title: str) -> str:
     """Film nomidagi barcha ortiqcha SEO, reklama, qavslar va markdown simvollarni tozalaydi."""
     if not raw_title:
         return ""
-    # 1. Markdown va maxsus belgilarni tozalash (*, _, ~, `, #)
-    t = re.sub(r'[*_~`#]', '', raw_title)
-    
-    # 2. Qavslar ichidagi yozuvlarni tozalash [ ... ] va ( ... )
-    t = re.sub(r'\[.*?\]', '', t)
-    t = re.sub(r'\(.*?\)', '', t)
-    
-    # 3. Ajratuvchilar bo'yicha faqat birinchi asosiy qismini olish ( / yoki | )
-    t = re.split(r'\s*[|/]\s*', t)[0]
-    
-    # 4. Uzbek saytlari va botlaridagi SEO/reklama iboralari
-    noise_patterns = [
-        r'\bpremyera\b', r'\bprimyera\b',
-        r'\byangi\s+(?:premyera|primyera|kino|film|serial|mavsum|qism)\b',
-        r"\b(?:o['\"`‘’]?zbek|uzbek)\s+tilida\b",
-        r"\b(?:o['\"`‘’]?zbekcha|uzbekcha)\b",
-        r'\btarjima\s+kino\b', r'\btarjima\s+film\b', r'\btarjima\b',
-        r'\bfull\s*hd\b', r'\bhd\b', r'\b4k\b', r'\b1080p\b', r'\b720p\b', r'\b480p\b',
-        r'\btas-?ix\b', r'\bskachat\b', r'\byuklab\s+olish\b',
-        r'\b(?:koreys|xitoy|turk|hind|rus|aqsh|eron)\s+(?:jangari\s+)?(?:filmi|kino|seriali)\b',
-        r'\b(?:badiiy|hujjatli|jangari|qiziqarli)\s+(?:filmi|kino)\b',
-        r'\b(?:tarjima\s+)?filmi\b',
-        r'\b(19\d{2}|20\d{2})\b',
-        r'\bbarcha\s+qismlar\b', r'\bqism\b', r'\bseriya\b'
-    ]
-    for p in noise_patterns:
-        t = re.sub(p, '', t, flags=re.IGNORECASE)
-        
-    t = re.sub(r'\s+', ' ', t).strip(' -–—:,')
-    return t or raw_title.strip()
+    try:
+        from scraper.title_cleaner import clean_movie_title_simple
+        return clean_movie_title_simple(raw_title)
+    except Exception:
+        # Fallback
+        t = re.sub(r'[*_~`#\[\]\(\)]', '', raw_title)
+        t = re.split(r'\s*[|/]\s*', t)[0]
+        return re.sub(r'\s+', ' ', t).strip(' -–—:,')
 
 
 def clean_synopsis_text(raw_text: Optional[str], fallback_title: str = "", media_type: str = "movie") -> str:
