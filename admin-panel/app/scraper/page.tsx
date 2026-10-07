@@ -77,7 +77,15 @@ export default function ScraperPage() {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "moderation" | "tools">("grabber");
+  const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "search" | "moderation" | "tools">("grabber");
+
+  // ── Site Search States ────────────────────────────────────
+  const [siteSearchQuery, setSiteSearchQuery] = useState("");
+  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia">("all");
+  const [siteSearchResults, setSiteSearchResults] = useState<any[]>([]);
+  const [searchingSite, setSearchingSite] = useState(false);
+  const [searchHasSearched, setSearchHasSearched] = useState(false);
+  const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null);
 
   // ── Moderation & Manual Edit States ───────────────────────
   const [reviewItems, setReviewItems] = useState<{ db_movies: any[]; queue_items: any[] }>({
@@ -324,6 +332,57 @@ export default function ScraperPage() {
   const showToast = (type: "success" | "error", text: string) => {
     setActionMsg({ type, text });
     setTimeout(() => setActionMsg(null), 4500);
+  };
+
+  // ── Site Search Handlers ──────────────────────────────────
+  const handleSiteSearch = async () => {
+    if (!siteSearchQuery.trim() || siteSearchQuery.trim().length < 2) return;
+    setSearchingSite(true);
+    setSearchHasSearched(true);
+    try {
+      const data = await fetchApi(`/scraper/search-site?q=${encodeURIComponent(siteSearchQuery.trim())}&source=${siteSearchSource}`);
+      setSiteSearchResults(data?.results || []);
+    } catch (err: any) {
+      showToast("error", "Saytdan qidiruv xatosi: " + (err?.message || ""));
+    } finally {
+      setSearchingSite(false);
+    }
+  };
+
+  const handleAddToQueue = async (item: any) => {
+    setQuickActionLoading(item.id);
+    try {
+      const res = await fetchApi("/scraper/queue-add", {
+        method: "POST",
+        body: JSON.stringify(item),
+      });
+      showToast("success", res.message || "Navbatga qo'shildi!");
+      setSiteSearchResults((prev) =>
+        prev.map((it) => (it.id === item.id ? { ...it, queue_status: it.is_duplicate ? "already_exists" : "pending" } : it))
+      );
+      fetchQueue(1);
+    } catch (err: any) {
+      showToast("error", "Navbatga qo'shishda xatolik: " + (err?.message || ""));
+    } finally {
+      setQuickActionLoading(null);
+    }
+  };
+
+  const handleQuickGrab = async (item: any) => {
+    setQuickActionLoading(item.id);
+    try {
+      const res = await fetchApi("/scraper/quick-grab", {
+        method: "POST",
+        body: JSON.stringify(item),
+      });
+      showToast("success", res.message || "Yuklash boshlandi!");
+      fetchStatus();
+      fetchQueue(1);
+    } catch (err: any) {
+      showToast("error", "Yuklashni boshlashda xatolik: " + (err?.message || ""));
+    } finally {
+      setQuickActionLoading(null);
+    }
   };
 
   // ── Handlers ──────────────────────────────────────────────
@@ -756,6 +815,15 @@ export default function ScraperPage() {
                 Parser
               </button>
               <button
+                onClick={() => setActiveTab("search")}
+                className={`px-3 py-1 rounded-lg transition-all font-medium flex items-center gap-1 ${
+                  activeTab === "search" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <span className="material-symbols-outlined text-xs">search</span>
+                <span>Qidiruv</span>
+              </button>
+              <button
                 onClick={() => {
                   setActiveTab("moderation");
                   fetchIncomplete();
@@ -917,6 +985,238 @@ export default function ScraperPage() {
                 <span className="material-symbols-outlined text-lg">travel_explore</span>
                 {isRunning ? "Jarayon Bajarilmoqda..." : "Katalog Yig'ishni Boshlash (Parse)"}
               </button>
+            </div>
+          )}
+
+          {/* TAB: SEARCH SITES */}
+          {activeTab === "search" && (
+            <div className="space-y-3 flex-1 flex flex-col">
+              <div>
+                <p className="text-xs text-text-secondary">
+                  Uzmovi va Asilmedia saytlaridan to'g'ridan-to'g'ri qidirish, dublikatni tekshirish va bir klikda yuklash.
+                </p>
+              </div>
+
+              {/* Source pills */}
+              <div className="flex gap-1.5 p-1 bg-black/40 rounded-xl border border-white/10">
+                {([
+                  { id: "all", label: "Barchasi" },
+                  { id: "uzmovi", label: "Uzmovi" },
+                  { id: "asilmedia", label: "Asilmedia" },
+                ] as const).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSiteSearchSource(s.id)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      siteSearchSource === s.id
+                        ? "bg-primary-container text-white shadow"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search input bar */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-zinc-400 text-base pointer-events-none">
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Kino yoki serial nomi..."
+                    value={siteSearchQuery}
+                    onChange={(e) => setSiteSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSiteSearch()}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary-container"
+                  />
+                  {siteSearchQuery && (
+                    <button
+                      onClick={() => setSiteSearchQuery("")}
+                      className="absolute right-2.5 top-2 text-zinc-400 hover:text-white"
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={searchingSite || !siteSearchQuery.trim()}
+                  onClick={handleSiteSearch}
+                  className="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-primary-container/80 text-white font-semibold text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0 shadow-lg shadow-primary-container/20"
+                >
+                  {searchingSite ? (
+                    <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-base">search</span>
+                  )}
+                  <span>Qidirish</span>
+                </button>
+              </div>
+
+              {/* Results Container */}
+              <div className="flex-1 flex flex-col min-h-[300px] max-h-[360px] overflow-hidden rounded-xl border border-white/5 bg-black/20 p-2">
+                {searchingSite ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 gap-2 py-8">
+                    <span className="material-symbols-outlined text-3xl animate-spin text-primary-container">
+                      hourglass_top
+                    </span>
+                    <span className="text-xs">Saytlardan qidirilmoqda...</span>
+                  </div>
+                ) : !searchHasSearched ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 gap-2 py-8 text-center px-4">
+                    <span className="material-symbols-outlined text-3xl text-zinc-600">manage_search</span>
+                    <span className="text-xs">Qidirish uchun kino yoki serial nomini kiriting va qidiring</span>
+                  </div>
+                ) : siteSearchResults.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 gap-2 py-8 text-center px-4">
+                    <span className="material-symbols-outlined text-3xl text-zinc-600">sentiment_dissatisfied</span>
+                    <span className="text-xs">Hech qanday natija topilmadi</span>
+                    <span className="text-[10px] text-zinc-600">Qidiruv so'zini qisqartirib yoki boshqacha yozib ko'ring</span>
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    <div className="text-[11px] text-zinc-400 px-1 py-0.5 flex justify-between items-center">
+                      <span>Topildi: <b className="text-white">{siteSearchResults.length}</b> ta</span>
+                      <span className="text-[10px] text-zinc-500">Bazada bor/yo'qligi tekshirildi</span>
+                    </div>
+
+                    {siteSearchResults.map((item) => {
+                      const isItemLoading = quickActionLoading === item.id;
+                      const isDup = item.is_duplicate;
+                      const inQueue = !!item.queue_status && item.queue_status !== "not_found";
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-2.5 rounded-xl border transition-all flex flex-col gap-2 ${
+                            isDup
+                              ? "bg-amber-950/20 border-amber-500/20 hover:border-amber-500/40"
+                              : "bg-white/[0.03] border-white/10 hover:border-white/20"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            {/* Poster */}
+                            <div className="w-11 h-14 rounded-lg bg-black/40 overflow-hidden flex-shrink-0 border border-white/5 relative">
+                              {item.poster || item.poster_url ? (
+                                <img
+                                  src={item.poster || item.poster_url}
+                                  alt={item.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e: any) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                                  <span className="material-symbols-outlined text-sm">movie</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Details */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                    item.source === "uzmovi"
+                                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                      : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  }`}
+                                >
+                                  {item.source} #{item.code}
+                                </span>
+
+                                {item.year && (
+                                  <span className="text-[10px] text-zinc-400 bg-white/5 px-1 rounded">
+                                    {item.year}
+                                  </span>
+                                )}
+
+                                {isDup ? (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                    title={item.duplicate_reason || item.db_reason || "Bazada mavjud"}
+                                  >
+                                    Bazada bor
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    Yangi
+                                  </span>
+                                )}
+
+                                {inQueue && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                    Navbatda: {item.queue_status}
+                                  </span>
+                                )}
+                              </div>
+
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-xs text-white hover:text-primary-container truncate block mt-1"
+                                title={item.title}
+                              >
+                                {item.title}
+                              </a>
+
+                              {isDup && (item.duplicate_reason || item.db_reason) && (
+                                <p className="text-[10px] text-amber-400/80 truncate mt-0.5">
+                                  {item.duplicate_reason || item.db_reason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Quick Action Buttons */}
+                          <div className="flex items-center gap-2 pt-1 border-t border-white/5">
+                            <button
+                              type="button"
+                              disabled={isItemLoading || inQueue}
+                              onClick={() => handleAddToQueue(item)}
+                              className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
+                                inQueue
+                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                                  : "bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 active:scale-95"
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-xs">playlist_add</span>
+                              <span>{inQueue ? "Navbatda bor" : "+ Navbatga"}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={isItemLoading || isRunning}
+                              onClick={() => handleQuickGrab(item)}
+                              className={`flex-1 py-1 px-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
+                                isRunning
+                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                                  : "bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95 shadow-sm shadow-emerald-600/30"
+                              }`}
+                              title={isRunning ? "Hozir boshqa jarayon ishlamoqda" : "Darhol yuklab olish"}
+                            >
+                              {isItemLoading ? (
+                                <span className="material-symbols-outlined text-xs animate-spin">
+                                  progress_activity
+                                </span>
+                              ) : (
+                                <span className="material-symbols-outlined text-xs">bolt</span>
+                              )}
+                              <span>⚡ Grab (Yuklash)</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

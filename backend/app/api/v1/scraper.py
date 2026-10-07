@@ -23,7 +23,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 try:
-    from scraper.queue_manager import QueueManager
+    from scraper.queue_manager import QueueManager, QueueItem
     from scraper.process_manager import ProcessManager
     SCRAPER_AVAILABLE = True
 except Exception as _exc:  # pragma: no cover
@@ -138,6 +138,71 @@ def start_download(data: DownloadRequest, admin=Depends(require_scraper)):
             target=data.target, limit=data.limit, codes=data.codes, media_type=data.media_type
         )
     )
+
+
+@router.get("/search-site")
+async def search_site(
+    q: str = Query(..., min_length=2, max_length=200, description="Qidiruv so'rovi"),
+    source: str = Query("all", description="all, uzmovi yoki asilmedia"),
+    admin=Depends(require_scraper),
+):
+    """Uzmovi va Asilmedia saytlaridan film/seriallarni qidirish."""
+    from scraper.site_search import search_sites
+    results = await search_sites(query=q, source=source)
+    return {"results": results, "count": len(results)}
+
+
+@router.post("/queue-add")
+def queue_add(
+    item_data: Dict[str, Any] = Body(...),
+    admin=Depends(require_scraper),
+):
+    """Qidiruv natijalaridan elementni navbatga qo'shish."""
+    qm = QueueManager()
+    is_dup = item_data.get("is_duplicate", False)
+    new_item = QueueItem(
+        id=item_data["id"],
+        source=item_data["source"],
+        title=item_data["title"],
+        year=item_data.get("year"),
+        media_type=item_data.get("media_type", "movie"),
+        url=item_data.get("url", ""),
+        poster_url=item_data.get("poster_url"),
+        status="already_exists" if is_dup else "pending",
+        error_message=f"Bazada mavjud: {item_data.get('db_title')}" if is_dup else None,
+    )
+    qm.add_item(new_item)
+    return {"success": True, "message": f"'{new_item.title}' navbatga qo'shildi.", "item": new_item.__dict__}
+
+
+@router.post("/quick-grab")
+def quick_grab(
+    item_data: Dict[str, Any] = Body(...),
+    admin=Depends(require_scraper),
+):
+    """Qidiruv natijalaridagi filmni darhol Telegram botdan yuklashni boshlash."""
+    qm = QueueManager()
+    new_item = QueueItem(
+        id=item_data["id"],
+        source=item_data["source"],
+        title=item_data["title"],
+        year=item_data.get("year"),
+        media_type=item_data.get("media_type", "movie"),
+        url=item_data.get("url", ""),
+        poster_url=item_data.get("poster_url"),
+        status="pending",
+    )
+    qm.add_item(new_item)
+
+    target_bot = item_data["source"]
+    res = ProcessManager().start_download(
+        target=target_bot,
+        limit=1,
+        codes=None,
+        media_type=item_data.get("media_type", "movie"),
+        item_id=new_item.id,
+    )
+    return _ensure_ok(res)
 
 
 @router.post("/clean-duplicates")
