@@ -598,6 +598,7 @@ class TelethonModeratorPipeline:
                 continue
 
             logger.info(f"🎬 {s_num}-mavsumda {len(episodes_map)} ta qism topildi: {sorted(list(episodes_map.keys()))}")
+            print(f"  🎬 [{s_num}-mavsum] Jami {len(episodes_map)} ta qism topildi. Yuklash boshlanmoqda...", flush=True)
 
             # Bazada mavjud qismlarni aniqlash
             existing_eps = set()
@@ -614,6 +615,7 @@ class TelethonModeratorPipeline:
             for ep_num in sorted(episodes_map.keys()):
                 if ep_num in existing_eps:
                     logger.info(f"⏭ {s_num}-Mavsum, {ep_num}-qism allaqachon mavjud, o'tkazib yuborildi.")
+                    print(f"  ⏭ [{s_num}-mavsum] {ep_num}-qism allaqachon bazada bor, o'tkazib yuborildi.", flush=True)
                     continue
 
                 # Anti-flood: Har bir qism oldidan kamida 3.5 soniya tanaffus
@@ -662,6 +664,7 @@ class TelethonModeratorPipeline:
                     continue
 
                 logger.info(f"\n--- 📺 {s_num}-Mavsum, {ep_num}-qism yuklanmoqda ({btn_name}) [{uploaded_count + 1}/{total_eps_in_season}] ---")
+                print(f"  📺 [{s_num}-mavsum] {ep_num}-qism yuklanmoqda ({uploaded_count + 1}/{total_eps_in_season})...", flush=True)
 
                 try:
                     ep_video_msg = None
@@ -675,6 +678,7 @@ class TelethonModeratorPipeline:
                                 f"⏳ [@{target_bot}] Anti-flood chegarasi ({click_flood}s). "
                                 f"Kutib turamiz ({ep_attempt + 1}/3)..."
                             )
+                            print(f"  ⏳ Telegram flood-wait ({click_flood}s). Kutib turamiz...", flush=True)
                             await asyncio.sleep(click_flood)
                             card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
                             continue
@@ -714,6 +718,7 @@ class TelethonModeratorPipeline:
                                 f"⏳ [@{target_bot}] Bot xabarida flood chegarasi: 'Biroz sekinroq. Bir daqiqadan so'ng urinib ko'ring.' "
                                 f"{flood_wait} soniya kutilmoqda ({ep_attempt + 1}/3)..."
                             )
+                            print(f"  ⏳ Bot flood-wait ({flood_wait}s). Kutilmoqda...", flush=True)
                             await asyncio.sleep(flood_wait)
                             card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
                             continue
@@ -855,6 +860,7 @@ class TelethonModeratorPipeline:
 
                     uploaded_count += 1
                     logger.info(f"✅ {s_num}-Mavsum, {ep_num}-qism to'liq yuklandi va bazaga bog'landi! (Storage Msg: {storage_msg.id})")
+                    print(f"  ✅ [{s_num}-mavsum] {ep_num}-qism saqlandi va ulandi ({uploaded_count}/{total_eps_in_season})", flush=True)
 
                     # Navbat statusini yangilash
                     try:
@@ -884,6 +890,7 @@ class TelethonModeratorPipeline:
                     await asyncio.sleep(3.5)
                 except Exception as ep_err:
                     logger.error(f"❌ {ep_num}-qismni yuklashda xatolik: {ep_err}")
+                    print(f"  ❌ [{s_num}-mavsum] {ep_num}-qismda xatolik: {ep_err}", flush=True)
                     await asyncio.sleep(3.5)
 
             # Agar keyingi mavsum mavjud bo'lsa, mavsumlar menyusiga qaytish
@@ -916,6 +923,7 @@ class TelethonModeratorPipeline:
                 logger.warning(f"Chala serialni tozalashda xatolik: {se_err}")
 
         logger.info(f"\n🎉 Serial yakunlandi: {title} | {uploaded_count} ta yangi qism yuklandi.")
+        print(f"  🎉 Serial yakunlandi: {title} | {uploaded_count} ta yangi qism yuklandi.", flush=True)
         return uploaded_count > 0
 
     async def run_single_movie(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:

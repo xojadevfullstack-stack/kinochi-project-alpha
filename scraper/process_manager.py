@@ -91,7 +91,7 @@ class ProcessManager:
 
         with self._lock:
             prog = re.search(r"\[(\d+)/(\d+)\]", line)
-            if prog:
+            if prog and ("sikl boshlanmoqda" in lower or "kod #" in lower):
                 self._set_progress(int(prog.group(1)) - 1, int(prog.group(2)))
                 title = re.search(r"'([^']+)'", line)
                 code = re.search(r"Kod #(\w+)", line)
@@ -107,6 +107,8 @@ class ProcessManager:
                 total = self.progress["total"] or int(page.group(1))
                 self._set_progress(int(page.group(1)), total)
                 self.current_action = line
+            elif "qism yuklanmoqda" in lower or "qism bazaga saqlandi" in lower or "qism saqlandi" in lower:
+                self.current_action = line
             elif "muvaffaqiyatli saqlandi" in lower or "yuklab bo'lmadi" in lower:
                 # finished the current item -> count it as done
                 self._set_progress(self.progress["current"] + 1, self.progress["total"])
@@ -115,8 +117,8 @@ class ProcessManager:
                 self.current_action = "Bazadagi dublikatlarga tekshirilmoqda..."
             elif "katalog yig'ish boshlanmoqda" in lower:
                 self.current_action = line
-            elif "tanaffus" in lower:
-                self.current_action = "Telegram flood-wait oldini olish uchun tanaffus..."
+            elif "flood" in lower or "tanaffus" in lower:
+                self.current_action = line
             elif "yuklash boshlanmoqda" in lower:
                 total = re.search(r"(\d+) ta", line)
                 if total:

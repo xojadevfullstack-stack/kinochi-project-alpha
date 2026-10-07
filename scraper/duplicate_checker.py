@@ -328,6 +328,16 @@ class DuplicateChecker:
                     db_year = item.get("release_year")
                     if year and db_year and abs(year - db_year) > 2:
                         continue
+                    return DuplicateCheckResult(
+                        is_duplicate=True,
+                        match_type="token_overlap",
+                        matched_id=item["id"],
+                        matched_title=item["title"],
+                        matched_year=db_year,
+                        matched_type=item["type"],
+                        matched_code=item.get("code"),
+                        reason=f"Nomi o'xshash ({int(overlap_ratio * 100)}% mos keldi: '{item['title']}')"
+                    )
         # ── 4. Containment / Prefix match (Aralash tilli sarlavhalar uchun) ──
         for item in db_items:
             item_slug = item.get("slug")
