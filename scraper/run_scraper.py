@@ -32,27 +32,33 @@ from scraper.duplicate_checker import DuplicateChecker
 from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, create_telethon_client
 from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH
 
-async def cmd_parse(source: str, max_pages: int):
+async def cmd_parse(source: str, max_pages: int, media_type: str = "all"):
     qm = QueueManager()
     checker = DuplicateChecker()
     await checker.refresh_cache(force=True)
 
-    print(f"\n🔍 [{source.upper()}] saytidan parallel katalog yig'ish boshlanmoqda (Maksimal sahifalar: {max_pages})...")
+    print(f"\n🔍 [{source.upper()}] saytidan katalog yig'ish boshlanmoqda (Maksimal sahifalar: {max_pages}, Turi: {media_type})...")
 
     urls = []
     for page in range(1, max_pages + 1):
         if source == "uzmovi":
-            url = f"https://uzmovi.net/tarjima-kinolarri/page/{page}/" if page > 1 else "https://uzmovi.net/tarjima-kinolarri"
+            if media_type in ("all", "movie"):
+                urls.append(f"https://uzmovi.me/kino/tarfilm/page/{page}/" if page > 1 else "https://uzmovi.me/kino/tarfilm/")
+            if media_type in ("all", "series"):
+                urls.append(f"https://uzmovi.me/seriall/page/{page}/" if page > 1 else "https://uzmovi.me/seriall/")
         elif source == "asilmedia":
-            url = f"https://asilmedia.org/page/{page}/" if page > 1 else "https://asilmedia.org/"
+            if media_type in ("all", "movie"):
+                urls.append(f"https://asilmedia.org/films/tarjima_kinolar/page/{page}/" if page > 1 else "https://asilmedia.org/films/tarjima_kinolar/")
+            if media_type in ("all", "series"):
+                urls.append(f"https://asilmedia.org/films/serial/page/{page}/" if page > 1 else "https://asilmedia.org/films/serial/")
         else:
             print("❌ Noma'lum manba. 'uzmovi' yoki 'asilmedia' tanlang.")
             return
-        urls.append(url)
 
     # Parallel aiohttp orqali barcha sahifalarni bir vaqtda tortamiz
     import aiohttp
-    async with aiohttp.ClientSession() as session:
+    conn = aiohttp.TCPConnector(ssl=False)
+    async with aiohttp.ClientSession(connector=conn) as session:
         if source == "uzmovi":
             tasks = [parse_uzmovi_page_async(session, u) for u in urls]
         else:
@@ -275,7 +281,7 @@ def main():
     elif args.clean_duplicates:
         asyncio.run(cmd_clean_duplicates())
     elif args.parse:
-        asyncio.run(cmd_parse(args.source, args.pages))
+        asyncio.run(cmd_parse(args.source, args.pages, args.media_type))
     elif args.download:
         asyncio.run(cmd_download(args.limit, args.target, args.codes, args.media_type, args.item_id))
     else:

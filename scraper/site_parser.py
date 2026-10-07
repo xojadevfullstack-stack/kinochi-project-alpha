@@ -10,7 +10,9 @@ from .queue_manager import QueueItem, QueueManager
 logger = logging.getLogger(__name__)
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,uz;q=0.8,ru;q=0.7",
 }
 
 from .title_cleaner import clean_scraped_title, clean_movie_title_simple
@@ -28,60 +30,39 @@ def extract_clean_title(raw_text: str, slug: str = "") -> str:
 def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
-    articles = soup.find_all("article", class_=lambda c: c and "shortstory" in c)
     seen_ids = set()
 
-    # Agar article lar mavjud bo'lsa - aniq katalog kartalarini olamiz (sidebar reyting raqamlari tushmaydi)
-    if articles:
-        for art in articles:
-            link = art.find("a", class_="short-images-link") or (art.find("h4").find("a") if art.find("h4") else None)
-            if not link or not link.get("href"):
-                continue
+    boxes = soup.find_all(class_=lambda c: c and any(k in str(c) for k in ["movie-box", "shortstory", "card", "short-content"]))
+    if not boxes:
+        boxes = soup.find_all("article")
 
-            href = link["href"]
-            m = re.search(r'/(\d+)-([a-zA-Z0-9_\-]+)\.html', href)
-            if not m:
-                continue
-
-            item_id_num = m.group(1)
-            if item_id_num in seen_ids:
-                continue
-            seen_ids.add(item_id_num)
-
-            raw_title = link.get("title") or link.get_text().strip()
-            cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
-            if not cleaned["title"] or len(cleaned["title"]) < 2:
-                continue
-
-            is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama|multiserial)', href + " " + raw_title, re.IGNORECASE))
-            media_type = "series" if is_series else "movie"
-
-            img = art.find("img")
-            poster_url = None
-            if img:
-                src = img.get("src") or img.get("data-src")
-                if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
-                    poster_url = src if src.startswith("http") else f"https://uzmovi.net{src}"
-
-            full_url = href if href.startswith("http") else f"https://uzmovi.net{href}"
-            items.append(QueueItem(
-                id=f"uzmovi_{item_id_num}",
-                source="uzmovi",
-                title=cleaned["title"],
-                original_title=None,
-                year=cleaned["year"],
-                media_type=media_type,
-                url=full_url,
-                poster_url=poster_url
-            ))
-        return items
-
-    # Fallback: oddiy linklar bo'yicha
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if not href.endswith(".html"):
+    for b in boxes:
+        # 1. Sidebar va TOP reyting bloklarini chetlab o'tish
+        parent_classes = []
+        for p in b.parents:
+            c = p.get("class")
+            if isinstance(c, list):
+                parent_classes.extend(str(x) for x in c)
+            elif c:
+                parent_classes.append(str(c))
+        parents_str = " ".join(parent_classes).lower()
+        if any(skip in parents_str for skip in ["sidebar", "top-", "rating", "popular"]):
             continue
 
+        # 2. Sarlavha havolasini topish (faqat raqamlar/reyting bo'lmagan link)
+        title_a = None
+        for a in b.find_all("a", href=True):
+            if not a["href"].endswith(".html"):
+                continue
+            t = a.get("title") or a.get_text().strip()
+            if t and len(t) > 3 and not re.match(r'^[\d\s\.\-p]+$', t, re.I):
+                title_a = a
+                break
+
+        if not title_a:
+            continue
+
+        href = title_a["href"]
         m = re.search(r'/(\d+)-([a-zA-Z0-9_\-]+)\.html', href)
         if not m:
             continue
@@ -90,13 +71,15 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
         if item_id_num in seen_ids:
             continue
 
-        # Sidebar va TOP reyting bloklarini chetlab o'tish
-        parents_str = " ".join(p.get("class", []) if isinstance(p.get("class"), list) else [str(p.get("class", ""))] for p in a.parents)
-        if any(skip in parents_str.lower() for skip in ["sidebar", "top-", "rating"]):
+        raw_title = title_a.get("title") or title_a.get_text().strip()
+        if not raw_title or len(raw_title) < 2 or raw_title.lower() in ["bosh sahifa", "aloqa", "sayt qoidasi"]:
             continue
 
-        raw_title = a.get("title") or a.get_text().strip()
-        if not raw_title or len(raw_title) < 2 or raw_title.lower() in ["bosh sahifa", "aloqa", "sayt qoidasi"]:
+        # 3. Hali chiqmagan premyeralar / faqat treylerlarni chetlab o'tish
+        box_text = b.get_text().lower() + " " + href.lower() + " " + raw_title.lower()
+        if any(unrel in box_text for unrel in [
+            "tez kunda", "kutilmoqda", "premyera kutilmoqda", "treylerlar", "faqat treyler"
+        ]):
             continue
 
         cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
@@ -108,13 +91,13 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
         media_type = "series" if is_series else "movie"
 
         poster_url = None
-        img = a.find("img") or (a.parent.find("img") if a.parent else None)
+        img = b.find("img")
         if img:
             src = img.get("src") or img.get("data-src")
             if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
-                poster_url = src if src.startswith("http") else f"https://uzmovi.net{src}"
+                poster_url = src if src.startswith("http") else f"https://uzmovi.me{src}"
 
-        full_url = href if href.startswith("http") else f"https://uzmovi.net{href}"
+        full_url = href if href.startswith("http") else f"https://uzmovi.me{href}"
         items.append(QueueItem(
             id=f"uzmovi_{item_id_num}",
             source="uzmovi",
@@ -125,6 +108,7 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
             url=full_url,
             poster_url=poster_url
         ))
+
     return items
 
 def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
@@ -158,6 +142,13 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
 
         if not raw_title or len(raw_title) < 2 or raw_title.lower() in ["tomosha qilish", "bosh sahifa", "aloqa", "qoidalar"]:
             raw_title = m.group(2).replace("-", " ").title()
+
+        # Chiqmagan premyeralar / Faqat treylerlarni chetlab o'tish
+        card_text = (card.get_text().lower() if card else "") + " " + href.lower() + " " + raw_title.lower()
+        if any(unrel in card_text for unrel in [
+            "tez kunda", "kutilmoqda", "premyera kutilmoqda", "treylerlar", "treyler", "/films/premyera", "faqat treyler"
+        ]):
+            continue
 
         cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
         if not cleaned["title"] or len(cleaned["title"]) < 2:
@@ -193,13 +184,21 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
         ))
     return items
 
+def normalize_uzmovi_url(page_url: str) -> str:
+    url = page_url
+    for old_d in ["uzmovi.com", "uzmovi.net", "uzmovi.tv"]:
+        url = url.replace(old_d, "uzmovi.me")
+    if not url.startswith("http"):
+        url = f"https://uzmovi.me{url if url.startswith('/') else '/' + url}"
+    return url
+
 def parse_uzmovi_page(page_url: str) -> List[QueueItem]:
     import ssl
     try:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        target_url = page_url.replace("uzmovi.com", "uzmovi.net")
+        target_url = normalize_uzmovi_url(page_url)
         req = urllib.request.Request(target_url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
@@ -223,12 +222,7 @@ def parse_asilmedia_page(page_url: str) -> List[QueueItem]:
         return []
 
 async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str) -> List[QueueItem]:
-    target_url = page_url.replace("uzmovi.com", "uzmovi.net")
-    if "/tarjima-kinolar/" in target_url:
-        target_url = target_url.replace("/tarjima-kinolar/", "/tarjima-kinolarri/")
-    elif target_url.endswith("/tarjima-kinolar"):
-        target_url = target_url.replace("/tarjima-kinolar", "/tarjima-kinolarri")
-
+    target_url = normalize_uzmovi_url(page_url)
     try:
         async with session.get(target_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
@@ -238,16 +232,6 @@ async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str)
                 logger.warning(f"Uzmovi HTTP {resp.status} for {target_url}")
     except Exception as e:
         logger.error(f"Async error scraping Uzmovi {target_url}: {e}")
-        # Agar uzmovi.net xato bersa, uzmovi.com orqali sinab ko'rish
-        if "uzmovi.net" in target_url:
-            fb_url = target_url.replace("uzmovi.net", "uzmovi.com")
-            try:
-                async with session.get(fb_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
-                    if resp.status == 200:
-                        html = await resp.text(errors="ignore")
-                        return _extract_uzmovi_items_from_html(html)
-            except Exception as e2:
-                logger.error(f"Fallback Uzmovi error: {e2}")
     return []
 
 async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: str) -> List[QueueItem]:

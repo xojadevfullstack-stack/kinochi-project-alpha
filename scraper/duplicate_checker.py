@@ -59,10 +59,14 @@ def to_slug(text: Optional[str]) -> str:
     """
     Faqat harf va raqamlarni qoldiradi (barcha bo'shliq va belgilarsiz).
     Masalan: "O'rgimchak-Odam" -> "orgimchakodam"
+    x va h harflari o'zbek tilida tez-tez adashtirilgani sababli birxillashtiriladi:
+    "Ruxshunos" -> "ruhshunos", "Ruhshunos" -> "ruhshunos"
+    (sh va ch harf birikmalari buzilmaydi)
     """
     if not text:
         return ""
     norm = normalize_uzbek_text(text)
+    norm = re.sub(r'(?<![sc])x', 'h', norm)
     return re.sub(r'[^a-z0-9]', '', norm)
 
 def extract_title_variants(raw_title: str) -> List[str]:
@@ -72,16 +76,27 @@ def extract_title_variants(raw_title: str) -> List[str]:
     'Odisseya / Odisey' -> ['Odisseya', 'Odisey', 'Odisseya / Odisey']
     'Shelbilar oilasi (Peaky Blinders)' -> ['Shelbilar oilasi', 'Peaky Blinders']
     'Akulalar orasida / Qo\'rquv changalida' -> ['Akulalar orasida', 'Qo\'rquv changalida']
+    'Ruxshunos' -> ['Ruxshunos', 'Ruhshunos']
     """
     variants = set()
     cleaned_raw = raw_title.strip()
     variants.add(cleaned_raw)
+
+    # x va h harflarini almashtirish varianti (sh va ch digraphlariga tegmasdan)
+    if 'x' in cleaned_raw.lower() or 'h' in cleaned_raw.lower():
+        v_h = re.sub(r'(?<![scSC])[xX]', lambda m: 'H' if m.group(0).isupper() else 'h', cleaned_raw)
+        v_x = re.sub(r'(?<![scSC])[hH]', lambda m: 'X' if m.group(0).isupper() else 'x', cleaned_raw)
+        variants.add(v_h)
+        variants.add(v_x)
 
     try:
         from scraper.title_cleaner import clean_scraped_title
         smart_clean = clean_scraped_title(raw_title)
         if smart_clean.get("title"):
             variants.add(smart_clean["title"])
+            if 'x' in smart_clean["title"].lower() or 'h' in smart_clean["title"].lower():
+                variants.add(smart_clean["title"].replace('x', 'h').replace('X', 'H'))
+                variants.add(smart_clean["title"].replace('h', 'x').replace('H', 'X'))
         for v in smart_clean.get("variants", []):
             if v and len(v) >= 2:
                 variants.add(v)
