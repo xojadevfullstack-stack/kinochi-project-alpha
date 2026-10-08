@@ -227,8 +227,11 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     downloaded_count += 1
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
+                    qm.load()
                     fresh = qm.items.get(item.id)
-                    if not (fresh and fresh.status in ("already_exists", "needs_review", "failed")):
+                    if fresh and fresh.status in ("already_exists", "needs_review"):
+                        print(f"⏭️ {item.title}: {fresh.error_message or fresh.status}")
+                    elif not (fresh and fresh.status == "failed"):
                         err_msg = fresh.error_message if (fresh and fresh.error_message) else "Video olinmadi yoki xatolik"
                         qm.update_status(item.id, "failed", error_message=err_msg)
                         print(f"⚠️ Yuklab bo'lmadi: {item.title} ({err_msg})")
