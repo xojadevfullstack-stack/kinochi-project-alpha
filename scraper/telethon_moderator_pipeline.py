@@ -1408,15 +1408,13 @@ class TelethonModeratorPipeline:
                 num_match = re.search(r'\d+', item.id)
                 if num_match and len(num_match.group(0)) <= 6:
                     search_query = num_match.group(0)
-            elif item.source == "uzmovi" and is_uzmovie:
-                num_match = re.search(r'\d+', item.id)
-                if num_match and len(num_match.group(0)) <= 6:
-                    search_query = num_match.group(0)
 
+            # Agar uzmovi bo'lsa yoki asilmedia kodi bo'lmasa, tozalangan film nomidan foydalanamiz
             if not search_query:
                 clean_name = item.title.split('/')[0].split('|')[0].strip()
                 clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
                 clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
+                clean_name = clean_movie_title(clean_name)
                 search_query = clean_name
 
         if not search_query:
@@ -1426,24 +1424,13 @@ class TelethonModeratorPipeline:
         if not is_uzmovie:
             return await self._fetch_asilmedia_video(query=search_query, year=item.year if item else None)
 
-        # UzmovieTV_Bot raqamli kodlar bilan ishlaydi. Agar so'rov matn bo'lsa, Asilmedia botiga yo'naltiramiz
-        if not search_query.isdigit():
-            logger.info(f"UzmovieTV_Bot matnli so'rov qabul qilmaydi. '{search_query}' filmi @asilmediabot orqali qidirilmoqda...")
-            res_video = await self._fetch_asilmedia_video(query=search_query, year=item.year if item else None)
-            if res_video:
-                return res_video
+        # UzmovieTV_Bot orqali video olish (avval raqamli kod yoki Telegram Inline Query orqali)
+        uz_code = code if (code and str(code).strip().isdigit()) else None
+        uz_video = await self._fetch_uzmovie_video(query=search_query, code=uz_code)
+        if uz_video:
+            return uz_video
 
-        # UzmovieTV_Bot flow
-        logger.info(f"[{target_bot}] botiga so'rov yuborilmoqda: '{search_query}'...")
-        sent = await self.client.send_message(target_bot, search_query)
-        def has_uzmovie_reply(msgs):
-            return any(m.file or "topilmadi" in (m.text or "").lower() for m in msgs)
-        recent = await poll_new_messages(self.client, target_bot, sent.id, timeout=6.0, condition=has_uzmovie_reply)
-        for m in recent:
-            if m.file:
-                return m
-
-        # Agar UzmovieTV_Bot da topilmasa, film nomi bo'yicha Asilmediada sinab ko'rish
+        # Agar UzmovieTV_Bot da topilmasa, film nomi bo'yicha zaxira tarzida Asilmediada sinab ko'rish
         if item and item.title:
             clean_name = item.title.split('/')[0].split('|')[0].strip()
             clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
@@ -1452,6 +1439,71 @@ class TelethonModeratorPipeline:
             if clean_name:
                 logger.info(f"UzmovieTV_Bot dan olinmadi. Zaxira tarzida @asilmediabot dan '{clean_name}' qidirilmoqda...")
                 return await self._fetch_asilmedia_video(query=clean_name, year=item.year)
+
+        return None
+
+    async def _fetch_uzmovie_video(
+        self,
+        query: str,
+        code: Optional[str] = None
+    ) -> Optional[Message]:
+        bot = "UzmovieTV_Bot"
+
+        # 1. Agar to'g'ridan-to'g'ri raqamli bot kodi mavjud bo'lsa
+        if code and str(code).strip().isdigit():
+            clean_code = str(code).strip()
+            logger.info(f"[@{bot}] botiga kod yuborilmoqda: '{clean_code}'...")
+            sent = await self.client.send_message(bot, clean_code)
+            def has_uzmovie_reply(msgs):
+                return any(m.file or "topilmadi" in (m.text or "").lower() for m in msgs)
+            recent = await poll_new_messages(self.client, bot, sent.id, timeout=6.0, condition=has_uzmovie_reply)
+            for m in recent:
+                if m.file:
+                    logger.info(f"✅ [@{bot}] dan video muvaffaqiyatli qabul qilindi (Kod #{clean_code})!")
+                    return m
+
+        # 2. Film nomi bo'yicha Telegram INLINE QUERY orqali qidirish
+        clean_name = query.split('/')[0].split('|')[0].strip()
+        clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
+        clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
+        clean_name = clean_movie_title(clean_name)
+        if not clean_name:
+            return None
+
+        logger.info(f"[@{bot}] Inline qidiruv orqali qidirilmoqda: '{clean_name}'...")
+        try:
+            results = await self.client.inline_query(bot, clean_name)
+            if results:
+                best_res = results[0]
+                for res in results:
+                    r_title = (getattr(res, 'title', '') or '').lower()
+                    if clean_name.lower() in r_title or r_title in clean_name.lower():
+                        best_res = res
+                        break
+
+                logger.info(f"[@{bot}] Inline natija tanlandi: '{best_res.title}'. Yuborilmoqda...")
+                sent_inline = await best_res.click(bot)
+                click_id = sent_inline.id if sent_inline else 0
+
+                def has_uzmovie_video(msgs):
+                    return any(m.file for m in msgs)
+
+                v_list = await poll_new_messages(
+                    self.client,
+                    bot,
+                    click_id,
+                    timeout=14.0,
+                    interval=0.4,
+                    condition=has_uzmovie_video
+                )
+                for vm in v_list:
+                    if vm.file:
+                        logger.info(f"✅ [@{bot}] dan inline video qabul qilindi! ({vm.file.name or 'fayl'})")
+                        return vm
+            else:
+                logger.info(f"[@{bot}] Inline qidiruvda '{clean_name}' topilmadi.")
+        except Exception as e:
+            logger.warning(f"[@{bot}] Inline qidiruvda xatolik: {e}")
 
         return None
 
