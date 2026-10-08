@@ -880,7 +880,7 @@ export default function ScraperPage() {
                     <input
                       type="number"
                       min={1}
-                      max={100}
+                      max={500}
                       value={downloadLimit}
                       onChange={(e) => setDownloadLimit(Math.max(1, parseInt(e.target.value, 10) || 1))}
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary-container"

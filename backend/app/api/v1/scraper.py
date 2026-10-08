@@ -56,7 +56,7 @@ class ParseRequest(BaseModel):
 
 class DownloadRequest(BaseModel):
     target: str = Field("uzmovi", description="Maqsadli bot: uzmovi yoki asilmedia")
-    limit: int = Field(5, ge=1, le=100, description="Yuklanadigan kinolar soni")
+    limit: int = Field(5, ge=1, le=500, description="Yuklanadigan kinolar soni")
     codes: Optional[str] = Field(None, max_length=500, description="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15)")
     media_type: str = Field("all", description="all, movie yoki series")
 

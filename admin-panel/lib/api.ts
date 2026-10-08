@@ -76,7 +76,13 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     try {
       const data = await response.json();
       if (data.detail) {
-          errorMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+        if (typeof data.detail === "string") {
+          errorMsg = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          errorMsg = data.detail.map((err: any) => err.msg || JSON.stringify(err)).join(", ");
+        } else {
+          errorMsg = JSON.stringify(data.detail);
+        }
       }
     } catch (e) {
       // Ignore JSON parse error
