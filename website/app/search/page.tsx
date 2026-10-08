@@ -45,8 +45,8 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   // 1. Fetch default trending/recommended items so the page is never empty
   try {
     const [moviesRes, seriesRes] = await Promise.all([
-      fetchApi('/movies?limit=12&exclude_paged=true').catch(() => ({ items: [] })),
-      fetchApi('/series?limit=12&exclude_paged=true').catch(() => ({ items: [] })),
+      fetchApi('/movies?limit=12').catch(() => ({ items: [] })),
+      fetchApi('/series?limit=12').catch(() => ({ items: [] })),
     ]);
 
     const defaultMovies = (moviesRes?.items || []).map((m: any) => ({ ...m, isSeries: false }));

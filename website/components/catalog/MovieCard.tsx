@@ -3,7 +3,7 @@ import Image from "next/image";
 import { CatalogItem } from "@/lib/api/catalog";
 
 export default function MovieCard({ item, statusBadge }: { item: CatalogItem, statusBadge?: "completed" | "in_progress" }) {
-  const isSeries = item.is_series;
+  const isSeries = !!item.is_series || (!item.code && !!item.id);
   const href = isSeries ? `/series/${item.id}` : `/movie/${item.code}`;
   
   return (
@@ -55,11 +55,9 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
       {/* Bottom content */}
       <div className="absolute bottom-0 left-0 w-full p-3 md:p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
         <div className="flex gap-1 mb-1.5 flex-wrap">
-          {item.genres && (
-            <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider truncate max-w-[120px]">
-              {item.genres}
-            </span>
-          )}
+          <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider truncate max-w-[120px]">
+            {item.genres?.split(',')[0] || (isSeries ? (item.categories?.[0]?.name || "Serial") : "Kino")}
+          </span>
           {item.release_year && (
             <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">
               {item.release_year}
