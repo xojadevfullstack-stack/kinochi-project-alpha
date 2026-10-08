@@ -132,6 +132,36 @@ def extract_title_variants(raw_title: str) -> List[str]:
     return [v for v in variants if len(v) >= 2]
 
 
+def extract_part_number(title: Optional[str]) -> Optional[int]:
+    """
+    Filmlardagi qism raqamini aniqlaydi (masalan: 'Karib dengizi 2', 'Forsaj 5', 'Terminator 3', '2-qism', 'Part 2').
+    """
+    if not title:
+        return None
+    t = str(title).lower().strip()
+    # 1. '2-qism', '3 qism', 'qism 4', 'part 2', 'chast 3'
+    m_part = re.search(r'\b(?:qism|part|chast)\s*[-_]?\s*(\d+)\b', t)
+    if m_part:
+        return int(m_part.group(1))
+    m_part2 = re.search(r'\b(\d+)\s*[-_]?\s*(?:qism|part|chast)\b', t)
+    if m_part2:
+        return int(m_part2.group(1))
+
+    # 2. Rim raqamlari (I, II, III, IV, V, VI, VII, VIII)
+    roman_map = {'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5, 'vi': 6, 'vii': 7, 'viii': 8}
+    for rom, val in sorted(roman_map.items(), key=lambda x: -len(x[0])):
+        if re.search(rf'\b{rom}\b', t):
+            return val
+
+    # 3. Yakka raqam: masalan 'Karib dengizi qaroqchilari 2', 'Shrek 4', 'Forsaj 9'
+    m_num = re.search(r'\b([1-9]|1[0-5])\b', t)
+    if m_num:
+        val = int(m_num.group(1))
+        if not re.search(r'\b(?:3d|4k|1080p|720p)\b', t):
+            return val
+    return None
+
+
 @dataclass
 class DuplicateCheckResult:
     is_duplicate: bool
@@ -267,6 +297,8 @@ class DuplicateChecker:
         else:
             db_items = self._movies + self._series
 
+        cand_part = extract_part_number(title)
+
         # ── 0. TMDb ID bo'yicha tekshirish (100% aniq moslik) ──
         if tmdb_id:
             try:
@@ -290,6 +322,12 @@ class DuplicateChecker:
         # ── 1. To'g'ridan-to'g'ri Slug bo'yicha tekshirish (Variantlar bilan) ──
         for cand_slug in candidate_slugs:
             for item in db_items:
+                db_part = extract_part_number(item.get("title"))
+                if cand_part is not None and db_part is not None and cand_part != db_part:
+                    continue
+                if cand_part is not None and cand_part > 1 and db_part is None:
+                    continue
+
                 # Agar itemning asosiy slugi yoki variantlaridan biriga to'liq teng bo'lsa
                 is_slug_match = (
                     cand_slug == item.get("slug") or
@@ -318,6 +356,10 @@ class DuplicateChecker:
         # ── 2. Original title (Inglizcha/Ruscha nomi) bo'yicha tekshirish ──
         if cand_orig_slug:
             for item in db_items:
+                db_part = extract_part_number(item.get("title"))
+                if cand_part is not None and db_part is not None and cand_part != db_part:
+                    continue
+
                 db_orig_slug = item.get("orig_slug")
                 if db_orig_slug and cand_orig_slug == db_orig_slug:
                     db_year = item.get("release_year")
@@ -341,6 +383,12 @@ class DuplicateChecker:
 
         if len(cand_words) >= 3:
             for item in db_items:
+                db_part = extract_part_number(item.get("title"))
+                if cand_part is not None and db_part is not None and cand_part != db_part:
+                    continue
+                if cand_part is not None and cand_part > 1 and db_part is None:
+                    continue
+
                 db_norm = normalize_uzbek_text(item["title"])
                 db_words = set(w for w in db_norm.split() if len(w) > 2)
                 if not db_words:
@@ -364,15 +412,36 @@ class DuplicateChecker:
                         matched_code=item.get("code"),
                         reason=f"Nomi o'xshash ({int(overlap_ratio * 100)}% mos keldi: '{item['title']}')"
                     )
+
         # ── 4. Containment / Prefix match (Aralash tilli sarlavhalar uchun) ──
         for item in db_items:
             item_slug = item.get("slug")
             if not item_slug or len(item_slug) < 3:
                 continue
+
+            db_part = extract_part_number(item.get("title"))
+            if cand_part is not None and db_part is not None and cand_part != db_part:
+                continue
+            if cand_part is not None and cand_part > 1 and db_part is None:
+                continue
+
             for cand_slug in candidate_slugs:
                 if not cand_slug:
                     continue
-                if cand_slug == item_slug or cand_slug.startswith(item_slug) or item_slug in cand_slug or item_slug.startswith(cand_slug):
+
+                # Oxirgi raqamlar mos kelmasa (masalan 1 vs 2)
+                if cand_slug[-1:].isdigit() and item_slug[-1:].isdigit() and cand_slug[-1:] != item_slug[-1:]:
+                    continue
+
+                is_match = False
+                if cand_slug == item_slug:
+                    is_match = True
+                elif cand_slug.startswith(item_slug) and (len(cand_slug) - len(item_slug) <= 4):
+                    is_match = True
+                elif item_slug.startswith(cand_slug) and (len(item_slug) - len(cand_slug) <= 4):
+                    is_match = True
+
+                if is_match:
                     db_year = item.get("release_year")
                     if year and db_year and abs(year - db_year) > 2:
                         continue

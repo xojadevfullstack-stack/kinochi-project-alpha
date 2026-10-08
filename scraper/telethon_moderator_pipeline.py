@@ -51,6 +51,7 @@ from scraper.config import (
 from scraper.queue_manager import QueueItem
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.smart_enricher import enrich_movie_smart, clean_movie_title
+from scraper.state_manager import StateManager
 
 # Backend DB & Services
 from app.infrastructure.db.session import async_session_factory
@@ -177,7 +178,15 @@ async def poll_new_messages(
                     msgs.append(m)
         except FloodWaitError as e:
             logger.warning(f"Telegram FloodWaitError: {e.seconds} soniya kutilmoqda...")
+            try:
+                StateManager().set_bot_status("flood_wait")
+            except Exception:
+                pass
             await asyncio.sleep(e.seconds + 2)
+            try:
+                StateManager().set_bot_status("online")
+            except Exception:
+                pass
             continue
         except Exception:
             pass
@@ -208,9 +217,17 @@ class TelethonModeratorPipeline:
             if res and hasattr(res, 'message') and res.message:
                 wait_s = get_flood_wait_seconds(res.message)
                 if wait_s > 0:
+                    try:
+                        StateManager().set_bot_status("flood_wait")
+                    except Exception:
+                        pass
                     return False, wait_s
             return True, 0
         except FloodWaitError as e:
+            try:
+                StateManager().set_bot_status("flood_wait")
+            except Exception:
+                pass
             return False, e.seconds + 5
         except Exception as e:
             logger.debug(f"Click callback xabari: {e}")
@@ -218,6 +235,11 @@ class TelethonModeratorPipeline:
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi."""
+        try:
+            StateManager().set_bot_status("online")
+        except Exception:
+            pass
+
         # Item manbasiga qarab mos botni avtomatik aniqlash:
         # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot) da ishlaydi
         effective_bot = target_bot

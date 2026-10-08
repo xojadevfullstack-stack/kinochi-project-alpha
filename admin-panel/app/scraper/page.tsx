@@ -15,6 +15,15 @@ interface LogEntry {
   level: "info" | "success" | "warning" | "error";
 }
 
+interface ScraperState {
+  uzmovi_current_page?: number;
+  uzmovi_total_pages?: number;
+  asilmedia_current_page?: number;
+  asilmedia_total_pages?: number;
+  min_rating?: number;
+  telegram_bot_status?: string;
+}
+
 interface ScraperStatus {
   is_running: boolean;
   task_type: string;
@@ -23,6 +32,8 @@ interface ScraperStatus {
   progress?: ProgressData;
   started_at: string | null;
   elapsed_seconds: number;
+  speed_movies_per_min?: number;
+  bot_status?: string;
   logs?: LogEntry[];
   stats?: {
     total: number;
@@ -32,6 +43,7 @@ interface ScraperStatus {
     failed: number;
     in_progress: number;
   };
+  state?: ScraperState;
 }
 
 interface QueueItem {
@@ -75,9 +87,20 @@ export default function ScraperPage() {
   const [downloadCodes, setDownloadCodes] = useState("");
   const [downloadMediaType, setDownloadMediaType] = useState("all");
 
+  // ── Autopilot & Checkpoint States ─────────────────────────
+  const [autopilotSource, setAutopilotSource] = useState<"uzmovi" | "asilmedia">("uzmovi");
+  const [autopilotPages, setAutopilotPages] = useState(3);
+  const [autopilotLimit, setAutopilotLimit] = useState(10);
+  const [autopilotMinRating, setAutopilotMinRating] = useState(6.0);
+  const [autopilotLoading, setAutopilotLoading] = useState(false);
+  const [editingCheckpoint, setEditingCheckpoint] = useState(false);
+  const [editUzmoviPage, setEditUzmoviPage] = useState<number | "">("");
+  const [editAsilPage, setEditAsilPage] = useState<number | "">("");
+  const [editMinRating, setEditMinRating] = useState<number | "">("");
+
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"grabber" | "parser" | "search" | "moderation" | "tools">("grabber");
+  const [activeTab, setActiveTab] = useState<"autopilot" | "grabber" | "parser" | "search" | "moderation" | "tools">("autopilot");
 
   // ── Site Search States ────────────────────────────────────
   const [siteSearchQuery, setSiteSearchQuery] = useState("");
@@ -426,6 +449,65 @@ export default function ScraperPage() {
     }
   };
 
+  const handleStartAutopilot = async () => {
+    if (status?.is_running) {
+      showToast("error", "Boshqa jarayon allaqachon ishlayapti!");
+      return;
+    }
+    setAutopilotLoading(true);
+    try {
+      const res = await fetchApi("/scraper/autopilot", {
+        method: "POST",
+        body: JSON.stringify({
+          source: autopilotSource,
+          pages: Math.max(1, Number(autopilotPages) || 1),
+          limit: Math.max(1, Number(autopilotLimit) || 1),
+          min_rating: Number(autopilotMinRating) || 6.0,
+          media_type: "all",
+        }),
+      });
+      showToast("success", res.message || "Avtopilot muvaffaqiyatli ishga tushirildi!");
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Avtopilotni ishga tushirib bo'lmadi");
+    } finally {
+      setAutopilotLoading(false);
+    }
+  };
+
+  const handleSaveCheckpoints = async () => {
+    try {
+      const body: any = {};
+      if (editUzmoviPage !== "") body.uzmovi_current_page = Number(editUzmoviPage);
+      if (editAsilPage !== "") body.asilmedia_current_page = Number(editAsilPage);
+      if (editMinRating !== "") body.min_rating = Number(editMinRating);
+      await fetchApi("/scraper/state", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      showToast("success", "Checkpoint parametrlari saqlandi!");
+      setEditingCheckpoint(false);
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Saqlashda xatolik");
+    }
+  };
+
+  const handleRetryFailedQueue = async () => {
+    if (status?.is_running) {
+      showToast("error", "Boshqa jarayon ishlayapti!");
+      return;
+    }
+    try {
+      const res = await fetchApi("/scraper/retry-failed", { method: "POST" });
+      showToast("success", res.message || "Xatoliklar qayta tiklandi!");
+      fetchQueue(1);
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Xatolik yuz berdi");
+    }
+  };
+
   const handleGrabSingleItem = async (itemId: string, itemTitle: string) => {
     if (status?.is_running) {
       showToast("error", "Boshqa jarayon allaqachon ishlayapti. Avval uni kuting yoki to'xtating.");
@@ -699,6 +781,28 @@ export default function ScraperPage() {
               </p>
             </div>
 
+            {/* Live Metrics Pulse Badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/5">
+              <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+                <span className="material-symbols-outlined text-sm text-amber-400">speed</span>
+                <span>Tezlik: <strong className="text-white">{status?.speed_movies_per_min ?? 0}</strong> film/daq</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+                <span className="material-symbols-outlined text-sm text-sky-400">smart_toy</span>
+                <span>Bot: <strong className={status?.bot_status === "flood_wait" ? "text-amber-400" : status?.bot_status === "online" ? "text-emerald-400" : "text-zinc-400"}>
+                  {status?.bot_status === "flood_wait" ? "FloodWait (Kutishda)" : status?.bot_status === "online" ? "Faol (Online)" : "Kutishda"}
+                </strong></span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+                <span className="material-symbols-outlined text-sm text-emerald-400">auto_stories</span>
+                <span>Uzmovi: <strong className="text-white">{status?.state?.uzmovi_current_page ?? 1}</strong>-sahifa</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+                <span className="material-symbols-outlined text-sm text-purple-400">auto_stories</span>
+                <span>Asilmedia: <strong className="text-white">{status?.state?.asilmedia_current_page ?? 1}</strong>-sahifa</span>
+              </div>
+            </div>
+
             {/* Progress Bar ("Qanchalik tugatdan") */}
             <div className="space-y-1.5 pt-1">
               <div className="flex justify-between items-center text-xs">
@@ -799,6 +903,17 @@ export default function ScraperPage() {
             </h2>
             <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
               <button
+                onClick={() => setActiveTab("autopilot")}
+                className={`px-3 py-1 rounded-lg transition-all font-bold flex items-center gap-1.5 ${
+                  activeTab === "autopilot"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
+                    : "text-emerald-400 hover:text-emerald-300"
+                }`}
+              >
+                <span className="material-symbols-outlined text-xs">rocket_launch</span>
+                <span>Avtopilot</span>
+              </button>
+              <button
                 onClick={() => setActiveTab("grabber")}
                 className={`px-3 py-1 rounded-lg transition-all font-medium ${
                   activeTab === "grabber" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
@@ -851,6 +966,182 @@ export default function ScraperPage() {
               </button>
             </div>
           </div>
+
+          {/* TAB 0: AUTOPILOT */}
+          {activeTab === "autopilot" && (
+            <div className="space-y-4 flex-1 flex flex-col justify-between">
+              <div className="space-y-3.5">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-emerald-400 text-xl shrink-0 mt-0.5">rocket_launch</span>
+                  <div className="text-xs space-y-1">
+                    <p className="font-bold text-white">To'liq Avtonom Avtopilot Rejimi</p>
+                    <p className="text-zinc-300 leading-relaxed">
+                      Skript oxirgi qolgan sahifasidan o'zi davom etadi, faqat <strong>6.0+</strong> reytingli filmlarni saralaydi va avtomatik Telegram kanallaringizga yuklaydi.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Checkpoint Indicators & Inline Edit */}
+                <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-text-secondary flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-primary-container">bookmark</span>
+                      Xotira (Oxirgi sahifalar):
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (!editingCheckpoint) {
+                          setEditUzmoviPage(status?.state?.uzmovi_current_page ?? 1);
+                          setEditAsilPage(status?.state?.asilmedia_current_page ?? 1);
+                          setEditMinRating(status?.state?.min_rating ?? 6.0);
+                        }
+                        setEditingCheckpoint(!editingCheckpoint);
+                      }}
+                      className="text-[11px] text-primary-container hover:underline font-medium"
+                    >
+                      {editingCheckpoint ? "Bekor qilish" : "Tahrirlash"}
+                    </button>
+                  </div>
+
+                  {!editingCheckpoint ? (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                        <span className="text-text-secondary block text-[10px]">Uzmovi:</span>
+                        <strong className="text-white text-sm">{status?.state?.uzmovi_current_page ?? 1}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.uzmovi_total_pages ?? 350}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                        <span className="text-text-secondary block text-[10px]">Asilmedia:</span>
+                        <strong className="text-white text-sm">{status?.state?.asilmedia_current_page ?? 1}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.asilmedia_total_pages ?? 400}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pt-1 border-t border-white/5">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] text-zinc-400">Uzmovi sahifa</label>
+                          <input
+                            type="number"
+                            value={editUzmoviPage}
+                            onChange={(e) => setEditUzmoviPage(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400">Asilmedia sahifa</label>
+                          <input
+                            type="number"
+                            value={editAsilPage}
+                            onChange={(e) => setEditAsilPage(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400">Min reyting</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editMinRating}
+                            onChange={(e) => setEditMinRating(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleSaveCheckpoints}
+                        className="w-full py-1.5 bg-primary-container text-white text-xs font-bold rounded-lg hover:bg-primary-container/80 transition-all"
+                      >
+                        Saqlash
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Source Selection */}
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Sayt Manbasi</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAutopilotSource("uzmovi")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                        autopilotSource === "uzmovi"
+                          ? "bg-primary-container/20 border-primary-container text-white shadow-lg shadow-primary-container/20"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span>🎬 Uzmovi</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutopilotSource("asilmedia")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                        autopilotSource === "asilmedia"
+                          ? "bg-purple-500/20 border-purple-500 text-white shadow-lg shadow-purple-500/20"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span>📺 Asilmedia</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Parameters: Pages & Download Limit */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1">
+                      Yig'ish (Sahifalar)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={autopilotPages}
+                      onChange={(e) => setAutopilotPages(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1">
+                      Yuklash (Kino soni)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={200}
+                      value={autopilotLimit}
+                      onChange={(e) => setAutopilotLimit(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={handleStartAutopilot}
+                  disabled={isRunning || autopilotLoading}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-500/20 hover:opacity-95 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">play_circle</span>
+                  <span>{autopilotLoading ? "Boshlanmoqda..." : "Avtopilotni Ishga Tushirish"}</span>
+                </button>
+
+                {stats.failed > 0 && (
+                  <button
+                    onClick={handleRetryFailedQueue}
+                    disabled={isRunning}
+                    className="w-full py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 font-medium text-xs hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">refresh</span>
+                    <span>Xatoliklarni Qayta Navbatga Qo'yish ({stats.failed})</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* TAB 1: GRABBER */}
           {activeTab === "grabber" && (

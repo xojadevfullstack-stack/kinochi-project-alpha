@@ -7,6 +7,7 @@ import threading
 import subprocess
 from typing import Dict, Any, List, Optional
 from scraper.queue_manager import QueueManager
+from scraper.state_manager import StateManager
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SCRAPER_SCRIPT = os.path.join(ROOT_DIR, "scraper", "run_scraper.py")
@@ -226,12 +227,22 @@ class ProcessManager:
         return {"success": True, "message": ok_message}
 
     # ── public API ───────────────────────────────────────────
-    def start_parse(self, source: str = "uzmovi", pages: int = 3) -> Dict[str, Any]:
+    def start_parse(
+        self,
+        source: str = "uzmovi",
+        pages: int = 3,
+        start_page: Optional[int] = None,
+        min_rating: Optional[float] = None
+    ) -> Dict[str, Any]:
         if source not in ("uzmovi", "asilmedia"):
             return {"success": False, "message": "Noma'lum manba."}
-        pages = max(1, min(int(pages), 20))
+        pages = max(1, min(int(pages), 50))
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--parse", "--source", source, "--pages", str(pages)]
-        return self._launch(cmd, "parse", pages, f"{source} manbasidan {pages} ta sahifa yig'ish boshlandi.")
+        if start_page is not None:
+            cmd.extend(["--start-page", str(start_page)])
+        if min_rating is not None:
+            cmd.extend(["--min-rating", str(min_rating)])
+        return self._launch(cmd, "parse", pages, f"{source.upper()} manbasidan {pages} ta sahifa yig'ish boshlandi.")
 
     def start_download(
         self,
@@ -245,7 +256,7 @@ class ProcessManager:
             return {"success": False, "message": "Noma'lum maqsadli bot."}
         if media_type not in ("all", "movie", "series"):
             return {"success": False, "message": "Noma'lum media turi."}
-        limit = max(1, min(int(limit), 100))
+        limit = max(1, min(int(limit), 500))
 
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--download", "--target", target,
                "--limit", str(limit), "--media-type", media_type]
@@ -260,6 +271,28 @@ class ProcessManager:
             cmd.extend(["--codes", clean.replace(" ", "")])
             expected = 0  # real total is announced by the scraper's own output
         return self._launch(cmd, "download", expected, f"Telegram grabber ishga tushirildi (Maqsad: {target}).")
+
+    def start_autopilot(
+        self,
+        source: str = "uzmovi",
+        pages: int = 3,
+        limit: int = 10,
+        media_type: str = "all",
+        min_rating: Optional[float] = None
+    ) -> Dict[str, Any]:
+        if source not in ("uzmovi", "asilmedia"):
+            return {"success": False, "message": "Noma'lum manba."}
+        pages = max(1, min(int(pages), 20))
+        limit = max(1, min(int(limit), 200))
+        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--autopilot", "--source", source,
+               "--pages", str(pages), "--limit", str(limit), "--media-type", media_type]
+        if min_rating is not None:
+            cmd.extend(["--min-rating", str(min_rating)])
+        return self._launch(cmd, "autopilot", limit, f"Avtopilot ishga tushirildi ({source.upper()}, {pages} ta sahifa, {limit} ta yuklash).")
+
+    def start_retry_failed(self) -> Dict[str, Any]:
+        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--retry-failed"]
+        return self._launch(cmd, "retry_failed", 0, "Muvaffaqiyatsiz kinolarni qayta tiklash boshlandi.")
 
     def start_clean_duplicates(self) -> Dict[str, Any]:
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--clean-duplicates"]
@@ -293,11 +326,24 @@ class ProcessManager:
 
     def get_status(self) -> Dict[str, Any]:
         stats = QueueManager().stats()
+        state = StateManager().get_state()
         with self._lock:
             elapsed = 0
+            speed = 0.0
             if self.started_at:
                 end = time.time() if self.is_running else (self.finished_at or time.time())
                 elapsed = int(end - self.started_at)
+                done_in_run = self.progress.get("current", 0)
+                if elapsed > 10 and done_in_run > 0:
+                    speed = round((done_in_run / elapsed) * 60, 1)
+
+            bot_status = state.get("telegram_bot_status", "idle")
+            if self.is_running:
+                if bot_status == "idle":
+                    bot_status = "online"
+                if "flood" in self.current_action.lower() or "tanaffus" in self.current_action.lower():
+                    bot_status = "flood_wait"
+
             return {
                 "is_running": self.is_running,
                 "task_type": self.task_type,
@@ -306,8 +352,11 @@ class ProcessManager:
                 "progress": dict(self.progress),
                 "started_at": datetime.datetime.fromtimestamp(self.started_at).isoformat() if self.started_at else None,
                 "elapsed_seconds": elapsed,
+                "speed_movies_per_min": speed,
+                "bot_status": bot_status,
                 "logs": list(self.logs),
                 "stats": stats,
+                "state": state,
             }
 
     def clear_logs(self):

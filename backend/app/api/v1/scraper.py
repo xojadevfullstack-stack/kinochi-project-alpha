@@ -25,10 +25,12 @@ if ROOT_DIR not in sys.path:
 try:
     from scraper.queue_manager import QueueManager, QueueItem
     from scraper.process_manager import ProcessManager
+    from scraper.state_manager import StateManager
     SCRAPER_AVAILABLE = True
 except Exception as _exc:  # pragma: no cover
     QueueManager = None  # type: ignore
     ProcessManager = None  # type: ignore
+    StateManager = None  # type: ignore
     SCRAPER_AVAILABLE = False
     logger.warning(f"Scraper moduli yuklanmadi (faqat lokal kompyuterda ishlaydi): {_exc}")
 
@@ -51,7 +53,9 @@ STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists", "
 
 class ParseRequest(BaseModel):
     source: str = Field("uzmovi", description="Manba: uzmovi yoki asilmedia")
-    pages: int = Field(3, ge=1, le=20, description="Sahifalar soni")
+    pages: int = Field(3, ge=1, le=50, description="Sahifalar soni")
+    start_page: Optional[int] = Field(None, ge=1, description="Boshlang'ich sahifa (bo'sh qolsa state.json dan)")
+    min_rating: Optional[float] = Field(None, ge=0.0, le=10.0, description="Minimal reyting (default 6.0)")
 
 
 class DownloadRequest(BaseModel):
@@ -59,6 +63,22 @@ class DownloadRequest(BaseModel):
     limit: int = Field(5, ge=1, le=500, description="Yuklanadigan kinolar soni")
     codes: Optional[str] = Field(None, max_length=500, description="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15)")
     media_type: str = Field("all", description="all, movie yoki series")
+
+
+class AutopilotRequest(BaseModel):
+    source: str = Field("uzmovi", description="Manba: uzmovi yoki asilmedia")
+    pages: int = Field(3, ge=1, le=20, description="Sahifalar soni")
+    limit: int = Field(10, ge=1, le=200, description="Yuklanadigan kinolar limiti")
+    media_type: str = Field("all", description="all, movie yoki series")
+    min_rating: Optional[float] = Field(6.0, ge=0.0, le=10.0, description="Minimal reyting filtri")
+
+
+class UpdateStateRequest(BaseModel):
+    uzmovi_current_page: Optional[int] = None
+    uzmovi_total_pages: Optional[int] = None
+    asilmedia_current_page: Optional[int] = None
+    asilmedia_total_pages: Optional[int] = None
+    min_rating: Optional[float] = None
 
 
 class StatusResponse(BaseModel):
@@ -69,8 +89,11 @@ class StatusResponse(BaseModel):
     progress: Dict[str, Any]
     started_at: Optional[str] = None
     elapsed_seconds: int = 0
+    speed_movies_per_min: float = 0.0
+    bot_status: str = "idle"
     logs: List[Dict[str, Any]]
     stats: Dict[str, int]
+    state: Optional[Dict[str, Any]] = None
 
 
 def _ensure_ok(res: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,6 +109,39 @@ def _ensure_ok(res: Dict[str, Any]) -> Dict[str, Any]:
 def get_status(admin=Depends(require_scraper)):
     """Scraper jarayonining hozirgi holati, progressi va loglarini olish."""
     return ProcessManager().get_status()
+
+
+@router.get("/state")
+def get_scraper_state(admin=Depends(require_scraper)):
+    """Scraper sahifa xotirasi (checkpoint) va parametrlarini olish."""
+    return StateManager().get_state()
+
+
+@router.post("/state")
+def update_scraper_state(data: UpdateStateRequest, admin=Depends(require_scraper)):
+    """Scraper sahifa xotirasi yoki parametrlarini yangilash."""
+    payload = {k: v for k, v in data.dict().items() if v is not None}
+    return StateManager().update(**payload)
+
+
+@router.post("/autopilot")
+def start_autopilot(data: AutopilotRequest, admin=Depends(require_scraper)):
+    """Bitta tugma bilan to'liq avtonom sikl (Parse + 6+ Filtr + Download) ni boshlash."""
+    return _ensure_ok(
+        ProcessManager().start_autopilot(
+            source=data.source,
+            pages=data.pages,
+            limit=data.limit,
+            media_type=data.media_type,
+            min_rating=data.min_rating
+        )
+    )
+
+
+@router.post("/retry-failed")
+def retry_failed(admin=Depends(require_scraper)):
+    """Barcha xatolik bergan filmlarni qayta navbatga qo'yish."""
+    return _ensure_ok(ProcessManager().start_retry_failed())
 
 
 @router.get("/queue")
@@ -123,7 +179,14 @@ def start_parse(data: ParseRequest, admin=Depends(require_scraper)):
     """Saytdan katalog yig'ish (Parse) jarayonini ishga tushirish."""
     if data.source not in SOURCES:
         raise HTTPException(status_code=400, detail="Noma'lum manba")
-    return _ensure_ok(ProcessManager().start_parse(source=data.source, pages=data.pages))
+    return _ensure_ok(
+        ProcessManager().start_parse(
+            source=data.source,
+            pages=data.pages,
+            start_page=data.start_page,
+            min_rating=data.min_rating
+        )
+    )
 
 
 @router.post("/start-download")

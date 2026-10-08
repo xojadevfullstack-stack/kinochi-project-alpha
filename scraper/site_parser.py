@@ -27,7 +27,24 @@ def extract_clean_title(raw_text: str, slug: str = "") -> str:
     res = clean_scraped_title(raw_text, url_or_slug=slug)
     return res["title"]
 
-def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
+def extract_rating(text: str) -> Optional[float]:
+    if not text:
+        return None
+    m = re.search(r'(?:imdb|kp|kinopoisk|rating|reyting)\s*[:\-–]?\s*([1-9](?:\.\d)?)\b', text, re.I)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    m_star = re.search(r'[⭐★]\s*([1-9](?:\.\d)?)\b', text)
+    if m_star:
+        try:
+            return float(m_star.group(1))
+        except ValueError:
+            pass
+    return None
+
+def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
     seen_ids = set()
@@ -86,6 +103,11 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
         ]):
             continue
 
+        # 4. Reyting tekshiruvi (min_rating filtri)
+        rating = extract_rating(box_text)
+        if rating is not None and min_rating > 0.0 and rating < min_rating:
+            continue
+
         cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
         if not cleaned["title"] or len(cleaned["title"]) < 2:
             continue
@@ -115,7 +137,7 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
 
     return items
 
-def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
+def _extract_asilmedia_items_from_html(html: str, min_rating: float = 0.0) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
     seen_ids = set()
@@ -152,6 +174,11 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
         if any(unrel in card_text for unrel in [
             "tez kunda", "kutilmoqda", "premyera kutilmoqda", "treylerlar", "treyler", "/films/premyera", "faqat treyler"
         ]):
+            continue
+
+        # Reyting tekshiruvi (min_rating filtri)
+        rating = extract_rating(card_text)
+        if rating is not None and min_rating > 0.0 and rating < min_rating:
             continue
 
         cleaned = clean_scraped_title(raw_title, url_or_slug=m.group(2))
@@ -196,7 +223,7 @@ def normalize_uzmovi_url(page_url: str) -> str:
         url = f"https://uzmovi.net{url if url.startswith('/') else '/' + url}"
     return url
 
-def parse_uzmovi_page(page_url: str) -> List[QueueItem]:
+def parse_uzmovi_page(page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
     import ssl
     try:
         ctx = ssl.create_default_context()
@@ -206,12 +233,12 @@ def parse_uzmovi_page(page_url: str) -> List[QueueItem]:
         req = urllib.request.Request(target_url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
-        return _extract_uzmovi_items_from_html(html)
+        return _extract_uzmovi_items_from_html(html, min_rating=min_rating)
     except Exception as e:
         logger.error(f"Error scraping Uzmovi page {page_url}: {e}")
         return []
 
-def parse_asilmedia_page(page_url: str) -> List[QueueItem]:
+def parse_asilmedia_page(page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
     import ssl
     try:
         ctx = ssl.create_default_context()
@@ -220,30 +247,30 @@ def parse_asilmedia_page(page_url: str) -> List[QueueItem]:
         req = urllib.request.Request(page_url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
-        return _extract_asilmedia_items_from_html(html)
+        return _extract_asilmedia_items_from_html(html, min_rating=min_rating)
     except Exception as e:
         logger.error(f"Error scraping Asilmedia page {page_url}: {e}")
         return []
 
-async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str) -> List[QueueItem]:
+async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
     target_url = normalize_uzmovi_url(page_url)
     try:
         async with session.get(target_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
-                return _extract_uzmovi_items_from_html(html)
+                return _extract_uzmovi_items_from_html(html, min_rating=min_rating)
             else:
                 logger.warning(f"Uzmovi HTTP {resp.status} for {target_url}")
     except Exception as e:
         logger.error(f"Async error scraping Uzmovi {target_url}: {e}")
     return []
 
-async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: str) -> List[QueueItem]:
+async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
     try:
         async with session.get(page_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
-                return _extract_asilmedia_items_from_html(html)
+                return _extract_asilmedia_items_from_html(html, min_rating=min_rating)
             else:
                 logger.warning(f"Asilmedia HTTP {resp.status} for {page_url}")
     except Exception as e:

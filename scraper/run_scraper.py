@@ -28,19 +28,35 @@ from scraper.site_parser import (
     parse_uzmovi_page_async,
     parse_asilmedia_page_async,
 )
+from scraper.state_manager import StateManager
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, create_telethon_client
 from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH
 
-async def cmd_parse(source: str, max_pages: int, media_type: str = "all"):
+async def cmd_parse(
+    source: str,
+    max_pages: int,
+    media_type: str = "all",
+    start_page: int = None,
+    min_rating: float = None
+):
     qm = QueueManager()
+    sm = StateManager()
+    state = sm.get_state()
+
+    if start_page is None:
+        start_page = int(state.get(f"{source.lower()}_current_page", 1))
+    if min_rating is None:
+        min_rating = float(state.get("min_rating", 6.0))
+
+    end_page = start_page + max_pages - 1
     checker = DuplicateChecker()
     await checker.refresh_cache(force=True)
 
-    print(f"\n🔍 [{source.upper()}] saytidan katalog yig'ish boshlanmoqda (Maksimal sahifalar: {max_pages}, Turi: {media_type})...")
+    print(f"\n🔍 [{source.upper()}] saytidan katalog yig'ish boshlanmoqda (Sahifalar: {start_page}..{end_page}, Min reyting: {min_rating}, Turi: {media_type})...")
 
     urls = []
-    for page in range(1, max_pages + 1):
+    for page in range(start_page, end_page + 1):
         if source == "uzmovi":
             if media_type in ("all", "movie"):
                 urls.append(f"https://uzmovi.net/tarjima-kinolarri/page/{page}/" if page > 1 else "https://uzmovi.net/tarjima-kinolarri")
@@ -60,18 +76,19 @@ async def cmd_parse(source: str, max_pages: int, media_type: str = "all"):
     conn = aiohttp.TCPConnector(ssl=False)
     async with aiohttp.ClientSession(connector=conn) as session:
         if source == "uzmovi":
-            tasks = [parse_uzmovi_page_async(session, u) for u in urls]
+            tasks = [parse_uzmovi_page_async(session, u, min_rating=min_rating) for u in urls]
         else:
-            tasks = [parse_asilmedia_page_async(session, u) for u in urls]
+            tasks = [parse_asilmedia_page_async(session, u, min_rating=min_rating) for u in urls]
         pages_results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_items = []
-    for p_idx, res in enumerate(pages_results, 1):
+    for p_offset, res in enumerate(pages_results):
+        actual_page = start_page + p_offset
         if isinstance(res, Exception):
-            print(f"⚠️ Sahifa {p_idx} yuklanmadi: {res}")
+            print(f"⚠️ Sahifa {actual_page} yuklanmadi: {res}")
             continue
         all_items.extend(res)
-        print(f"📄 Sahifa {p_idx}: {len(res)} ta element yuklandi.")
+        print(f"📄 Sahifa {actual_page}: {len(res)} ta mos element yuklandi.")
 
     # Dublikatlarni parallel tekshirish (1 soniyada yuzlab kinolar tekshiriladi)
     print(f"🔄 {len(all_items)} ta kino/serial bazadagi dublikatlarga parallel tekshirilmoqda...")
@@ -91,7 +108,9 @@ async def cmd_parse(source: str, max_pages: int, media_type: str = "all"):
             duplicates_detected += 1
 
     total_added = qm.add_items_batch(all_items)
+    next_page = sm.advance_page(source, max_pages)
     print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}")
+    print(f"📑 [STATE] {source.upper()} keyingi sahifa: {next_page}")
     print(f"📊 Navbat holati: {qm.stats()}\n")
 
 def parse_codes_arg(codes_str: str) -> list:
@@ -228,6 +247,11 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
 
     finally:
         await client.disconnect()
+        try:
+            StateManager().set_bot_status("idle")
+            StateManager().update(autopilot_active=False)
+        except Exception:
+            pass
         print("\n🏁 Yuklash jarayoni to'xtatildi.")
         if not code_list:
             qm = QueueManager()
@@ -255,21 +279,52 @@ async def cmd_clean_duplicates():
 
 def cmd_stats():
     qm = QueueManager()
+    sm = StateManager()
     print("\n📊 Navbat statistikasi:")
     for k, v in qm.stats().items():
         print(f"  • {k}: {v}")
+    st = sm.get_state()
+    print("\n📑 Checkpoint holati:")
+    print(f"  • Uzmovi joriy sahifa: {st.get('uzmovi_current_page', 1)} / {st.get('uzmovi_total_pages', 350)}")
+    print(f"  • Asilmedia joriy sahifa: {st.get('asilmedia_current_page', 1)} / {st.get('asilmedia_total_pages', 400)}")
+    print(f"  • Minimal reyting: {st.get('min_rating', 6.0)}+")
     print()
+
+def cmd_retry_failed():
+    qm = QueueManager()
+    count = 0
+    for item_id, item in list(qm.items.items()):
+        if item.status == "failed":
+            item.status = "pending"
+            item.error_message = None
+            count += 1
+    qm.save()
+    print(f"\n♻️ {count} ta muvaffaqiyatsiz (failed) element 'kutilmoqda' holatiga qaytarildi.")
+    print(f"📊 Yangilangan navbat statistikasi: {qm.stats()}\n")
+
+async def cmd_autopilot(source: str = "uzmovi", pages: int = 3, limit: int = 10, media_type: str = "all", min_rating: float = None):
+    print(f"\n🚀 AVTOPILOT ISHGA TUSHIRILMOQDA (Manba: {source.upper()}, Sahifalar: {pages}, Yuklash limiti: {limit})...")
+    # 1. Parse from checkpoint
+    await cmd_parse(source=source, max_pages=pages, media_type=media_type, min_rating=min_rating)
+    # 2. Download pending
+    target_bot = "asilmedia" if "asil" in source.lower() else "uzmovi"
+    await cmd_download(limit=limit, target=target_bot, media_type=media_type)
+    print("\n🏁 Avtopilot sikli muvaffaqiyatli yakunlandi!")
 
 def main():
     parser = argparse.ArgumentParser(description="Kinochi Avtomatlashtirilgan Parser & Grabber")
     parser.add_argument("--parse", action="store_true", help="Saytdan kinolar ro'yxatini yig'ish")
     parser.add_argument("--source", type=str, default="uzmovi", choices=["uzmovi", "asilmedia"], help="Sayt manbasi (uzmovi yoki asilmedia)")
     parser.add_argument("--pages", type=int, default=3, help="Yig'iladigan sahifalar soni (default: 3)")
+    parser.add_argument("--start-page", type=int, default=None, help="Boshlang'ich sahifa (agar berilmasa, state.json dan olinadi)")
+    parser.add_argument("--min-rating", type=float, default=None, help="Minimal reyting (default: 6.0)")
     parser.add_argument("--download", action="store_true", help="Navbatdagi kinolarni Telegram botdan yuklab olish")
     parser.add_argument("--target", type=str, default="uzmovi", choices=["uzmovi", "asilmedia"], help="Maqsadli bot (uzmovi yoki asilmedia)")
     parser.add_argument("--limit", type=int, default=5, help="Yuklanadigan kinolar soni (default: 5)")
     parser.add_argument("--codes", type=str, default=None, help="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15,20)")
     parser.add_argument("--clean-duplicates", action="store_true", help="Navbatdagi mavjud bazadagi dublikatlarni tozalash")
+    parser.add_argument("--retry-failed", action="store_true", help="Xatolik bergan barcha filmlarni qayta navbatga qo'yish")
+    parser.add_argument("--autopilot", action="store_true", help="Bir martalik to'liq avtopilot: Parse + Download")
     parser.add_argument("--media-type", type=str, default="all", choices=["all", "movie", "series"], help="Media turi (all, movie yoki series)")
     parser.add_argument("--item-id", type=str, default=None, help="Navbatdagi aniq bitta element ID si (masalan: asilmedia_18509)")
     parser.add_argument("--stats", action="store_true", help="Navbat holatini ko'rish")
@@ -280,8 +335,12 @@ def main():
         cmd_stats()
     elif args.clean_duplicates:
         asyncio.run(cmd_clean_duplicates())
+    elif args.retry_failed:
+        cmd_retry_failed()
+    elif args.autopilot:
+        asyncio.run(cmd_autopilot(args.source, args.pages, args.limit, args.media_type, args.min_rating))
     elif args.parse:
-        asyncio.run(cmd_parse(args.source, args.pages, args.media_type))
+        asyncio.run(cmd_parse(args.source, args.pages, args.media_type, args.start_page, args.min_rating))
     elif args.download:
         asyncio.run(cmd_download(args.limit, args.target, args.codes, args.media_type, args.item_id))
     else:
