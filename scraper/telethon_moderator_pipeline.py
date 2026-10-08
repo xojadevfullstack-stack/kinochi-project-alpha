@@ -334,15 +334,21 @@ class TelethonModeratorPipeline:
                     click_id = m.id
                     await m.click(r_idx, c_idx)
 
-                    # Qismlar yoki fasllar menyusi chiqishini tezkor kutish
-                    def has_episodes_or_seasons(msgs):
-                        return any(nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower()) for nm in msgs)
+                    # Qismlar, fasllar yoki kino sifatlari menyusi chiqishini tezkor kutish
+                    def has_card_reply(msgs):
+                        return any(nm.buttons and any(any(q in b.text.lower() for q in ["qism", "fasl", "mavsum", "1080", "720", "480"]) or b.text.strip().isdigit() for row in nm.buttons for b in row) for nm in msgs)
 
-                    nm_list = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, condition=has_episodes_or_seasons)
+                    nm_list = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, condition=has_card_reply)
                     for nm in nm_list:
                         if nm.buttons:
                             m = nm
                             break
+
+            # Agar bot serial emas, to'g'ridan-to'g'ri film kartasini qaytargan bo'lsa (1080p, 720p, 480p):
+            if m.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in m.buttons for b in row):
+                logger.info(f"ℹ️ '{item.title}' botda serial emas, film sifatida joylashtirilgan. Kino sikliga yo'naltirilmoqda...")
+                item.media_type = "movie"
+                return await self.run_single_movie(item=item, target_bot=target_bot)
 
             # Fasllar (1-fasl, 2-fasl) yoki qismlar tugmalarini aniqlash
             for row_idx, row in enumerate(m.buttons or []):
@@ -362,6 +368,10 @@ class TelethonModeratorPipeline:
 
         if not card_msg or not card_msg.buttons:
             async for nm in self.client.iter_messages(target_bot, limit=4):
+                if nm.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in nm.buttons for b in row):
+                    logger.info(f"ℹ️ '{item.title}' botda film sifatida topildi. Kino sikliga yo'naltirilmoqda...")
+                    item.media_type = "movie"
+                    return await self.run_single_movie(item=item, target_bot=target_bot)
                 if nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()):
                     card_msg = nm
                     for row_idx, row in enumerate(nm.buttons):
@@ -373,6 +383,13 @@ class TelethonModeratorPipeline:
                     break
 
         if not card_msg or not card_msg.buttons:
+            # Tekshiramiz: balki botda serial emas, to'g'ridan-to'g'ri kino sifati tugmalari (1080p, 720p, 480p) chiqqandir?
+            for m_chk in recent_msgs:
+                if m_chk.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in m_chk.buttons for b in row):
+                    logger.info(f"ℹ️ '{item.title}' botda serial emas, film sifatida joylashtirilgan. Kino sikliga yo'naltirilmoqda...")
+                    item.media_type = "movie"
+                    return await self.run_single_movie(item=item, target_bot=target_bot)
+
             for m in recent_msgs:
                 if m.buttons and any("tayyor bo'lganda" in b.text.lower() for row in m.buttons for b in row):
                     err_msg = "Serial hali botga yuklanmagan (Tez kunda / 'Tayyor bo'lganda yuboring')"
