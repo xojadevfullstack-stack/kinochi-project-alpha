@@ -48,7 +48,7 @@ from scraper.config import (
     AUTO_TOPIC_CHAT_ID,
     TARGET_BOTS
 )
-from scraper.queue_manager import QueueItem
+from scraper.queue_manager import QueueManager, QueueItem
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.smart_enricher import enrich_movie_smart, clean_movie_title
 from scraper.state_manager import StateManager
@@ -249,15 +249,14 @@ class TelethonModeratorPipeline:
             effective_bot = "UzmovieTV_Bot"
 
         if item.media_type == "series":
-            return await self.run_single_series(item=item, target_bot=effective_bot)
+            # UzmovieTV_Bot da seriallar (qismlar va fasllar menyusi) mavjud emas.
+            # Barcha seriallar Telegramda @asilmediabot orqali yuklanadi
+            return await self.run_single_series(item=item, target_bot="asilmediabot")
         return await self.run_single_movie(item=item, target_bot=effective_bot)
 
     async def run_single_series(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
-        # Agar item manbasi boshqa bot bo'lsa, mos botga to'g'rilash
-        if getattr(item, "source", None) == "asilmedia":
-            target_bot = "asilmediabot"
-        elif getattr(item, "source", None) == "uzmovi":
-            target_bot = "UzmovieTV_Bot"
+        # Seriallar har doim asilmediabot orqali olinadi
+        target_bot = "asilmediabot"
 
         logger.info("\n" + "="*55)
         logger.info(f"📺 SERIAL MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
@@ -1420,9 +1419,9 @@ class TelethonModeratorPipeline:
         # UzmovieTV_Bot flow
         logger.info(f"[{target_bot}] botiga so'rov yuborilmoqda: '{search_query}'...")
         sent = await self.client.send_message(target_bot, search_query)
-        def has_uzmovie_file(msgs):
-            return any(m.file for m in msgs)
-        recent = await poll_new_messages(self.client, target_bot, sent.id, timeout=10.0, condition=has_uzmovie_file)
+        def has_uzmovie_reply(msgs):
+            return any(m.file or "topilmadi" in (m.text or "").lower() for m in msgs)
+        recent = await poll_new_messages(self.client, target_bot, sent.id, timeout=6.0, condition=has_uzmovie_reply)
         for m in recent:
             if m.file:
                 return m
@@ -1432,7 +1431,8 @@ class TelethonModeratorPipeline:
             clean_name = item.title.split('/')[0].split('|')[0].strip()
             clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
             clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
-            if clean_name and clean_name != search_query:
+            clean_name = clean_movie_title(clean_name)
+            if clean_name:
                 logger.info(f"UzmovieTV_Bot dan olinmadi. Zaxira tarzida @asilmediabot dan '{clean_name}' qidirilmoqda...")
                 return await self._fetch_asilmedia_video(query=clean_name, year=item.year)
 

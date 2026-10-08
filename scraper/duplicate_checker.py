@@ -337,7 +337,8 @@ class DuplicateChecker:
                 if is_slug_match:
                     # Yil tekshiruvi:
                     db_year = item.get("release_year")
-                    if year and db_year:
+                    is_series = (item.get("type") == "series" or media_type == "series")
+                    if not is_series and year and db_year:
                         # Yillari 2 yildan ko'p farq qilsa, turli xil film bo'lishi mumkin (masalan 1994 vs 2019)
                         if abs(year - db_year) > 2:
                             continue
@@ -363,7 +364,8 @@ class DuplicateChecker:
                 db_orig_slug = item.get("orig_slug")
                 if db_orig_slug and cand_orig_slug == db_orig_slug:
                     db_year = item.get("release_year")
-                    if year and db_year and abs(year - db_year) > 2:
+                    is_series = (item.get("type") == "series" or media_type == "series")
+                    if not is_series and year and db_year and abs(year - db_year) > 2:
                         continue
                     return DuplicateCheckResult(
                         is_duplicate=True,
@@ -400,7 +402,8 @@ class DuplicateChecker:
                 # 80% dan yuqori moslik va yil bir xil bo'lsa
                 if overlap_ratio >= 0.8:
                     db_year = item.get("release_year")
-                    if year and db_year and abs(year - db_year) > 2:
+                    is_series = (item.get("type") == "series" or media_type == "series")
+                    if not is_series and year and db_year and abs(year - db_year) > 2:
                         continue
                     return DuplicateCheckResult(
                         is_duplicate=True,
@@ -443,7 +446,8 @@ class DuplicateChecker:
 
                 if is_match:
                     db_year = item.get("release_year")
-                    if year and db_year and abs(year - db_year) > 2:
+                    is_series = (item.get("type") == "series" or media_type == "series")
+                    if not is_series and year and db_year and abs(year - db_year) > 2:
                         continue
                     return DuplicateCheckResult(
                         is_duplicate=True,
