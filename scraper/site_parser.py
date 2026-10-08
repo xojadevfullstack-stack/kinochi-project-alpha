@@ -32,7 +32,11 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
     soup = BeautifulSoup(html, "html.parser")
     seen_ids = set()
 
-    boxes = soup.find_all(class_=lambda c: c and any(k in str(c) for k in ["movie-box", "shortstory", "card", "short-content"]))
+    # Sidebar, qidiruv tavsiyalari, karusel va modallarni olib tashlaymiz
+    for bad in soup.select('#sidebar, .search-suggest, .owl-carousel, .bottom-sheet, .search-modal, .top10-item, .fundraiser-user-item'):
+        bad.decompose()
+
+    boxes = soup.find_all(class_=lambda c: c and any(k in str(c) for k in ["shortstory", "movie-card", "movie-box", "card", "short-content"]))
     if not boxes:
         boxes = soup.find_all("article")
 
@@ -46,7 +50,7 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
             elif c:
                 parent_classes.append(str(c))
         parents_str = " ".join(parent_classes).lower()
-        if any(skip in parents_str for skip in ["sidebar", "top-", "rating", "popular"]):
+        if any(skip in parents_str for skip in ["sidebar", "top-", "rating", "popular", "suggest"]):
             continue
 
         # 2. Sarlavha havolasini topish (faqat raqamlar/reyting bo'lmagan link)
@@ -95,9 +99,9 @@ def _extract_uzmovi_items_from_html(html: str) -> List[QueueItem]:
         if img:
             src = img.get("src") or img.get("data-src")
             if src and not any(skip in src.lower() for skip in ["icon", "logo", "avatar", "blank"]):
-                poster_url = src if src.startswith("http") else f"https://uzmovi.me{src}"
+                poster_url = src if src.startswith("http") else f"https://uzmovi.net{src}"
 
-        full_url = href if href.startswith("http") else f"https://uzmovi.me{href}"
+        full_url = href if href.startswith("http") else f"https://uzmovi.net{href}"
         items.append(QueueItem(
             id=f"uzmovi_{item_id_num}",
             source="uzmovi",
@@ -186,10 +190,10 @@ def _extract_asilmedia_items_from_html(html: str) -> List[QueueItem]:
 
 def normalize_uzmovi_url(page_url: str) -> str:
     url = page_url
-    for old_d in ["uzmovi.com", "uzmovi.net", "uzmovi.tv"]:
-        url = url.replace(old_d, "uzmovi.me")
+    for old_d in ["uzmovi.com", "uzmovi.me", "uzmovi.tv"]:
+        url = url.replace(old_d, "uzmovi.net")
     if not url.startswith("http"):
-        url = f"https://uzmovi.me{url if url.startswith('/') else '/' + url}"
+        url = f"https://uzmovi.net{url if url.startswith('/') else '/' + url}"
     return url
 
 def parse_uzmovi_page(page_url: str) -> List[QueueItem]:

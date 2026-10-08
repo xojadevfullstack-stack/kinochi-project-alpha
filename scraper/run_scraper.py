@@ -43,9 +43,9 @@ async def cmd_parse(source: str, max_pages: int, media_type: str = "all"):
     for page in range(1, max_pages + 1):
         if source == "uzmovi":
             if media_type in ("all", "movie"):
-                urls.append(f"https://uzmovi.me/kino/tarfilm/page/{page}/" if page > 1 else "https://uzmovi.me/kino/tarfilm/")
+                urls.append(f"https://uzmovi.net/tarjima-kinolarri/page/{page}/" if page > 1 else "https://uzmovi.net/tarjima-kinolarri")
             if media_type in ("all", "series"):
-                urls.append(f"https://uzmovi.me/seriall/page/{page}/" if page > 1 else "https://uzmovi.me/seriall/")
+                urls.append(f"https://uzmovi.net/serialar/page/{page}/" if page > 1 else "https://uzmovi.net/serialar")
         elif source == "asilmedia":
             if media_type in ("all", "movie"):
                 urls.append(f"https://asilmedia.org/films/tarjima_kinolar/page/{page}/" if page > 1 else "https://asilmedia.org/films/tarjima_kinolar/")

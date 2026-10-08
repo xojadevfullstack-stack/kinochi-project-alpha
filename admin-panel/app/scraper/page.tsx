@@ -949,7 +949,7 @@ export default function ScraperPage() {
                     onChange={(e) => setParseSource(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary-container"
                   >
-                    <option value="uzmovi">Uzmovi (uzmovi.com / tarjima-kinolar)</option>
+                    <option value="uzmovi">Uzmovi (uzmovi.net / tarjima-kinolar)</option>
                     <option value="asilmedia">Asilmedia (asilmedia.org)</option>
                   </select>
                 </div>

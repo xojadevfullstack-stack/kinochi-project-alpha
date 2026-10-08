@@ -1,6 +1,6 @@
 """
 Search module for Kinochi Scraper.
-Allows direct searching on Uzmovi (uzmovi.me) and Asilmedia (asilmedia.org) by title,
+Allows direct searching on Uzmovi (uzmovi.net) and Asilmedia (asilmedia.org) by title,
 enriching results with duplicate check status from Neon PostgreSQL and current queue status.
 """
 
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 async def _search_uzmovi(session: aiohttp.ClientSession, query: str) -> List[QueueItem]:
-    url = f"https://uzmovi.me/index.php?do=search&subaction=search&story={urllib.parse.quote(query)}"
+    url = f"https://uzmovi.net/search?q={urllib.parse.quote(query)}"
     try:
-        async with session.get(url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+        async with session.get(url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
                 return _extract_uzmovi_items_from_html(html)
