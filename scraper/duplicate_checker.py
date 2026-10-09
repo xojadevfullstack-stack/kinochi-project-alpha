@@ -166,6 +166,7 @@ class DuplicateCheckResult:
     matched_type: Optional[str] = None  # "movie" or "series"
     matched_code: Optional[str] = None
     reason: str = ""
+    is_incomplete: bool = False
 
 
 class DuplicateChecker:
@@ -218,8 +219,20 @@ class DuplicateChecker:
             )
             raw_series = await conn.fetch(
                 """
-                SELECT s.id, s.title, s.release_year, s.tmdb_id 
+                SELECT s.id, s.title, s.release_year, s.tmdb_id,
+                       COALESCE(ep_stats.ep_count, 0) AS episode_count,
+                       COALESCE(ep_stats.trans_count, 0) AS translation_count
                 FROM series s
+                LEFT JOIN (
+                    SELECT sn.series_id,
+                           COUNT(e.id) AS ep_count,
+                           COUNT(et.id) AS trans_count
+                    FROM seasons sn
+                    JOIN episodes e ON e.season_id = sn.id
+                    LEFT JOIN episode_translations et ON et.episode_id = e.id 
+                         AND (et.storage_channel_message_id IS NOT NULL OR et.telegram_file_id IS NOT NULL)
+                    GROUP BY sn.series_id
+                ) ep_stats ON ep_stats.series_id = s.id
                 """
             )
 
@@ -228,6 +241,7 @@ class DuplicateChecker:
             for m in raw_movies:
                 m_dict = dict(m)
                 m_dict["type"] = "movie"
+                m_dict["is_incomplete"] = False
                 slug = to_slug(m_dict["title"])
                 m_dict["slug"] = slug
                 m_dict["variants_slugs"] = [to_slug(v) for v in extract_title_variants(m_dict["title"])]
@@ -243,6 +257,7 @@ class DuplicateChecker:
             for s in raw_series:
                 s_dict = dict(s)
                 s_dict["type"] = "series"
+                s_dict["is_incomplete"] = (s_dict.get("episode_count", 0) == 0 or s_dict.get("translation_count", 0) == 0)
                 slug = to_slug(s_dict["title"])
                 s_dict["slug"] = slug
                 s_dict["variants_slugs"] = [to_slug(v) for v in extract_title_variants(s_dict["title"])]
@@ -259,6 +274,20 @@ class DuplicateChecker:
             logger.error(f"[DUPLICATE_CHECKER] Keshni yuklashda xatolik: {e}")
         finally:
             await conn.close()
+
+    def _make_result(self, item: Dict[str, Any], match_type: str, reason: str) -> DuplicateCheckResult:
+        is_incomplete = bool(item.get("is_incomplete", False))
+        return DuplicateCheckResult(
+            is_duplicate=not is_incomplete,
+            match_type=match_type,
+            matched_id=item["id"],
+            matched_title=item["title"],
+            matched_year=item.get("release_year"),
+            matched_type=item["type"],
+            matched_code=item.get("code"),
+            reason=f"Serial bazada mavjud ammo qismlari/videolari yuklanmagan (ID: {item['id']})" if is_incomplete else reason,
+            is_incomplete=is_incomplete
+        )
 
     async def check(
         self,
@@ -300,14 +329,9 @@ class DuplicateChecker:
                 for item in db_items:
                     db_tmdb = item.get("tmdb_id")
                     if db_tmdb and int(db_tmdb) == target_tmdb:
-                        return DuplicateCheckResult(
-                            is_duplicate=True,
+                        return self._make_result(
+                            item=item,
                             match_type="tmdb_id",
-                            matched_id=item["id"],
-                            matched_title=item["title"],
-                            matched_year=item.get("release_year"),
-                            matched_type=item["type"],
-                            matched_code=item.get("code"),
                             reason=f"TMDb ID to'liq mos keldi (ID: {tmdb_id})"
                         )
             except (ValueError, TypeError):
@@ -339,14 +363,9 @@ class DuplicateChecker:
                         if abs(year - db_year) > 2:
                             continue
                     
-                    return DuplicateCheckResult(
-                        is_duplicate=True,
+                    return self._make_result(
+                        item=item,
                         match_type="exact_slug",
-                        matched_id=item["id"],
-                        matched_title=item["title"],
-                        matched_year=item.get("release_year"),
-                        matched_type=item["type"],
-                        matched_code=item.get("code"),
                         reason=f"Nomi to'liq mos keldi ('{item['title']}', Yili: {db_year})"
                     )
 
@@ -368,14 +387,9 @@ class DuplicateChecker:
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series and year and db_year and abs(year - db_year) > 2:
                         continue
-                    return DuplicateCheckResult(
-                        is_duplicate=True,
+                    return self._make_result(
+                        item=item,
                         match_type="original_title",
-                        matched_id=item["id"],
-                        matched_title=item["title"],
-                        matched_year=item.get("release_year"),
-                        matched_type=item["type"],
-                        matched_code=item.get("code"),
                         reason=f"Original nomi mos keldi ('{item.get('original_title')}')"
                     )
 
@@ -408,14 +422,9 @@ class DuplicateChecker:
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series and year and db_year and abs(year - db_year) > 2:
                         continue
-                    return DuplicateCheckResult(
-                        is_duplicate=True,
+                    return self._make_result(
+                        item=item,
                         match_type="token_overlap",
-                        matched_id=item["id"],
-                        matched_title=item["title"],
-                        matched_year=db_year,
-                        matched_type=item["type"],
-                        matched_code=item.get("code"),
                         reason=f"Nomi o'xshash ({int(overlap_ratio * 100)}% mos keldi: '{item['title']}')"
                     )
 
@@ -454,14 +463,9 @@ class DuplicateChecker:
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series and year and db_year and abs(year - db_year) > 2:
                         continue
-                    return DuplicateCheckResult(
-                        is_duplicate=True,
+                    return self._make_result(
+                        item=item,
                         match_type="prefix_match",
-                        matched_id=item["id"],
-                        matched_title=item["title"],
-                        matched_year=db_year,
-                        matched_type=item["type"],
-                        matched_code=item.get("code"),
                         reason=f"Nomi mos keldi ('{item['title']}', Yili: {db_year})"
                     )
 

@@ -155,6 +155,67 @@ def get_flood_wait_seconds(msg_or_msgs: Any) -> int:
     return 0
 
 
+def is_video_message(m: Any) -> bool:
+    """
+    Xabar video yoki video-fayl ekanligini ishonchli aniqlash.
+    Telethon video xabarlari, .m4v, .mp4, .mkv, .avi, .webm, .flv, .ts formatlarini qamrab oladi.
+    """
+    if not m:
+        return False
+    if getattr(m, "video", None):
+        return True
+    if getattr(m, "document", None):
+        doc = m.document
+        if getattr(doc, "mime_type", "").startswith("video/"):
+            return True
+        for attr in getattr(doc, "attributes", []):
+            if type(attr).__name__ == "DocumentAttributeVideo":
+                return True
+            if type(attr).__name__ == "DocumentAttributeFilename":
+                fn = getattr(attr, "file_name", "").lower()
+                if any(fn.endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov", ".m4v", ".webm", ".flv", ".ts")):
+                    return True
+    if getattr(m, "file", None) and getattr(m.file, "name", None):
+        fn = m.file.name.lower()
+        if any(fn.endswith(ext) for ext in (".mp4", ".mkv", ".avi", ".mov", ".m4v", ".webm", ".flv", ".ts")):
+            return True
+    return False
+
+
+def matches_episode(m: Any, ep_num: int, total_eps: int = 12) -> bool:
+    """
+    Video xabar berilgan qism raqamiga (ep_num) mos kelishini aniqlash.
+    """
+    if total_eps == 1:
+        return True
+    fn = (getattr(getattr(m, "file", None), "name", "") or "").lower()
+    tx = (getattr(m, "text", "") or getattr(m, "caption", "") or "").lower()
+    ep_patterns = [
+        rf"\b{ep_num}\s*[-_]?\s*qism\b",
+        rf"\b{ep_num}\s*[-_]?\s*seriya\b",
+        rf"\b{ep_num}\s*[-_]?\s*ep\b",
+        rf"\bq0*{ep_num}\b",
+        rf"\bep0*{ep_num}\b",
+        rf"\bf\d+q0*{ep_num}\b",
+    ]
+    for pat in ep_patterns:
+        if re.search(pat, fn) or re.search(pat, tx):
+            return True
+    other_ep_found = False
+    for other in range(1, total_eps + 5):
+        if other == ep_num:
+            continue
+        if re.search(rf"\b{other}\s*[-_]?\s*qism\b", fn) or re.search(rf"\b{other}\s*[-_]?\s*qism\b", tx):
+            other_ep_found = True
+            break
+        if re.search(rf"\bq0*{other}\b", fn) or re.search(rf"\bf\d+q0*{other}\b", fn):
+            other_ep_found = True
+            break
+    if not other_ep_found:
+        return True
+    return False
+
+
 async def poll_new_messages(
     client: TelegramClient,
     chat: str,
@@ -213,7 +274,7 @@ class TelethonModeratorPipeline:
         Qaytaradi: (success: bool, flood_wait_seconds: int)
         """
         try:
-            res = await msg.click(row, col)
+            res = await asyncio.wait_for(msg.click(row, col), timeout=5.0)
             if res and hasattr(res, 'message') and res.message:
                 wait_s = get_flood_wait_seconds(res.message)
                 if wait_s > 0:
@@ -222,6 +283,9 @@ class TelethonModeratorPipeline:
                     except Exception:
                         pass
                     return False, wait_s
+            return True, 0
+        except asyncio.TimeoutError:
+            # Bot callback'ga darhol javob qaytarmasa ham, bosish Telegramga yetkazilgan
             return True, 0
         except FloodWaitError as e:
             try:
@@ -232,6 +296,83 @@ class TelethonModeratorPipeline:
         except Exception as e:
             logger.debug(f"Click callback xabari: {e}")
             return True, 0
+
+    async def handle_sponsor_lock(self, bot_username: str, msg: Message) -> Optional[Message]:
+        """
+        Agar bot homiy kanallarga obuna bo'lish talabini qo'ysa,
+        Telethon orqali havola kanallarga avtomatik a'zo bo'ladi va
+        tasdiqlash/tekshirish tugmasini bosadi.
+        """
+        if not msg:
+            return None
+        text = (msg.text or "").lower()
+        is_sponsor = any(w in text for w in ["obuna bo'ling", "homiy", "kanalga a'zo", "obuna bo'lmagansiz", "obuna talab"])
+        has_verify_btn = False
+        if msg.buttons:
+            for row in msg.buttons:
+                for b in row:
+                    if any(w in b.text.lower() for w in ["tekshirish", "animeni ko'rish", "a'zo bo'ldim", "tasdiqlash", "davom etish"]):
+                        has_verify_btn = True
+                        break
+
+        if not (is_sponsor or has_verify_btn):
+            return msg
+
+        logger.info(f"🛡️ [@{bot_username}] Homiy kanallar talabi aniqlandi. Avtomatik obuna bo'linmoqda...")
+        print(f"  🛡️ [@{bot_username}] Homiy kanallarga avtomatik ulanmoqda...", flush=True)
+
+        from telethon.tl.functions.messages import ImportChatInviteRequest
+        from telethon.tl.functions.channels import JoinChannelRequest
+        from telethon.errors import UserAlreadyParticipantError
+
+        verify_coords = None
+
+        for r_i, row in enumerate(msg.buttons or []):
+            for c_i, b in enumerate(row):
+                b_url = getattr(b, "url", None) or ""
+                b_text = b.text.lower()
+                if any(w in b_text for w in ["tekshirish", "animeni ko'rish", "a'zo bo'ldim", "tasdiqlash", "davom etish"]):
+                    verify_coords = (r_i, c_i)
+
+                if b_url and ("t.me/" in b_url or "telegram.me/" in b_url):
+                    # 1. Private invite: t.me/+hash or t.me/joinchat/hash
+                    m_inv = re.search(r'(?:t\.me|telegram\.me)/(?:\+|joinchat/)([A-Za-z0-9_-]+)', b_url)
+                    if m_inv:
+                        inv_hash = m_inv.group(1)
+                        try:
+                            await self.client(ImportChatInviteRequest(inv_hash))
+                            logger.info(f"✅ [@{bot_username}] Homiy kanalga ulandi (+{inv_hash[:6]}...)")
+                        except UserAlreadyParticipantError:
+                            pass
+                        except Exception as e:
+                            logger.debug(f"Invite join xatolik: {e}")
+                    else:
+                        # 2. Public channel: t.me/channel_username
+                        m_pub = re.search(r'(?:t\.me|telegram\.me)/([A-Za-z0-9_]{4,})', b_url)
+                        if m_pub:
+                            pub_uname = m_pub.group(1)
+                            if pub_uname.lower() not in ("kawaii_uz_bot", "asilmediabot", "uzmovietv_bot", "share"):
+                                try:
+                                    await self.client(JoinChannelRequest(pub_uname))
+                                    logger.info(f"✅ [@{bot_username}] Homiy kanalga ulandi (@{pub_uname})")
+                                except UserAlreadyParticipantError:
+                                    pass
+                                except Exception as e:
+                                    logger.debug(f"Public channel join xatolik: {e}")
+
+        if verify_coords:
+            logger.info(f"[@{bot_username}] Tasdiqlash tugmasi bosilmoqda...")
+            await asyncio.sleep(1.5)
+            await self.safe_click(msg, verify_coords[0], verify_coords[1])
+            await asyncio.sleep(2.5)
+            updated = await self.client.get_messages(bot_username, ids=msg.id)
+            if updated and updated.buttons and not any(w in (updated.text or "").lower() for w in ["obuna bo'ling", "homiy"]):
+                return updated
+            async for nm in self.client.iter_messages(bot_username, limit=3):
+                if nm.buttons and not any(w in (nm.text or "").lower() for w in ["obuna bo'ling", "homiy"]):
+                    return nm
+
+        return msg
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi (qat'iy Timeout bilan)."""
@@ -752,7 +893,7 @@ class TelethonModeratorPipeline:
                                 for nm in msgs:
                                     if is_bot_flood_text(nm.text):
                                         return True
-                                    if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                                    if is_video_message(nm):
                                         return True
                                     if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
                                         return True
@@ -775,12 +916,9 @@ class TelethonModeratorPipeline:
                             continue
 
                         for nm in ep_reply_msgs:
-                            if nm.file and nm.file.name and nm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
-                                f_lower = (nm.file.name or "").lower()
-                                t_lower = (nm.text or "").lower()
-                                if f"{ep_num}-qism" in f_lower or f"{ep_num}-qism" in t_lower or f"{ep_num} qism" in t_lower or total_eps_in_season == 1:
-                                    ep_video_msg = nm
-                                    break
+                            if is_video_message(nm) and matches_episode(nm, ep_num, total_eps_in_season):
+                                ep_video_msg = nm
+                                break
                             if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
                                 quality_msg = nm
                                 break
@@ -809,7 +947,7 @@ class TelethonModeratorPipeline:
 
                                 def has_final_video(msgs):
                                     return any(
-                                        is_bot_flood_text(vm.text) or (vm.file and vm.file.name and vm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')))
+                                        is_bot_flood_text(vm.text) or is_video_message(vm)
                                         for vm in msgs
                                     )
 
@@ -820,19 +958,16 @@ class TelethonModeratorPipeline:
                                     await asyncio.sleep(v_flood)
 
                                 for vm in v_list:
-                                    if vm.file and vm.file.name and vm.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                                    if is_video_message(vm) and matches_episode(vm, ep_num, total_eps_in_season):
                                         ep_video_msg = vm
                                         break
 
                         if not ep_video_msg:
                             async for fallback_m in self.client.iter_messages(target_bot, limit=10):
-                                if fallback_m.file and fallback_m.file.name and fallback_m.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
-                                    f_name_lower = (fallback_m.file.name or "").lower()
-                                    f_text_lower = (fallback_m.text or "").lower()
-                                    if f"{ep_num}-qism" in f_name_lower or f"{ep_num}-qism" in f_text_lower or f"{ep_num} qism" in f_text_lower or total_eps_in_season == 1:
-                                        ep_video_msg = fallback_m
-                                        logger.info(f"ℹ️ Zaxiradagi xabarlardan {ep_num}-qism videosi topildi (Msg ID: {ep_video_msg.id})")
-                                        break
+                                if is_video_message(fallback_m) and matches_episode(fallback_m, ep_num, total_eps_in_season):
+                                    ep_video_msg = fallback_m
+                                    logger.info(f"ℹ️ Zaxiradagi xabarlardan {ep_num}-qism videosi topildi (Msg ID: {ep_video_msg.id})")
+                                    break
 
                         if ep_video_msg:
                             break
@@ -1087,6 +1222,10 @@ class TelethonModeratorPipeline:
             return False
 
         card_msg = card_msgs[0]
+        # Homiy tekshiruvi (agar bot obuna bo'lishni so'rasa avtomatik obuna bo'lish):
+        unlocked = await self.handle_sponsor_lock(target_bot, card_msg)
+        if unlocked:
+            card_msg = unlocked
         card_text = card_msg.text or ""
 
         # Tugmalardan "Tomosha qilish" ni topish
@@ -1440,20 +1579,20 @@ class TelethonModeratorPipeline:
 
             v_msg = None
             # 1-qism videosi "Tomosha qilish" bosilishi bilanoq bot tomonidan kartaga biriktirib berilgan bo'ladi!
-            if current_ep == 1 and card_msg.media and getattr(card_msg.media, "video", False):
+            if current_ep == 1 and is_video_message(card_msg):
                 v_msg = card_msg
             else:
                 await self.safe_click(card_msg, target_btn[0], target_btn[1])
                 await asyncio.sleep(3.0)
                 v_msg = await self.client.get_messages(target_bot, ids=click_id)
 
-            if not (v_msg and v_msg.media and getattr(v_msg.media, "video", False)):
-                async for nm in self.client.iter_messages(target_bot, limit=3):
-                    if nm.media and getattr(nm.media, "video", False):
+            if not is_video_message(v_msg):
+                async for nm in self.client.iter_messages(target_bot, limit=4):
+                    if is_video_message(nm):
                         v_msg = nm
                         break
 
-            if not (v_msg and v_msg.media and getattr(v_msg.media, "video", False)):
+            if not is_video_message(v_msg):
                 logger.warning(f"❌ {current_ep}-qism videosi qabul qilinmadi, keyingisiga o'tilmoqda.")
                 current_ep += 1
                 continue

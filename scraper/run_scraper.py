@@ -222,6 +222,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     qm.update_status(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
                     print(f"⏭️ [{media_label}] '{item.title}' bazada mavjud: [{dup.matched_type}] '{dup.matched_title}' (ID: {dup.matched_id}). O'tkazib yuborildi.")
                     continue
+                elif getattr(dup, "is_incomplete", False):
+                    print(f"🔄 [{media_label}] '{item.title}' bazada mavjud ammo qismlari to'liq emas (ID: {dup.matched_id}). Mavjud mavzuga ulanib qismlar yuklanmoqda...")
 
                 print(f"\n[{downloaded_count + 1}/{limit}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
                 qm.update_status(item.id, "in_progress")
