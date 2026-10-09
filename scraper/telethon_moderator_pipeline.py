@@ -1485,6 +1485,9 @@ class TelethonModeratorPipeline:
 
                 logger.info(f"[@{bot}] Inline natija tanlandi: '{best_res.title}'. Yuborilmoqda...")
                 sent_inline = await best_res.click(bot)
+                if sent_inline and sent_inline.file:
+                    logger.info(f"✅ [@{bot}] dan inline video qabul qilindi! ({sent_inline.file.name or 'fayl'})")
+                    return sent_inline
                 click_id = sent_inline.id if sent_inline else 0
 
                 def has_uzmovie_video(msgs):
