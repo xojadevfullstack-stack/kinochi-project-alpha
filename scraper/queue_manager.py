@@ -247,13 +247,15 @@ class QueueManager:
             return None
 
     def get_pending(self, limit: int = 50, source: Optional[str] = None, media_type: Optional[str] = None) -> List[QueueItem]:
-        pending = [
-            item for item in self.items.values()
-            if item.status == "pending"
-            and (not source or item.source == source)
-            and (not media_type or item.media_type == media_type)
-        ]
-        return pending[:limit]
+        with _FILE_LOCK:
+            self.load()
+            pending = [
+                item for item in self.items.values()
+                if item.status == "pending"
+                and (not source or item.source == source)
+                and (not media_type or item.media_type == media_type)
+            ]
+            return pending[:limit]
 
     def get_filtered(
         self,
@@ -263,37 +265,41 @@ class QueueManager:
         skip: int = 0,
         limit: int = 50
     ) -> Tuple[List[QueueItem], int]:
-        filtered = list(self.items.values())
-        if status and status != "all":
-            filtered = [item for item in filtered if item.status == status]
-        if source and source != "all":
-            filtered = [item for item in filtered if item.source == source]
-        if search:
-            q = search.lower().strip()
-            filtered = [
-                item for item in filtered
-                if (q in (item.title or "").lower())
-                or (item.original_title and q in item.original_title.lower())
-                or (q in item.id.lower())
-            ]
+        with _FILE_LOCK:
+            self.load()
+            filtered = list(self.items.values())
+            if status and status != "all":
+                filtered = [item for item in filtered if item.status == status]
+            if source and source != "all":
+                filtered = [item for item in filtered if item.source == source]
+            if search:
+                q = search.lower().strip()
+                filtered = [
+                    item for item in filtered
+                    if (q in (item.title or "").lower())
+                    or (item.original_title and q in item.original_title.lower())
+                    or (q in item.id.lower())
+                ]
 
-        # in_progress first so the active item is always visible on page 1
-        filtered.sort(key=lambda i: 0 if i.status == "in_progress" else 1)
-        total_count = len(filtered)
-        return filtered[skip: skip + limit], total_count
+            # in_progress first so the active item is always visible on page 1
+            filtered.sort(key=lambda i: 0 if i.status == "in_progress" else 1)
+            total_count = len(filtered)
+            return filtered[skip: skip + limit], total_count
 
     def stats(self) -> Dict[str, int]:
-        total = len(self.items)
-        pending = sum(1 for i in self.items.values() if i.status == "pending")
-        completed = sum(1 for i in self.items.values() if i.status == "completed")
-        already_exists = sum(1 for i in self.items.values() if i.status == "already_exists")
-        failed = sum(1 for i in self.items.values() if i.status == "failed")
-        in_progress = sum(1 for i in self.items.values() if i.status == "in_progress")
-        return {
-            "total": total,
-            "pending": pending,
-            "completed": completed,
-            "already_exists": already_exists,
-            "failed": failed,
-            "in_progress": in_progress,
-        }
+        with _FILE_LOCK:
+            self.load()
+            total = len(self.items)
+            pending = sum(1 for i in self.items.values() if i.status == "pending")
+            completed = sum(1 for i in self.items.values() if i.status == "completed")
+            already_exists = sum(1 for i in self.items.values() if i.status == "already_exists")
+            failed = sum(1 for i in self.items.values() if i.status == "failed")
+            in_progress = sum(1 for i in self.items.values() if i.status == "in_progress")
+            return {
+                "total": total,
+                "pending": pending,
+                "completed": completed,
+                "already_exists": already_exists,
+                "failed": failed,
+                "in_progress": in_progress,
+            }

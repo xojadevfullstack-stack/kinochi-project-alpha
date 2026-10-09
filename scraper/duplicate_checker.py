@@ -117,18 +117,12 @@ def extract_title_variants(raw_title: str) -> List[str]:
         variants.add(without_brackets)
         
     # / yoki | bo'yicha bo'lish
+    # / yoki | bo'yicha bo'lish
     for part in re.split(r'[/|]', cleaned_raw):
         part_clean = part.strip()
-        if part_clean:
+        if part_clean and len(part_clean) >= 2:
             variants.add(part_clean)
 
-    # Ko'p tilli aralash sarlavhalar uchun birinchi 1-2 so'zni variant qilish (masalan "Yengilmas Nepobedimyj Invincible" -> "Yengilmas")
-    words = [w for w in cleaned_raw.split() if len(w) >= 2]
-    if words:
-        variants.add(words[0])
-        if len(words) >= 2:
-            variants.add(f"{words[0]} {words[1]}")
-            
     return [v for v in variants if len(v) >= 2]
 
 
@@ -327,6 +321,8 @@ class DuplicateChecker:
                     continue
                 if cand_part is not None and cand_part > 1 and db_part is None:
                     continue
+                if db_part is not None and db_part > 1 and cand_part is None:
+                    continue
 
                 # Agar itemning asosiy slugi yoki variantlaridan biriga to'liq teng bo'lsa
                 is_slug_match = (
@@ -361,6 +357,11 @@ class DuplicateChecker:
                 if cand_part is not None and db_part is not None and cand_part != db_part:
                     continue
 
+                if cand_part is not None and cand_part > 1 and db_part is None:
+                    continue
+                if db_part is not None and db_part > 1 and cand_part is None:
+                    continue
+
                 db_orig_slug = item.get("orig_slug")
                 if db_orig_slug and cand_orig_slug == db_orig_slug:
                     db_year = item.get("release_year")
@@ -389,6 +390,8 @@ class DuplicateChecker:
                 if cand_part is not None and db_part is not None and cand_part != db_part:
                     continue
                 if cand_part is not None and cand_part > 1 and db_part is None:
+                    continue
+                if db_part is not None and db_part > 1 and cand_part is None:
                     continue
 
                 db_norm = normalize_uzbek_text(item["title"])
@@ -426,6 +429,8 @@ class DuplicateChecker:
             if cand_part is not None and db_part is not None and cand_part != db_part:
                 continue
             if cand_part is not None and cand_part > 1 and db_part is None:
+                continue
+            if db_part is not None and db_part > 1 and cand_part is None:
                 continue
 
             for cand_slug in candidate_slugs:

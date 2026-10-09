@@ -328,15 +328,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
         print(f"   Rejim: Cheksiz Avtonom (Xotiradan to'xtovsiz davom etish)", flush=True)
     print("="*60 + "\n", flush=True)
 
-    # 1. Agar oldingi sessiyadan qolib ketgan kutilayotgan (pending) filmlar bo'lsa, avval ularni yuklaymiz
-    for s in sources_to_run:
-        target_bot = "asilmedia" if "asil" in s.lower() else "uzmovi"
-        old_pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
-        if old_pending:
-            print(f"📋 [{s.upper()}] Oldingi navbatda kutilayotgan {len(old_pending)} ta film yuklanmoqda...", flush=True)
-            await cmd_download(limit=len(old_pending), target=target_bot, media_type=media_type)
-
-    # 2. Agar foydalanuvchi qat'iy cheklangan pages/limit bergan bo'lsa (eski parametrli rejim):
+    # 1. Agar foydalanuvchi qat'iy cheklangan pages/limit bergan bo'lsa (parametrli rejim):
     if pages and limit:
         for s in sources_to_run:
             target_bot = "asilmedia" if "asil" in s.lower() else "uzmovi"
@@ -344,6 +336,14 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             await cmd_download(limit=limit, target=target_bot, media_type=media_type)
         print("\n🏁 Avtopilot sikli yakunlandi!", flush=True)
         return
+
+    # 2. Cheksiz rejimda: agar oldingi sessiyadan qolib ketgan kutilayotgan filmlar bo'lsa, avval ularni yuklaymiz
+    for s in sources_to_run:
+        target_bot = "asilmedia" if "asil" in s.lower() else "uzmovi"
+        old_pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
+        if old_pending:
+            print(f"📋 [{s.upper()}] Oldingi navbatda kutilayotgan {len(old_pending)} ta film yuklanmoqda...", flush=True)
+            await cmd_download(limit=len(old_pending), target=target_bot, media_type=media_type)
 
     # 3. CHEKSIZ AVTONOM REJIM (Foydalanuvchi xohlagan yangi uzluksiz avtopilot)
     cycle_count = 0

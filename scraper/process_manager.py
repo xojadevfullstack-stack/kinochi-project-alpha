@@ -195,6 +195,12 @@ class ProcessManager:
             except Exception as e:
                 self._add_log(f"⚠️ Navbatni tiklashda xatolik: {e}", level="warning")
 
+            try:
+                StateManager().set_bot_status("idle")
+                StateManager().update(autopilot_active=False)
+            except Exception:
+                pass
+
             with self._lock:
                 if self.stop_requested:
                     self._add_log("⏹️ Jarayon admin tomonidan to'xtatildi", level="warning")
@@ -296,6 +302,13 @@ class ProcessManager:
         if source not in ("uzmovi", "asilmedia", "all"):
             return {"success": False, "message": "Noma'lum manba."}
 
+        try:
+            StateManager().update(autopilot_active=True)
+            if min_rating is not None:
+                StateManager().update(min_rating=float(min_rating))
+        except Exception:
+            pass
+
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--autopilot", "--source", source, "--media-type", media_type]
         if pages is not None and int(pages) > 0:
             cmd.extend(["--pages", str(pages)])
@@ -329,6 +342,11 @@ class ProcessManager:
             self.stop_requested = True
             self.current_action = "To'xtatilmoqda..."
             self._add_log("⚠️ Jarayonga to'xtatish signali yuborildi...", level="warning")
+            try:
+                StateManager().update(autopilot_active=False)
+                StateManager().set_bot_status("idle")
+            except Exception:
+                pass
 
         try:
             proc.terminate()
