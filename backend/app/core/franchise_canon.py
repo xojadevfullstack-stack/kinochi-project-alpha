@@ -6,7 +6,7 @@ Used by automatic pipeline enrichment and manual admin tooling.
 from typing import TypedDict
 
 
-class CanonItemBlueprint(TypedDict):
+class CanonItemBlueprint(TypedDict, total=False):
     tmdb_id: int
     title_en: str
     title_uz: str
@@ -14,6 +14,7 @@ class CanonItemBlueprint(TypedDict):
     release_order: int
     timeline_event_desc: str
     year: int
+    aliases: list[str]
 
 
 class FranchiseBlueprint(TypedDict):
@@ -32,8 +33,8 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
         "slug": "mcu",
         "name": "Marvel Kinokoinoti (MCU)",
         "description": "Marvel kinematografiya olami — 1942-yildagi Birinchi Qasoskordan boshlab, Multiverse sagasigacha bo'lgan barcha voqealar xronologiyasi.",
-        "poster_url": "https://image.tmdb.org/t/p/w780/yFSIUVTCvgYrRA0t1sf89T3eNcK.jpg",
-        "banner_url": "https://image.tmdb.org/t/p/original/mDfJG3LC3Djh677YNVvLi0ukZq.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w780/yFSIUVTCvgYrpalUktulvk3Gi5Y.jpg",
+        "banner_url": "https://image.tmdb.org/t/p/original/2UNUv4NJdC36E5myDHACBJ99EwL.jpg",
         "is_franchise": True,
         "sort_order": 1,
         "items": [
@@ -322,8 +323,8 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
         "slug": "harry-potter",
         "name": "Garri Potter va Sehrgarlar Olamı",
         "description": "J.K. Rowling sehrgarlik olami — Nyu-Yorkdagi 1926-yilgi Sehrli jonzotlardan tortib, Xogvarts uchun buyuk janggacha bo'lgan to'liq xronologiya.",
-        "poster_url": "https://image.tmdb.org/t/p/w780/wuMc08IPKEatv9rnMNXvIDxqP4W.jpg",
-        "banner_url": "https://image.tmdb.org/t/p/original/5jkzqL4u3rD0V2V1mOx0tU1F2gE.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w780/eVPs2Y0LyvTLZn6AP5Z6O2rtiGB.jpg",
+        "banner_url": "https://image.tmdb.org/t/p/original/4gV0rKUjB1nLUdZB4zIltLvNZZr.jpg",
         "is_franchise": True,
         "sort_order": 2,
         "items": [

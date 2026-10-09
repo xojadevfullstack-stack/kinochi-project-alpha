@@ -116,16 +116,20 @@ class MovieRepositoryImpl(IMovieRepository):
         return self._to_domain(model) if model else None
 
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
+        clean_q = str(title_query).strip()
+        conditions = [
+            MovieModel.title.ilike(f"%{clean_q}%"),
+            MovieModel.original_title.ilike(f"%{clean_q}%"),
+            MovieModel.code.ilike(f"%{clean_q}%")
+        ]
+        if clean_q.isdigit():
+            conditions.append(MovieModel.id == int(clean_q))
+
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
-        ).where(
-            or_(
-                MovieModel.title.ilike(f"%{title_query}%"),
-                MovieModel.original_title.ilike(f"%{title_query}%")
-            )
-        )
+        ).where(or_(*conditions))
         
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)

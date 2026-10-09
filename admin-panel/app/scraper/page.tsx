@@ -20,6 +20,8 @@ interface ScraperState {
   uzmovi_total_pages?: number;
   asilmedia_current_page?: number;
   asilmedia_total_pages?: number;
+  kawaii_current_page?: number;
+  kawaii_total_pages?: number;
   min_rating?: number;
   telegram_bot_status?: string;
 }
@@ -88,13 +90,14 @@ export default function ScraperPage() {
   const [downloadMediaType, setDownloadMediaType] = useState("all");
 
   // ── Autopilot & Checkpoint States ─────────────────────────
-  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia">("all");
+  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia" | "kawaii">("all");
   const [autopilotMinRating, setAutopilotMinRating] = useState(6.0);
   const [autopilotMediaType, setAutopilotMediaType] = useState<"all" | "movie" | "series">("all");
   const [autopilotLoading, setAutopilotLoading] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState(false);
   const [editUzmoviPage, setEditUzmoviPage] = useState<number | "">("");
   const [editAsilPage, setEditAsilPage] = useState<number | "">("");
+  const [editKawaiiPage, setEditKawaiiPage] = useState<number | "">("");
   const [editMinRating, setEditMinRating] = useState<number | "">("");
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -103,7 +106,7 @@ export default function ScraperPage() {
 
   // ── Site Search States ────────────────────────────────────
   const [siteSearchQuery, setSiteSearchQuery] = useState("");
-  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia">("all");
+  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia" | "kawaii">("all");
   const [siteSearchResults, setSiteSearchResults] = useState<any[]>([]);
   const [searchingSite, setSearchingSite] = useState(false);
   const [searchHasSearched, setSearchHasSearched] = useState(false);
@@ -477,6 +480,7 @@ export default function ScraperPage() {
       const body: any = {};
       if (editUzmoviPage !== "") body.uzmovi_current_page = Number(editUzmoviPage);
       if (editAsilPage !== "") body.asilmedia_current_page = Number(editAsilPage);
+      if (editKawaiiPage !== "") body.kawaii_current_page = Number(editKawaiiPage);
       if (editMinRating !== "") body.min_rating = Number(editMinRating);
       await fetchApi("/scraper/state", {
         method: "POST",
@@ -990,6 +994,7 @@ export default function ScraperPage() {
                         if (!editingCheckpoint) {
                           setEditUzmoviPage(status?.state?.uzmovi_current_page ?? 1);
                           setEditAsilPage(status?.state?.asilmedia_current_page ?? 1);
+                          setEditKawaiiPage(status?.state?.kawaii_current_page ?? 1);
                           setEditMinRating(status?.state?.min_rating ?? 6.0);
                         }
                         setEditingCheckpoint(!editingCheckpoint);
@@ -1001,7 +1006,7 @@ export default function ScraperPage() {
                   </div>
 
                   {!editingCheckpoint ? (
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">Uzmovi:</span>
                         <strong className="text-white text-sm">{status?.state?.uzmovi_current_page ?? 1}</strong>
@@ -1012,10 +1017,15 @@ export default function ScraperPage() {
                         <strong className="text-white text-sm">{status?.state?.asilmedia_current_page ?? 1}</strong>
                         <span className="text-zinc-500 text-[10px]"> / {status?.state?.asilmedia_total_pages ?? 400}</span>
                       </div>
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                        <span className="text-text-secondary block text-[10px]">Kawaii:</span>
+                        <strong className="text-white text-sm">{status?.state?.kawaii_current_page ?? 1}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.kawaii_total_pages ?? 50}</span>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-2 pt-1 border-t border-white/5">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         <div>
                           <label className="text-[10px] text-zinc-400">Uzmovi sahifa</label>
                           <input
@@ -1031,6 +1041,15 @@ export default function ScraperPage() {
                             type="number"
                             value={editAsilPage}
                             onChange={(e) => setEditAsilPage(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400">Kawaii sahifa</label>
+                          <input
+                            type="number"
+                            value={editKawaiiPage}
+                            onChange={(e) => setEditKawaiiPage(e.target.value === "" ? "" : Number(e.target.value))}
                             className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
                           />
                         </div>
@@ -1055,10 +1074,10 @@ export default function ScraperPage() {
                   )}
                 </div>
 
-                {/* Source Selection (3 buttons: Ikkalasi ham, Uzmovi, Asilmedia) */}
+                {/* Source Selection (4 buttons: Barchasi, Uzmovi, Asilmedia, Kawaii) */}
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary mb-1">Sayt Manbasi</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-2">
                     <button
                       type="button"
                       onClick={() => setAutopilotSource("all")}
@@ -1069,7 +1088,7 @@ export default function ScraperPage() {
                       }`}
                     >
                       <span className="text-base">🌐</span>
-                      <span>Ikkalasi Ham</span>
+                      <span>Hammasi</span>
                     </button>
                     <button
                       type="button"
@@ -1094,6 +1113,18 @@ export default function ScraperPage() {
                     >
                       <span className="text-base">📺</span>
                       <span>Asilmedia</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutopilotSource("kawaii")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        autopilotSource === "kawaii"
+                          ? "bg-pink-500/20 border-pink-500 text-white shadow-lg shadow-pink-500/20"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-base">🎌</span>
+                      <span>Kawaii</span>
                     </button>
                   </div>
                 </div>
@@ -1202,6 +1233,7 @@ export default function ScraperPage() {
                   >
                     <option value="uzmovi">Uzmovi (@UzmovieTV_Bot)</option>
                     <option value="asilmedia">Asilmedia (@asilmediabot)</option>
+                    <option value="kawaii">Kawaii (@kawaii_uz_bot)</option>
                   </select>
                 </div>
 
@@ -1283,6 +1315,7 @@ export default function ScraperPage() {
                   >
                     <option value="uzmovi">Uzmovi (uzmovi.net / tarjima-kinolar)</option>
                     <option value="asilmedia">Asilmedia (asilmedia.org)</option>
+                    <option value="kawaii">Kawaii (bot.kawaii.uz / anime)</option>
                   </select>
                 </div>
 
@@ -1325,7 +1358,7 @@ export default function ScraperPage() {
             <div className="space-y-3 flex-1 flex flex-col">
               <div>
                 <p className="text-xs text-text-secondary">
-                  Uzmovi va Asilmedia saytlaridan to'g'ridan-to'g'ri qidirish, dublikatni tekshirish va bir klikda yuklash.
+                  Uzmovi, Asilmedia va Kawaii saytlaridan to'g'ridan-to'g'ri qidirish, dublikatni tekshirish va bir klikda yuklash.
                 </p>
               </div>
 
@@ -1335,6 +1368,7 @@ export default function ScraperPage() {
                   { id: "all", label: "Barchasi" },
                   { id: "uzmovi", label: "Uzmovi" },
                   { id: "asilmedia", label: "Asilmedia" },
+                  { id: "kawaii", label: "Kawaii" },
                 ] as const).map((s) => (
                   <button
                     key={s.id}
@@ -1930,6 +1964,7 @@ export default function ScraperPage() {
               <option value="all">Barchasi</option>
               <option value="uzmovi">Uzmovi</option>
               <option value="asilmedia">Asilmedia</option>
+              <option value="kawaii">Kawaii</option>
             </select>
           </div>
         </div>

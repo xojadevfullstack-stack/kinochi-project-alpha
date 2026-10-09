@@ -35,9 +35,20 @@ class SeriesRepository:
         return list(result.scalars().all()), total or 0
 
     async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[SeriesModel], int]:
-        search_pattern = f"%{title_query}%"
+        clean_q = str(title_query).strip()
+        search_pattern = f"%{clean_q}%"
         
-        total_stmt = select(func.count(SeriesModel.id)).where(SeriesModel.title.ilike(search_pattern))
+        conditions = [
+            SeriesModel.title.ilike(search_pattern),
+        ]
+        if clean_q.isdigit():
+            conditions.append(SeriesModel.id == int(clean_q))
+        elif clean_q.lower().startswith("s_") and clean_q[2:].isdigit():
+            conditions.append(SeriesModel.id == int(clean_q[2:]))
+        elif clean_q.lower().startswith("s") and clean_q[1:].isdigit():
+            conditions.append(SeriesModel.id == int(clean_q[1:]))
+
+        total_stmt = select(func.count(SeriesModel.id)).where(or_(*conditions))
         total = await self.session.scalar(total_stmt)
         
         stmt = select(SeriesModel).options(
@@ -45,7 +56,7 @@ class SeriesRepository:
             selectinload(SeriesModel.categories),
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
-        ).where(SeriesModel.title.ilike(search_pattern)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
+        ).where(or_(*conditions)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0

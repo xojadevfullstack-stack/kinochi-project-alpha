@@ -78,15 +78,38 @@ export default function MoviesPage() {
     source_id: "" as number | "",
   };
 
+  const [totalMovies, setTotalMovies] = useState<number>(0);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState<string>("");
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  const PAGE_SIZE = 50;
+
   const [form, setForm] = useState(initialForm);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([loadMovies(), loadCategories(), loadPages(), loadSources()]).then(() =>
-      setLoading(false)
-    );
+    Promise.all([loadCategories(), loadPages(), loadSources()]);
   }, []);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load movies on query change or initial mount
+  useEffect(() => {
+    setIsSearching(true);
+    loadMovies(true, debouncedQuery).finally(() => {
+      setIsSearching(false);
+      setLoading(false);
+    });
+  }, [debouncedQuery]);
 
   const loadSources = async () => {
     try {
@@ -97,12 +120,49 @@ export default function MoviesPage() {
     }
   };
 
-  const loadMovies = async () => {
+  const loadMovies = async (reset = true, queryOverride?: string) => {
     try {
-      const data = await fetchApi("/movies?limit=100");
-      setMovies(data.items);
+      const query = queryOverride !== undefined ? queryOverride : debouncedQuery;
+      let url = "";
+      if (reset) {
+        if (query.length >= 2) {
+          url = `/movies/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}`;
+        } else {
+          url = `/movies?skip=0&limit=${PAGE_SIZE}`;
+        }
+        const data = await fetchApi(url);
+        setMovies(data.items || []);
+        setTotalMovies(typeof data.total === "number" ? data.total : (data.items || []).length);
+      } else {
+        const skip = movies.length;
+        if (query.length >= 2) {
+          url = `/movies/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}`;
+        } else {
+          url = `/movies?skip=${skip}&limit=${PAGE_SIZE}`;
+        }
+        const data = await fetchApi(url);
+        const newItems: Movie[] = data.items || [];
+        setMovies((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const uniqueNew = newItems.filter((m) => !existingIds.has(m.id));
+          return [...prev, ...uniqueNew];
+        });
+        if (typeof data.total === "number") {
+          setTotalMovies(data.total);
+        }
+      }
     } catch (e: any) {
-      alert("Xato: " + e.message);
+      console.error("loadMovies error:", e);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (loadingMore || movies.length >= totalMovies) return;
+    setLoadingMore(true);
+    try {
+      await loadMovies(false, debouncedQuery);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -948,10 +1008,42 @@ export default function MoviesPage() {
 
       {/* Movies List Table */}
       <div className="metric-card rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 sm:p-5 border-b border-white/5 bg-[#1a0908]/80 flex items-center justify-between">
-          <h3 className="font-display font-bold text-base sm:text-lg text-text-primary">
-            Mavjud kinolar ro'yxati ({movies.length})
-          </h3>
+        <div className="p-4 sm:p-5 border-b border-white/5 bg-[#1a0908]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h3 className="font-display font-bold text-base sm:text-lg text-text-primary">
+              Mavjud kinolar ro'yxati
+            </h3>
+            <span className="text-xs bg-white/5 border border-white/10 text-text-secondary px-2.5 py-1 rounded-full font-mono">
+              {totalMovies > 0 ? `${movies.length} / ${totalMovies}` : movies.length}
+            </span>
+            {isSearching && (
+              <span className="w-3.5 h-3.5 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span>
+            )}
+          </div>
+
+          {/* Search Input */}
+          <div className="relative w-full sm:w-72 md:w-80">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[18px]">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Kinolar bo'yicha qidirish (nomi yoki kodi)..."
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary-container focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white text-xs p-1"
+                title="Tozalash"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
@@ -1115,13 +1207,43 @@ export default function MoviesPage() {
                     colSpan={5}
                     className="px-6 py-8 text-center text-text-secondary"
                   >
-                    Hech qanday kino topilmadi
+                    {searchQuery
+                      ? `"${searchQuery}" bo'yicha hech qanday kino topilmadi`
+                      : "Hech qanday kino topilmadi"}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Load More Button */}
+        {movies.length < totalMovies ? (
+          <div className="p-4 sm:p-5 border-t border-white/5 flex flex-col items-center justify-center gap-2 bg-surface-container-lowest/50">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="flex items-center justify-center gap-2 h-11 px-7 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-white/30 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loadingMore ? (
+                <span className="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                <span className="material-symbols-outlined text-[18px]">expand_more</span>
+              )}
+              <span>Yana yuklash</span>
+            </button>
+            <span className="text-xs text-text-secondary font-medium">
+              Jami {totalMovies} tadan {movies.length} tasi ko'rsatilmoqda
+            </span>
+          </div>
+        ) : (
+          movies.length > 0 && (
+            <div className="p-4 border-t border-white/5 text-center text-xs text-text-secondary/70 bg-surface-container-lowest/30">
+              <span>Barcha {movies.length} ta kino ko'rsatildi</span>
+            </div>
+          )
+        )}
       </div>
 
       <VideoUploadModal

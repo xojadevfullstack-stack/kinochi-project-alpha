@@ -12,6 +12,7 @@ import ssl
 import logging
 import asyncio
 import xml.etree.ElementTree as ET
+import html
 from typing import List, Optional, Dict, Any
 import aiohttp
 from bs4 import BeautifulSoup
@@ -90,24 +91,34 @@ async def get_all_kawaii_slugs(session: Optional[aiohttp.ClientSession] = None) 
 def clean_kawaii_title(raw_title: str) -> str:
     """
     Cleans raw title text from kawaii.uz page.
-    Example: "Faqat Tangriga ayon dunyo 2-fasl  O'zbek tilida onlayn tomosha qilish"
-    -> "Faqat Tangriga ayon dunyo 2-fasl"
+    Example: "Naruto 1-Film: Qor malikasining ninja san\ufffdati kitobi \ufffd O&#x27;zbek tilida onlayn ko&#x27;rish"
+    -> "Naruto 1: Qor malikasining ninja san'ati kitobi"
     """
     if not raw_title:
         return ""
     text = raw_title.strip()
-    text = text.replace("\ufffd", " ")
-    # Remove common separators like  or dashes
+    text = html.unescape(text)
+
+    # Normalize curly apostrophes and okina to standard straight apostrophe '
+    text = re.sub(r'[\u2018\u2019\u02bb\u02bc`]', "'", text)
+
+    # In Uzbek words, broken \ufffd between letters is an apostrophe (o'zbek, ko'rish, san'at)
+    text = re.sub(r'(\w)\ufffd+(\w)', r"\1'\2", text)
+    # Outside words, \ufffd is a dash, bullet, or separator
     text = re.sub(r'[\uFFFD\u2013\u2014]+', ' ', text)
+
+    # Convert "1-film" or "1-kino" to "1" so clean_scraped_title doesn't leave dangling "1-"
+    text = re.sub(r'(\d+)-(?:film|kino)\b', r'\1', text, flags=re.IGNORECASE)
+
     # Remove typical suffix
     text = re.sub(
-        r'[\s\-\–\|]+(?:o[\'ʼ`]zbek\s+tilida|onlayn|tomosha\s+qilish|barcha\s+qismlar|tas-ix).*$',
+        r'[\s\-\–\|]+(?:o[\'ʼ`]zbek\s+tilida|onlayn|tomosha\s+qilish|ko[\'ʼ`]rish|barcha\s+qismlar|tas-ix).*$',
         '',
         text,
         flags=re.IGNORECASE
     )
-    # Remove trailing dashes or spaces
-    text = re.sub(r'[\s\-\–\|]+$', '', text).strip()
+    # Remove trailing dashes, colons or spaces
+    text = re.sub(r'[\s\-\–\|:]+$', '', text).strip()
     return text
 
 
@@ -224,7 +235,7 @@ def parse_anime_html_to_item(slug: str, html: str, min_rating: float = 0.0) -> O
 
 
 async def parse_kawaii_page_async(
-    session: aiohttp.ClientSession,
+    session: Optional[aiohttp.ClientSession] = None,
     page: int = 1,
     min_rating: float = 0.0,
     media_type: str = "all"
@@ -233,6 +244,15 @@ async def parse_kawaii_page_async(
     Asynchronously parses a page of anime from Kawaii.uz.
     Uses sitemap indexing: page 1 -> first 20 items, page 2 -> next 20 items.
     """
+    if isinstance(session, int):
+        page = session
+        session = None
+
+    if session is None:
+        conn = aiohttp.TCPConnector(ssl=False)
+        async with aiohttp.ClientSession(connector=conn) as sess:
+            return await parse_kawaii_page_async(sess, page=page, min_rating=min_rating, media_type=media_type)
+
     slugs = await get_all_kawaii_slugs(session)
     if not slugs:
         return []

@@ -26,25 +26,27 @@ echo.
 echo   [ TERMINALDA PARSER (Saytlardan katalog yig'ish) ]
 echo   2) Uzmovi saytidan katalog yig'ish (Parse)
 echo   3) Asilmedia saytidan katalog yig'ish (Parse)
+echo   4) Kawaii saytidan anime katalog yig'ish (Parse)
 echo.
 echo   [ TERMINALDA GRABBER (Telegram botdan kinolarni yuklash) ]
-echo   4) Uzmovi botidan yuklash (@UzmovieTV_Bot)
-echo   5) Asilmedia botidan yuklash (@asilmediabot)
-echo   6) Muayyan film kodi bo'yicha yuklash (masalan: 15 yoki 1-5 yoki 10,20)
+echo   5) Uzmovi botidan yuklash (@UzmovieTV_Bot)
+echo   6) Asilmedia botidan yuklash (@asilmediabot)
+echo   7) Kawaii botidan anime yuklash (@kawaii_uz_bot)
+echo   8) Muayyan film kodi yoki anime bo'yicha yuklash (masalan: 15 yoki 1-5 yoki acbvhsdv)
 echo.
 echo   [ NAVBAT VA DUBLIKATLARNI BOSHQARISH ]
-echo   7) Navbatdagi dublikatlarni tozalash (--clean-duplicates)
-echo   8) Navbat statistikasini ko'rish (--stats)
+echo   9) Navbatdagi dublikatlarni tozalash (--clean-duplicates)
+echo   10) Navbat statistikasini ko'rish (--stats)
 echo.
 echo   [ TO'LIQ TIZIM ]
-echo   9) Barcha xizmatlarni yoqish (Backend + Bot + Admin Panel + Website)
+echo   11) Barcha xizmatlarni yoqish (Backend + Bot + Admin Panel + Website)
 echo.
 echo   0) Chiqish
 echo ======================================================================
 echo.
 
 set choice=
-set /p choice="Tanlovingizni kiriting (0-9): "
+set /p choice="Tanlovingizni kiriting (0-11): "
 
 if "%choice%"=="" exit /b
 
@@ -53,13 +55,15 @@ if "%choice%"=="1" goto opt_web
 if "%choice%"=="web" goto opt_web
 if "%choice%"=="2" goto opt_parse_uzmovi
 if "%choice%"=="3" goto opt_parse_asilmedia
-if "%choice%"=="4" goto opt_grab_uzmovi
-if "%choice%"=="5" goto opt_grab_asilmedia
-if "%choice%"=="6" goto opt_grab_codes
-if "%choice%"=="7" goto opt_clean
-if "%choice%"=="8" goto opt_stats
+if "%choice%"=="4" goto opt_parse_kawaii
+if "%choice%"=="5" goto opt_grab_uzmovi
+if "%choice%"=="6" goto opt_grab_asilmedia
+if "%choice%"=="7" goto opt_grab_kawaii
+if "%choice%"=="8" goto opt_grab_codes
+if "%choice%"=="9" goto opt_clean
+if "%choice%"=="10" goto opt_stats
 if "%choice%"=="stats" goto opt_stats
-if "%choice%"=="9" goto opt_all
+if "%choice%"=="11" goto opt_all
 if "%choice%"=="0" exit /b
 
 echo.
@@ -129,6 +133,24 @@ if not "%1"=="" exit /b
 pause
 goto menu
 
+:opt_parse_kawaii
+cls
+echo ======================================================================
+echo   KAWAII SAYTIDAN ANIME PARSE QILISH
+echo ======================================================================
+echo.
+set pages=3
+if "%1"=="" (
+    set /p pages="Nechta sahifa yig'ilsin? [Standart: 3]: "
+)
+echo.
+echo Boshlanmoqda...
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --parse --source kawaii --pages %pages%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
 :opt_grab_uzmovi
 cls
 echo ======================================================================
@@ -165,6 +187,24 @@ if not "%1"=="" exit /b
 pause
 goto menu
 
+:opt_grab_kawaii
+cls
+echo ======================================================================
+echo   KAWAII BOTIDAN YUKLASH (@kawaii_uz_bot)
+echo ======================================================================
+echo.
+set count=5
+if "%1"=="" (
+    set /p count="Nechta anime yuklansin? [Standart: 5]: "
+)
+echo.
+echo Boshlanmoqda...
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --download --target kawaii --limit %count%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
 :opt_grab_codes
 cls
 echo ======================================================================
@@ -174,14 +214,16 @@ echo.
 echo Qaysi bot orqali yuklamoqchisiz?
 echo 1) Uzmovi bot (@UzmovieTV_Bot)
 echo 2) Asilmedia bot (@asilmediabot)
-set /p bot_choice="Tanlovingiz (1 yoki 2) [Standart: 1]: "
+echo 3) Kawaii bot (@kawaii_uz_bot)
+set /p bot_choice="Tanlovingiz (1, 2 yoki 3) [Standart: 1]: "
 
 set target=uzmovi
 if "%bot_choice%"=="2" set target=asilmedia
+if "%bot_choice%"=="3" set target=kawaii
 
 echo.
 set codes=
-set /p codes="Film kodlari (masalan: 15 yoki 1-5 yoki 10,20,35): "
+set /p codes="Film kodlari yoki anime slug (masalan: 15 yoki 1-5 yoki acbvhsdv): "
 if "%codes%"=="" (
     echo [!] Kod kiritilmadi!
     if not "%1"=="" exit /b
