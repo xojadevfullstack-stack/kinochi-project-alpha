@@ -1278,6 +1278,17 @@ class TelethonModeratorPipeline:
 
             existing_series = await series_repo.get_series_by_title_and_year(title, year)
             if not existing_series:
+                sec_dup = await self.dup_checker.check(
+                    title=title,
+                    year=year,
+                    original_title=meta.get("original_title"),
+                    media_type="series",
+                    tmdb_id=meta.get("tmdb_id")
+                )
+                if sec_dup.is_duplicate and sec_dup.matched_id:
+                    existing_series = await series_repo.get_series_by_id(sec_dup.matched_id)
+
+            if not existing_series:
                 source = SourceModel(
                     name=title,
                     type="superguruh",
@@ -1305,6 +1316,11 @@ class TelethonModeratorPipeline:
                 series_id = created_series.id
             else:
                 series_id = existing_series.id
+                if thread_id and existing_series.source:
+                    existing_series.source.topic_id = int(thread_id)
+                    await session.commit()
+                elif not thread_id and existing_series.source and existing_series.source.topic_id:
+                    thread_id = existing_series.source.topic_id
 
             all_seasons = await series_repo.get_seasons_by_series(series_id)
             matched_season = next((s for s in all_seasons if s.season_number == 1), None)

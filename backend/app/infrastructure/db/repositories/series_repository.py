@@ -106,6 +106,19 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
+    async def get_series_by_title_and_year(self, title: str, release_year: int | None = None) -> SeriesModel | None:
+        clean_title = str(title).strip().lower()
+        stmt = select(SeriesModel).options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
+            selectinload(SeriesModel.source)
+        ).where(func.lower(SeriesModel.title) == clean_title)
+        if release_year:
+            stmt = stmt.where(SeriesModel.release_year == release_year)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def create_series(self, series_data: SeriesCreate | dict) -> SeriesModel:
         data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
         
