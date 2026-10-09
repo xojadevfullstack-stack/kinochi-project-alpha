@@ -1178,6 +1178,34 @@ class TelethonModeratorPipeline:
                 except Exception as top_err:
                     logger.warning(f"Topic ochishda xatolik: {top_err}")
 
+            # Darhol topic ichiga banner/poster yuborish (topic bo'm-bo'sh turmasligi uchun):
+            if thread_id and AUTO_TOPIC_CHAT_ID:
+                rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
+                director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
+                cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
+                year_str = f" ({year})" if year else ""
+                welcome_text = (
+                    f"🎬 <b>{html.escape(title)}</b> (Anime film){year_str}\n"
+                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Anime film')}\n"
+                    f"{rating_str}{director_str}{cast_str}"
+                    f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                    f"⏳ <i>Video yuklanmoqda, kuting...</i>"
+                )
+                poster_to_send = meta.get("poster_url") or item.poster_url
+                if poster_to_send:
+                    try:
+                        await self.client.send_file(
+                            AUTO_TOPIC_CHAT_ID,
+                            file=poster_to_send,
+                            caption=welcome_text,
+                            reply_to=thread_id,
+                            parse_mode="html"
+                        )
+                    except Exception:
+                        await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+                else:
+                    await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+
             # Topicga yuklash
             topic_caption = (
                 f"🎬 <b>{html.escape(title)}</b>\n"
@@ -1269,6 +1297,34 @@ class TelethonModeratorPipeline:
                 thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
             except Exception as top_err:
                 logger.warning(f"Topic ochishda xatolik: {top_err}")
+
+        # Topic ochilishi bilanoq darhol banner va posterni yuborish (topic bo'm-bo'sh turmasligi uchun):
+        if thread_id and AUTO_TOPIC_CHAT_ID:
+            rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
+            director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
+            cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
+            year_str = f" ({year})" if year else ""
+            welcome_text = (
+                f"📺 <b>{html.escape(title)}</b> (Anime Serial){year_str}\n"
+                f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Anime')}\n"
+                f"{rating_str}{director_str}{cast_str}"
+                f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                f"⬇️ <i>Serial qismlari shu yerga yuklanmoqda...</i>"
+            )
+            poster_to_send = meta.get("poster_url") or item.poster_url
+            if poster_to_send:
+                try:
+                    await self.client.send_file(
+                        AUTO_TOPIC_CHAT_ID,
+                        file=poster_to_send,
+                        caption=welcome_text,
+                        reply_to=thread_id,
+                        parse_mode="html"
+                    )
+                except Exception:
+                    await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+            else:
+                await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
 
         series_id = None
         season_id = None
@@ -2221,7 +2277,7 @@ class TelethonModeratorPipeline:
                     print(f"  📥 Yuklab olish: {pct}% ({mb_cur}MB / {mb_tot}MB)", flush=True)
                     last_logged[0] = now
 
-            logger.info("⚡ Parallel 8-oqimli tezkor yuklab olish boshlandi...")
+            logger.info("⚡ Parallel 12-oqimli tezkor yuklab olish boshlandi...")
             print("⚡ Katta faylni tezkor yuklab olish boshlandi...", flush=True)
             raw_filename = video_msg.file.name if (video_msg.file and video_msg.file.name) else f"video_{video_msg.id}.mp4"
             target_file_path = os.path.join(downloads_dir, raw_filename)
@@ -2232,7 +2288,7 @@ class TelethonModeratorPipeline:
                     location_or_msg=video_msg,
                     out_file_path=target_file_path,
                     progress_callback=dl_progress,
-                    connection_count=8
+                    connection_count=12
                 )
             except Exception as dl_err:
                 logger.warning(f"Fast download da xatolik ({dl_err}), standart usulga o'tilmoqda...")
@@ -2247,7 +2303,7 @@ class TelethonModeratorPipeline:
                 return None
 
             total_mb = round(os.path.getsize(file_path) / 1024 / 1024, 1)
-            logger.info(f"⚡ Parallel 8-oqimli chatga yuklash boshlandi ({total_mb} MB)...")
+            logger.info(f"⚡ Parallel 12-oqimli chatga yuklash boshlandi ({total_mb} MB)...")
             print(f"⚡ Telegramga yuklash boshlandi ({total_mb} MB)...", flush=True)
 
             last_ul = [0.0]
@@ -2268,7 +2324,7 @@ class TelethonModeratorPipeline:
                     client=self.client,
                     file_path=file_path,
                     progress_callback=ul_progress,
-                    connection_count=8
+                    connection_count=12
                 )
                 # Original video atributlaridan foydalanish (aniq duration, width, height va streaming saqlanadi):
                 if hasattr(video_msg, "document") and video_msg.document and video_msg.document.attributes:
