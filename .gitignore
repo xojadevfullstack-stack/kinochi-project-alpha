@@ -45,8 +45,6 @@ out/
 # Scraper runtime data / secrets
 *.session
 *.session-journal
-scraper/scraper_queue.json
-scraper/scraper_state.json
 scraper/*.tmp
 scraper/downloads/
 downloads/

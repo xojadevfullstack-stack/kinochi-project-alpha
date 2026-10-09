@@ -1,0 +1,15 @@
+{
+  "uzmovi_current_page": 3,
+  "uzmovi_total_pages": 350,
+  "asilmedia_current_page": 4,
+  "asilmedia_total_pages": 400,
+  "kawaii_current_page": 2,
+  "kawaii_total_pages": 50,
+  "min_rating": 6.0,
+  "autopilot_active": false,
+  "autopilot_pages": 3,
+  "autopilot_limit": 10,
+  "telegram_bot_status": "idle",
+  "last_run_timestamp": null,
+  "speed_items_per_min": 0.0
+}
