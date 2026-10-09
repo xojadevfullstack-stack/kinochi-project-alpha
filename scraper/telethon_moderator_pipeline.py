@@ -1137,7 +1137,10 @@ class TelethonModeratorPipeline:
                 if m_ep:
                     ep_buttons.append((int(m_ep.group(1)), r_i, c_i, btn.text))
 
-        is_single_movie = (item.media_type == "movie") or (len(ep_buttons) <= 1 and (has_video_now or "1 / 1" in card_text or "film" in title.lower()))
+        # Agar botda 1 tadan ortiq ep tugmasi bo'lsa - bu qat'iy serial!
+        is_single_movie = (len(ep_buttons) <= 1) and (
+            item.media_type == "movie" or (has_video_now and "1 / 1" in card_text) or "film" in title.lower()
+        )
 
         # A) KINO SIKLI (1 qism)
         if is_single_movie:
@@ -1361,10 +1364,15 @@ class TelethonModeratorPipeline:
             logger.info(f"▶️ {current_ep}-qism yuklanmoqda ({target_btn[2].text})...")
             print(f"  ▶️ [KAWAII] {current_ep}-qism yuklanmoqda...", flush=True)
 
-            await self.safe_click(card_msg, target_btn[0], target_btn[1])
-            await asyncio.sleep(3.0)
+            v_msg = None
+            # 1-qism videosi "Tomosha qilish" bosilishi bilanoq bot tomonidan kartaga biriktirib berilgan bo'ladi!
+            if current_ep == 1 and card_msg.media and getattr(card_msg.media, "video", False):
+                v_msg = card_msg
+            else:
+                await self.safe_click(card_msg, target_btn[0], target_btn[1])
+                await asyncio.sleep(3.0)
+                v_msg = await self.client.get_messages(target_bot, ids=click_id)
 
-            v_msg = await self.client.get_messages(target_bot, ids=click_id)
             if not (v_msg and v_msg.media and getattr(v_msg.media, "video", False)):
                 async for nm in self.client.iter_messages(target_bot, limit=3):
                     if nm.media and getattr(nm.media, "video", False):
@@ -1421,10 +1429,15 @@ class TelethonModeratorPipeline:
                 except Exception:
                     pass
 
+                # Bot kartasidan ovoz jamoasini aniqlash (masalan: 🎙 Anizzers)
+                raw_caption = (card_msg.text or (v_msg.text if v_msg else "")) or ""
+                voice_match = re.search(r'🎙\s*([^•\n\r]+)', raw_caption)
+                voiceover_team = voice_match.group(1).strip() if voice_match else "Kawaii Uz"
+
                 await series_service.add_episode_translation(
                     episode_id=ep_id,
                     language_code="uz",
-                    voiceover_team="Kawaii Uz",
+                    voiceover_team=voiceover_team,
                     source_chat_id=storage_chat,
                     source_message_id=storage_msg.id,
                     telegram_file_id=ep_bot_file_id
