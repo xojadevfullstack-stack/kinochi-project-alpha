@@ -128,6 +128,9 @@ class ProcessManager:
                 self.current_action = "Bazadagi dublikatlarga tekshirilmoqda..."
             elif "katalog yig'ish boshlanmoqda" in lower:
                 self.current_action = line
+            elif "yuklab olish:" in lower or "telegramga yuklash:" in lower:
+                clean_step = re.sub(r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\[\w+\]\s*', '', line).strip()
+                self.current_action = clean_step
             elif "tanaffus" in lower:
                 self.current_action = line
             elif "yuklash boshlanmoqda" in lower:

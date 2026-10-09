@@ -234,7 +234,17 @@ class TelethonModeratorPipeline:
             return True, 0
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
-        """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi."""
+        """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi (qat'iy Timeout bilan)."""
+        # Seriallar ko'p qismli bo'lgani uchun 25 daqiqa, bitta kinolar uchun 12 daqiqa timeout
+        item_timeout = 1500 if getattr(item, "media_type", "movie") == "series" else 720
+        try:
+            return await asyncio.wait_for(self._run_item_inner(item, target_bot), timeout=item_timeout)
+        except asyncio.TimeoutError:
+            logger.error(f"⏱️ '{item.title}' jarayoni {item_timeout // 60} daqiqadan oshdi (Timeout). Keyingi kinoga o'tilmoqda...")
+            print(f"⏱️ '{item.title}' jarayoni {item_timeout // 60} daqiqadan oshdi (Timeout). Keyingi kinoga o'tilmoqda...", flush=True)
+            return False
+
+    async def _run_item_inner(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
         try:
             StateManager().set_bot_status("online")
         except Exception:
@@ -1701,20 +1711,38 @@ class TelethonModeratorPipeline:
         """
         file_path = None
         try:
+            # 0. 2000 MB (2 GB) chegarasi (Telegram non-premium akkauntlarining qat'iy limiti)
+            if hasattr(video_msg, "file") and video_msg.file and getattr(video_msg.file, "size", 0) > 2000 * 1024 * 1024:
+                file_mb = round(video_msg.file.size / 1024 / 1024, 1)
+                logger.warning(f"⚠️ Fayl hajmi juda katta ({file_mb} MB > 2000 MB). Telegram non-premium limiti tufayli o'tkazib yuborildi.")
+                print(f"⚠️ Fayl hajmi juda katta ({file_mb} MB > 2000 MB). Telegram limiti tufayli o'tkazib yuborildi.", flush=True)
+                return None
+
             peer = await self.client.get_input_entity(target_chat)
-            # Server-side copy (juda tez va tejamkor):
+            # Server-side copy (juda tez va tejamkor - 1 soniya):
             try:
                 media_to_send = getattr(video_msg.media, "document", video_msg.media) if hasattr(video_msg, "media") and video_msg.media else video_msg
-                sent_msg = await self.client.send_file(
-                    peer,
-                    file=media_to_send,
-                    caption=caption,
-                    reply_to=reply_to,
-                    supports_streaming=True,
-                    parse_mode="html"
-                )
+                try:
+                    sent_msg = await self.client.send_file(
+                        peer,
+                        file=media_to_send,
+                        caption=caption,
+                        reply_to=reply_to,
+                        supports_streaming=True,
+                        parse_mode="html"
+                    )
+                except Exception:
+                    clean_cap = re.sub(r'<[^>]+>', '', caption) if caption else None
+                    sent_msg = await self.client.send_file(
+                        peer,
+                        file=media_to_send,
+                        caption=clean_cap,
+                        reply_to=reply_to,
+                        supports_streaming=True
+                    )
                 if sent_msg:
                     logger.info("⚡ Server-side nusxalash muvaffaqiyatli bajarildi!")
+                    print("⚡ Server-side tezkor nusxalandi!", flush=True)
                     return sent_msg
             except Exception as copy_err:
                 logger.info(f"Server-side nusxalab bo'lmadi ({copy_err}), yuklab yuklash usuli bajarilmoqda...")
@@ -1731,9 +1759,11 @@ class TelethonModeratorPipeline:
                     mb_cur = round(current / 1024 / 1024, 1)
                     mb_tot = round(total / 1024 / 1024, 1)
                     logger.info(f"  📥 Yuklab olish: {pct}% ({mb_cur}MB / {mb_tot}MB)")
+                    print(f"  📥 Yuklab olish: {pct}% ({mb_cur}MB / {mb_tot}MB)", flush=True)
                     last_logged[0] = now
 
             logger.info("⚡ Parallel 8-oqimli tezkor yuklab olish boshlandi...")
+            print("⚡ Katta faylni tezkor yuklab olish boshlandi...", flush=True)
             raw_filename = video_msg.file.name if (video_msg.file and video_msg.file.name) else f"video_{video_msg.id}.mp4"
             target_file_path = os.path.join(downloads_dir, raw_filename)
 
@@ -1759,6 +1789,7 @@ class TelethonModeratorPipeline:
 
             total_mb = round(os.path.getsize(file_path) / 1024 / 1024, 1)
             logger.info(f"⚡ Parallel 8-oqimli chatga yuklash boshlandi ({total_mb} MB)...")
+            print(f"⚡ Telegramga yuklash boshlandi ({total_mb} MB)...", flush=True)
 
             last_ul = [0.0]
             def ul_progress(current, total):
@@ -1768,6 +1799,7 @@ class TelethonModeratorPipeline:
                     mb_cur = round(current / 1024 / 1024, 1)
                     mb_tot = round(total / 1024 / 1024, 1)
                     logger.info(f"  📤 Yuklash: {pct}% ({mb_cur}MB / {mb_tot}MB)")
+                    print(f"  📤 Telegramga yuklash: {pct}% ({mb_cur}MB / {mb_tot}MB)", flush=True)
                     last_ul[0] = now
 
             peer = await self.client.get_input_entity(target_chat)
