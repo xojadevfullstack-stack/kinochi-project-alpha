@@ -19,6 +19,8 @@ DEFAULT_STATE: Dict[str, Any] = {
     "uzmovi_total_pages": 350,
     "asilmedia_current_page": 1,
     "asilmedia_total_pages": 400,
+    "kawaii_current_page": 1,
+    "kawaii_total_pages": 50,
     "min_rating": 6.0,
     "autopilot_active": False,
     "autopilot_pages": 3,

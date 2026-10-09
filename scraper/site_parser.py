@@ -276,3 +276,6 @@ async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: s
     except Exception as e:
         logger.error(f"Async error scraping Asilmedia {page_url}: {e}")
     return []
+
+from .kawaii_parser import parse_kawaii_page, parse_kawaii_page_async
+

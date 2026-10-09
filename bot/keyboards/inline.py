@@ -22,27 +22,39 @@ def build_movies_list_keyboard(movies: list[dict]) -> InlineKeyboardMarkup:
 
 def build_search_results_keyboard(results: list[dict]) -> InlineKeyboardMarkup:
     """
-    Builds an inline keyboard for combined search results (movies and series).
-    Each item must have a 'type' ('movie' or 'series').
+    Builds an inline keyboard for live search results (movies, series, and collections).
     """
+    from config import settings
     builder = InlineKeyboardBuilder()
-    
+
     for item in results:
         title = item.get("title", "Noma'lum")
-        
-        if item.get("type") == "movie":
+        year = item.get("year")
+        rating = item.get("imdb_rating")
+        year_str = f" ({year})" if year else ""
+        rating_str = f" ⭐ {rating:.1f}" if rating else ""
+
+        item_type = item.get("type")
+        if item_type == "movie":
             code = item.get("code")
             builder.button(
-                text=f"🎬 {title}",
-                callback_data=f"movie_{code}"
+                text=f"🎬 {title}{year_str}{rating_str}",
+                callback_data=f"movie_{code}",
             )
-        elif item.get("type") == "series":
+        elif item_type == "series":
             series_id = item.get("id")
             builder.button(
-                text=f"📺 {title}",
-                callback_data=f"search_series_{series_id}"
+                text=f"📺 {title}{year_str}{rating_str}",
+                callback_data=f"search_series_{series_id}",
             )
-            
+        elif item_type == "collection":
+            slug = item.get("code") or item.get("slug")
+            web_url = f"{settings.WEBSITE_URL.rstrip('/')}/collections/{slug}"
+            builder.button(
+                text=f"🌌 {title} (Xronologiya)",
+                url=web_url,
+            )
+
     builder.adjust(1)
     return builder.as_markup()
 

@@ -37,6 +37,40 @@ class MovieRepositoryImpl(IMovieRepository):
         self.session.add(model)
         await self.session.flush()
         await self.session.refresh(model)
+
+        # Automatic franchise canonical placement
+        try:
+            from app.core.franchise_canon import find_canon_match
+            from app.infrastructure.db.models.collection import CollectionModel, CollectionItemModel
+            canon_match = find_canon_match(model.tmdb_id, model.title)
+            if not canon_match and model.original_title:
+                canon_match = find_canon_match(model.tmdb_id, model.original_title)
+
+            if canon_match:
+                f_slug, canon_item = canon_match
+                col_res = await self.session.execute(select(CollectionModel).where(CollectionModel.slug == f_slug))
+                col = col_res.scalar_one_or_none()
+                if col:
+                    ci_res = await self.session.execute(
+                        select(CollectionItemModel).where(
+                            CollectionItemModel.collection_id == col.id,
+                            CollectionItemModel.movie_id == model.id,
+                        )
+                    )
+                    if not ci_res.scalar_one_or_none():
+                        new_ci = CollectionItemModel(
+                            collection_id=col.id,
+                            movie_id=model.id,
+                            chronological_order=canon_item["chronological_order"],
+                            release_order=canon_item["release_order"],
+                            timeline_event_desc=canon_item["timeline_event_desc"],
+                            is_locked=False,
+                        )
+                        self.session.add(new_ci)
+                        await self.session.flush()
+        except Exception:
+            pass
+
         return self._to_domain(model)
 
     async def get_by_id(self, movie_id: int) -> Movie | None:

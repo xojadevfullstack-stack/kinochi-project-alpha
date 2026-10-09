@@ -251,7 +251,10 @@ class TelethonModeratorPipeline:
             pass
 
         # Item manbasiga qarab mos botni avtomatik aniqlash:
-        # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot) da ishlaydi
+        # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot), Kawaii (@kawaii_uz_bot) da ishlaydi
+        if getattr(item, "source", None) == "kawaii" or target_bot in ("kawaii", "kawaii_uz_bot"):
+            return await self.run_kawaii_anime(item=item)
+
         effective_bot = target_bot
         if getattr(item, "source", None) == "asilmedia":
             effective_bot = "asilmediabot"

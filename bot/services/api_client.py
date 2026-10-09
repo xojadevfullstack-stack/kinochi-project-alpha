@@ -219,7 +219,17 @@ class APIClient:
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Error searching series with query '{query}': {e}")
-            return {"items": [], "total": 0}
+    async def live_search(self, query: str, limit: int = 10) -> Dict[str, Any]:
+        try:
+            response = await self.client.get(
+                "/search/live",
+                params={"q": query, "limit": limit}
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"Error live searching with query '{query}': {e}")
+            return {"query": query, "total": 0, "results": []}
 
     async def get_pages(self, skip: int = 0, limit: int = 100) -> Dict[str, Any]:
         try:

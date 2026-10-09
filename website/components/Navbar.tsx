@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../lib/auth/AuthProvider";
 import TelegramLoginWidget from "./auth/TelegramLoginWidget";
+import LiveSearch from "./LiveSearch";
 
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
@@ -12,7 +13,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   const { status, user, logout } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
@@ -100,14 +100,6 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     setProfileDropdownOpen(false);
   }, [pathname]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setMobileMenuOpen(false);
-    }
-  };
-
   const handleLinkClick = (href: string) => {
     if (typeof window !== "undefined") {
       document.body.style.overflow = "";
@@ -136,6 +128,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     { name: "Bosh sahifa", href: "/" },
     { name: "Kinolar", href: "/movies" },
     { name: "Seriallar", href: "/series" },
+    { name: "Xronologiya", href: "/collections" },
     ...pages.map(p => ({ name: p.title, href: `/p/${p.slug}` }))
   ];
 
@@ -188,17 +181,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
           {/* Right: Search & Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-50 relative">
-            {/* Desktop/Tablet Search */}
-            <form onSubmit={handleSearch} className="hidden md:flex items-center bg-white/5 hover:bg-white/10 rounded-full px-3.5 py-1.5 xl:px-4 xl:py-2 border border-white/5 focus-within:border-white/30 focus-within:bg-white/10 transition-all">
-              <span className="material-symbols-outlined text-text-secondary mr-2 text-[18px] xl:text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary w-24 lg:w-40 xl:w-56 outline-none" 
-                placeholder="Qidirish..." 
-              />
-            </form>
+            {/* Desktop/Tablet Live Search */}
+            <LiveSearch
+              className="hidden md:block w-36 lg:w-48 xl:w-64"
+              placeholder="Qidirish..."
+            />
 
             {/* Desktop Notifications (xl and above) */}
             <Link 
@@ -356,17 +343,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
           {/* Drawer Scrollable Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 flex flex-col gap-5">
-            {/* Search Input */}
-            <form onSubmit={handleSearch} className="flex w-full items-center bg-white/10 rounded-xl px-4 py-3 border border-white/10 focus-within:border-primary-container transition-all">
-              <span className="material-symbols-outlined text-text-secondary mr-3 text-[22px]">search</span>
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-text-primary text-base w-full outline-none placeholder:text-text-secondary" 
-                placeholder="Kino yoki serial qidirish..." 
-              />
-            </form>
+            {/* Live Search Input */}
+            <LiveSearch
+              isMobileDrawer
+              onNavigate={() => setMobileMenuOpen(false)}
+              placeholder="Kino, serial yoki #kod qidirish..."
+              className="w-full"
+            />
 
             {/* Navigation Sections */}
             <div className="flex flex-col gap-1.5">

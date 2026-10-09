@@ -17,4 +17,6 @@ from app.infrastructure.db.models.watch_history import WatchHistoryModel
 from app.infrastructure.db.models.achievement import UserAchievementModel
 from app.infrastructure.db.models.review import ReviewModel
 
-__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table", "WatchHistoryModel", "UserAchievementModel", "ReviewModel"]
+from app.infrastructure.db.models.collection import CollectionModel, CollectionItemModel
+
+__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table", "WatchHistoryModel", "UserAchievementModel", "ReviewModel", "CollectionModel", "CollectionItemModel"]

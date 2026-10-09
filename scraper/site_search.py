@@ -16,6 +16,7 @@ from scraper.site_parser import (
     _extract_uzmovi_items_from_html,
     _extract_asilmedia_items_from_html,
 )
+from scraper.kawaii_parser import search_kawaii_async
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.queue_manager import QueueManager, QueueItem
 
@@ -77,6 +78,8 @@ async def search_sites(
             tasks.append(_search_uzmovi(session, clean_q))
         if source in ("all", "asilmedia"):
             tasks.append(_search_asilmedia(session, clean_q))
+        if source in ("all", "kawaii"):
+            tasks.append(search_kawaii_async(clean_q, session))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

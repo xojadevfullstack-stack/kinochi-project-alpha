@@ -35,22 +35,21 @@ async def handle_search_query(message: Message):
         return
 
         
-    # Send search request to backend for movies and series
-    movie_result = await api_client.search_movies(query=query, limit=10)
-    series_result = await api_client.search_series(query=query, limit=10)
-    
-    movies = movie_result.get("items", [])
-    series = series_result.get("items", [])
-    
-    # Combine results and tag with type
-    combined_results = []
-    for m in movies:
-        m['type'] = 'movie'
-        combined_results.append(m)
-    for s in series:
-        s['type'] = 'series'
-        combined_results.append(s)
-        
+    # Send unified live search request to backend (movies, series, collections)
+    search_result = await api_client.live_search(query=query, limit=10)
+    combined_results = search_result.get("results", [])
+
+    if not combined_results:
+        # Fallback to individual searches if live search empty
+        movie_result = await api_client.search_movies(query=query, limit=5)
+        series_result = await api_client.search_series(query=query, limit=5)
+        for m in movie_result.get("items", []):
+            m["type"] = "movie"
+            combined_results.append(m)
+        for s in series_result.get("items", []):
+            s["type"] = "series"
+            combined_results.append(s)
+
     if not combined_results:
         await message.answer("😔 <b>Afsuski, hech narsa topilmadi...</b>\n\nBalki kino yoki serial nomida xato bordir? Boshqacharoq yozib ko'ring yoki saytimizdagi katalogdan izlang!", parse_mode="HTML")
         return

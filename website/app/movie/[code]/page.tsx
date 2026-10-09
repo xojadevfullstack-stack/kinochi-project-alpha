@@ -7,6 +7,7 @@ import ReviewsSection from "@/components/reviews/ReviewsSection";
 import KinochiRatingBadge from "@/components/reviews/KinochiRatingBadge";
 import TrailerModal from "@/components/TrailerModal";
 import TelegramWatchButton from "@/components/TelegramWatchButton";
+import FranchiseTimelineBar from "@/components/FranchiseTimelineBar";
 
 type Props = {
   params: { code: string };
@@ -44,10 +45,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MovieDetailsPage({ params }: Props) {
   let movie;
+  let franchiseContext = null;
   try {
     movie = await fetchApi(`/movies/code/${params.code}`);
   } catch (error) {
     notFound();
+  }
+
+  try {
+    franchiseContext = await fetchApi(`/collections/movie-context/${params.code}`);
+  } catch (e) {
+    // Optional
   }
 
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
@@ -201,6 +209,13 @@ export default async function MovieDetailsPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Franchise Chronology Timeline Bar */}
+      {franchiseContext && (
+        <section className="max-w-container-max mx-auto px-gutter -mt-4 mb-4 relative z-20">
+          <FranchiseTimelineBar context={franchiseContext} currentMovieCode={movie.code} />
+        </section>
+      )}
 
       {/* Trailer Section */}
       {movie.trailer_url && movie.trailer_url !== "" && movie.trailer_url !== "null" && movie.trailer_url !== "undefined" && (
