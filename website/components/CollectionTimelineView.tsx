@@ -138,6 +138,7 @@ export default function CollectionTimelineView({
                     alt={content?.title || "Poster"}
                     fill
                     sizes="(max-width: 768px) 100vw, 150px"
+                    unoptimized
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (

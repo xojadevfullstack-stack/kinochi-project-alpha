@@ -417,6 +417,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 7,
                 "timeline_event_desc": "1997–1998: Jonajonlarni izlash safari va Malfoylar qasridagi asirlik",
                 "year": 2010,
+                "aliases": ["garri potter 7: ajal tuhfasi 1", "ajal tuhfasi 1", "ajal tuhfalari: 1-qism", "deathly hallows: part 1", "deathly hallows part 1"],
             },
             {
                 "tmdb_id": 12445,
@@ -426,6 +427,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 8,
                 "timeline_event_desc": "1998: Xogvarts uchun yakuniy buyuk jang va Volan-de-Mortning mag'lubiyati",
                 "year": 2011,
+                "aliases": ["garri potter 7: ajal tuhfasi 2", "ajal tuhfasi 2", "ajal tuhfalari: 2-qism", "deathly hallows: part 2", "deathly hallows part 2"],
             },
         ],
     },
@@ -433,8 +435,8 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
         "slug": "middle-earth",
         "name": "O'rta Yer: Xobbit va Uzuklar Hukmdori",
         "description": "J.R.R. Tolkien afsonaviy olami — Bilbo Begginsning Yolg'iz tog'ga sayohatidan boshlab, Yagona Uzukning Qora Tog'da yo'q qilinishigacha bo'lgan saga.",
-        "poster_url": "https://image.tmdb.org/t/p/w780/6oom5QYQ2yQTMJIbnvbkBL9cDK6.jpg",
-        "banner_url": "https://image.tmdb.org/t/p/original/vL5LR6WdxWPjC3D4q299K58J078.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w780/oENY593nKRVL2PnxXsMtlh8izb4.jpg",
+        "banner_url": "https://image.tmdb.org/t/p/original/bccR2CGTWVVSZAG0yqmy3DIvhTX.jpg",
         "is_franchise": True,
         "sort_order": 3,
         "items": [
@@ -498,8 +500,8 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
         "slug": "transformers",
         "name": "Transformerlar",
         "description": "Avtobotlar va Deseptikonlar o'rtasidagi koinot miqyosidagi urush — 1987-yildagi Bamlblining kelishidan zamonaviy davrgacha.",
-        "poster_url": "https://image.tmdb.org/t/p/w780/1MSbA3t1t4b3C30L5iXgE.jpg",
-        "banner_url": "https://image.tmdb.org/t/p/original/7c9UVPPiT9t8GhhgR9mX.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w780/nnFgBA6nR0pHorxdFaDvdY4nVHL.jpg",
+        "banner_url": "https://image.tmdb.org/t/p/original/zvZBNNDWd5LcsIBpDhJyCB2MDT7.jpg",
         "is_franchise": True,
         "sort_order": 4,
         "items": [
@@ -511,6 +513,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 6,
                 "timeline_event_desc": "1987: Kiberitron qulashi, B-127 (Bamlbli) Yerga kelishi va Charli",
                 "year": 2018,
+                "aliases": ["bumblebee", "bamlbli", "bamblebi"],
             },
             {
                 "tmdb_id": 667538,
@@ -520,6 +523,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 7,
                 "timeline_event_desc": "1994: Maksimallar, Yunikron tahdidi va Nyu-York / Peru jangi",
                 "year": 2023,
+                "aliases": ["transformers 6", "transformerlar 6", "maxluqlar uyg'onishi", "hayvonlar yuksalishi", "rise of the beasts"],
             },
             {
                 "tmdb_id": 1858,
@@ -529,6 +533,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 1,
                 "timeline_event_desc": "2007: Sem Uitviki, Buyuk Uchqun (Allspark) va Megatron uyg'onishi",
                 "year": 2007,
+                "aliases": ["transformers 1", "transformerlar 1", "transformers (2007)"],
             },
             {
                 "tmdb_id": 8373,
@@ -538,6 +543,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 2,
                 "timeline_event_desc": "2009: Misr ehromlari ostidagi quyosh yo'qotuvchi mashina va Fallen",
                 "year": 2009,
+                "aliases": ["transformers 2", "transformerlar 2", "yiqilganlar qasosi", "mag'lublar qasosi", "revenge of the fallen"],
             },
             {
                 "tmdb_id": 38356,
@@ -547,6 +553,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 3,
                 "timeline_event_desc": "2011: Oyga parvoz siri, Sentinil Praym xiyonati va Chikago jangi",
                 "year": 2011,
+                "aliases": ["transformers 3", "transformerlar 3", "oyning qorong'u tomoni", "dark of the moon"],
             },
             {
                 "tmdb_id": 91314,
@@ -556,6 +563,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 4,
                 "timeline_event_desc": "2014: Transformium metali, Dinobotlar va Lokdaun ovchisi",
                 "year": 2014,
+                "aliases": ["transformers 4", "transformerlar 4", "yo'q bo'lish davri", "yoʻq boʻlish davri", "qirg'in davri", "age of extinction"],
             },
             {
                 "tmdb_id": 335988,
@@ -565,6 +573,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "release_order": 5,
                 "timeline_event_desc": "2017: Qirol Artur siri, Kiberitron qaytishi va Kvintessa joduysi",
                 "year": 2017,
+                "aliases": ["transformers 5", "transformerlar 5", "so'nggi ritsar", "soʻnggi ritsar", "the last knight"],
             },
         ],
     },
@@ -572,8 +581,8 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
         "slug": "fast-and-furious",
         "name": "Forsaj (Fast & Furious)",
         "description": "Dominik Toretto va uning oilasi sarguzashtlari — Los-Anjeles ko'chalaridagi poygalardan tortib butun dunyoni qutqarishgacha.",
-        "poster_url": "https://image.tmdb.org/t/p/w780/fiVW06jE7z9YnO4trhaMEdclSiC.jpg",
-        "banner_url": "https://image.tmdb.org/t/p/original/jBIMtF6rS5vB9Wd2XmX1k3e.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w780/zOCnMPoUxgJK1RFPfN4PcnT16gr.jpg",
+        "banner_url": "https://image.tmdb.org/t/p/original/z5A5W3WYJc3UVEWljSGwdjDgQ0j.jpg",
         "is_franchise": True,
         "sort_order": 5,
         "items": [
@@ -682,8 +691,8 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
         "slug": "dceu",
         "name": "DC Kengaytirilgan Koinoti (DCEU)",
         "description": "DC Comics qahramonlari — Mo''jiza ayolning 1918-yildagi ilk qadamidan Zak Snayder Adolat ligasigacha.",
-        "poster_url": "https://image.tmdb.org/t/p/w780/jHQd0bFpB37y5i2e0K5A2xZ.jpg",
-        "banner_url": "https://image.tmdb.org/t/p/original/tcheoA2nPATCm2vvXw2Ij9o6.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w780/rNnIW6xSPeTiIUtsfEhFeIRiJVv.jpg",
+        "banner_url": "https://image.tmdb.org/t/p/original/rPaqhsSMCky0UXVW4qmNOJq5Orp.jpg",
         "is_franchise": True,
         "sort_order": 6,
         "items": [
@@ -807,10 +816,29 @@ def find_canon_match(tmdb_id: int | None, title: str | None) -> tuple[str, Canon
     Look up whether a movie matches any predefined canon universe.
     Returns (franchise_slug, canon_item) or None.
     First checks by TMDb ID (rock-solid 100% precision).
-    If tmdb_id is present and doesn't match, does NOT fallback to loose title matching (prevents false positives).
-    Fallback checks by normalized English/Uzbek title ONLY when tmdb_id is absent.
+    Disambiguates HP 7 Part 1 vs Part 2 if tmdb_id is 12445 and title indicates Part 1.
+    Fallback checks by normalized English/Uzbek title and specific aliases.
     """
+    norm_title = ""
+    if title:
+        norm_title = (
+            title.lower()
+            .replace("‘", "'")
+            .replace("’", "'")
+            .replace("ʻ", "'")
+            .replace("`", "'")
+            .strip()
+        )
+
+    # 1. TMDb ID
     if tmdb_id:
+        if tmdb_id == 12445 and norm_title and (
+            " 1" in norm_title or "part 1" in norm_title or "1-qism" in norm_title or "tuhfasi 1" in norm_title
+        ):
+            for item in CANON_FRANCHISES["harry-potter"]["items"]:
+                if item["chronological_order"] == 10:
+                    return "harry-potter", item
+
         for slug, franchise in CANON_FRANCHISES.items():
             for item in franchise["items"]:
                 if item["tmdb_id"] == tmdb_id:
@@ -818,23 +846,80 @@ def find_canon_match(tmdb_id: int | None, title: str | None) -> tuple[str, Canon
         # If tmdb_id was provided and didn't match any canon item, it's definitely not in canon!
         return None
 
-    if not title:
+    if not norm_title:
         return None
 
-    norm_title = title.strip().lower()
+    # 2. Specific Aliases first across all franchises
     for slug, franchise in CANON_FRANCHISES.items():
         for item in franchise["items"]:
-            en_lower = item["title_en"].lower()
-            uz_lower = item["title_uz"].lower()
+            for alias in item.get("aliases", []):
+                norm_alias = (
+                    alias.lower()
+                    .replace("‘", "'")
+                    .replace("’", "'")
+                    .replace("ʻ", "'")
+                    .replace("`", "'")
+                    .strip()
+                )
+                if norm_alias and norm_alias in norm_title:
+                    return slug, item
 
-            # Exact match
+    # 3. Exact titles
+    for slug, franchise in CANON_FRANCHISES.items():
+        for item in franchise["items"]:
+            en_lower = (
+                item["title_en"]
+                .lower()
+                .replace("‘", "'")
+                .replace("’", "'")
+                .replace("ʻ", "'")
+                .replace("`", "'")
+                .strip()
+            )
+            uz_lower = (
+                item["title_uz"]
+                .lower()
+                .replace("‘", "'")
+                .replace("’", "'")
+                .replace("ʻ", "'")
+                .replace("`", "'")
+                .strip()
+            )
             if norm_title in (en_lower, uz_lower):
                 return slug, item
 
-            # Word boundary regex for titles >= 5 chars
-            if len(en_lower) >= 5 and re.search(rf"\b{re.escape(en_lower)}\b", norm_title):
+    # 4. Fallback word boundary regex (with sequel number guard)
+    has_sequel_num = bool(re.search(r"\b[2-9]\b", norm_title) or re.search(r"\b1[0-9]\b", norm_title))
+
+    for slug, franchise in CANON_FRANCHISES.items():
+        for item in franchise["items"]:
+            en_lower = (
+                item["title_en"]
+                .lower()
+                .replace("‘", "'")
+                .replace("’", "'")
+                .replace("ʻ", "'")
+                .replace("`", "'")
+                .strip()
+            )
+            uz_lower = (
+                item["title_uz"]
+                .lower()
+                .replace("‘", "'")
+                .replace("’", "'")
+                .replace("ʻ", "'")
+                .replace("`", "'")
+                .strip()
+            )
+
+            item_has_num = bool(re.search(r"\b[2-9]\b", en_lower) or re.search(r"\b[2-9]\b", uz_lower))
+            if has_sequel_num and not item_has_num:
+                continue
+
+            if len(en_lower) >= 6 and re.search(rf"\b{re.escape(en_lower)}\b", norm_title):
                 return slug, item
-            if len(uz_lower) >= 5 and re.search(rf"\b{re.escape(uz_lower)}\b", norm_title):
+            if len(uz_lower) >= 6 and re.search(rf"\b{re.escape(uz_lower)}\b", norm_title):
                 return slug, item
 
     return None
+

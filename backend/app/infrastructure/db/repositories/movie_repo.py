@@ -54,7 +54,10 @@ class MovieRepositoryImpl(IMovieRepository):
                     ci_res = await self.session.execute(
                         select(CollectionItemModel).where(
                             CollectionItemModel.collection_id == col.id,
-                            CollectionItemModel.movie_id == model.id,
+                            or_(
+                                CollectionItemModel.movie_id == model.id,
+                                CollectionItemModel.chronological_order == canon_item["chronological_order"],
+                            ),
                         )
                     )
                     if not ci_res.scalar_one_or_none():

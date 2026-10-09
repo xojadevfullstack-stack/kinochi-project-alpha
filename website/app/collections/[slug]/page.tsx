@@ -66,6 +66,7 @@ export default async function CollectionDetailPage({ params }: Props) {
                 fill
                 priority
                 sizes="(max-width: 768px) 180px, 224px"
+                unoptimized
                 className="object-cover"
               />
             </div>
