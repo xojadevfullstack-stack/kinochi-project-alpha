@@ -996,6 +996,7 @@ class TelethonModeratorPipeline:
             return False
 
         # 2. Botdan video olish (video_msg va card_msg olinadi)
+        print(f"  🔍 '{item.title}' bo'yicha @{target_bot} botidan video qidirilmoqda...", flush=True)
         video_msg = await self._fetch_video(item=item, target_bot=target_bot)
         if not video_msg:
             # Agar bot serial tugmalarini qaytargan bo'lsa, avtomatik serial deb hisoblab serial siklini bajaramiz
@@ -1019,6 +1020,7 @@ class TelethonModeratorPipeline:
             QueueManager().update_status(item.id, "failed", error_message=f"[@{target_bot}] dan video olinmadi")
             return False
 
+        print(f"  📥 '{item.title}' videosi botdan qabul qilindi. AI va Topic jarayoni...", flush=True)
         return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
 
     async def run_by_code(self, code: str, target_bot: str = "asilmediabot") -> bool:

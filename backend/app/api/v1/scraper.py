@@ -46,7 +46,7 @@ def require_scraper(admin=Depends(get_current_admin)):
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
-SOURCES = ("uzmovi", "asilmedia")
+SOURCES = ("uzmovi", "asilmedia", "all")
 MEDIA_TYPES = ("all", "movie", "series")
 STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists", "needs_review")
 
@@ -66,9 +66,9 @@ class DownloadRequest(BaseModel):
 
 
 class AutopilotRequest(BaseModel):
-    source: str = Field("uzmovi", description="Manba: uzmovi yoki asilmedia")
-    pages: int = Field(3, ge=1, le=20, description="Sahifalar soni")
-    limit: int = Field(10, ge=1, le=200, description="Yuklanadigan kinolar limiti")
+    source: str = Field("all", description="Manba: uzmovi, asilmedia yoki all (ikkalasi ham)")
+    pages: Optional[int] = Field(None, ge=1, le=50, description="Sahifalar soni (ixtiyoriy, avtonom rejimda kerak emas)")
+    limit: Optional[int] = Field(None, ge=1, le=500, description="Yuklanadigan kinolar limiti (ixtiyoriy)")
     media_type: str = Field("all", description="all, movie yoki series")
     min_rating: Optional[float] = Field(6.0, ge=0.0, le=10.0, description="Minimal reyting filtri")
 

@@ -92,38 +92,48 @@ class ProcessManager:
 
         with self._lock:
             prog = re.search(r"\[(\d+)/(\d+)\]", line)
-            if prog and ("sikl boshlanmoqda" in lower or "kod #" in lower):
+            if prog and ("sikl boshlanmoqda" in lower or "bo'yicha sikl" in lower or "kod #" in lower):
                 self._set_progress(int(prog.group(1)) - 1, int(prog.group(2)))
                 title = re.search(r"'([^']+)'", line)
                 code = re.search(r"Kod #(\w+)", line)
                 if title:
                     self.current_item = {"title": title.group(1)}
+                    self.current_action = f"🎬 '{title.group(1)}' yuklanmoqda..."
                 elif code:
                     self.current_item = {"code": code.group(1)}
-                self.current_action = line
+                    self.current_action = f"🎬 Kod #{code.group(1)} yuklanmoqda..."
                 return
 
             page = re.search(r"Sahifa (\d+):", line)
-            if page and self.task_type == "parse":
-                total = self.progress["total"] or int(page.group(1))
-                self._set_progress(int(page.group(1)), total)
+            if page and self.task_type in ("parse", "autopilot"):
+                if self.task_type == "parse":
+                    total = self.progress["total"] or int(page.group(1))
+                    self._set_progress(int(page.group(1)), total)
                 self.current_action = line
+            elif "avtopilot sikli" in lower:
+                self.current_action = line
+            elif "qadam:" in lower:
+                clean_step = re.sub(r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\[\w+\]\s*', '', line)
+                self.current_action = clean_step
+            elif "botiga so'rov" in lower or "inline qidiruv" in lower or "qidirilmoqda" in lower:
+                clean_step = re.sub(r'^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\[\w+\]\s*', '', line)
+                self.current_action = clean_step
             elif "qism yuklanmoqda" in lower or "qism bazaga saqlandi" in lower or "qism saqlandi" in lower:
                 self.current_action = line
             elif "muvaffaqiyatli saqlandi" in lower or "yuklab bo'lmadi" in lower:
                 # finished the current item -> count it as done
-                self._set_progress(self.progress["current"] + 1, self.progress["total"])
+                self._set_progress(self.progress["current"] + 1, max(self.progress["total"], self.progress["current"] + 1))
                 self.current_action = line
             elif "dublikatlarga" in lower and "tekshirilmoqda" in lower:
                 self.current_action = "Bazadagi dublikatlarga tekshirilmoqda..."
             elif "katalog yig'ish boshlanmoqda" in lower:
                 self.current_action = line
-            elif "flood" in lower or "tanaffus" in lower:
+            elif "tanaffus" in lower:
                 self.current_action = line
             elif "yuklash boshlanmoqda" in lower:
                 total = re.search(r"(\d+) ta", line)
                 if total:
-                    self._set_progress(0, int(total.group(1)))
+                    self._set_progress(self.progress["current"], int(total.group(1)))
                 self.current_action = line
 
     # ── worker ───────────────────────────────────────────────
@@ -274,21 +284,31 @@ class ProcessManager:
 
     def start_autopilot(
         self,
-        source: str = "uzmovi",
-        pages: int = 3,
-        limit: int = 10,
+        source: str = "all",
+        pages: Optional[int] = None,
+        limit: Optional[int] = None,
         media_type: str = "all",
         min_rating: Optional[float] = None
     ) -> Dict[str, Any]:
-        if source not in ("uzmovi", "asilmedia"):
+        if source not in ("uzmovi", "asilmedia", "all"):
             return {"success": False, "message": "Noma'lum manba."}
-        pages = max(1, min(int(pages), 20))
-        limit = max(1, min(int(limit), 200))
-        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--autopilot", "--source", source,
-               "--pages", str(pages), "--limit", str(limit), "--media-type", media_type]
+
+        cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--autopilot", "--source", source, "--media-type", media_type]
+        if pages is not None and int(pages) > 0:
+            cmd.extend(["--pages", str(pages)])
+        if limit is not None and int(limit) > 0:
+            cmd.extend(["--limit", str(limit)])
         if min_rating is not None:
             cmd.extend(["--min-rating", str(min_rating)])
-        return self._launch(cmd, "autopilot", limit, f"Avtopilot ishga tushirildi ({source.upper()}, {pages} ta sahifa, {limit} ta yuklash).")
+
+        expected = int(limit) if (limit and int(limit) > 0) else 0
+        src_label = "BARCHASI (UZMOVI & ASILMEDIA)" if source == "all" else source.upper()
+        return self._launch(
+            cmd,
+            "autopilot",
+            expected,
+            f"Avtopilot ishga tushirildi ({src_label}, reyting: {min_rating or 6.0}+)."
+        )
 
     def start_retry_failed(self) -> Dict[str, Any]:
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--retry-failed"]
@@ -339,9 +359,9 @@ class ProcessManager:
 
             bot_status = state.get("telegram_bot_status", "idle")
             if self.is_running:
-                if bot_status == "idle":
+                if bot_status in ("idle", "offline"):
                     bot_status = "online"
-                if "flood" in self.current_action.lower() or "tanaffus" in self.current_action.lower():
+                if "floodwaiterror" in self.current_action.lower() or "flood-wait" in self.current_action.lower() or bot_status == "flood_wait":
                     bot_status = "flood_wait"
 
             return {

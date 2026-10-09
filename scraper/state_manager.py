@@ -68,6 +68,7 @@ class StateManager:
             logger.error(f"Error saving scraper state to {self.filepath}: {e}")
 
     def get_state(self) -> Dict[str, Any]:
+        self.load()
         return dict(self.state)
 
     def update(self, **kwargs) -> Dict[str, Any]:
@@ -78,10 +79,10 @@ class StateManager:
         self.save()
         return dict(self.state)
 
-    def advance_page(self, source: str, count: int) -> int:
+    def advance_page(self, source: str, count: int, from_page: int = None) -> int:
         self.load()
         key = f"{source.lower()}_current_page"
-        current = int(self.state.get(key, 1))
+        current = from_page if from_page is not None else int(self.state.get(key, 1))
         new_page = current + count
         self.state[key] = new_page
         self.save()
@@ -89,5 +90,6 @@ class StateManager:
         return new_page
 
     def set_bot_status(self, status: str):
+        self.load()
         self.state["telegram_bot_status"] = status
         self.save()

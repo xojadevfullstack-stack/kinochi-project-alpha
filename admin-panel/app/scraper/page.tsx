@@ -88,10 +88,9 @@ export default function ScraperPage() {
   const [downloadMediaType, setDownloadMediaType] = useState("all");
 
   // ── Autopilot & Checkpoint States ─────────────────────────
-  const [autopilotSource, setAutopilotSource] = useState<"uzmovi" | "asilmedia">("uzmovi");
-  const [autopilotPages, setAutopilotPages] = useState(3);
-  const [autopilotLimit, setAutopilotLimit] = useState(10);
+  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia">("all");
   const [autopilotMinRating, setAutopilotMinRating] = useState(6.0);
+  const [autopilotMediaType, setAutopilotMediaType] = useState<"all" | "movie" | "series">("all");
   const [autopilotLoading, setAutopilotLoading] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState(false);
   const [editUzmoviPage, setEditUzmoviPage] = useState<number | "">("");
@@ -460,10 +459,8 @@ export default function ScraperPage() {
         method: "POST",
         body: JSON.stringify({
           source: autopilotSource,
-          pages: Math.max(1, Number(autopilotPages) || 1),
-          limit: Math.max(1, Number(autopilotLimit) || 1),
           min_rating: Number(autopilotMinRating) || 6.0,
-          media_type: "all",
+          media_type: autopilotMediaType,
         }),
       });
       showToast("success", res.message || "Avtopilot muvaffaqiyatli ishga tushirildi!");
@@ -976,7 +973,7 @@ export default function ScraperPage() {
                   <div className="text-xs space-y-1">
                     <p className="font-bold text-white">To'liq Avtonom Avtopilot Rejimi</p>
                     <p className="text-zinc-300 leading-relaxed">
-                      Skript oxirgi qolgan sahifasidan o'zi davom etadi, faqat <strong>6.0+</strong> reytingli filmlarni saralaydi va avtomatik Telegram kanallaringizga yuklaydi.
+                      Skript oxirgi qolgan sahifasidan o'zi davom etadi, faqat <strong>{autopilotMinRating}+</strong> reytingli filmlarni saralaydi va avtomatik Telegram kanallaringizga yuklaydi.
                     </p>
                   </div>
                 </div>
@@ -1058,76 +1055,120 @@ export default function ScraperPage() {
                   )}
                 </div>
 
-                {/* Source Selection */}
+                {/* Source Selection (3 buttons: Ikkalasi ham, Uzmovi, Asilmedia) */}
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary mb-1">Sayt Manbasi</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAutopilotSource("all")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        autopilotSource === "all"
+                          ? "bg-emerald-500/20 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-base">🌐</span>
+                      <span>Ikkalasi Ham</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setAutopilotSource("uzmovi")}
-                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                         autopilotSource === "uzmovi"
                           ? "bg-primary-container/20 border-primary-container text-white shadow-lg shadow-primary-container/20"
                           : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
                       }`}
                     >
-                      <span>🎬 Uzmovi</span>
+                      <span className="text-base">🎬</span>
+                      <span>Uzmovi</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setAutopilotSource("asilmedia")}
-                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
                         autopilotSource === "asilmedia"
                           ? "bg-purple-500/20 border-purple-500 text-white shadow-lg shadow-purple-500/20"
                           : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
                       }`}
                     >
-                      <span>📺 Asilmedia</span>
+                      <span className="text-base">📺</span>
+                      <span>Asilmedia</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Parameters: Pages & Download Limit */}
+                {/* Rating & Media Type Selectors */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-text-secondary mb-1">
-                      Yig'ish (Sahifalar)
+                      Minimal Reyting
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={autopilotPages}
-                      onChange={(e) => setAutopilotPages(Math.max(1, Number(e.target.value) || 1))}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container"
-                    />
+                    <div className="relative">
+                      <select
+                        value={autopilotMinRating}
+                        onChange={(e) => setAutopilotMinRating(Number(e.target.value))}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container appearance-none"
+                      >
+                        <option value={7.0} className="bg-zinc-900 text-white">⭐ 7.0+ (Eng sara)</option>
+                        <option value={6.5} className="bg-zinc-900 text-white">⭐ 6.5+ (Yaxshi)</option>
+                        <option value={6.0} className="bg-zinc-900 text-white">⭐ 6.0+ (Tavsiya)</option>
+                        <option value={5.0} className="bg-zinc-900 text-white">⭐ 5.0+ (O'rtacha+)</option>
+                        <option value={0.0} className="bg-zinc-900 text-white">🌟 0.0+ (Filtrsiz)</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-2.5 top-2 text-zinc-400 pointer-events-none text-base">
+                        expand_more
+                      </span>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-text-secondary mb-1">
-                      Yuklash (Kino soni)
+                      Media Turi
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={200}
-                      value={autopilotLimit}
-                      onChange={(e) => setAutopilotLimit(Math.max(1, Number(e.target.value) || 1))}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container"
-                    />
+                    <div className="relative">
+                      <select
+                        value={autopilotMediaType}
+                        onChange={(e) => setAutopilotMediaType(e.target.value as any)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary-container appearance-none"
+                      >
+                        <option value="all" className="bg-zinc-900 text-white">🎞️ Barchasi</option>
+                        <option value="movie" className="bg-zinc-900 text-white">🎬 Faqat Kino</option>
+                        <option value="series" className="bg-zinc-900 text-white">📺 Faqat Serial</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-2.5 top-2 text-zinc-400 pointer-events-none text-base">
+                        expand_more
+                      </span>
+                    </div>
                   </div>
+                </div>
+
+                {/* Autonomous Mode Info Badge */}
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-[11px] text-zinc-300 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base text-emerald-400 shrink-0">autorenew</span>
+                  <span>Sahifa va kinolar soni cheklanmagan — to'xtatilgunga qadar sahifama-sahifa uzluksiz ishlaydi va xotirada saqlanadi.</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="space-y-2 pt-2">
-                <button
-                  onClick={handleStartAutopilot}
-                  disabled={isRunning || autopilotLoading}
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-500/20 hover:opacity-95 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-lg">play_circle</span>
-                  <span>{autopilotLoading ? "Boshlanmoqda..." : "Avtopilotni Ishga Tushirish"}</span>
-                </button>
+                {isRunning ? (
+                  <button
+                    onClick={handleStopProcess}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-red-500/20 hover:opacity-95 active:scale-98 flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-lg">stop_circle</span>
+                    <span>Avtopilotni To'xtatish (Pause)</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleStartAutopilot}
+                    disabled={autopilotLoading}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white font-bold text-sm tracking-wide transition-all shadow-xl shadow-emerald-500/20 hover:opacity-95 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-lg">play_circle</span>
+                    <span>{autopilotLoading ? "Boshlanmoqda..." : "Avtopilotni Ishga Tushirish"}</span>
+                  </button>
+                )}
 
                 {stats.failed > 0 && (
                   <button
