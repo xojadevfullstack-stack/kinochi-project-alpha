@@ -319,7 +319,9 @@ async def enrich_movie_smart(
     source_genres: Optional[str] = None,
     caption: Optional[str] = None,
     media_type: str = "movie",
-    item_url: Optional[str] = None
+    item_url: Optional[str] = None,
+    original_title: Optional[str] = None,
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """
     AI (Gemini) + TMDb orqali film/serialni to'liq ma'lumotlar, poster, treyler,
@@ -347,7 +349,7 @@ async def enrich_movie_smart(
 
     metadata: Dict[str, Any] = {
         "title": clean_title or raw_title,
-        "original_title": None,
+        "original_title": original_title or None,
         "description": clean_default_desc,
         "poster_url": source_poster,
         "trailer_url": None,

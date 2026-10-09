@@ -1109,7 +1109,9 @@ class TelethonModeratorPipeline:
             raw_title=item.title,
             year=item.year,
             original_title=item.original_title,
-            caption=card_text
+            source_poster=item.poster_url,
+            caption=card_text,
+            media_type=item.media_type
         )
         title = meta.get("title") or item.title
         year = meta.get("year") or item.year
