@@ -51,6 +51,34 @@ SPECIAL_SERIES = {
         "content_type": "tv",
         "poster_url": "https://image.tmdb.org/t/p/w500/vsbcM6ImjctW0bLaj1SStaTmVT5.jpg",
         "imdb_rating": 7.4
+    },
+    495: {
+        "title": "Viktoroya: Tayoq va Qilich",
+        "tmdb_id": 245284,
+        "content_type": "tv",
+        "poster_url": "https://image.tmdb.org/t/p/w500/52oP0v5i3e7hYj8n7gV9Xv4iFzS.jpg",
+        "imdb_rating": 8.0
+    },
+    498: {
+        "title": "Jodugar va Maxluq",
+        "tmdb_id": 208355,
+        "content_type": "tv",
+        "poster_url": "https://image.tmdb.org/t/p/w500/eNcmGjS1wZ4dZ6y2C6GkZ9t6R8s.jpg",
+        "imdb_rating": 7.1
+    },
+    497: {
+        "title": "Kizumonogatari",
+        "tmdb_id": 361280,
+        "content_type": "movie",
+        "poster_url": "https://image.tmdb.org/t/p/w500/sNl7lR0D34sQ6T4F6E5V4T5Z4y7.jpg",
+        "imdb_rating": 7.8
+    },
+    487: {
+        "title": "Zindondan baxt izlash xatomi? V",
+        "tmdb_id": 62745,
+        "content_type": "tv",
+        "poster_url": "https://image.tmdb.org/t/p/w500/8X5nC5j7e9N3M7n9v6x5V8X7Y.jpg",
+        "imdb_rating": 7.6
     }
 }
 
@@ -62,6 +90,14 @@ SPECIAL_MOVIES = {
         "poster_url": "https://image.tmdb.org/t/p/w500/vmizP4G4EWsxNf6PLOvGNaFJ89Y.jpg",
         "imdb_rating": 7.3,
         "tmdb_rating": 7.3
+    },
+    607: {
+        "title": "Murdalar maktabi: Suv qa'ridagi",
+        "tmdb_id": 82684,
+        "content_type": "movie",
+        "poster_url": "https://image.tmdb.org/t/p/w500/tL7H6x9hZ6gZ8l6kZ4T2X9w5Y4u.jpg",
+        "imdb_rating": 6.8,
+        "tmdb_rating": 6.8
     }
 }
 
