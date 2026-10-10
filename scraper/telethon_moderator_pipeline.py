@@ -585,7 +585,7 @@ class TelethonModeratorPipeline:
                 media_type="series",
                 tmdb_id=meta.get("tmdb_id")
             )
-            if sec_dup.is_duplicate:
+            if (sec_dup.is_duplicate or sec_dup.is_incomplete) and sec_dup.matched_id:
                 logger.info(
                     f"ℹ️ Serial (boyitilgandan so'ng) bazada topildi: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). "
                     f"Yangi serial/topic ochilmaydi, mavjudiga ulanadi."
@@ -1195,7 +1195,8 @@ class TelethonModeratorPipeline:
             title=item.title,
             year=item.year,
             original_title=item.original_title,
-            media_type=None
+            media_type=None,
+            episodes_count=item.episodes_count
         )
         if dup_check.is_duplicate:
             if dup_check.matched_type == "movie":
@@ -1462,7 +1463,7 @@ class TelethonModeratorPipeline:
                     media_type="series",
                     tmdb_id=meta.get("tmdb_id")
                 )
-                if sec_dup.is_duplicate and sec_dup.matched_id:
+                if (sec_dup.is_duplicate or sec_dup.is_incomplete) and sec_dup.matched_id:
                     existing_series = await series_repo.get_series_by_id(sec_dup.matched_id)
 
             if existing_series:

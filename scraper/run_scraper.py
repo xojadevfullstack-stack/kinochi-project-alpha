@@ -225,7 +225,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     title=item.title,
                     year=item.year,
                     original_title=item.original_title,
-                    media_type=item.media_type
+                    media_type=item.media_type,
+                    episodes_count=item.episodes_count
                 )
                 if dup.is_duplicate:
                     qm.update_status(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")

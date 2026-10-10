@@ -275,8 +275,14 @@ class DuplicateChecker:
         finally:
             await conn.close()
 
-    def _make_result(self, item: Dict[str, Any], match_type: str, reason: str) -> DuplicateCheckResult:
+    def _make_result(self, item: Dict[str, Any], match_type: str, reason: str, candidate_ep_count: Optional[int] = None) -> DuplicateCheckResult:
         is_incomplete = bool(item.get("is_incomplete", False))
+        if item.get("type") == "series":
+            db_eps = item.get("episode_count", 0)
+            if db_eps == 0 or item.get("translation_count", 0) == 0:
+                is_incomplete = True
+            elif candidate_ep_count and db_eps < candidate_ep_count:
+                is_incomplete = True
         return DuplicateCheckResult(
             is_duplicate=not is_incomplete,
             match_type=match_type,
@@ -285,7 +291,7 @@ class DuplicateChecker:
             matched_year=item.get("release_year"),
             matched_type=item["type"],
             matched_code=item.get("code"),
-            reason=f"Serial bazada mavjud ammo qismlari/videolari yuklanmagan (ID: {item['id']})" if is_incomplete else reason,
+            reason=f"Serial bazada mavjud ammo qismlari to'liq emas ({item.get('episode_count', 0)}/{candidate_ep_count or '?'}) (ID: {item['id']})" if is_incomplete else reason,
             is_incomplete=is_incomplete
         )
 
@@ -296,6 +302,7 @@ class DuplicateChecker:
         original_title: Optional[str] = None,
         media_type: Optional[str] = None,
         tmdb_id: Optional[int] = None,
+        episodes_count: Optional[int] = None,
         **kwargs
     ) -> DuplicateCheckResult:
         """
@@ -332,7 +339,8 @@ class DuplicateChecker:
                         return self._make_result(
                             item=item,
                             match_type="tmdb_id",
-                            reason=f"TMDb ID to'liq mos keldi (ID: {tmdb_id})"
+                            reason=f"TMDb ID to'liq mos keldi (ID: {tmdb_id})",
+                            candidate_ep_count=episodes_count
                         )
             except (ValueError, TypeError):
                 pass
@@ -366,7 +374,8 @@ class DuplicateChecker:
                     return self._make_result(
                         item=item,
                         match_type="exact_slug",
-                        reason=f"Nomi to'liq mos keldi ('{item['title']}', Yili: {db_year})"
+                        reason=f"Nomi to'liq mos keldi ('{item['title']}', Yili: {db_year})",
+                        candidate_ep_count=episodes_count
                     )
 
         # ── 2. Original title (Inglizcha/Ruscha nomi) bo'yicha tekshirish ──
@@ -390,7 +399,8 @@ class DuplicateChecker:
                     return self._make_result(
                         item=item,
                         match_type="original_title",
-                        reason=f"Original nomi mos keldi ('{item.get('original_title')}')"
+                        reason=f"Original nomi mos keldi ('{item.get('original_title')}')",
+                        candidate_ep_count=episodes_count
                     )
 
         # ── 3. So'zlar to'plami (Token Overlap) bo'yicha tekshirish ──
@@ -425,7 +435,8 @@ class DuplicateChecker:
                     return self._make_result(
                         item=item,
                         match_type="token_overlap",
-                        reason=f"Nomi o'xshash ({int(overlap_ratio * 100)}% mos keldi: '{item['title']}')"
+                        reason=f"Nomi o'xshash ({int(overlap_ratio * 100)}% mos keldi: '{item['title']}')",
+                        candidate_ep_count=episodes_count
                     )
 
         # ── 4. Containment / Prefix match (Aralash tilli sarlavhalar uchun) ──
@@ -466,7 +477,8 @@ class DuplicateChecker:
                     return self._make_result(
                         item=item,
                         match_type="prefix_match",
-                        reason=f"Nomi mos keldi ('{item['title']}', Yili: {db_year})"
+                        reason=f"Nomi mos keldi ('{item['title']}', Yili: {db_year})",
+                        candidate_ep_count=episodes_count
                     )
 
         return DuplicateCheckResult(is_duplicate=False)
