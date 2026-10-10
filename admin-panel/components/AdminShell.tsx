@@ -52,6 +52,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     if (pathname === "/") return "Dashboard";
     if (pathname.startsWith("/movies")) return "Kinolar";
     if (pathname.startsWith("/series")) return "Seriallar";
+    if (pathname.startsWith("/audit")) return "Kontent Auditi";
     if (pathname.startsWith("/categories")) return "Kategoriyalar";
     if (pathname.startsWith("/collections")) return "Xronologiyalar";
     if (pathname.startsWith("/pages")) return "Sahifalar";

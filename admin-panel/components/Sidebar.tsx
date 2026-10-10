@@ -32,6 +32,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     { name: "Dashboard", href: "/", icon: "dashboard" },
     { name: "Kinolar", href: "/movies", icon: "movie" },
     { name: "Seriallar", href: "/series", icon: "live_tv" },
+    { name: "Kontent Auditi", href: "/audit", icon: "fact_check" },
     { name: "Kategoriyalar", href: "/categories", icon: "category" },
     { name: "Xronologiyalar", href: "/collections", icon: "auto_awesome_motion" },
     { name: "Sahifalar", href: "/pages", icon: "pages" },
