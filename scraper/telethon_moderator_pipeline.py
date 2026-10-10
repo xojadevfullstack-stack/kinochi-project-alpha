@@ -1185,6 +1185,23 @@ class TelethonModeratorPipeline:
                     logger.info(f"✅ {s_num}-Mavsum, {ep_num}-qism to'liq yuklandi va bazaga bog'landi! (Storage Msg: {storage_msg.id})")
                     print(f"  ✅ [{s_num}-mavsum] {ep_num}-qism saqlandi va ulandi ({uploaded_count}/{total_eps_in_season})", flush=True)
 
+                    # Topic ichiga tasdiqlash xabari
+                    confirm_text = (
+                        f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi.\n"
+                        f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                        f"📺 Serial kodi: <code>s_{series_id}</code>"
+                    )
+                    try:
+                        reply_target = topic_msg.id if topic_msg else thread_id
+                        await self.client.send_message(
+                            target_chat,
+                            message=confirm_text,
+                            reply_to=reply_target,
+                            parse_mode="html"
+                        )
+                    except Exception as conf_err:
+                        logger.warning(f"Tasdiqlash xabari yuborilmadi: {conf_err}")
+
                     # Navbat statusini yangilash
                     try:
                         QueueManager().update_status(
@@ -1490,15 +1507,8 @@ class TelethonModeratorPipeline:
 
             thread_id = None
             if AUTO_TOPIC_CHAT_ID:
-                try:
-                    res_topic = await self.client(CreateForumTopicRequest(
-                        peer=AUTO_TOPIC_CHAT_ID,
-                        title=f"{title[:100]} ({year or ''})".strip(),
-                        icon_color=0x6FB9F0
-                    ))
-                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
-                except Exception as top_err:
-                    logger.warning(f"Topic ochishda xatolik: {top_err}")
+                topic_title = f"🎬 {title[:100]}" + (f" ({year})" if year else "")
+                thread_id = await self._create_topic(chat_id=AUTO_TOPIC_CHAT_ID, title=topic_title)
 
             if thread_id and AUTO_TOPIC_CHAT_ID:
                 rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
@@ -1586,6 +1596,24 @@ class TelethonModeratorPipeline:
 
             QueueManager().update_status(item.id, "completed")
             print(f"✅ [ANIMEELAR] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
+
+            # Topic ichiga tasdiqlash xabari
+            confirm_text = (
+                f"✅ <b>Kino videosi saqlandi va indekslandi.</b>\n"
+                f"🔑 Kod: <code>{created_movie.code}</code>\n"
+                f"🌐 Websaytda onlayn tomosha qilishga tayyor!"
+            )
+            try:
+                reply_target = topic_video_msg.id if topic_video_msg else thread_id
+                await self.client.send_message(
+                    target_chat,
+                    message=confirm_text,
+                    reply_to=reply_target,
+                    parse_mode="html"
+                )
+            except Exception:
+                pass
+
             return True
 
         # ==========================================
@@ -1616,15 +1644,8 @@ class TelethonModeratorPipeline:
                             thread_id = int(src_obj.topic_id)
         else:
             if AUTO_TOPIC_CHAT_ID:
-                try:
-                    res_topic = await self.client(CreateForumTopicRequest(
-                        peer=AUTO_TOPIC_CHAT_ID,
-                        title=f"📺 {title[:95]} ({year or ''})".strip(),
-                        icon_color=0x6FB9F0
-                    ))
-                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
-                except Exception as top_err:
-                    logger.warning(f"Topic ochishda xatolik: {top_err}")
+                topic_title = f"📺 {title[:95]}" + (f" ({year})" if year else "")
+                thread_id = await self._create_topic(chat_id=AUTO_TOPIC_CHAT_ID, title=topic_title)
 
             if thread_id and AUTO_TOPIC_CHAT_ID:
                 welcome_text = (
@@ -1835,6 +1856,23 @@ class TelethonModeratorPipeline:
             existing_episodes_set.add(current_ep)
             item.downloaded_episodes = downloaded_in_session
             print(f"  ✅ [ANIMEELAR] {current_ep}-qism saqlandi!", flush=True)
+
+            # Topic ichiga tasdiqlash xabari
+            confirm_text = (
+                f"✅ <b>{current_ep}-qism</b> saqlandi va indekslandi.\n"
+                f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                f"📺 Serial kodi: <code>s_{series_id}</code>"
+            )
+            try:
+                reply_target = topic_video_msg.id if topic_video_msg else thread_id
+                await self.client.send_message(
+                    target_chat,
+                    message=confirm_text,
+                    reply_to=reply_target,
+                    parse_mode="html"
+                )
+            except Exception as conf_err:
+                logger.warning(f"Tasdiqlash xabari yuborilmadi: {conf_err}")
 
             QueueManager().update_status(
                 item.id,
@@ -2047,15 +2085,8 @@ class TelethonModeratorPipeline:
 
             thread_id = None
             if AUTO_TOPIC_CHAT_ID:
-                try:
-                    res_topic = await self.client(CreateForumTopicRequest(
-                        peer=AUTO_TOPIC_CHAT_ID,
-                        title=f"{title[:100]} ({year or ''})".strip(),
-                        icon_color=0x6FB9F0
-                    ))
-                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
-                except Exception as top_err:
-                    logger.warning(f"Topic ochishda xatolik: {top_err}")
+                topic_title = f"🎬 {title[:100]}" + (f" ({year})" if year else "")
+                thread_id = await self._create_topic(chat_id=AUTO_TOPIC_CHAT_ID, title=topic_title)
 
             if thread_id and AUTO_TOPIC_CHAT_ID:
                 rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
@@ -2143,6 +2174,24 @@ class TelethonModeratorPipeline:
 
             QueueManager().update_status(item.id, "completed")
             print(f"✅ [ANITOOB] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
+
+            # Topic ichiga tasdiqlash xabari
+            confirm_text = (
+                f"✅ <b>Kino videosi saqlandi va indekslandi.</b>\n"
+                f"🔑 Kod: <code>{created_movie.code}</code>\n"
+                f"🌐 Websaytda onlayn tomosha qilishga tayyor!"
+            )
+            try:
+                reply_target = topic_video_msg.id if topic_video_msg else thread_id
+                await self.client.send_message(
+                    target_chat,
+                    message=confirm_text,
+                    reply_to=reply_target,
+                    parse_mode="html"
+                )
+            except Exception:
+                pass
+
             return True
 
         # ==========================================
@@ -2172,9 +2221,40 @@ class TelethonModeratorPipeline:
                         if src_obj and src_obj.topic_id:
                             thread_id = int(src_obj.topic_id)
         else:
+            if AUTO_TOPIC_CHAT_ID:
+                topic_title = f"📺 {title[:95]}" + (f" ({year})" if year else "")
+                thread_id = await self._create_topic(chat_id=AUTO_TOPIC_CHAT_ID, title=topic_title)
+
+            if thread_id and AUTO_TOPIC_CHAT_ID:
+                welcome_text = (
+                    f"📺 <b>{html.escape(title)}</b> (Anime Serial)" + (f" ({year})" if year else "") + "\n"
+                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
+                    f"🔢 <b>Jami qismlar:</b> {ep_count} ta\n\n"
+                    f"📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                    f"⬇️ <i>Qismlar yuklanmoqda...</i>"
+                )
+                poster_to_send = meta.get("poster_url") or item.poster_url
+                if poster_to_send:
+                    try:
+                        await self.client.send_file(AUTO_TOPIC_CHAT_ID, file=poster_to_send, caption=welcome_text, reply_to=thread_id, parse_mode="html")
+                    except Exception:
+                        await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+
             async with async_session_factory() as session:
                 series_repo = SeriesRepository(session)
                 series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+
+                source = None
+                if AUTO_TOPIC_CHAT_ID:
+                    source = SourceModel(
+                        name=title,
+                        type="superguruh",
+                        chat_id=int(AUTO_TOPIC_CHAT_ID),
+                        topic_id=int(thread_id) if thread_id else None
+                    )
+                    session.add(source)
+                    await session.flush()
+
                 anime_cat_ids = list(meta.get("category_ids") or [])
                 if 2 not in anime_cat_ids:
                     anime_cat_ids.append(2)
@@ -2190,7 +2270,9 @@ class TelethonModeratorPipeline:
                     cast=meta.get("cast"),
                     poster_url=meta.get("poster_url") or item.poster_url,
                     category_ids=anime_cat_ids,
-                    page_ids=[1]
+                    page_ids=[1],
+                    source_id=source.id if source else None,
+                    status="ongoing"
                 ))
                 series_id = created_series.id
                 s_season = await series_service.create_season(SeasonCreate(series_id=series_id, season_number=1, title="1-fasl"))
@@ -2296,12 +2378,8 @@ class TelethonModeratorPipeline:
 
             if not thread_id and AUTO_TOPIC_CHAT_ID:
                 try:
-                    res_topic = await self.client(CreateForumTopicRequest(
-                        peer=AUTO_TOPIC_CHAT_ID,
-                        title=f"📺 {title[:95]} ({year or ''})".strip(),
-                        icon_color=0x6FB9F0
-                    ))
-                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
+                    topic_title = f"📺 {title[:95]}" + (f" ({year})" if year else "")
+                    thread_id = await self._create_topic(chat_id=AUTO_TOPIC_CHAT_ID, title=topic_title)
                     if thread_id:
                         welcome_text = (
                             f"📺 <b>{html.escape(title)}</b> (Anime Serial)" + (f" ({year})" if year else "") + "\n"
@@ -2320,11 +2398,17 @@ class TelethonModeratorPipeline:
                         if series_id:
                             async with async_session_factory() as update_session:
                                 upd_s = await update_session.get(SeriesModel, series_id)
-                                if upd_s and upd_s.source_id:
-                                    upd_src = await update_session.get(SourceModel, upd_s.source_id)
-                                    if upd_src:
-                                        upd_src.topic_id = int(thread_id)
-                                        await update_session.commit()
+                                if upd_s:
+                                    if upd_s.source_id:
+                                        upd_src = await update_session.get(SourceModel, upd_s.source_id)
+                                        if upd_src:
+                                            upd_src.topic_id = int(thread_id)
+                                    else:
+                                        new_src = SourceModel(name=title, type="superguruh", chat_id=int(AUTO_TOPIC_CHAT_ID), topic_id=int(thread_id))
+                                        update_session.add(new_src)
+                                        await update_session.flush()
+                                        upd_s.source_id = new_src.id
+                                    await update_session.commit()
                 except Exception as top_err:
                     logger.warning(f"Topic ochishda xatolik: {top_err}")
 
@@ -2379,6 +2463,23 @@ class TelethonModeratorPipeline:
             existing_episodes_set.add(current_ep)
             item.downloaded_episodes = downloaded_in_session
             print(f"  ✅ [ANITOOB] {current_ep}-qism saqlandi!", flush=True)
+
+            # Topic ichiga tasdiqlash xabari
+            confirm_text = (
+                f"✅ <b>{current_ep}-qism</b> saqlandi va indekslandi.\n"
+                f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                f"📺 Serial kodi: <code>s_{series_id}</code>"
+            )
+            try:
+                reply_target = topic_msg.id if topic_msg else thread_id
+                await self.client.send_message(
+                    target_chat,
+                    message=confirm_text,
+                    reply_to=reply_target,
+                    parse_mode="html"
+                )
+            except Exception as conf_err:
+                logger.warning(f"Tasdiqlash xabari yuborilmadi: {conf_err}")
 
             QueueManager().update_status(
                 item.id,

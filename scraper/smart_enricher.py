@@ -18,8 +18,66 @@ from app.infrastructure.external.genre_mapper import map_tmdb_genres
 from app.infrastructure.db.session import async_session_factory
 from sqlalchemy import select
 from app.infrastructure.db.models.category import CategoryModel
+import urllib.parse
 
 logger = logging.getLogger(__name__)
+
+# Mashhur o'zbekcha tarjima qilingan anime nomlari xaritasi (TMDb / Shikimori uchun)
+ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
+    "meni oyga olib ket": {"en": "Fly Me to the Moon", "orig": "Tonikaku Kawaii", "ru": "Унеси меня на Луну"},
+    "iblislar qotili": {"en": "Demon Slayer: Kimetsu no Yaiba", "orig": "Kimetsu no Yaiba", "ru": "Клинок, рассекающий демонов"},
+    "qahramon x": {"en": "To Be Hero X", "orig": "To Be Hero X", "ru": "Быть героем Икс"},
+    "metal alximik aka uka": {"en": "Fullmetal Alchemist: Brotherhood", "orig": "Hagane no Renkinjutsushi", "ru": "Стальной алхимик"},
+    "metal alximik": {"en": "Fullmetal Alchemist", "orig": "Hagane no Renkinjutsushi", "ru": "Стальной алхимик"},
+    "kelajak kundaligi": {"en": "The Future Diary", "orig": "Mirai Nikki", "ru": "Дневник будущего"},
+    "tabiat farzandi": {"en": "Weathering with You", "orig": "Tenki no Ko", "ru": "Дитя погоды"},
+    "arra odam": {"en": "Chainsaw Man", "orig": "Chainsaw Man", "ru": "Человек-бензопила"},
+    "qilich sanati online": {"en": "Sword Art Online", "orig": "Sword Art Online", "ru": "Мастера Меча Онлайн"},
+    "olim kundaligi": {"en": "Death Note", "orig": "Death Note", "ru": "Тетрадь смерти"},
+    "salom dunyo": {"en": "Hello World", "orig": "Hello World", "ru": "Здравствуй, мир"},
+    "jodugarlar jangi": {"en": "Jujutsu Kaisen", "orig": "Jujutsu Kaisen", "ru": "Магическая битва"},
+    "yetti o'lim gunohlari": {"en": "The Seven Deadly Sins", "orig": "Nanatsu no Taizai", "ru": "Семь смертных грехов"},
+    "yetti olim gunohlari": {"en": "The Seven Deadly Sins", "orig": "Nanatsu no Taizai", "ru": "Семь смертных грехов"},
+    "yolg'izlikda daraja ko'tarish": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку"},
+    "yolgizlikda daraja kotarish": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку"},
+    "tungi boyqush kuyi": {"en": "Call of the Night", "orig": "Yofukashi no Uta", "ru": "Песнь ночных сов"},
+    "jahannam jannati": {"en": "Hell's Paradise", "orig": "Jigokuraku", "ru": "Адский рай"},
+    "mushuk niqobi": {"en": "A Whisker Away", "orig": "Nakitai Watashi wa Neko wo Kaburu", "ru": "Сквозь слёзы я притворяюсь кошкой"},
+    "soyada kotarilish": {"en": "The Eminence in Shadow", "orig": "Kage no Jitsuryokusha ni Naritakute!", "ru": "Восхождение в тени!"},
+    "yulduz farzandlari": {"en": "Oshi no Ko", "orig": "Oshi no Ko", "ru": "Звёздное дитя"},
+    "ovoz shakli": {"en": "A Silent Voice", "orig": "Koe no Katachi", "ru": "Форма голоса"},
+    "tokio qasoskorlari": {"en": "Tokyo Revengers", "orig": "Tokyo Revengers", "ru": "Токийские мстители"},
+    "tokio gul": {"en": "Tokyo Ghoul", "orig": "Tokyo Ghoul", "ru": "Токийский гуль"},
+    "kok zindon": {"en": "Blue Lock", "orig": "Blue Lock", "ru": "Синяя тюрьма: Блю Лок"},
+    "aprel yolgoni": {"en": "Your Lie in April", "orig": "Shigatsu wa Kimi no Uso", "ru": "Твоя апрельская ложь"},
+    "zombi 100": {"en": "Zom 100: Bucket List of the Dead", "orig": "Zom 100", "ru": "Предсмертный список зомби"},
+    "frieren songi yolga kuzatuvchi": {"en": "Frieren: Beyond Journey's End", "orig": "Sousou no Frieren", "ru": "Провожающая в последний путь Фрирен"},
+    "frieren": {"en": "Frieren: Beyond Journey's End", "orig": "Sousou no Frieren", "ru": "Провожающая в последний путь Фрирен"},
+    "vinland haqida afsona": {"en": "Vinland Saga", "orig": "Vinland Saga", "ru": "Сага о Винланде"},
+    "zanjirli qul": {"en": "Chained Soldier", "orig": "Mato Seihei no Slave", "ru": "Раб спецотряда демонического города"},
+    "mob psixo 100": {"en": "Mob Psycho 100", "orig": "Mob Psycho 100", "ru": "Моб Психо 100"},
+    "yoz arvohi": {"en": "Summer Ghost", "orig": "Summer Ghost", "ru": "Летний призрак"},
+    "zindonda qizlar bilan uchrashish yomonmi": {"en": "Is It Wrong to Try to Pick Up Girls in a Dungeon?", "orig": "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka", "ru": "Может, я встречу тебя в подземелье?"},
+    "qamoqxona maktabi": {"en": "Prison School", "orig": "Kangoku Gakuen", "ru": "Школа строгого режима"},
+    "seni oshqozon osti bezingni yemoqchiman": {"en": "I Want to Eat Your Pancreas", "orig": "Kimi no Suizou wo Tabetai", "ru": "Я хочу съесть твою поджелудочную"},
+    "shamol kotariladi": {"en": "The Wind Rises", "orig": "Kaze Tachinu", "ru": "Ветер крепчает"},
+    "sen uchun olmas": {"en": "To Your Eternity", "orig": "Fumetsu no Anata e", "ru": "Для тебя, Бессмертный"},
+    "nier avtomatlari": {"en": "NieR:Automata Ver1.1a", "orig": "NieR:Automata Ver1.1a", "ru": "Ниер: Автомата — Версия 1.1а"},
+    "bir soatlik qizcha": {"en": "Rent-a-Girlfriend", "orig": "Kanojo, Okarishimasu", "ru": "Девушка напрокат"},
+    "qora klever": {"en": "Black Clover", "orig": "Black Clover", "ru": "Чёрный клевер"},
+    "dandadan": {"en": "Dan Da Dan", "orig": "Dandadan", "ru": "Дандадан"},
+    "dororo": {"en": "Dororo", "orig": "Dororo", "ru": "Дороро"},
+    "kaiju 8": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь"},
+    "songi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!"},
+    "so'nggi telba boss paydo bo'ldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!"},
+    "oxirgi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!"},
+    "ozga dunyoda ruhsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни"},
+    "o'zga dunyoda ruxsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни"},
+    "ozga dunyoda ruxsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни"},
+}
+
+
+
 
 
 async def get_all_categories_map() -> Dict[str, int]:
@@ -54,9 +112,10 @@ async def gemini_identify_movie(
 Senga o'zbek tilidagi film yoki serial nomi va qo'shimcha ma'lumot (caption/tavsif) beriladi. {type_hint_str}
 QAT'IY QOIDALAR:
 1. Agar qo'shimcha matnda (caption) haqiqiy syujet/tavsif yozilgan bo'lsa, uni O'ZGARTIRMA! Filmni boshqa mashhur Gollivud kinosi (masalan: Bad Boys, Agent X, Under Paris) deb o'ylab xato qilib yuborma!
-2. Agar davlat (masalan: Qozog'iston, Hindiston, Rossiya, O'zbekiston, Ispaniya) ko'rsatilgan bo'lsa, o'sha davlat kinosi deb tahlil qil.
-3. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil yoki o'zbekcha nomini qoldir.
-4. "description" maydoniga albatta berilgan filmning HAQIQIY syujetini o'zbek tilida to'liq va ravon yoz.
+2. Agar bu Anime yoki Yaponiya/Koreya animatsiyasi bo'lsa (yoki o'zbekcha tarjima qilingan bo'lsa, masalan: "Meni oyga olib ket" -> "Tonikaku Kawaii", "Iblislar qotili" -> "Kimetsu no Yaiba", "Qahramon x" -> "To Be Hero X"), "original_title" ga rasmiy yaponcha Romaji nomini, "search_title_en" ga rasmiy inglizcha nomini, "search_title_ru" ga ruscha nomini yoz. Janrlariga albatta "Anime" qo'sh.
+3. Agar davlat (masalan: Qozog'iston, Hindiston, Rossiya, O'zbekiston, Ispaniya) ko'rsatilgan bo'lsa, o'sha davlat kinosi deb tahlil qil.
+4. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil yoki o'zbekcha nomini qoldir.
+5. "description" maydoniga albatta berilgan filmning HAQIQIY syujetini o'zbek tilida to'liq va ravon yoz.
 
 Film/Serial nomi: '{raw_title}'
 Yil taxmini: {year_hint or 'Noma\'lum'}
@@ -223,14 +282,15 @@ def score_tmdb_candidate(
     cand_year = candidate.get("release_year") or candidate.get("year")
     poster_url = candidate.get("poster_url")
 
-    # 1. Yil tekshiruvi: Agar target_year berilgan bo'lsa, oraliq 2 yildan oshmasligi shart!
+    # 1. Yil tekshiruvi: Agar target_year berilgan bo'lsa, oraliq 2 yildan oshmasligi shart (agar anime/original nom aniq ko'rsatilmagan bo'lsa)
     if target_year and cand_year:
         try:
             diff = abs(int(cand_year) - int(target_year))
-            if diff > 2:
+            if diff > 2 and not expected_original_title:
                 return -1.0
         except (ValueError, TypeError):
             pass
+
 
     # 2. Sarlavha o'xshashligi
     query_tokens = normalize_title_tokens(query)
@@ -263,6 +323,13 @@ def score_tmdb_candidate(
                 match_found = True
                 title_overlap = max(title_overlap, 0.8)
 
+    # Agar nomzod Kanji/Kirill bo'lsa va TMDb qidiruvida topilgan bo'lsa (yapon animelari uchun)
+    if not match_found and (expected_original_title or query):
+        has_non_latin = any(ord(c) > 1200 or 0x4E00 <= ord(c) <= 0x9FFF for c in cand_title + cand_orig)
+        if has_non_latin and poster_url:
+            match_found = True
+            title_overlap = max(title_overlap, 0.75)
+
     if not match_found:
         return -1.0
 
@@ -285,7 +352,10 @@ def score_tmdb_candidate(
                 score += 15.0
             elif diff == 2:
                 score += 5.0
+            elif diff > 2 and expected_original_title:
+                score -= 10.0
         except (ValueError, TypeError):
+
             pass
     elif target_year and not cand_year:
         score -= 15.0
@@ -330,13 +400,23 @@ async def enrich_movie_smart(
     """
     clean_title = clean_movie_title(raw_title)
 
-    # Normalize source_poster URL
+    # Normalize source_poster URL - AniToob img_proxy linklari ishlamaydi (HTML 340KB qaytaradi)
     if source_poster and source_poster.startswith("/"):
         source_poster = f"https://asilmedia.org{source_poster}"
     if source_poster and not source_poster.startswith("http"):
         source_poster = None
+    if source_poster and ("img_proxy=" in source_poster or "anitoobtv.uz" in source_poster):
+        source_poster = None
 
     detected_type = "series" if (media_type == "series" or any(w in raw_title.lower() for w in ["serial", "dorama", "mavsum"])) else "movie"
+
+    # Anime nomini lug'atdan tekshirish
+    norm_clean = clean_title.lower().strip()
+    matched_anime_dict = None
+    for a_key, a_val in ANIME_TITLE_MAP.items():
+        if a_key in norm_clean or norm_clean in a_key:
+            matched_anime_dict = a_val
+            break
 
     # Default description: if source_desc or caption contains full synopsis, clean it!
     clean_default_desc = ""
@@ -349,7 +429,7 @@ async def enrich_movie_smart(
 
     metadata: Dict[str, Any] = {
         "title": clean_title or raw_title,
-        "original_title": original_title or None,
+        "original_title": original_title or (matched_anime_dict.get("orig") if matched_anime_dict else None),
         "description": clean_default_desc,
         "poster_url": source_poster,
         "trailer_url": None,
@@ -357,7 +437,7 @@ async def enrich_movie_smart(
         "imdb_rating": None,
         "tmdb_rating": None,
         "tmdb_id": None,
-        "genres": source_genres or ("Serial" if detected_type == "series" else "Tarjima kino"),
+        "genres": source_genres or ("Anime, Serial" if matched_anime_dict else ("Serial" if detected_type == "series" else "Tarjima kino")),
         "cast": None,
         "director": None,
         "runtime": 120,
@@ -370,6 +450,8 @@ async def enrich_movie_smart(
     # Kategoriyalar xaritasi
     cat_map = await get_all_categories_map()
     matched_cat_names = set()
+    if matched_anime_dict:
+        matched_cat_names.add("anime")
 
     # 1. Gemini orqali kinoni tanib olish
     ai_info = await gemini_identify_movie(raw_title=clean_title, year_hint=year, caption=caption or source_desc, media_type=detected_type)
@@ -405,9 +487,19 @@ async def enrich_movie_smart(
     # 2. TMDb qidiruv ro'yxatini shakllantirish
     default_tmdb_type = "tv" if metadata["media_type"] == "series" else "movie"
     search_queries = []
-    if ai_info and ai_info.get("search_title_en"):
+    if matched_anime_dict:
+        if matched_anime_dict.get("orig"):
+            search_queries.append((matched_anime_dict["orig"], default_tmdb_type))
+        if matched_anime_dict.get("en"):
+            search_queries.append((matched_anime_dict["en"], default_tmdb_type))
+        if matched_anime_dict.get("ru"):
+            search_queries.append((matched_anime_dict["ru"], default_tmdb_type))
+
+    if ai_info and ai_info.get("original_title") and (ai_info["original_title"], default_tmdb_type) not in search_queries:
+        search_queries.append((ai_info["original_title"], default_tmdb_type))
+    if ai_info and ai_info.get("search_title_en") and (ai_info["search_title_en"], default_tmdb_type) not in search_queries:
         search_queries.append((ai_info["search_title_en"], default_tmdb_type))
-    if ai_info and ai_info.get("search_title_ru"):
+    if ai_info and ai_info.get("search_title_ru") and (ai_info["search_title_ru"], default_tmdb_type) not in search_queries:
         search_queries.append((ai_info["search_title_ru"], default_tmdb_type))
     if clean_title not in [q[0] for q in search_queries]:
         search_queries.append((clean_title, default_tmdb_type))
@@ -422,12 +514,36 @@ async def enrich_movie_smart(
     target_year = metadata["release_year"] or year
     expected_orig = ai_info.get("original_title") if ai_info else None
 
+    # Avval asosiy ctype (masalan serial uchun faqat tv) orqali barcha qidiruvlarni tekshiramiz
     for query, ctype in search_queries:
         if not query or len(query.strip()) < 2:
             continue
-        for search_type in [ctype, "movie" if ctype == "tv" else "tv"]:
+        try:
+            results = await tmdb_client.search(query=query, content_type=ctype)
+            if results:
+                for res in results:
+                    score = score_tmdb_candidate(
+                        candidate=res,
+                        query=query,
+                        target_year=target_year,
+                        expected_original_title=expected_orig
+                    )
+                    if score > best_score:
+                        best_score = score
+                        matched_tmdb = res
+                        if score >= 90.0:
+                            break
+        except Exception as e:
+            logger.warning(f"TMDb search error query '{query}' ({ctype}): {e}")
+        if best_score >= 90.0:
+            break
+
+    # Faqat mos natija topilmagan bo'lsagina muqobil turdan qidiramiz
+    if not matched_tmdb or best_score < 60.0:
+        for query, ctype in search_queries:
+            alt_type = "movie" if ctype == "tv" else "tv"
             try:
-                results = await tmdb_client.search(query=query, content_type=search_type)
+                results = await tmdb_client.search(query=query, content_type=alt_type)
                 if results:
                     for res in results:
                         score = score_tmdb_candidate(
@@ -439,15 +555,12 @@ async def enrich_movie_smart(
                         if score > best_score:
                             best_score = score
                             matched_tmdb = res
-                            # Agar posteri bor va yuqori mos kelgan bo'lsa darhol to'xtatish
                             if score >= 90.0:
                                 break
             except Exception as e:
-                logger.warning(f"TMDb search error query '{query}' ({search_type}): {e}")
+                logger.warning(f"TMDb alt search error query '{query}' ({alt_type}): {e}")
             if best_score >= 90.0:
                 break
-        if best_score >= 90.0:
-            break
 
     # 3. TMDb tafsilotlarini yuklash (Faqatgina 100% mos kelgandagina!)
     if matched_tmdb and matched_tmdb.get("id"):
@@ -510,6 +623,40 @@ async def enrich_movie_smart(
                         logger.info(f"✅ Saytdan og:image posteri muvaffaqiyatli olindi: {metadata['poster_url']}")
         except Exception as e:
             logger.debug(f"Saytdan og:image olishda xatolik: {e}")
+
+    # 4.1 Agar poster hali ham yo'q bo'lsa, Shikimori Anime API orqali qidiramiz
+    if not metadata.get("poster_url"):
+        shikimori_queries = []
+        if matched_anime_dict:
+            for k in ["orig", "en", "ru"]:
+                if matched_anime_dict.get(k) and matched_anime_dict[k] not in shikimori_queries:
+                    shikimori_queries.append(matched_anime_dict[k])
+        if ai_info:
+            for k in ["original_title", "search_title_en", "search_title_ru"]:
+                if ai_info.get(k) and ai_info[k] not in shikimori_queries:
+                    shikimori_queries.append(ai_info[k])
+        if clean_title not in shikimori_queries:
+            shikimori_queries.append(clean_title)
+
+        for sq in shikimori_queries:
+            if not sq or len(sq.strip()) < 2:
+                continue
+            try:
+                async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
+                    shiki_url = f"https://shikimori.one/api/animes?search={urllib.parse.quote(sq.strip())}&limit=1"
+                    shiki_resp = await client.get(shiki_url, headers={"User-Agent": "Kinochi/1.0"})
+                    if shiki_resp.status_code == 200:
+                        shiki_data = shiki_resp.json()
+                        if shiki_data and isinstance(shiki_data, list) and len(shiki_data) > 0:
+                            img_path = shiki_data[0].get("image", {}).get("original")
+                            if img_path:
+                                metadata["poster_url"] = f"https://shikimori.one{img_path}"
+                                if not metadata.get("original_title"):
+                                    metadata["original_title"] = shiki_data[0].get("name")
+                                logger.info(f"✅ Shikimori orqali anime posteri muvaffaqiyatli topildi ({sq}): {metadata['poster_url']}")
+                                break
+            except Exception as e:
+                logger.debug(f"Shikimori search error '{sq}': {e}")
 
     # Treyler topilmagan bo'lsa, YouTube qidiruv linki
     if not metadata["trailer_url"] and ai_info and ai_info.get("trailer_query"):

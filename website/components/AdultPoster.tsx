@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 
 interface AdultPosterProps {
@@ -29,6 +31,15 @@ export default function AdultPoster({
   onVerifyClick,
 }: AdultPosterProps) {
   const { isMounted, isVerified, openVerificationModal } = useAgeVerification();
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !src) {
+    return (
+      <div className={`w-full h-full flex flex-col items-center justify-center bg-surface-container-high text-gray-500 ${className}`}>
+        <span className="material-symbols-outlined text-4xl mb-2 opacity-30">movie</span>
+      </div>
+    );
+  }
 
   // If not 18+, render standard image
   if (!is18Plus) {
@@ -40,9 +51,11 @@ export default function AdultPoster({
         priority={priority}
         sizes={sizes}
         className={imageClassName || className}
+        onError={() => setHasError(true)}
       />
     );
   }
+
 
   // Adult content: before mount or if not verified, show heavy blur
   const shouldBlur = !isMounted || !isVerified;
@@ -70,7 +83,9 @@ export default function AdultPoster({
             ? "blur-xl scale-110 brightness-75 select-none"
             : "blur-0 scale-100 brightness-100"
         }`}
+        onError={() => setHasError(true)}
       />
+
 
       {shouldBlur && (
         <div
