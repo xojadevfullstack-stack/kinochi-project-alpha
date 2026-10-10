@@ -120,11 +120,14 @@ class SeriesRepository:
         return result.scalars().first()
 
     async def create_series(self, series_data: SeriesCreate | dict) -> SeriesModel:
-        data = series_data if isinstance(series_data, dict) else series_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
-        
-        # Remove category_ids if present in dict
-        category_ids = data.pop("category_ids", None)
-        page_ids = data.pop("page_ids", None)
+        if isinstance(series_data, dict):
+            data = series_data.copy()
+            category_ids = data.pop("category_ids", None)
+            page_ids = data.pop("page_ids", None)
+        else:
+            category_ids = getattr(series_data, "category_ids", None)
+            page_ids = getattr(series_data, "page_ids", None)
+            data = series_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
         
         series = SeriesModel(**data)
         

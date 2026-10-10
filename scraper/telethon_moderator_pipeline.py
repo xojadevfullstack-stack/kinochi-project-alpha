@@ -216,6 +216,130 @@ def matches_episode(m: Any, ep_num: int, total_eps: int = 12) -> bool:
     return False
 
 
+def matches_series_video(
+    m: Any,
+    series_title: str,
+    ep_num: int,
+    total_eps: int = 12
+) -> bool:
+    """
+    Video xabar haqiqatan ham ushbu serial va berilgan qism raqamiga tegishli ekanligini
+    qattiq (strict) tekshirish:
+    1. Video yoki hujjat-video bo'lishi shart.
+    2. Qism raqami (ep_num) mos kelishi shart.
+    3. Serial nomi (yoki asosiy kalit so'zlari) fayl nomi yoki xabar matnida mavjud bo'lishi shart.
+    """
+    if not is_video_message(m):
+        return False
+
+    if not matches_episode(m, ep_num, total_eps):
+        return False
+
+    # Sarlavhadan asosiy kalit so'zlarni ajratib olish
+    clean_t = re.sub(r'[^\w\s]', ' ', series_title.lower())
+    words = [w for w in clean_t.split() if len(w) >= 3]
+    stop_words = {"serial", "seriali", "fasl", "mavsum", "qism", "uzbek", "tarjima", "premyera", "barcha", "kino", "film"}
+    keywords = [w for w in words if w not in stop_words]
+
+    if not keywords:
+        return True
+
+    fn = (getattr(getattr(m, "file", None), "name", "") or "").lower()
+    tx = (getattr(m, "text", "") or getattr(m, "caption", "") or "").lower()
+    combined = f"{fn} {tx}"
+
+    for kw in keywords:
+        if kw in combined:
+            return True
+        # Kirill/lotin va o'/g'/x/h variantlari
+        kw_norm = kw.replace('x', 'h').replace("o'", "o").replace("g'", "g").replace("‘", "'").replace("’", "'")
+        combined_norm = combined.replace('x', 'h').replace("o'", "o").replace("g'", "g").replace("‘", "'").replace("’", "'")
+        if kw_norm in combined_norm:
+            return True
+
+    logger.warning(
+        f"⚠️ Xabar (ID: {getattr(m, 'id', None)}) serial sarlavhasiga mos kelmadi! "
+        f"Kutilgan sarlavha: '{series_title}' (kalitlar: {keywords}), Fayl nomi: '{fn}'"
+    )
+    return False
+
+
+def pick_best_series_search_button(
+    buttons: List[List[Any]],
+    query: str,
+    target_year: Optional[int] = None,
+    media_type: str = "series"
+) -> Optional[tuple[int, int, str]]:
+    """
+    Qidiruv natijalari ro'yxatidan eng mos keladigan tugmani aniqlash:
+    - Seriallar uchun fasl/yil oralig'i (masalan '2008-2012') bor tugmalarga ustunlik beradi.
+    - Yagona yilli (masalan '2025' - film) tugmalarni serial so'rovida pasaytiradi.
+    - Kalit so'zlarga to'liq mos kelishni yuqori baholaydi.
+    """
+    if not buttons:
+        return None
+
+    clean_q = re.sub(r'[^\w\s]', ' ', query.lower())
+    q_words = [w for w in clean_q.split() if len(w) >= 2]
+    stop_words = {"seriali", "serial", "barcha", "qismlar", "premyera", "kino", "film"}
+    q_tokens = [w for w in q_words if w not in stop_words] or q_words
+
+    best_candidate = None
+    best_score = -9999
+
+    for r_idx, row in enumerate(buttons):
+        for c_idx, btn in enumerate(row):
+            b_text = getattr(btn, "text", "") or str(btn)
+            b_lower = b_text.strip().lower()
+            score = 0
+
+            is_year_range = bool(re.search(r'\(\s*\d{4}\s*-\s*(?:\d{4}|\.\.\.)\s*\)', b_lower))
+            is_single_year = bool(re.search(r'\(\s*\d{4}\s*\)', b_lower))
+
+            if media_type == "series":
+                if is_year_range:
+                    score += 50
+                elif is_single_year:
+                    score -= 15
+
+            if target_year:
+                t_yr = str(target_year)
+                if t_yr in b_lower:
+                    score += 40
+
+            if query.lower() in b_lower:
+                score += 40
+
+            b_clean = re.sub(r'[^\w\s]', ' ', b_lower)
+            b_words = set(b_clean.split())
+
+            matches = 0
+            for t in q_tokens:
+                if t in b_words:
+                    score += 25
+                    matches += 1
+                elif any(t in bw or bw in t for bw in b_words):
+                    score += 10
+                    matches += 0.5
+
+            non_year_b_words = [w for w in b_clean.split() if not w.isdigit() and len(w) >= 3]
+            for bw in non_year_b_words:
+                if bw not in q_tokens and not any(t in bw or bw in t for t in q_tokens):
+                    score -= 8
+
+            if matches > 0 and score > best_score:
+                best_score = score
+                best_candidate = (r_idx, c_idx, b_text)
+
+    if best_candidate and best_score > 0:
+        return best_candidate
+
+    if buttons and buttons[0]:
+        first_btn = buttons[0][0]
+        return (0, 0, getattr(first_btn, "text", "") or str(first_btn))
+    return None
+
+
 async def poll_new_messages(
     client: TelegramClient,
     chat: str,
@@ -446,85 +570,89 @@ class TelethonModeratorPipeline:
         # 2. Botdan serial kartasi va qismlar menyusini topish
         is_uzmovie = "uzmovie" in target_bot.lower()
         is_asilmedia = "asilmedia" in target_bot.lower()
-        search_query = clean_query
+
+        queries_to_try = [clean_query]
+        if item.original_title and item.original_title.lower() != clean_query.lower():
+            queries_to_try.append(item.original_title)
+        clean_words = [w for w in clean_query.split() if len(w) >= 3]
+        if len(clean_words) >= 2 and clean_words[-1] not in queries_to_try:
+            # Masalan "Afsungar Merlin" -> "Merlin"
+            queries_to_try.append(clean_words[-1])
+
         num_match = re.search(r'\d+', item.id)
         if is_uzmovie and getattr(item, "source", None) == "uzmovi" and num_match and len(num_match.group(0)) <= 6:
-            search_query = num_match.group(0)
+            queries_to_try = [num_match.group(0)]
         elif is_asilmedia and getattr(item, "source", None) == "asilmedia" and num_match and len(num_match.group(0)) <= 6:
-            search_query = f"/start {num_match.group(0)}"
-
-        logger.info(f"[@{target_bot}] botiga serial bo'yicha so'rov: '{search_query}'...")
-        sent = await self.client.send_message(target_bot, search_query)
-
-        # Tezkor reaktiv poller (0.35s)
-        recent_msgs = await poll_new_messages(
-            self.client,
-            target_bot,
-            sent.id,
-            timeout=8.0,
-            condition=lambda msgs: any(m.buttons for m in msgs)
-        )
+            queries_to_try = [f"/start {num_match.group(0)}"]
 
         card_msg = None
         season_entries = []
-        for m in recent_msgs:
-            if not m.buttons:
-                continue
 
-            # Agar qidiruv ro'yxati chiqsa
-            if "topildi" in (m.text or "").lower():
-                best_btn = None
-                target_year_str = str(item.year) if item.year else ""
-                for row_idx, row in enumerate(m.buttons):
-                    for col_idx, btn in enumerate(row):
-                        b_text = btn.text.lower()
-                        if target_year_str and target_year_str in b_text:
-                            best_btn = (row_idx, col_idx, btn.text)
-                            break
-                        if clean_query.lower() in b_text:
-                            best_btn = (row_idx, col_idx, btn.text)
+        for q_idx, search_query in enumerate(queries_to_try):
+            logger.info(f"[@{target_bot}] botiga serial bo'yicha so'rov ({q_idx + 1}/{len(queries_to_try)}): '{search_query}'...")
+            sent = await self.client.send_message(target_bot, search_query)
+
+            # Tezkor reaktiv poller (0.35s)
+            recent_msgs = await poll_new_messages(
+                self.client,
+                target_bot,
+                sent.id,
+                timeout=8.0,
+                condition=lambda msgs: any(m.buttons for m in msgs)
+            )
+
+            for m in recent_msgs:
+                if not m.buttons:
+                    continue
+
+                # Agar qidiruv ro'yxati chiqsa
+                if "topildi" in (m.text or "").lower():
+                    best_btn = pick_best_series_search_button(
+                        m.buttons,
+                        query=clean_query,
+                        target_year=item.year,
+                        media_type="series"
+                    )
+
                     if best_btn:
-                        break
+                        r_idx, c_idx, b_name = best_btn
+                        logger.info(f"Qidiruvdan serial tanlanmoqda: '{b_name}'...")
+                        click_id = m.id
+                        await m.click(r_idx, c_idx)
 
-                if not best_btn and m.buttons and m.buttons[0]:
-                    best_btn = (0, 0, m.buttons[0][0].text)
+                        # Qismlar, fasllar yoki kino sifatlari menyusi chiqishini tezkor kutish
+                        def has_card_reply(msgs):
+                            return any(nm.buttons and any(any(q in b.text.lower() for q in ["qism", "fasl", "mavsum", "1080", "720", "480"]) or b.text.strip().isdigit() for row in nm.buttons for b in row) for nm in msgs)
 
-                if best_btn:
-                    r_idx, c_idx, b_name = best_btn
-                    logger.info(f"Qidiruvdan serial tanlanmoqda: '{b_name}'...")
-                    click_id = m.id
-                    await m.click(r_idx, c_idx)
+                        nm_list = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, condition=has_card_reply)
+                        for nm in nm_list:
+                            if nm.buttons:
+                                m = nm
+                                break
 
-                    # Qismlar, fasllar yoki kino sifatlari menyusi chiqishini tezkor kutish
-                    def has_card_reply(msgs):
-                        return any(nm.buttons and any(any(q in b.text.lower() for q in ["qism", "fasl", "mavsum", "1080", "720", "480"]) or b.text.strip().isdigit() for row in nm.buttons for b in row) for nm in msgs)
+                # Agar bot serial emas, to'g'ridan-to'g'ri film kartasini qaytargan bo'lsa (1080p, 720p, 480p):
+                if m.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in m.buttons for b in row):
+                    logger.info(f"ℹ️ '{item.title}' botda serial emas, film sifatida joylashtirilgan. Kino sikliga yo'naltirilmoqda...")
+                    item.media_type = "movie"
+                    return await self.run_single_movie(item=item, target_bot=target_bot)
 
-                    nm_list = await poll_new_messages(self.client, target_bot, click_id, timeout=8.0, condition=has_card_reply)
-                    for nm in nm_list:
-                        if nm.buttons:
-                            m = nm
-                            break
+                # Fasllar (1-fasl, 2-fasl) yoki qismlar tugmalarini aniqlash
+                for row_idx, row in enumerate(m.buttons or []):
+                    for col_idx, btn in enumerate(row):
+                        b_lower = btn.text.strip().lower()
+                        m_s = re.search(r'(\d+)\s*[-_]?\s*(?:fasl|mavsum|sezon|season)', b_lower)
+                        if m_s:
+                            season_entries.append((int(m_s.group(1)), row_idx, col_idx, btn.text.strip()))
+                        else:
+                            m_s2 = re.search(r'(?:fasl|mavsum|sezon|season)\s*(\d+)', b_lower)
+                            if m_s2:
+                                season_entries.append((int(m_s2.group(1)), row_idx, col_idx, btn.text.strip()))
 
-            # Agar bot serial emas, to'g'ridan-to'g'ri film kartasini qaytargan bo'lsa (1080p, 720p, 480p):
-            if m.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in m.buttons for b in row):
-                logger.info(f"ℹ️ '{item.title}' botda serial emas, film sifatida joylashtirilgan. Kino sikliga yo'naltirilmoqda...")
-                item.media_type = "movie"
-                return await self.run_single_movie(item=item, target_bot=target_bot)
+                if any(b for row in m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()):
+                    card_msg = m
+                    break
 
-            # Fasllar (1-fasl, 2-fasl) yoki qismlar tugmalarini aniqlash
-            for row_idx, row in enumerate(m.buttons or []):
-                for col_idx, btn in enumerate(row):
-                    b_lower = btn.text.strip().lower()
-                    m_s = re.search(r'(\d+)\s*[-_]?\s*(?:fasl|mavsum|sezon|season)', b_lower)
-                    if m_s:
-                        season_entries.append((int(m_s.group(1)), row_idx, col_idx, btn.text.strip()))
-                    else:
-                        m_s2 = re.search(r'(?:fasl|mavsum|sezon|season)\s*(\d+)', b_lower)
-                        if m_s2:
-                            season_entries.append((int(m_s2.group(1)), row_idx, col_idx, btn.text.strip()))
-
-            if any(b for row in m.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()):
-                card_msg = m
+            if card_msg and card_msg.buttons:
                 break
 
         if not card_msg or not card_msg.buttons:
@@ -900,7 +1028,7 @@ class TelethonModeratorPipeline:
                                 for nm in msgs:
                                     if is_bot_flood_text(nm.text):
                                         return True
-                                    if is_video_message(nm):
+                                    if matches_series_video(nm, title, ep_num, total_eps_in_season):
                                         return True
                                     if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
                                         return True
@@ -923,7 +1051,7 @@ class TelethonModeratorPipeline:
                             continue
 
                         for nm in ep_reply_msgs:
-                            if is_video_message(nm) and matches_episode(nm, ep_num, total_eps_in_season):
+                            if matches_series_video(nm, title, ep_num, total_eps_in_season):
                                 ep_video_msg = nm
                                 break
                             if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
@@ -954,7 +1082,7 @@ class TelethonModeratorPipeline:
 
                                 def has_final_video(msgs):
                                     return any(
-                                        is_bot_flood_text(vm.text) or is_video_message(vm)
+                                        is_bot_flood_text(vm.text) or matches_series_video(vm, title, ep_num, total_eps_in_season)
                                         for vm in msgs
                                     )
 
@@ -965,13 +1093,15 @@ class TelethonModeratorPipeline:
                                     await asyncio.sleep(v_flood)
 
                                 for vm in v_list:
-                                    if is_video_message(vm) and matches_episode(vm, ep_num, total_eps_in_season):
+                                    if matches_series_video(vm, title, ep_num, total_eps_in_season):
                                         ep_video_msg = vm
                                         break
 
                         if not ep_video_msg:
-                            async for fallback_m in self.client.iter_messages(target_bot, limit=10):
-                                if is_video_message(fallback_m) and matches_episode(fallback_m, ep_num, total_eps_in_season):
+                            async for fallback_m in self.client.iter_messages(target_bot, limit=6):
+                                if fallback_m.id <= click_id:
+                                    break
+                                if matches_series_video(fallback_m, title, ep_num, total_eps_in_season):
                                     ep_video_msg = fallback_m
                                     logger.info(f"ℹ️ Zaxiradagi xabarlardan {ep_num}-qism videosi topildi (Msg ID: {ep_video_msg.id})")
                                     break
@@ -1438,7 +1568,7 @@ class TelethonModeratorPipeline:
                     runtime=meta.get("runtime"),
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
-                    category_ids=meta.get("category_ids")
+                    category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2]
                 )
                 movie_id = created_movie.id
                 await service.link_movie_video_from_message(
@@ -1526,6 +1656,10 @@ class TelethonModeratorPipeline:
                     session.add(source)
                     await session.flush()
 
+                anime_cat_ids = list(meta.get("category_ids") or [])
+                if 2 not in anime_cat_ids:
+                    anime_cat_ids.append(2)
+
                 series_data = SeriesCreate(
                     title=title,
                     original_title=meta.get("original_title") or item.original_title,
@@ -1537,7 +1671,8 @@ class TelethonModeratorPipeline:
                     release_year=year,
                     director=meta.get("director"),
                     cast=meta.get("cast"),
-                    category_ids=meta.get("category_ids"),
+                    category_ids=anime_cat_ids,
+                    page_ids=[1],
                     source_id=source.id if source else None,
                     status="ongoing"
                 )
@@ -1990,7 +2125,7 @@ class TelethonModeratorPipeline:
                     runtime=meta.get("runtime"),
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
-                    category_ids=meta.get("category_ids")
+                    category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2]
                 )
                 movie_id = created_movie.id
                 await service.link_movie_video_from_message(
@@ -2040,19 +2175,22 @@ class TelethonModeratorPipeline:
             async with async_session_factory() as session:
                 series_repo = SeriesRepository(session)
                 series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                anime_cat_ids = list(meta.get("category_ids") or [])
+                if 2 not in anime_cat_ids:
+                    anime_cat_ids.append(2)
+
                 created_series = await series_service.create_series(SeriesCreate(
                     title=title,
                     original_title=meta.get("original_title") or item.original_title,
                     description=meta.get("description"),
                     imdb_rating=meta.get("imdb_rating"),
-                    tmdb_rating=meta.get("tmdb_rating"),
                     tmdb_id=meta.get("tmdb_id"),
-                    genres=meta.get("genres") or genres_text or "Anime",
-                    cast=meta.get("cast"),
-                    director=meta.get("director"),
                     release_year=year,
+                    director=meta.get("director"),
+                    cast=meta.get("cast"),
                     poster_url=meta.get("poster_url") or item.poster_url,
-                    category_ids=meta.get("category_ids")
+                    category_ids=anime_cat_ids,
+                    page_ids=[1]
                 ))
                 series_id = created_series.id
                 s_season = await series_service.create_season(SeasonCreate(series_id=series_id, season_number=1, title="1-fasl"))
