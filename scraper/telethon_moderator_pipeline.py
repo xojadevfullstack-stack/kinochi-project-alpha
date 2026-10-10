@@ -1190,18 +1190,24 @@ class TelethonModeratorPipeline:
         if not slug:
             slug = item.id.strip()
 
-        # 2. Dublikat tekshiruvi
+        # 2. Dublikat tekshiruvi (har ikkala jadval bo'yicha)
         dup_check = await self.dup_checker.check(
             title=item.title,
             year=item.year,
             original_title=item.original_title,
-            media_type=item.media_type
+            media_type=None
         )
-        if dup_check.is_duplicate and item.media_type == "movie":
-            logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
-            print(f"ℹ️ [KAWAII] '{item.title}' bazada allaqachon mavjud, o'tkazib yuborildi.", flush=True)
-            QueueManager().update_status(item.id, "already_exists")
-            return True
+        if dup_check.is_duplicate:
+            if dup_check.matched_type == "movie":
+                logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [KAWAII] '{item.title}' bazada film sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif dup_check.matched_type == "series" and not getattr(dup_check, "is_incomplete", False):
+                logger.info(f"ℹ️ Anime serial bazada to'liq mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [KAWAII] '{item.title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
 
         # 3. @kawaii_uz_bot ga so'rov yuborish
         req_cmd = f"/start a-{slug}"
@@ -1285,7 +1291,20 @@ class TelethonModeratorPipeline:
 
         # A) KINO SIKLI (1 qism)
         if is_single_movie:
-            logger.info(f"🎬 '{title}' yagona film/kino sifatida yuklanmoqda...")
+            logger.info(f"🎬 '{title}' yagona film/kino sifatida aniqlandi. Dublikat tekshirilmoqda...")
+            movie_dup = await self.dup_checker.check(
+                title=title,
+                year=year,
+                original_title=meta.get("original_title") or item.original_title,
+                media_type="movie",
+                tmdb_id=meta.get("tmdb_id")
+            )
+            if movie_dup.is_duplicate:
+                logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={movie_dup.matched_id} ('{movie_dup.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [KAWAII] '{title}' bazada allaqachon mavjud (ID: {movie_dup.matched_id}), o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+
             print(f"🎬 [KAWAII] '{title}' film sifatida yuklanmoqda...", flush=True)
 
             video_msg = None
