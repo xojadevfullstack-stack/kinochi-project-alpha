@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
+import { isAdultContent } from "@/lib/adult";
+import AdultPoster from "@/components/AdultPoster";
 
 interface Item {
   id: number;
@@ -17,6 +19,8 @@ interface Item {
   code?: string;
   is_series?: boolean;
   page_title?: string;
+  is_18_plus?: boolean;
+  categories?: any[];
 }
 
 interface Props {
@@ -59,7 +63,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
       release_year: m.release_year,
       genres: m.genres,
       code: m.code,
-      is_series: false
+      is_series: false,
+      is_18_plus: m.is_18_plus,
+      categories: m.categories,
     }));
 
     const formattedSeries: Item[] = (series || []).map(s => ({
@@ -71,7 +77,9 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
       release_year: s.release_year,
       genres: s.categories?.map((c: any) => c.name).join(", ") || "Serial",
       code: String(s.id),
-      is_series: true
+      is_series: true,
+      is_18_plus: s.is_18_plus,
+      categories: s.categories,
     }));
 
     if (selectedCategory === "all") {
@@ -207,20 +215,21 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
         {activeItem && (
           <div className="flex flex-col sm:flex-row gap-5 sm:gap-7 md:gap-8 items-center sm:items-start">
             {/* Poster */}
-            <div className="w-36 sm:w-44 md:w-52 aspect-[2/3] shrink-0 rounded-xl overflow-hidden relative shadow-lg border border-white/10 group">
+            <div className="w-36 sm:w-44 md:w-52 aspect-[2/3] shrink-0 rounded-xl overflow-hidden relative shadow-lg border border-white/10 group bg-surface-container">
               {activeItem.poster_url ? (
-                <Image
+                <AdultPoster
                   src={activeItem.poster_url}
                   alt={activeItem.title}
+                  is18Plus={isAdultContent(activeItem)}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  imageClassName="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               ) : (
                 <div className="w-full h-full bg-surface-container flex items-center justify-center text-text-secondary">
                   <span className="material-symbols-outlined text-5xl opacity-40">movie</span>
                 </div>
               )}
-              <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-rating-gold text-xs font-bold flex items-center gap-1">
+              <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-rating-gold text-xs font-bold flex items-center gap-1 pointer-events-none">
                 <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   star
                 </span>
@@ -235,6 +244,11 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                 <span className="px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider bg-white/5 text-text-secondary border border-white/10">
                   {activeItem.is_series ? "Serial" : "Film"}
                 </span>
+                {isAdultContent(activeItem) && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-red-600/30 text-red-300 border border-red-500/40">
+                    🔞 18+
+                  </span>
+                )}
                 {activeItem.release_year && (
                   <span className="px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider bg-white/5 text-text-secondary border border-white/10">
                     {activeItem.release_year}

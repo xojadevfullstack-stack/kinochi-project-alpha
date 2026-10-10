@@ -4,45 +4,73 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface AgeVerificationModalProps {
-  is18Plus: boolean;
+  is18Plus?: boolean;
+  allowDismissWithoutRedirect?: boolean;
   onVerifiedChange?: (verified: boolean) => void;
 }
 
+const STORAGE_KEY = "kinochi_age_verified_18";
+
 export default function AgeVerificationModal({
-  is18Plus,
-  onVerifiedChange
+  is18Plus = false,
+  allowDismissWithoutRedirect = false,
+  onVerifiedChange,
 }: AgeVerificationModalProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [isVerified, setIsVerified] = useState(true); // default to true on SSR to prevent hydration flash
+  const [isVerified, setIsVerified] = useState(true);
+  const [manualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (!is18Plus) {
-      setIsVerified(true);
-      onVerifiedChange?.(true);
-      return;
-    }
-
+    let verified = false;
     try {
-      const verified = localStorage.getItem("kinochi_age_verified_18") === "true";
-      setIsVerified(verified);
-      onVerifiedChange?.(verified);
+      verified = localStorage.getItem(STORAGE_KEY) === "true";
     } catch {
-      setIsVerified(false);
-      onVerifiedChange?.(false);
+      verified = false;
     }
-  }, [is18Plus]);
+    setIsVerified(verified);
+    onVerifiedChange?.(verified);
+
+    // Listen to custom verify event across components
+    const handleVerifyEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      const v = customEvent?.detail !== undefined ? !!customEvent.detail : true;
+      setIsVerified(v);
+      if (v) setManualOpen(false);
+    };
+
+    // Listen to manual open request
+    const handleOpenModal = () => {
+      setManualOpen(true);
+    };
+
+    window.addEventListener("kinochi:age_verified", handleVerifyEvent);
+    window.addEventListener("kinochi:open_age_modal", handleOpenModal);
+
+    return () => {
+      window.removeEventListener("kinochi:age_verified", handleVerifyEvent);
+      window.removeEventListener("kinochi:open_age_modal", handleOpenModal);
+    };
+  }, [onVerifiedChange]);
 
   const handleConfirm = () => {
     try {
-      localStorage.setItem("kinochi_age_verified_18", "true");
+      localStorage.setItem(STORAGE_KEY, "true");
     } catch {}
     setIsVerified(true);
+    setManualOpen(false);
+    window.dispatchEvent(new CustomEvent("kinochi:age_verified", { detail: true }));
     onVerifiedChange?.(true);
   };
 
   const handleDecline = () => {
+    setManualOpen(false);
+    if (allowDismissWithoutRedirect) {
+      // Just close modal on homepage, keeping adult content blurred
+      return;
+    }
+
     if (window.history.length > 1) {
       router.back();
     } else {
@@ -50,7 +78,13 @@ export default function AgeVerificationModal({
     }
   };
 
-  if (!mounted || !is18Plus || isVerified) {
+  if (!mounted) {
+    return null;
+  }
+
+  // Open if manually requested OR if current page is 18+ and user is not verified
+  const shouldShow = manualOpen || (is18Plus && !isVerified);
+  if (!shouldShow) {
     return null;
   }
 
@@ -81,7 +115,7 @@ export default function AgeVerificationModal({
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-lg shadow-red-600/40 flex items-center justify-center gap-2"
+            className="flex-1 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-lg shadow-red-600/40 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">check_circle</span>
             <span>Ha, 18 yoshdaman</span>
@@ -90,7 +124,7 @@ export default function AgeVerificationModal({
           <button
             type="button"
             onClick={handleDecline}
-            className="flex-1 bg-white/10 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white font-medium py-3.5 px-4 rounded-xl text-sm border border-white/10 transition-all flex items-center justify-center gap-2"
+            className="flex-1 bg-white/10 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white font-medium py-3.5 px-4 rounded-xl text-sm border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
             <span>Ortga qaytish</span>

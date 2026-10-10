@@ -10,6 +10,10 @@ import TelegramWatchButton from "@/components/TelegramWatchButton";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import ReportIssueButton from "@/components/ReportIssueButton";
 
+import { isAdultContent } from "@/lib/adult";
+import AdultPoster from "@/components/AdultPoster";
+import AdultHeroBackground from "@/components/AdultHeroBackground";
+
 type Props = {
   params: { id: string };
 };
@@ -75,23 +79,26 @@ export default async function SeriesDetailsPage({ params }: Props) {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
   // Fallback direct link to bot
   const telegramDeepLink = `https://t.me/${botUsername}?start=s_${series.id}`;
-  const is18Plus = !!(series.is_18_plus || series.categories?.some((c: any) => c.name.toLowerCase().includes("18+")));
+  const is18Plus = isAdultContent(series);
 
   return (
     <>
       <AgeVerificationModal is18Plus={is18Plus} />
       <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-20 sm:pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden">
         {/* Background Blur & Gradient Overlays */}
-        <div className="absolute inset-0 bg-background-obsidian">
+        <div className="absolute inset-0 bg-background-obsidian pointer-events-none">
            {series.poster_url ? (
-            <div className="absolute inset-0 bg-cover bg-center opacity-30 blur-xl" 
-               style={{ backgroundImage: `url('${series.poster_url}')` }}></div>
+            <AdultHeroBackground
+              src={series.poster_url}
+              alt={series.title}
+              is18Plus={is18Plus}
+            />
            ) : (
             <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
            )}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block pointer-events-none"></div>
         
         {/* Content Container */}
         <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
@@ -99,12 +106,13 @@ export default async function SeriesDetailsPage({ params }: Props) {
           <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
             <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-black/80 relative bg-surface-container-high">
               {series.poster_url ? (
-                <Image 
+                <AdultPoster 
                   src={series.poster_url}
                   alt={series.title}
+                  is18Plus={is18Plus}
                   fill
                   priority
-                  className="object-cover"
+                  imageClassName="object-cover"
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-500">
