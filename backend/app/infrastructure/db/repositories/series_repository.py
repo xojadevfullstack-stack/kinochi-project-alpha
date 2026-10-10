@@ -25,7 +25,12 @@ class SeriesRepository:
         if page_id:
             stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
         elif exclude_paged:
-            stmt = stmt.filter(~SeriesModel.pages.any())
+            stmt = stmt.filter(
+                ~SeriesModel.pages.any(),
+                ~SeriesModel.categories.any(CategoryModel.id == 2),
+                ~SeriesModel.categories.any(CategoryModel.name.ilike("%anime%")),
+                ~SeriesModel.title.ilike("%anime%")
+            )
 
         total_stmt = select(func.count()).select_from(stmt.subquery())
         total = await self.session.scalar(total_stmt)

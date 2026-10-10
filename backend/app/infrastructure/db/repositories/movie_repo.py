@@ -154,7 +154,12 @@ class MovieRepositoryImpl(IMovieRepository):
         if page_id:
             query = query.filter(MovieModel.pages.any(id=page_id))
         elif exclude_paged:
-            query = query.filter(~MovieModel.pages.any())
+            query = query.filter(
+                ~MovieModel.pages.any(),
+                ~MovieModel.categories.any(CategoryModel.id == 2),
+                ~MovieModel.categories.any(CategoryModel.name.ilike("%anime%")),
+                ~MovieModel.title.ilike("%anime%")
+            )
             
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)

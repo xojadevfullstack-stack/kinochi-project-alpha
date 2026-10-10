@@ -68,12 +68,32 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "dandadan": {"en": "Dan Da Dan", "orig": "Dandadan", "ru": "Дандадан"},
     "dororo": {"en": "Dororo", "orig": "Dororo", "ru": "Дороро"},
     "kaiju 8": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь"},
-    "songi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!"},
-    "so'nggi telba boss paydo bo'ldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!"},
-    "oxirgi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!"},
-    "ozga dunyoda ruhsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни"},
-    "o'zga dunyoda ruxsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни"},
-    "ozga dunyoda ruxsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни"},
+    "songi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!", "tmdb_id": 280042, "type": "tv"},
+    "so'nggi telba boss paydo bo'ldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!", "tmdb_id": 280042, "type": "tv"},
+    "oxirgi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!", "tmdb_id": 280042, "type": "tv"},
+    "ozga dunyoda ruhsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни", "tmdb_id": 205743, "type": "tv"},
+    "o'zga dunyoda ruxsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни", "tmdb_id": 205743, "type": "tv"},
+    "ozga dunyoda ruxsatsiz": {"en": "No Longer Allowed in Another World", "orig": "Isekai Shikkaku", "ru": "Дисквалифицирован по жизни", "tmdb_id": 205743, "type": "tv"},
+    "men gayritabiiy holat": {"en": "Failure Frame: I Became the Strongest and Annihilated Everything with Low-Level Spells", "orig": "Hazurewaku no Joutai Ijou Skill de Saikyou ni Natta Ore ga Subete wo Juurin Suru made", "ru": "Я стал сильнейшим с навыком «Осквернение состояния»", "tmdb_id": 245285, "type": "tv"},
+    "men g'ayritabiiy holat": {"en": "Failure Frame: I Became the Strongest and Annihilated Everything with Low-Level Spells", "orig": "Hazurewaku no Joutai Ijou Skill de Saikyou ni Natta Ore ga Subete wo Juurin Suru made", "ru": "Я стал сильнейшим с навыком «Осквернение состояния»", "tmdb_id": 245285, "type": "tv"},
+    "men gayritabiiy holat muvaffaqiyatsiz": {"en": "Failure Frame: I Became the Strongest and Annihilated Everything with Low-Level Spells", "orig": "Hazurewaku no Joutai Ijou Skill de Saikyou ni Natta Ore ga Subete wo Juurin Suru made", "ru": "Я стал сильнейшим с навыком «Осквернение состояния»", "tmdb_id": 245285, "type": "tv"},
+    "men g'ayritabiiy holat muvaffaqiyatsiz": {"en": "Failure Frame: I Became the Strongest and Annihilated Everything with Low-Level Spells", "orig": "Hazurewaku no Joutai Ijou Skill de Saikyou ni Natta Ore ga Subete wo Juurin Suru made", "ru": "Я стал сильнейшим с навыком «Осквернение состояния»", "tmdb_id": 245285, "type": "tv"},
+    "re:zero hayotni noldan boshlash": {"en": "Re:Zero - Starting Life in Another World", "orig": "Re:Zero kara Hajimeru Isekai Seikatsu", "ru": "Re:Zero. Жизнь с нуля в альтернативном мире", "tmdb_id": 65942, "type": "tv"},
+    "re:zero": {"en": "Re:Zero - Starting Life in Another World", "orig": "Re:Zero kara Hajimeru Isekai Seikatsu", "ru": "Re:Zero. Жизнь с нуля в альтернативном мире", "tmdb_id": 65942, "type": "tv"},
+    "rezero": {"en": "Re:Zero - Starting Life in Another World", "orig": "Re:Zero kara Hajimeru Isekai Seikatsu", "ru": "Re:Zero. Жизнь с нуля в альтернативном мире", "tmdb_id": 65942, "type": "tv"},
+    "qip-qizil ragna": {"en": "Ragna Crimson", "orig": "Ragna Crimson", "ru": "Рагна Багровый", "tmdb_id": 195459, "type": "tv"},
+    "qip qizil ragna": {"en": "Ragna Crimson", "orig": "Ragna Crimson", "ru": "Рагна Багровый", "tmdb_id": 195459, "type": "tv"},
+    "ragna crimson": {"en": "Ragna Crimson", "orig": "Ragna Crimson", "ru": "Рагна Багровый", "tmdb_id": 195459, "type": "tv"},
+    "avatar ang haqidagi afsona": {"en": "Avatar: The Last Airbender", "orig": "Avatar: The Last Airbender", "ru": "Аватар: Легенда об Аанге", "tmdb_id": 246, "type": "tv"},
+    "avatar aang haqidagi afsona": {"en": "Avatar: The Last Airbender", "orig": "Avatar: The Last Airbender", "ru": "Аватар: Легенда об Аанге", "tmdb_id": 246, "type": "tv"},
+    "avatar": {"en": "Avatar: The Last Airbender", "orig": "Avatar: The Last Airbender", "ru": "Аватар: Легенда об Аанге", "tmdb_id": 246, "type": "tv"},
+    "sehr yaratuvchisi qanday qilib boshqa dunyoda": {"en": "Magic Maker: How to Make Magic in Another World", "orig": "Majikku Meikā: Isekai Mahō no Tsukurikata", "ru": "Создатель магии: Как создать магию в другом мире", "tmdb_id": 258912, "type": "tv"},
+    "sehr yaratuvchisi qanday qilib boshqa": {"en": "Magic Maker: How to Make Magic in Another World", "orig": "Majikku Meikā: Isekai Mahō no Tsukurikata", "ru": "Создатель магии: Как создать магию в другом мире", "tmdb_id": 258912, "type": "tv"},
+    "sehr yaratuvchisi": {"en": "Magic Maker: How to Make Magic in Another World", "orig": "Majikku Meikā: Isekai Mahō no Tsukurikata", "ru": "Создатель магии: Как создать магию в другом мире", "tmdb_id": 258912, "type": "tv"},
+    "salom dunyo": {"en": "Hello World", "orig": "Hello World", "ru": "Здравствуй, мир", "tmdb_id": 604605, "type": "movie"},
+    "arra odam arc": {"en": "Chainsaw Man", "orig": "Chainsaw Man", "ru": "Человек-бензопила", "tmdb_id": 114410, "type": "tv"},
+    "yozgi urushima tuneli": {"en": "The Tunnel to Summer, the Exit of Goodbyes", "orig": "Natsu e no Tunnel, Sayonara no Deguchi", "ru": "Туннель в лето, выход прощаний", "tmdb_id": 916192, "type": "movie"},
+    "vampirlar ovchisi d": {"en": "Vampire Hunter D: Bloodlust", "orig": "Banpaia Hantā Dī: Buraddorasuto", "ru": "Ди: Жажда крови", "tmdb_id": 9463, "type": "movie"},
 }
 
 
@@ -176,6 +196,51 @@ def clean_movie_title(raw_title: str) -> str:
         return re.sub(r'\s+', ' ', t).strip(' -–—:,')
 
 
+def is_telegram_caption_junk(text: Optional[str]) -> bool:
+    """
+    Matnda telegram kanallari, botlar yoki post metadata belgilari borligini tekshiradi:
+    masalan: @kanal, t.me/, nomi:, tili:, janri:, davlati:, holati:, ko'rishlar, qidirishlar, | 🎬
+    """
+    if not text or not str(text).strip():
+        return False
+    t_lower = str(text).lower()
+    junk_patterns = [
+        r'@[a-zA-Z0-9_]{3,}',
+        r't\.me/[a-zA-Z0-9_]+',
+        r'nomi\s*:',
+        r'tili\s*:',
+        r'til\s*:',
+        r'janri\s*:',
+        r'janr\s*:',
+        r'davlati\s*:',
+        r'davlat\s*:',
+        r'yili\s*:',
+        r'yil\s*:',
+        r'holati\s*:',
+        r'holat\s*:',
+        r'kino\s*kodi',
+        r'film\s*kodi',
+        r'kod\s*:',
+        r'ko\'?rishlar\s*soni',
+        r'qidirishlar\s*soni',
+        r'yuklangan\s*:',
+        r'ovoz\s*beruvchilar\s*:',
+        r'barcha\s*qismlar',
+        r'premyera\s*!'
+    ]
+    matches = 0
+    for p in junk_patterns:
+        if re.search(p, t_lower):
+            matches += 1
+            if matches >= 2:
+                return True
+
+    # Telegram havolalari yoki kanallari
+    if '@' in t_lower or 't.me/' in t_lower or 'kino kodi' in t_lower or "ko'rishlar soni" in t_lower or "qidirishlar soni" in t_lower:
+        return True
+    return False
+
+
 def clean_synopsis_text(raw_text: Optional[str], fallback_title: str = "", media_type: str = "movie") -> str:
     """
     Telegram botlaridagi barcha ortiqcha axlatlarni tozalaydi:
@@ -183,22 +248,26 @@ def clean_synopsis_text(raw_text: Optional[str], fallback_title: str = "", media
     - Pastki tugma va menyu yozuvlari (1-fasl qismni tanlang, Sifatni tanlang, t.me/, kanalimiz)
     - Ruscha takroriy matnlar (Uzbek matnidan keyin ruscha kelgan qismlarni qirqib tashlaydi)
     - Markdown simvollari (**, __, `, ~)
+    - Pipe yoki chiziqlar bilan ajratilgan metadata qatorlari (| Nomi: ..., | Tili: ...)
     Natijada faqat sof o'zbek tilidagi chiroyli tavsif qoladi.
     """
     if not raw_text or not str(raw_text).strip():
         return f"🍿 {fallback_title} {'seriali' if media_type == 'series' else 'kinofilmi'} o'zbek tilida."
 
-    lines = str(raw_text).strip().split("\n")
+    raw_str = str(raw_text).strip()
+    lines = raw_str.split("\n")
     cleaned_lines = []
     
     header_keywords = [
-        "davlat:", "til:", "yil:", "imdb:", "janr:", "sifat:", "davomiyligi:",
-        "kino kodi:", "film kodi:", "kod:", "bot orqali", "premyera!", "premyera",
-        "yuklangan:", "ovoz beruvchilar:", "format:", "barcha qismlar", "rejissyor:"
+        "davlat:", "davlati:", "til:", "tili:", "yil:", "yili:", "imdb:", "janr:", "janri:",
+        "sifat:", "sifati:", "davomiyligi:", "kino kodi:", "film kodi:", "kod:", "bot orqali",
+        "premyera!", "premyera", "yuklangan:", "ovoz beruvchilar:", "format:", "barcha qismlar",
+        "rejissyor:", "holati:", "holat:", "ko'rishlar soni:", "ko'rishlar soni", "korishlar soni:",
+        "qidirishlar soni:", "qidirishlar soni"
     ]
     footer_keywords = [
         "qismni tanlang", "sifatni tanlang", "kino videosi", "yuklanmoqda",
-        "kanalimiz", "botimiz", "do'stlarga ulashing", "t.me/", "fasl", "qism"
+        "kanalimiz", "botimiz", "do'stlarga ulashing", "t.me/", "fasl", "qism", "@"
     ]
 
     for line in lines:
@@ -210,22 +279,42 @@ def clean_synopsis_text(raw_text: Optional[str], fallback_title: str = "", media
         if re.search(r'[\u2796\u2500\u2014\u2013\-_*=]{3,}', l_str):
             continue
 
+        # Agar satrda bir nechta '|' yoki '│' bo'lsa, ularni qismlarga bo'lib tekshiramiz
+        if '|' in l_str or '│' in l_str:
+            parts = re.split(r'[|│]', l_str)
+            clean_parts = []
+            for p in parts:
+                p_clean = p.strip()
+                if not p_clean:
+                    continue
+                p_lower = p_clean.lower()
+                if any(p_lower.startswith(emoji) for emoji in ["🎬", "🌐", "🎙", "📅", "⭐", "🎭", "⏱", "🆔", "📥", "📺", "📀", "💿", "🗣", "🎞", "🖥", "🔥", "👇", "👉", "⬇️", "🌍", "🍿", "🖊", "📍", "👁", "🔍"]):
+                    continue
+                if any(hk in p_lower for hk in header_keywords):
+                    continue
+                if any(fk in p_lower for fk in footer_keywords):
+                    continue
+                clean_parts.append(p_clean)
+            if not clean_parts:
+                continue
+            l_str = " ".join(clean_parts)
+
         # Sarlavha yoki ost-sarlavha qatorlari (__Original Title__, **Title**)
         if re.match(r'^(__|\*\*).+(__|\*\*)$', l_str) and len(l_str) < 60:
             continue
         
         lower = l_str.lower()
-        if any(lower.startswith(emoji) for emoji in ["🎬", "🌐", "🎙", "📅", "⭐", "🎭", "⏱", "🆔", "📥", "📺", "📀", "💿", "🗣", "🎞", "🖥", "🔥", "👇", "👉", "⬇️"]):
+        if any(lower.startswith(emoji) for emoji in ["🎬", "🌐", "🎙", "📅", "⭐", "🎭", "⏱", "🆔", "📥", "📺", "📀", "💿", "🗣", "🎞", "🖥", "🔥", "👇", "👉", "⬇️", "🌍", "🍿", "🖊", "📍", "👁", "🔍"]):
             continue
-        if any(hk in lower for hk in header_keywords if len(lower) < 100):
+        if any(hk in lower for hk in header_keywords if len(lower) < 120):
             continue
-        if any(fk in lower for fk in footer_keywords if len(lower) < 100):
+        if any(fk in lower for fk in footer_keywords if len(lower) < 120):
             continue
 
         cleaned_lines.append(l_str)
 
     synopsis = " ".join(cleaned_lines).strip()
-    synopsis = re.sub(r'[*_~`#]', '', synopsis)
+    synopsis = re.sub(r'[*_~`#|│]', '', synopsis)
 
     # Ruscha qismini ajratib qirqish (odatda o'zbekcha matndan keyin ruscha matn takrorlanadi)
     cyrillic_match = re.search(r'([А-Яа-яЁё]{4,})', synopsis)
@@ -236,7 +325,7 @@ def clean_synopsis_text(raw_text: Optional[str], fallback_title: str = "", media
             synopsis = latin_prefix.rstrip(' .–—,;:') + "."
 
     synopsis = re.sub(r'\s+', ' ', synopsis).strip()
-    if len(synopsis) < 25:
+    if len(synopsis) < 25 or is_telegram_caption_junk(synopsis):
         return f"🍿 {fallback_title} {'seriali' if media_type == 'series' else 'kinofilmi'} o'zbek tilida."
 
     return synopsis
@@ -514,6 +603,14 @@ async def enrich_movie_smart(
     target_year = metadata["release_year"] or year
     expected_orig = ai_info.get("original_title") if ai_info else None
 
+    # Agar anime xaritasida to'g'ridan-to'g'ri TMDB ID ko'rsatilgan bo'lsa, qidiruvsiz darhol ulanamiz
+    if matched_anime_dict and matched_anime_dict.get("tmdb_id"):
+        matched_tmdb = {
+            "id": matched_anime_dict["tmdb_id"],
+            "content_type": matched_anime_dict.get("type", default_tmdb_type)
+        }
+        best_score = 100.0
+
     # Avval asosiy ctype (masalan serial uchun faqat tv) orqali barcha qidiruvlarni tekshiramiz
     for query, ctype in search_queries:
         if not query or len(query.strip()) < 2:
@@ -576,11 +673,13 @@ async def enrich_movie_smart(
                 metadata["trailer_url"] = details.get("trailer_url") or metadata["trailer_url"]
                 metadata["release_year"] = details.get("release_year") or metadata["release_year"]
                 metadata["runtime"] = details.get("runtime") or metadata["runtime"]
-                metadata["tmdb_rating"] = details.get("tmdb_rating")
+                metadata["tmdb_rating"] = details.get("tmdb_rating") or (round(details["vote_average"], 1) if details.get("vote_average") else None)
                 if details.get("imdb_rating"):
                     metadata["imdb_rating"] = details["imdb_rating"]
-                elif details.get("vote_average") and not metadata["imdb_rating"]:
+                elif details.get("vote_average"):
                     metadata["imdb_rating"] = round(details["vote_average"], 1)
+                elif metadata.get("tmdb_rating"):
+                    metadata["imdb_rating"] = metadata["tmdb_rating"]
 
                 if details.get("director") and not metadata["director"]:
                     metadata["director"] = details["director"]
@@ -594,13 +693,21 @@ async def enrich_movie_smart(
                     for g in tmdb_uz_genres:
                         matched_cat_names.add(g.strip().lower())
 
-                # Tavsifni o'zbekchaga tarjima qilish (faqat tavsif juda qisqa bo'lsa yoki shablon bo'lsa)
-                if not metadata.get("description") or len(metadata["description"]) < 50 or metadata["description"].startswith("🍿"):
-                    raw_overview = details.get("overview") or ""
-                    if raw_overview:
-                        trans_desc, _ = await translator_service.translate_to_uzbek(raw_overview)
-                        if trans_desc:
-                            metadata["description"] = clean_synopsis_text(trans_desc, clean_title, detected_type)
+                # Tavsifni o'zbekchaga tarjima qilish (agar TMDb tavsifi mavjud bo'lsa va joriy tavsif bo'sh, qisqa, shablon yoki telegram axlati bo'lsa)
+                raw_overview = details.get("overview") or ""
+                curr_desc = metadata.get("description") or ""
+                needs_trans = (
+                    not curr_desc
+                    or len(curr_desc) < 60
+                    or curr_desc.startswith("🍿")
+                    or is_telegram_caption_junk(curr_desc)
+                )
+                if raw_overview and needs_trans:
+                    trans_desc, _ = await translator_service.translate_to_uzbek(raw_overview)
+                    if trans_desc:
+                        clean_trans = clean_synopsis_text(trans_desc, clean_title, detected_type)
+                        if clean_trans and not clean_trans.startswith("🍿"):
+                            metadata["description"] = clean_trans
 
                 metadata["source_used"] = "tmdb"
                 logger.info(f"✅ TMDb tasdiqlangan ma'lumot berdi (ID: {tmdb_id}, Poster: {metadata['poster_url']})")

@@ -819,6 +819,7 @@ class TelethonModeratorPipeline:
                     director=meta.get("director"),
                     cast=meta.get("cast"),
                     category_ids=meta.get("category_ids"),
+                    page_ids=[1] if (2 in (meta.get("category_ids") or []) or "anime" in (meta.get("genres") or "").lower()) else meta.get("page_ids"),
                     source_id=source.id,
                     status="ongoing"
                 )
@@ -1578,7 +1579,8 @@ class TelethonModeratorPipeline:
                     runtime=meta.get("runtime"),
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
-                    category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2]
+                    category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2],
+                    page_ids=[1]
                 )
                 movie_id = created_movie.id
                 await service.link_movie_video_from_message(
@@ -2156,7 +2158,8 @@ class TelethonModeratorPipeline:
                     runtime=meta.get("runtime"),
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
-                    category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2]
+                    category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2],
+                    page_ids=[1]
                 )
                 movie_id = created_movie.id
                 await service.link_movie_video_from_message(
@@ -2724,7 +2727,8 @@ class TelethonModeratorPipeline:
                 runtime=meta.get("runtime"),
                 poster_url=meta.get("poster_url"),
                 trailer_url=meta.get("trailer_url"),
-                category_ids=meta.get("category_ids")
+                category_ids=meta.get("category_ids"),
+                page_ids=[1] if (2 in (meta.get("category_ids") or []) or "anime" in (meta.get("genres") or "").lower()) else meta.get("page_ids")
             )
             movie_id = created_movie.id
             movie_code = created_movie.code

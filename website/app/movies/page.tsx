@@ -26,8 +26,8 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
   
   try {
     const query = searchParams.category 
-      ? `/movies?limit=${pageSize}&category_id=${searchParams.category}` 
-      : `/movies?limit=${pageSize}`;
+      ? `/movies?limit=${pageSize}&category_id=${searchParams.category}&exclude_paged=true` 
+      : `/movies?limit=${pageSize}&exclude_paged=true`;
     const [moviesData, categoriesData, pagesData] = await Promise.all([
       fetchApi(query),
       fetchApi("/categories"),
