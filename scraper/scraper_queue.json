@@ -4964,9 +4964,9 @@
     "media_type": "series",
     "url": "https://bot.kawaii.uz/anime/ajdfoowe",
     "poster_url": "https://cdn.kawaii.uz/kawaii-bot-media/posters/d8aaa283-9105-44a9-af0e-7224e9f93661.webp",
-    "status": "pending",
-    "episodes_count": null,
-    "downloaded_episodes": 0,
+    "status": "in_progress",
+    "episodes_count": 12,
+    "downloaded_episodes": 1,
     "error_message": null
   },
   {

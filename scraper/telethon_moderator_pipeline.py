@@ -374,18 +374,18 @@ class TelethonModeratorPipeline:
 
         return msg
 
-    async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
+    async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi (qat'iy Timeout bilan)."""
         # Seriallar ko'p qismli bo'lgani uchun 25 daqiqa, bitta kinolar uchun 12 daqiqa timeout
         item_timeout = 1500 if getattr(item, "media_type", "movie") == "series" else 720
         try:
-            return await asyncio.wait_for(self._run_item_inner(item, target_bot), timeout=item_timeout)
+            return await asyncio.wait_for(self._run_item_inner(item, target_bot, max_episodes=max_episodes), timeout=item_timeout)
         except asyncio.TimeoutError:
             logger.error(f"⏱️ '{item.title}' jarayoni {item_timeout // 60} daqiqadan oshdi (Timeout). Keyingi kinoga o'tilmoqda...")
             print(f"⏱️ '{item.title}' jarayoni {item_timeout // 60} daqiqadan oshdi (Timeout). Keyingi kinoga o'tilmoqda...", flush=True)
             return False
 
-    async def _run_item_inner(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
+    async def _run_item_inner(self, item: QueueItem, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
         try:
             StateManager().set_bot_status("online")
         except Exception:
@@ -394,7 +394,7 @@ class TelethonModeratorPipeline:
         # Item manbasiga qarab mos botni avtomatik aniqlash:
         # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot), Kawaii (@kawaii_uz_bot) da ishlaydi
         if getattr(item, "source", None) == "kawaii" or target_bot in ("kawaii", "kawaii_uz_bot"):
-            return await self.run_kawaii_anime(item=item)
+            return await self.run_kawaii_anime(item=item, max_episodes=max_episodes)
 
         effective_bot = target_bot
         if getattr(item, "source", None) == "asilmedia":
@@ -1171,7 +1171,7 @@ class TelethonModeratorPipeline:
         print(f"  📥 '{item.title}' videosi botdan qabul qilindi. AI va Topic jarayoni...", flush=True)
         return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
 
-    async def run_kawaii_anime(self, item: QueueItem) -> bool:
+    async def run_kawaii_anime(self, item: QueueItem, max_episodes: Optional[int] = None) -> bool:
         """
         Kawaii.uz animesi bo'yicha to'liq moderator sikli:
         @kawaii_uz_bot orqali kino va ko'p qismli anime seriallarni yuklash,
@@ -1509,6 +1509,11 @@ class TelethonModeratorPipeline:
         downloaded_in_session = 0
 
         while current_ep <= total_ep_count:
+            if max_episodes and downloaded_in_session >= max_episodes:
+                logger.info(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi. Sikl to'xtatilmoqda.")
+                print(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi.", flush=True)
+                break
+
             if current_ep in existing_eps:
                 logger.info(f"⏭ {current_ep}-qism allaqachon mavjud, o'tkazib yuborildi.")
                 current_ep += 1
@@ -1669,19 +1674,34 @@ class TelethonModeratorPipeline:
                 voice_match = re.search(r'🎙\s*([^•\n\r]+)', raw_caption)
                 voiceover_team = voice_match.group(1).strip() if voice_match else "Kawaii Uz"
 
-                await series_service.add_episode_translation(
+                await series_repo.add_episode_translation(
                     episode_id=ep_id,
-                    language_code="uz",
-                    voiceover_team=voiceover_team,
-                    source_chat_id=storage_chat,
-                    source_message_id=storage_msg.id,
-                    telegram_file_id=ep_bot_file_id
+                    language="Asosiy",
+                    telegram_file_id=ep_bot_file_id,
+                    storage_channel_message_id=storage_msg.id
                 )
                 await session.commit()
 
             downloaded_in_session += 1
             item.downloaded_episodes = downloaded_in_session
             print(f"  ✅ [KAWAII] {current_ep}-qism saqlandi!", flush=True)
+
+            try:
+                QueueManager().update_status(
+                    item.id,
+                    "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
+                    downloaded_episodes=downloaded_in_session,
+                    episodes_count=total_ep_count
+                )
+            except Exception:
+                pass
+
+            if max_episodes and downloaded_in_session >= max_episodes:
+                logger.info(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi. Sikl yakunlandi.")
+                print(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi.", flush=True)
+                current_ep += 1
+                break
+
             current_ep += 1
 
         try:
@@ -1716,11 +1736,17 @@ class TelethonModeratorPipeline:
             print(f"⚠️ [KAWAII] '{title}': Birorta ham qism yuklanmadi, bo'sh topic tozalandi.", flush=True)
             return False
 
-        QueueManager().update_status(item.id, "completed")
-        print(f"🎉 [KAWAII] Serial muvaffaqiyatli yakunlandi! Jami {downloaded_in_session} ta qism saqlandi.", flush=True)
+        final_status = "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
+        QueueManager().update_status(
+            item.id,
+            final_status,
+            downloaded_episodes=downloaded_in_session,
+            episodes_count=total_ep_count
+        )
+        print(f"🎉 [KAWAII] Serial yakunlandi! Jami {downloaded_in_session} ta qism saqlandi (Status: {final_status}).", flush=True)
         return True
 
-    async def run_by_code(self, code: str, target_bot: str = "asilmediabot") -> bool:
+    async def run_by_code(self, code: str, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
         clean_code = str(code).strip()
         logger.info("\n" + "="*55)
         logger.info(f"🎬 MODERATOR SIKLI: KOD #{clean_code} | BOT: @{target_bot}")
@@ -1733,7 +1759,7 @@ class TelethonModeratorPipeline:
         # Kawaii bot tekshiruvi
         if target_bot in ("kawaii", "kawaii_uz_bot") or (queued_item and getattr(queued_item, "source", None) == "kawaii"):
             if queued_item:
-                return await self.run_kawaii_anime(item=queued_item)
+                return await self.run_kawaii_anime(item=queued_item, max_episodes=max_episodes)
             dummy = QueueItem(
                 id=f"kawaii_{clean_code}",
                 source="kawaii",
@@ -1743,7 +1769,7 @@ class TelethonModeratorPipeline:
                 media_type="series",
                 url=f"https://bot.kawaii.uz/anime/{clean_code}"
             )
-            return await self.run_kawaii_anime(item=dummy)
+            return await self.run_kawaii_anime(item=dummy, max_episodes=max_episodes)
 
         if queued_item and queued_item.media_type == "series":
             logger.info(f"ℹ️ Kod #{clean_code} navbatda serial sifatida qayd etilgan ('{queued_item.title}'). Serial sikliga yo'naltirilmoqda...")
@@ -2465,7 +2491,7 @@ class TelethonModeratorPipeline:
                     print(f"  📥 Yuklab olish: {pct}% ({mb_cur}MB / {mb_tot}MB)", flush=True)
                     last_logged[0] = now
 
-            logger.info("⚡ Parallel 12-oqimli tezkor yuklab olish boshlandi...")
+            logger.info("⚡ Parallel tezkor yuklab olish boshlandi...")
             print("⚡ Katta faylni tezkor yuklab olish boshlandi...", flush=True)
             raw_filename = video_msg.file.name if (video_msg.file and video_msg.file.name) else f"video_{video_msg.id}.mp4"
             target_file_path = os.path.join(downloads_dir, raw_filename)
@@ -2476,7 +2502,8 @@ class TelethonModeratorPipeline:
                     location_or_msg=video_msg,
                     out_file_path=target_file_path,
                     progress_callback=dl_progress,
-                    connection_count=12
+                    connection_count=6,
+                    part_size_kb=512
                 )
             except Exception as dl_err:
                 logger.warning(f"Fast download da xatolik ({dl_err}), standart usulga o'tilmoqda...")
@@ -2491,7 +2518,7 @@ class TelethonModeratorPipeline:
                 return None
 
             total_mb = round(os.path.getsize(file_path) / 1024 / 1024, 1)
-            logger.info(f"⚡ Parallel 12-oqimli chatga yuklash boshlandi ({total_mb} MB)...")
+            logger.info(f"⚡ Parallel chatga yuklash boshlandi ({total_mb} MB)...")
             print(f"⚡ Telegramga yuklash boshlandi ({total_mb} MB)...", flush=True)
 
             last_ul = [0.0]
@@ -2512,7 +2539,8 @@ class TelethonModeratorPipeline:
                     client=self.client,
                     file_path=file_path,
                     progress_callback=ul_progress,
-                    connection_count=12
+                    connection_count=6,
+                    part_size_kb=512
                 )
                 # Original video atributlaridan foydalanish (aniq duration, width, height va streaming saqlanadi):
                 if hasattr(video_msg, "document") and video_msg.document and video_msg.document.attributes:
@@ -2565,6 +2593,7 @@ async def main_cli():
     parser.add_argument("--series", type=str, default=None, help="Serial nomi (masalan: Erta bahor)")
     parser.add_argument("--year", type=int, default=None, help="Film/Serial yili (masalan: 2026)")
     parser.add_argument("--target", type=str, default="asilmedia", help="Target bot (asilmedia yoki uzmovi)")
+    parser.add_argument("--max-episodes", type=int, default=None, help="Maksimal yuklanadigan qismlar soni")
     args = parser.parse_args()
 
     bot_username = TARGET_BOTS.get(args.target, args.target)
@@ -2576,7 +2605,7 @@ async def main_cli():
     pipeline = TelethonModeratorPipeline(client=client, duplicate_checker=checker)
     try:
         if args.code:
-            await pipeline.run_by_code(code=args.code, target_bot=bot_username)
+            await pipeline.run_by_code(code=args.code, target_bot=bot_username, max_episodes=args.max_episodes)
         elif args.series:
             item = QueueItem(
                 id=f"{args.target}_{int(time.time())}",

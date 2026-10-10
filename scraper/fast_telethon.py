@@ -281,6 +281,7 @@ async def fast_upload_file(
     file_path: str,
     progress_callback: callable = None,
     connection_count: Optional[int] = None,
+    part_size_kb: Optional[float] = 512,
 ) -> Tuple[TypeInputFile, int]:
     """
     Katta fayllarni parallel MTProto oqimlari orqali juda yuqori tezlikda Telegramga yuklaydi.
@@ -293,6 +294,7 @@ async def fast_upload_file(
     part_size, part_count, is_large = await uploader.init_upload(
         file_id=file_id,
         file_size=file_size,
+        part_size_kb=part_size_kb,
         connection_count=connection_count,
     )
 
@@ -419,9 +421,10 @@ async def fast_upload(
     file_path: str,
     progress_callback: callable = None,
     connection_count: Optional[int] = None,
+    part_size_kb: Optional[float] = 512,
 ) -> TypeInputFile:
     """
     Convenience wrapper returning TypeInputFile directly.
     """
-    res, _ = await fast_upload_file(client, file_path, progress_callback, connection_count)
+    res, _ = await fast_upload_file(client, file_path, progress_callback, connection_count, part_size_kb)
     return res
