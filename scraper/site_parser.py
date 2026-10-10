@@ -277,5 +277,6 @@ async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: s
         logger.error(f"Async error scraping Asilmedia {page_url}: {e}")
     return []
 
-from .kawaii_parser import parse_kawaii_page, parse_kawaii_page_async
+from .animeelar_parser import parse_animeelar_page, parse_animeelar_page_async
+from .anitoob_parser import parse_anitoob_page, parse_anitoob_page_async
 

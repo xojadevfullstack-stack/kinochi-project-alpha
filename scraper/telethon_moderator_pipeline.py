@@ -272,9 +272,10 @@ class TelethonModeratorPipeline:
         """
         Tugmani xavfsiz bosadi.
         Qaytaradi: (success: bool, flood_wait_seconds: int)
+        flood_wait_seconds = -1 agar 'Keyingi sahifa yo'q' bo'lsa
         """
         try:
-            res = await asyncio.wait_for(msg.click(row, col), timeout=5.0)
+            res = await asyncio.wait_for(msg.click(row, col), timeout=20.0)
             if res and hasattr(res, 'message') and res.message:
                 wait_s = get_flood_wait_seconds(res.message)
                 if wait_s > 0:
@@ -283,6 +284,8 @@ class TelethonModeratorPipeline:
                     except Exception:
                         pass
                     return False, wait_s
+                if any(w in str(res.message).lower() for w in ["keyingi sahifa yo'q", "sahifa yo'q", "mavjud emas"]):
+                    return False, -1
             return True, 0
         except asyncio.TimeoutError:
             # Bot callback'ga darhol javob qaytarmasa ham, bosish Telegramga yetkazilgan
@@ -351,7 +354,7 @@ class TelethonModeratorPipeline:
                         m_pub = re.search(r'(?:t\.me|telegram\.me)/([A-Za-z0-9_]{4,})', b_url)
                         if m_pub:
                             pub_uname = m_pub.group(1)
-                            if pub_uname.lower() not in ("kawaii_uz_bot", "asilmediabot", "uzmovietv_bot", "share"):
+                            if pub_uname.lower() not in ("anitoobuz_bot", "animeelar_bot", "asilmediabot", "uzmovietv_bot", "share"):
                                 try:
                                     await self.client(JoinChannelRequest(pub_uname))
                                     logger.info(f"✅ [@{bot_username}] Homiy kanalga ulandi (@{pub_uname})")
@@ -392,9 +395,13 @@ class TelethonModeratorPipeline:
             pass
 
         # Item manbasiga qarab mos botni avtomatik aniqlash:
-        # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot), Kawaii (@kawaii_uz_bot) da ishlaydi
-        if getattr(item, "source", None) == "kawaii" or target_bot in ("kawaii", "kawaii_uz_bot"):
-            return await self.run_kawaii_anime(item=item, max_episodes=max_episodes)
+        # Asilmedia kodlari (@asilmediabot), Uzmovi kodlari (@UzmovieTV_Bot), Animeelar (@Animeelar_Bot), AniToob (@ANITOOBUZ_BOT)
+        t_bot_lower = str(target_bot).lower()
+        if getattr(item, "source", None) in ("anitoob", "anitoobuz_bot") or t_bot_lower in ("anitoob", "anitoobuz_bot"):
+            return await self.run_anitoob_anime(item=item, max_episodes=max_episodes)
+
+        if getattr(item, "source", None) in ("animeelar", "anime") or t_bot_lower in ("animeelar", "animeelar_bot", "anime"):
+            return await self.run_animeelar_anime(item=item, max_episodes=max_episodes)
 
         effective_bot = target_bot
         if getattr(item, "source", None) == "asilmedia":
@@ -1171,47 +1178,51 @@ class TelethonModeratorPipeline:
         print(f"  📥 '{item.title}' videosi botdan qabul qilindi. AI va Topic jarayoni...", flush=True)
         return await self._process_pipeline(item=item, video_msg=video_msg, target_bot=target_bot, card_msg=self._last_card_msg)
 
-    async def run_kawaii_anime(self, item: QueueItem, max_episodes: Optional[int] = None) -> bool:
+    async def run_animeelar_anime(self, item: QueueItem, max_episodes: Optional[int] = None) -> bool:
         """
-        Kawaii.uz animesi bo'yicha to'liq moderator sikli:
-        @kawaii_uz_bot orqali kino va ko'p qismli anime seriallarni yuklash,
+        Animeelar (@Animeelar_Bot) animesi bo'yicha to'liq moderator sikli:
+        @Animeelar_Bot orqali anime va ko'p qismli seriallarni yuklash,
         Topic ochish, Storage kanalga saqlash va websayt bazasiga ulash.
         """
-        target_bot = "kawaii_uz_bot"
+        target_bot = "Animeelar_Bot"
         logger.info("\n" + "="*55)
-        logger.info(f"🎌 KAWAII ANIME MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
+        logger.info(f"🎌 ANIMEELAR MODERATOR SIKLI: '{item.title}' | BOT: @{target_bot}")
         logger.info("="*55)
-        print(f"\n🚀 [KAWAII] '{item.title}' ({item.year or 'Noma\'lum'}) yuklash boshlanmoqda...", flush=True)
+        print(f"\n🚀 [ANIMEELAR] '{item.title}' yuklash boshlanmoqda...", flush=True)
 
-        # 1. Slugni aniqlash
-        slug = item.id.replace("kawaii_", "").strip() if item.id.startswith("kawaii_") else ""
-        if not slug and item.url and "/anime/" in item.url:
-            slug = item.url.split("/anime/")[-1].strip().strip("/")
-        if not slug:
-            slug = item.id.strip()
+        # 1. Kodni aniqlash
+        code = item.id.replace("animeelar_", "").strip() if item.id.startswith("animeelar_") else ""
+        if not code and item.url and "start=" in item.url:
+            code = item.url.split("start=")[-1].strip()
+        if not code:
+            num_match = re.search(r'\d+', item.id)
+            code = num_match.group(0) if num_match else ""
 
-        # 2. Dublikat tekshiruvi (har ikkala jadval bo'yicha)
-        dup_check = await self.dup_checker.check(
-            title=item.title,
-            year=item.year,
-            original_title=item.original_title,
-            media_type=None,
-            episodes_count=item.episodes_count
-        )
-        if dup_check.is_duplicate:
-            if dup_check.matched_type == "movie":
-                logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
-                print(f"ℹ️ [KAWAII] '{item.title}' bazada film sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
-                QueueManager().update_status(item.id, "already_exists")
-                return True
-            elif dup_check.matched_type == "series" and not getattr(dup_check, "is_incomplete", False):
-                logger.info(f"ℹ️ Anime serial bazada to'liq mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
-                print(f"ℹ️ [KAWAII] '{item.title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
-                QueueManager().update_status(item.id, "already_exists")
-                return True
+        if not code:
+            clean_q = item.title.split('/')[0].strip()
+            clean_q = re.sub(r'\(.*?\)', '', clean_q).strip()
+            logger.info(f"Kod yo'q, [@{target_bot}] dan nom bo'yicha qidirilmoqda: '{clean_q}'...")
+            sent_s = await self.client.send_message(target_bot, clean_q)
+            res_s = await poll_new_messages(self.client, target_bot, sent_s.id, timeout=6.0)
+            for sm in res_s:
+                if sm.buttons:
+                    for row in sm.buttons:
+                        for b in row:
+                            if b.data and b.data.startswith(b"loadAnime="):
+                                code = b.data.decode("utf-8").split("=")[-1].strip()
+                                break
+                        if code:
+                            break
+                if code:
+                    break
 
-        # 3. @kawaii_uz_bot ga so'rov yuborish
-        req_cmd = f"/start a-{slug}"
+        if not code:
+            logger.error(f"❌ [@{target_bot}] '{item.title}' uchun kod topilmadi.")
+            QueueManager().update_status(item.id, "failed", error_message="Anime kodi topilmadi")
+            return False
+
+        # 2. @Animeelar_Bot ga /start {code} yuborish
+        req_cmd = f"/start {code}"
         logger.info(f"[@{target_bot}] botiga so'rov: '{req_cmd}'...")
         sent = await self.client.send_message(target_bot, req_cmd)
 
@@ -1229,104 +1240,124 @@ class TelethonModeratorPipeline:
             return False
 
         card_msg = card_msgs[0]
-        # Homiy tekshiruvi (agar bot obuna bo'lishni so'rasa avtomatik obuna bo'lish):
         unlocked = await self.handle_sponsor_lock(target_bot, card_msg)
         if unlocked:
             card_msg = unlocked
         card_text = card_msg.text or ""
 
-        # Tugmalardan "Tomosha qilish" ni topish
-        watch_btn_coords = None
-        watch_btn_text = ""
-        for r_idx, row in enumerate(card_msg.buttons or []):
-            for c_idx, btn in enumerate(row):
-                if any(w in btn.text.lower() for w in ["tomosha qilish", "tomosha"]):
-                    watch_btn_coords = (r_idx, c_idx)
-                    watch_btn_text = btn.text
-                    break
-            if watch_btn_coords:
-                break
-
-        if not watch_btn_coords:
-            logger.error(f"❌ [@{target_bot}] 'Tomosha qilish' tugmasi topilmadi.")
-            QueueManager().update_status(item.id, "failed", error_message="'Tomosha qilish' tugmasi topilmadi")
+        if "Nomi:" not in card_text:
+            logger.warning(f"❌ [@{target_bot}] Kod #{code} bo'yicha anime topilmadi.")
+            print(f"❌ [ANIMEELAR] Kod #{code} bo'yicha anime topilmadi.", flush=True)
+            QueueManager().update_status(item.id, "failed", error_message=f"Kod #{code} topilmadi")
             return False
 
-        # Metadata boyitish (AI + TMDb)
-        meta = await enrich_movie_smart(
-            raw_title=item.title,
-            year=item.year,
+        # 3. Kartadan metadata ajratib olish
+        raw_title = item.title
+        m_t = re.search(r'🎬?\s*Nomi:\s*([^\n\r]+)', card_text)
+        if m_t:
+            raw_title = m_t.group(1).strip()
+
+        ep_count = 1
+        m_ep = re.search(r'🎥?\s*Qismi:\s*(\d+)', card_text)
+        if m_ep:
+            ep_count = int(m_ep.group(1))
+
+        year = item.year
+        m_y = re.search(r'📆?\s*Yili:\s*(\d{4})', card_text)
+        if m_y:
+            year = int(m_y.group(1))
+
+        genres_text = ""
+        m_g = re.search(r'🎞?\s*Janri:\s*([^\n\r]+)', card_text)
+        if m_g:
+            genres_text = m_g.group(1).strip()
+
+        # 4. Dublikat tekshiruvi
+        dup_check = await self.dup_checker.check(
+            title=raw_title,
+            year=year,
             original_title=item.original_title,
-            source_poster=item.poster_url,
-            caption=card_text,
-            media_type=item.media_type
+            media_type="movie" if ep_count == 1 else "series",
+            episodes_count=ep_count
         )
-        title = meta.get("title") or item.title
-        year = meta.get("year") or item.year
-        target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
-        storage_chat = STORAGE_CHANNEL_ID
+        existing_series_id = None
+        if (dup_check.is_duplicate or getattr(dup_check, "is_incomplete", False)) and dup_check.matched_type == "series":
+            existing_series_id = dup_check.matched_id
 
-        # 5. "Tomosha qilish" tugmasini bosish
-        logger.info(f"[@{target_bot}] 'Tomosha qilish' tugmasi bosilmoqda...")
-        click_id = card_msg.id
-        await self.safe_click(card_msg, watch_btn_coords[0], watch_btn_coords[1])
-        await asyncio.sleep(2.0)
-
-        # Kartani yangilangan holatini olish
-        updated_card = await self.client.get_messages(target_bot, ids=click_id)
-        if updated_card:
-            card_msg = updated_card
-
-        # Tekshiramiz: bu kino (1 qism)mi yoki ko'p qismli serialmi?
-        has_video_now = bool(card_msg.media and getattr(card_msg.media, "document", None) and getattr(card_msg.media, "video", False))
-
-        ep_buttons = []
-        for r_i, row in enumerate(card_msg.buttons or []):
-            for c_i, btn in enumerate(row):
-                m_ep = re.search(r'(\d+)\s*ep\b', btn.text, re.I)
-                if m_ep:
-                    ep_buttons.append((int(m_ep.group(1)), r_i, c_i, btn.text))
-
-        # Agar botda 1 tadan ortiq ep tugmasi bo'lsa - bu qat'iy serial!
-        is_single_movie = (len(ep_buttons) <= 1) and (
-            item.media_type == "movie" or (has_video_now and "1 / 1" in card_text) or "film" in title.lower()
-        )
-
-        # A) KINO SIKLI (1 qism)
-        if is_single_movie:
-            logger.info(f"🎬 '{title}' yagona film/kino sifatida aniqlandi. Dublikat tekshirilmoqda...")
-            movie_dup = await self.dup_checker.check(
-                title=title,
-                year=year,
-                original_title=meta.get("original_title") or item.original_title,
-                media_type="movie",
-                tmdb_id=meta.get("tmdb_id")
-            )
-            if movie_dup.is_duplicate:
-                logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={movie_dup.matched_id} ('{movie_dup.matched_title}'). O'tkazib yuborildi.")
-                print(f"ℹ️ [KAWAII] '{title}' bazada allaqachon mavjud (ID: {movie_dup.matched_id}), o'tkazib yuborildi.", flush=True)
+        if dup_check.is_duplicate:
+            if dup_check.matched_type == "movie":
+                logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANIMEELAR] '{raw_title}' bazada film sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif dup_check.matched_type == "series" and not getattr(dup_check, "is_incomplete", False):
+                logger.info(f"ℹ️ Anime serial bazada to'liq mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANIMEELAR] '{raw_title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
                 QueueManager().update_status(item.id, "already_exists")
                 return True
 
-            print(f"🎬 [KAWAII] '{title}' film sifatida yuklanmoqda...", flush=True)
+        # 5. Metadata boyitish (AI + TMDB)
+        meta = await enrich_movie_smart(
+            raw_title=raw_title,
+            year=year,
+            original_title=item.original_title,
+            source_poster=item.poster_url,
+            caption=card_text,
+            media_type="movie" if ep_count == 1 else "series"
+        )
+        title = meta.get("title") or raw_title
+        year = meta.get("year") or year
+        target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
+        storage_chat = STORAGE_CHANNEL_ID
 
-            video_msg = None
-            if has_video_now:
-                video_msg = card_msg
-            elif ep_buttons:
-                ep_r, ep_c = ep_buttons[0][1], ep_buttons[0][2]
-                await self.safe_click(card_msg, ep_r, ep_c)
-                await asyncio.sleep(2.5)
-                v_card = await self.client.get_messages(target_bot, ids=click_id)
-                if v_card and v_card.media and getattr(v_card.media, "video", False):
-                    video_msg = v_card
+        # 6. YUKLAB OLISH tugmasini topish
+        download_btn_coords = None
+        for r_idx, row in enumerate(card_msg.buttons or []):
+            for c_idx, btn in enumerate(row):
+                if btn.data and btn.data.startswith(b"yuklanolish="):
+                    download_btn_coords = (r_idx, c_idx)
+                    break
+                elif "yuklab olish" in btn.text.lower():
+                    download_btn_coords = (r_idx, c_idx)
+                    break
+            if download_btn_coords:
+                break
 
-            if not video_msg:
-                logger.error(f"❌ '{title}' video xabari topilmadi!")
-                QueueManager().update_status(item.id, "failed", error_message="Video topilmadi")
-                return False
+        if not download_btn_coords:
+            logger.error(f"❌ [@{target_bot}] 'YUKLAB OLISH' tugmasi topilmadi.")
+            QueueManager().update_status(item.id, "failed", error_message="Yuklab olish tugmasi topilmadi")
+            return False
 
-            # Topic yaratish
+        logger.info(f"[@{target_bot}] 'YUKLAB OLISH' tugmasi bosilmoqda...")
+        await self.safe_click(card_msg, download_btn_coords[0], download_btn_coords[1])
+        await asyncio.sleep(1.5)
+
+        ep1_msgs = await poll_new_messages(
+            self.client,
+            target_bot,
+            card_msg.id,
+            timeout=10.0,
+            interval=0.35,
+            condition=lambda msgs: any(m.media and getattr(m.media, "document", None) for m in msgs)
+        )
+        if not ep1_msgs:
+            recent = await self.client.get_messages(target_bot, limit=3)
+            ep1_msgs = [m for m in recent if m.media and getattr(m.media, "document", None)]
+
+        if not ep1_msgs:
+            logger.error(f"❌ [@{target_bot}] Video xabari kelmadi.")
+            QueueManager().update_status(item.id, "failed", error_message="Video xabari kelmadi")
+            return False
+
+        current_video_msg = ep1_msgs[0]
+        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+
+        # ==========================================
+        # A) KINO SIKLI (1 qism)
+        # ==========================================
+        if is_single_movie:
+            print(f"🎬 [ANIMEELAR] '{title}' film sifatida yuklanmoqda...", flush=True)
+
             thread_id = None
             if AUTO_TOPIC_CHAT_ID:
                 try:
@@ -1339,65 +1370,49 @@ class TelethonModeratorPipeline:
                 except Exception as top_err:
                     logger.warning(f"Topic ochishda xatolik: {top_err}")
 
-            # Darhol topic ichiga banner/poster yuborish (topic bo'm-bo'sh turmasligi uchun):
             if thread_id and AUTO_TOPIC_CHAT_ID:
                 rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
                 director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
                 cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
                 year_str = f" ({year})" if year else ""
-                welcome_text = (
-                    f"🎬 <b>{html.escape(title)}</b> (Anime film){year_str}\n"
-                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Anime film')}\n"
+                caption_text = (
+                    f"🎬 <b>{html.escape(title)}</b> (Anime Film){year_str}\n"
+                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
                     f"{rating_str}{director_str}{cast_str}"
                     f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
-                    f"⏳ <i>Video yuklanmoqda, kuting...</i>"
+                    f"⬇️ <i>Film yuklanmoqda...</i>"
                 )
                 poster_to_send = meta.get("poster_url") or item.poster_url
                 if poster_to_send:
                     try:
-                        await self.client.send_file(
-                            AUTO_TOPIC_CHAT_ID,
-                            file=poster_to_send,
-                            caption=welcome_text,
-                            reply_to=thread_id,
-                            parse_mode="html"
-                        )
+                        await self.client.send_file(AUTO_TOPIC_CHAT_ID, file=poster_to_send, caption=caption_text, reply_to=thread_id, parse_mode="html")
                     except Exception:
-                        await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
-                else:
-                    await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+                        await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=caption_text, reply_to=thread_id, parse_mode="html")
 
-            # Topicga yuklash
-            topic_caption = (
-                f"🎬 <b>{html.escape(title)}</b>\n"
-                f"🔑 <b>Kodi:</b> <code>{slug}</code>\n"
-                + (f"📅 <b>Yili:</b> {year}\n" if year else "")
+            caption_video = (
+                f"🎬 <b>{html.escape(title)}</b>" + (f" ({year})" if year else "") + "\n"
+                f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
+                f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n"
+                f"🇺🇿 <b>Tili:</b> O'zbek tilida\n\n"
+                f"🍿 @kinochi_robot orqali yuklandi."
             )
             topic_video_msg = await self._upload_video_to_chat(
-                video_msg=video_msg,
+                video_msg=current_video_msg,
                 target_chat=target_chat,
                 reply_to=thread_id,
-                caption=topic_caption
+                caption=caption_video
             )
-            if not topic_video_msg:
-                topic_video_msg = video_msg
+            storage_msg = topic_video_msg or current_video_msg
+            if storage_chat and str(storage_chat) != str(target_chat):
+                s_msg = await self._upload_video_to_chat(
+                    video_msg=topic_video_msg or current_video_msg,
+                    target_chat=storage_chat,
+                    reply_to=None,
+                    caption=caption_video
+                )
+                if s_msg:
+                    storage_msg = s_msg
 
-            # Storage kanalga nusxalash
-            storage_caption = (
-                f"🍿 <b>{html.escape(title)}</b>\n"
-                f"🔑 <b>Kodi:</b> <code>{slug}</code>\n"
-                + (f"📅 <b>Yili:</b> {year}\n" if year else "")
-            )
-            storage_msg = await self._upload_video_to_chat(
-                video_msg=topic_video_msg,
-                target_chat=storage_chat,
-                reply_to=None,
-                caption=storage_caption
-            )
-            if not storage_msg:
-                storage_msg = topic_video_msg
-
-            # DB ga yozish
             bot_file_id = None
             try:
                 from telethon.utils import pack_bot_file_id
@@ -1416,7 +1431,7 @@ class TelethonModeratorPipeline:
                     imdb_rating=meta.get("imdb_rating"),
                     tmdb_rating=meta.get("tmdb_rating"),
                     tmdb_id=meta.get("tmdb_id"),
-                    genres=meta.get("genres"),
+                    genres=meta.get("genres") or genres_text or "Anime",
                     cast=meta.get("cast"),
                     director=meta.get("director"),
                     release_year=year,
@@ -1440,52 +1455,80 @@ class TelethonModeratorPipeline:
                 pass
 
             QueueManager().update_status(item.id, "completed")
-            print(f"✅ [KAWAII] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
+            print(f"✅ [ANIMEELAR] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
             return True
 
+        # ==========================================
         # B) KO'P QISMLI SERIAL SIKLI
-        logger.info(f"📺 '{title}' serial sifatida yuklanmoqda...")
-        print(f"📺 [KAWAII] '{title}' serial sifatida yuklanmoqda...", flush=True)
+        # ==========================================
+        logger.info(f"📺 '{title}' serial sifatida yuklanmoqda ({ep_count} qism)...")
+        print(f"📺 [ANIMEELAR] '{title}' serial sifatida yuklanmoqda ({ep_count} qism)...", flush=True)
 
         series_id = None
         season_id = None
         thread_id = None
-        newly_created_series = False
+        existing_episodes_set = set()
 
-        async with async_session_factory() as session:
-            series_repo = SeriesRepository(session)
-            series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+        if existing_series_id:
+            series_id = existing_series_id
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                s_obj = await series_service.get_series_by_id(series_id)
+                if s_obj and s_obj.seasons:
+                    season_id = s_obj.seasons[0].id
+                    existing_eps = await series_repo.get_episodes_by_season(season_id)
+                    existing_episodes_set = {ep.episode_number for ep in existing_eps}
+                    logger.info(f"🔄 Mavjud serial qayta tiklandi: ID={series_id}, bazadagi qismlar: {sorted(list(existing_episodes_set))}")
+                    if s_obj.source_id:
+                        src_obj = await session.get(SourceModel, s_obj.source_id)
+                        if src_obj and src_obj.topic_id:
+                            thread_id = int(src_obj.topic_id)
+        else:
+            if AUTO_TOPIC_CHAT_ID:
+                try:
+                    res_topic = await self.client(CreateForumTopicRequest(
+                        peer=AUTO_TOPIC_CHAT_ID,
+                        title=f"📺 {title[:95]} ({year or ''})".strip(),
+                        icon_color=0x6FB9F0
+                    ))
+                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
+                except Exception as top_err:
+                    logger.warning(f"Topic ochishda xatolik: {top_err}")
 
-            existing_series = await series_repo.get_series_by_title_and_year(title, year)
-            if not existing_series:
-                sec_dup = await self.dup_checker.check(
-                    title=title,
-                    year=year,
-                    original_title=meta.get("original_title"),
-                    media_type="series",
-                    tmdb_id=meta.get("tmdb_id")
+            if thread_id and AUTO_TOPIC_CHAT_ID:
+                welcome_text = (
+                    f"📺 <b>{html.escape(title)}</b> (Anime Serial)" + (f" ({year})" if year else "") + "\n"
+                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
+                    f"🔢 <b>Jami qismlar:</b> {ep_count} ta\n\n"
+                    f"📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                    f"⬇️ <i>Qismlar yuklanmoqda...</i>"
                 )
-                if (sec_dup.is_duplicate or sec_dup.is_incomplete) and sec_dup.matched_id:
-                    existing_series = await series_repo.get_series_by_id(sec_dup.matched_id)
+                poster_to_send = meta.get("poster_url") or item.poster_url
+                if poster_to_send:
+                    try:
+                        await self.client.send_file(AUTO_TOPIC_CHAT_ID, file=poster_to_send, caption=welcome_text, reply_to=thread_id, parse_mode="html")
+                    except Exception:
+                        await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
 
-            if existing_series:
-                series_id = existing_series.id
-                if existing_series.source and existing_series.source.topic_id:
-                    thread_id = existing_series.source.topic_id
-                    logger.info(f"ℹ️ Mavjud serialning Topic ID si ishlatiladi: {thread_id}")
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
 
-            if not existing_series:
-                source = SourceModel(
-                    name=title,
-                    type="superguruh",
-                    chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
-                    topic_id=None
-                )
-                session.add(source)
-                await session.flush()
+                source = None
+                if AUTO_TOPIC_CHAT_ID:
+                    source = SourceModel(
+                        name=title,
+                        type="superguruh",
+                        chat_id=int(AUTO_TOPIC_CHAT_ID) if (isinstance(AUTO_TOPIC_CHAT_ID, int) or (isinstance(AUTO_TOPIC_CHAT_ID, str) and AUTO_TOPIC_CHAT_ID.lstrip('-').isdigit())) else 0,
+                        topic_id=int(thread_id) if thread_id else None
+                    )
+                    session.add(source)
+                    await session.flush()
 
                 series_data = SeriesCreate(
                     title=title,
+                    original_title=meta.get("original_title") or item.original_title,
                     description=meta.get("description"),
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
@@ -1495,126 +1538,624 @@ class TelethonModeratorPipeline:
                     director=meta.get("director"),
                     cast=meta.get("cast"),
                     category_ids=meta.get("category_ids"),
-                    source_id=source.id,
+                    source_id=source.id if source else None,
                     status="ongoing"
                 )
                 created_series = await series_service.create_series(series_data)
                 series_id = created_series.id
-                newly_created_series = True
-            else:
-                newly_created_series = False
 
-            all_seasons = await series_repo.get_seasons_by_series(series_id)
-            matched_season = next((s for s in all_seasons if s.season_number == 1), None)
-            if not matched_season:
                 created_season = await series_service.create_season(SeasonCreate(
                     series_id=series_id,
                     season_number=1,
-                    title="1-Mavsum"
+                    title="1-fasl"
                 ))
                 season_id = created_season.id
-            else:
-                season_id = matched_season.id
-            await session.commit()
+                await session.commit()
 
-        existing_eps = set()
-        async with async_session_factory() as session:
-            series_repo = SeriesRepository(session)
-            s_model = await series_repo.get_season_by_id(season_id)
-            if s_model and s_model.episodes:
-                for ep in s_model.episodes:
-                    if ep.translations:
-                        existing_eps.add(ep.episode_number)
-
-        parsed_ep_count = None
-        if watch_btn_text:
-            m_w = re.search(r'(\d+)\s*(?:epizod|qism)', watch_btn_text, re.I)
-            if m_w:
-                parsed_ep_count = int(m_w.group(1))
-        if not parsed_ep_count and card_msg and card_msg.text:
-            m_c = re.search(r'/\s*(\d+)\s*epizod', card_msg.text, re.I) or re.search(r'/\s*(\d+)\b', card_msg.text)
-            if m_c:
-                parsed_ep_count = int(m_c.group(1))
-
-        total_ep_count = item.episodes_count or parsed_ep_count or len(ep_buttons) or 12
-        logger.info(f"📊 Serial qismlari soni: {total_ep_count} ta (Bazada mavjud: {len(existing_eps)} ta)")
+        total_ep_count = ep_count
+        downloaded_in_session = len(existing_episodes_set)
         current_ep = 1
-        downloaded_in_session = 0
+
+        latest_btn_msg = current_video_msg
 
         while current_ep <= total_ep_count:
             if max_episodes and downloaded_in_session >= max_episodes:
-                logger.info(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi. Sikl to'xtatilmoqda.")
-                print(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi.", flush=True)
+                logger.info(f"🛑 Belgilangan limitga ({max_episodes}) yetildi.")
                 break
 
-            if current_ep in existing_eps:
-                logger.info(f"⏭ {current_ep}-qism allaqachon mavjud, o'tkazib yuborildi.")
+            if current_ep in existing_episodes_set:
+                logger.info(f"⏩ {current_ep}-qism bazada allaqachon mavjud, o'tkazib yuborildi.")
                 current_ep += 1
                 continue
 
-            await asyncio.sleep(2.5)
-
-            card_msg = await self.client.get_messages(target_bot, ids=click_id)
-            target_btn = None
-            next_page_btn = None
-
-            for r_i, row in enumerate(card_msg.buttons or []):
-                for c_i, btn in enumerate(row):
-                    b_t = btn.text.strip().lower()
-                    m_ep = re.search(r'(\d+)\s*ep\b', b_t)
-                    if m_ep and int(m_ep.group(1)) == current_ep:
-                        target_btn = (r_i, c_i, btn)
-                    if "keyingi" in b_t or "➡️" in b_t:
-                        next_page_btn = (r_i, c_i, btn)
-
-            if not target_btn and next_page_btn:
-                logger.info(f"📄 Keyingi qismlar sahifasiga o'tilmoqda ({next_page_btn[2].text})...")
-                await self.safe_click(card_msg, next_page_btn[0], next_page_btn[1])
-                await asyncio.sleep(2.0)
-                continue
-
-            if not target_btn:
-                logger.warning(f"⚠️ {current_ep}-qism tugmasi topilmadi. Serial yakunlangan bo'lishi mumkin.")
-                break
-
-            logger.info(f"▶️ {current_ep}-qism yuklanmoqda ({target_btn[2].text})...")
-            print(f"  ▶️ [KAWAII] {current_ep}-qism yuklanmoqda...", flush=True)
+            print(f"  🎬 [ANIMEELAR] {current_ep}-qism yuklanmoqda...", flush=True)
 
             v_msg = None
-            # 1-qism videosi "Tomosha qilish" bosilishi bilanoq bot tomonidan kartaga biriktirib berilgan bo'ladi!
-            if current_ep == 1 and is_video_message(card_msg):
-                v_msg = card_msg
+            ep_match = re.search(r'(\d+)\s*[-_]?\s*qism', (latest_btn_msg.text or "") if latest_btn_msg else "", re.IGNORECASE)
+            detected_ep = int(ep_match.group(1)) if ep_match else None
+            
+            if detected_ep == current_ep and latest_btn_msg and is_video_message(latest_btn_msg):
+                v_msg = latest_btn_msg
             else:
-                prev_doc = getattr(getattr(card_msg, "media", None), "document", None)
-                prev_doc_id = prev_doc.id if prev_doc else None
+                target_btn_coords = None
+                
+                for attempt in range(5):
+                    if not latest_btn_msg or not latest_btn_msg.buttons:
+                        break
 
-                await self.safe_click(card_msg, target_btn[0], target_btn[1])
-
-                # Kawaii bot yangi xabar yubormaydi, mavjud xabarni (click_id) in-place tahrirlab yangi video qo'yadi:
-                for _ in range(12):
-                    await asyncio.sleep(1.0)
-                    fresh_m = await self.client.get_messages(target_bot, ids=click_id)
-                    if fresh_m and fresh_m.media:
-                        cur_doc = getattr(fresh_m.media, "document", None)
-                        has_ep_text = bool(fresh_m.text and re.search(rf'epizod\s*\**\s*{current_ep}\b', fresh_m.text, re.I))
-                        if cur_doc and (cur_doc.id != prev_doc_id or has_ep_text):
-                            v_msg = fresh_m
-                            card_msg = fresh_m
-                            logger.info(f"✅ In-place edit aniqlandi: {current_ep}-qism videosi yangilandi (Doc ID: {cur_doc.id})")
+                    for r_idx, row in enumerate(latest_btn_msg.buttons):
+                        for c_idx, btn in enumerate(row):
+                            b_txt = btn.text.strip()
+                            b_data = btn.data.decode("utf-8", errors="ignore") if btn.data else ""
+                            if b_txt == str(current_ep) or b_txt == f"[💽] - {current_ep}":
+                                target_btn_coords = (r_idx, c_idx)
+                                break
+                            if b_data and f"yuklanolish={code}={current_ep}=" in b_data:
+                                target_btn_coords = (r_idx, c_idx)
+                                break
+                        if target_btn_coords:
                             break
 
-                if not v_msg:
-                    fresh_fallback = await self.client.get_messages(target_bot, ids=click_id)
-                    if is_video_message(fresh_fallback):
-                        v_msg = fresh_fallback
-                        card_msg = fresh_fallback
+                    if target_btn_coords:
+                        break
 
-            if not is_video_message(v_msg):
-                logger.warning(f"❌ {current_ep}-qism videosi qabul qilinmadi, keyingisiga o'tilmoqda.")
+                    next_page_btn = None
+                    for r_idx, row in enumerate(latest_btn_msg.buttons):
+                        for c_idx, btn in enumerate(row):
+                            if btn.text.strip() == "➡️" or (btn.data and b"next" in btn.data):
+                                next_page_btn = (r_idx, c_idx)
+                                break
+                        if next_page_btn:
+                            break
+
+                    if next_page_btn:
+                        logger.info(f"[{current_ep}-qism] Keyingi qismlar sahifasiga o'tilmoqda (➡️)...")
+                        _, p_flood = await self.safe_click(latest_btn_msg, next_page_btn[0], next_page_btn[1])
+                        if p_flood == -1:
+                            logger.info(f"ℹ️ [{current_ep}-qism] Keyingi sahifa mavjud emas. Botdagi qismlar tugadi.")
+                            break
+                        await asyncio.sleep(2.0)
+                        upd = await self.client.get_messages(target_bot, ids=latest_btn_msg.id)
+                        if upd:
+                            latest_btn_msg = upd
+                    else:
+                        break
+
+                if not target_btn_coords:
+                    logger.info(f"ℹ️ {current_ep}-qism tugmasi botda mavjud emas. Serialning mavjud qismlari yakunlandi.")
+                    break
+
+                await self.safe_click(latest_btn_msg, target_btn_coords[0], target_btn_coords[1])
+                await asyncio.sleep(2.0)
+
+                new_v_msgs = await poll_new_messages(
+                    self.client,
+                    target_bot,
+                    latest_btn_msg.id,
+                    timeout=30.0,
+                    interval=1.5,
+                    condition=lambda msgs: any(m.media and getattr(m.media, "document", None) for m in msgs)
+                )
+                if not new_v_msgs:
+                    recent = await self.client.get_messages(target_bot, limit=5)
+                    new_v_msgs = [m for m in recent if m.id > latest_btn_msg.id and m.media and getattr(m.media, "document", None)]
+                if new_v_msgs:
+                    matched = next((m for m in new_v_msgs if (re.search(r'(\d+)\s*[-_]?\s*qism', (m.text or '')) and int(re.search(r'(\d+)\s*[-_]?\s*qism', m.text).group(1)) == current_ep)), None)
+                    v_msg = matched or new_v_msgs[0]
+                    latest_btn_msg = v_msg
+
+            if not v_msg or not is_video_message(v_msg):
+                logger.warning(f"❌ {current_ep}-qism videosi olinmadi, keyingisiga o'tilmoqda.")
                 current_ep += 1
                 continue
 
-            # Faqat video muvaffaqiyatli qabul qilingandagina yangi Forum Topic ochiladi:
+            ep_caption = (
+                f"🎬 <b>{html.escape(title)}</b>\n"
+                f"🔢 <b>{current_ep}-Qism</b>"
+            )
+            topic_msg = await self._upload_video_to_chat(
+                video_msg=v_msg,
+                target_chat=target_chat,
+                reply_to=thread_id,
+                caption=ep_caption
+            )
+            storage_msg = topic_msg or v_msg
+            if storage_chat and str(storage_chat) != str(target_chat):
+                s_msg = await self._upload_video_to_chat(
+                    video_msg=topic_msg or v_msg,
+                    target_chat=storage_chat,
+                    reply_to=None,
+                    caption=ep_caption
+                )
+                if s_msg:
+                    storage_msg = s_msg
+
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                ep_entity = await series_service.create_episode(EpisodeCreate(
+                    season_id=season_id,
+                    episode_number=current_ep,
+                    title=f"{current_ep}-qism"
+                ))
+                ep_id = ep_entity.id
+
+                ep_bot_file_id = None
+                try:
+                    from telethon.utils import pack_bot_file_id
+                    if storage_msg and storage_msg.media:
+                        ep_bot_file_id = pack_bot_file_id(storage_msg.media)
+                except Exception:
+                    pass
+
+                await series_repo.add_episode_translation(
+                    episode_id=ep_id,
+                    language="Asosiy",
+                    telegram_file_id=ep_bot_file_id,
+                    storage_channel_message_id=storage_msg.id
+                )
+                await session.commit()
+
+            downloaded_in_session += 1
+            existing_episodes_set.add(current_ep)
+            item.downloaded_episodes = downloaded_in_session
+            print(f"  ✅ [ANIMEELAR] {current_ep}-qism saqlandi!", flush=True)
+
+            QueueManager().update_status(
+                item.id,
+                "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
+                downloaded_episodes=downloaded_in_session,
+                episodes_count=total_ep_count
+            )
+
+            current_ep += 1
+            await asyncio.sleep(1.5)
+
+        try:
+            await delete_cache_pattern("cache:series:*")
+        except Exception:
+            pass
+
+        final_status = "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
+        QueueManager().update_status(
+            item.id,
+            final_status,
+            downloaded_episodes=downloaded_in_session,
+            episodes_count=total_ep_count
+        )
+        print(f"🎉 [ANIMEELAR] Serial yakunlandi! Jami {downloaded_in_session} ta qism saqlandi (Status: {final_status}).", flush=True)
+        return True
+
+    async def run_anitoob_anime(self, item: QueueItem, max_episodes: Optional[int] = None) -> bool:
+        """
+        AniToob (@ANITOOBUZ_BOT / bot.anitoobtv.uz) animesi bo'yicha to'liq moderator sikli:
+        @ANITOOBUZ_BOT orqali anime va ko'p qismli seriallarni yuklash,
+        Topic ochish, Storage kanalga saqlash va websayt bazasiga ulash.
+        """
+        target_bot = "ANITOOBUZ_BOT"
+        logger.info("\n" + "="*55)
+        logger.info(f"🎌 ANITOOB ANIME MODERATOR SIKLI: '{item.title}' | BOT: @{target_bot}")
+        logger.info("="*55)
+        print(f"\n🚀 [ANITOOB] '{item.title}' yuklash boshlanmoqda...", flush=True)
+
+        # 1. Kodni aniqlash
+        code = item.id.replace("anitoob_", "").strip() if item.id.startswith("anitoob_") else ""
+        if not code and item.url and "start=" in item.url:
+            code = item.url.split("start=")[-1].strip()
+        if not code:
+            num_match = re.search(r'\d+', item.id)
+            code = num_match.group(0) if num_match else ""
+
+        if not code:
+            from scraper.anitoob_parser import get_anitoob_catalog
+            cat = get_anitoob_catalog()
+            c_low = item.title.lower()
+            for c_k, c_v in cat.items():
+                if c_v.get("title", "").lower() in c_low or c_low in c_v.get("title", "").lower():
+                    code = c_k
+                    break
+
+        if not code:
+            logger.error(f"❌ [@{target_bot}] '{item.title}' uchun AniToob kodi topilmadi.")
+            QueueManager().update_status(item.id, "failed", error_message="AniToob kodi topilmadi")
+            return False
+
+        # 2. @ANITOOBUZ_BOT ga /start {code} yuborish
+        req_cmd = f"/start {code}"
+        logger.info(f"[@{target_bot}] botiga so'rov: '{req_cmd}'...")
+        sent = await self.client.send_message(target_bot, req_cmd)
+
+        card_msgs = await poll_new_messages(
+            self.client,
+            target_bot,
+            sent.id,
+            timeout=10.0,
+            interval=0.35,
+            condition=lambda msgs: any(m.buttons for m in msgs)
+        )
+        if not card_msgs:
+            recent = await self.client.get_messages(target_bot, limit=3)
+            card_msgs = [m for m in recent if m.buttons]
+
+        if not card_msgs:
+            logger.error(f"❌ [@{target_bot}] Bot javob bermadi yoki kartada tugmalar yo'q.")
+            QueueManager().update_status(item.id, "failed", error_message="Bot javob bermadi")
+            return False
+
+        card_msg = card_msgs[0]
+        unlocked = await self.handle_sponsor_lock(target_bot, card_msg)
+        if unlocked:
+            card_msg = unlocked
+        card_text = card_msg.text or ""
+
+        if "Nomi:" not in card_text and "Kod:" not in card_text:
+            logger.warning(f"❌ [@{target_bot}] Kod #{code} bo'yicha anime topilmadi.")
+            print(f"❌ [ANITOOB] Kod #{code} bo'yicha anime topilmadi.", flush=True)
+            QueueManager().update_status(item.id, "failed", error_message=f"Kod #{code} topilmadi")
+            return False
+
+        # 3. Kartadan metadata ajratib olish
+        raw_title = item.title
+        m_t = re.search(r'Nomi\s*:\s*([^\n\r]+)', card_text)
+        if m_t:
+            raw_title = m_t.group(1).strip()
+
+        ep_count = 1
+        m_ep = re.search(r'Qismi\s*:\s*(\d+)', card_text)
+        if m_ep:
+            ep_count = int(m_ep.group(1))
+
+        year = item.year
+        m_y = re.search(r'Yili?\s*:\s*(\d{4})', card_text)
+        if m_y:
+            year = int(m_y.group(1))
+
+        genres_text = ""
+        m_g = re.search(r'Janri?\s*:\s*([^\n\r]+)', card_text)
+        if m_g:
+            genres_text = m_g.group(1).strip()
+
+        if not year or not genres_text:
+            try:
+                from scraper.anitoob_parser import get_anitoob_catalog
+                cat = get_anitoob_catalog()
+                c_info = cat.get(str(code), {})
+                if not year:
+                    year = c_info.get("year")
+                if not genres_text and c_info.get("genres"):
+                    genres_text = ", ".join(c_info.get("genres", []))
+            except Exception:
+                pass
+
+        # 4. Dublikat tekshiruvi
+        dup_check = await self.dup_checker.check(
+            title=raw_title,
+            year=year,
+            original_title=item.original_title,
+            media_type="movie" if ep_count == 1 else "series",
+            episodes_count=ep_count
+        )
+        existing_series_id = None
+        if (dup_check.is_duplicate or getattr(dup_check, "is_incomplete", False)) and dup_check.matched_type == "series":
+            existing_series_id = dup_check.matched_id
+
+        if dup_check.is_duplicate:
+            if dup_check.matched_type == "movie":
+                logger.info(f"ℹ️ Anime film bazada allaqachon mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANITOOB] '{raw_title}' bazada film sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif dup_check.matched_type == "series" and not getattr(dup_check, "is_incomplete", False):
+                logger.info(f"ℹ️ Anime serial bazada to'liq mavjud: ID={dup_check.matched_id} ('{dup_check.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANITOOB] '{raw_title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+
+        # 5. Metadata boyitish (AI + TMDB)
+        meta = await enrich_movie_smart(
+            raw_title=raw_title,
+            year=year,
+            original_title=item.original_title,
+            source_poster=item.poster_url,
+            caption=card_text,
+            media_type="movie" if ep_count == 1 else "series"
+        )
+        title = meta.get("title") or raw_title
+        year = meta.get("year") or year
+        target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
+        storage_chat = STORAGE_CHANNEL_ID
+
+        # 6. 'Tomosha qilish' tugmasini topish va bosish
+        watch_btn_coords = None
+        for r_idx, row in enumerate(card_msg.buttons or []):
+            for c_idx, btn in enumerate(row):
+                if "tomosha qilish" in btn.text.lower() or (btn.data and btn.data.startswith(b"yuklanolish")):
+                    watch_btn_coords = (r_idx, c_idx)
+                    break
+            if watch_btn_coords:
+                break
+
+        if not watch_btn_coords:
+            logger.error(f"❌ [@{target_bot}] 'Tomosha qilish' tugmasi topilmadi.")
+            QueueManager().update_status(item.id, "failed", error_message="Tomosha qilish tugmasi topilmadi")
+            return False
+
+        logger.info(f"[@{target_bot}] 'Tomosha qilish' tugmasi bosilmoqda...")
+        await self.safe_click(card_msg, watch_btn_coords[0], watch_btn_coords[1])
+        await asyncio.sleep(2.0)
+
+        ep1_msgs = await poll_new_messages(
+            self.client,
+            target_bot,
+            card_msg.id,
+            timeout=10.0,
+            interval=0.35,
+            condition=lambda msgs: any(m.media and getattr(m.media, "document", None) for m in msgs)
+        )
+        if not ep1_msgs:
+            recent = await self.client.get_messages(target_bot, limit=4)
+            ep1_msgs = [m for m in recent if m.media and getattr(m.media, "document", None)]
+
+        if not ep1_msgs:
+            logger.error(f"❌ [@{target_bot}] Video xabari kelmadi.")
+            QueueManager().update_status(item.id, "failed", error_message="Video xabari kelmadi")
+            return False
+
+        current_video_msg = ep1_msgs[0]
+        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+
+        # ==========================================
+        # A) KINO SIKLI (1 qism)
+        # ==========================================
+        if is_single_movie:
+            print(f"🎬 [ANITOOB] '{title}' film sifatida yuklanmoqda...", flush=True)
+
+            thread_id = None
+            if AUTO_TOPIC_CHAT_ID:
+                try:
+                    res_topic = await self.client(CreateForumTopicRequest(
+                        peer=AUTO_TOPIC_CHAT_ID,
+                        title=f"{title[:100]} ({year or ''})".strip(),
+                        icon_color=0x6FB9F0
+                    ))
+                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
+                except Exception as top_err:
+                    logger.warning(f"Topic ochishda xatolik: {top_err}")
+
+            if thread_id and AUTO_TOPIC_CHAT_ID:
+                rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
+                director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
+                cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
+                year_str = f" ({year})" if year else ""
+                caption_text = (
+                    f"🎬 <b>{html.escape(title)}</b> (Anime Film){year_str}\n"
+                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
+                    f"{rating_str}{director_str}{cast_str}"
+                    f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                    f"⬇️ <i>Film yuklanmoqda...</i>"
+                )
+                poster_to_send = meta.get("poster_url") or item.poster_url
+                if poster_to_send:
+                    try:
+                        await self.client.send_file(AUTO_TOPIC_CHAT_ID, file=poster_to_send, caption=caption_text, reply_to=thread_id, parse_mode="html")
+                    except Exception:
+                        await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=caption_text, reply_to=thread_id, parse_mode="html")
+
+            caption_video = (
+                f"🎬 <b>{html.escape(title)}</b>" + (f" ({year})" if year else "") + "\n"
+                f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
+                f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n"
+                f"🇺🇿 <b>Tili:</b> O'zbek tilida\n\n"
+                f"🍿 @kinochi_robot orqali yuklandi."
+            )
+            topic_video_msg = await self._upload_video_to_chat(
+                video_msg=current_video_msg,
+                target_chat=target_chat,
+                reply_to=thread_id,
+                caption=caption_video
+            )
+            storage_msg = topic_video_msg or current_video_msg
+            if storage_chat and str(storage_chat) != str(target_chat):
+                s_msg = await self._upload_video_to_chat(
+                    video_msg=topic_video_msg or current_video_msg,
+                    target_chat=storage_chat,
+                    reply_to=None,
+                    caption=caption_video
+                )
+                if s_msg:
+                    storage_msg = s_msg
+
+            bot_file_id = None
+            try:
+                from telethon.utils import pack_bot_file_id
+                if storage_msg and storage_msg.media:
+                    bot_file_id = pack_bot_file_id(storage_msg.media)
+            except Exception:
+                pass
+
+            async with async_session_factory() as session:
+                repo = MovieRepositoryImpl(session)
+                service = MovieService(repo)
+                created_movie = await service.create_movie(
+                    title=title,
+                    original_title=meta.get("original_title") or item.original_title,
+                    description=meta.get("description"),
+                    imdb_rating=meta.get("imdb_rating"),
+                    tmdb_rating=meta.get("tmdb_rating"),
+                    tmdb_id=meta.get("tmdb_id"),
+                    genres=meta.get("genres") or genres_text or "Anime",
+                    cast=meta.get("cast"),
+                    director=meta.get("director"),
+                    release_year=year,
+                    runtime=meta.get("runtime"),
+                    poster_url=meta.get("poster_url") or item.poster_url,
+                    trailer_url=meta.get("trailer_url"),
+                    category_ids=meta.get("category_ids")
+                )
+                movie_id = created_movie.id
+                await service.link_movie_video_from_message(
+                    movie_id=movie_id,
+                    message_id=storage_msg.id,
+                    language="Asosiy",
+                    telegram_file_id=bot_file_id
+                )
+                await session.commit()
+
+            try:
+                await delete_cache_pattern("cache:movies:*")
+            except Exception:
+                pass
+
+            QueueManager().update_status(item.id, "completed")
+            print(f"✅ [ANITOOB] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
+            return True
+
+        # ==========================================
+        # B) KO'P QISMLI SERIAL SIKLI
+        # ==========================================
+        logger.info(f"📺 '{title}' serial sifatida yuklanmoqda ({ep_count} qism)...")
+        print(f"📺 [ANITOOB] '{title}' serial sifatida yuklanmoqda ({ep_count} qism)...", flush=True)
+
+        series_id = None
+        season_id = None
+        thread_id = None
+        existing_episodes_set = set()
+
+        if existing_series_id:
+            series_id = existing_series_id
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                s_obj = await series_service.get_series_by_id(series_id)
+                if s_obj and s_obj.seasons:
+                    season_id = s_obj.seasons[0].id
+                    existing_eps = await series_repo.get_episodes_by_season(season_id)
+                    existing_episodes_set = {ep.episode_number for ep in existing_eps}
+                    logger.info(f"🔄 Mavjud serial qayta tiklandi: ID={series_id}, bazadagi qismlar: {sorted(list(existing_episodes_set))}")
+                    if s_obj.source_id:
+                        src_obj = await session.get(SourceModel, s_obj.source_id)
+                        if src_obj and src_obj.topic_id:
+                            thread_id = int(src_obj.topic_id)
+        else:
+            async with async_session_factory() as session:
+                series_repo = SeriesRepository(session)
+                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                created_series = await series_service.create_series(SeriesCreate(
+                    title=title,
+                    original_title=meta.get("original_title") or item.original_title,
+                    description=meta.get("description"),
+                    imdb_rating=meta.get("imdb_rating"),
+                    tmdb_rating=meta.get("tmdb_rating"),
+                    tmdb_id=meta.get("tmdb_id"),
+                    genres=meta.get("genres") or genres_text or "Anime",
+                    cast=meta.get("cast"),
+                    director=meta.get("director"),
+                    release_year=year,
+                    poster_url=meta.get("poster_url") or item.poster_url,
+                    category_ids=meta.get("category_ids")
+                ))
+                series_id = created_series.id
+                s_season = await series_service.create_season(SeasonCreate(series_id=series_id, season_number=1, title="1-fasl"))
+                season_id = s_season.id
+                await session.commit()
+
+        total_ep_count = ep_count
+        downloaded_in_session = len(existing_episodes_set)
+        current_ep = 1
+
+        latest_btn_msg = current_video_msg
+
+        while current_ep <= total_ep_count:
+            if max_episodes and downloaded_in_session >= max_episodes:
+                logger.info(f"🛑 Belgilangan limitga ({max_episodes}) yetildi.")
+                break
+
+            if current_ep in existing_episodes_set:
+                logger.info(f"⏩ {current_ep}-qism bazada allaqachon mavjud, o'tkazib yuborildi.")
+                current_ep += 1
+                continue
+
+            print(f"  🎬 [ANITOOB] {current_ep}-qism yuklanmoqda...", flush=True)
+
+            v_msg = None
+            if current_ep == 1 and current_video_msg and is_video_message(current_video_msg):
+                v_msg = current_video_msg
+            else:
+                target_btn_coords = None
+
+                for attempt in range(6):
+                    if not latest_btn_msg or not latest_btn_msg.buttons:
+                        break
+
+                    for r_idx, row in enumerate(latest_btn_msg.buttons):
+                        for c_idx, btn in enumerate(row):
+                            b_txt = btn.text.strip()
+                            if b_txt == str(current_ep) or b_txt == f"[💽] - {current_ep}" or b_txt == f"[{current_ep}] - 💽":
+                                target_btn_coords = (r_idx, c_idx)
+                                break
+                        if target_btn_coords:
+                            break
+
+                    if target_btn_coords:
+                        break
+
+                    # Sahifa navigatsiyasi (➡️)
+                    next_page_btn = None
+                    for r_idx, row in enumerate(latest_btn_msg.buttons):
+                        for c_idx, btn in enumerate(row):
+                            if btn.text.strip() == "➡️" or (btn.data and b"next" in btn.data):
+                                next_page_btn = (r_idx, c_idx)
+                                break
+                        if next_page_btn:
+                            break
+
+                    if next_page_btn:
+                        logger.info(f"[{current_ep}-qism] Keyingi qismlar sahifasiga o'tilmoqda (➡️)...")
+                        await self.safe_click(latest_btn_msg, next_page_btn[0], next_page_btn[1])
+                        await asyncio.sleep(1.8)
+                        recent_after = await self.client.get_messages(target_bot, limit=2)
+                        for ram in recent_after:
+                            if ram.buttons:
+                                latest_btn_msg = ram
+                                if is_video_message(ram) and f"{current_ep}-qism" in (ram.text or ""):
+                                    v_msg = ram
+                                break
+                    else:
+                        break
+
+                if not target_btn_coords and not v_msg:
+                    logger.warning(f"⚠️ {current_ep}-qism tugmasi botda topilmadi.")
+                    current_ep += 1
+                    continue
+
+                if not v_msg and target_btn_coords:
+                    await self.safe_click(latest_btn_msg, target_btn_coords[0], target_btn_coords[1])
+                    await asyncio.sleep(1.8)
+
+                    new_v_msgs = await poll_new_messages(
+                        self.client,
+                        target_bot,
+                        latest_btn_msg.id,
+                        timeout=10.0,
+                        interval=0.35,
+                        condition=lambda msgs: any(m.media and getattr(m.media, "document", None) for m in msgs)
+                    )
+                    if new_v_msgs:
+                        v_msg = new_v_msgs[0]
+                        latest_btn_msg = v_msg
+                    else:
+                        recent_check = await self.client.get_messages(target_bot, limit=2)
+                        for rcm in recent_check:
+                            if rcm.media and getattr(rcm.media, "document", None):
+                                v_msg = rcm
+                                latest_btn_msg = v_msg
+                                break
+
+            if not v_msg or not is_video_message(v_msg):
+                logger.warning(f"❌ {current_ep}-qism videosi olinmadi, keyingisiga o'tilmoqda.")
+                current_ep += 1
+                continue
+
             if not thread_id and AUTO_TOPIC_CHAT_ID:
                 try:
                     res_topic = await self.client(CreateForumTopicRequest(
@@ -1624,17 +2165,12 @@ class TelethonModeratorPipeline:
                     ))
                     thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
                     if thread_id:
-                        logger.info(f"✅ Yangi Forum Topic ochildi (ID: {thread_id})")
-                        rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
-                        director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
-                        cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
-                        year_str = f" ({year})" if year else ""
                         welcome_text = (
-                            f"📺 <b>{html.escape(title)}</b> (Anime Serial){year_str}\n"
-                            f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Anime')}\n"
-                            f"{rating_str}{director_str}{cast_str}"
-                            f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
-                            f"⬇️ <i>Serial qismlari shu yerga yuklanmoqda...</i>"
+                            f"📺 <b>{html.escape(title)}</b> (Anime Serial)" + (f" ({year})" if year else "") + "\n"
+                            f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
+                            f"🔢 <b>Jami qismlar:</b> {total_ep_count} ta\n\n"
+                            f"📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                            f"⬇️ <i>Qismlar yuklanmoqda...</i>"
                         )
                         poster_to_send = meta.get("poster_url") or item.poster_url
                         if poster_to_send:
@@ -1642,10 +2178,7 @@ class TelethonModeratorPipeline:
                                 await self.client.send_file(AUTO_TOPIC_CHAT_ID, file=poster_to_send, caption=welcome_text, reply_to=thread_id, parse_mode="html")
                             except Exception:
                                 await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
-                        else:
-                            await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
 
-                        # Series source topic_id sini yangilaymiz
                         if series_id:
                             async with async_session_factory() as update_session:
                                 upd_s = await update_session.get(SeriesModel, series_id)
@@ -1667,22 +2200,16 @@ class TelethonModeratorPipeline:
                 reply_to=thread_id,
                 caption=ep_caption
             )
-            if not topic_msg:
-                topic_msg = v_msg
-
-            storage_caption = (
-                f"🎬 <b>{html.escape(title)}</b>\n"
-                f"🔢 <b>{current_ep}-Qism</b>\n"
-                + (f"📅 <b>Yili:</b> {year}\n" if year else "")
-            )
-            storage_msg = await self._upload_video_to_chat(
-                video_msg=topic_msg,
-                target_chat=storage_chat,
-                reply_to=None,
-                caption=storage_caption
-            )
-            if not storage_msg:
-                storage_msg = topic_msg
+            storage_msg = topic_msg or v_msg
+            if storage_chat and str(storage_chat) != str(target_chat):
+                s_msg = await self._upload_video_to_chat(
+                    video_msg=topic_msg or v_msg,
+                    target_chat=storage_chat,
+                    reply_to=None,
+                    caption=ep_caption
+                )
+                if s_msg:
+                    storage_msg = s_msg
 
             async with async_session_factory() as session:
                 series_repo = SeriesRepository(session)
@@ -1702,11 +2229,6 @@ class TelethonModeratorPipeline:
                 except Exception:
                     pass
 
-                # Bot kartasidan ovoz jamoasini aniqlash (masalan: 🎙 Anizzers)
-                raw_caption = (card_msg.text or (v_msg.text if v_msg else "")) or ""
-                voice_match = re.search(r'🎙\s*([^•\n\r]+)', raw_caption)
-                voiceover_team = voice_match.group(1).strip() if voice_match else "Kawaii Uz"
-
                 await series_repo.add_episode_translation(
                     episode_id=ep_id,
                     language="Asosiy",
@@ -1716,58 +2238,24 @@ class TelethonModeratorPipeline:
                 await session.commit()
 
             downloaded_in_session += 1
+            existing_episodes_set.add(current_ep)
             item.downloaded_episodes = downloaded_in_session
-            print(f"  ✅ [KAWAII] {current_ep}-qism saqlandi!", flush=True)
+            print(f"  ✅ [ANITOOB] {current_ep}-qism saqlandi!", flush=True)
 
-            try:
-                QueueManager().update_status(
-                    item.id,
-                    "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
-                    downloaded_episodes=downloaded_in_session,
-                    episodes_count=total_ep_count
-                )
-            except Exception:
-                pass
-
-            if max_episodes and downloaded_in_session >= max_episodes:
-                logger.info(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi. Sikl yakunlandi.")
-                print(f"🛑 Belgilangan maksimal qismlar soniga ({max_episodes}) yetildi.", flush=True)
-                current_ep += 1
-                break
+            QueueManager().update_status(
+                item.id,
+                "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
+                downloaded_episodes=downloaded_in_session,
+                episodes_count=total_ep_count
+            )
 
             current_ep += 1
+            await asyncio.sleep(1.0)
 
         try:
             await delete_cache_pattern("cache:series:*")
         except Exception:
             pass
-
-        if downloaded_in_session == 0:
-            if thread_id and AUTO_TOPIC_CHAT_ID and newly_created_series:
-                try:
-                    from telethon.tl.functions.messages import DeleteTopicHistoryRequest
-                    peer_del = await self.client.get_input_entity(AUTO_TOPIC_CHAT_ID)
-                    await self.client(DeleteTopicHistoryRequest(peer=peer_del, top_msg_id=thread_id))
-                    logger.info(f"🧹 Bo'sh qolgan topic Telegramdan o'chirildi: {thread_id}")
-                except Exception as del_top_err:
-                    logger.warning(f"Bo'sh topicni o'chirishda xatolik: {del_top_err}")
-
-            if newly_created_series and series_id:
-                try:
-                    from sqlalchemy import text
-                    async with async_session_factory() as cleanup_session:
-                        await cleanup_session.execute(text("DELETE FROM series_category WHERE series_id = :sid"), {"sid": series_id})
-                        await cleanup_session.execute(text("DELETE FROM page_series WHERE series_id = :sid"), {"sid": series_id})
-                        await cleanup_session.execute(text("DELETE FROM seasons WHERE series_id = :sid"), {"sid": series_id})
-                        await cleanup_session.execute(text("DELETE FROM series WHERE id = :sid"), {"sid": series_id})
-                        await cleanup_session.commit()
-                    logger.info(f"🧹 Chala serial (ID: {series_id}) tozalandi.")
-                except Exception as se_err:
-                    logger.warning(f"Chala serialni tozalashda xatolik: {se_err}")
-
-            QueueManager().update_status(item.id, "failed", error_message="Birorta ham qism yuklanmadi")
-            print(f"⚠️ [KAWAII] '{title}': Birorta ham qism yuklanmadi, bo'sh topic tozalandi.", flush=True)
-            return False
 
         final_status = "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
         QueueManager().update_status(
@@ -1776,7 +2264,7 @@ class TelethonModeratorPipeline:
             downloaded_episodes=downloaded_in_session,
             episodes_count=total_ep_count
         )
-        print(f"🎉 [KAWAII] Serial yakunlandi! Jami {downloaded_in_session} ta qism saqlandi (Status: {final_status}).", flush=True)
+        print(f"🎉 [ANITOOB] Serial yakunlandi! Jami {downloaded_in_session} ta qism saqlandi (Status: {final_status}).", flush=True)
         return True
 
     async def run_by_code(self, code: str, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
@@ -1789,20 +2277,44 @@ class TelethonModeratorPipeline:
         qm = QueueManager()
         queued_item = qm.get_item_by_code(clean_code)
 
-        # Kawaii bot tekshiruvi
-        if target_bot in ("kawaii", "kawaii_uz_bot") or (queued_item and getattr(queued_item, "source", None) == "kawaii"):
+        # AniToob bot tekshiruvi
+        t_bot_lower = str(target_bot).lower()
+        if t_bot_lower in ("anitoob", "anitoobuz_bot") or (queued_item and getattr(queued_item, "source", None) in ("anitoob", "anitoobuz_bot")):
             if queued_item:
-                return await self.run_kawaii_anime(item=queued_item, max_episodes=max_episodes)
+                return await self.run_anitoob_anime(item=queued_item, max_episodes=max_episodes)
+            from scraper.anitoob_parser import get_anitoob_catalog
+            cat = get_anitoob_catalog()
+            c_info = cat.get(clean_code, {})
+            c_title = c_info.get("title") or f"AniToob Anime #{clean_code}"
             dummy = QueueItem(
-                id=f"kawaii_{clean_code}",
-                source="kawaii",
-                title=f"Kawaii Anime {clean_code}",
+                id=f"anitoob_{clean_code}",
+                source="anitoob",
+                title=c_title,
+                original_title=None,
+                year=c_info.get("year"),
+                media_type="series",
+                url=f"https://t.me/ANITOOBUZ_BOT?start={clean_code}",
+                poster_url=c_info.get("poster_url")
+            )
+            return await self.run_anitoob_anime(item=dummy, max_episodes=max_episodes)
+
+        # Animeelar bot tekshiruvi
+        if t_bot_lower in ("animeelar", "animeelar_bot", "anime") or (queued_item and getattr(queued_item, "source", None) in ("animeelar", "anime")):
+            if queued_item:
+                return await self.run_animeelar_anime(item=queued_item, max_episodes=max_episodes)
+            from scraper.animeelar_parser import get_animeelar_catalog
+            cat = get_animeelar_catalog()
+            c_title = cat.get(clean_code) or f"Animeelar Anime #{clean_code}"
+            dummy = QueueItem(
+                id=f"animeelar_{clean_code}",
+                source="animeelar",
+                title=c_title,
                 original_title=None,
                 year=None,
                 media_type="series",
-                url=f"https://bot.kawaii.uz/anime/{clean_code}"
+                url=f"https://t.me/Animeelar_Bot?start={clean_code}"
             )
-            return await self.run_kawaii_anime(item=dummy, max_episodes=max_episodes)
+            return await self.run_animeelar_anime(item=dummy, max_episodes=max_episodes)
 
         if queued_item and queued_item.media_type == "series":
             logger.info(f"ℹ️ Kod #{clean_code} navbatda serial sifatida qayd etilgan ('{queued_item.title}'). Serial sikliga yo'naltirilmoqda...")

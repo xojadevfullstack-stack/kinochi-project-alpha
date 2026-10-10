@@ -26,27 +26,29 @@ echo.
 echo   [ TERMINALDA PARSER (Saytlardan katalog yig'ish) ]
 echo   2) Uzmovi saytidan katalog yig'ish (Parse)
 echo   3) Asilmedia saytidan katalog yig'ish (Parse)
-echo   4) Kawaii saytidan anime katalog yig'ish (Parse)
+echo   4) AniToob anime katalogini yig'ish (@ANITOOBUZ_BOT / bot.anitoobtv.uz)
+echo   5) Animeelar bot/katalogidan anime yig'ish (Parse)
 echo.
 echo   [ TERMINALDA GRABBER (Telegram botdan kinolarni yuklash) ]
-echo   5) Uzmovi botidan yuklash (@UzmovieTV_Bot)
-echo   6) Asilmedia botidan yuklash (@asilmediabot)
-echo   7) Kawaii botidan anime yuklash (@kawaii_uz_bot)
-echo   8) Muayyan film kodi yoki anime bo'yicha yuklash (masalan: 15 yoki 1-5 yoki acbvhsdv)
+echo   6) Uzmovi botidan yuklash (@UzmovieTV_Bot)
+echo   7) Asilmedia botidan yuklash (@asilmediabot)
+echo   8) AniToob botidan anime yuklash (@ANITOOBUZ_BOT)
+echo   9) Animeelar botidan anime yuklash (@Animeelar_Bot)
+echo   10) Muayyan film kodi yoki anime bo'yicha yuklash (masalan: 15 yoki 1-5 yoki 4)
 echo.
 echo   [ NAVBAT VA DUBLIKATLARNI BOSHQARISH ]
-echo   9) Navbatdagi dublikatlarni tozalash (--clean-duplicates)
-echo   10) Navbat statistikasini ko'rish (--stats)
+echo   11) Navbatdagi dublikatlarni tozalash (--clean-duplicates)
+echo   12) Navbat statistikasini ko'rish (--stats)
 echo.
 echo   [ TO'LIQ TIZIM ]
-echo   11) Barcha xizmatlarni yoqish (Backend + Bot + Admin Panel + Website)
+echo   13) Barcha xizmatlarni yoqish (Backend + Bot + Admin Panel + Website)
 echo.
 echo   0) Chiqish
 echo ======================================================================
 echo.
 
 set choice=
-set /p choice="Tanlovingizni kiriting (0-11): "
+set /p choice="Tanlovingizni kiriting (0-13): "
 
 if "%choice%"=="" exit /b
 
@@ -55,15 +57,17 @@ if "%choice%"=="1" goto opt_web
 if "%choice%"=="web" goto opt_web
 if "%choice%"=="2" goto opt_parse_uzmovi
 if "%choice%"=="3" goto opt_parse_asilmedia
-if "%choice%"=="4" goto opt_parse_kawaii
-if "%choice%"=="5" goto opt_grab_uzmovi
-if "%choice%"=="6" goto opt_grab_asilmedia
-if "%choice%"=="7" goto opt_grab_kawaii
-if "%choice%"=="8" goto opt_grab_codes
-if "%choice%"=="9" goto opt_clean
-if "%choice%"=="10" goto opt_stats
+if "%choice%"=="4" goto opt_parse_anitoob
+if "%choice%"=="5" goto opt_parse_animeelar
+if "%choice%"=="6" goto opt_grab_uzmovi
+if "%choice%"=="7" goto opt_grab_asilmedia
+if "%choice%"=="8" goto opt_grab_anitoob
+if "%choice%"=="9" goto opt_grab_animeelar
+if "%choice%"=="10" goto opt_grab_codes
+if "%choice%"=="11" goto opt_clean
+if "%choice%"=="12" goto opt_stats
 if "%choice%"=="stats" goto opt_stats
-if "%choice%"=="11" goto opt_all
+if "%choice%"=="13" goto opt_all
 if "%choice%"=="0" exit /b
 
 echo.
@@ -133,10 +137,28 @@ if not "%1"=="" exit /b
 pause
 goto menu
 
-:opt_parse_kawaii
+:opt_parse_anitoob
 cls
 echo ======================================================================
-echo   KAWAII SAYTIDAN ANIME PARSE QILISH
+echo   ANITOOB ANIME PARSE QILISH (@ANITOOBUZ_BOT / bot.anitoobtv.uz)
+echo ======================================================================
+echo.
+set pages=3
+if "%1"=="" (
+    set /p pages="Nechta sahifa yig'ilsin? (Har sahifa 20 ta anime) [Standart: 3]: "
+)
+echo.
+echo Boshlanmoqda...
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --parse --source anitoob --pages %pages%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_parse_animeelar
+cls
+echo ======================================================================
+echo   ANIMEELAR BOTIDAN ANIME PARSE QILISH
 echo ======================================================================
 echo.
 set pages=3
@@ -145,7 +167,7 @@ if "%1"=="" (
 )
 echo.
 echo Boshlanmoqda...
-backend\.venv\Scripts\python.exe scraper/run_scraper.py --parse --source kawaii --pages %pages%
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --parse --source animeelar --pages %pages%
 echo.
 if not "%1"=="" exit /b
 pause
@@ -187,10 +209,10 @@ if not "%1"=="" exit /b
 pause
 goto menu
 
-:opt_grab_kawaii
+:opt_grab_anitoob
 cls
 echo ======================================================================
-echo   KAWAII BOTIDAN YUKLASH (@kawaii_uz_bot)
+echo   ANITOOB BOTIDAN ANIME YUKLASH (@ANITOOBUZ_BOT)
 echo ======================================================================
 echo.
 set count=5
@@ -199,7 +221,25 @@ if "%1"=="" (
 )
 echo.
 echo Boshlanmoqda...
-backend\.venv\Scripts\python.exe scraper/run_scraper.py --download --target kawaii --limit %count%
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --download --target anitoob --limit %count%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_grab_animeelar
+cls
+echo ======================================================================
+echo   ANIMEELAR BOTIDAN YUKLASH (@Animeelar_Bot)
+echo ======================================================================
+echo.
+set count=5
+if "%1"=="" (
+    set /p count="Nechta anime yuklansin? [Standart: 5]: "
+)
+echo.
+echo Boshlanmoqda...
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --download --target animeelar --limit %count%
 echo.
 if not "%1"=="" exit /b
 pause
@@ -214,16 +254,18 @@ echo.
 echo Qaysi bot orqali yuklamoqchisiz?
 echo 1) Uzmovi bot (@UzmovieTV_Bot)
 echo 2) Asilmedia bot (@asilmediabot)
-echo 3) Kawaii bot (@kawaii_uz_bot)
-set /p bot_choice="Tanlovingiz (1, 2 yoki 3) [Standart: 1]: "
+echo 3) AniToob anime bot (@ANITOOBUZ_BOT)
+echo 4) Animeelar bot (@Animeelar_Bot)
+set /p bot_choice="Tanlovingiz (1-4) [Standart: 3]: "
 
 set target=uzmovi
 if "%bot_choice%"=="2" set target=asilmedia
-if "%bot_choice%"=="3" set target=kawaii
+if "%bot_choice%"=="3" set target=anitoob
+if "%bot_choice%"=="4" set target=animeelar
 
 echo.
 set codes=
-set /p codes="Film kodlari yoki anime slug (masalan: 15 yoki 1-5 yoki acbvhsdv): "
+set /p codes="Film/Anime kodlari (masalan: 4 yoki 1-5 yoki 43): "
 if "%codes%"=="" (
     echo [!] Kod kiritilmadi!
     if not "%1"=="" exit /b

@@ -253,7 +253,7 @@ class ProcessManager:
         start_page: Optional[int] = None,
         min_rating: Optional[float] = None
     ) -> Dict[str, Any]:
-        if source not in ("uzmovi", "asilmedia", "kawaii"):
+        if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
             return {"success": False, "message": "Noma'lum manba."}
         pages = max(1, min(int(pages), 50))
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--parse", "--source", source, "--pages", str(pages)]
@@ -271,7 +271,7 @@ class ProcessManager:
         media_type: str = "all",
         item_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        if target not in ("uzmovi", "asilmedia", "kawaii"):
+        if target not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
             return {"success": False, "message": "Noma'lum maqsadli bot."}
         if media_type not in ("all", "movie", "series"):
             return {"success": False, "message": "Noma'lum media turi."}
@@ -299,7 +299,7 @@ class ProcessManager:
         media_type: str = "all",
         min_rating: Optional[float] = None
     ) -> Dict[str, Any]:
-        if source not in ("uzmovi", "asilmedia", "kawaii", "all"):
+        if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar", "all"):
             return {"success": False, "message": "Noma'lum manba."}
 
         try:
@@ -318,7 +318,7 @@ class ProcessManager:
             cmd.extend(["--min-rating", str(min_rating)])
 
         expected = int(limit) if (limit and int(limit) > 0) else 0
-        src_label = "BARCHASI (UZMOVI, ASILMEDIA & KAWAII)" if source == "all" else source.upper()
+        src_label = "BARCHASI (UZMOVI, ASILMEDIA, ANITOOB & ANIMEELAR)" if source == "all" else source.upper()
         return self._launch(
             cmd,
             "autopilot",

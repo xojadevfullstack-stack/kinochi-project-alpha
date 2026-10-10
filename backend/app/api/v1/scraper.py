@@ -46,27 +46,27 @@ def require_scraper(admin=Depends(get_current_admin)):
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
-SOURCES = ("uzmovi", "asilmedia", "kawaii", "all")
+SOURCES = ("uzmovi", "asilmedia", "anitoob", "animeelar", "all")
 MEDIA_TYPES = ("all", "movie", "series")
 STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists", "needs_review")
 
 
 class ParseRequest(BaseModel):
-    source: str = Field("uzmovi", description="Manba: uzmovi, asilmedia yoki kawaii")
+    source: str = Field("uzmovi", description="Manba: uzmovi, asilmedia, anitoob yoki animeelar")
     pages: int = Field(3, ge=1, le=50, description="Sahifalar soni")
     start_page: Optional[int] = Field(None, ge=1, description="Boshlang'ich sahifa (bo'sh qolsa state.json dan)")
     min_rating: Optional[float] = Field(None, ge=0.0, le=10.0, description="Minimal reyting (default 6.0)")
 
 
 class DownloadRequest(BaseModel):
-    target: str = Field("uzmovi", description="Maqsadli bot: uzmovi, asilmedia yoki kawaii")
+    target: str = Field("uzmovi", description="Maqsadli bot: uzmovi, asilmedia, anitoob yoki animeelar")
     limit: int = Field(5, ge=1, le=500, description="Yuklanadigan kinolar soni")
     codes: Optional[str] = Field(None, max_length=500, description="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15)")
     media_type: str = Field("all", description="all, movie yoki series")
 
 
 class AutopilotRequest(BaseModel):
-    source: str = Field("all", description="Manba: uzmovi, asilmedia, kawaii yoki all")
+    source: str = Field("all", description="Manba: uzmovi, asilmedia, anitoob, animeelar yoki all")
     pages: Optional[int] = Field(None, ge=1, le=50, description="Sahifalar soni (ixtiyoriy, avtonom rejimda kerak emas)")
     limit: Optional[int] = Field(None, ge=1, le=500, description="Yuklanadigan kinolar limiti (ixtiyoriy)")
     media_type: str = Field("all", description="all, movie yoki series")
@@ -78,8 +78,10 @@ class UpdateStateRequest(BaseModel):
     uzmovi_total_pages: Optional[int] = None
     asilmedia_current_page: Optional[int] = None
     asilmedia_total_pages: Optional[int] = None
-    kawaii_current_page: Optional[int] = None
-    kawaii_total_pages: Optional[int] = None
+    anitoob_current_page: Optional[int] = None
+    anitoob_total_pages: Optional[int] = None
+    animeelar_current_page: Optional[int] = None
+    animeelar_total_pages: Optional[int] = None
     min_rating: Optional[float] = None
 
 
@@ -208,10 +210,10 @@ def start_download(data: DownloadRequest, admin=Depends(require_scraper)):
 @router.get("/search-site")
 async def search_site(
     q: str = Query(..., min_length=2, max_length=200, description="Qidiruv so'rovi"),
-    source: str = Query("all", description="all, uzmovi, asilmedia yoki kawaii"),
+    source: str = Query("all", description="all, uzmovi, asilmedia yoki animeelar"),
     admin=Depends(require_scraper),
 ):
-    """Uzmovi, Asilmedia va Kawaii saytlaridan film/seriallarni qidirish."""
+    """Uzmovi, Asilmedia va Animeelar sayt/botlaridan film/seriallarni qidirish."""
     from scraper.site_search import search_sites
     results = await search_sites(query=q, source=source)
     return {"results": results, "count": len(results)}

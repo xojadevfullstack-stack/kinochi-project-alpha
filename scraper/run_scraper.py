@@ -27,7 +27,8 @@ from scraper.site_parser import (
     parse_asilmedia_page,
     parse_uzmovi_page_async,
     parse_asilmedia_page_async,
-    parse_kawaii_page_async,
+    parse_animeelar_page_async,
+    parse_anitoob_page_async,
 )
 from scraper.state_manager import StateManager
 from scraper.duplicate_checker import DuplicateChecker
@@ -70,10 +71,10 @@ async def cmd_parse(
                     urls.append(f"https://asilmedia.org/films/tarjima_kinolar/page/{page}/" if page > 1 else "https://asilmedia.org/films/tarjima_kinolar/")
                 if media_type in ("all", "series"):
                     urls.append(f"https://asilmedia.org/films/serial/page/{page}/" if page > 1 else "https://asilmedia.org/films/serial/")
-    elif source == "kawaii":
+    elif source in ("anitoob", "anitoobuz", "animeelar", "anime"):
         pass
     else:
-        print("❌ Noma'lum manba. 'uzmovi', 'asilmedia' yoki 'kawaii' tanlang.")
+        print("❌ Noma'lum manba. 'uzmovi', 'asilmedia', 'anitoob' yoki 'animeelar' tanlang.")
         return
 
     # Parallel aiohttp orqali barcha sahifalarni bir vaqtda tortamiz
@@ -82,8 +83,10 @@ async def cmd_parse(
     async with aiohttp.ClientSession(connector=conn) as session:
         if source == "uzmovi":
             tasks = [parse_uzmovi_page_async(session, u, min_rating=min_rating) for u in urls]
-        elif source == "kawaii":
-            tasks = [parse_kawaii_page_async(session, page=p, min_rating=min_rating, media_type=media_type) for p in range(start_page, end_page + 1)]
+        elif source in ("anitoob", "anitoobuz"):
+            tasks = [parse_anitoob_page_async(session, page=p, min_rating=min_rating, media_type=media_type) for p in range(start_page, end_page + 1)]
+        elif source in ("animeelar", "anime"):
+            tasks = [parse_animeelar_page_async(session, page=p, min_rating=min_rating, media_type=media_type) for p in range(start_page, end_page + 1)]
         else:
             tasks = [parse_asilmedia_page_async(session, u, min_rating=min_rating) for u in urls]
         pages_results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -155,8 +158,10 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
         print(f"\n🚀 {len(code_list)} ta film kodi bo'yicha yuklash boshlanmoqda (Maqsadli bot: @{bot_username}, Kodlar: {', '.join(code_list)})...")
     else:
         qm = QueueManager()
-        if target == "kawaii":
-            target_source = "kawaii"
+        if target in ("anitoob", "anitoobuz"):
+            target_source = "anitoob"
+        elif target in ("animeelar", "anime"):
+            target_source = "animeelar"
         elif "asil" in target.lower():
             target_source = "asilmedia"
         else:
@@ -205,7 +210,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
 
                 if success:
                     print(f"✅ Kod #{c} muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi.")
-                    for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"kawaii_{c}"]:
+                    for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"animeelar_{c}", f"anitoob_{c}"]:
                         if qid in qm.items:
                             qm.update_status(qid, "completed")
                 else:
@@ -322,6 +327,8 @@ def cmd_stats():
     print("\n📑 Checkpoint holati:")
     print(f"  • Uzmovi joriy sahifa: {st.get('uzmovi_current_page', 1)} / {st.get('uzmovi_total_pages', 350)}")
     print(f"  • Asilmedia joriy sahifa: {st.get('asilmedia_current_page', 1)} / {st.get('asilmedia_total_pages', 400)}")
+    print(f"  • AniToob joriy sahifa: {st.get('anitoob_current_page', 1)} / {st.get('anitoob_total_pages', 20)}")
+    print(f"  • Animeelar joriy sahifa: {st.get('animeelar_current_page', 1)} / {st.get('animeelar_total_pages', 50)}")
     print(f"  • Minimal reyting: {st.get('min_rating', 6.0)}+")
     print()
 
@@ -346,8 +353,8 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
     if min_rating is None:
         min_rating = float(sm.get_state().get("min_rating", 6.0))
 
-    sources_to_run = ["uzmovi", "asilmedia", "kawaii"] if source in ("all", "both") else [source]
-    src_title = "BARCHASI (UZMOVI, ASILMEDIA & KAWAII)" if len(sources_to_run) > 1 else source.upper()
+    sources_to_run = ["uzmovi", "asilmedia", "anitoob", "animeelar"] if source in ("all", "both") else [source]
+    src_title = "BARCHASI (UZMOVI, ASILMEDIA, ANITOOB & ANIMEELAR)" if len(sources_to_run) > 1 else source.upper()
 
     print(f"\n" + "="*60, flush=True)
     print(f"🚀 TO'LIQ AVTONOM AVTOPILOT ISHGA TUSHIRILMOQDA", flush=True)
@@ -363,7 +370,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
     # 1. Agar foydalanuvchi qat'iy cheklangan pages/limit bergan bo'lsa (parametrli rejim):
     if pages and limit:
         for s in sources_to_run:
-            target_bot = "kawaii" if s == "kawaii" else ("asilmedia" if "asil" in s.lower() else "uzmovi")
+            target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
             await cmd_parse(source=s, max_pages=pages, media_type=media_type, min_rating=min_rating)
             await cmd_download(limit=limit, target=target_bot, media_type=media_type)
         print("\n🏁 Avtopilot sikli yakunlandi!", flush=True)
@@ -371,7 +378,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 
     # 2. Cheksiz rejimda: agar oldingi sessiyadan qolib ketgan kutilayotgan filmlar bo'lsa, avval ularni yuklaymiz
     for s in sources_to_run:
-        target_bot = "kawaii" if s == "kawaii" else ("asilmedia" if "asil" in s.lower() else "uzmovi")
+        target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
         old_pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
         if old_pending:
             print(f"📋 [{s.upper()}] Oldingi navbatda kutilayotgan {len(old_pending)} ta film yuklanmoqda...", flush=True)
@@ -407,7 +414,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             )
 
             # Yangi saralangan pending filmlarni yuklaymiz
-            target_bot = "kawaii" if s == "kawaii" else ("asilmedia" if "asil" in s.lower() else "uzmovi")
+            target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
             pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
             if pending:
                 print(f"🚀 [{s.upper()}] {len(pending)} ta yangi saralangan film Telegram orqali yuklanmoqda...", flush=True)
@@ -425,12 +432,12 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 def main():
     parser = argparse.ArgumentParser(description="Kinochi Avtomatlashtirilgan Parser & Grabber")
     parser.add_argument("--parse", action="store_true", help="Saytdan kinolar ro'yxatini yig'ish")
-    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "kawaii", "all"], help="Sayt manbasi (uzmovi, asilmedia, kawaii yoki all)")
+    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "all"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar yoki all)")
     parser.add_argument("--pages", type=int, default=None, help="Yig'iladigan sahifalar soni")
     parser.add_argument("--start-page", type=int, default=None, help="Boshlang'ich sahifa (agar berilmasa, state.json dan olinadi)")
     parser.add_argument("--min-rating", type=float, default=None, help="Minimal reyting (default: 6.0)")
     parser.add_argument("--download", action="store_true", help="Navbatdagi kinolarni Telegram botdan yuklab olish")
-    parser.add_argument("--target", type=str, default="uzmovi", choices=["uzmovi", "asilmedia", "kawaii"], help="Maqsadli bot (uzmovi, asilmedia yoki kawaii)")
+    parser.add_argument("--target", type=str, default="uzmovi", choices=["uzmovi", "asilmedia", "anitoob", "animeelar"], help="Maqsadli bot (uzmovi, asilmedia, anitoob yoki animeelar)")
     parser.add_argument("--limit", type=int, default=5, help="Yuklanadigan kinolar soni (default: 5)")
     parser.add_argument("--codes", type=str, default=None, help="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15,20)")
     parser.add_argument("--clean-duplicates", action="store_true", help="Navbatdagi mavjud bazadagi dublikatlarni tozalash")

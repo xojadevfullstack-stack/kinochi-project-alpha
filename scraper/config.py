@@ -40,6 +40,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 TARGET_BOTS = {
     "uzmovi": "UzmovieTV_Bot",
     "asilmedia": "asilmediabot",
-    "kawaii": "kawaii_uz_bot"
+    "animeelar": "Animeelar_Bot",
+    "anitoob": "ANITOOBUZ_BOT",
 }
 

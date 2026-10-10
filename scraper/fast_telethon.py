@@ -59,7 +59,7 @@ class DownloadSender:
     async def next(self) -> Optional[bytes]:
         if not self.remaining:
             return None
-        result = await self.client._call(self.sender, self.request)
+        result = await asyncio.wait_for(self.client._call(self.sender, self.request), timeout=35.0)
         self.remaining -= 1
         self.request.offset += self.stride
         return result.bytes
@@ -98,7 +98,7 @@ class UploadSender:
 
     async def _next(self, data: bytes) -> None:
         self.request.bytes = data
-        await self.client._call(self.sender, self.request)
+        await asyncio.wait_for(self.client._call(self.sender, self.request), timeout=45.0)
         self.request.file_part += self.stride
 
     async def disconnect(self) -> None:
@@ -255,17 +255,18 @@ class ParallelTransferrer:
         part_count = math.ceil(file_size / part_size)
         await self._init_download(connection_count, file, part_count, part_size)
 
-        part = 0
-        while part < part_count:
-            tasks = [self.loop.create_task(s.next()) for s in self.senders]
-            for task in tasks:
-                data = await task
-                if not data:
-                    break
-                yield data
-                part += 1
-
-        await self._cleanup()
+        try:
+            part = 0
+            while part < part_count:
+                tasks = [self.loop.create_task(s.next()) for s in self.senders]
+                for task in tasks:
+                    data = await task
+                    if not data:
+                        break
+                    yield data
+                    part += 1
+        finally:
+            await self._cleanup()
 
 
 def _stream_file_chunks(file_obj: BinaryIO, chunk_size: int = 128 * 1024):

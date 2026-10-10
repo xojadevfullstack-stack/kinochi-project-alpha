@@ -20,8 +20,10 @@ interface ScraperState {
   uzmovi_total_pages?: number;
   asilmedia_current_page?: number;
   asilmedia_total_pages?: number;
-  kawaii_current_page?: number;
-  kawaii_total_pages?: number;
+  anitoob_current_page?: number;
+  anitoob_total_pages?: number;
+  animeelar_current_page?: number;
+  animeelar_total_pages?: number;
   min_rating?: number;
   telegram_bot_status?: string;
 }
@@ -90,14 +92,15 @@ export default function ScraperPage() {
   const [downloadMediaType, setDownloadMediaType] = useState("all");
 
   // ── Autopilot & Checkpoint States ─────────────────────────
-  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia" | "kawaii">("all");
+  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia" | "anitoob" | "animeelar">("all");
   const [autopilotMinRating, setAutopilotMinRating] = useState(6.0);
   const [autopilotMediaType, setAutopilotMediaType] = useState<"all" | "movie" | "series">("all");
   const [autopilotLoading, setAutopilotLoading] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState(false);
   const [editUzmoviPage, setEditUzmoviPage] = useState<number | "">("");
   const [editAsilPage, setEditAsilPage] = useState<number | "">("");
-  const [editKawaiiPage, setEditKawaiiPage] = useState<number | "">("");
+  const [editAnitoobPage, setEditAnitoobPage] = useState<number | "">("");
+  const [editAnimeelarPage, setEditAnimeelarPage] = useState<number | "">("");
   const [editMinRating, setEditMinRating] = useState<number | "">("");
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -106,7 +109,7 @@ export default function ScraperPage() {
 
   // ── Site Search States ────────────────────────────────────
   const [siteSearchQuery, setSiteSearchQuery] = useState("");
-  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia" | "kawaii">("all");
+  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia" | "anitoob" | "animeelar">("all");
   const [siteSearchResults, setSiteSearchResults] = useState<any[]>([]);
   const [searchingSite, setSearchingSite] = useState(false);
   const [searchHasSearched, setSearchHasSearched] = useState(false);
@@ -480,7 +483,8 @@ export default function ScraperPage() {
       const body: any = {};
       if (editUzmoviPage !== "") body.uzmovi_current_page = Number(editUzmoviPage);
       if (editAsilPage !== "") body.asilmedia_current_page = Number(editAsilPage);
-      if (editKawaiiPage !== "") body.kawaii_current_page = Number(editKawaiiPage);
+      if (editAnitoobPage !== "") body.anitoob_current_page = Number(editAnitoobPage);
+      if (editAnimeelarPage !== "") body.animeelar_current_page = Number(editAnimeelarPage);
       if (editMinRating !== "") body.min_rating = Number(editMinRating);
       await fetchApi("/scraper/state", {
         method: "POST",
@@ -783,7 +787,7 @@ export default function ScraperPage() {
             </div>
 
             {/* Live Metrics Pulse Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-2 border-t border-white/5">
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
                 <span className="material-symbols-outlined text-sm text-amber-400">speed</span>
                 <span>Tezlik: <strong className="text-white">{status?.speed_movies_per_min ?? 0}</strong> film/daq</span>
@@ -795,12 +799,20 @@ export default function ScraperPage() {
                 </strong></span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
-                <span className="material-symbols-outlined text-sm text-emerald-400">auto_stories</span>
+                <span className="material-symbols-outlined text-sm text-blue-400">auto_stories</span>
                 <span>Uzmovi: <strong className="text-white">{status?.state?.uzmovi_current_page ?? 1}</strong>-sahifa</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
-                <span className="material-symbols-outlined text-sm text-purple-400">auto_stories</span>
+                <span className="material-symbols-outlined text-sm text-emerald-400">auto_stories</span>
                 <span>Asilmedia: <strong className="text-white">{status?.state?.asilmedia_current_page ?? 1}</strong>-sahifa</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+                <span className="material-symbols-outlined text-sm text-amber-400">auto_stories</span>
+                <span>AniToob: <strong className="text-white">{status?.state?.anitoob_current_page ?? 1}</strong>-sahifa</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+                <span className="material-symbols-outlined text-sm text-purple-400">auto_stories</span>
+                <span>Animeelar: <strong className="text-white">{status?.state?.animeelar_current_page ?? 1}</strong>-sahifa</span>
               </div>
             </div>
 
@@ -994,7 +1006,8 @@ export default function ScraperPage() {
                         if (!editingCheckpoint) {
                           setEditUzmoviPage(status?.state?.uzmovi_current_page ?? 1);
                           setEditAsilPage(status?.state?.asilmedia_current_page ?? 1);
-                          setEditKawaiiPage(status?.state?.kawaii_current_page ?? 1);
+                          setEditAnitoobPage(status?.state?.anitoob_current_page ?? 1);
+                          setEditAnimeelarPage(status?.state?.animeelar_current_page ?? 1);
                           setEditMinRating(status?.state?.min_rating ?? 6.0);
                         }
                         setEditingCheckpoint(!editingCheckpoint);
@@ -1006,7 +1019,7 @@ export default function ScraperPage() {
                   </div>
 
                   {!editingCheckpoint ? (
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-4 gap-2 text-xs">
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">Uzmovi:</span>
                         <strong className="text-white text-sm">{status?.state?.uzmovi_current_page ?? 1}</strong>
@@ -1018,14 +1031,19 @@ export default function ScraperPage() {
                         <span className="text-zinc-500 text-[10px]"> / {status?.state?.asilmedia_total_pages ?? 400}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
-                        <span className="text-text-secondary block text-[10px]">Kawaii:</span>
-                        <strong className="text-white text-sm">{status?.state?.kawaii_current_page ?? 1}</strong>
-                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.kawaii_total_pages ?? 50}</span>
+                        <span className="text-text-secondary block text-[10px]">AniToob:</span>
+                        <strong className="text-white text-sm">{status?.state?.anitoob_current_page ?? 1}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.anitoob_total_pages ?? 20}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                        <span className="text-text-secondary block text-[10px]">Animeelar:</span>
+                        <strong className="text-white text-sm">{status?.state?.animeelar_current_page ?? 1}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.animeelar_total_pages ?? 50}</span>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-2 pt-1 border-t border-white/5">
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-5 gap-2">
                         <div>
                           <label className="text-[10px] text-zinc-400">Uzmovi sahifa</label>
                           <input
@@ -1045,11 +1063,20 @@ export default function ScraperPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] text-zinc-400">Kawaii sahifa</label>
+                          <label className="text-[10px] text-zinc-400">AniToob sahifa</label>
                           <input
                             type="number"
-                            value={editKawaiiPage}
-                            onChange={(e) => setEditKawaiiPage(e.target.value === "" ? "" : Number(e.target.value))}
+                            value={editAnitoobPage}
+                            onChange={(e) => setEditAnitoobPage(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400">Animeelar sahifa</label>
+                          <input
+                            type="number"
+                            value={editAnimeelarPage}
+                            onChange={(e) => setEditAnimeelarPage(e.target.value === "" ? "" : Number(e.target.value))}
                             className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
                           />
                         </div>
@@ -1074,10 +1101,10 @@ export default function ScraperPage() {
                   )}
                 </div>
 
-                {/* Source Selection (4 buttons: Barchasi, Uzmovi, Asilmedia, Kawaii) */}
+                {/* Source Selection (5 buttons: Barchasi, Uzmovi, Asilmedia, AniToob, Animeelar) */}
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary mb-1">Sayt Manbasi</label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-5 gap-2">
                     <button
                       type="button"
                       onClick={() => setAutopilotSource("all")}
@@ -1116,15 +1143,27 @@ export default function ScraperPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAutopilotSource("kawaii")}
+                      onClick={() => setAutopilotSource("anitoob")}
                       className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
-                        autopilotSource === "kawaii"
+                        autopilotSource === "anitoob"
+                          ? "bg-amber-500/20 border-amber-500 text-white shadow-lg shadow-amber-500/20"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-base">⚡</span>
+                      <span>AniToob</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutopilotSource("animeelar")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        autopilotSource === "animeelar"
                           ? "bg-pink-500/20 border-pink-500 text-white shadow-lg shadow-pink-500/20"
                           : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
                       }`}
                     >
                       <span className="text-base">🎌</span>
-                      <span>Kawaii</span>
+                      <span>Animeelar</span>
                     </button>
                   </div>
                 </div>
@@ -1233,7 +1272,8 @@ export default function ScraperPage() {
                   >
                     <option value="uzmovi">Uzmovi (@UzmovieTV_Bot)</option>
                     <option value="asilmedia">Asilmedia (@asilmediabot)</option>
-                    <option value="kawaii">Kawaii (@kawaii_uz_bot)</option>
+                    <option value="anitoob">AniToob (@ANITOOBUZ_BOT)</option>
+                    <option value="animeelar">Animeelar (@Animeelar_Bot)</option>
                   </select>
                 </div>
 
@@ -1315,7 +1355,8 @@ export default function ScraperPage() {
                   >
                     <option value="uzmovi">Uzmovi (uzmovi.net / tarjima-kinolar)</option>
                     <option value="asilmedia">Asilmedia (asilmedia.org)</option>
-                    <option value="kawaii">Kawaii (bot.kawaii.uz / anime)</option>
+                    <option value="anitoob">AniToob (bot.anitoobtv.uz / anime)</option>
+                    <option value="animeelar">Animeelar (@Animeelar_Bot)</option>
                   </select>
                 </div>
 
@@ -1358,7 +1399,7 @@ export default function ScraperPage() {
             <div className="space-y-3 flex-1 flex flex-col">
               <div>
                 <p className="text-xs text-text-secondary">
-                  Uzmovi, Asilmedia va Kawaii saytlaridan to'g'ridan-to'g'ri qidirish, dublikatni tekshirish va bir klikda yuklash.
+                  Uzmovi, Asilmedia, AniToob va Animeelar manbalaridan to'g'ridan-to'g'ri qidirish, dublikatni tekshirish va bir klikda yuklash.
                 </p>
               </div>
 
@@ -1368,7 +1409,8 @@ export default function ScraperPage() {
                   { id: "all", label: "Barchasi" },
                   { id: "uzmovi", label: "Uzmovi" },
                   { id: "asilmedia", label: "Asilmedia" },
-                  { id: "kawaii", label: "Kawaii" },
+                  { id: "anitoob", label: "AniToob" },
+                  { id: "animeelar", label: "Animeelar" },
                 ] as const).map((s) => (
                   <button
                     key={s.id}
@@ -1490,6 +1532,10 @@ export default function ScraperPage() {
                                   className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                     item.source === "uzmovi"
                                       ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                      : item.source === "anitoob"
+                                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                      : item.source === "animeelar"
+                                      ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
                                       : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                                   }`}
                                 >
@@ -1964,7 +2010,8 @@ export default function ScraperPage() {
               <option value="all">Barchasi</option>
               <option value="uzmovi">Uzmovi</option>
               <option value="asilmedia">Asilmedia</option>
-              <option value="kawaii">Kawaii</option>
+              <option value="anitoob">AniToob</option>
+              <option value="animeelar">Animeelar</option>
             </select>
           </div>
         </div>
@@ -2074,10 +2121,18 @@ export default function ScraperPage() {
                           href={item.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-sky-400 hover:underline flex items-center gap-1 capitalize"
+                          className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1 transition-all ${
+                            item.source === "uzmovi"
+                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30"
+                              : item.source === "anitoob"
+                              ? "bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
+                              : item.source === "animeelar"
+                              ? "bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30"
+                              : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                          }`}
                         >
                           {item.source}
-                          <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                          <span className="material-symbols-outlined text-[12px]">open_in_new</span>
                         </a>
                       </td>
 
