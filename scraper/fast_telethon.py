@@ -341,6 +341,7 @@ async def fast_download_media(
     out_path: str,
     progress_callback: callable = None,
     connection_count: Optional[int] = None,
+    part_size_kb: Optional[float] = 512,
 ) -> str:
     """
     Telegram xabaridagi katta media faylni parallel MTProto oqimlari orqali juda yuqori tezlikda yuklab oladi.
@@ -358,6 +359,7 @@ async def fast_download_media(
         file=location,
         file_size=size,
         connection_count=connection_count,
+        part_size_kb=part_size_kb,
     )
 
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
@@ -381,12 +383,13 @@ async def fast_download(
     out_file_path: str,
     progress_callback: callable = None,
     connection_count: Optional[int] = None,
+    part_size_kb: Optional[float] = 512,
 ) -> str:
     """
     Convenience wrapper accepting Message or Document/TypeLocation.
     """
     if isinstance(location_or_msg, Message):
-        return await fast_download_media(client, location_or_msg, out_file_path, progress_callback, connection_count)
+        return await fast_download_media(client, location_or_msg, out_file_path, progress_callback, connection_count, part_size_kb)
 
     doc = getattr(location_or_msg, "document", location_or_msg)
     size = getattr(doc, "size", 0)
@@ -396,6 +399,7 @@ async def fast_download(
         file=location,
         file_size=size,
         connection_count=connection_count,
+        part_size_kb=part_size_kb,
     )
     os.makedirs(os.path.dirname(os.path.abspath(out_file_path)), exist_ok=True)
     downloaded_bytes = 0

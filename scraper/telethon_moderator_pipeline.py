@@ -1425,48 +1425,11 @@ class TelethonModeratorPipeline:
         logger.info(f"📺 '{title}' serial sifatida yuklanmoqda...")
         print(f"📺 [KAWAII] '{title}' serial sifatida yuklanmoqda...", flush=True)
 
-        thread_id = None
-        if AUTO_TOPIC_CHAT_ID:
-            try:
-                res_topic = await self.client(CreateForumTopicRequest(
-                    peer=AUTO_TOPIC_CHAT_ID,
-                    title=f"📺 {title[:95]} ({year or ''})".strip(),
-                    icon_color=0x6FB9F0
-                ))
-                thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
-            except Exception as top_err:
-                logger.warning(f"Topic ochishda xatolik: {top_err}")
-
-        # Topic ochilishi bilanoq darhol banner va posterni yuborish (topic bo'm-bo'sh turmasligi uchun):
-        if thread_id and AUTO_TOPIC_CHAT_ID:
-            rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
-            director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
-            cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
-            year_str = f" ({year})" if year else ""
-            welcome_text = (
-                f"📺 <b>{html.escape(title)}</b> (Anime Serial){year_str}\n"
-                f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Anime')}\n"
-                f"{rating_str}{director_str}{cast_str}"
-                f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
-                f"⬇️ <i>Serial qismlari shu yerga yuklanmoqda...</i>"
-            )
-            poster_to_send = meta.get("poster_url") or item.poster_url
-            if poster_to_send:
-                try:
-                    await self.client.send_file(
-                        AUTO_TOPIC_CHAT_ID,
-                        file=poster_to_send,
-                        caption=welcome_text,
-                        reply_to=thread_id,
-                        parse_mode="html"
-                    )
-                except Exception:
-                    await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
-            else:
-                await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
-
         series_id = None
         season_id = None
+        thread_id = None
+        newly_created_series = False
+
         async with async_session_factory() as session:
             series_repo = SeriesRepository(session)
             series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
@@ -1483,12 +1446,18 @@ class TelethonModeratorPipeline:
                 if sec_dup.is_duplicate and sec_dup.matched_id:
                     existing_series = await series_repo.get_series_by_id(sec_dup.matched_id)
 
+            if existing_series:
+                series_id = existing_series.id
+                if existing_series.source and existing_series.source.topic_id:
+                    thread_id = existing_series.source.topic_id
+                    logger.info(f"ℹ️ Mavjud serialning Topic ID si ishlatiladi: {thread_id}")
+
             if not existing_series:
                 source = SourceModel(
                     name=title,
                     type="superguruh",
                     chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
-                    topic_id=int(thread_id) if thread_id else None
+                    topic_id=None
                 )
                 session.add(source)
                 await session.flush()
@@ -1509,13 +1478,9 @@ class TelethonModeratorPipeline:
                 )
                 created_series = await series_service.create_series(series_data)
                 series_id = created_series.id
+                newly_created_series = True
             else:
-                series_id = existing_series.id
-                if thread_id and existing_series.source:
-                    existing_series.source.topic_id = int(thread_id)
-                    await session.commit()
-                elif not thread_id and existing_series.source and existing_series.source.topic_id:
-                    thread_id = existing_series.source.topic_id
+                newly_created_series = False
 
             all_seasons = await series_repo.get_seasons_by_series(series_id)
             matched_season = next((s for s in all_seasons if s.season_number == 1), None)
@@ -1582,20 +1547,77 @@ class TelethonModeratorPipeline:
             if current_ep == 1 and is_video_message(card_msg):
                 v_msg = card_msg
             else:
-                await self.safe_click(card_msg, target_btn[0], target_btn[1])
-                await asyncio.sleep(3.0)
-                v_msg = await self.client.get_messages(target_bot, ids=click_id)
+                prev_doc = getattr(getattr(card_msg, "media", None), "document", None)
+                prev_doc_id = prev_doc.id if prev_doc else None
 
-            if not is_video_message(v_msg):
-                async for nm in self.client.iter_messages(target_bot, limit=4):
-                    if is_video_message(nm):
-                        v_msg = nm
-                        break
+                await self.safe_click(card_msg, target_btn[0], target_btn[1])
+
+                # Kawaii bot yangi xabar yubormaydi, mavjud xabarni (click_id) in-place tahrirlab yangi video qo'yadi:
+                for _ in range(12):
+                    await asyncio.sleep(1.0)
+                    fresh_m = await self.client.get_messages(target_bot, ids=click_id)
+                    if fresh_m and fresh_m.media:
+                        cur_doc = getattr(fresh_m.media, "document", None)
+                        has_ep_text = bool(fresh_m.text and re.search(rf'epizod\s*\**\s*{current_ep}\b', fresh_m.text, re.I))
+                        if cur_doc and (cur_doc.id != prev_doc_id or has_ep_text):
+                            v_msg = fresh_m
+                            card_msg = fresh_m
+                            logger.info(f"✅ In-place edit aniqlandi: {current_ep}-qism videosi yangilandi (Doc ID: {cur_doc.id})")
+                            break
+
+                if not v_msg:
+                    fresh_fallback = await self.client.get_messages(target_bot, ids=click_id)
+                    if is_video_message(fresh_fallback):
+                        v_msg = fresh_fallback
+                        card_msg = fresh_fallback
 
             if not is_video_message(v_msg):
                 logger.warning(f"❌ {current_ep}-qism videosi qabul qilinmadi, keyingisiga o'tilmoqda.")
                 current_ep += 1
                 continue
+
+            # Faqat video muvaffaqiyatli qabul qilingandagina yangi Forum Topic ochiladi:
+            if not thread_id and AUTO_TOPIC_CHAT_ID:
+                try:
+                    res_topic = await self.client(CreateForumTopicRequest(
+                        peer=AUTO_TOPIC_CHAT_ID,
+                        title=f"📺 {title[:95]} ({year or ''})".strip(),
+                        icon_color=0x6FB9F0
+                    ))
+                    thread_id = res_topic.updates[0].id if hasattr(res_topic, 'updates') and res_topic.updates else getattr(res_topic, 'id', None)
+                    if thread_id:
+                        logger.info(f"✅ Yangi Forum Topic ochildi (ID: {thread_id})")
+                        rating_str = f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n" if (meta.get('imdb_rating') or meta.get('tmdb_rating')) else ""
+                        director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
+                        cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
+                        year_str = f" ({year})" if year else ""
+                        welcome_text = (
+                            f"📺 <b>{html.escape(title)}</b> (Anime Serial){year_str}\n"
+                            f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Anime')}\n"
+                            f"{rating_str}{director_str}{cast_str}"
+                            f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                            f"⬇️ <i>Serial qismlari shu yerga yuklanmoqda...</i>"
+                        )
+                        poster_to_send = meta.get("poster_url") or item.poster_url
+                        if poster_to_send:
+                            try:
+                                await self.client.send_file(AUTO_TOPIC_CHAT_ID, file=poster_to_send, caption=welcome_text, reply_to=thread_id, parse_mode="html")
+                            except Exception:
+                                await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+                        else:
+                            await self.client.send_message(AUTO_TOPIC_CHAT_ID, message=welcome_text, reply_to=thread_id, parse_mode="html")
+
+                        # Series source topic_id sini yangilaymiz
+                        if series_id:
+                            async with async_session_factory() as update_session:
+                                upd_s = await update_session.get(SeriesModel, series_id)
+                                if upd_s and upd_s.source_id:
+                                    upd_src = await update_session.get(SourceModel, upd_s.source_id)
+                                    if upd_src:
+                                        upd_src.topic_id = int(thread_id)
+                                        await update_session.commit()
+                except Exception as top_err:
+                    logger.warning(f"Topic ochishda xatolik: {top_err}")
 
             ep_caption = (
                 f"🎬 <b>{html.escape(title)}</b>\n"
@@ -1666,6 +1688,33 @@ class TelethonModeratorPipeline:
             await delete_cache_pattern("cache:series:*")
         except Exception:
             pass
+
+        if downloaded_in_session == 0:
+            if thread_id and AUTO_TOPIC_CHAT_ID and newly_created_series:
+                try:
+                    from telethon.tl.functions.messages import DeleteTopicHistoryRequest
+                    peer_del = await self.client.get_input_entity(AUTO_TOPIC_CHAT_ID)
+                    await self.client(DeleteTopicHistoryRequest(peer=peer_del, top_msg_id=thread_id))
+                    logger.info(f"🧹 Bo'sh qolgan topic Telegramdan o'chirildi: {thread_id}")
+                except Exception as del_top_err:
+                    logger.warning(f"Bo'sh topicni o'chirishda xatolik: {del_top_err}")
+
+            if newly_created_series and series_id:
+                try:
+                    from sqlalchemy import text
+                    async with async_session_factory() as cleanup_session:
+                        await cleanup_session.execute(text("DELETE FROM series_category WHERE series_id = :sid"), {"sid": series_id})
+                        await cleanup_session.execute(text("DELETE FROM page_series WHERE series_id = :sid"), {"sid": series_id})
+                        await cleanup_session.execute(text("DELETE FROM seasons WHERE series_id = :sid"), {"sid": series_id})
+                        await cleanup_session.execute(text("DELETE FROM series WHERE id = :sid"), {"sid": series_id})
+                        await cleanup_session.commit()
+                    logger.info(f"🧹 Chala serial (ID: {series_id}) tozalandi.")
+                except Exception as se_err:
+                    logger.warning(f"Chala serialni tozalashda xatolik: {se_err}")
+
+            QueueManager().update_status(item.id, "failed", error_message="Birorta ham qism yuklanmadi")
+            print(f"⚠️ [KAWAII] '{title}': Birorta ham qism yuklanmadi, bo'sh topic tozalandi.", flush=True)
+            return False
 
         QueueManager().update_status(item.id, "completed")
         print(f"🎉 [KAWAII] Serial muvaffaqiyatli yakunlandi! Jami {downloaded_in_session} ta qism saqlandi.", flush=True)

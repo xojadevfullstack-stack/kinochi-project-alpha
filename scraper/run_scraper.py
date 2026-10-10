@@ -32,6 +32,7 @@ from scraper.site_parser import (
 from scraper.state_manager import StateManager
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, create_telethon_client
+from telethon.errors import FloodWaitError
 from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH
 
 async def cmd_parse(
@@ -190,6 +191,14 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 print(f"\n[{idx}/{len(code_list)}] 🎬 Kod #{c} bo'yicha moderator sikli boshlanmoqda...")
                 try:
                     success = await pipeline.run_by_code(code=c, target_bot=bot_username)
+                except FloodWaitError as fe:
+                    wait_m = round(fe.seconds / 60, 1)
+                    print(f"\n🛑 Telegram FloodWait: {fe.seconds} soniya ({wait_m} daqiqa) kutish talab qilinadi. Akkaunt xavfsizligi uchun navbat to'xtatildi!", flush=True)
+                    try:
+                        StateManager().set_bot_status("flood_wait")
+                    except Exception:
+                        pass
+                    break
                 except Exception as ex:
                     print(f"❌ Kod #{c} da kutilmagan xatolik: {ex}")
                     success = False
@@ -203,8 +212,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     print(f"⚠️ Kod #{c} yuklab bo'lmadi yoki o'tkazib yuborildi.")
                 
                 if idx < len(code_list):
-                    print("⏳ 2 soniya tanaffus...")
-                    await asyncio.sleep(2.0)
+                    print("⏳ 4 soniya tanaffus...")
+                    await asyncio.sleep(4.0)
         else:
             qm = QueueManager()
             downloaded_count = 0
@@ -230,6 +239,15 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 
                 try:
                     success = await pipeline.run_item(item, target_bot=bot_username)
+                except FloodWaitError as fe:
+                    wait_m = round(fe.seconds / 60, 1)
+                    print(f"\n🛑 Telegram FloodWait: {fe.seconds} soniya ({wait_m} daqiqa) kutish talab qilinadi. Akkaunt xavfsizligi uchun navbat to'xtatildi!", flush=True)
+                    qm.update_status(item.id, "failed", error_message=f"Telegram FloodWait ({fe.seconds}s)")
+                    try:
+                        StateManager().set_bot_status("flood_wait")
+                    except Exception:
+                        pass
+                    break
                 except Exception as ex:
                     print(f"❌ '{item.title}' yuklashda kutilmagan xatolik: {ex}")
                     qm.update_status(item.id, "failed", error_message=f"Kutilmagan xatolik: {ex}")
@@ -258,8 +276,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
 
                 # Telegram flood limitiga tushmaslik uchun xavfsiz qisqa kutish
                 if idx < len(pending):
-                    print("⏳ 2.5 soniya tanaffus...")
-                    await asyncio.sleep(2.5)
+                    print("⏳ 4 soniya tanaffus...")
+                    await asyncio.sleep(4.0)
 
     finally:
         await client.disconnect()
