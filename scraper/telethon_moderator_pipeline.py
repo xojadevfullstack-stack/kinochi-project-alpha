@@ -1237,10 +1237,12 @@ class TelethonModeratorPipeline:
 
         # Tugmalardan "Tomosha qilish" ni topish
         watch_btn_coords = None
+        watch_btn_text = ""
         for r_idx, row in enumerate(card_msg.buttons or []):
             for c_idx, btn in enumerate(row):
                 if any(w in btn.text.lower() for w in ["tomosha qilish", "tomosha"]):
                     watch_btn_coords = (r_idx, c_idx)
+                    watch_btn_text = btn.text
                     break
             if watch_btn_coords:
                 break
@@ -1524,7 +1526,18 @@ class TelethonModeratorPipeline:
                     if ep.translations:
                         existing_eps.add(ep.episode_number)
 
-        total_ep_count = item.episodes_count or len(ep_buttons) or 12
+        parsed_ep_count = None
+        if watch_btn_text:
+            m_w = re.search(r'(\d+)\s*(?:epizod|qism)', watch_btn_text, re.I)
+            if m_w:
+                parsed_ep_count = int(m_w.group(1))
+        if not parsed_ep_count and card_msg and card_msg.text:
+            m_c = re.search(r'/\s*(\d+)\s*epizod', card_msg.text, re.I) or re.search(r'/\s*(\d+)\b', card_msg.text)
+            if m_c:
+                parsed_ep_count = int(m_c.group(1))
+
+        total_ep_count = item.episodes_count or parsed_ep_count or len(ep_buttons) or 12
+        logger.info(f"📊 Serial qismlari soni: {total_ep_count} ta (Bazada mavjud: {len(existing_eps)} ta)")
         current_ep = 1
         downloaded_in_session = 0
 

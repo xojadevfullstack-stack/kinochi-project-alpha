@@ -283,6 +283,8 @@ class DuplicateChecker:
                 is_incomplete = True
             elif candidate_ep_count and db_eps < candidate_ep_count:
                 is_incomplete = True
+            elif not candidate_ep_count and db_eps <= 3 and item.get("status") == "ongoing":
+                is_incomplete = True
         return DuplicateCheckResult(
             is_duplicate=not is_incomplete,
             match_type=match_type,
