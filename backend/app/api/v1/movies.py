@@ -45,6 +45,7 @@ class MovieCreate(BaseModel):
     category_ids: list[int] | None = None
     page_ids: list[int] | None = None
     source_id: int | None = None
+    is_18_plus: bool = False
 
 class MovieUpdate(BaseModel):
     title: str | None = None
@@ -63,6 +64,7 @@ class MovieUpdate(BaseModel):
     category_ids: list[int] | None = None
     page_ids: list[int] | None = None
     source_id: int | None = None
+    is_18_plus: bool | None = None
 
 class MovieTranslationResponse(BaseModel):
     id: int
@@ -91,6 +93,7 @@ class MovieResponse(BaseModel):
     poster_url: str | None = None
     trailer_url: str | None = None
     code: str
+    is_18_plus: bool = False
     categories: list[CategoryResponse] = []
     pages: list[PageResponse] = []
     translations: list[MovieTranslationResponse] = []

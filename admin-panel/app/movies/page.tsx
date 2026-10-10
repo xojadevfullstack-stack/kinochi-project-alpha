@@ -21,6 +21,7 @@ type Movie = {
   release_year: number;
   duration_minutes: number;
   runtime?: number;
+  is_18_plus?: boolean;
   categories: Category[];
   pages: PageItem[];
   source_id?: number | null;
@@ -76,6 +77,7 @@ export default function MoviesPage() {
     category_ids: [] as number[],
     page_ids: [] as number[],
     source_id: "" as number | "",
+    is_18_plus: false,
   };
 
   const [totalMovies, setTotalMovies] = useState<number>(0);
@@ -407,6 +409,7 @@ export default function MoviesPage() {
       category_ids: m.categories?.map((c) => c.id) || [],
       page_ids: m.pages?.map((p) => p.id) || [],
       source_id: matchedSourceId,
+      is_18_plus: m.is_18_plus || false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -937,6 +940,34 @@ export default function MoviesPage() {
               </div>
             )}
             {errorMsg && <p className="text-red-400 text-xs sm:text-sm mt-1">{errorMsg}</p>}
+          </div>
+
+          {/* 18+ Yosh chegarasi Toggle */}
+          <div className="md:col-span-2 bg-red-950/20 border border-red-500/30 rounded-xl p-3.5">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🔞</span>
+                <div>
+                  <div className="text-sm font-bold text-red-300 flex items-center gap-2">
+                    <span>18+ Yosh chegarasi (Kattalar uchun)</span>
+                    {form.is_18_plus && (
+                      <span className="text-[10px] bg-red-600/40 text-red-200 px-2 py-0.5 rounded-full border border-red-500/40 uppercase font-black">
+                        Faol
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Saytda poster xiralashtiriladi (blur) va foydalanuvchidan 18 yoshni tasdiqlash so&apos;raladi.
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={form.is_18_plus}
+                onChange={(e) => setForm({ ...form, is_18_plus: e.target.checked })}
+                className="w-5 h-5 rounded border-red-500/40 bg-surface-container-lowest focus:ring-red-500 text-red-600 cursor-pointer"
+              />
+            </label>
           </div>
 
           {/* Categories */}

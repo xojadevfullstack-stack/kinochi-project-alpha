@@ -86,6 +86,7 @@ class SeriesBase(BaseModel):
     director: str | None = None
     cast: str | None = None
     status: str = "ongoing"
+    is_18_plus: bool = False
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
@@ -106,6 +107,7 @@ class SeriesUpdate(BaseModel):
     page_ids: list[int] | None = None
     source_id: int | None = None
     status: str | None = None
+    is_18_plus: bool | None = None
 
 from app.domain.series.source_entities import SourceResponse
 

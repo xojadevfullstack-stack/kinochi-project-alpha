@@ -32,6 +32,7 @@ type Series = {
   source_id: number | null;
   source: Source | null;
   status: string;
+  is_18_plus?: boolean;
 };
 
 export default function SeriesListPage() {
@@ -77,6 +78,7 @@ export default function SeriesListPage() {
     page_ids: [] as number[],
     source_id: "" as number | "",
     status: "ongoing" as string,
+    is_18_plus: false,
   };
 
   const [totalSeries, setTotalSeries] = useState<number>(0);
@@ -392,6 +394,7 @@ export default function SeriesListPage() {
       page_ids: s.pages ? s.pages.map((p) => p.id) : [],
       source_id: s.source_id || "",
       status: s.status || "ongoing",
+      is_18_plus: s.is_18_plus || false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -904,6 +907,34 @@ export default function SeriesListPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 18+ Yosh chegarasi Toggle */}
+          <div className="md:col-span-2 bg-red-950/20 border border-red-500/30 rounded-xl p-3.5">
+            <label className="flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🔞</span>
+                <div>
+                  <div className="text-sm font-bold text-red-300 flex items-center gap-2">
+                    <span>18+ Yosh chegarasi (Kattalar uchun)</span>
+                    {form.is_18_plus && (
+                      <span className="text-[10px] bg-red-600/40 text-red-200 px-2 py-0.5 rounded-full border border-red-500/40 uppercase font-black">
+                        Faol
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Saytda poster xiralashtiriladi (blur) va foydalanuvchidan 18 yoshni tasdiqlash so&apos;raladi.
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={form.is_18_plus}
+                onChange={(e) => setForm({ ...form, is_18_plus: e.target.checked })}
+                className="w-5 h-5 rounded border-red-500/40 bg-surface-container-lowest focus:ring-red-500 text-red-600 cursor-pointer"
+              />
+            </label>
           </div>
 
           {/* Categories */}

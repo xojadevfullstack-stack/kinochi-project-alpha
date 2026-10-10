@@ -361,6 +361,7 @@ async def enrich_movie_smart(
         "cast": None,
         "director": None,
         "runtime": 120,
+        "is_18_plus": False,
         "category_ids": [],
         "source_used": "source",
         "media_type": detected_type
@@ -515,6 +516,22 @@ async def enrich_movie_smart(
         import urllib.parse
         q = urllib.parse.quote_plus(ai_info["trailer_query"])
         metadata["trailer_url"] = f"https://www.youtube.com/results?search_query={q}"
+
+    # 18+ (kattalar uchun) kontentni aniqlash
+    is_adult = False
+    if matched_tmdb and matched_tmdb.get("adult"):
+        is_adult = True
+    check_text = f"{raw_title} {clean_title} {metadata.get('genres', '')} {caption or ''} {source_desc or ''}".lower()
+    adult_keywords = ["18+", "erotika", "hentai", "ecchi", "kattalar uchun", "erotic", "adult", "porn", "r18", "порно", "эротика"]
+    if any(kw in check_text for kw in adult_keywords):
+        is_adult = True
+
+    metadata["is_18_plus"] = is_adult
+    if is_adult:
+        for cname in cat_map:
+            if "18+" in cname:
+                matched_cat_names.add(cname)
+                break
 
     # Kategoriyalarni ID lar bilan boyitish
     final_cat_ids = []

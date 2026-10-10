@@ -19,6 +19,7 @@ export type CatalogItem = {
   release_year?: number | null;
   poster_url?: string | null;
   is_series?: boolean;
+  is_18_plus?: boolean;
   created_at?: string;
   categories?: { id: number; name: string }[];
 };

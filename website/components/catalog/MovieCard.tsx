@@ -4,6 +4,7 @@ import { CatalogItem } from "@/lib/api/catalog";
 
 export default function MovieCard({ item, statusBadge }: { item: CatalogItem, statusBadge?: "completed" | "in_progress" }) {
   const isSeries = !!item.is_series || (!item.code && !!item.id);
+  const is18Plus = !!(item.is_18_plus || item.categories?.some((c) => c.name.toLowerCase().includes("18+")));
   const href = isSeries ? `/series/${item.id}` : `/movie/${item.code}`;
   
   return (
@@ -17,7 +18,11 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
           alt={item.title}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
-          className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+          className={`object-cover transition-transform duration-500 ease-out ${
+            is18Plus 
+              ? "blur-[3px] group-hover:blur-none group-hover:scale-110" 
+              : "group-hover:scale-110"
+          }`}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-high text-gray-500">
@@ -36,8 +41,14 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
         <span className="font-label-caps text-xs font-bold">{item.imdb_rating || item.tmdb_rating || "N/A"}</span>
       </div>
 
-      {/* Top Left Badges Container (status badges only, no redundant noisy badges) */}
+      {/* Top Left Badges Container */}
       <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
+        {is18Plus && (
+          <div className="px-2 py-0.5 bg-red-600/90 backdrop-blur-md rounded text-white text-[10px] font-black uppercase tracking-wider border border-red-500/40 flex items-center gap-1 shadow-sm shadow-black/50">
+            <span className="text-[11px]">🔞</span>
+            <span>18+</span>
+          </div>
+        )}
         {statusBadge === "completed" && (
           <div className="px-2 py-0.5 bg-emerald-500/90 backdrop-blur-md rounded text-white text-[10px] font-bold uppercase tracking-wider border border-emerald-400/30 flex items-center gap-1 shadow-sm shadow-black/40">
             <span className="material-symbols-outlined text-[12px]">check_circle</span>

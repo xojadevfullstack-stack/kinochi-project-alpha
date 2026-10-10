@@ -2,7 +2,7 @@
 Movie ORM model and association tables.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger
+from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
@@ -42,6 +42,7 @@ class MovieModel(Base):
     trailer_url: Mapped[str | None] = mapped_column(String(1024))
     
     code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True)
+    is_18_plus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     
     source_chat_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
     source_topic_id: Mapped[int | None] = mapped_column(Integer, index=True)

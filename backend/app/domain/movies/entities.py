@@ -26,6 +26,7 @@ class Movie(BaseModel):
     poster_url: str | None = None
     trailer_url: str | None = None
     code: str = Field(..., min_length=1, max_length=50) # Unique code
+    is_18_plus: bool = False
     
     source_chat_id: int | None = None
     source_topic_id: int | None = None

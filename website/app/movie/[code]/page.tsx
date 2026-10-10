@@ -8,6 +8,8 @@ import KinochiRatingBadge from "@/components/reviews/KinochiRatingBadge";
 import TrailerModal from "@/components/TrailerModal";
 import TelegramWatchButton from "@/components/TelegramWatchButton";
 import FranchiseTimelineBar from "@/components/FranchiseTimelineBar";
+import AgeVerificationModal from "@/components/AgeVerificationModal";
+import ReportIssueButton from "@/components/ReportIssueButton";
 
 type Props = {
   params: { code: string };
@@ -60,9 +62,11 @@ export default async function MovieDetailsPage({ params }: Props) {
 
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
   const telegramDeepLink = `https://t.me/${botUsername}?start=${movie.code}`;
+  const is18Plus = !!(movie.is_18_plus || movie.categories?.some((c: any) => c.name.toLowerCase().includes("18+")));
 
   return (
     <>
+      <AgeVerificationModal is18Plus={is18Plus} />
       <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-20 sm:pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden">
         {/* Background Blur & Gradient Overlays */}
         <div className="absolute inset-0 bg-background-obsidian">
@@ -134,6 +138,13 @@ export default async function MovieDetailsPage({ params }: Props) {
                 <span>KINO</span>
               </div>
 
+              {is18Plus && (
+                <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-red-600/20 backdrop-blur-md border border-red-500/40 text-red-200 text-xs font-black tracking-wide shadow-sm shadow-red-950/40">
+                  <span className="text-[13px]">🔞</span>
+                  <span>18+</span>
+                </div>
+              )}
+
               {/* Categories & Genres */}
               {movie.categories && movie.categories.length > 0 ? (
                 movie.categories.map((cat: any) => (
@@ -204,6 +215,12 @@ export default async function MovieDetailsPage({ params }: Props) {
                 code={movie.code}
                 botUsername={botUsername}
                 className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+              />
+              <ReportIssueButton
+                mediaType="movie"
+                movieId={movie.id}
+                mediaTitle={movie.title}
+                className="w-full sm:w-auto"
               />
             </div>
           </div>

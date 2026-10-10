@@ -261,6 +261,7 @@ class TMDbClient:
             "cast": cast_str,
             "genres_raw": genres_list,
             "genres_str": genres_names,
+            "adult": bool(data.get("adult", False)),
         }
 
         # TV-specific metadata

@@ -7,6 +7,8 @@ import ReviewsSection from "@/components/reviews/ReviewsSection";
 import KinochiRatingBadge from "@/components/reviews/KinochiRatingBadge";
 import TrailerModal from "@/components/TrailerModal";
 import TelegramWatchButton from "@/components/TelegramWatchButton";
+import AgeVerificationModal from "@/components/AgeVerificationModal";
+import ReportIssueButton from "@/components/ReportIssueButton";
 
 type Props = {
   params: { id: string };
@@ -73,9 +75,11 @@ export default async function SeriesDetailsPage({ params }: Props) {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
   // Fallback direct link to bot
   const telegramDeepLink = `https://t.me/${botUsername}?start=s_${series.id}`;
+  const is18Plus = !!(series.is_18_plus || series.categories?.some((c: any) => c.name.toLowerCase().includes("18+")));
 
   return (
     <>
+      <AgeVerificationModal is18Plus={is18Plus} />
       <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-20 sm:pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden">
         {/* Background Blur & Gradient Overlays */}
         <div className="absolute inset-0 bg-background-obsidian">
@@ -147,6 +151,13 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 <span>SERIAL</span>
               </div>
 
+              {is18Plus && (
+                <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-red-600/20 backdrop-blur-md border border-red-500/40 text-red-200 text-xs font-black tracking-wide shadow-sm shadow-red-950/40">
+                  <span className="text-[13px]">🔞</span>
+                  <span>18+</span>
+                </div>
+              )}
+
               {series.categories && series.categories.length > 0 ? (
                 series.categories.map((cat: any) => (
                   <a
@@ -184,6 +195,12 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 code={`s_${series.id}`}
                 botUsername={botUsername}
                 className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+              />
+              <ReportIssueButton
+                mediaType="series"
+                seriesId={series.id}
+                mediaTitle={series.title}
+                className="w-full sm:w-auto"
               />
             </div>
           </div>
@@ -276,28 +293,41 @@ export default async function SeriesDetailsPage({ params }: Props) {
                           .map((episode) => {
                           const episodeLink = `https://t.me/${botUsername}?start=${episode.code}`;
                           return (
-                            <TelegramWatchButton 
-                              url={episodeLink}
-                              key={episode.id} 
-                              className="group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-container/50 rounded-xl p-4 transition-all duration-300 flex flex-col relative overflow-hidden text-left cursor-pointer"
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-primary-container/0 to-primary-container/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                              <div className="flex justify-between items-start mb-2 relative z-10">
-                                <span className="text-xl font-bold text-white group-hover:text-primary-container transition-colors">
-                                  {episode.episode_number}
-                                </span>
-                                {episode.duration && (
-                                  <span className="text-[10px] bg-black/40 px-2 py-1 rounded text-text-secondary font-mono">
-                                    {episode.duration} min
+                            <div key={episode.id} className="relative group/ep">
+                              <TelegramWatchButton 
+                                url={episodeLink}
+                                className="w-full group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-container/50 rounded-xl p-4 transition-all duration-300 flex flex-col relative overflow-hidden text-left cursor-pointer"
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary-container/0 to-primary-container/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="flex justify-between items-start mb-2 relative z-10">
+                                  <span className="text-xl font-bold text-white group-hover:text-primary-container transition-colors">
+                                    {episode.episode_number}
                                   </span>
-                                )}
+                                  {episode.duration && (
+                                    <span className="text-[10px] bg-black/40 px-2 py-1 rounded text-text-secondary font-mono">
+                                      {episode.duration} min
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10 pr-7">
+                                  {episode.title && episode.title !== `${episode.episode_number}-qism` 
+                                    ? episode.title 
+                                    : `${episode.episode_number}-qism`}
+                                </span>
+                              </TelegramWatchButton>
+
+                              <div className="absolute bottom-2.5 right-2.5 z-20">
+                                <ReportIssueButton
+                                  mediaType="series"
+                                  seriesId={series.id}
+                                  episodeId={episode.id}
+                                  mediaTitle={series.title}
+                                  seasonNumber={season.season_number}
+                                  episodeNumber={episode.episode_number}
+                                  variant="icon"
+                                />
                               </div>
-                              <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10">
-                                {episode.title && episode.title !== `${episode.episode_number}-qism` 
-                                  ? episode.title 
-                                  : `${episode.episode_number}-qism`}
-                              </span>
-                            </TelegramWatchButton>
+                            </div>
                           )
                         })
                       )}

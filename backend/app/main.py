@@ -20,8 +20,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search, reports
 from app.api.limiter import limiter
+from fastapi.staticfiles import StaticFiles
+import os
 
 # ── Lifespan (startup / shutdown hooks) ──────────────────────────
 @asynccontextmanager
@@ -126,6 +128,11 @@ app.include_router(content_lookup.router, prefix="/api/v1")
 app.include_router(scraper.router, prefix="/api/v1")
 app.include_router(collections.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")
+
+# ── Static Uploads ───────────────────────────────────────────────
+os.makedirs("uploads/reports", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ── CORS ─────────────────────────────────────────────────────────
 app.add_middleware(

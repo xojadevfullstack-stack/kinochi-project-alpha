@@ -373,5 +373,86 @@ class TelegramClient:
             text=text
         )
 
+    async def send_photo(
+        self,
+        chat_id: int | str,
+        photo_bytes: bytes,
+        filename: str = "screenshot.jpg",
+        caption: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+        parse_mode: str = "HTML"
+    ) -> bool:
+        """Telegram chatiga rasm / skrinshot yuboradi."""
+        if not self.bot_token:
+            logger.error("BOT_TOKEN is missing")
+            return False
+
+        url = f"{self.base_url}/sendPhoto"
+        data = {"chat_id": str(chat_id)}
+        if parse_mode:
+            data["parse_mode"] = parse_mode
+        if caption:
+            data["caption"] = caption[:1024]
+        if reply_markup:
+            import json
+            data["reply_markup"] = json.dumps(reply_markup)
+
+        files = {"photo": (filename, photo_bytes)}
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(url, data=data, files=files)
+                if resp.status_code == 200 and resp.json().get("ok"):
+                    return True
+                logger.error(f"send_photo error ({resp.status_code}): {resp.text}")
+                # Fallback to plain text caption if HTML parse failed
+                if "can't parse entities" in resp.text.lower() and parse_mode:
+                    data.pop("parse_mode", None)
+                    resp_retry = await client.post(url, data=data, files={"photo": (filename, photo_bytes)})
+                    return resp_retry.status_code == 200 and resp_retry.json().get("ok")
+                return False
+        except Exception as e:
+            logger.error(f"send_photo exception: {e}")
+            return False
+
+    async def send_video(
+        self,
+        chat_id: int | str,
+        video_bytes: bytes,
+        filename: str = "video.mp4",
+        caption: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+        parse_mode: str = "HTML"
+    ) -> bool:
+        """Telegram chatiga video yuboradi."""
+        if not self.bot_token:
+            logger.error("BOT_TOKEN is missing")
+            return False
+
+        url = f"{self.base_url}/sendVideo"
+        data = {"chat_id": str(chat_id)}
+        if parse_mode:
+            data["parse_mode"] = parse_mode
+        if caption:
+            data["caption"] = caption[:1024]
+        if reply_markup:
+            import json
+            data["reply_markup"] = json.dumps(reply_markup)
+
+        files = {"video": (filename, video_bytes)}
+        try:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                resp = await client.post(url, data=data, files=files)
+                if resp.status_code == 200 and resp.json().get("ok"):
+                    return True
+                logger.error(f"send_video error ({resp.status_code}): {resp.text}")
+                if "can't parse entities" in resp.text.lower() and parse_mode:
+                    data.pop("parse_mode", None)
+                    resp_retry = await client.post(url, data=data, files={"video": (filename, video_bytes)})
+                    return resp_retry.status_code == 200 and resp_retry.json().get("ok")
+                return False
+        except Exception as e:
+            logger.error(f"send_video exception: {e}")
+            return False
+
 telegram_client = TelegramClient()
 

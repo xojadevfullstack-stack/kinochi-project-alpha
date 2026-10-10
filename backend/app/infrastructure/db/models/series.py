@@ -2,7 +2,7 @@
 Series ORM models.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, UniqueConstraint
+from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
@@ -24,6 +24,7 @@ class SeriesModel(Base):
     poster_url: Mapped[str | None] = mapped_column(String(1024))
     trailer_url: Mapped[str | None] = mapped_column(String(1024))
     status: Mapped[str] = mapped_column(String(50), server_default="ongoing", nullable=False)
+    is_18_plus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     
     imdb_rating: Mapped[float | None] = mapped_column(Float)
     tmdb_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
