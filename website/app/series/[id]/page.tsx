@@ -92,6 +92,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
               src={series.poster_url}
               alt={series.title}
               is18Plus={is18Plus}
+              isDetailPage={true}
             />
            ) : (
             <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
@@ -110,6 +111,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
                   src={series.poster_url}
                   alt={series.title}
                   is18Plus={is18Plus}
+                  isDetailPage={true}
                   fill
                   priority
                   imageClassName="object-cover"

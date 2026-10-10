@@ -6,7 +6,6 @@ import RandomRecommendationWidget from "@/components/recommendations/RandomRecom
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
-import AgeVerificationModal from "@/components/AgeVerificationModal";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; 
@@ -197,8 +196,6 @@ export default async function Home() {
 
   return (
     <>
-      <AgeVerificationModal is18Plus={isHero18Plus} allowDismissWithoutRedirect={true} />
-
       {heroItem && (
         <section className="relative w-full pt-20 pb-6 md:pt-28 md:pb-16 md:min-h-[85vh] md:flex md:items-center overflow-hidden">
           {/* Main Background Image - with cinematic gradient blur and adult protection */}

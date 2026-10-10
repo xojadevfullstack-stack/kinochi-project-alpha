@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAgeVerification } from "@/hooks/useAgeVerification";
 
 interface AgeVerificationModalProps {
   is18Plus?: boolean;
@@ -9,80 +10,56 @@ interface AgeVerificationModalProps {
   onVerifiedChange?: (verified: boolean) => void;
 }
 
-const STORAGE_KEY = "kinochi_age_verified_18";
-
 export default function AgeVerificationModal({
   is18Plus = false,
   allowDismissWithoutRedirect = false,
   onVerifiedChange,
 }: AgeVerificationModalProps) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [isVerified, setIsVerified] = useState(true);
+  const { isMounted, isVerified, verifyAge } = useAgeVerification();
   const [manualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    let verified = false;
-    try {
-      verified = localStorage.getItem(STORAGE_KEY) === "true";
-    } catch {
-      verified = false;
-    }
-    setIsVerified(verified);
-    onVerifiedChange?.(verified);
+    onVerifiedChange?.(isVerified);
+  }, [isVerified, onVerifiedChange]);
 
-    // Listen to custom verify event across components
-    const handleVerifyEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<boolean>;
-      const v = customEvent?.detail !== undefined ? !!customEvent.detail : true;
-      setIsVerified(v);
-      if (v) setManualOpen(false);
-    };
-
-    // Listen to manual open request
+  useEffect(() => {
     const handleOpenModal = () => {
       setManualOpen(true);
     };
 
-    window.addEventListener("kinochi:age_verified", handleVerifyEvent);
     window.addEventListener("kinochi:open_age_modal", handleOpenModal);
 
     return () => {
-      window.removeEventListener("kinochi:age_verified", handleVerifyEvent);
       window.removeEventListener("kinochi:open_age_modal", handleOpenModal);
     };
-  }, [onVerifiedChange]);
+  }, []);
 
   const handleConfirm = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "true");
-    } catch {}
-    setIsVerified(true);
+    verifyAge();
     setManualOpen(false);
-    window.dispatchEvent(new CustomEvent("kinochi:age_verified", { detail: true }));
     onVerifiedChange?.(true);
   };
 
   const handleDecline = () => {
     setManualOpen(false);
     if (allowDismissWithoutRedirect) {
-      // Just close modal on homepage, keeping adult content blurred
+      // Just close modal if dismissal without redirect is allowed
       return;
     }
 
-    if (window.history.length > 1) {
+    if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
       router.push("/");
     }
   };
 
-  if (!mounted) {
+  if (!isMounted) {
     return null;
   }
 
-  // Open if manually requested OR if current page is 18+ and user is not verified
+  // Open if manually requested OR if current page is 18+ and user is not verified on this page
   const shouldShow = manualOpen || (is18Plus && !isVerified);
   if (!shouldShow) {
     return null;
@@ -130,11 +107,8 @@ export default function AgeVerificationModal({
             <span>Ortga qaytish</span>
           </button>
         </div>
-
-        <p className="text-[11px] text-text-secondary/60 mt-4">
-          Tasdiqlash brauzeringizda saqlanadi va qayta so&apos;ralmaydi.
-        </p>
       </div>
     </div>
   );
 }
+

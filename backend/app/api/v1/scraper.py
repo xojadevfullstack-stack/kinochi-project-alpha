@@ -316,6 +316,45 @@ def clear_by_status(status: str = Body(..., embed=True), admin=Depends(require_s
     return {"success": True, "count": count, "message": f"{count} ta element tozalandi."}
 
 
+@router.post("/queue/clear-all")
+def clear_all_queue(admin=Depends(require_scraper)):
+    """Butun navbatdagi barcha elementlarni tozalash (butunlay bo'shatish)."""
+    _forbid_while_running("Jarayon ishlayotgan paytda butun navbatni tozalab bo'lmaydi!")
+    count = QueueManager().clear_all()
+    return {"success": True, "count": count, "message": f"Butun navbat tozalandi ({count} ta element o'chirildi)."}
+
+
+@router.post("/queue/clear-finished")
+def clear_finished_queue(admin=Depends(require_scraper)):
+    """Bajarilgan va allaqachon bazada bor barcha elementlarni navbatdan tozalash."""
+    _forbid_while_running("Jarayon ishlayotgan paytda navbatni tozalab bo'lmaydi!")
+    count = QueueManager().clear_finished_and_existing()
+    return {"success": True, "count": count, "message": f"{count} ta bajarilgan va bazada bor elementlar tozalandi."}
+
+
+@router.post("/state/reset")
+def reset_scraper_state(admin=Depends(require_scraper)):
+    """Parser va Grabber sahifa xotiralarini (checkpoint) 1-sahifaga qaytarish."""
+    _forbid_while_running("Jarayon ishlayotgan paytda xotirani qayta tiklab bo'lmaydi!")
+    new_state = StateManager().reset_to_defaults()
+    return {"success": True, "message": "Barcha manbalar 1-sahifaga qaytarildi.", "state": new_state}
+
+
+@router.post("/master-reset")
+def master_reset_scraper(admin=Depends(require_scraper)):
+    """To'liq tozalash: Butun navbat + Sahifa xotiralari (1-sahifaga) + Jonli loglar."""
+    _forbid_while_running("Jarayon ishlayotgan paytda to'liq tozalash mumkin emas!")
+    q_count = QueueManager().clear_all()
+    new_state = StateManager().reset_to_defaults()
+    ProcessManager().clear_logs()
+    return {
+        "success": True,
+        "message": f"To'liq tozalash muvaffaqiyatli bajarildi! Navbat bo'shatildi ({q_count} ta), xotiralar 1-sahifaga qaytarildi va loglar tozalandi.",
+        "queue_count": q_count,
+        "state": new_state,
+    }
+
+
 @router.post("/queue/{item_id}/retry")
 def retry_queue_item(item_id: str, admin=Depends(require_scraper)):
     """Xatolikka uchragan elementni qayta navbatga qo'yish."""

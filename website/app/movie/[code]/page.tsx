@@ -79,6 +79,7 @@ export default async function MovieDetailsPage({ params }: Props) {
               src={movie.poster_url}
               alt={movie.title}
               is18Plus={is18Plus}
+              isDetailPage={true}
             />
            ) : (
             <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
@@ -97,6 +98,7 @@ export default async function MovieDetailsPage({ params }: Props) {
                   src={movie.poster_url}
                   alt={movie.title}
                   is18Plus={is18Plus}
+                  isDetailPage={true}
                   fill
                   priority
                   imageClassName="object-cover"

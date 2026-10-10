@@ -7,15 +7,17 @@ interface AdultHeroBackgroundProps {
   src: string;
   alt: string;
   is18Plus?: boolean;
+  isDetailPage?: boolean;
 }
 
 export default function AdultHeroBackground({
   src,
   alt,
   is18Plus = false,
+  isDetailPage = false,
 }: AdultHeroBackgroundProps) {
   const { isMounted, isVerified } = useAgeVerification();
-  const shouldBlur = is18Plus && (!isMounted || !isVerified);
+  const shouldBlur = is18Plus && (!isDetailPage ? true : (!isMounted || !isVerified));
 
   return (
     <Image
@@ -32,3 +34,4 @@ export default function AdultHeroBackground({
     />
   );
 }
+

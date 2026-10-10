@@ -75,6 +75,14 @@ NAME_FALLBACK_MAP: dict[str, str] = {
     "триллер": "Triller",
     "военный": "Urush",
     "вестерн": "Vestern",
+    "erotic": "18+",
+    "erotica": "18+",
+    "эротика": "18+",
+    "adult": "18+",
+    "hentai": "18+",
+    "хентай": "18+",
+    "ecchi": "18+",
+    "этти": "18+",
 }
 
 

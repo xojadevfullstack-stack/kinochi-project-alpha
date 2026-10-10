@@ -97,3 +97,10 @@ class StateManager:
         self.load()
         self.state["telegram_bot_status"] = status
         self.save()
+
+    def reset_to_defaults(self) -> Dict[str, Any]:
+        """Barcha checkpoint va parametrlarni boshlang'ich 1-sahifaga qaytarish."""
+        self.state = dict(DEFAULT_STATE)
+        self.save()
+        logger.info("[STATE] Barcha sahifa xotiralari (checkpoint) 1-sahifaga qaytarildi.")
+        return dict(self.state)

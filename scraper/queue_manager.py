@@ -208,6 +208,17 @@ class QueueManager:
                 self.save()
             return count
 
+    def retry_item(self, item_id: str) -> bool:
+        """Aynan bitta elementni pending holatiga qaytarish."""
+        with _FILE_LOCK:
+            self.load()
+            if item_id in self.items:
+                self.items[item_id].status = "pending"
+                self.items[item_id].error_message = None
+                self.save()
+                return True
+            return False
+
     def reset_stuck_in_progress(self) -> int:
         """Items left 'in_progress' by a crashed/stopped run go back to pending."""
         with _FILE_LOCK:
@@ -225,6 +236,29 @@ class QueueManager:
         with _FILE_LOCK:
             self.load()
             to_delete = [item_id for item_id, item in self.items.items() if item.status == status]
+            for item_id in to_delete:
+                del self.items[item_id]
+            if to_delete:
+                self.save()
+            return len(to_delete)
+
+    def clear_all(self) -> int:
+        """Navbatdagi barcha elementlarni tozalash (bo'shatish)."""
+        with _FILE_LOCK:
+            self.load()
+            count = len(self.items)
+            self.items = {}
+            self.save()
+            return count
+
+    def clear_finished_and_existing(self) -> int:
+        """Bajarilgan (completed) va allaqachon bazada bor (already_exists) elementlarni navbatdan tozalash."""
+        with _FILE_LOCK:
+            self.load()
+            to_delete = [
+                item_id for item_id, item in self.items.items()
+                if item.status in ("completed", "already_exists")
+            ]
             for item_id in to_delete:
                 del self.items[item_id]
             if to_delete:
@@ -281,10 +315,20 @@ class QueueManager:
                     or (q in item.id.lower())
                 ]
 
-            # in_progress first so the active item is always visible on page 1
-            filtered.sort(key=lambda i: 0 if i.status == "in_progress" else 1)
-            total_count = len(filtered)
-            return filtered[skip: skip + limit], total_count
+            # Status bo'yicha saralash: Jarayonda -> Kutilmoqda -> Moderatsiya -> Xatolik -> Bajarildi -> Bazada Bor
+            status_priority = {
+                "in_progress": 0,
+                "pending": 1,
+                "needs_review": 2,
+                "failed": 3,
+                "completed": 4,
+                "already_exists": 5,
+            }
+            # Yangi qo'shilgan elementlarni birinchi ko'rsatish (reversed) va status tartibi
+            sorted_items = list(reversed(filtered))
+            sorted_items.sort(key=lambda i: status_priority.get(i.status, 99))
+            total_count = len(sorted_items)
+            return sorted_items[skip: skip + limit], total_count
 
     def stats(self) -> Dict[str, int]:
         with _FILE_LOCK:

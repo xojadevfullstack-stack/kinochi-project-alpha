@@ -325,7 +325,8 @@ class ModeratorPipeline:
                 runtime=meta.get("runtime"),
                 poster_url=meta.get("poster_url"),
                 trailer_url=meta.get("trailer_url"),
-                category_ids=meta.get("category_ids")
+                category_ids=meta.get("category_ids"),
+                is_18_plus=bool(meta.get("is_18_plus", False))
             )
             movie_id = created_movie.id
             movie_code = created_movie.code
@@ -338,7 +339,9 @@ class ModeratorPipeline:
             logger.error("AUTO_TOPIC_CHAT_ID sozlanmagan!")
             return False
 
-        topic_name = f"🎬 {title}{year_str}"
+        is_adult = bool(meta.get("is_18_plus", False))
+        topic_icon = "🔞" if is_adult else "🎬"
+        topic_name = f"{topic_icon} {title}{year_str}"
         logger.info(f"ℹ️ 3-QADAM: Guruhda Forum Topic ochilmoqda: '{topic_name}'...")
         try:
             thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
@@ -355,9 +358,10 @@ class ModeratorPipeline:
         director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
         cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
         trailer_str = f"🍿 <b>Treyler:</b> <a href=\"{meta['trailer_url']}\">YouTube</a>\n" if meta.get("trailer_url") else ""
+        adult_prefix = "🔞 <b>18+ Kattalar uchun</b>\n\n" if is_adult else ""
 
         welcome_text = (
-            f"🎬 <b>{html.escape(title)}</b>{year_str}\n"
+            f"{adult_prefix}🎬 <b>{html.escape(title)}</b>{year_str}\n"
             f"🔑 <b>Film kodi:</b> <code>{movie_code}</code>\n"
             f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Tarjima kino')}\n"
             f"{rating_str}{director_str}{cast_str}{trailer_str}"

@@ -136,6 +136,7 @@ QAT'IY QOIDALAR:
 3. Agar davlat (masalan: Qozog'iston, Hindiston, Rossiya, O'zbekiston, Ispaniya) ko'rsatilgan bo'lsa, o'sha davlat kinosi deb tahlil qil.
 4. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil yoki o'zbekcha nomini qoldir.
 5. "description" maydoniga albatta berilgan filmning HAQIQIY syujetini o'zbek tilida to'liq va ravon yoz.
+6. Agar ushbu kino/serial/anime 18+ (kattalar uchun, erotik, hentay, ecchi, jinsiy aloqa, zo'ravonlik yoki kattalar mavzusidagi) kontent bo'lsa, "is_18_plus": true, aks holda false qilib qaytar.
 
 Film/Serial nomi: '{raw_title}'
 Yil taxmini: {year_hint or 'Noma\'lum'}
@@ -157,7 +158,8 @@ Faqat va faqat quyidagi JSON formatida javob ber:
   "cast": "Aktyorlar",
   "runtime": 100,
   "imdb_rating": 6.5,
-  "trailer_query": null
+  "trailer_query": null,
+  "is_18_plus": false
 }}
 ```
 """
@@ -461,13 +463,80 @@ def score_tmdb_candidate(
     return score
 
 
-def is_valid_tmdb_match(
-    candidate: Dict[str, Any],
-    query: str,
-    target_year: Optional[int] = None,
-    expected_original_title: Optional[str] = None
+ADULT_PATTERNS = [
+    r'\b18\+\b',
+    r'\+18\b',
+    r'🔞',
+    r'\[18\+\]',
+    r'\(18\+\)',
+    r'\br18\b',
+    r'\br-18\b',
+    r'\bnc-17\b',
+    r'\btv-ma\b',
+    r'eroti[kc]',
+    r'эротик',
+    r'hentai',
+    r'hentay',
+    r'хентай',
+    r'xentai',
+    r'ecchi',
+    r'etchi',
+    r'ekki',
+    r'этти',
+    r'kattalar\s+uchun',
+    r'faqat\s+kattalar',
+    r'\bkattalar\b',
+    r'\bporn',
+    r'порно',
+    r'jinsi[y]?\s+aloqa',
+    r'\bseks\b',
+    r'\bsex\b',
+    r'zo\'?rlangan',
+    r'zorlangan',
+    r'extirosli',
+    r'ehtirosli',
+    r'18\s+yosh',
+    r'yosh\s+chegarasi\s*[:\s]*18',
+    r'yosh\s+toifasi\s*[:\s]*18',
+    r'high\s+school\s+dxd',
+    r'yuqori\s+maktab\s+dxd',
+    r'\bdxd\b',
+    r'futoku\s+no\s+guild',
+    r'axloqsiz\s+gildiya',
+    r'kangoku\s+gakuen',
+    r'prison\s+school',
+    r'qamoqxona\s+maktabi',
+    r'chuhai\s+lips',
+    r'maktabdagi\s+shifokor\s+biz\s+bilan',
+    r'opamni\s+dugonalari\s+bilan',
+    r'kuryer\s+bilan\s+jinsi',
+    r'saunadagi\s+qizlar',
+    r'chiroyli\s+va\s+extirosli',
+    r'redo\s+of\s+healer',
+    r'yosuga\s+no\s+sora',
+    r'aki\s+sora',
+    r'kiss\s+x\s+sis',
+]
+
+
+def check_adult_content(
+    raw_title: str = "",
+    clean_title: str = "",
+    original_title: Optional[str] = "",
+    genres: Optional[str] = "",
+    caption: Optional[str] = "",
+    description: Optional[str] = "",
+    tmdb_adult: bool = False,
+    ai_is_18: bool = False
 ) -> bool:
-    return score_tmdb_candidate(candidate, query, target_year, expected_original_title) > 0.0
+    """18+ (kattalar uchun) kontentni har tomonlama va chuqur aniqlaydi."""
+    if tmdb_adult or ai_is_18:
+        return True
+    text_to_check = f"{raw_title} {clean_title} {original_title or ''} {genres or ''} {caption or ''} {description or ''}".lower()
+    for p in ADULT_PATTERNS:
+        if re.search(p, text_to_check, re.IGNORECASE):
+            return True
+    return False
 
 
 async def enrich_movie_smart(
@@ -660,12 +729,15 @@ async def enrich_movie_smart(
                 break
 
     # 3. TMDb tafsilotlarini yuklash (Faqatgina 100% mos kelgandagina!)
+    details = None
     if matched_tmdb and matched_tmdb.get("id"):
         tmdb_id = matched_tmdb["id"]
         tmdb_type = matched_tmdb.get("content_type", "movie")
         try:
             details = await tmdb_client.get_details(tmdb_id=tmdb_id, content_type=tmdb_type)
             if details:
+                if details.get("adult"):
+                    matched_tmdb["adult"] = True
                 metadata["tmdb_id"] = tmdb_id
                 # TMDb posteri faqat mavjud bo'lsa olinadi, lekin source_poster bor bo'lsa uni yo'qotmaymiz
                 if details.get("poster_url"):
@@ -771,27 +843,42 @@ async def enrich_movie_smart(
         q = urllib.parse.quote_plus(ai_info["trailer_query"])
         metadata["trailer_url"] = f"https://www.youtube.com/results?search_query={q}"
 
-    # 18+ (kattalar uchun) kontentni aniqlash
-    is_adult = False
-    if matched_tmdb and matched_tmdb.get("adult"):
-        is_adult = True
-    check_text = f"{raw_title} {clean_title} {metadata.get('genres', '')} {caption or ''} {source_desc or ''}".lower()
-    adult_keywords = ["18+", "erotika", "hentai", "ecchi", "kattalar uchun", "erotic", "adult", "porn", "r18", "порно", "эротика"]
-    if any(kw in check_text for kw in adult_keywords):
-        is_adult = True
+    # 18+ (kattalar uchun) kontentni har tomonlama aniqlash
+    tmdb_adult = bool((details and details.get("adult")) or (matched_tmdb and matched_tmdb.get("adult")))
+    ai_is_18 = bool(ai_info.get("is_18_plus")) if ai_info else False
+    is_adult = check_adult_content(
+        raw_title=raw_title,
+        clean_title=clean_title,
+        original_title=metadata.get("original_title"),
+        genres=metadata.get("genres"),
+        caption=caption or source_desc,
+        description=metadata.get("description"),
+        tmdb_adult=tmdb_adult,
+        ai_is_18=ai_is_18
+    )
 
     metadata["is_18_plus"] = is_adult
     if is_adult:
+        found_18_cat = False
         for cname in cat_map:
-            if "18+" in cname:
+            if "18+" in cname or "18-plus" in cname:
                 matched_cat_names.add(cname)
+                found_18_cat = True
                 break
+        cur_genres = metadata.get("genres") or ""
+        if "18+" not in cur_genres:
+            metadata["genres"] = f"{cur_genres}, 18+" if cur_genres else "18+"
+        logger.info(f"🔞 18+ KONTENT ANIQLANDI: '{metadata['title']}' (TMDb={tmdb_adult}, AI={ai_is_18})")
 
     # Kategoriyalarni ID lar bilan boyitish
     final_cat_ids = []
     for gname in matched_cat_names:
         if gname in cat_map:
             final_cat_ids.append(cat_map[gname])
+    if is_adult:
+        cat_18_id = cat_map.get("18+") or cat_map.get("18-plus") or 33
+        if cat_18_id and cat_18_id not in final_cat_ids:
+            final_cat_ids.append(cat_18_id)
     metadata["category_ids"] = list(set(final_cat_ids))
 
     # Poster URL sini tekshirish va to'liq HTTPS qilib formatlash

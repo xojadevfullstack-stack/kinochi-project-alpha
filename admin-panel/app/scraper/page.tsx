@@ -609,6 +609,53 @@ export default function ScraperPage() {
     }
   };
 
+  const handleClearFinished = async () => {
+    if (!confirm("Bajarilgan va allaqachon bazada mavjud bo'lgan elementlarni navbatdan tozalamoqchimisiz?")) return;
+    try {
+      const res = await fetchApi("/scraper/queue/clear-finished", { method: "POST" });
+      showToast("success", res.message || "Keraksiz elementlar tozalandi");
+      fetchQueue(1);
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Tozalashda xatolik");
+    }
+  };
+
+  const handleClearAllQueue = async () => {
+    if (!confirm("Rostdan ham BUTUN navbatni tozalab bo'shatmoqchimisiz? Barcha elementlar navbatdan o'chiriladi.")) return;
+    try {
+      const res = await fetchApi("/scraper/queue/clear-all", { method: "POST" });
+      showToast("success", res.message || "Butun navbat tozalandi");
+      fetchQueue(1);
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Tozalashda xatolik");
+    }
+  };
+
+  const handleResetState = async () => {
+    if (!confirm("Barcha manbalar sahifa xotirasini (Uzmovi, Asilmedia, AniToob, Animeelar) 1-sahifaga qaytarmoqchimisiz?")) return;
+    try {
+      const res = await fetchApi("/scraper/state/reset", { method: "POST" });
+      showToast("success", res.message || "Barcha sahifalar 1-sahifaga qaytarildi");
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Xotirani qaytarishda xatolik");
+    }
+  };
+
+  const handleMasterReset = async () => {
+    if (!confirm("DIQQAT! To'liq tozalash: Butun navbat 0 ga tushadi, barcha manbalar 1-sahifaga qaytariladi va loglar tozalanadi. Davom etasizmi?")) return;
+    try {
+      const res = await fetchApi("/scraper/master-reset", { method: "POST" });
+      showToast("success", res.message || "To'liq tozalash muvaffaqiyatli bajarildi");
+      fetchQueue(1);
+      fetchStatus();
+    } catch (e: any) {
+      showToast("error", e.message || "Tozalashda xatolik");
+    }
+  };
+
   const stats = status?.stats || {
     total: queueTotal || 0,
     pending: 0,
@@ -908,76 +955,82 @@ export default function ScraperPage() {
       {/* ── 3. ACTIONS & LIVE CONSOLE TERMINAL ──────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Control Panel (5 cols) */}
-        <div className="lg:col-span-5 bg-surface-container-lowest/60 border border-white/10 rounded-2xl p-5 flex flex-col space-y-4">
+        <div className="lg:col-span-5 bg-surface-container-lowest/60 border border-white/10 rounded-2xl p-5 flex flex-col space-y-4 overflow-hidden shadow-xl">
+          {/* Header Row: Title & Active Tab Badge */}
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <h2 className="text-base font-bold text-white flex items-center gap-2 shrink-0">
               <span className="material-symbols-outlined text-primary-container">tune</span>
               Boshqaruv Paneli
             </h2>
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
-              <button
-                onClick={() => setActiveTab("autopilot")}
-                className={`px-3 py-1 rounded-lg transition-all font-bold flex items-center gap-1.5 ${
-                  activeTab === "autopilot"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
-                    : "text-emerald-400 hover:text-emerald-300"
-                }`}
-              >
-                <span className="material-symbols-outlined text-xs">rocket_launch</span>
-                <span>Avtopilot</span>
-              </button>
-              <button
-                onClick={() => setActiveTab("grabber")}
-                className={`px-3 py-1 rounded-lg transition-all font-medium ${
-                  activeTab === "grabber" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                Grabber
-              </button>
-              <button
-                onClick={() => setActiveTab("parser")}
-                className={`px-3 py-1 rounded-lg transition-all font-medium ${
-                  activeTab === "parser" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                Parser
-              </button>
-              <button
-                onClick={() => setActiveTab("search")}
-                className={`px-3 py-1 rounded-lg transition-all font-medium flex items-center gap-1 ${
-                  activeTab === "search" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                <span className="material-symbols-outlined text-xs">search</span>
-                <span>Qidiruv</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("moderation");
-                  fetchIncomplete();
-                }}
-                className={`px-3 py-1 rounded-lg transition-all font-medium flex items-center gap-1.5 ${
-                  activeTab === "moderation"
-                    ? "bg-amber-500 text-black font-bold shadow"
-                    : "text-amber-400 hover:text-amber-300"
-                }`}
-              >
-                <span>Moderatsiya</span>
-                {reviewItems.db_movies.length + reviewItems.queue_items.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                    {reviewItems.db_movies.length + reviewItems.queue_items.length}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("tools")}
-                className={`px-3 py-1 rounded-lg transition-all font-medium ${
-                  activeTab === "tools" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                Servis
-              </button>
-            </div>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-zinc-400 capitalize">
+              {activeTab === "autopilot" ? "🚀 Avtopilot" : activeTab === "tools" ? "⚙️ Servis" : activeTab === "search" ? "🔍 Qidiruv" : activeTab === "moderation" ? "⚠️ Moderatsiya" : activeTab}
+            </span>
+          </div>
+
+          {/* Tab Navigation Row: Full width, scrollable without bleeding */}
+          <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/10 text-xs overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => setActiveTab("autopilot")}
+              className={`px-3 py-1.5 rounded-lg transition-all font-bold flex items-center gap-1.5 shrink-0 ${
+                activeTab === "autopilot"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "text-emerald-400 hover:text-emerald-300"
+              }`}
+            >
+              <span className="material-symbols-outlined text-xs">rocket_launch</span>
+              <span>Avtopilot</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("grabber")}
+              className={`px-3 py-1.5 rounded-lg transition-all font-medium shrink-0 ${
+                activeTab === "grabber" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Grabber
+            </button>
+            <button
+              onClick={() => setActiveTab("parser")}
+              className={`px-3 py-1.5 rounded-lg transition-all font-medium shrink-0 ${
+                activeTab === "parser" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Parser
+            </button>
+            <button
+              onClick={() => setActiveTab("search")}
+              className={`px-3 py-1.5 rounded-lg transition-all font-medium flex items-center gap-1 shrink-0 ${
+                activeTab === "search" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <span className="material-symbols-outlined text-xs">search</span>
+              <span>Qidiruv</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("moderation");
+                fetchIncomplete();
+              }}
+              className={`px-3 py-1.5 rounded-lg transition-all font-medium flex items-center gap-1.5 shrink-0 ${
+                activeTab === "moderation"
+                  ? "bg-amber-500 text-black font-bold shadow"
+                  : "text-amber-400 hover:text-amber-300"
+              }`}
+            >
+              <span>Moderatsiya</span>
+              {reviewItems.db_movies.length + reviewItems.queue_items.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                  {reviewItems.db_movies.length + reviewItems.queue_items.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("tools")}
+              className={`px-3 py-1.5 rounded-lg transition-all font-medium shrink-0 ${
+                activeTab === "tools" ? "bg-primary-container text-white shadow" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Servis
+            </button>
           </div>
 
           {/* TAB 0: AUTOPILOT */}
@@ -1634,11 +1687,27 @@ export default function ScraperPage() {
 
           {/* TAB 3: TOOLS */}
           {activeTab === "tools" && (
-            <div className="space-y-3 flex-1 flex flex-col justify-between">
+            <div className="space-y-3 flex-1 flex flex-col justify-between overflow-y-auto max-h-[380px] pr-1">
               <div className="space-y-2.5">
                 <p className="text-xs text-text-secondary mb-2">
-                  Navbatni tozalash, xatolarni tiklash va dublikatlarni qayta tekshirish amallari.
+                  Navbatni tozalash, xotirani (checkpoint) qaytarish va tizim profilaktikasi.
                 </p>
+
+                {/* Clear Finished + Already Exists (Most useful button!) */}
+                <button
+                  disabled={actionLoading || isRunning}
+                  onClick={handleClearFinished}
+                  className="w-full p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 text-left text-xs transition-all flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-emerald-400 text-lg">cleaning_services</span>
+                    <div>
+                      <div className="font-bold text-emerald-300">Bajarilgan + Bazada borlarni tozalash</div>
+                      <div className="text-[11px] text-zinc-400">Navbatdan barcha yuklangan va takroriy filmlarni olib tashlaydi</div>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-sm text-emerald-400">arrow_forward</span>
+                </button>
 
                 {/* Clean Duplicates */}
                 <button
@@ -1649,7 +1718,7 @@ export default function ScraperPage() {
                   <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-sky-400 text-lg">find_replace</span>
                     <div>
-                      <div className="font-bold text-white">Dublikatlarni tozalash</div>
+                      <div className="font-bold text-white">Dublikatlarni tekshirish</div>
                       <div className="text-[11px] text-zinc-400">Navbatni bazadagi kinolar bilan qayta solishtiradi</div>
                     </div>
                   </div>
@@ -1672,36 +1741,52 @@ export default function ScraperPage() {
                   <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
                 </button>
 
-                {/* Clear Completed */}
+                {/* Reset Parser Checkpoints (State Memory) */}
                 <button
                   disabled={actionLoading || isRunning}
-                  onClick={() => handleClearByStatus("completed")}
+                  onClick={handleResetState}
                   className="w-full p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 text-left text-xs transition-all flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="material-symbols-outlined text-emerald-400 text-lg">mop</span>
+                    <span className="material-symbols-outlined text-indigo-400 text-lg">history</span>
                     <div>
-                      <div className="font-bold text-white">Bajarilganlarni tozalash</div>
-                      <div className="text-[11px] text-zinc-400">Yuklab bo'lingan elementlarni ro'yxatdan o'chiradi</div>
+                      <div className="font-bold text-white">Parser xotirasini 1-sahifaga qaytarish</div>
+                      <div className="text-[11px] text-zinc-400">Uzmovi, Asilmedia, AniToob va Animeelar checkpointlarini 1 ga tushiradi</div>
                     </div>
                   </div>
-                  <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
+                  <span className="material-symbols-outlined text-sm text-indigo-400">chevron_right</span>
                 </button>
 
-                {/* Clear Already Exists */}
+                {/* Clear Entire Queue */}
                 <button
                   disabled={actionLoading || isRunning}
-                  onClick={() => handleClearByStatus("already_exists")}
-                  className="w-full p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 text-left text-xs transition-all flex items-center justify-between"
+                  onClick={handleClearAllQueue}
+                  className="w-full p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 active:scale-95 text-left text-xs transition-all flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="material-symbols-outlined text-zinc-400 text-lg">delete_sweep</span>
+                    <span className="material-symbols-outlined text-red-400 text-lg">delete_sweep</span>
                     <div>
-                      <div className="font-bold text-white">Bazada borlarni tozalash</div>
-                      <div className="text-[11px] text-zinc-400">Bazada allaqachon mavjud bo'lganlarni olib tashlaydi</div>
+                      <div className="font-bold text-red-300">Butun navbatni tozalash (0 ta qilish)</div>
+                      <div className="text-[11px] text-zinc-400">Navbatdagi barcha elementlarni butunlay o'chirib bo'shatadi</div>
                     </div>
                   </div>
-                  <span className="material-symbols-outlined text-sm text-zinc-400">chevron_right</span>
+                  <span className="material-symbols-outlined text-sm text-red-400">chevron_right</span>
+                </button>
+
+                {/* Master Reset (Nuclear Option) */}
+                <button
+                  disabled={actionLoading || isRunning}
+                  onClick={handleMasterReset}
+                  className="w-full p-3 rounded-xl bg-gradient-to-r from-red-950/40 to-amber-950/40 border border-red-500/30 hover:border-red-500/50 active:scale-95 text-left text-xs transition-all flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-amber-400 text-lg">restart_alt</span>
+                    <div>
+                      <div className="font-bold text-amber-300">To'liq tozalash (Master Reset)</div>
+                      <div className="text-[11px] text-zinc-400">Navbat (0) + Sahifalar (1) + Konsol loglarini biryo'la tozalash</div>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-sm text-amber-400">bolt</span>
                 </button>
               </div>
             </div>
@@ -1949,8 +2034,8 @@ export default function ScraperPage() {
             </p>
           </div>
 
-          {/* Search Box */}
-          <div className="flex items-center gap-2">
+          {/* Search Box & Quick Clean Actions */}
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-2.5 text-zinc-500 text-lg">search</span>
               <input
@@ -1958,7 +2043,7 @@ export default function ScraperPage() {
                 placeholder="Qidiruv (nomi, kodi)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary-container w-64"
+                className="pl-9 pr-8 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary-container w-52 sm:w-64"
               />
               {searchQuery && (
                 <button
@@ -1970,6 +2055,28 @@ export default function ScraperPage() {
                 </button>
               )}
             </div>
+
+            {/* Quick Clean Actions */}
+            <button
+              onClick={handleClearFinished}
+              disabled={isRunning || (stats.completed === 0 && stats.already_exists === 0)}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all"
+              title="Yuklangan (completed) va bazada bor (already_exists) filmlarni navbatdan tozalash"
+            >
+              <span className="material-symbols-outlined text-xs">cleaning_services</span>
+              <span className="hidden sm:inline">Keraksizlarni tozalash</span>
+              <span className="sm:hidden">Tozalash</span>
+            </button>
+
+            <button
+              onClick={handleClearAllQueue}
+              disabled={isRunning || stats.total === 0}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all"
+              title="Butun navbatni to'liq bo'shatish"
+            >
+              <span className="material-symbols-outlined text-xs">delete_sweep</span>
+              <span className="hidden sm:inline">Navbatni tozalash</span>
+            </button>
           </div>
         </div>
 

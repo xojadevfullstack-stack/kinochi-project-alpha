@@ -760,6 +760,17 @@ class TelethonModeratorPipeline:
                             db_series.source_id = src.id
                             await session.commit()
 
+                if db_series and meta.get("is_18_plus") and not db_series.is_18_plus:
+                    db_series.is_18_plus = True
+                    cat_18 = next((c for c in db_series.categories if c.name == "18+" or c.slug == "18-plus"), None)
+                    if not cat_18:
+                        c18_res = await session.execute(select(CategoryModel).where(CategoryModel.id == 33))
+                        c18_model = c18_res.scalar_one_or_none()
+                        if c18_model and c18_model not in db_series.categories:
+                            db_series.categories.append(c18_model)
+                    await session.commit()
+                    logger.info(f"🔞 Mavjud serial 18+ sifatida belgilandi: '{title}' (ID: {series_id})")
+
             if not series_id:
                 topic_name = f"🎬 {title} (Serial){year_str}"
                 logger.info(f"ℹ️ Forum Topic ochilmoqda: '{topic_name}'...")
@@ -821,12 +832,13 @@ class TelethonModeratorPipeline:
                     category_ids=meta.get("category_ids"),
                     page_ids=[1] if (2 in (meta.get("category_ids") or []) or "anime" in (meta.get("genres") or "").lower()) else meta.get("page_ids"),
                     source_id=source.id,
-                    status="ongoing"
+                    status="ongoing",
+                    is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 created_series = await series_service.create_series(series_data)
                 series_id = created_series.id
                 await session.commit()
-                logger.info(f"✅ Serial bazada muvaffaqiyatli yaratildi (Series ID: {series_id})")
+                logger.info(f"✅ Serial bazada muvaffaqiyatli yaratildi (Series ID: {series_id}, 18+: {series_data.is_18_plus})")
 
         # 5. Har bir mavsum va qismlarni ketma-ket yuklash
         uploaded_count = 0
@@ -1580,7 +1592,8 @@ class TelethonModeratorPipeline:
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
                     category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2],
-                    page_ids=[1]
+                    page_ids=[1],
+                    is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 movie_id = created_movie.id
                 await service.link_movie_video_from_message(
@@ -1644,6 +1657,18 @@ class TelethonModeratorPipeline:
                         src_obj = await session.get(SourceModel, s_obj.source_id)
                         if src_obj and src_obj.topic_id:
                             thread_id = int(src_obj.topic_id)
+                    if meta.get("is_18_plus") and not s_obj.is_18_plus:
+                        db_s = await series_repo.get_series_by_id(series_id)
+                        if db_s:
+                            db_s.is_18_plus = True
+                            cat_18 = next((c for c in db_s.categories if c.name == "18+" or c.slug == "18-plus"), None)
+                            if not cat_18:
+                                c18_res = await session.execute(select(CategoryModel).where(CategoryModel.id == 33))
+                                c18_model = c18_res.scalar_one_or_none()
+                                if c18_model and c18_model not in db_s.categories:
+                                    db_s.categories.append(c18_model)
+                            await session.commit()
+                            logger.info(f"🔞 [ANIMEELAR] Mavjud serial 18+ sifatida belgilandi: '{title}' (ID: {series_id})")
         else:
             if AUTO_TOPIC_CHAT_ID:
                 topic_title = f"📺 {title[:95]}" + (f" ({year})" if year else "")
@@ -1697,7 +1722,8 @@ class TelethonModeratorPipeline:
                     category_ids=anime_cat_ids,
                     page_ids=[1],
                     source_id=source.id if source else None,
-                    status="ongoing"
+                    status="ongoing",
+                    is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 created_series = await series_service.create_series(series_data)
                 series_id = created_series.id
@@ -2159,7 +2185,8 @@ class TelethonModeratorPipeline:
                     poster_url=meta.get("poster_url") or item.poster_url,
                     trailer_url=meta.get("trailer_url"),
                     category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2],
-                    page_ids=[1]
+                    page_ids=[1],
+                    is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 movie_id = created_movie.id
                 await service.link_movie_video_from_message(
@@ -2223,6 +2250,18 @@ class TelethonModeratorPipeline:
                         src_obj = await session.get(SourceModel, s_obj.source_id)
                         if src_obj and src_obj.topic_id:
                             thread_id = int(src_obj.topic_id)
+                    if meta.get("is_18_plus") and not s_obj.is_18_plus:
+                        db_s = await series_repo.get_series_by_id(series_id)
+                        if db_s:
+                            db_s.is_18_plus = True
+                            cat_18 = next((c for c in db_s.categories if c.name == "18+" or c.slug == "18-plus"), None)
+                            if not cat_18:
+                                c18_res = await session.execute(select(CategoryModel).where(CategoryModel.id == 33))
+                                c18_model = c18_res.scalar_one_or_none()
+                                if c18_model and c18_model not in db_s.categories:
+                                    db_s.categories.append(c18_model)
+                            await session.commit()
+                            logger.info(f"🔞 [ANITOOB] Mavjud serial 18+ sifatida belgilandi: '{title}' (ID: {series_id})")
         else:
             if AUTO_TOPIC_CHAT_ID:
                 topic_title = f"📺 {title[:95]}" + (f" ({year})" if year else "")
@@ -2275,7 +2314,8 @@ class TelethonModeratorPipeline:
                     category_ids=anime_cat_ids,
                     page_ids=[1],
                     source_id=source.id if source else None,
-                    status="ongoing"
+                    status="ongoing",
+                    is_18_plus=bool(meta.get("is_18_plus", False))
                 ))
                 series_id = created_series.id
                 s_season = await series_service.create_season(SeasonCreate(series_id=series_id, season_number=1, title="1-fasl"))
@@ -2728,6 +2768,7 @@ class TelethonModeratorPipeline:
                 poster_url=meta.get("poster_url"),
                 trailer_url=meta.get("trailer_url"),
                 category_ids=meta.get("category_ids"),
+                is_18_plus=bool(meta.get("is_18_plus", False)),
                 page_ids=[1] if (2 in (meta.get("category_ids") or []) or "anime" in (meta.get("genres") or "").lower()) else meta.get("page_ids")
             )
             movie_id = created_movie.id
@@ -2737,7 +2778,9 @@ class TelethonModeratorPipeline:
 
         # ── 3. 'manba' superguruhida Topic ochish ──
         target_chat = AUTO_TOPIC_CHAT_ID
-        topic_name = f"🎬 {title}{year_str}"
+        is_adult = bool(meta.get("is_18_plus", False))
+        topic_icon = "🔞" if is_adult else "🎬"
+        topic_name = f"{topic_icon} {title}{year_str}"
         logger.info(f"ℹ️ 3-QADAM: Guruhda Forum Topic ochilmoqda: '{topic_name}'...")
         thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
         if not thread_id:
@@ -2750,9 +2793,10 @@ class TelethonModeratorPipeline:
         director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
         cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
         trailer_str = f"🍿 <b>Treyler:</b> <a href=\"{meta['trailer_url']}\">YouTube</a>\n" if meta.get("trailer_url") else ""
+        adult_prefix = "🔞 <b>18+ Kattalar uchun</b>\n\n" if is_adult else ""
 
         welcome_text = (
-            f"🎬 <b>{html.escape(title)}</b>{year_str}\n"
+            f"{adult_prefix}🎬 <b>{html.escape(title)}</b>{year_str}\n"
             f"🔑 <b>Film kodi:</b> <code>{movie_code}</code>\n"
             f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Tarjima kino')}\n"
             f"{rating_str}{director_str}{cast_str}{trailer_str}"

@@ -76,13 +76,14 @@ class TMDbClient:
                         "poster_url": direct_data.get("poster_url"),
                         "overview": direct_data.get("overview") or "",
                         "vote_average": direct_data.get("tmdb_rating") or 0.0,
+                        "adult": bool(direct_data.get("adult", False)),
                     })
                     seen_ids.add(direct_id)
             except Exception as e:
                 logger.warning(f"Direct TMDb ID search failed for {clean_query}: {e}")
 
         headers, base_params = self._get_headers_and_params()
-        params = {**base_params, "query": clean_query, "language": "ru-RU"}
+        params = {**base_params, "query": clean_query, "language": "ru-RU", "include_adult": "true"}
 
         async with httpx.AsyncClient(timeout=10.0) as client:
             try:
@@ -134,6 +135,7 @@ class TMDbClient:
                 "poster_url": poster_url,
                 "overview": item.get("overview") or "",
                 "vote_average": round(item.get("vote_average", 0.0), 1),
+                "adult": bool(item.get("adult", False)),
             })
 
         # Cache only when results are found (do not cache empty transient failures)
