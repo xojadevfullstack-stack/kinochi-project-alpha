@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 import { getToken, clearToken } from "./auth/tokenStorage";
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {

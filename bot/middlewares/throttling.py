@@ -9,14 +9,18 @@ from aiogram.types import Message, CallbackQuery
 logger = logging.getLogger(__name__)
 
 # Try to import job_manager from backend to reuse the existing Redis pool
+redis_client = None
 try:
     from app.core.job_manager import job_manager
     redis_client = job_manager._redis
 except ImportError:
-    logger.warning("Could not import job_manager from backend. Rate limiting might not share the same Redis pool.")
-    import redis.asyncio as redis
-    redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-    redis_client = redis.from_url(redis_url, decode_responses=True)
+    try:
+        import redis.asyncio as redis
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+        redis_client = redis.from_url(redis_url, decode_responses=True)
+    except Exception as e:
+        logger.warning(f"Could not initialize Redis client for throttling: {e}")
+        redis_client = None
 
 class ThrottlingMiddleware(BaseMiddleware):
     def __init__(self, limit_per_minute: int = None):
@@ -42,7 +46,7 @@ class ThrottlingMiddleware(BaseMiddleware):
         elif isinstance(event, CallbackQuery):
             user_id = event.from_user.id
             
-        if not user_id:
+        if not user_id or redis_client is None:
             return await handler(event, data)
             
         key = f"ratelimit:{user_id}"

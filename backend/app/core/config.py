@@ -43,6 +43,8 @@ class Settings(BaseSettings):
             self.CORS_ORIGINS.extend([
                 "http://localhost:3000",   # website dev
                 "http://localhost:3001",   # admin panel dev
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",
             ])
 
     # ── Security (Phase 1+) ──────────────────────────────────────────

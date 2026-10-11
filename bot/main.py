@@ -1,6 +1,16 @@
 import asyncio
 import logging
 import os
+import sys
+
+# Ensure backend and bot directories are in sys.path
+BOT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BOT_DIR)
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+if BOT_DIR not in sys.path:
+    sys.path.insert(0, BOT_DIR)
 
 from aiogram import Bot, Dispatcher
 from config import settings
@@ -91,3 +101,10 @@ async def run_bot():
     finally:
         await api_client.close()
         await bot.session.close()
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    try:
+        asyncio.run(run_bot())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Bot to'xtatildi.")
