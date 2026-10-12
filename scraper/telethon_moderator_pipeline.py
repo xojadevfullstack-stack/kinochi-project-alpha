@@ -70,6 +70,8 @@ logger = logging.getLogger(__name__)
 FALLBACK_USERBOT_SESSION = (
     "1ApWapzMBuyF503SKFe7YvecikokTfoWvtlnlzunbRRik8mht2VtaJve7uOtwuKwQBdXkvZ_0cOn-SBVZ2jHcHJuRhdcGiVBnP_Yg0_dEVOJT6jjvVhbwepZFPTn4HkwyVqG2Z7h-HFpXRYo4HboCGLR0QCYVx8KrKVQYTK44Sxiai6atXQ7klb6tKg_Nq8S2u3x23V82J3SVM6bROoGvltvZKMZ2n9suDPUSWtg9612fCtTqsH6ohVEq-jeWUt099pWYWCBnn_yTlWiZWdhflktlGP4nD4PL52JdQDz1zUilq1B9KFsLq8DQW3jbfYzbpAzz6175F_Ve3xuD2-wsBd8--H08Is0="
 )
+FALLBACK_API_ID = 32571063
+FALLBACK_API_HASH = "fe3038cd47d8c37788a5f4bdeef00138"
 
 
 def create_telethon_client(session_path: str = None) -> TelegramClient:
@@ -79,6 +81,9 @@ def create_telethon_client(session_path: str = None) -> TelegramClient:
     2. Mavjud va to'g'ri .session fayl orqali.
     3. Zaxira sessiya orqali (fayl bo'lmaganda yoki buzilganda ham uzluksiz ishlash uchun).
     """
+    api_id = int(TELEGRAM_API_ID) if TELEGRAM_API_ID else FALLBACK_API_ID
+    api_hash = str(TELEGRAM_API_HASH).strip() if (TELEGRAM_API_HASH and str(TELEGRAM_API_HASH).strip()) else FALLBACK_API_HASH
+
     raw_str_session = (
         os.environ.get("TELEGRAM_STRING_SESSION")
         or TELEGRAM_STRING_SESSION
@@ -87,7 +92,7 @@ def create_telethon_client(session_path: str = None) -> TelegramClient:
     )
     if raw_str_session and str(raw_str_session).strip():
         logger.info("Telethon mijozini TELEGRAM_STRING_SESSION orqali yuklash...")
-        return TelegramClient(StringSession(str(raw_str_session).strip()), TELEGRAM_API_ID, TELEGRAM_API_HASH)
+        return TelegramClient(StringSession(str(raw_str_session).strip()), api_id, api_hash)
 
     session_file = session_path or os.path.join(BASE_DIR, "scraper", "kinochi_userbot.session")
     if not session_file.endswith(".session"):
@@ -111,12 +116,12 @@ def create_telethon_client(session_path: str = None) -> TelegramClient:
                 session = MemorySession()
                 session.set_dc(dc_id, dc_ips.get(dc_id, "149.154.167.51"), 443)
                 session.auth_key = AuthKey(data=auth_key_bytes)
-                return TelegramClient(session, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+                return TelegramClient(session, api_id, api_hash)
         except Exception as e:
             logger.warning(f"Session faylidan o'qishda xatolik: {e}")
 
     logger.info("Zaxira Telegram StringSession orqali ulanmoqda...")
-    return TelegramClient(StringSession(FALLBACK_USERBOT_SESSION), TELEGRAM_API_ID, TELEGRAM_API_HASH)
+    return TelegramClient(StringSession(FALLBACK_USERBOT_SESSION), api_id, api_hash)
 
 
 def is_bot_flood_text(text: Optional[str]) -> bool:

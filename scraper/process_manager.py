@@ -148,6 +148,14 @@ class ProcessManager:
             env["PYTHONUNBUFFERED"] = "1"
             env["PYTHONIOENCODING"] = "utf-8"
 
+            from scraper.config import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_STRING_SESSION
+            if TELEGRAM_API_ID:
+                env["TELEGRAM_API_ID"] = str(TELEGRAM_API_ID)
+            if TELEGRAM_API_HASH:
+                env["TELEGRAM_API_HASH"] = str(TELEGRAM_API_HASH)
+            if TELEGRAM_STRING_SESSION:
+                env["TELEGRAM_STRING_SESSION"] = str(TELEGRAM_STRING_SESSION)
+
             creationflags = 0
             if sys.platform == "win32":
                 creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)

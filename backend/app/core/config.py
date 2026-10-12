@@ -55,8 +55,9 @@ class Settings(BaseSettings):
     # ── Telegram (Phase 4+) ──────────────────────────────────────────
     BOT_TOKEN: str
     STORAGE_CHANNEL_ID: str | int
-    TELEGRAM_API_ID: int = 0
-    TELEGRAM_API_HASH: str = ""
+    TELEGRAM_API_ID: int = 32571063
+    TELEGRAM_API_HASH: str = "fe3038cd47d8c37788a5f4bdeef00138"
+    TELEGRAM_STRING_SESSION: str = "1ApWapzMBuyF503SKFe7YvecikokTfoWvtlnlzunbRRik8mht2VtaJve7uOtwuKwQBdXkvZ_0cOn-SBVZ2jHcHJuRhdcGiVBnP_Yg0_dEVOJT6jjvVhbwepZFPTn4HkwyVqG2Z7h-HFpXRYo4HboCGLR0QCYVx8KrKVQYTK44Sxiai6atXQ7klb6tKg_Nq8S2u3x23V82J3SVM6bROoGvltvZKMZ2n9suDPUSWtg9612fCtTqsH6ohVEq-jeWUt099pWYWCBnn_yTlWiZWdhflktlGP4nD4PL52JdQDz1zUilq1B9KFsLq8DQW3jbfYzbpAzz6175F_Ve3xuD2-wsBd8--H08Is0="
     # Internal secret for bot → backend API calls (POST /users/register, etc.)
     BOT_API_SECRET: str = ""
 
