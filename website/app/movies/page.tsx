@@ -5,7 +5,7 @@ import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60; // 60s ISR kesh: Vercel CDN orqali Render trafigini tejaydi
 
 export const metadata: Metadata = {
   title: "Kinolar - MediaPlus",

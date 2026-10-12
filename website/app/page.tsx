@@ -7,8 +7,7 @@ import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0; 
+export const revalidate = 60; // 60s ISR kesh: Vercel CDN orqali Render trafigini 90% tejaydi 
 
 type Movie = {
   id: number;

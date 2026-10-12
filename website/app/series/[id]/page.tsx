@@ -18,7 +18,7 @@ type Props = {
   params: { id: string };
 };
 
-export const revalidate = 0;
+export const revalidate = 60; // 60s ISR kesh: Vercel CDN orqali Render trafigini tejaydi
 
 type Episode = {
   id: number;

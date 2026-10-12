@@ -19,7 +19,7 @@ type Props = {
   params: { code: string };
 };
 
-export const revalidate = 0; 
+export const revalidate = 60; // 60s ISR kesh: Vercel CDN orqali Render trafigini tejaydi 
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
