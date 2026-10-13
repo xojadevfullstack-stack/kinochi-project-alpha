@@ -508,8 +508,8 @@ class TelethonModeratorPipeline:
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi (qat'iy Timeout bilan)."""
-        # Seriallar ko'p qismli bo'lgani uchun 25 daqiqa, bitta kinolar uchun 12 daqiqa timeout
-        item_timeout = 1500 if getattr(item, "media_type", "movie") == "series" else 720
+        # Seriallar ko'p qismli bo'lgani uchun 2 soat (7200s), bitta kinolar uchun 20 daqiqa timeout
+        item_timeout = 7200 if getattr(item, "media_type", "movie") == "series" else 1200
         try:
             return await asyncio.wait_for(self._run_item_inner(item, target_bot, max_episodes=max_episodes), timeout=item_timeout)
         except asyncio.TimeoutError:
@@ -925,18 +925,62 @@ class TelethonModeratorPipeline:
                 except Exception as s_err:
                     logger.debug(f"Fasl tugmasini bosishda xatolik: {s_err}")
 
-            # Ushbu mavsum qismlari tugmalarini yig'ish
+            # Ushbu mavsum qismlari tugmalarini yig'ish (barcha sahifalarni to'liq aylanib chiqish)
             episodes_grid_msg_id = card_msg.id
             episodes_map = {}
-            for r_idx, row in enumerate(card_msg.buttons or []):
-                for c_idx, btn in enumerate(row):
-                    t = btn.text.strip()
-                    if t.isdigit():
-                        episodes_map[int(t)] = (r_idx, c_idx, t)
-                    else:
-                        m_num = re.search(r'(\d+)\s*[-_]?\s*qism', t, re.I)
-                        if m_num:
-                            episodes_map[int(m_num.group(1))] = (r_idx, c_idx, t)
+            pages_traversed = 0
+            while True:
+                pages_traversed += 1
+                for r_idx, row in enumerate(card_msg.buttons or []):
+                    for c_idx, btn in enumerate(row):
+                        t = btn.text.strip()
+                        if t.isdigit():
+                            episodes_map[int(t)] = (r_idx, c_idx, t)
+                        else:
+                            m_num = re.search(r'(\d+)\s*[-_]?\s*qism', t, re.I)
+                            if m_num:
+                                episodes_map[int(m_num.group(1))] = (r_idx, c_idx, t)
+
+                # Keyingi sahifa tugmasi bormi? (▶️, ➡️, »)
+                next_page_btn = None
+                for r_idx, row in enumerate(card_msg.buttons or []):
+                    for c_idx, btn in enumerate(row):
+                        if btn.text.strip() in ["▶️", "➡️", "»"]:
+                            next_page_btn = (r_idx, c_idx)
+                            break
+                    if next_page_btn:
+                        break
+
+                if not next_page_btn or pages_traversed >= 15:
+                    break
+
+                await card_msg.click(next_page_btn[0], next_page_btn[1])
+                await asyncio.sleep(2.0)
+                refreshed = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                if refreshed and refreshed.buttons:
+                    card_msg = refreshed
+                else:
+                    break
+
+            # 1-sahifaga qaytish (◀️, ⬅️, «)
+            while True:
+                prev_page_btn = None
+                for r_idx, row in enumerate(card_msg.buttons or []):
+                    for c_idx, btn in enumerate(row):
+                        if btn.text.strip() in ["◀️", "⬅️", "«"]:
+                            prev_page_btn = (r_idx, c_idx)
+                            break
+                    if prev_page_btn:
+                        break
+                if not prev_page_btn:
+                    break
+                await card_msg.click(prev_page_btn[0], prev_page_btn[1])
+                await asyncio.sleep(1.5)
+                refreshed = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                if refreshed and refreshed.buttons:
+                    card_msg = refreshed
+                else:
+                    break
 
             if not episodes_map:
                 logger.warning(f"⚠️ {s_num}-mavsum uchun raqamlangan qism tugmalari topilmadi.")
@@ -981,28 +1025,42 @@ class TelethonModeratorPipeline:
                 except Exception as e:
                     logger.debug(f"Qismlar ro'yxatini tiklashda xatolik: {e}")
 
-                # ep_num tugmasini joriy menyudan aniqlash
+                # ep_num tugmasini menyudan aniqlash (agar kerakli sahifada bo'lmasa, oldinga/orqaga varoqlaymiz)
                 target_r_idx, target_c_idx = None, None
                 btn_name = str(ep_num)
-                for row_idx, row in enumerate(card_msg.buttons or []):
-                    for col_idx, btn in enumerate(row):
-                        t = btn.text.strip()
-                        if t == str(ep_num) or t.startswith(f"{ep_num}-") or t.startswith(f"{ep_num} "):
-                            target_r_idx, target_c_idx, btn_name = row_idx, col_idx, btn.text
+
+                for _nav in range(10):
+                    card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
+                    visible_digits = []
+                    for row_idx, row in enumerate(card_msg.buttons or []):
+                        for col_idx, btn in enumerate(row):
+                            t = btn.text.strip()
+                            if t.isdigit():
+                                visible_digits.append(int(t))
+                            if t == str(ep_num) or t.startswith(f"{ep_num}-") or t.startswith(f"{ep_num} "):
+                                target_r_idx, target_c_idx, btn_name = row_idx, col_idx, btn.text
+                                break
+                        if target_r_idx is not None:
                             break
+
                     if target_r_idx is not None:
                         break
 
-                if target_r_idx is None:
-                    if ep_num in episodes_map:
-                        orig_r, orig_c, orig_name = episodes_map[ep_num]
-                        if (
-                            card_msg.buttons
-                            and orig_r < len(card_msg.buttons)
-                            and orig_c < len(card_msg.buttons[orig_r])
-                            and card_msg.buttons[orig_r][orig_c].text.strip() == str(ep_num)
-                        ):
-                            target_r_idx, target_c_idx, btn_name = orig_r, orig_c, orig_name
+                    # Agar ushbu sahifada topilmasa, sahifani varoqlaymiz
+                    if visible_digits:
+                        if ep_num > max(visible_digits):
+                            n_btn = next(((r, c) for r, row in enumerate(card_msg.buttons or []) for c, b in enumerate(row) if b.text.strip() in ["▶️", "➡️", "»"]), None)
+                            if n_btn:
+                                await card_msg.click(n_btn[0], n_btn[1])
+                                await asyncio.sleep(2.0)
+                                continue
+                        elif ep_num < min(visible_digits):
+                            p_btn = next(((r, c) for r, row in enumerate(card_msg.buttons or []) for c, b in enumerate(row) if b.text.strip() in ["◀️", "⬅️", "«"]), None)
+                            if p_btn:
+                                await card_msg.click(p_btn[0], p_btn[1])
+                                await asyncio.sleep(2.0)
+                                continue
+                    break
 
                 if target_r_idx is None:
                     logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism tugmasi menyuda topilmadi, o'tkazib yuborildi.")

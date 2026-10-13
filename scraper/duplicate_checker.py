@@ -320,12 +320,12 @@ class DuplicateChecker:
         candidate_slugs = [to_slug(v) for v in candidate_variants if to_slug(v)]
         cand_orig_slug = to_slug(original_title) if original_title else ""
 
-        # Qaysi ro'yxatlarni tekshiramiz? (Har doim har ikkala ro'yxat tekshiriladi, media_type bo'yicha birinchi o'ringa qo'yiladi)
+        # Qaysi ro'yxatlarni tekshiramiz? media_type berilgan bo'lsa, qat'iy o'z turi bo'yicha tekshiriladi
         db_items: List[Dict[str, Any]] = []
         if media_type == "movie":
-            db_items = self._movies + self._series
+            db_items = self._movies
         elif media_type == "series":
-            db_items = self._series + self._movies
+            db_items = self._series
         else:
             db_items = self._movies + self._series
 

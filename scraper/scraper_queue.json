@@ -5864,5 +5864,19 @@
     "episodes_count": null,
     "downloaded_episodes": 0,
     "error_message": null
+  },
+  {
+    "id": "asilmedia_11153",
+    "source": "asilmedia",
+    "title": "Qashqirlar Makoni",
+    "original_title": "Kurtlar Vadisi",
+    "year": 2003,
+    "media_type": "series",
+    "url": "https://asilmedia.org/11153-qashqirlar-makoni-kurtlar-vadisi-turk-seriali-barcha-qismlar-uzbek-tilida-2003-ozbekcha-tarjima.html",
+    "poster_url": "https://images.uzmovi.net/2026-05-08/b08732a9da017cb866092a3b95323f7f.jpg",
+    "status": "completed",
+    "episodes_count": 95,
+    "downloaded_episodes": 95,
+    "error_message": null
   }
 ]
