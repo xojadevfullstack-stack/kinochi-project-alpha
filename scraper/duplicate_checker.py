@@ -128,11 +128,22 @@ def extract_title_variants(raw_title: str) -> List[str]:
 
 def extract_part_number(title: Optional[str]) -> Optional[int]:
     """
-    Filmlardagi qism raqamini aniqlaydi (masalan: 'Karib dengizi 2', 'Forsaj 5', 'Terminator 3', '2-qism', 'Part 2').
+    Filmlardagi qism raqamini aniqlaydi (masalan: 'Karib dengizi 2', 'Forsaj 5', 'Terminator 3', '2-qism', 'Part 2', 'II', 'Ikkinchi qism').
     """
     if not title:
         return None
     t = str(title).lower().strip()
+
+    # 0. So'z bilan yozilgan qism/tartib raqamlari
+    word_ordinals = {
+        'birinchi': 1, 'ikkinchi': 2, 'uchinchi': 3, 'to\'rtinchi': 4, 'tortinchi': 4,
+        'beshinchi': 5, 'oltinchi': 6, 'yettinchi': 7, 'sakkizinchi': 8, 'to\'qqizinchi': 9, 'toqqizinchi': 9,
+        'o\'ninchi': 10, 'oninchi': 10
+    }
+    for w, num in word_ordinals.items():
+        if re.search(rf'\b{w}\s*(?:qism|fasl|part|chast)?\b', t):
+            return num
+
     # 1. '2-qism', '3 qism', 'qism 4', 'part 2', 'chast 3'
     m_part = re.search(r'\b(?:qism|part|chast)\s*[-_]?\s*(\d+)\b', t)
     if m_part:
@@ -141,17 +152,20 @@ def extract_part_number(title: Optional[str]) -> Optional[int]:
     if m_part2:
         return int(m_part2.group(1))
 
-    # 2. Rim raqamlari (I, II, III, IV, V, VI, VII, VIII)
-    roman_map = {'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5, 'vi': 6, 'vii': 7, 'viii': 8}
+    # 2. Rim raqamlari (X, IX, VIII, VII, VI, V, IV, III, II)
+    roman_map = {'x': 10, 'ix': 9, 'viii': 8, 'vii': 7, 'vi': 6, 'v': 5, 'iv': 4, 'iii': 3, 'ii': 2}
     for rom, val in sorted(roman_map.items(), key=lambda x: -len(x[0])):
-        if re.search(rf'\b{rom}\b', t):
+        if re.search(rf'(?:\b|\s|_|-){rom}(?:\b|\s|_|-|$|[^\w])', t):
             return val
+    # 'I' rim raqami faqat aniq qism kontekstida
+    if re.search(r'\b(?:part|qism|chast)\s*[-_]?\s*i\b', t) or re.search(r'\b1-qism\b', t):
+        return 1
 
     # 3. Yakka raqam: masalan 'Karib dengizi qaroqchilari 2', 'Shrek 4', 'Forsaj 9'
     m_num = re.search(r'\b([1-9]|1[0-5])\b', t)
     if m_num:
         val = int(m_num.group(1))
-        if not re.search(r'\b(?:3d|4k|1080p|720p)\b', t):
+        if not re.search(r'\b(?:3d|4k|1080p|720p|480p)\b', t):
             return val
     return None
 
@@ -351,11 +365,12 @@ class DuplicateChecker:
         for cand_slug in candidate_slugs:
             for item in db_items:
                 db_part = extract_part_number(item.get("title"))
+                # Qism raqamlari bo'yicha qat'iy himoya:
                 if cand_part is not None and db_part is not None and cand_part != db_part:
                     continue
-                if cand_part is not None and cand_part > 1 and db_part is None:
+                if cand_part is not None and cand_part > 1 and (db_part is None or db_part == 1):
                     continue
-                if db_part is not None and db_part > 1 and cand_part is None:
+                if db_part is not None and db_part > 1 and (cand_part is None or cand_part == 1):
                     continue
 
                 # Agar itemning asosiy slugi yoki variantlaridan biriga to'liq teng bo'lsa
@@ -369,8 +384,8 @@ class DuplicateChecker:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series and year and db_year:
-                        # Yillari 2 yildan ko'p farq qilsa, turli xil film bo'lishi mumkin (masalan 1994 vs 2019)
-                        if abs(year - db_year) > 2:
+                        # Yillari 1 yildan ko'p farq qilsa, turli xil film (masalan 1972 vs 1974)
+                        if abs(year - db_year) > 1:
                             continue
                     
                     return self._make_result(
@@ -386,17 +401,16 @@ class DuplicateChecker:
                 db_part = extract_part_number(item.get("title"))
                 if cand_part is not None and db_part is not None and cand_part != db_part:
                     continue
-
-                if cand_part is not None and cand_part > 1 and db_part is None:
+                if cand_part is not None and cand_part > 1 and (db_part is None or db_part == 1):
                     continue
-                if db_part is not None and db_part > 1 and cand_part is None:
+                if db_part is not None and db_part > 1 and (cand_part is None or cand_part == 1):
                     continue
 
                 db_orig_slug = item.get("orig_slug")
                 if db_orig_slug and cand_orig_slug == db_orig_slug:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
-                    if not is_series and year and db_year and abs(year - db_year) > 2:
+                    if not is_series and year and db_year and abs(year - db_year) > 1:
                         continue
                     return self._make_result(
                         item=item,
@@ -415,9 +429,9 @@ class DuplicateChecker:
                 db_part = extract_part_number(item.get("title"))
                 if cand_part is not None and db_part is not None and cand_part != db_part:
                     continue
-                if cand_part is not None and cand_part > 1 and db_part is None:
+                if cand_part is not None and cand_part > 1 and (db_part is None or db_part == 1):
                     continue
-                if db_part is not None and db_part > 1 and cand_part is None:
+                if db_part is not None and db_part > 1 and (cand_part is None or cand_part == 1):
                     continue
 
                 db_norm = normalize_uzbek_text(item["title"])
@@ -428,12 +442,13 @@ class DuplicateChecker:
                 intersection = cand_words.intersection(db_words)
                 overlap_ratio = len(intersection) / max(len(cand_words), len(db_words))
 
-                # 80% dan yuqori moslik va yil bir xil bo'lsa
-                if overlap_ratio >= 0.8:
+                # Kamida 85% moslik va yil bo'lishi, yili 1 yildan ortiq farq qilmasligi SHART
+                if overlap_ratio >= 0.85:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
-                    if not is_series and year and db_year and abs(year - db_year) > 2:
-                        continue
+                    if not is_series:
+                        if not year or not db_year or abs(year - db_year) > 1:
+                            continue
                     return self._make_result(
                         item=item,
                         match_type="token_overlap",
@@ -450,32 +465,38 @@ class DuplicateChecker:
             db_part = extract_part_number(item.get("title"))
             if cand_part is not None and db_part is not None and cand_part != db_part:
                 continue
-            if cand_part is not None and cand_part > 1 and db_part is None:
+            if cand_part is not None and cand_part > 1 and (db_part is None or db_part == 1):
                 continue
-            if db_part is not None and db_part > 1 and cand_part is None:
+            if db_part is not None and db_part > 1 and (cand_part is None or cand_part == 1):
                 continue
 
             for cand_slug in candidate_slugs:
                 if not cand_slug:
                     continue
 
-                # Oxirgi raqamlar mos kelmasa (masalan 1 vs 2)
-                if cand_slug[-1:].isdigit() and item_slug[-1:].isdigit() and cand_slug[-1:] != item_slug[-1:]:
-                    continue
+                # Oxirgi raqamlar mos kelmasa (masalan 1 vs 2 yoki 2 vs bo'sh)
+                cand_trailing_digit = re.search(r'\d+$', cand_slug)
+                item_trailing_digit = re.search(r'\d+$', item_slug)
+                if cand_trailing_digit or item_trailing_digit:
+                    c_d = cand_trailing_digit.group(0) if cand_trailing_digit else ""
+                    i_d = item_trailing_digit.group(0) if item_trailing_digit else ""
+                    if c_d != i_d:
+                        continue
 
                 is_match = False
                 if cand_slug == item_slug:
                     is_match = True
-                elif cand_slug.startswith(item_slug) and (len(cand_slug) - len(item_slug) <= 4):
+                elif cand_slug.startswith(item_slug) and (len(cand_slug) - len(item_slug) <= 3) and not cand_slug[len(item_slug):].isdigit():
                     is_match = True
-                elif item_slug.startswith(cand_slug) and (len(item_slug) - len(cand_slug) <= 4):
+                elif item_slug.startswith(cand_slug) and (len(item_slug) - len(cand_slug) <= 3) and not item_slug[len(cand_slug):].isdigit():
                     is_match = True
 
                 if is_match:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
-                    if not is_series and year and db_year and abs(year - db_year) > 2:
-                        continue
+                    if not is_series:
+                        if not year or not db_year or abs(year - db_year) > 1:
+                            continue
                     return self._make_result(
                         item=item,
                         match_type="prefix_match",

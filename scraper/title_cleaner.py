@@ -47,10 +47,16 @@ def clean_scraped_title(raw_title: str, url_or_slug: Optional[str] = None) -> Di
     text = re.sub(r'^\s*(?:top\s*)?\d{1,2}\s+(?=[A-ZА-ЯOʻGʻShCh])', '', text)
     text = re.sub(r'^\s*(\d{1,2})[-_]?(?:o[\'`]?rin|orin|top)\s*', '', text, flags=re.I)
 
-    # 3. Fasllar va qismlar (masalan "Ajdar xonadoni uyi 3 mavsum fasl", "1-6-fasllar", "3-fasl 5-qism!")
-    text = re.sub(r'\b\d+(?:-\d+)?\s*-(?:fasl|mavsum|qism)[lar]*\b!?', '', text, flags=re.I)
+    # 3. Fasllar va qismlar:
+    # Serial fasllarini (masalan "1-fasl", "3-mavsum", "3-fasl 5-qism") tozalaymiz
+    text = re.sub(r'\b\d+(?:-\d+)?\s*-(?:fasl|mavsum)[lar]*\b!?', '', text, flags=re.I)
     text = re.sub(r'\b\d+-(?:fasl|mavsum)\s+\d+-qism\b!?', '', text, flags=re.I)
-    text = re.sub(r'\b\d+\s+(?:mavsum|fasl|qism)\b.*$', '', text, flags=re.I)
+    text = re.sub(r'\b\d+\s+(?:mavsum|fasl)\b.*$', '', text, flags=re.I)
+    
+    # Filmlardagi qism ko'rsatkichlari (masalan "2-qism", "3 qism", "Part 2") — RAQAMNI SAQLAB QOLAMIZ:
+    # "Cho'qintirgan ota 2-qism" -> "Cho'qintirgan ota 2"
+    text = re.sub(r'\b(\d+)\s*[-_]?\s*(?:qism|part|chast)[lar]*\b!?', r' \1 ', text, flags=re.I)
+    text = re.sub(r'\b(?:qism|part|chast)\s*[-_]?\s*(\d+)\b!?', r' \1 ', text, flags=re.I)
 
     # 4. Sifat va formatlar
     text = re.sub(r'\b(?:1080p|720p|480p|4k|full\s*hd|hd)\b', '', text, flags=re.I)
