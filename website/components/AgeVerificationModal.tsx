@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 
 interface AgeVerificationModalProps {
@@ -61,12 +62,12 @@ export default function AgeVerificationModal({
 
   // Open if manually requested OR if current page is 18+ and user is not verified on this page
   const shouldShow = manualOpen || (is18Plus && !isVerified);
-  if (!shouldShow) {
+  if (!shouldShow || typeof document === "undefined") {
     return null;
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-300">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-300">
       <div className="relative w-full max-w-md bg-surface-container-high/95 border border-red-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-red-950/50 text-center flex flex-col items-center">
         {/* Glow decoration */}
         <div className="absolute -top-12 w-28 h-28 bg-red-600/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -108,7 +109,8 @@ export default function AgeVerificationModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

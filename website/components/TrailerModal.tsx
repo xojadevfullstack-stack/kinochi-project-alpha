@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface TrailerModalProps {
   trailerUrl: string;
@@ -10,6 +11,32 @@ interface TrailerModalProps {
 
 export default function TrailerModal({ trailerUrl, posterUrl, title }: TrailerModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
 
   // Helper function to extract YouTube video ID
   const getYoutubeId = (url: string) => {
@@ -88,9 +115,16 @@ export default function TrailerModal({ trailerUrl, posterUrl, title }: TrailerMo
         </div>
       </div>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl aspect-video bg-surface-container-lowest rounded-xl border border-white/10 shadow-2xl animate-fade-in">
+      {isOpen && mounted && typeof document !== "undefined" && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsOpen(false);
+            }
+          }}
+        >
+          <div className="relative w-full max-w-4xl aspect-video bg-surface-container-lowest rounded-xl border border-white/10 shadow-2xl">
             {/* Close button */}
             <button
               onClick={() => setIsOpen(false)}
@@ -104,7 +138,8 @@ export default function TrailerModal({ trailerUrl, posterUrl, title }: TrailerMo
               {renderPlayer()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

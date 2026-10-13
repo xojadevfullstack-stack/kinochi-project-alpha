@@ -319,7 +319,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10 pr-7">
+                                <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10 pr-9">
                                   {episode.title && episode.title !== `${episode.episode_number}-qism` 
                                     ? episode.title 
                                     : `${episode.episode_number}-qism`}

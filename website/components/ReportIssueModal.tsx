@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, ChangeEvent, DragEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, DragEvent } from "react";
+import { createPortal } from "react-dom";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -37,6 +38,7 @@ export default function ReportIssueModal({
   seasonNumber,
   episodeNumber,
 }: ReportIssueModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<string>("boshqa");
   const [description, setDescription] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
@@ -48,7 +50,34 @@ export default function ReportIssueModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted || typeof document === "undefined") return null;
 
   const handleFileChange = (newFile: File | null) => {
     if (!newFile) {
@@ -155,9 +184,19 @@ export default function ReportIssueModal({
     ? `(${seasonNumber || 1}-mavsum, ${episodeNumber}-qism)`
     : "";
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-surface-container-high border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl text-left custom-scrollbar">
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-surface-container-high border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl text-left custom-scrollbar"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-white/10 mb-5">
           <div className="flex items-center gap-3">
@@ -350,6 +389,7 @@ export default function ReportIssueModal({
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

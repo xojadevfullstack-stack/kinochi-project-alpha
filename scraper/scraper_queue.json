@@ -64,10 +64,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/639-karib-dengizi-qaroqchilari-5-murdalar-ertak-aytmaydi-uzbek-ozbek-tilida-toliq-uzmovi-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1555271680/211b42e8/26189058.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Karib dengizi qaroqchilari 5: Murdalar ertak aytmaydi', Yili: 2017) (ID: 185)"
   },
   {
     "id": "asilmedia_8546",
@@ -204,10 +204,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/416-jon-uik-2-uzbek-ozbek-tilida-toliq-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1549840937/06cdbbb0/25340334.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jon Uik 2', Yili: 2017) (ID: 387)"
   },
   {
     "id": "uzmovi_397",
@@ -218,10 +218,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/397-jon-uik-1-uzbek-ozbek-tilida-toliq-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1549287198/ae21b699/25250624.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jon Uik 1', Yili: 2014) (ID: 388)"
   },
   {
     "id": "uzmovi_1063",
@@ -232,10 +232,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1063-jon-uik-3-uzbek-tilida-ozbek-tilida-toliq-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1572208829/b33c3041/28350567.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jon Uik 3', Yili: 2019) (ID: 389)"
   },
   {
     "id": "uzmovi_5298",
@@ -274,10 +274,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9832-jon-uik-3-jon-vik-3-uzbek-tilida-ozbekcha-tarjima-kino-hd-tas-ix-full-hd-4k-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/13/50596f6136027f7737e56cd5383b02.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jon Uik 3', Yili: 2019) (ID: 389)"
   },
   {
     "id": "asilmedia_7235",
@@ -288,10 +288,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/7235-jon-uik-2-jon-vik-2-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/43/11275da496c80d48cb39d42daa039f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jon Uik 2', Yili: 2017) (ID: 387)"
   },
   {
     "id": "asilmedia_7189",
@@ -302,10 +302,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/7189-jon-uik-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/b1/8774fd94bdefaaeb78bebec3aa3189.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jon Uik 1', Yili: 2014) (ID: 388)"
   },
   {
     "id": "uzmovi_559",
@@ -372,10 +372,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16784-qaqshatqich-ochlik-oyinlari-premyera-uzbek-tilida-ozbekcha-2013-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/a7/6d692f78f7a2f4243dc43dff8ea525.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Qaqshatqich ochlik o'yinlari', Yili: 2013) (ID: 397)"
   },
   {
     "id": "asilmedia_14913",
@@ -386,10 +386,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14913-hayot-mamot-oyinlari-5-kuychi-qushlar-va-ilonlar-haqida-ballada-uzbek-tilida-2023-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/99/cc397b3e9cdd7070751a3c3ac07f03.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Hayot-Mamot o'yinlari 5: Kuychi qushlar va ilonlar haqida ballada', Yili: 2023) (ID: 398)"
   },
   {
     "id": "asilmedia_7605",
@@ -400,10 +400,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/7605-hayot-mamot-oyinlari-3-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e4/dcc30de47969c67a95816a64c5dee4.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Hayot-Mamot o'yinlari 3', Yili: 2014) (ID: 399)"
   },
   {
     "id": "asilmedia_10582",
@@ -414,10 +414,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10582-hayot-mamot-oyinlari-2-uzbek-tilida-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/60/5073d01323041e76333579f47e176f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Hayot-Mamot o'yinlari 2', Yili: 2013) (ID: 400)"
   },
   {
     "id": "uzmovi_362",
@@ -568,10 +568,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/657-temir-odam-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1555873805/c7ff9525/26273330.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('Temir odam 1', Yili: 2008) (ID: 401)"
   },
   {
     "id": "uzmovi_745",
@@ -582,10 +582,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/745-temir-odam-3-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1559968105/13d512b9/26818958.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Temir odam 3', Yili: 2013) (ID: 390)"
   },
   {
     "id": "uzmovi_658",
@@ -596,10 +596,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/658-temir-odam-2-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1555873928/522fcfd3/26273356.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Temir odam 2', Yili: 2010) (ID: 392)"
   },
   {
     "id": "asilmedia_8200",
@@ -610,10 +610,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8200-temir-odam-1-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/d4/b81bf4c49e9d8f08a5c585f3386d7c.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Temir odam 1', Yili: 2008) (ID: 401)"
   },
   {
     "id": "uzmovi_558",
@@ -680,10 +680,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/984-orgimchak-odam-uydan-uzoqda-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1568837736/55f93f5f/27909758.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'rgimchak odam: Uydan uzoqda', Yili: 2019) (ID: 393)"
   },
   {
     "id": "uzmovi_564",
@@ -694,10 +694,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/564-orgimchak-odam-uyga-qaytish-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639223064/aabff42d/37055111.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'rgimchak odam: Uyga qaytish', Yili: 2017) (ID: 394)"
   },
   {
     "id": "uzmovi_582",
@@ -708,10 +708,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/582-orgimchak-odam-yondosh-olamlar-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639223240/6514eed9/37055119.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('O'rgimchak odam: Yondosh olam', Yili: 2018) (ID: 395)"
   },
   {
     "id": "uzmovi_8906",
@@ -736,10 +736,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/3988-orgimchak-odam-barcha-qismlari-uzbek-ozbek-tilida-yuqori-sifatda-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639224379/a410a0eb/37055257.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('O'rgimchak odam 1', Yili: 2002) (ID: 192)"
   },
   {
     "id": "uzmovi_5474",
@@ -764,10 +764,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1299-yangi-orgimchak-odam-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639222928/e3a1861d/37055105.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yangi o'rgimchak odam 1', Yili: 2012) (ID: 396)"
   },
   {
     "id": "uzmovi_1300",
@@ -820,10 +820,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14897-orgimchak-odam-olamlar-tori-multfilm-uzbek-tilida-2023-ozbekcha-tarjima-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/a4/d5cf9f3db10ae0419f7f96d77f173e.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'rgimchak odam: Olamlar to'ri', Yili: 2023) (ID: 402)"
   },
   {
     "id": "asilmedia_12802",
@@ -834,10 +834,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12802-orgimchak-odam-uyga-yol-yoq-uzbek-tilida-2021-marvel-kinolari-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/ea/350da2347dc1231f3de4e68e28936b.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'rgimchak odam: Uyga Yo'l yo'q', Yili: 2021) (ID: 130)"
   },
   {
     "id": "asilmedia_7750",
@@ -848,10 +848,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/7750-orgimchak-odam-yondosh-olam-multiflm-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/be/7aa6c51083a4fa5ff0d47ec23df6bb.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'rgimchak odam: Yondosh olam', Yili: 2018) (ID: 395)"
   },
   {
     "id": "asilmedia_10744",
@@ -862,10 +862,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10744-yangi-orgimchak-odam-2-2014-uzbek-tilida-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/51/f1342a1a336d7848bdd0243c7f27fb.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yangi o'rgimchak odam 2', Yili: 2014) (ID: 403)"
   },
   {
     "id": "asilmedia_18343",
@@ -876,10 +876,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/18343-orgimchak-nuar-qora-orgimcha-odam-barcha-qismlar-2026-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/7e/1cad6da285898f5e51734663a9b7dd.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Orgimchak-Nuar', Yili: 2026) (ID: 21)"
   },
   {
     "id": "asilmedia_15432",
@@ -890,10 +890,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/15432-sherlok-xolms-orgimchak-ayol-uzbek-tilida-1943-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e3/a5f74d9fe78f370e6ed6fa35f66ba3.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sherlok Xolms: O'rgimchak ayol', Yili: 1943) (ID: 404)"
   },
   {
     "id": "uzmovi_4424",
@@ -988,10 +988,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8580-betmen-jokerga-qarshi-qora-ritsar-temnyy-rycar-betmen-protiv-dzhokera-hd-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/38/84466f592314407f129a9b4cca83d3.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Betmen: Batman Jokerga qarshi', Yili: 2008) (ID: 405)"
   },
   {
     "id": "asilmedia_8579",
@@ -1058,10 +1058,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/11274-unutilgan-betmen-batman-betman-uzbek-tilida-1989-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/ca/9461ad7368bf1eaac32636ffcfe126.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Unutilgan Betmen', Yili: 1989) (ID: 406)"
   },
   {
     "id": "uzmovi_555",
@@ -1072,10 +1072,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/555-yura-davri-dunyosi-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1553620920/2f6832de/25932223.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi o'xshash (100% mos keldi: 'Yura davri dunyosi 1') (ID: 409)"
   },
   {
     "id": "uzmovi_8302",
@@ -1142,10 +1142,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/17801-yura-davri-dunyosi-bogiga-qaytish-xitoy-filmi-2025-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/17/c5dfd26bd57d8d3fd201f18e249435.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davri dunyosi bog'iga qaytish', Yili: 2025) (ID: 407)"
   },
   {
     "id": "asilmedia_17308",
@@ -1156,10 +1156,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/17308-yura-davri-dunyosi-qayta-tugilish-premyera-2025-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/f7/4a655b2dba1184f45f6028520eac54.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davri dunyosi: Qayta tug'ilish', Yili: 2025) (ID: 408)"
   },
   {
     "id": "asilmedia_13506",
@@ -1170,10 +1170,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13506-yura-davri-dunyosi-bor-davri-lageri-netflix-multserial-uzbek-tilida-multfilm-2021-2022-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/64/8a0fd8ca73a20cd199aad9db3258fe.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davri dunyosi: Bo'r davri lageri Netflix multserial', Yili: 2021) (ID: 681)"
   },
   {
     "id": "asilmedia_8246",
@@ -1184,10 +1184,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8246-yura-davri-dunyosi-1-mir-yurskogo-perioda-1-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/d7/d824453198a16f8a635d4bb7644b00.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davri dunyosi 1', Yili: 2015) (ID: 409)"
   },
   {
     "id": "asilmedia_8244",
@@ -1198,10 +1198,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8244-yura-davriga-sayohat-2-park-yurskogo-perioda-2-zateryannyy-mir-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/bf/5220b3ad4865e94e9fc4accd0b3d35.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davri dunyosi 2', Yili: 2018) (ID: 410)"
   },
   {
     "id": "asilmedia_11917",
@@ -1212,10 +1212,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/11917-mir-jurskogo-perioda-vlast-jurassic-world-dominion-uzbek-tilida-2021-ozbekcha-tarjima-tsa-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/15/e21362e0f30ccfc580a63cca37c849.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yangi Yura davri dunyosi 3: Hukumronlik', Yili: 2022) (ID: 411)"
   },
   {
     "id": "asilmedia_10042",
@@ -1226,10 +1226,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10042-yura-davriga-sayohat-2-uzbek-tilida-1997-ozbek-tarjima.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/5e/2ef212e7d9d18a3c68fd70d31654e2.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davriga sayohat 2', Yili: 1997) (ID: 412)"
   },
   {
     "id": "asilmedia_8245",
@@ -1240,10 +1240,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8245-yura-davriga-sayohat-3-park-yurskogo-perioda-3-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e4/8231e06f56d3e9e642eb29ba065a5d.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yura davriga sayohat 1', Yili: 2001) (ID: 413)"
   },
   {
     "id": "uzmovi_922",
@@ -1254,10 +1254,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/922-matritsa-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1566717791/98538f2d/27650112.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('Matritsa', Yili: 1999) (ID: 414)"
   },
   {
     "id": "uzmovi_954",
@@ -1268,10 +1268,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/954-matritsa-2-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1568001263/808df479/27802748.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Matritsa 2', Yili: 2003) (ID: 679)"
   },
   {
     "id": "uzmovi_3875",
@@ -1282,10 +1282,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/3875-matritsa-3-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1635328954/d12297bc/36435565.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Matritsa 3', Yili: 2003) (ID: 680)"
   },
   {
     "id": "uzmovi_4052",
@@ -1296,10 +1296,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/4052-matritsa-4-qayta-tirilish-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1640331324/70be33fc/37248495.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Matritsa 4: Qayta tirilish', Yili: 2021) (ID: 417)"
   },
   {
     "id": "uzmovi_7269",
@@ -1310,10 +1310,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/7269-labirint-2-hind-kino-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2025-04-07/71d192836498d58a48ece1bef1587f33.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirint 2', Yili: 2022) (ID: 418)"
   },
   {
     "id": "uzmovi_484",
@@ -1338,10 +1338,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/7290-labirint-3-hind-kino-premyera-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2025-04-14/fac6240aa9e3c695a5eb62e6387fdb28.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirint 3', Yili: 2024) (ID: 419)"
   },
   {
     "id": "uzmovi_713",
@@ -1380,10 +1380,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16939-labirint-bhool-bhulaiyaa-2007-hind-kinosi-hd-uzbek-tilida-tarjima-kino-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/0d/724b35aee7520cb8a38f8174ebe62d.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirint', Yili: 2006) (ID: 427)"
   },
   {
     "id": "asilmedia_10208",
@@ -1394,10 +1394,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10208-labirint-xavfli-tuzoq-1-uzbek-tilida-2014-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/90/ee89c658e44a39a80c75dc81d7141b.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirint xavfli tuzoq 1', Yili: 2014) (ID: 420)"
   },
   {
     "id": "asilmedia_10520",
@@ -1408,10 +1408,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10520-labirintdagilar-2-olov-iskanjasida-uzbek-tilida-2020-ozbekcha-tarjima-kino.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/c0/371e43767236c5e13d19f53d8a8221.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirintdagilar 2: Olov iskanjasida', Yili: 2015) (ID: 428)"
   },
   {
     "id": "asilmedia_10407",
@@ -1422,10 +1422,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10407-labirintdagi-qiz-uzbek-tilida-2020-ozbek-tarjima-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/da/3e7054af0cb99197cd288b3d9cf8be.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirintdagi qiz', Yili: 2019) (ID: 429)"
   },
   {
     "id": "asilmedia_2495",
@@ -1436,10 +1436,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/2495-labirintdagilar-3-olimga-qarshi-ozbek-tilida-premyera-tas-ix-2018.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/76/cc587b104d50bd73f5fc5dfd6ee8bf.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Labirintdagilar 3: O'limga qarshi', Yili: 2018) (ID: 430)"
   },
   {
     "id": "asilmedia_14162",
@@ -1450,10 +1450,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14162-faun-labirinti-ujas-film-uzbek-tilida-2006-ozbekcha-tarjima-film-full-hd-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/64/478a34b6e003a17258549c75be3618.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Faun Labirinti', Yili: 2006) (ID: 431)"
   },
   {
     "id": "uzmovi_1543",
@@ -1464,10 +1464,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1543-divergent-3-devor-ortida-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1586691078/a2b978b4/30199034.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Divergent 3: Devor ortida', Yili: 2016) (ID: 421)"
   },
   {
     "id": "uzmovi_308",
@@ -1478,10 +1478,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/308-divergent-1-yuqori-sifatda-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1604494227/b537524f/32179797.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Divergent 1', Yili: 2014) (ID: 422)"
   },
   {
     "id": "uzmovi_2576",
@@ -1520,10 +1520,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10293-divergent-1-uzbek-tilida-2014-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/61/bf653ef92a6c5497f2b8aba44f7b5a.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Divergent 1', Yili: 2018) (ID: 681)"
   },
   {
     "id": "asilmedia_7763",
@@ -1548,10 +1548,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12376-yovuzlik-qarorgohi-6-yakuniy-bob-yomonlik-maskani-6-final-hisobi-obitel-zla-6-uzbek-tilida-2016-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/95/c03af66adbfa9ee27593265ddc9954.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yovuzlik qarorgohi 6: Yakuniy bob', Yili: 2016) (ID: 432)"
   },
   {
     "id": "asilmedia_12375",
@@ -1562,10 +1562,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12375-yovuzlik-qarorgohi-7-qayta-jonlanish-ishga-tushirish-perezagruzka-yomonlik-maskani-7-obitel-zla-7-uzbek-tilida-20210ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/ad/95b430ca0ecdfe661fd721572663c8.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yovuzlik qarorgohi 7: Rakkun-Sitiga xush kelibsiz', Yili: 2021) (ID: 433)"
   },
   {
     "id": "asilmedia_12374",
@@ -1576,10 +1576,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12374-yovuzlik-qarorgohi-5-qasos-yomonlik-maskani-5-obitel-zla-5-uzbek-tilida-2012-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/79/e56c75f7b5561af4d5cf6db31ee69f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yovuzlik qarorgohi 5: Qasos', Yili: 2012) (ID: 434)"
   },
   {
     "id": "asilmedia_12367",
@@ -1604,10 +1604,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12366-yovuzlik-qarorgohi-3-qirgin-yoq-bolib-ketish-yomonlik-maskani-3-obitel-zla-3-uzbek-tilida-2004-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/b8/45a7b9a4289a5f514bd4fc8872333e.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yovuzlik qarorgohi 3: Qirg'in', Yili: 2007) (ID: 435)"
   },
   {
     "id": "asilmedia_12279",
@@ -1646,10 +1646,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/832-terminator-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1563424305/23f07a83/27245903.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('Terminator 1', Yili: 1984) (ID: 439)"
   },
   {
     "id": "uzmovi_884",
@@ -1660,10 +1660,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/884-terminator-5-genezis-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1565617433/b0699759/27519214.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 5: Genezis', Yili: 2015) (ID: 425)"
   },
   {
     "id": "uzmovi_903",
@@ -1730,10 +1730,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10370-terminator-6-ogir-qismat-uzbek-tarjima-2019-hd-ozbek-tilida-kino.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e9/3018a2484a9dd3757becf89442c964.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 6: Og'ir qismat', Yili: 2019) (ID: 436)"
   },
   {
     "id": "asilmedia_9207",
@@ -1744,10 +1744,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9207-terminator-4-najotkorning-kelishi-uzbek-tarjima-2009-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/9d/76dc5b4985b951395cdf0fef630f83.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 4: Najotkorning kelishi', Yili: 2009) (ID: 426)"
   },
   {
     "id": "asilmedia_9126",
@@ -1758,10 +1758,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9126-terminator-6-qorongu-taqdir-uzbek-tarjima-2019-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/a1/1f9e4833afd132f2f04cb2e1943318.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 6: Qorong'u taqdir', Yili: 2019) (ID: 437)"
   },
   {
     "id": "asilmedia_8886",
@@ -1772,10 +1772,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8886-terminator-2-terminator-2-uzbek-tarjima-1991-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/8c/63e2da0bfcb8f68e9776ad50122bdc.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 2: Qiyomat kuni', Yili: 1991) (ID: 438)"
   },
   {
     "id": "asilmedia_8825",
@@ -1786,10 +1786,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8825-terminator-1-terminator-uzbek-tarjima-2018-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/1f/73729e91164275cce9af4013928876.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 1', Yili: 1984) (ID: 439)"
   },
   {
     "id": "asilmedia_8372",
@@ -1800,10 +1800,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8372-terminator-3-mashinalar-isyoni-terminator-3-vosstanie-mashin-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/b0/2fa1365c50e0d17e0179e34554d0f7.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Terminator 3: Mashinalar isyoni', Yili: 2003) (ID: 440)"
   },
   {
     "id": "uzmovi_906",
@@ -1870,10 +1870,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/7897-mumiyo-2017-ozbek-uzbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/fc/6b59d7b4c7d9334d4c55cd69b78afd.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Mumiya', Yili: 2017) (ID: 441)"
   },
   {
     "id": "asilmedia_13050",
@@ -1884,10 +1884,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13050-mumiya-2-qaytish-mumiyo-2qaytib-keladi-uzbek-tilida-2001-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/a0/72da35fdb8d435596068e22932f8c0.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Mumiya 2: Qaytish', Yili: 2001) (ID: 442)"
   },
   {
     "id": "asilmedia_13049",
@@ -1898,10 +1898,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13049-mumiya-1-mumiyo-1-uzbek-tilida-1999-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/2b/f3b1830664933b1bbaf0a06b2adce8.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Mumiya 1', Yili: 1999) (ID: 443)"
   },
   {
     "id": "asilmedia_6460",
@@ -1912,10 +1912,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/6460-mumiyo-ajdar-imperatori-maqbarasi-ozbek-uzbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/45/21a9f5aa53a70f4d0a58f358e89a8d.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Mumiya 3: Ajdar Imperatori maqbarasi', Yili: 2008) (ID: 444)"
   },
   {
     "id": "uzmovi_595",
@@ -1926,10 +1926,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/595-maymunlar-sayyorasi-3-urush-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1554471632/d3683810/26067793.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Maymunlar Sayyorasi 3: Urush', Yili: 2017) (ID: 447)"
   },
   {
     "id": "uzmovi_594",
@@ -1954,10 +1954,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/593-maymunlar-sayyorasi-1-qozgolon-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1554471439/f8033715/26067743.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Maymunlar Sayyorasi 1: Qo'zg'olon', Yili: 2011) (ID: 448)"
   },
   {
     "id": "uzmovi_6247",
@@ -1996,10 +1996,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/545-maymunlar-sayyorasi-123-qismlar.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/51/34529997e22a4020098534d1e9a70e.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Maymunlar Sayyorasi: 1, 2, 3-qismlar', Yili: 2014) (ID: 446)"
   },
   {
     "id": "uzmovi_455",
@@ -2010,10 +2010,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/455-godzilla-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1614860845/96af61fd/33555399.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('Godzilla', Yili: 2014) (ID: 449)"
   },
   {
     "id": "uzmovi_3129",
@@ -2038,10 +2038,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/6259-godzilla-minus-bir-premyera-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2024-05-22/6c3b3e824a8f304e8a85aa8b61cf9a9e.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Godzilla minus bir', Yili: 1998) (ID: 450)"
   },
   {
     "id": "uzmovi_3253",
@@ -2066,10 +2066,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/3251-godzilla-king-kongga-qarshi-premyera-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1617263983/092573e5/33902069.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Godzilla King Kongga qarshi', Yili: 2021) (ID: 452)"
   },
   {
     "id": "uzmovi_6181",
@@ -2122,10 +2122,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8349-godzilla-2-maxluqlar-qiroli-2019-godzilla-2-korol-monstrov-uzbek-tilida-ozbekcha-tarjima-kino-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/fd/9de45b5d30ff7a69403c56bb1c7504.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Godzilla 2: Maxluqlar qiroli', Yili: 2019) (ID: 630)"
   },
   {
     "id": "asilmedia_15722",
@@ -2136,10 +2136,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/15722-godzilla-monarx-maxluqlar-merosi-barcha-qismlar-uzbek-tilida-2023-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/5e/1e3deef72f18d787f100a36d76199b.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Monarx: Maxluqlar merosi Godzilla King kong Titanlar', Yili: 2023) (ID: 684)"
   },
   {
     "id": "uzmovi_889",
@@ -2150,10 +2150,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/889-king-kong-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1614860785/852b32d0/33555385.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('King Kong', Yili: 2005) (ID: 454)"
   },
   {
     "id": "uzmovi_612",
@@ -2178,10 +2178,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/15393-king-kong-hali-tirik-uzbek-tilida-1996-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/22/d6a6bbcdb5e87c00b4f4e8dd7f888b.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('King-Kong hali tirik', Yili: 1996) (ID: 683)"
   },
   {
     "id": "asilmedia_9810",
@@ -2192,10 +2192,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9810-king-kong-1-uzbek-tilida-2005-ozbek-tarjima-kino-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/38/10ecc95ab60ed316c4669d04012020.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('King Kong', Yili: 2005) (ID: 454)"
   },
   {
     "id": "asilmedia_8552",
@@ -2206,10 +2206,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/8552-kong-bosh-suyagi-oroli-kong-ostrov-cherepa-uzbek-ozbek-tilida-tas-ix-skachat-download.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/d1/e68089ef0608ec3be143783beb9d4b.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('King Kong 2: Bosh suyagi oroli', Yili: 2017) (ID: 632)"
   },
   {
     "id": "uzmovi_1147",
@@ -2220,10 +2220,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1147-avatar-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1575377762/5765fbc7/28788459.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Avatar', Yili: 2009) (ID: 455)"
   },
   {
     "id": "uzmovi_5072",
@@ -2234,10 +2234,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/5072-avatar-2-suv-yoli-premyera-uzbek-ozbek-tilida-toliq-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2022-12-21/746b45f9a4e03623815a8be8a79d3ad7.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Avatar 2: Suv yo'li', Yili: 2022) (ID: 157)"
   },
   {
     "id": "asilmedia_14735",
@@ -2276,10 +2276,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1460-lanat-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1584456352/1f6c1903/29905851.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'nat', Yili: 2020) (ID: 456)"
   },
   {
     "id": "uzmovi_1535",
@@ -2304,10 +2304,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/3568-lanat-yoli-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1625713163/cd749e89/35086211.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('La'nat', Yili: 2020) (ID: 456)"
   },
   {
     "id": "uzmovi_7927",
@@ -2318,10 +2318,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/7927-lanat-4-songgi-marosim-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2025-09-07/888e8c34c4e97386b83efad3a5da7dc3.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Lanat 4: So'nggi marosim', Yili: 2025) (ID: 458)"
   },
   {
     "id": "uzmovi_8759",
@@ -2346,10 +2346,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/3480-lanat-3-shayton-meni-majburladi-premyera-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1623258762/768dde87/34775098.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Lanat 3: Shayton meni majburladi', Yili: 2021) (ID: 638)"
   },
   {
     "id": "uzmovi_7638",
@@ -2416,10 +2416,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/18336-lanatlangan-ikkinchi-xotin-arvohi-hind-kino-2010-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/74/e4f07aa19b77eb95c468e7b6907b1f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'natlangan: Ikkinchi xotin arvohi', Yili: 2010) (ID: 634)"
   },
   {
     "id": "asilmedia_17782",
@@ -2430,10 +2430,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/17782-lanatlangan-uy-32-lanatlangan-32-uy-ispaniya-ujas-filmi-2020-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/c3/f33fe4c7c4860b7bdfc14ca94140b4.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'natlangan uy 32', Yili: 2020) (ID: 635)"
   },
   {
     "id": "asilmedia_17122",
@@ -2444,10 +2444,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/17122-lanatlangan-uy-2-xizmatkorli-uy-uyqudagi-gozallar-uzbek-tilida-ozbekcha-2023-tarjima-kino-full-hd-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/4e/a9b8e98aaef26035313c3e71b01969.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'natlangan uy 2: Xizmatkorli uy', Yili: 2023) (ID: 457)"
   },
   {
     "id": "asilmedia_16203",
@@ -2458,10 +2458,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16203-lanatlangan-uy-uzbek-tilida-2018-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/af/65a51d96181a355766dcdf495c4405.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('La'natlangan uy 32', Yili: 2020) (ID: 635)"
   },
   {
     "id": "asilmedia_14622",
@@ -2472,10 +2472,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14622-lanatlangan-qirollar-seriali-barcha-qismlar-ozbek-tilida-2005-uzbekcha-tarjima.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/97/ade689a9e1fc21264b974a0fc3a248.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'natlangan qirollar', Yili: 2005) (ID: 424)"
   },
   {
     "id": "asilmedia_13760",
@@ -2486,10 +2486,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13760-lanati-ikilgan-dunyoning-yakuni-netflix-seriali-barcha-qismlar-uztitrda-2017-uzbekcha-tarjima.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e4/27be37d52f80309195bbfe4653e43e.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'nati ikilgan Dunyoning Yakuni Netflix Uztitrda', Yili: 2017) (ID: 685)"
   },
   {
     "id": "asilmedia_9761",
@@ -2500,10 +2500,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9761-lanatlanganlar-oroli-uzbek-tilida-2009-full-hd-ozbek-tarjima-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/de/bd8ac2ae1a3eb1ced2f5569869fe20.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('La'natlanganlar oroli', Yili: 2010) (ID: 462)"
   },
   {
     "id": "asilmedia_14969",
@@ -2514,10 +2514,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14969-annabelning-lanati-1-ujas-kino-uzbek-tilida-2014-ozbekcha-tarjima-film-full-hd-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/cd/941ed3b9fec25a416c3900cc129523.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Annabelning la'nati 1', Yili: 2014) (ID: 463)"
   },
   {
     "id": "uzmovi_2345",
@@ -2528,10 +2528,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/2345-astral-2-uzbek-tilida-premyera-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1601745422/01508ad2/31820478.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Astral 2', Yili: 2013) (ID: 467)"
   },
   {
     "id": "uzmovi_8094",
@@ -2640,10 +2640,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16122-astral-13-qavat-ujas-kino-uzbek-tilida-2022-ozbekcha-tarjima-film-full-hd-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/69/0957bc4d0b7032605531230afc1637.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Astral. 13-qavat', Yili: 2022) (ID: 465)"
   },
   {
     "id": "asilmedia_14997",
@@ -2654,10 +2654,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14997-astral-1-uzbek-tilida-2010-ozbekcha-tarjima-film-full-hd-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/d7/6dedd58d99010070d42bceeb076981.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Astral 1', Yili: 2011) (ID: 466)"
   },
   {
     "id": "asilmedia_2103",
@@ -2822,10 +2822,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/5129-qichqiriq-5-premyera-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2023-01-11/f990362c93de71c3e2ddfa878e8e6b1d.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Qichqiriq 5', Yili: None) (ID: 685)"
   },
   {
     "id": "uzmovi_5380",
@@ -2864,10 +2864,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14336-qichqiriq-1-ujas-film-uzbek-tilida-1996-ozbekcha-tarjima-film-full-hd-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/28/b856cc90fcc89416d9cfd72c14068f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Qichqiriq 1', Yili: 1996) (ID: 468)"
   },
   {
     "id": "uzmovi_1934",
@@ -2962,10 +2962,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/17168-oxirgi-manzil-6-2025-songgi-manzil-6-ajal-rejasi-olti-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/f4/b9d56c3016bb78f469a2adcf012068.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oxirgi manzil 6', Yili: 2025) (ID: 469)"
   },
   {
     "id": "asilmedia_16521",
@@ -2976,10 +2976,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16521-oxirgi-manzil-5-uzbek-tilida-2011-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/d8/77c9e0881a3d52e4f50c6566562f1f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oxirgi manzil 5', Yili: 2011) (ID: 470)"
   },
   {
     "id": "asilmedia_16514",
@@ -2990,10 +2990,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16514-oxirgi-manzil-4-uzbek-tilida-2009-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/51/bf9baf48704844a7fe5ac8f2e41563.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oxirgi manzil 4', Yili: 2009) (ID: 471)"
   },
   {
     "id": "asilmedia_16505",
@@ -3004,10 +3004,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16505-oxirgi-manzil-3-uzbek-tilida-2006-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/c7/755b59cd57acb5812baa6af60af389.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oxirgi manzil 3', Yili: 2006) (ID: 472)"
   },
   {
     "id": "asilmedia_16480",
@@ -3018,10 +3018,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16480-oxirgi-manzil-2-uzbek-tilida-2003-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/b9/f34185570117de4a12edd4e4d800df.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oxirgi manzil 2', Yili: 2003) (ID: 473)"
   },
   {
     "id": "asilmedia_16479",
@@ -3032,10 +3032,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16479-oxirgi-manzil-uzbek-tilida-2000-ozbekcha-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/7d/8f40ead9d4ec715bf5dc2bff17ece4.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oxirgi manzil 1', Yili: 2000) (ID: 474)"
   },
   {
     "id": "asilmedia_18418",
@@ -3060,10 +3060,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1339-sokin-hudud-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1594929314/9b8c13ae/31094727.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sokin Hudud 1', Yili: 2018) (ID: 644)"
   },
   {
     "id": "uzmovi_3535",
@@ -3074,10 +3074,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/3535-sokin-hudud-2-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1624889161/9f8c29b0/34979136.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sokin hudud 2', Yili: 2021) (ID: 645)"
   },
   {
     "id": "uzmovi_6365",
@@ -3088,10 +3088,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/6365-sokin-hudud-birinchi-kun-premyera-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2024-07-03/f20263349bda47bf1858bb647c854179.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sokin hudud: Birinchi kun', Yili: 2024) (ID: 646)"
   },
   {
     "id": "uzmovi_7478",
@@ -3116,10 +3116,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/1252-shrek-4-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1578786424/5371c15d/29175312.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Shrek 4', Yili: 2010) (ID: 648)"
   },
   {
     "id": "uzmovi_4016",
@@ -3130,10 +3130,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/comediy/4016-shrek-3-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639583508/9e38eb8b/37116392.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Shrek 3', Yili: 2007) (ID: 649)"
   },
   {
     "id": "uzmovi_4014",
@@ -3144,10 +3144,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/comediy/4014-shrek-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639583188/f8d735a5/37116343.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Shrek 1', Yili: 2001) (ID: 650)"
   },
   {
     "id": "uzmovi_4015",
@@ -3158,10 +3158,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/comediy/4015-shrek-2-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1639583251/1f03511f/37116355.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Shrek 2', Yili: 2004) (ID: 651)"
   },
   {
     "id": "uzmovi_2852",
@@ -3200,10 +3200,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/2038-kung-fu-panda-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1596704855/96563e5b/31268018.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kung Fu Panda 1', Yili: 2008) (ID: 652)"
   },
   {
     "id": "uzmovi_714",
@@ -3214,10 +3214,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/jangari/714-kung-fu-panda-3-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1557901575/7384539c/26539234.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kung Fu Panda 3', Yili: 2016) (ID: 653)"
   },
   {
     "id": "uzmovi_8318",
@@ -3228,10 +3228,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/8318-kung-fu-panda-4-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2025-12-31/17191098bbdb44c3b697f1a4485a12ff.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kung Fu Panda 4', Yili: 2024) (ID: 654)"
   },
   {
     "id": "uzmovi_7363",
@@ -3242,10 +3242,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/7363-kung-fu-panda-2-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2025-04-30/7458e1ce6c5cfe76e66d27139df0f5ac.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kung Fu Panda 2', Yili: 2011) (ID: 655)"
   },
   {
     "id": "uzmovi_4062",
@@ -3284,10 +3284,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/4810-kung-fu-panda-taqdir-panjalari-barcha-qismlari-uzbek-ozbek-tilida-multfilm-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2022-09-27/41ebc4d4c9deed5f9b287dd9649d75c2.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kung fu Panda: Taqdir panjalari', Yili: 2018) (ID: 427)"
   },
   {
     "id": "uzmovi_6209",
@@ -3312,10 +3312,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/11199-kung-fu-panda-qoyilmaqom-beshlik-uzbek-tilida-multfilm-barcha-qismlar-2008-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/06/94f769e9c6d1c42e62292d099b2f7f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('Kung Fu Panda 1', Yili: 2008) (ID: 652)"
   },
   {
     "id": "asilmedia_14441",
@@ -3326,10 +3326,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14441-kung-fu-panda-taqdir-panjalari-multserial-barcha-qismlar-ozbek-tilida-2018-uzbekcha-tarjima.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/ee/b65bf9e881127c4f00e88c0fee913d.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi o'xshash (80% mos keldi: 'Kung fu Panda: Taqdir panjalari') (ID: 427)"
   },
   {
     "id": "asilmedia_12446",
@@ -3340,10 +3340,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12446-kung-fu-panda-bayram-uzbek-tilida-multfilm-2010-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/39/ea61163526f0f934039ada3a97b0b9.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kung fu Panda - Bayram', Yili: 2010) (ID: 477)"
   },
   {
     "id": "asilmedia_18275",
@@ -3368,10 +3368,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/16645-panda-operatsiyasi-uzbek-tilida-2024-ozbekcha-tarjima-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/62/69d0c5b7359aac4938ca4712f851cb.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Panda Operatsiyasi', Yili: 2024) (ID: 479)"
   },
   {
     "id": "uzmovi_2993",
@@ -3382,10 +3382,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/tarjima-kinolarri/2993-madagaskar-1-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1612074639/046a2edd/33161847.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Madagaskar 1', Yili: 2005) (ID: 657)"
   },
   {
     "id": "uzmovi_1277",
@@ -3396,10 +3396,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/sarguzasht/1277-madagaskar-3-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1579216210/e062c190/29226515.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Madagaskar 3', Yili: 2012) (ID: 658)"
   },
   {
     "id": "uzmovi_699",
@@ -3410,10 +3410,10 @@
     "media_type": "movie",
     "url": "https://uzmovi.net/multfilmlari/699-madagaskar-2-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/ii/1557539342/bfa88589/26490154.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Madagaskar 2', Yili: 2008) (ID: 659)"
   },
   {
     "id": "asilmedia_12443",
@@ -3536,10 +3536,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/14024-muzlik-davri-olmaxon-skrat-ertaklari-multserial-barcha-qismlar-ozbek-tilida-2022-uzbekcha-tarjima.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/db/480f58d32549d9d60c5da3ac4e7f75.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi o'xshash (83% mos keldi: 'Muzlik davri: Olmaxon Skrat ertaklari') (ID: 428)"
   },
   {
     "id": "asilmedia_13706",
@@ -3550,10 +3550,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13706-muzlik-davri-5-muqarrar-toqnashuv-uzbek-tilida-multfilm-2016-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/26/8a1964be4026eecb79882d7a5b1824.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Muzlik davri 5: Muqarrar to'qnashuv', Yili: 2016) (ID: 484)"
   },
   {
     "id": "asilmedia_13705",
@@ -3564,10 +3564,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13705-muzlik-davri-4-ayro-qitalar-uzbek-tilida-multfilm-2012-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/36/bd400cf195f0a3950045730c2fa377.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Muzlik davri 4: Ayro qit'alar', Yili: 2012) (ID: 485)"
   },
   {
     "id": "asilmedia_13704",
@@ -3578,10 +3578,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13704-muzlik-davri-3-dinazavrlar-asri-uzbek-tilida-multfilm-2009-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e4/bbd7c9958e01822d43ac141f47e6fd.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Muzlik davri 3: Dinazavrlar asri', Yili: 2009) (ID: 486)"
   },
   {
     "id": "asilmedia_13703",
@@ -3592,10 +3592,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13703-muzlik-davri-2-jazirama-issiq-uzbek-tilida-multfilm-2006-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/a8/665950020a70428ec2646ca4a22270.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Muzlik davri 2: Jazirama issiq', Yili: 2006) (ID: 487)"
   },
   {
     "id": "asilmedia_13702",
@@ -3606,10 +3606,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13702-muzlik-davri-1-uzbek-tilida-multfilm-2002-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/c1/e94ca8bedc589ae4d640906f3ec67d.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi mos keldi ('Muzlik Davri', Yili: 2002) (ID: 482)"
   },
   {
     "id": "asilmedia_13510",
@@ -3620,10 +3620,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/13510-muzlik-davri-6-yovvoyi-bakning-sarguzashtlari-uzbek-tilida-multfilm-2022-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/ef/550828be81dee5f25f3e6d9b1c10d8.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Muzlik davri 6: Yovvoyi Bakining sarguzashtlari', Yili: 2022) (ID: 488)"
   },
   {
     "id": "uzmovi_1308",
@@ -3676,10 +3676,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/12784-minionlar-gryuning-yuksalishi-gravitatsiya-uzbek-tilida-multfilm-2022-ozbek-tarjima-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/09/a07a7b24d19f7ea4d3e742883a59ae.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Minionlar: Gryuning yuksalishi', Yili: 2022) (ID: 489)"
   },
   {
     "id": "uzmovi_8811",
@@ -3704,10 +3704,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9747-oyinchoqlar-tarixi-4-uzbek-tarjima-2019-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/06/074468442692fd4d4dd21a376535e5.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'yinchoqlar tarixi 4', Yili: 2019) (ID: 490)"
   },
   {
     "id": "asilmedia_9139",
@@ -3718,10 +3718,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9139-oyinchoqlar-tarixi-3-uzbek-tarjima-2010-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/8f/2a499878701534ae5d2b521f19a5e2.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'yinchoqlar tarixi 3', Yili: 2010) (ID: 491)"
   },
   {
     "id": "asilmedia_9138",
@@ -3732,10 +3732,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9138-oyinchoqlar-tarixi-2-uzbek-tarjima-1999-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/1a/187f9b3eff95eccd6e91830949d8ed.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'yinchoqlar tarixi 2', Yili: 1999) (ID: 492)"
   },
   {
     "id": "asilmedia_9137",
@@ -3746,10 +3746,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/9137-oyinchoqlar-tarixi-1-uzbek-tarjima-1995-hd-ozbek-tilida-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/48/7223d13ff7f58ef7a2ccdef094834f.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'yinchoqlar tarixi 1', Yili: 1995) (ID: 493)"
   },
   {
     "id": "uzmovi_1370",
@@ -3788,10 +3788,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10725-jumanji-1-uzbek-tilida-1995-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/86/88cc5062eb726169d821b2bcdcf929.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jumanji 1', Yili: 1995) (ID: 494)"
   },
   {
     "id": "asilmedia_10699",
@@ -3802,10 +3802,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/10699-jumanji-2-keyingi-bosqich-uzbek-tilida-2019-kino-hd.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/11/4eff13b696996e8ae9be71182c6094.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jumanji 2: Keyingi bosqich', Yili: 2019) (ID: 495)"
   },
   {
     "id": "asilmedia_2179",
@@ -3816,10 +3816,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/2179-jumanji-2-jungle-chorlaydi-premyera.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e9/624288a642a81b275d6e6b1b3d2732.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi o'xshash (100% mos keldi: 'Jumanji: Jungle Changalzor chorlaydi') (ID: 496)"
   },
   {
     "id": "uzmovi_8999",
@@ -4124,10 +4124,10 @@
     "media_type": "series",
     "url": "https://uzmovi.net/tarjima-kinolarri/8935-najot-shifoxonasi-oqituvchi-kim-doktor-romantik-koreys-serial-barcha-qismlari-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2026-09-18/0e876c5d39eb13ad8ad339f6d916b697.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Najot shifoxonasi O'qituvchi Kim', Yili: None) (ID: 710)"
   },
   {
     "id": "uzmovi_8934",
@@ -4180,10 +4180,10 @@
     "media_type": "series",
     "url": "https://uzmovi.net/tarjima-kinolarri/8931-muhabbat-iztiroblari-korey-serial-barcha-qismlari-uzbek-ozbek-tilida-onlayn-korish.html",
     "poster_url": "https://images.uzmovi.net/2026-09-17/6c48b15d62b24f35649dad972876a3cd.jpg",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Muhabbat iztiroblari korey', Yili: None) (ID: 711)"
   },
   {
     "id": "uzmovi_8913",
@@ -4432,10 +4432,10 @@
     "media_type": "movie",
     "url": "https://asilmedia.org/18556-ogirlangan-qiz-gandhari-2026-hind-kino-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/15/049d1f6fe848dd3a48d4dec6706302.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'g'irlangan qiz', Yili: 2026) (ID: 318)"
   },
   {
     "id": "asilmedia_18555",
@@ -4572,10 +4572,10 @@
     "media_type": "series",
     "url": "https://asilmedia.org/18247-galati-narsalar-1985-yil-barcha-qismlar-aqsh-seriali-2026-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-hodisalar-garoyib-ishlar-85-yil-hikoyalari-voqealari-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/e2/f350d19f6d329bb9b64dc42a7efec9.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari', Yili: 1985) (ID: 703)"
   },
   {
     "id": "asilmedia_18395",
@@ -4726,10 +4726,10 @@
     "media_type": "series",
     "url": "https://asilmedia.org/17987-arosat-oramizda-ortamizda-oraliq-uzbek-tilida-ozbekcha-tarjima-kino-full-hd-tas-ix-skachat.html",
     "poster_url": "https://asilmedia.org/uploads/mini/shortstory/9f/48ba0647f44f44865fdec4275de6c6.webp",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Arosat Oramizda', Yili: 2025) (ID: 429)"
   },
   {
     "id": "asilmedia_17973",
@@ -4782,10 +4782,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=6",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Zindonda qizlar bilan uchrashish yomonmi', Yili: 2022) (ID: 610)"
   },
   {
     "id": "animeelar_7",
@@ -4796,10 +4796,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=7",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Viktoroya: Tayoq va Qilich', Yili: 2024) (ID: 495)"
   },
   {
     "id": "animeelar_8",
@@ -4810,10 +4810,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=8",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Oltin rangdagi vermil', Yili: 2022) (ID: 496)"
   },
   {
     "id": "animeelar_9",
@@ -4838,10 +4838,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=10",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Berserk', Yili: None) (ID: 675)"
   },
   {
     "id": "animeelar_11",
@@ -4852,10 +4852,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=11",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kizumonogatari', Yili: 2023) (ID: 497)"
   },
   {
     "id": "animeelar_12",
@@ -4880,10 +4880,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=13",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jodugar va Maxluq', Yili: 2020) (ID: 498)"
   },
   {
     "id": "animeelar_14",
@@ -4894,10 +4894,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=14",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'qituvchi Nobunaganing yosh tyolkalari', Yili: 2019) (ID: 499)"
   },
   {
     "id": "animeelar_15",
@@ -4908,10 +4908,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=15",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Qamoqxona maktabi', Yili: 2022) (ID: 502)"
   },
   {
     "id": "animeelar_16",
@@ -4922,10 +4922,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=16",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sehr yaratuvchisi qanday qilib boshqa dunyoda', Yili: 2023) (ID: 515)"
   },
   {
     "id": "animeelar_17",
@@ -4936,10 +4936,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=17",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Avatar ang haqidagi afsona', Yili: 2002) (ID: 516)"
   },
   {
     "id": "animeelar_18",
@@ -4950,10 +4950,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=18",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Avatar ang haqidagi afsona', Yili: 2002) (ID: 516)"
   },
   {
     "id": "animeelar_19",
@@ -4964,10 +4964,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=19",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Avatar ang haqidagi afsona', Yili: 2002) (ID: 516)"
   },
   {
     "id": "animeelar_20",
@@ -4978,10 +4978,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=20",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Qip-qizil Ragna', Yili: 2017) (ID: 517)"
   },
   {
     "id": "animeelar_21",
@@ -4992,10 +4992,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=21",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Re:Zero hayotni noldan boshlash', Yili: 2016) (ID: 518)"
   },
   {
     "id": "animeelar_22",
@@ -5006,10 +5006,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=22",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Men G'ayritabiiy Holat muvaffaqiyatsiz mahorati bilan eng kuchli bo'lib, hamma narsani yo'q qilaman', Yili: 2023) (ID: 519)"
   },
   {
     "id": "animeelar_23",
@@ -5020,10 +5020,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=23",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Hayotdan diskvalifikatsiya qilingan', Yili: 2020) (ID: 521)"
   },
   {
     "id": "anitoob_1",
@@ -5034,10 +5034,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=1",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEB2IVpTPkhU2zhvPr2Iv36J64gVd_EpgACDhBrG81jaErvMAWj25fNawEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Qahramon x', Yili: None) (ID: 503)"
   },
   {
     "id": "anitoob_2",
@@ -5048,10 +5048,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=2",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEB7gABaU1jevCq6ERGH8X_qlvsGdvkqaQAAioNaxvNY3BKGoc7Mq7wdwABAQADAgADeQADNgQ",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Gleipnir', Yili: None) (ID: 507)"
   },
   {
     "id": "anitoob_3",
@@ -5062,10 +5062,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=3",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEByldpStKazQ7SyOucy5gSekm-eZo0zAAC_QxrG0xAWEoilKNQjrIWLgEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Meni oyga olib ket', Yili: None) (ID: 508)"
   },
   {
     "id": "anitoob_4",
@@ -5090,10 +5090,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=5",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEB8AJpTWttNLobzvxS6myAVtc5-dYamwACcw1rG81jcErsLAhGHke9jAEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Platina yakun', Yili: None) (ID: 509)"
   },
   {
     "id": "anitoob_6",
@@ -5104,10 +5104,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=6",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEB8ORpTW1dYBBGA-HrSqqJgJlla4925wACqg1rG81jcErnZtNOuq-q3gEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Inuyashiki', Yili: None) (ID: 510)"
   },
   {
     "id": "anitoob_7",
@@ -5118,10 +5118,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=7",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEBVgxpP-YAARQ1jT200EGI91HpGxY-uxUAApUOaxtFaAABSg72tP2RUWs1AQADAgADeAADNgQ",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kelajak kundaligi', Yili: None) (ID: 511)"
   },
   {
     "id": "anitoob_8",
@@ -5132,10 +5132,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=8",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEBkfFpRimRha0WA7LPUYBL_nuen1MTIgACjw9rG0OtMErhT9cbK0nefAEAAwIAA3gAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Tabiat farzandi', Yili: 2019) (ID: 617)"
   },
   {
     "id": "anitoob_9",
@@ -5160,10 +5160,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=10",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEBTAdpPq5ncy9h3OCT2_Ed9iWZzRQVbQACnQxrGwFo-Eko5EbS9CaGFgEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Songi telba boss paydo boldi', Yili: None) (ID: 512)"
   },
   {
     "id": "anitoob_11",
@@ -5174,10 +5174,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=11",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEB_05pTmAXF4UzHAaMzIJgswWplGZjdgAC4Q1rG_16cUoKsnKIN834twEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Arra odam arc', Yili: None) (ID: 618)"
   },
   {
     "id": "anitoob_12",
@@ -5202,10 +5202,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=13",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAECAYFpTm2iJtnePkahkD1ygiRI2hGMKwACdQ5rG_16cUraoBpMKKzPdQEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kaiju 8', Yili: 2024) (ID: 501)"
   },
   {
     "id": "anitoob_14",
@@ -5216,10 +5216,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=14",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAECAjtpTnBcTvx5WjsujKZdUfjkauNZegACpw5rG_16cUpI2kIsvESEoQEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Vampirlar ovchisi d', Yili: None) (ID: 619)"
   },
   {
     "id": "anitoob_15",
@@ -5244,10 +5244,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=16",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAECAxNpTnXaOxeuIdUTJ_3CQTNQHhXxdQAC4w5rG_16cUpXelhwCL3RCwEAAwIAA3gAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yozgi urushima tuneli', Yili: None) (ID: 620)"
   },
   {
     "id": "anitoob_17",
@@ -5258,10 +5258,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=17",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkDAAEBPKJpPSUgCnMYD5Fpjpz6e8yrohnndQACTg9rGxGBqUk8uFjCFzHVBgEAAwIAA3gAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Salom dunyo', Yili: 2019) (ID: 621)"
   },
   {
     "id": "anitoob_18",
@@ -5272,10 +5272,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=18",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkDAAEBOQ9pPMCtAAGHxygRaJmnao9hAkeogiIAAtwLaxv4oclJ_4y0djAIaNABAAMCAAN5AAM2BA",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Nier avtomatlari', Yili: None) (ID: 513)"
   },
   {
     "id": "anitoob_19",
@@ -5286,10 +5286,10 @@
     "media_type": "series",
     "url": "https://t.me/ANITOOBUZ_BOT?start=19",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAECCLJpTp_OB4_j6_UJgzkrerdrcn6vSQACzBBrG_16cUrrsl_EJHZG5wEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Ozga dunyoda ruhsatsiz', Yili: None) (ID: 514)"
   },
   {
     "id": "anitoob_20",
@@ -5300,10 +5300,10 @@
     "media_type": "movie",
     "url": "https://t.me/ANITOOBUZ_BOT?start=20",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAECFeRpT2xoTm-DywkvE4eIRLWuKAX4XQACbAxrG_16eUqYgEuM_0rgDgEAAwIAA3kAAzYE",
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": 1,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Iblislar qotili fanart', Yili: None) (ID: 622)"
   },
   {
     "id": "animeelar_24",
@@ -5314,10 +5314,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=24",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Samurai Batusai', Yili: 2012) (ID: 522)"
   },
   {
     "id": "animeelar_25",
@@ -5328,10 +5328,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=25",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Tekken: Qonli Yo'l', Yili: 2022) (ID: 523)"
   },
   {
     "id": "animeelar_26",
@@ -5342,10 +5342,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=26",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Trinity: yetti sehrgar', Yili: 2020) (ID: 524)"
   },
   {
     "id": "animeelar_27",
@@ -5356,10 +5356,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=27",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Axloqsiz gildiya', Yili: 2020) (ID: 525)"
   },
   {
     "id": "animeelar_28",
@@ -5370,10 +5370,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=28",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Men eng kuchli sarguzashtchi bo'lish uchun doim mashq qildm', Yili: 2020) (ID: 526)"
   },
   {
     "id": "animeelar_29",
@@ -5384,10 +5384,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=29",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Ma'budsiz dunyoda ma'budning ish faoliyati', Yili: 2020) (ID: 527)"
   },
   {
     "id": "animeelar_30",
@@ -5412,10 +5412,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=31",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Opamni dugonalari bilan jinsiy aloqa', Yili: 2222) (ID: 678)"
   },
   {
     "id": "animeelar_32",
@@ -5426,10 +5426,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=32",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Aki sora', Yili: 2222) (ID: 625)"
   },
   {
     "id": "animeelar_33",
@@ -5454,10 +5454,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=34",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Evalutsiya mevasi', Yili: 2021) (ID: 546)"
   },
   {
     "id": "animeelar_35",
@@ -5468,10 +5468,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=35",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Taqiqlangan hudud: X daraja', Yili: 2024) (ID: 547)"
   },
   {
     "id": "animeelar_36",
@@ -5496,10 +5496,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=37",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('O'zga sayyoralik sigir', Yili: 2222) (ID: 626)"
   },
   {
     "id": "animeelar_38",
@@ -5510,10 +5510,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=38",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Nol Edem', Yili: 2021) (ID: 548)"
   },
   {
     "id": "animeelar_39",
@@ -5524,10 +5524,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=39",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Ajdar hukumdori Raja', Yili: 2022) (ID: 549)"
   },
   {
     "id": "animeelar_40",
@@ -5538,10 +5538,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=40",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yuz o'girilganlarning yashirin istaklari', Yili: 2017) (ID: 550)"
   },
   {
     "id": "animeelar_41",
@@ -5552,10 +5552,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=41",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yumshoq oʻpish', Yili: 2222) (ID: 551)"
   },
   {
     "id": "animeelar_42",
@@ -5566,10 +5566,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=42",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jojoning g'aroyib sarguzashtlari', Yili: 2012) (ID: 552)"
   },
   {
     "id": "animeelar_43",
@@ -5580,10 +5580,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=43",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yirtqich hayvon yo'li', Yili: 2019) (ID: 553)"
   },
   {
     "id": "animeelar_44",
@@ -5594,10 +5594,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=44",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Jojoning g'aroyib sarguzashtlari', Yili: 2012) (ID: 552)"
   },
   {
     "id": "animeelar_45",
@@ -5608,10 +5608,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=45",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Yetti yulduz to'plami', Yili: 2018) (ID: 554)"
   },
   {
     "id": "animeelar_46",
@@ -5622,10 +5622,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=46",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Soyada ko'tarilish', Yili: 2022) (ID: 555)"
   },
   {
     "id": "animeelar_47",
@@ -5636,10 +5636,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=47",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Soyada ko'tarilish', Yili: 2022) (ID: 555)"
   },
   {
     "id": "animeelar_48",
@@ -5650,10 +5650,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=48",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Ijarachi Honim', Yili: 1111) (ID: 627)"
   },
   {
     "id": "animeelar_49",
@@ -5664,10 +5664,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=49",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Ishura: Yangi iblislar qirolining urushlari', Yili: 2024) (ID: 556)"
   },
   {
     "id": "animeelar_50",
@@ -5678,10 +5678,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=50",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Taqdir: Boshlanish', Yili: 2011) (ID: 557)"
   },
   {
     "id": "animeelar_51",
@@ -5692,10 +5692,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=51",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sehr yaratuvchisi qanday qilib boshqa dunyoda', Yili: 2023) (ID: 515)"
   },
   {
     "id": "animeelar_52",
@@ -5706,10 +5706,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=52",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Olovli Kabaddi', Yili: 2021) (ID: 558)"
   },
   {
     "id": "animeelar_53",
@@ -5720,10 +5720,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=53",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Fuuka', Yili: 2017) (ID: 559)"
   },
   {
     "id": "animeelar_54",
@@ -5734,10 +5734,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=54",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Cheksiz Dendrogram', Yili: 2020) (ID: 560)"
   },
   {
     "id": "animeelar_55",
@@ -5748,10 +5748,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=55",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Sanka Rea', Yili: 2012) (ID: 561)"
   },
   {
     "id": "animeelar_56",
@@ -5762,10 +5762,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=56",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Kuryer bilan jinsi aloqa', Yili: 2222) (ID: 682)"
   },
   {
     "id": "animeelar_57",
@@ -5776,10 +5776,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=57",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Juda mukammal bo'lgani uchun unashtiruvi buzilgan avliyo qo'shni qirollikka sotildi', Yili: 2025) (ID: 562)"
   },
   {
     "id": "animeelar_58",
@@ -5790,10 +5790,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=58",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Castlevania', Yili: 2017) (ID: 563)"
   },
   {
     "id": "animeelar_59",
@@ -5804,10 +5804,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=59",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Dastlabki Drift', Yili: 1995) (ID: 565)"
   },
   {
     "id": "animeelar_60",
@@ -5818,10 +5818,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=60",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Uyatchan qahramon va qotil malikalar', Yili: 2025) (ID: 566)"
   },
   {
     "id": "animeelar_61",
@@ -5832,10 +5832,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=61",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Eng qudratli partiya tomonidan o'limgacha tarbiyalangan Ossan yangi sarguzashtchi yengilmas bo'lib qoldi', Yili: 2024) (ID: 567)"
   },
   {
     "id": "animeelar_62",
@@ -5846,10 +5846,10 @@
     "media_type": "series",
     "url": "https://t.me/Animeelar_Bot?start=62",
     "poster_url": null,
-    "status": "pending",
+    "status": "already_exists",
     "episodes_count": null,
     "downloaded_episodes": 0,
-    "error_message": null
+    "error_message": "Bazada mavjud: Nomi to'liq mos keldi ('Douki-chan sen uddalaysan!', Yili: 2021) (ID: 568)"
   },
   {
     "id": "animeelar_63",
