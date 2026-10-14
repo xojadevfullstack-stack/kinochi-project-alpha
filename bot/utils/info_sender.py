@@ -68,7 +68,7 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
         
     buttons.append([InlineKeyboardButton(text="⚠️ Xatolikni bildirish", callback_data=f"report_m_{code}")])
     buttons.append([
-        InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_movies"),
+        InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_catalog"),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
     
@@ -212,7 +212,7 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
         
     rows.append([InlineKeyboardButton(text="⚠️ Xatolikni bildirish", callback_data=f"report_s_{series_id}")])
     rows.append([
-        InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_series"),
+        InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_catalog"),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
         
@@ -294,7 +294,10 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
         rows.append(current_row)
         
     rows.append([
-        InlineKeyboardButton(text="◀️ Ortga", callback_data=f"back_to_series:{series_id}"),
+        InlineKeyboardButton(text="◀️ Serialga qaytish", callback_data=f"back_to_series:{series_id}"),
+        InlineKeyboardButton(text="📂 Katalog", callback_data="menu_catalog")
+    ])
+    rows.append([
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
         

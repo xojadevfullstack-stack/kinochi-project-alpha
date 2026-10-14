@@ -25,6 +25,10 @@ async def handle_search_query(message: Message):
     elif query == "🌐 Saytga o'tish":
         await message.answer(f"🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>{settings.WEBSITE_URL}</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
         return
+    elif query.lower() in ["katalog", "📂 katalog", "ortga", "◀️ ortga", "orqaga", "🔙 katalog", "🔙 katalogga qaytish"]:
+        from handlers.catalog import send_catalog
+        await send_catalog(message)
+        return
         
     # 1. Avval so'rovni kino, serial yoki qism kodi/ID si sifatida tekshiramiz
     from utils.code_resolver import resolve_and_send_content

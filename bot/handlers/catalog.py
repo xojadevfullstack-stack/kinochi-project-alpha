@@ -1,5 +1,6 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
+from aiogram.fsm.context import FSMContext
 from services.api_client import api_client
 from utils.info_sender import send_movie_info, send_series_info
 from keyboards.inline import get_main_menu_inline, get_catalog_categories_inline, build_catalog_items_list, build_page_items_list
@@ -11,26 +12,53 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 def get_webapp_url():
-    return "https://kinochi-project-alpha.vercel.app/"
+    base = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app/").rstrip("/")
+    return f"{base}/"
 
-@router.callback_query(F.data == "menu_catalog")
-async def handle_catalog_btn(callback: CallbackQuery):
-    text = "📂 Kategoriyalardan birini tanlang:"
+async def send_catalog(target: CallbackQuery | Message, state: FSMContext = None):
+    """Holatdan qat'iy nazar katalogni chiqaradi va kerak bo'lsa FSM holatini tozalaydi."""
+    if state:
+        await state.clear()
+        
+    text = "📂 <b>Katalog</b>\n\nQuyidagi toifalardan birini tanlang:"
     
-    pages_data = await api_client.get_pages()
-    pages = pages_data.get("items", [])
+    try:
+        pages_data = await api_client.get_pages()
+        pages = pages_data.get("items", [])
+    except Exception as e:
+        logger.warning(f"Error fetching pages for catalog: {e}")
+        pages = []
     
     markup = get_catalog_categories_inline(pages)
-    try:
-        if callback.message.photo or callback.message.video:
-            await callback.message.delete()
-            await callback.message.answer(text, reply_markup=markup)
-        else:
-            await callback.message.edit_text(text, reply_markup=markup)
-    except Exception as e:
-        logger.warning(f"Error in handle_catalog_btn: {e}")
-        await callback.message.answer(text, reply_markup=markup)
+    
+    if isinstance(target, CallbackQuery) or hasattr(target, "message"):
+        msg = target.message
+        try:
+            if msg.photo or msg.video:
+                try:
+                    await msg.delete()
+                except Exception:
+                    pass
+                await msg.answer(text, parse_mode="HTML", reply_markup=markup)
+            else:
+                try:
+                    await msg.edit_text(text, parse_mode="HTML", reply_markup=markup)
+                except Exception:
+                    await msg.answer(text, parse_mode="HTML", reply_markup=markup)
+        except Exception as e:
+            logger.warning(f"Error in send_catalog via callback: {e}")
+            await msg.answer(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await target.answer(text, parse_mode="HTML", reply_markup=markup)
+
+@router.callback_query(F.data.in_(["menu_catalog", "menu_movies", "menu_series", "back_to_catalog"]))
+async def handle_catalog_btn(callback: CallbackQuery, state: FSMContext = None):
     await callback.answer()
+    await send_catalog(callback, state)
+
+@router.message(F.text.lower().in_(["katalog", "📂 katalog", "ortga", "◀️ ortga", "orqaga", "/katalog", "/catalog"]))
+async def handle_catalog_message(message: Message, state: FSMContext = None):
+    await send_catalog(message, state)
 
 @router.callback_query(F.data == "menu_main")
 async def handle_back_to_main(callback: CallbackQuery):
