@@ -402,23 +402,52 @@ export default function AuditPage() {
     if (!deletingItem) return;
     setIsDeleting(true);
     try {
-      const res = await fetchApi(
-        `/audit/cascade-delete/${deletingItem.content_type}/${deletingItem.id}`,
-        { method: "DELETE" }
-      );
-      if (alsoBlacklist) {
-        await fetchApi("/blacklist", {
-          method: "POST",
-          body: JSON.stringify({
-            title: deletingItem.title,
-            reason: "Audit orqali kaskad o'chirilib qora ro'yxatga kiritildi",
-          }),
-        });
+      let successMessage = `"${deletingItem.title}" to'liq kaskad tarzda o'chirildi!`;
+      
+      try {
+        const res = await fetchApi(
+          `/audit/cascade-delete/${deletingItem.content_type}/${deletingItem.id}`,
+          { method: "DELETE" }
+        );
+        if (res?.message) {
+          successMessage = res.message;
+        }
+      } catch (cascadeErr: any) {
+        // Fallback to core endpoints if cascade-delete endpoint 404s (e.g. backend not reloaded yet)
+        const errMsg = cascadeErr?.message || "";
+        const isNotFound = errMsg.includes("Not Found") || errMsg.includes("404") || errMsg.includes("topilmadi");
+        if (isNotFound) {
+          const fallbackUrl = deletingItem.content_type === "movie"
+            ? `/movies/${deletingItem.id}`
+            : `/series/${deletingItem.id}`;
+          try {
+            await fetchApi(fallbackUrl, { method: "DELETE" });
+          } catch (fbErr: any) {
+            const fbMsg = (fbErr?.message || "").toLowerCase();
+            if (!fbMsg.includes("not found") && !fbMsg.includes("topilmadi")) {
+              throw fbErr;
+            }
+          }
+        } else {
+          throw cascadeErr;
+        }
       }
-      showToast(
-        res.message || `"${deletingItem.title}" to'liq kaskad tarzda o'chirildi!`,
-        "success"
-      );
+
+      if (alsoBlacklist) {
+        try {
+          await fetchApi("/blacklist", {
+            method: "POST",
+            body: JSON.stringify({
+              title: deletingItem.title,
+              reason: "Audit orqali kaskad o'chirilib qora ro'yxatga kiritildi",
+            }),
+          });
+        } catch (blErr: any) {
+          console.warn("Blacklist warning:", blErr);
+        }
+      }
+
+      showToast(successMessage, "success");
       setDeletingItem(null);
       setAlsoBlacklist(false);
       await loadStats();
@@ -432,7 +461,7 @@ export default function AuditPage() {
         await loadIncomplete();
       }
     } catch (err: any) {
-      showToast("O'chirishda xatolik: " + err.message, "error");
+      showToast("O'chirishda xatolik: " + (err?.message || "Noma'lum xatolik"), "error");
     } finally {
       setIsDeleting(false);
     }

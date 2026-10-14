@@ -398,7 +398,7 @@ async def get_audit_stats(
             missing_video=no_vid_s,
             missing_poster=no_post_s,
             missing_description=no_desc_s,
-            missing_genres=no_cat_s,
+            missing_genres=0,
             missing_categories=no_cat_s,
             missing_trailer=no_tr_s,
             missing_tmdb=no_tmdb_s,
@@ -1224,7 +1224,7 @@ async def check_orphan_episodes(
 
 @router.delete("/cascade-delete/{content_type}/{item_id}", status_code=status.HTTP_200_OK)
 async def cascade_delete_item(
-    content_type: Literal["movie", "series"],
+    content_type: str,
     item_id: int,
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin),
@@ -1236,10 +1236,16 @@ async def cascade_delete_item(
     from app.infrastructure.telegram.telegram_client import telegram_client
 
     topic_deleted = False
-    if content_type == "movie":
+    c_type = (content_type or "").lower().strip()
+
+    if c_type in ("movie", "movies"):
         movie = await db.get(MovieModel, item_id)
         if not movie:
-            raise HTTPException(status_code=404, detail="Kino topilmadi")
+            return {
+                "success": True,
+                "message": "Kino allaqachon bazadan o'chirilgan.",
+                "telegram_topic_deleted": False
+            }
 
         if movie.source_chat_id and movie.source_topic_id:
             try:
@@ -1250,14 +1256,22 @@ async def cascade_delete_item(
         await db.delete(movie)
         await db.commit()
         await delete_cache_pattern("cache:movies:*")
-        return {"success": True, "message": "Kino va barcha ma'lumotlari kaskad tarzda o'chirildi.", "telegram_topic_deleted": topic_deleted}
+        return {
+            "success": True,
+            "message": "Kino va unga bog'liq barcha ma'lumotlar to'liq kaskad tarzda o'chirildi.",
+            "telegram_topic_deleted": topic_deleted
+        }
 
-    else:
+    elif c_type in ("series", "tv", "show"):
         stmt = select(SeriesModel).options(selectinload(SeriesModel.source)).where(SeriesModel.id == item_id)
         res = await db.execute(stmt)
         series = res.scalar_one_or_none()
         if not series:
-            raise HTTPException(status_code=404, detail="Serial topilmadi")
+            return {
+                "success": True,
+                "message": "Serial allaqachon bazadan o'chirilgan.",
+                "telegram_topic_deleted": False
+            }
 
         if series.source and series.source.chat_id and series.source.topic_id:
             try:
@@ -1268,5 +1282,13 @@ async def cascade_delete_item(
         await db.delete(series)
         await db.commit()
         await delete_cache_pattern("cache:series:*")
-        return {"success": True, "message": "Serial va uning fasllari, qismlari kaskad tarzda o'chirildi.", "telegram_topic_deleted": topic_deleted}
+        return {
+            "success": True,
+            "message": "Serial va uning barcha fasllari, qismlari kaskad tarzda o'chirildi.",
+            "telegram_topic_deleted": topic_deleted
+        }
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Noto'g'ri content_type: '{content_type}'. Faqat 'movie' yoki 'series' qabul qilinadi.")
+
 

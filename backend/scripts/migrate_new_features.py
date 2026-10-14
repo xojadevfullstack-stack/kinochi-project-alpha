@@ -44,7 +44,7 @@ async def run_migration():
             if cleaned:
                 print(f"Running: {cleaned[:60]}...")
                 await conn.execute(text(cleaned))
-    print("✅ Migration executed successfully!")
+    print("[OK] Migration executed successfully!")
 
 if __name__ == "__main__":
     asyncio.run(run_migration())
