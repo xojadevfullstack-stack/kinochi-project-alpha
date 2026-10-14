@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Must match BOT_API_SECRET in backend/.env
     BOT_API_SECRET: str = ""
     WEBSITE_URL: str = "https://kinochi-project-alpha.vercel.app"
+    BOT_USERNAME: str = "kinochi_mvp_bot"
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(BOT_DIR, ".env"),

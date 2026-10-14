@@ -6,6 +6,9 @@ from keyboards.inline import build_search_results_keyboard
 from utils.movie_sender import send_movie_to_user
 from config import settings
 import html
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -120,24 +123,103 @@ async def handle_series_subscription(callback: CallbackQuery):
 
 
 # ── Telegram Inline Search Handler ──────────────────────────────────
-from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    InlineQueryResultsButton,
+)
 
 @router.inline_query()
 async def handle_inline_search(inline_query: InlineQuery):
     query = inline_query.query.strip()
-    if not query or len(query) < 2:
+    bot_username = getattr(settings, "BOT_USERNAME", "kinochi_mvp_bot").lstrip("@")
+    base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+    if not base_site or "localhost" in base_site or "127.0.0.1" in base_site:
+        base_site = "https://kinochi-project-alpha.vercel.app"
+
+    # 1. So'rov bo'sh bo'lganda ko'rsatma tugmasi
+    if not query:
+        try:
+            await inline_query.answer(
+                results=[],
+                cache_time=5,
+                is_personal=False,
+                button=InlineQueryResultsButton(
+                    text="🔍 Kino yoki serial nomini yozing...",
+                    start_parameter="search"
+                )
+            )
+        except Exception as e:
+            logger.warning(f"Empty inline query answer error: {e}")
+        return
+
+    # 2. 2 ta harfdan kam bo'lganda ogohlantirish
+    if len(query) < 2:
+        try:
+            await inline_query.answer(
+                results=[],
+                cache_time=5,
+                is_personal=False,
+                button=InlineQueryResultsButton(
+                    text="⚠️ Kamida 2 ta harf yozing...",
+                    start_parameter="search"
+                )
+            )
+        except Exception as e:
+            logger.warning(f"Short inline query answer error: {e}")
         return
 
     try:
         search_result = await api_client.live_search(query=query, limit=15)
         combined_results = search_result.get("results", [])
     except Exception as e:
-        logger.error(f"Inline search error: {e}")
+        logger.error(f"Inline search error: {e}", exc_info=True)
         combined_results = []
 
+    # Agar live_search bo'sh qaytarsa, alohida kinolar va seriallarni qidirib ko'ramiz
+    if not combined_results:
+        try:
+            m_res = await api_client.search_movies(query=query, limit=8)
+            s_res = await api_client.search_series(query=query, limit=8)
+            for m in m_res.get("items", []):
+                m["type"] = "movie"
+                combined_results.append(m)
+            for s in s_res.get("items", []):
+                s["type"] = "series"
+                combined_results.append(s)
+        except Exception as e:
+            logger.error(f"Inline search fallback error: {e}", exc_info=True)
+
     results = []
-    bot_username = (settings.BOT_USERNAME or "kinochi_mvp_bot").lstrip("@")
-    base_site = (settings.WEBSITE_URL or "https://kinochi-project-alpha.vercel.app").rstrip("/")
+
+    # 3. Agar hech narsa topilmasa
+    if not combined_results:
+        safe_q = html.escape(query[:40])
+        results.append(
+            InlineQueryResultArticle(
+                id="not_found",
+                title=f"😔 '{query[:30]}' topilmadi",
+                description="Boshqa nom bilan qidirib ko'ring yoki botga o'ting",
+                input_message_content=InputTextMessageContent(
+                    message_text=(
+                        f"😔 <b>'{safe_q}'</b> bo'yicha hech qanday film yoki serial topilmadi.\n\n"
+                        f"Boshqa so'z bilan izlab ko'ring yoki @{bot_username} botiga kiring!"
+                    ),
+                    parse_mode="HTML"
+                ),
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="🔍 Botda qidirish", url=f"https://t.me/{bot_username}")]
+                ])
+            )
+        )
+        try:
+            await inline_query.answer(results, cache_time=30, is_personal=False)
+        except Exception as e:
+            logger.warning(f"Empty results inline answer error: {e}")
+        return
 
     for item in combined_results:
         c_type = item.get("type", "movie")
@@ -148,11 +230,12 @@ async def handle_inline_search(inline_query: InlineQuery):
         poster_url = item.get("poster_url")
         rating = item.get("imdb_rating")
         rating_str = f" ⭐ {rating:.1f}" if rating else ""
+        genres = item.get("genres") or []
+        genre_str = f"\n🎭 <b>Janr:</b> {', '.join(genres[:3])}" if genres else ""
 
         if c_type == "collection":
             slug = item.get("code") or item.get("slug") or str(item_id)
             desc = "🌌 Xronologiya to'plami"
-            deep_link = f"https://t.me/{bot_username}?start=menu"
             web_link = f"{base_site}/collections/{slug}"
             msg_text = (
                 f"🌌 <b>{html.escape(title)}</b> (Franshiza Xronologiyasi)\n\n"
@@ -169,8 +252,9 @@ async def handle_inline_search(inline_query: InlineQuery):
             msg_text = (
                 f"📺 <b>{html.escape(title)}</b>\n\n"
                 f"📅 <b>Yili:</b> {year or 'N/A'}\n"
-                f"🔑 <b>Serial kodi:</b> <code>s_{item_id}</code>\n"
-                f"{rating_str}\n\n"
+                f"🔑 <b>Serial kodi:</b> <code>s_{item_id}</code>"
+                f"{rating_str}"
+                f"{genre_str}\n\n"
                 f"<i>Kinochi platformasida barcha fasl va qismlarni tomosha qiling!</i>"
             )
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -186,8 +270,9 @@ async def handle_inline_search(inline_query: InlineQuery):
             msg_text = (
                 f"🎬 <b>{html.escape(title)}</b>\n\n"
                 f"📅 <b>Yili:</b> {year or 'N/A'}\n"
-                f"🔑 <b>Kino kodi:</b> <code>{code or 'N/A'}</code>\n"
-                f"{rating_str}\n\n"
+                f"🔑 <b>Kino kodi:</b> <code>{code or 'N/A'}</code>"
+                f"{rating_str}"
+                f"{genre_str}\n\n"
                 f"<i>Kinochi platformasida eng sara sifatda tomosha qiling!</i>"
             )
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -197,12 +282,14 @@ async def handle_inline_search(inline_query: InlineQuery):
                 ]
             ])
 
+        thumb = poster_url if (poster_url and (poster_url.startswith("http://") or poster_url.startswith("https://"))) else None
+
         results.append(
             InlineQueryResultArticle(
                 id=f"{c_type}_{item_id}",
                 title=title,
                 description=desc,
-                thumbnail_url=poster_url if (poster_url and poster_url.startswith("http")) else None,
+                thumbnail_url=thumb,
                 input_message_content=InputTextMessageContent(
                     message_text=msg_text,
                     parse_mode="HTML"
@@ -211,5 +298,9 @@ async def handle_inline_search(inline_query: InlineQuery):
             )
         )
 
-    await inline_query.answer(results, cache_time=30, is_personal=True)
+    try:
+        await inline_query.answer(results, cache_time=60, is_personal=False)
+    except Exception as e:
+        logger.error(f"Failed to answer inline query: {e}", exc_info=True)
+
 

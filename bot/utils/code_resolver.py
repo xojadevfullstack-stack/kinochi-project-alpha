@@ -23,14 +23,14 @@ def clean_and_extract_code(text: str) -> Tuple[str, Optional[str]]:
     # Boshidagi # yoki № belgilarini olib tashlash
     raw = re.sub(r'^[#№]+', '', raw).strip()
 
-    # 1. movie_ yoki kino_ prefikslari (masalan, movie_PT3BQB)
-    if re.match(r'^(?:movie_|kino_)', raw, re.IGNORECASE):
-        cleaned = re.sub(r'^(?:movie_|kino_)', '', raw, flags=re.IGNORECASE).strip()
+    # 1. movie_, m_ yoki kino_ prefikslari (masalan, movie_PT3BQB, m_PT3BQB)
+    if re.match(r'^(?:m_|movie_|kino_)', raw, re.IGNORECASE):
+        cleaned = re.sub(r'^(?:m_|movie_|kino_)', '', raw, flags=re.IGNORECASE).strip()
         return cleaned, 'movie'
 
-    # 2. series_ yoki serial_ prefikslari (masalan, series_30, serial_30)
-    if re.match(r'^(?:series_|serial_)', raw, re.IGNORECASE):
-        cleaned = re.sub(r'^(?:series_|serial_)', '', raw, flags=re.IGNORECASE).strip()
+    # 2. series_, s_ yoki serial_ prefikslari (masalan, series_30, s_30, serial_30)
+    if re.match(r'^(?:s_|series_|serial_)', raw, re.IGNORECASE):
+        cleaned = re.sub(r'^(?:s_|series_|serial_)', '', raw, flags=re.IGNORECASE).strip()
         return cleaned, 'series'
 
     # 3. ep_ yoki episode_ prefikslari

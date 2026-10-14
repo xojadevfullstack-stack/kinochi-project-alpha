@@ -96,7 +96,7 @@ async def run_bot():
                 logging.info("CHECKPOINT 11: bot.delete_webhook() chaqirilmoqda")
                 await bot.delete_webhook(drop_pending_updates=True)
                 logging.info("CHECKPOINT 12: dp.start_polling(bot) chaqirilmoqda")
-                await dp.start_polling(bot)
+                await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
                 logging.info("CHECKPOINT 13: dp.start_polling(bot) tugadi")
             except Exception as e:
                 logging.error(f"[BOT] Polling failed: {e}")
