@@ -46,6 +46,9 @@ class MovieCreate(BaseModel):
     page_ids: list[int] | None = None
     source_id: int | None = None
     is_18_plus: bool = False
+    source_type: str | None = "uzmovi"
+    custom_source_name: str | None = None
+    custom_source_logo: str | None = None
 
 class MovieUpdate(BaseModel):
     title: str | None = None
@@ -65,6 +68,9 @@ class MovieUpdate(BaseModel):
     page_ids: list[int] | None = None
     source_id: int | None = None
     is_18_plus: bool | None = None
+    source_type: str | None = None
+    custom_source_name: str | None = None
+    custom_source_logo: str | None = None
 
 class MovieTranslationResponse(BaseModel):
     id: int
@@ -100,6 +106,9 @@ class MovieResponse(BaseModel):
 
     source_chat_id: int | None = None
     source_topic_id: int | None = None
+    source_type: str | None = "uzmovi"
+    custom_source_name: str | None = None
+    custom_source_logo: str | None = None
     created_at: datetime | None = None
 
     @computed_field
@@ -452,7 +461,19 @@ async def delete_movie(
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin)
 ):
-    """Delete a movie (Admin only)."""
+    """Delete a movie (Admin only) with full cascade: DB + Telegram topic + Cache."""
+    movie = await service.get_movie(movie_id)
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    # Cascade delete Telegram Forum Topic if present
+    if movie.source_chat_id and movie.source_topic_id:
+        try:
+            from app.infrastructure.telegram.telegram_client import telegram_client
+            await telegram_client.delete_forum_topic(movie.source_chat_id, movie.source_topic_id)
+        except Exception as e:
+            logger.warning(f"Could not cascade delete telegram topic for movie {movie_id}: {e}")
+
     success = await service.delete_movie(movie_id)
     if not success:
         raise HTTPException(status_code=404, detail="Movie not found")

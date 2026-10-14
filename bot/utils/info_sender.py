@@ -164,6 +164,13 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     except Exception as e:
         rows.append([InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_series_{series_id}")])
         
+    try:
+        is_sub = await api_client.check_series_subscription(series_id, chat_id)
+    except Exception:
+        is_sub = False
+    sub_text = "🔕 Obunani bekor qilish" if is_sub else "🔔 Yangi qismlarga obuna bo'lish"
+    rows.append([InlineKeyboardButton(text=sub_text, callback_data=f"sub_series_{series_id}")])
+
     rows.append([
         InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_s_{series_id}"),
         InlineKeyboardButton(text="💬 Fikrlar", callback_data=f"reviews_s_{series_id}")

@@ -760,3 +760,402 @@ async def quick_update_audit_item(
         await db.commit()
         await delete_cache_pattern("cache:series:*")
         return {"success": True, "message": "Serial ma'lumotlari muvaffaqiyatli yangilandi"}
+
+
+# ── Advanced Audit & Quality Control Endpoints ───────────────────
+
+class MergeDuplicatesRequest(BaseModel):
+    content_type: Literal["movie", "series"]
+    primary_id: int
+    duplicate_id: int
+    keep_better_video: bool = True
+
+
+@router.get("/duplicates")
+@limiter.limit("30/minute")
+async def find_duplicates(
+    request: Request,
+    content_type: Literal["movie", "series"] = "movie",
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """
+    Smart Duplicate Finder:
+    Matches duplicates based on:
+    1. Identical TMDb ID (> 0)
+    2. Normalized title similarity
+    """
+    duplicates_groups = []
+
+    if content_type == "movie":
+        # 1. TMDb ID based
+        tmdb_dup_query = (
+            select(MovieModel.tmdb_id)
+            .where(MovieModel.tmdb_id.isnot(None), MovieModel.tmdb_id > 0)
+            .group_by(MovieModel.tmdb_id)
+            .having(func.count(MovieModel.id) > 1)
+        )
+        tmdb_dups = (await db.execute(tmdb_dup_query)).scalars().all()
+
+        for tid in tmdb_dups:
+            stmt = (
+                select(MovieModel)
+                .options(selectinload(MovieModel.translations))
+                .where(MovieModel.tmdb_id == tid)
+                .order_by(MovieModel.id.asc())
+            )
+            movies = (await db.execute(stmt)).scalars().all()
+            duplicates_groups.append({
+                "match_reason": f"TMDb ID: {tid}",
+                "items": [
+                    {
+                        "id": m.id,
+                        "title": m.title,
+                        "original_title": m.original_title,
+                        "code": m.code,
+                        "release_year": m.release_year,
+                        "poster_url": m.poster_url,
+                        "translations_count": len(m.translations or []),
+                        "has_video": any(bool(t.telegram_file_id) for t in (m.translations or [])),
+                        "source_topic_id": m.source_topic_id,
+                        "created_at": m.created_at.isoformat() if m.created_at else None,
+                    }
+                    for m in movies
+                ]
+            })
+
+        # 2. Normalized title matching
+        all_movies_stmt = select(MovieModel.id, MovieModel.title, MovieModel.original_title, MovieModel.release_year, MovieModel.code, MovieModel.poster_url).order_by(MovieModel.id.desc()).limit(1000)
+        all_m = (await db.execute(all_movies_stmt)).all()
+        import re
+
+        def norm(t: str) -> str:
+            if not t:
+                return ""
+            return re.sub(r"[^\w\s]", "", t.lower()).strip()
+
+        seen_titles = {}
+        for mid, mtitle, morig, myear, mcode, mposter in all_m:
+            clean = norm(mtitle)
+            if not clean or len(clean) < 3:
+                continue
+            key = f"{clean}_{myear}" if myear else clean
+            if key in seen_titles:
+                seen_titles[key].append({"id": mid, "title": mtitle, "year": myear, "code": mcode, "poster_url": mposter})
+            else:
+                seen_titles[key] = [{"id": mid, "title": mtitle, "year": myear, "code": mcode, "poster_url": mposter}]
+
+        for k, items in seen_titles.items():
+            if len(items) > 1 and not any(any(it["id"] == m["id"] for m in g["items"]) for g in duplicates_groups):
+                duplicates_groups.append({
+                    "match_reason": f"Nom o'xshashligi: {items[0]['title']}",
+                    "items": items
+                })
+
+    else:
+        # Series
+        tmdb_dup_query = (
+            select(SeriesModel.tmdb_id)
+            .where(SeriesModel.tmdb_id.isnot(None), SeriesModel.tmdb_id > 0)
+            .group_by(SeriesModel.tmdb_id)
+            .having(func.count(SeriesModel.id) > 1)
+        )
+        tmdb_dups = (await db.execute(tmdb_dup_query)).scalars().all()
+
+        for tid in tmdb_dups:
+            stmt = (
+                select(SeriesModel)
+                .options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes))
+                .where(SeriesModel.tmdb_id == tid)
+                .order_by(SeriesModel.id.asc())
+            )
+            series_list = (await db.execute(stmt)).scalars().all()
+            duplicates_groups.append({
+                "match_reason": f"TMDb ID: {tid}",
+                "items": [
+                    {
+                        "id": s.id,
+                        "title": s.title,
+                        "code": f"S{s.id}",
+                        "release_year": s.release_year,
+                        "poster_url": s.poster_url,
+                        "seasons_count": len(s.seasons or []),
+                        "episodes_count": sum(len(sz.episodes or []) for sz in (s.seasons or [])),
+                        "created_at": s.created_at.isoformat() if s.created_at else None,
+                    }
+                    for s in series_list
+                ]
+            })
+
+    return {"total_groups": len(duplicates_groups), "groups": duplicates_groups}
+
+
+@router.post("/merge-duplicates")
+@limiter.limit("20/minute")
+async def merge_duplicates(
+    request: Request,
+    payload: MergeDuplicatesRequest,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """
+    Smart Merge:
+    Merges duplicate into primary.
+    Preserves highest quality video / translations and cleans up duplicate.
+    Also deletes Telegram topic of duplicate if present.
+    """
+    if payload.primary_id == payload.duplicate_id:
+        raise HTTPException(status_code=400, detail="Asosiy va dublikat ID lari bir xil bo'lishi mumkin emas.")
+
+    if payload.content_type == "movie":
+        stmt_p = select(MovieModel).options(selectinload(MovieModel.translations), selectinload(MovieModel.categories), selectinload(MovieModel.pages)).where(MovieModel.id == payload.primary_id)
+        primary = (await db.execute(stmt_p)).scalar_one_or_none()
+        stmt_d = select(MovieModel).options(selectinload(MovieModel.translations), selectinload(MovieModel.categories), selectinload(MovieModel.pages)).where(MovieModel.id == payload.duplicate_id)
+        dup = (await db.execute(stmt_d)).scalar_one_or_none()
+
+        if not primary or not dup:
+            raise HTTPException(status_code=404, detail="Asosiy yoki dublikat kino topilmadi.")
+
+        # Copy missing translations from dup to primary
+        existing_langs = {t.language for t in (primary.translations or [])}
+        for dt in (dup.translations or []):
+            if dt.language not in existing_langs and dt.telegram_file_id:
+                new_tr = MovieTranslationModel(
+                    movie_id=primary.id,
+                    language=dt.language,
+                    telegram_file_id=dt.telegram_file_id,
+                    storage_channel_message_id=dt.storage_channel_message_id,
+                )
+                db.add(new_tr)
+
+        # Fill missing metadata on primary
+        if (not primary.poster_url or not primary.poster_url.strip()) and dup.poster_url:
+            primary.poster_url = dup.poster_url
+        if (not primary.description or len(primary.description.strip()) < 30) and dup.description:
+            primary.description = dup.description
+        if not primary.genres and dup.genres:
+            primary.genres = dup.genres
+        if not primary.trailer_url and dup.trailer_url:
+            primary.trailer_url = dup.trailer_url
+
+        # Copy missing categories & pages
+        prim_cat_ids = {c.id for c in primary.categories}
+        for c in dup.categories:
+            if c.id not in prim_cat_ids:
+                primary.categories.append(c)
+
+        prim_page_ids = {p.id for p in primary.pages}
+        for p in dup.pages:
+            if p.id not in prim_page_ids:
+                primary.pages.append(p)
+
+        # Delete duplicate topic in Telegram if exists
+        if dup.source_chat_id and dup.source_topic_id:
+            try:
+                from app.infrastructure.telegram.telegram_client import telegram_client
+                await telegram_client.delete_forum_topic(dup.source_chat_id, dup.source_topic_id)
+            except Exception as e:
+                logger.warning(f"Failed to delete duplicate movie topic: {e}")
+
+        # Delete duplicate from DB
+        await db.delete(dup)
+        await db.commit()
+        await delete_cache_pattern("cache:movies:*")
+
+        return {"success": True, "message": f"Kino muvaffaqiyatli birlashtirildi (ID: {primary.id}) va dublikat o'chirildi."}
+
+    else:
+        # Series merge
+        stmt_p = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes), selectinload(SeriesModel.categories), selectinload(SeriesModel.pages)).where(SeriesModel.id == payload.primary_id)
+        primary = (await db.execute(stmt_p)).scalar_one_or_none()
+        stmt_d = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations), selectinload(SeriesModel.categories), selectinload(SeriesModel.pages)).where(SeriesModel.id == payload.duplicate_id)
+        dup = (await db.execute(stmt_d)).scalar_one_or_none()
+
+        if not primary or not dup:
+            raise HTTPException(status_code=404, detail="Asosiy yoki dublikat serial topilmadi.")
+
+        # Re-link missing seasons/episodes
+        prim_season_map = {s.season_number: s for s in (primary.seasons or [])}
+        for d_sz in (dup.seasons or []):
+            if d_sz.season_number not in prim_season_map:
+                d_sz.series_id = primary.id
+            else:
+                target_sz = prim_season_map[d_sz.season_number]
+                target_ep_nums = {ep.episode_number for ep in (target_sz.episodes or [])}
+                for ep in (d_sz.episodes or []):
+                    if ep.episode_number not in target_ep_nums:
+                        ep.season_id = target_sz.id
+
+        # Delete duplicate series from DB
+        await db.delete(dup)
+        await db.commit()
+        await delete_cache_pattern("cache:series:*")
+
+        return {"success": True, "message": f"Serial muvaffaqiyatli birlashtirildi (ID: {primary.id}) va dublikat o'chirildi."}
+
+
+@router.get("/sequence-gaps")
+@limiter.limit("30/minute")
+async def check_sequence_gaps(
+    request: Request,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """
+    Checks all series seasons for missing episode numbers in the sequence (e.g. 1 to 41 gap).
+    """
+    stmt = (
+        select(SeriesModel)
+        .options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes))
+        .order_by(SeriesModel.id.desc())
+    )
+    result = await db.execute(stmt)
+    series_list = result.scalars().all()
+
+    gaps = []
+    for s in series_list:
+        for sz in (s.seasons or []):
+            episodes = sz.episodes or []
+            if len(episodes) < 2:
+                continue
+            ep_numbers = sorted([e.episode_number for e in episodes])
+            max_num = max(ep_numbers)
+            if max_num > len(ep_numbers):
+                missing = sorted(list(set(range(1, max_num + 1)) - set(ep_numbers)))
+                if missing:
+                    gaps.append({
+                        "series_id": s.id,
+                        "series_title": s.title,
+                        "season_id": sz.id,
+                        "season_number": sz.season_number,
+                        "total_episodes": len(episodes),
+                        "max_episode_number": max_num,
+                        "missing_count": len(missing),
+                        "missing_episodes": missing[:20],  # preview first 20
+                        "gap_summary": f"1 dan {max_num} gacha bo'lgan ketma-ketlikda {len(missing)} ta qism yetishmayapti",
+                    })
+
+    return {"total_gaps": len(gaps), "items": gaps}
+
+
+@router.get("/incomplete-series")
+@limiter.limit("30/minute")
+async def check_incomplete_series(
+    request: Request,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """
+    Finds series where season.episode_count is known but actual episodes in DB is fewer.
+    Sorted by biggest gap descending.
+    """
+    stmt = (
+        select(SeriesModel)
+        .options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes))
+        .order_by(SeriesModel.id.desc())
+    )
+    result = await db.execute(stmt)
+    series_list = result.scalars().all()
+
+    incomplete = []
+    for s in series_list:
+        for sz in (s.seasons or []):
+            if sz.episode_count and sz.episode_count > 0:
+                actual_count = len(sz.episodes or [])
+                if actual_count < sz.episode_count:
+                    gap = sz.episode_count - actual_count
+                    incomplete.append({
+                        "series_id": s.id,
+                        "series_title": s.title,
+                        "season_number": sz.season_number,
+                        "expected_episodes": sz.episode_count,
+                        "existing_episodes": actual_count,
+                        "missing_count": gap,
+                        "poster_url": s.poster_url,
+                    })
+
+    incomplete.sort(key=lambda x: x["missing_count"], reverse=True)
+    return {"total_incomplete": len(incomplete), "items": incomplete}
+
+
+@router.get("/orphan-episodes")
+@limiter.limit("30/minute")
+async def check_orphan_episodes(
+    request: Request,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """
+    Finds episodes that don't belong to any valid season or whose season doesn't belong to any series.
+    """
+    # Episodes whose season_id doesn't exist in seasons table
+    stmt = (
+        select(EpisodeModel)
+        .outerjoin(SeasonModel, EpisodeModel.season_id == SeasonModel.id)
+        .where(SeasonModel.id.is_(None))
+    )
+    orphans = (await db.execute(stmt)).scalars().all()
+
+    return {
+        "total_orphans": len(orphans),
+        "items": [
+            {
+                "id": ep.id,
+                "code": ep.code,
+                "display_code": ep.display_code,
+                "season_id": ep.season_id,
+                "created_at": ep.created_at.isoformat() if ep.created_at else None,
+            }
+            for ep in orphans
+        ]
+    }
+
+
+@router.delete("/cascade-delete/{content_type}/{item_id}", status_code=status.HTTP_200_OK)
+async def cascade_delete_item(
+    content_type: Literal["movie", "series"],
+    item_id: int,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """
+    1-Click Full Cascade Deletion:
+    Deletes Telegram Forum Topic + DB entries + Caches.
+    """
+    from app.infrastructure.telegram.telegram_client import telegram_client
+
+    topic_deleted = False
+    if content_type == "movie":
+        movie = await db.get(MovieModel, item_id)
+        if not movie:
+            raise HTTPException(status_code=404, detail="Kino topilmadi")
+
+        if movie.source_chat_id and movie.source_topic_id:
+            try:
+                topic_deleted = await telegram_client.delete_forum_topic(movie.source_chat_id, movie.source_topic_id)
+            except Exception as e:
+                logger.warning(f"Cascade topic delete failed: {e}")
+
+        await db.delete(movie)
+        await db.commit()
+        await delete_cache_pattern("cache:movies:*")
+        return {"success": True, "message": "Kino va barcha ma'lumotlari kaskad tarzda o'chirildi.", "telegram_topic_deleted": topic_deleted}
+
+    else:
+        stmt = select(SeriesModel).options(selectinload(SeriesModel.source)).where(SeriesModel.id == item_id)
+        res = await db.execute(stmt)
+        series = res.scalar_one_or_none()
+        if not series:
+            raise HTTPException(status_code=404, detail="Serial topilmadi")
+
+        if series.source and series.source.chat_id and series.source.topic_id:
+            try:
+                topic_deleted = await telegram_client.delete_forum_topic(series.source.chat_id, series.source.topic_id)
+            except Exception as e:
+                logger.warning(f"Cascade topic delete failed: {e}")
+
+        await db.delete(series)
+        await db.commit()
+        await delete_cache_pattern("cache:series:*")
+        return {"success": True, "message": "Serial va uning fasllari, qismlari kaskad tarzda o'chirildi.", "telegram_topic_deleted": topic_deleted}
+

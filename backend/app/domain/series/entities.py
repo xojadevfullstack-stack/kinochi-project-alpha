@@ -87,6 +87,9 @@ class SeriesBase(BaseModel):
     cast: str | None = None
     status: str = "ongoing"
     is_18_plus: bool = False
+    source_type: str | None = "uzmovi"
+    custom_source_name: str | None = None
+    custom_source_logo: str | None = None
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
@@ -108,6 +111,9 @@ class SeriesUpdate(BaseModel):
     source_id: int | None = None
     status: str | None = None
     is_18_plus: bool | None = None
+    source_type: str | None = None
+    custom_source_name: str | None = None
+    custom_source_logo: str | None = None
 
 from app.domain.series.source_entities import SourceResponse
 

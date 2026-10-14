@@ -277,4 +277,26 @@ class APIClient:
 
         return None
 
+    async def toggle_series_subscription(self, series_id: int, telegram_user_id: int) -> Dict[str, Any]:
+        """Subscribes or unsubscribes a user to series new episode alerts."""
+        try:
+            resp = await self.client.post(f"/series/{series_id}/subscribe", json={"telegram_user_id": telegram_user_id})
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.error(f"Error toggling series subscription: {e}")
+            return {"is_subscribed": False}
+
+    async def check_series_subscription(self, series_id: int, telegram_user_id: int) -> bool:
+        """Checks if user is subscribed to series new episode alerts."""
+        try:
+            resp = await self.client.get(f"/series/{series_id}/subscription-status", params={"telegram_user_id": telegram_user_id})
+            if resp.status_code == 200:
+                return resp.json().get("is_subscribed", False)
+            return False
+        except Exception as e:
+            logger.error(f"Error checking series subscription: {e}")
+            return False
+
 api_client = APIClient()
+

@@ -116,9 +116,30 @@ export default function AuditPage() {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoMovieId, setVideoMovieId] = useState<number | null>(null);
 
-  // Delete Confirmation
+  // Main Audit Tabs
+  const [activeMainTab, setActiveMainTab] = useState<"quality" | "duplicates" | "gaps" | "incomplete" | "orphans">("quality");
+
+  // Duplicates state
+  const [duplicatesData, setDuplicatesData] = useState<{ total_groups: number; groups: any[] } | null>(null);
+  const [duplicatesLoading, setDuplicatesLoading] = useState(false);
+  const [mergingLoading, setMergingLoading] = useState(false);
+
+  // Sequence Gaps state
+  const [gapsData, setGapsData] = useState<{ total_gaps: number; items: any[] } | null>(null);
+  const [gapsLoading, setGapsLoading] = useState(false);
+
+  // Incomplete Series state
+  const [incompleteData, setIncompleteData] = useState<{ total_incomplete: number; items: any[] } | null>(null);
+  const [incompleteLoading, setIncompleteLoading] = useState(false);
+
+  // Orphan Episodes state
+  const [orphansData, setOrphansData] = useState<{ total_orphans: number; items: any[] } | null>(null);
+  const [orphansLoading, setOrphansLoading] = useState(false);
+
+  // Delete Confirmation & Blacklist option
   const [deletingItem, setDeletingItem] = useState<AuditItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [alsoBlacklist, setAlsoBlacklist] = useState(false);
 
   const PAGE_SIZE = 50;
 
@@ -138,8 +159,10 @@ export default function AuditPage() {
 
   // Reload items when content type, issue filter, or search changes
   useEffect(() => {
-    loadItems(true);
-  }, [contentType, issueType, debouncedQuery]);
+    if (activeMainTab === "quality") {
+      loadItems(true);
+    }
+  }, [contentType, issueType, debouncedQuery, activeMainTab]);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -275,20 +298,139 @@ export default function AuditPage() {
     }
   };
 
-  // Delete item
+  // Duplicates loader
+  const loadDuplicates = async (type: "movie" | "series" = contentType) => {
+    try {
+      setDuplicatesLoading(true);
+      const data = await fetchApi(`/audit/duplicates?content_type=${type}`);
+      setDuplicatesData(data);
+    } catch (e: any) {
+      showToast("Dublikatlarni yuklashda xatolik: " + e.message, "error");
+    } finally {
+      setDuplicatesLoading(false);
+    }
+  };
+
+  const handleMergeDuplicates = async (primaryId: number, duplicateId: number, type: "movie" | "series") => {
+    try {
+      setMergingLoading(true);
+      const res = await fetchApi("/audit/merge-duplicates", {
+        method: "POST",
+        body: JSON.stringify({
+          content_type: type,
+          primary_id: primaryId,
+          duplicate_id: duplicateId,
+        }),
+      });
+      showToast(res.message || "Muvaffaqiyatli birlashtirildi!", "success");
+      await loadDuplicates(type);
+      await loadStats();
+    } catch (e: any) {
+      showToast("Birlashtirishda xatolik: " + e.message, "error");
+    } finally {
+      setMergingLoading(false);
+    }
+  };
+
+  // Sequence gaps loader
+  const loadGaps = async () => {
+    try {
+      setGapsLoading(true);
+      const data = await fetchApi("/audit/sequence-gaps");
+      setGapsData(data);
+    } catch (e: any) {
+      showToast("Ketma-ketlik uzilishlarini yuklashda xatolik: " + e.message, "error");
+    } finally {
+      setGapsLoading(false);
+    }
+  };
+
+  // Incomplete series loader
+  const loadIncomplete = async () => {
+    try {
+      setIncompleteLoading(true);
+      const data = await fetchApi("/audit/incomplete-series");
+      setIncompleteData(data);
+    } catch (e: any) {
+      showToast("Chala seriallarni yuklashda xatolik: " + e.message, "error");
+    } finally {
+      setIncompleteLoading(false);
+    }
+  };
+
+  // Orphan episodes loader
+  const loadOrphans = async () => {
+    try {
+      setOrphansLoading(true);
+      const data = await fetchApi("/audit/orphan-episodes");
+      setOrphansData(data);
+    } catch (e: any) {
+      showToast("Begona qismlarni yuklashda xatolik: " + e.message, "error");
+    } finally {
+      setOrphansLoading(false);
+    }
+  };
+
+  // Blacklist helper
+  const handleAddToBlacklist = async (title: string, reason = "Audit orqali qora ro'yxatga olindi") => {
+    try {
+      await fetchApi("/blacklist", {
+        method: "POST",
+        body: JSON.stringify({ title, reason }),
+      });
+      showToast(`"${title}" qora ro'yxatga qo'shildi! Scraper uni qayta yuklamaydi.`, "success");
+    } catch (err: any) {
+      showToast("Qora ro'yxatga qo'shishda xatolik: " + err.message, "error");
+    }
+  };
+
+  // Main tab change watcher
+  useEffect(() => {
+    if (activeMainTab === "duplicates") {
+      loadDuplicates(contentType);
+    } else if (activeMainTab === "gaps") {
+      loadGaps();
+    } else if (activeMainTab === "incomplete") {
+      loadIncomplete();
+    } else if (activeMainTab === "orphans") {
+      loadOrphans();
+    }
+  }, [activeMainTab, contentType]);
+
+  // Full Cascade Delete (DB + Telegram Topic + Cache)
   const handleDeleteItem = async () => {
     if (!deletingItem) return;
     setIsDeleting(true);
     try {
-      const endpoint =
-        deletingItem.content_type === "movie"
-          ? `/movies/${deletingItem.id}`
-          : `/series/${deletingItem.id}`;
-      await fetchApi(endpoint, { method: "DELETE" });
-      showToast(`"${deletingItem.title}" muvaffaqiyatli o'chirildi`, "success");
+      const res = await fetchApi(
+        `/audit/cascade-delete/${deletingItem.content_type}/${deletingItem.id}`,
+        { method: "DELETE" }
+      );
+      if (alsoBlacklist) {
+        await fetchApi("/blacklist", {
+          method: "POST",
+          body: JSON.stringify({
+            title: deletingItem.title,
+            reason: "Audit orqali kaskad o'chirilib qora ro'yxatga kiritildi",
+          }),
+        });
+      }
+      showToast(
+        res.message || `"${deletingItem.title}" to'liq kaskad tarzda o'chirildi!`,
+        "success"
+      );
       setDeletingItem(null);
+      setAlsoBlacklist(false);
       await loadStats();
-      await loadItems(true);
+      if (activeMainTab === "quality") {
+        await loadItems(true);
+      } else if (activeMainTab === "duplicates") {
+        await loadDuplicates(contentType);
+      } else if (activeMainTab === "gaps") {
+        await loadGaps();
+      } else if (activeMainTab === "incomplete") {
+        await loadIncomplete();
+      }
     } catch (err: any) {
       showToast("O'chirishda xatolik: " + err.message, "error");
     } finally {
@@ -382,13 +524,99 @@ export default function AuditPage() {
         </div>
       </div>
 
-      {/* Content Type Selector (Kinolar vs Seriallar) */}
-      <div className="flex border-b border-white/10 gap-2">
+      {/* Main Audit Tabs */}
+      <div className="flex border-b border-white/10 gap-2 overflow-x-auto custom-scrollbar">
         <button
-          onClick={() => {
-            setContentType("movie");
-            setIssueType("all_issues");
-          }}
+          onClick={() => setActiveMainTab("quality")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+            activeMainTab === "quality"
+              ? "border-primary-container text-primary-container bg-primary-container/10"
+              : "border-transparent text-text-secondary hover:text-white"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">verified</span>
+          <span>Baza Sifati (Auditi)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab("duplicates")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+            activeMainTab === "duplicates"
+              ? "border-primary-container text-primary-container bg-primary-container/10"
+              : "border-transparent text-text-secondary hover:text-white"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">content_copy</span>
+          <span>Dublikatlar</span>
+          {duplicatesData && duplicatesData.total_groups > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono">
+              {duplicatesData.total_groups}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab("gaps")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+            activeMainTab === "gaps"
+              ? "border-primary-container text-primary-container bg-primary-container/10"
+              : "border-transparent text-text-secondary hover:text-white"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">rule</span>
+          <span>Ketma-ketlik Uzilishlari (Gaps)</span>
+          {gapsData && gapsData.total_gaps > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-mono">
+              {gapsData.total_gaps}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab("incomplete")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+            activeMainTab === "incomplete"
+              ? "border-primary-container text-primary-container bg-primary-container/10"
+              : "border-transparent text-text-secondary hover:text-white"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">pending_actions</span>
+          <span>Chala Seriallar</span>
+          {incompleteData && incompleteData.total_incomplete > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-yellow-500/20 text-yellow-300 font-mono">
+              {incompleteData.total_incomplete}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab("orphans")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+            activeMainTab === "orphans"
+              ? "border-primary-container text-primary-container bg-primary-container/10"
+              : "border-transparent text-text-secondary hover:text-white"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">link_off</span>
+          <span>Egasiz Qismlar</span>
+          {orphansData && orphansData.total_orphans > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 font-mono">
+              {orphansData.total_orphans}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Quality Audit Tab Content */}
+      {activeMainTab === "quality" && (
+        <div className="space-y-6">
+          {/* Content Type Selector (Kinolar vs Seriallar) */}
+          <div className="flex border-b border-white/10 gap-2">
+            <button
+              onClick={() => {
+                setContentType("movie");
+                setIssueType("all_issues");
+              }}
           className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-medium text-sm transition-all ${
             contentType === "movie"
               ? "border-primary-container text-primary-container bg-primary-container/10 rounded-t-xl"
@@ -826,6 +1054,417 @@ export default function AuditPage() {
           </div>
         )}
       </div>
+      </div>
+      )}
+
+      {/* Duplicates Tab */}
+      {activeMainTab === "duplicates" && (
+        <div className="space-y-6">
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest border border-white/10 p-4 rounded-2xl">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setContentType("movie");
+                  loadDuplicates("movie");
+                }}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  contentType === "movie"
+                    ? "bg-primary-container text-on-primary-container"
+                    : "bg-white/5 text-text-secondary hover:text-white"
+                }`}
+              >
+                Kinolar Dublikatlari
+              </button>
+              <button
+                onClick={() => {
+                  setContentType("series");
+                  loadDuplicates("series");
+                }}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  contentType === "series"
+                    ? "bg-primary-container text-on-primary-container"
+                    : "bg-white/5 text-text-secondary hover:text-white"
+                }`}
+              >
+                Seriallar Dublikatlari
+              </button>
+            </div>
+
+            <button
+              onClick={() => loadDuplicates(contentType)}
+              disabled={duplicatesLoading}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-secondary hover:text-white flex items-center gap-1.5 transition-all w-fit"
+            >
+              <span className={`material-symbols-outlined text-sm ${duplicatesLoading ? "animate-spin" : ""}`}>
+                refresh
+              </span>
+              <span>Qayta tekshirish</span>
+            </button>
+          </div>
+
+          {/* Duplicates content */}
+          {duplicatesLoading ? (
+            <div className="p-12 text-center text-text-secondary">
+              <span className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin inline-block mb-3"></span>
+              <p className="text-sm">Dublikatlar tahlil qilinmoqda...</p>
+            </div>
+          ) : !duplicatesData || duplicatesData.groups.length === 0 ? (
+            <div className="metric-card p-12 text-center rounded-2xl border border-white/5">
+              <span className="material-symbols-outlined text-4xl text-emerald-400 mb-2">task_alt</span>
+              <h3 className="text-lg font-bold text-text-primary">Dublikatlar topilmadi</h3>
+              <p className="text-xs text-text-secondary mt-1">Barcha {contentType === "movie" ? "kinolar" : "seriallar"} unikal va toza.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {duplicatesData.groups.map((group, gIdx) => (
+                <div key={gIdx} className="metric-card p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-amber-400 text-lg">call_split</span>
+                      <span className="text-sm font-bold text-amber-300">{group.match_reason}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 font-mono text-text-secondary">
+                        {group.items.length} ta nusxa
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {group.items.map((item: any, itIdx: number) => {
+                      const otherItem = group.items.find((x: any) => x.id !== item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-surface-container-lowest border border-white/10 rounded-xl p-4 flex flex-col justify-between gap-3 relative"
+                        >
+                          <div className="flex gap-3">
+                            {item.poster_url ? (
+                              <img src={item.poster_url} alt="" className="w-14 h-20 object-cover rounded-lg border border-white/10 shrink-0" />
+                            ) : (
+                              <div className="w-14 h-20 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center text-text-secondary shrink-0">
+                                🎬
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-sm text-text-primary truncate">{item.title}</span>
+                                {itIdx === 0 && (
+                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold">
+                                    Birlamchi
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-text-secondary mt-1 space-y-0.5">
+                                <div>ID: #{item.id} {item.code ? `• Kod: ${item.code}` : ""} {item.release_year ? `• Yil: ${item.release_year}` : ""}</div>
+                                {item.has_video !== undefined && (
+                                  <div className={item.has_video ? "text-emerald-400" : "text-rose-400"}>
+                                    {item.has_video ? `✓ Video bor (${item.translations_count || 1} ta tarjima)` : "✗ Video yuklanmagan"}
+                                  </div>
+                                )}
+                                {item.episodes_count !== undefined && (
+                                  <div className="text-sky-400">
+                                    {item.seasons_count} fasl, {item.episodes_count} qism
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+                            {otherItem && (
+                              <button
+                                type="button"
+                                disabled={mergingLoading}
+                                onClick={() => handleMergeDuplicates(item.id, otherItem.id, contentType)}
+                                className="px-3 py-1.5 rounded-lg bg-primary-container/20 hover:bg-primary-container/30 border border-primary-container/40 text-primary-container text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-50"
+                                title="Buni asosiy qilib, ikkinchisini unga birlashtirish va dublikatni o'chirish"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">merge_type</span>
+                                <span>Bunga Birlashtirish</span>
+                              </button>
+                            )}
+
+                            <div className="flex items-center gap-1.5 ml-auto">
+                              <button
+                                type="button"
+                                onClick={() => handleAddToBlacklist(item.title)}
+                                className="px-2 py-1.5 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/20 text-xs font-medium transition-colors"
+                                title="Qora ro'yxatga olish (kelgusida scraper grab qilmaydi)"
+                              >
+                                🚫 Qora ro'yxat
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDeletingItem({
+                                    id: item.id,
+                                    title: item.title,
+                                    content_type: contentType,
+                                  } as any)
+                                }
+                                className="px-2 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-medium transition-colors"
+                                title="Kaskad o'chirish"
+                              >
+                                🗑️ O'chirish
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sequence Gaps Tab */}
+      {activeMainTab === "gaps" && (
+        <div className="space-y-4">
+          <div className="metric-card p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-text-primary">Qismlar Ketma-ketligidagi Uzilishlar (Sequence Gaps)</h3>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Masalan: 1-qismdan so'ng 41-qism kelib qolgan (2..40 yetishmayotgan) holatlar
+              </p>
+            </div>
+            <button
+              onClick={loadGaps}
+              disabled={gapsLoading}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-secondary hover:text-white flex items-center gap-1.5 transition-all w-fit"
+            >
+              <span className={`material-symbols-outlined text-sm ${gapsLoading ? "animate-spin" : ""}`}>refresh</span>
+              <span>Yangilash</span>
+            </button>
+          </div>
+
+          {gapsLoading ? (
+            <div className="p-12 text-center text-text-secondary">
+              <span className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin inline-block mb-3"></span>
+              <p className="text-sm">Ketma-ketlik tekshirilmoqda...</p>
+            </div>
+          ) : !gapsData || gapsData.items.length === 0 ? (
+            <div className="metric-card p-12 text-center rounded-2xl border border-white/5">
+              <span className="material-symbols-outlined text-4xl text-emerald-400 mb-2">check_circle</span>
+              <h3 className="text-lg font-bold text-text-primary">Uzilishlar topilmadi</h3>
+              <p className="text-xs text-text-secondary mt-1">Barcha seriallarda qismlar ketma-ketligi to'g'ri.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto custom-scrollbar border border-white/10 rounded-2xl">
+              <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead className="bg-surface-container-lowest border-b border-white/10 text-text-secondary">
+                  <tr>
+                    <th className="px-4 py-3">Serial Nomi</th>
+                    <th className="px-4 py-3">Fasl</th>
+                    <th className="px-4 py-3">Mavjud qismlar</th>
+                    <th className="px-4 py-3">Maksimal qism</th>
+                    <th className="px-4 py-3">Yetishmayotgan soni</th>
+                    <th className="px-4 py-3">Qismlar ro'yxati</th>
+                    <th className="px-4 py-3 text-right">Amallar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 bg-surface-container-high/30">
+                  {gapsData.items.map((gap: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-white/5 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-text-primary">{gap.series_title}</td>
+                      <td className="px-4 py-3 font-mono">{gap.season_number}-fasl</td>
+                      <td className="px-4 py-3 font-mono text-sky-400">{gap.total_episodes} ta</td>
+                      <td className="px-4 py-3 font-mono text-amber-400">{gap.max_episode_number}-qism</td>
+                      <td className="px-4 py-3 font-mono text-rose-400 font-bold">{gap.missing_count} ta yetishmaydi</td>
+                      <td className="px-4 py-3 text-text-secondary font-mono text-xs max-w-xs truncate">
+                        {gap.missing_episodes.join(", ")}
+                        {gap.missing_count > 20 ? "..." : ""}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/series?id=${gap.series_id}`}
+                            className="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 text-xs"
+                          >
+                            Ko'rish
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleAddToBlacklist(gap.series_title)}
+                            className="px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 text-xs"
+                          >
+                            Qora ro'yxat
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDeletingItem({
+                                id: gap.series_id,
+                                title: gap.series_title,
+                                content_type: "series",
+                              } as any)
+                            }
+                            className="px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs"
+                          >
+                            O'chirish
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Incomplete Series Tab */}
+      {activeMainTab === "incomplete" && (
+        <div className="space-y-4">
+          <div className="metric-card p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-text-primary">Chala Seriallar Nazorati (Incomplete Series)</h3>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Kutilgan qismlar soni mavjud qismlardan ko'p bo'lgan seriallar ro'yxati
+              </p>
+            </div>
+            <button
+              onClick={loadIncomplete}
+              disabled={incompleteLoading}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-secondary hover:text-white flex items-center gap-1.5 transition-all w-fit"
+            >
+              <span className={`material-symbols-outlined text-sm ${incompleteLoading ? "animate-spin" : ""}`}>refresh</span>
+              <span>Yangilash</span>
+            </button>
+          </div>
+
+          {incompleteLoading ? (
+            <div className="p-12 text-center text-text-secondary">
+              <span className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin inline-block mb-3"></span>
+              <p className="text-sm">Chala seriallar tahlil qilinmoqda...</p>
+            </div>
+          ) : !incompleteData || incompleteData.items.length === 0 ? (
+            <div className="metric-card p-12 text-center rounded-2xl border border-white/5">
+              <span className="material-symbols-outlined text-4xl text-emerald-400 mb-2">task_alt</span>
+              <h3 className="text-lg font-bold text-text-primary">Barcha seriallar to'liq</h3>
+              <p className="text-xs text-text-secondary mt-1">Chala qolgan seriallar aniqlanmadi.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto custom-scrollbar border border-white/10 rounded-2xl">
+              <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead className="bg-surface-container-lowest border-b border-white/10 text-text-secondary">
+                  <tr>
+                    <th className="px-4 py-3">Serial</th>
+                    <th className="px-4 py-3">Fasl</th>
+                    <th className="px-4 py-3">Kutilgan</th>
+                    <th className="px-4 py-3">Yuklangan</th>
+                    <th className="px-4 py-3">Yetishmayotgan</th>
+                    <th className="px-4 py-3 text-right">Amallar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 bg-surface-container-high/30">
+                  {incompleteData.items.map((item: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-white/5 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          {item.poster_url && (
+                            <img src={item.poster_url} alt="" className="w-8 h-12 object-cover rounded border border-white/10" />
+                          )}
+                          <span className="font-semibold text-text-primary">{item.series_title}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-mono">{item.season_number}-fasl</td>
+                      <td className="px-4 py-3 font-mono text-text-secondary">{item.expected_episodes} ta</td>
+                      <td className="px-4 py-3 font-mono text-emerald-400">{item.existing_episodes} ta</td>
+                      <td className="px-4 py-3 font-mono text-rose-400 font-bold">{item.missing_count} ta yetishmaydi</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleAddToBlacklist(item.series_title)}
+                            className="px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 text-xs"
+                          >
+                            Qora ro'yxat
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDeletingItem({
+                                id: item.series_id,
+                                title: item.series_title,
+                                content_type: "series",
+                              } as any)
+                            }
+                            className="px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs"
+                          >
+                            O'chirish
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Orphan Episodes Tab */}
+      {activeMainTab === "orphans" && (
+        <div className="space-y-4">
+          <div className="metric-card p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-text-primary">Egasiz Qismlar Nazorati (Orphan Episodes)</h3>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Hech qaysi mavjud fasl yoki serialga ulanmagan qismlar
+              </p>
+            </div>
+            <button
+              onClick={loadOrphans}
+              disabled={orphansLoading}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-secondary hover:text-white flex items-center gap-1.5 transition-all w-fit"
+            >
+              <span className={`material-symbols-outlined text-sm ${orphansLoading ? "animate-spin" : ""}`}>refresh</span>
+              <span>Yangilash</span>
+            </button>
+          </div>
+
+          {orphansLoading ? (
+            <div className="p-12 text-center text-text-secondary">
+              <span className="w-8 h-8 border-2 border-primary-container border-t-transparent rounded-full animate-spin inline-block mb-3"></span>
+              <p className="text-sm">Egasiz qismlar tekshirilmoqda...</p>
+            </div>
+          ) : !orphansData || orphansData.items.length === 0 ? (
+            <div className="metric-card p-12 text-center rounded-2xl border border-white/5">
+              <span className="material-symbols-outlined text-4xl text-emerald-400 mb-2">verified</span>
+              <h3 className="text-lg font-bold text-text-primary">Egasiz qismlar topilmadi</h3>
+              <p className="text-xs text-text-secondary mt-1">Barcha qismlar to'g'ri fasllarga biriktirilgan.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto custom-scrollbar border border-white/10 rounded-2xl">
+              <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead className="bg-surface-container-lowest border-b border-white/10 text-text-secondary">
+                  <tr>
+                    <th className="px-4 py-3">Qism ID</th>
+                    <th className="px-4 py-3">Kodi</th>
+                    <th className="px-4 py-3">Bog'langan Fasl ID</th>
+                    <th className="px-4 py-3">Yaratilgan vaqti</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 bg-surface-container-high/30">
+                  {orphansData.items.map((ep: any) => (
+                    <tr key={ep.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-4 py-3 font-mono font-bold text-rose-400">#{ep.id}</td>
+                      <td className="px-4 py-3 font-mono">{ep.display_code || ep.code}</td>
+                      <td className="px-4 py-3 font-mono text-text-secondary">Fasl #{ep.season_id} (Mavjud emas)</td>
+                      <td className="px-4 py-3 text-text-secondary text-xs">{ep.created_at || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Quick Edit Modal */}
       {editingItem && (
@@ -1062,14 +1701,36 @@ export default function AuditPage() {
           <div className="bg-surface-container-lowest border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-red-400">
               <span className="material-symbols-outlined text-3xl">warning</span>
-              <h3 className="font-bold text-lg text-text-primary">O'chirishni tasdiqlang</h3>
+              <h3 className="font-bold text-lg text-text-primary">Kaskad O'chirishni tasdiqlang</h3>
             </div>
             <p className="text-sm text-text-secondary">
-              Haqiqatan ham <strong className="text-text-primary">"{deletingItem.title}"</strong> ni butunlay o'chirib tashlamoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi.
+              Haqiqatan ham <strong className="text-text-primary">"{deletingItem.title}"</strong> ni butunlay o'chirib tashlamoqchimisiz?
             </p>
+            <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl text-xs text-red-300 space-y-1">
+              <div className="font-bold">⚠️ Kaskad o'chirish:</div>
+              <div>• Ma'lumotlar bazasidan to'liq o'chiriladi</div>
+              <div>• Telegram Forumdagi tegishli Topic o'chiriladi</div>
+              <div>• Kesh tozalab yuboriladi</div>
+            </div>
+
+            <div className="pt-2 border-t border-white/10">
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs text-text-secondary hover:text-white">
+                <input
+                  type="checkbox"
+                  checked={alsoBlacklist}
+                  onChange={(e) => setAlsoBlacklist(e.target.checked)}
+                  className="rounded border-white/20 bg-surface-container-lowest text-rose-500 focus:ring-0 cursor-pointer w-4 h-4"
+                />
+                <span>Kelgusida scraper qayta yuklamasligi uchun <strong>Qora ro'yxatga</strong> qo'shish</span>
+              </label>
+            </div>
+
             <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={() => setDeletingItem(null)}
+                onClick={() => {
+                  setDeletingItem(null);
+                  setAlsoBlacklist(false);
+                }}
                 disabled={isDeleting}
                 className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm font-medium transition-colors"
               >

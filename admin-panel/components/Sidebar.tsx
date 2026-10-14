@@ -33,6 +33,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     { name: "Kinolar", href: "/movies", icon: "movie" },
     { name: "Seriallar", href: "/series", icon: "live_tv" },
     { name: "Kontent Auditi", href: "/audit", icon: "fact_check" },
+    { name: "Qora Ro'yxat", href: "/blacklist", icon: "block" },
     { name: "Kategoriyalar", href: "/categories", icon: "category" },
     { name: "Xronologiyalar", href: "/collections", icon: "auto_awesome_motion" },
     { name: "Sahifalar", href: "/pages", icon: "pages" },

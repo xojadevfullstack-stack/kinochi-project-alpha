@@ -22,6 +22,9 @@ export type CatalogItem = {
   is_18_plus?: boolean;
   created_at?: string;
   categories?: { id: number; name: string }[];
+  source_type?: string;
+  custom_source_name?: string | null;
+  custom_source_logo?: string | null;
 };
 
 export async function getPages(): Promise<PageResponse[]> {

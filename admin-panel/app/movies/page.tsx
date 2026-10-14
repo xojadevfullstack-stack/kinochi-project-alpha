@@ -29,6 +29,9 @@ type Movie = {
   source_topic_id?: number | null;
   source_link?: string | null;
   translations: { id: number; language: string; telegram_file_id: string }[];
+  source_type?: string;
+  custom_source_name?: string | null;
+  custom_source_logo?: string | null;
 };
 
 export default function MoviesPage() {
@@ -39,6 +42,11 @@ export default function MoviesPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
+
+  // Bulk Reassign states
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkPageId, setBulkPageId] = useState<string>("");
+  const [bulkReassigning, setBulkReassigning] = useState<boolean>(false);
 
   // Video Modal states
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -78,6 +86,9 @@ export default function MoviesPage() {
     page_ids: [] as number[],
     source_id: "" as number | "",
     is_18_plus: false,
+    source_type: "uzmovi" as string,
+    custom_source_name: "",
+    custom_source_logo: "",
   };
 
   const [totalMovies, setTotalMovies] = useState<number>(0);
@@ -303,6 +314,9 @@ export default function MoviesPage() {
       ...form,
       runtime: form.duration_minutes,
       source_id: form.source_id === "" ? null : form.source_id,
+      source_type: form.source_type || "uzmovi",
+      custom_source_name: form.source_type === "boshqa" ? (form.custom_source_name.trim() || null) : null,
+      custom_source_logo: form.source_type === "boshqa" ? (form.custom_source_logo.trim() || null) : null,
     };
 
     try {
@@ -410,6 +424,9 @@ export default function MoviesPage() {
       page_ids: m.pages?.map((p) => p.id) || [],
       source_id: matchedSourceId,
       is_18_plus: m.is_18_plus || false,
+      source_type: m.source_type || "uzmovi",
+      custom_source_name: m.custom_source_name || "",
+      custom_source_logo: m.custom_source_logo || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -942,6 +959,66 @@ export default function MoviesPage() {
             {errorMsg && <p className="text-red-400 text-xs sm:text-sm mt-1">{errorMsg}</p>}
           </div>
 
+          {/* Ovoz / Studiya Manbasi (Source Branding: 1. Uzmovi, 2. Asilmedia, 3. Boshqa) */}
+          <div className="md:col-span-2 bg-surface-container-high/30 border border-white/5 rounded-xl p-4 space-y-3">
+            <label className="block text-xs font-semibold text-text-secondary uppercase">
+              Ovoz / Studiya Manbasi (Source Branding)
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: "uzmovi", label: "Uzmovi", logo: "https://uzmovi.com/favicon.ico" },
+                { id: "asilmedia", label: "Asilmedia", logo: "https://asilmedia.org/favicon.ico" },
+                { id: "boshqa", label: "Boshqa studiya / Manba" },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, source_type: opt.id })}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all ${
+                    form.source_type === opt.id
+                      ? "bg-primary-container/20 text-primary-container border-primary-container"
+                      : "bg-surface-container-lowest text-text-secondary border-white/10 hover:text-white"
+                  }`}
+                >
+                  {opt.logo && (
+                    <img
+                      src={opt.logo}
+                      alt=""
+                      className="w-4 h-4 rounded-full object-contain"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  )}
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {form.source_type === "boshqa" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block text-[11px] text-text-secondary mb-1">Studiya nomi</label>
+                  <input
+                    type="text"
+                    placeholder="Masalan: A-Media, Tarjima Kinolar..."
+                    value={form.custom_source_name}
+                    onChange={(e) => setForm({ ...form, custom_source_name: e.target.value })}
+                    className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-2.5 text-xs text-text-primary focus:border-primary-container"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-text-secondary mb-1">Studiya Logotipi (URL yoki havola)</label>
+                  <input
+                    type="text"
+                    placeholder="https://.../logo.png"
+                    value={form.custom_source_logo}
+                    onChange={(e) => setForm({ ...form, custom_source_logo: e.target.value })}
+                    className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-2.5 text-xs text-text-primary focus:border-primary-container"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 18+ Yosh chegarasi Toggle */}
           <div className="md:col-span-2 bg-red-950/20 border border-red-500/30 rounded-xl p-3.5">
             <label className="flex items-center justify-between cursor-pointer">
@@ -1077,10 +1154,85 @@ export default function MoviesPage() {
           </div>
         </div>
 
+        {/* Bulk Reassign Toolbar */}
+        {selectedIds.length > 0 && (
+          <div className="p-3.5 bg-primary-container/15 border-b border-primary-container/30 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary-container">check_circle</span>
+              <span className="text-xs sm:text-sm font-bold text-white">
+                {selectedIds.length} ta kino tanlandi
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={bulkPageId}
+                onChange={(e) => setBulkPageId(e.target.value)}
+                className="bg-surface-container-lowest border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary-container"
+              >
+                <option value="">Sahifa tanlang...</option>
+                {pages.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                disabled={!bulkPageId || bulkReassigning}
+                onClick={async () => {
+                  try {
+                    setBulkReassigning(true);
+                    await fetchApi("/pages/bulk-reassign", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        movie_ids: selectedIds,
+                        target_page_ids: [parseInt(bulkPageId)],
+                        replace: true,
+                      }),
+                    });
+                    setSuccessMsg(`${selectedIds.length} ta kino yangi sahifaga muvaffaqiyatli ko'chirildi!`);
+                    setSelectedIds([]);
+                    setBulkPageId("");
+                    loadMovies(true);
+                  } catch (e: any) {
+                    setErrorMsg("Ko'chirishda xatolik: " + e.message);
+                  } finally {
+                    setBulkReassigning(false);
+                  }
+                }}
+                className="px-4 py-1.5 rounded-xl bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-bold text-xs transition-colors disabled:opacity-50"
+              >
+                {bulkReassigning ? "Ko'chirilmoqda..." : "Sahifaga Ko'chirish"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="text-xs text-text-secondary hover:text-white px-2 py-1"
+              >
+                Bekor qilish
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto custom-scrollbar">
           <table className="min-w-[700px] w-full text-left border-collapse">
             <thead className="bg-surface-container-lowest border-b border-white/10">
               <tr>
+                <th className="w-10 px-3 py-3.5">
+                  <input
+                    type="checkbox"
+                    checked={movies.length > 0 && selectedIds.length === movies.length}
+                    onChange={() => {
+                      if (selectedIds.length === movies.length) setSelectedIds([]);
+                      else setSelectedIds(movies.map((m) => m.id));
+                    }}
+                    className="rounded border-white/20 bg-surface-container-lowest text-primary-container focus:ring-0 cursor-pointer"
+                  />
+                </th>
                 <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-text-secondary uppercase tracking-wider">
                   Kod
                 </th>
@@ -1101,6 +1253,20 @@ export default function MoviesPage() {
             <tbody className="divide-y divide-white/5 text-sm">
               {movies.map((m) => (
                 <tr key={m.id} className="data-table-row">
+                  <td className="w-10 px-3 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(m.id)}
+                      onChange={() => {
+                        if (selectedIds.includes(m.id)) {
+                          setSelectedIds(selectedIds.filter((id) => id !== m.id));
+                        } else {
+                          setSelectedIds([...selectedIds, m.id]);
+                        }
+                      }}
+                      className="rounded border-white/20 bg-surface-container-lowest text-primary-container focus:ring-0 cursor-pointer"
+                    />
+                  </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap font-bold text-primary-container text-base">
                     #{m.code}
                   </td>

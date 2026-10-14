@@ -59,6 +59,22 @@ export default function MovieCard({ item, statusBadge }: { item: CatalogItem, st
             Davom etmoqda
           </div>
         )}
+        {item.source_type && (
+          <div className="px-1.5 py-0.5 bg-black/80 backdrop-blur-md rounded text-[9px] font-bold tracking-wider border border-white/10 flex items-center gap-1 shadow-sm shadow-black/50">
+            {item.source_type === "asilmedia" ? (
+              <span className="text-amber-400">🎬 Asilmedia</span>
+            ) : item.source_type === "boshqa" ? (
+              <span className="text-purple-300 flex items-center gap-1">
+                {item.custom_source_logo && (
+                  <img src={item.custom_source_logo} alt="" className="w-3 h-3 rounded object-cover inline" />
+                )}
+                <span>{item.custom_source_name || "Boshqa"}</span>
+              </span>
+            ) : (
+              <span className="text-sky-400">⭐ Uzmovi</span>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Bottom content */}

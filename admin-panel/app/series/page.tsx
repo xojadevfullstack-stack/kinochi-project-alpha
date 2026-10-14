@@ -33,6 +33,9 @@ type Series = {
   source: Source | null;
   status: string;
   is_18_plus?: boolean;
+  source_type?: string;
+  custom_source_name?: string | null;
+  custom_source_logo?: string | null;
 };
 
 export default function SeriesListPage() {
@@ -42,6 +45,11 @@ export default function SeriesListPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Bulk Reassign states
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkPageId, setBulkPageId] = useState<string>("");
+  const [bulkReassigning, setBulkReassigning] = useState<boolean>(false);
 
   // TMDb states
   const [tmdbSearchQuery, setTmdbSearchQuery] = useState("");
@@ -79,6 +87,9 @@ export default function SeriesListPage() {
     source_id: "" as number | "",
     status: "ongoing" as string,
     is_18_plus: false,
+    source_type: "uzmovi" as string,
+    custom_source_name: "",
+    custom_source_logo: "",
   };
 
   const [totalSeries, setTotalSeries] = useState<number>(0);
@@ -301,6 +312,9 @@ export default function SeriesListPage() {
       const payload = {
         ...form,
         source_id: form.source_id === "" ? null : form.source_id,
+        source_type: form.source_type || "uzmovi",
+        custom_source_name: form.source_type === "boshqa" ? (form.custom_source_name.trim() || null) : null,
+        custom_source_logo: form.source_type === "boshqa" ? (form.custom_source_logo.trim() || null) : null,
       };
 
       if (editingId) {
@@ -395,6 +409,9 @@ export default function SeriesListPage() {
       source_id: s.source_id || "",
       status: s.status || "ongoing",
       is_18_plus: s.is_18_plus || false,
+      source_type: s.source_type || "uzmovi",
+      custom_source_name: s.custom_source_name || "",
+      custom_source_logo: s.custom_source_logo || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -909,6 +926,66 @@ export default function SeriesListPage() {
             </select>
           </div>
 
+          {/* Ovoz / Studiya Manbasi (Source Branding: 1. Uzmovi, 2. Asilmedia, 3. Boshqa) */}
+          <div className="md:col-span-2 bg-surface-container-high/30 border border-white/5 rounded-xl p-4 space-y-3">
+            <label className="block text-xs font-semibold text-text-secondary uppercase">
+              Ovoz / Studiya Manbasi (Source Branding)
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: "uzmovi", label: "Uzmovi", logo: "https://uzmovi.com/favicon.ico" },
+                { id: "asilmedia", label: "Asilmedia", logo: "https://asilmedia.org/favicon.ico" },
+                { id: "boshqa", label: "Boshqa studiya / Manba" },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, source_type: opt.id })}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all ${
+                    form.source_type === opt.id
+                      ? "bg-primary-container/20 text-primary-container border-primary-container"
+                      : "bg-surface-container-lowest text-text-secondary border-white/10 hover:text-white"
+                  }`}
+                >
+                  {opt.logo && (
+                    <img
+                      src={opt.logo}
+                      alt=""
+                      className="w-4 h-4 rounded-full object-contain"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  )}
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {form.source_type === "boshqa" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block text-[11px] text-text-secondary mb-1">Studiya nomi</label>
+                  <input
+                    type="text"
+                    placeholder="Masalan: A-Media, Tarjima Seriallar..."
+                    value={form.custom_source_name}
+                    onChange={(e) => setForm({ ...form, custom_source_name: e.target.value })}
+                    className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-2.5 text-xs text-text-primary focus:border-primary-container"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-text-secondary mb-1">Studiya Logotipi (URL yoki havola)</label>
+                  <input
+                    type="text"
+                    placeholder="https://.../logo.png"
+                    value={form.custom_source_logo}
+                    onChange={(e) => setForm({ ...form, custom_source_logo: e.target.value })}
+                    className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-2.5 text-xs text-text-primary focus:border-primary-container"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 18+ Yosh chegarasi Toggle */}
           <div className="md:col-span-2 bg-red-950/20 border border-red-500/30 rounded-xl p-3.5">
             <label className="flex items-center justify-between cursor-pointer">
@@ -1024,38 +1101,144 @@ export default function SeriesListPage() {
           )}
         </div>
 
-        {/* Search Input */}
-        <div className="relative w-full sm:w-72 md:w-80">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[18px]">
-            search
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Seriallar bo'yicha qidirish (nomi yoki ID)..."
-            className="w-full bg-surface-container-lowest border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary-container focus:outline-none transition-colors"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white text-xs p-1"
-              title="Tozalash"
-            >
-              ✕
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Select All Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedIds.length === seriesList.length && seriesList.length > 0) {
+                setSelectedIds([]);
+              } else {
+                setSelectedIds(seriesList.map((s) => s.id));
+              }
+            }}
+            className="text-xs px-3 py-2 rounded-xl bg-surface-container-lowest border border-white/10 hover:border-white/20 text-text-secondary hover:text-white transition-colors flex items-center gap-1.5"
+          >
+            <input
+              type="checkbox"
+              readOnly
+              checked={seriesList.length > 0 && selectedIds.length === seriesList.length}
+              className="rounded border-white/20 bg-surface-container-lowest text-primary-container focus:ring-0 cursor-pointer pointer-events-none"
+            />
+            <span>{selectedIds.length === seriesList.length && seriesList.length > 0 ? "Bekor qilish" : "Barchasi"}</span>
+          </button>
+
+          {/* Search Input */}
+          <div className="relative w-full sm:w-72 md:w-80">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[18px]">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Seriallar bo'yicha qidirish (nomi yoki ID)..."
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary-container focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white text-xs p-1"
+                title="Tozalash"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Bulk Reassign Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="bg-primary-container/10 border border-primary-container/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary-container">check_circle</span>
+            <span className="text-xs sm:text-sm font-bold text-white">
+              {selectedIds.length} ta serial tanlandi
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={bulkPageId}
+              onChange={(e) => setBulkPageId(e.target.value)}
+              className="bg-surface-container-lowest border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary-container"
+            >
+              <option value="">Sahifa tanlang...</option>
+              {pages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              disabled={!bulkPageId || bulkReassigning}
+              onClick={async () => {
+                try {
+                  setBulkReassigning(true);
+                  await fetchApi("/pages/bulk-reassign", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      series_ids: selectedIds,
+                      target_page_ids: [parseInt(bulkPageId)],
+                      replace: true,
+                    }),
+                  });
+                  setSuccessMsg(`${selectedIds.length} ta serial yangi sahifaga muvaffaqiyatli ko'chirildi!`);
+                  setSelectedIds([]);
+                  setBulkPageId("");
+                  loadSeries(true);
+                } catch (e: any) {
+                  setErrorMsg("Ko'chirishda xatolik: " + e.message);
+                } finally {
+                  setBulkReassigning(false);
+                }
+              }}
+              className="px-4 py-1.5 rounded-xl bg-primary-container hover:bg-primary-container/80 text-on-primary-container font-bold text-xs transition-colors disabled:opacity-50"
+            >
+              {bulkReassigning ? "Ko'chirilmoqda..." : "Sahifaga Ko'chirish"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="text-xs text-text-secondary hover:text-white px-2 py-1"
+            >
+              Bekor qilish
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Series Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {seriesList.map((s) => (
           <div
             key={s.id}
-            className="metric-card rounded-2xl overflow-hidden flex flex-col group border border-white/5 shadow-lg"
+            className={`metric-card rounded-2xl overflow-hidden flex flex-col group border transition-all shadow-lg relative ${
+              selectedIds.includes(s.id) ? "border-primary-container/80 ring-1 ring-primary-container/50" : "border-white/5"
+            }`}
           >
+            {/* Selection Checkbox */}
+            <div className="absolute top-3 left-3 z-30">
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(s.id)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  if (selectedIds.includes(s.id)) {
+                    setSelectedIds(selectedIds.filter((id) => id !== s.id));
+                  } else {
+                    setSelectedIds([...selectedIds, s.id]);
+                  }
+                }}
+                className="w-5 h-5 rounded border-white/40 bg-surface-container-lowest/90 text-primary-container focus:ring-0 cursor-pointer shadow-md"
+              />
+            </div>
+
             {s.poster_url && (
               <div className="h-44 sm:h-48 w-full bg-surface-container-lowest overflow-hidden relative">
                 <img
@@ -1075,11 +1258,29 @@ export default function SeriesListPage() {
                 <h3 className="text-base sm:text-lg font-bold text-text-primary truncate">
                   {s.title}
                 </h3>
-                {s.tmdb_id && (
-                  <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.2 rounded font-mono shrink-0">
-                    TMDb
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {s.source_type === "asilmedia" ? (
+                    <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold">
+                      Asilmedia
+                    </span>
+                  ) : s.source_type === "boshqa" ? (
+                    <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
+                      {s.custom_source_logo && (
+                        <img src={s.custom_source_logo} alt="" className="w-3 h-3 rounded object-cover inline" />
+                      )}
+                      {s.custom_source_name || "Boshqa"}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded font-bold">
+                      Uzmovi
+                    </span>
+                  )}
+                  {s.tmdb_id && (
+                    <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.2 rounded font-mono">
+                      TMDb
+                    </span>
+                  )}
+                </div>
               </div>
 
               {s.categories && s.categories.length > 0 && (

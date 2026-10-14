@@ -42,7 +42,10 @@ class MovieService:
         page_ids: list[int] | None = None,
         source_chat_id: int | None = None,
         source_topic_id: int | None = None,
-        is_18_plus: bool = False
+        is_18_plus: bool = False,
+        source_type: str | None = "uzmovi",
+        custom_source_name: str | None = None,
+        custom_source_logo: str | None = None
     ) -> Movie:
         if code is None:
             code = await self._generate_unique_code()
@@ -64,7 +67,10 @@ class MovieService:
             trailer_url=trailer_url,
             source_chat_id=source_chat_id,
             source_topic_id=source_topic_id,
-            is_18_plus=is_18_plus
+            is_18_plus=is_18_plus,
+            source_type=source_type or "uzmovi",
+            custom_source_name=custom_source_name,
+            custom_source_logo=custom_source_logo
         )
         return await self.movie_repo.create(movie, category_ids=category_ids, page_ids=page_ids)
 

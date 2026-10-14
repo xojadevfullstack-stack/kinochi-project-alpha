@@ -36,6 +36,9 @@ class SeriesModel(Base):
     
     source_id: Mapped[int | None] = mapped_column(ForeignKey("series_sources.id", ondelete="SET NULL"), index=True)
     source: Mapped["SourceModel"] = relationship(back_populates="series", lazy="selectin")
+    source_type: Mapped[str | None] = mapped_column(String(50), default="uzmovi", server_default="uzmovi")
+    custom_source_name: Mapped[str | None] = mapped_column(String(255))
+    custom_source_logo: Mapped[str | None] = mapped_column(String(1024))
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -58,6 +61,10 @@ class SeriesModel(Base):
     )
 
     reviews: Mapped[list["ReviewModel"]] = relationship(
+        back_populates="series", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+    subscriptions: Mapped[list["SeriesSubscriptionModel"]] = relationship(
         back_populates="series", cascade="all, delete-orphan", passive_deletes=True
     )
 

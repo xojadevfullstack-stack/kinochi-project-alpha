@@ -134,3 +134,69 @@ async def delete_page(
     await session.delete(page)
     await session.commit()
     await delete_cache_pattern("cache:pages:*")
+
+
+class BulkReassignRequest(BaseModel):
+    movie_ids: list[int] = []
+    series_ids: list[int] = []
+    target_page_ids: list[int] = []
+    replace: bool = True
+
+@router.post("/bulk-reassign")
+async def bulk_reassign_pages(
+    payload: BulkReassignRequest,
+    session: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin)
+):
+    """
+    Search & Mark bulk reassignment of movies/series to specific page(s).
+    """
+    target_pages = []
+    if payload.target_page_ids:
+        res = await session.execute(select(PageModel).where(PageModel.id.in_(payload.target_page_ids)))
+        target_pages = list(res.scalars().all())
+
+    # Update Movies
+    if payload.movie_ids:
+        from app.infrastructure.db.models.movie import MovieModel
+        from sqlalchemy.orm import selectinload
+        stmt = select(MovieModel).options(selectinload(MovieModel.pages)).where(MovieModel.id.in_(payload.movie_ids))
+        res = await session.execute(stmt)
+        movies = res.scalars().all()
+        for m in movies:
+            if payload.replace:
+                m.pages = list(target_pages)
+            else:
+                existing_ids = {p.id for p in m.pages}
+                for tp in target_pages:
+                    if tp.id not in existing_ids:
+                        m.pages.append(tp)
+
+    # Update Series
+    if payload.series_ids:
+        from app.infrastructure.db.models.series import SeriesModel
+        from sqlalchemy.orm import selectinload
+        stmt = select(SeriesModel).options(selectinload(SeriesModel.pages)).where(SeriesModel.id.in_(payload.series_ids))
+        res = await session.execute(stmt)
+        series_list = res.scalars().all()
+        for s in series_list:
+            if payload.replace:
+                s.pages = list(target_pages)
+            else:
+                existing_ids = {p.id for p in s.pages}
+                for tp in target_pages:
+                    if tp.id not in existing_ids:
+                        s.pages.append(tp)
+
+    await session.commit()
+    await delete_cache_pattern("cache:pages:*")
+    await delete_cache_pattern("cache:movies:*")
+    await delete_cache_pattern("cache:series:*")
+
+    return {
+        "success": True,
+        "movies_updated": len(payload.movie_ids),
+        "series_updated": len(payload.series_ids),
+        "target_pages": [p.title for p in target_pages]
+    }
+

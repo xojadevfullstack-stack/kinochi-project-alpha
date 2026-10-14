@@ -197,6 +197,7 @@ class DuplicateChecker:
         # Keshlangan ma'lumotlar
         self._movies: List[Dict[str, Any]] = []
         self._series: List[Dict[str, Any]] = []
+        self._blacklist: List[Dict[str, Any]] = []
         
         # Tezkor qidiruv xaritalari (slug -> item)
         self._movie_slug_map: Dict[str, Dict[str, Any]] = {}
@@ -225,6 +226,13 @@ class DuplicateChecker:
             return
 
         try:
+            try:
+                raw_bl = await conn.fetch("SELECT id, title, url, reason FROM blacklist")
+                self._blacklist = [dict(b) for b in raw_bl]
+            except Exception as bl_err:
+                logger.warning(f"[DUPLICATE_CHECKER] Blacklist o'qishda xato: {bl_err}")
+                self._blacklist = []
+
             raw_movies = await conn.fetch(
                 """
                 SELECT m.id, m.title, m.original_title, m.release_year, m.code, m.tmdb_id 
@@ -344,6 +352,29 @@ class DuplicateChecker:
             db_items = self._movies + self._series
 
         cand_part = extract_part_number(title)
+
+        # ── 00. Qora ro'yxat (Blacklist) tekshiruvi ──
+        url = kwargs.get("url") or ""
+        cand_slug = to_slug(title)
+        cand_lower = title.lower().strip()
+        for b in (self._blacklist or []):
+            b_title = b.get("title")
+            b_url = b.get("url")
+            if b_title:
+                b_slug = to_slug(b_title)
+                b_t_lower = b_title.lower().strip()
+                if (b_slug and b_slug == cand_slug) or (b_t_lower and (b_t_lower == cand_lower or b_t_lower in cand_lower or cand_lower in b_t_lower)):
+                    return DuplicateCheckResult(
+                        is_duplicate=True,
+                        match_type="blacklist",
+                        reason=f"Qora ro'yxatda (Sabab: {b.get('reason') or 'Taqiqlangan'})"
+                    )
+            if b_url and url and b_url.strip().lower() in url.strip().lower():
+                return DuplicateCheckResult(
+                    is_duplicate=True,
+                    match_type="blacklist",
+                    reason=f"Qora ro'yxatda (URL taqiqlangan)"
+                )
 
         # ── 0. TMDb ID bo'yicha tekshirish (100% aniq moslik) ──
         if tmdb_id:

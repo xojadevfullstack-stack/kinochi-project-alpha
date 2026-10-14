@@ -30,6 +30,9 @@ class Movie(BaseModel):
     
     source_chat_id: int | None = None
     source_topic_id: int | None = None
+    source_type: str | None = "uzmovi"
+    custom_source_name: str | None = None
+    custom_source_logo: str | None = None
     
     translations: list['MovieTranslation'] = Field(default_factory=list)
     

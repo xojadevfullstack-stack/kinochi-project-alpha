@@ -26,11 +26,15 @@ try:
     from scraper.queue_manager import QueueManager, QueueItem
     from scraper.process_manager import ProcessManager
     from scraper.state_manager import StateManager
+    from scraper.autopilot_v2 import autopilot_engine, quarantine_manager, health_evaluator
     SCRAPER_AVAILABLE = True
 except Exception as _exc:  # pragma: no cover
     QueueManager = None  # type: ignore
     ProcessManager = None  # type: ignore
     StateManager = None  # type: ignore
+    autopilot_engine = None  # type: ignore
+    quarantine_manager = None  # type: ignore
+    health_evaluator = None  # type: ignore
     SCRAPER_AVAILABLE = False
     logger.warning(f"Scraper moduli yuklanmadi (faqat lokal kompyuterda ishlaydi): {_exc}")
 
@@ -535,4 +539,91 @@ async def delete_db_movie(
     await db.commit()
     await delete_cache_pattern("*")
     return {"success": True, "message": f"Film #{movie_id} bazadan o'chirildi."}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  AUTOPILOT 2.0 ARCHITECTURE ENDPOINTS (HEALTH & CIRCUIT BREAKER & QUARANTINE)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class AssignSeasonRequest(BaseModel):
+    season_number: int = Field(..., ge=1, description="Fasl raqami (masalan: 1, 2, 3)")
+
+
+class BindTmdbRequest(BaseModel):
+    tmdb_id: int = Field(..., ge=1, description="TMDb ID raqami")
+    original_title: Optional[str] = Field(None, description="Inglizcha/Original nomi")
+
+
+@router.get("/autopilot-v2/status")
+async def get_autopilot_v2_status(admin=Depends(require_scraper)):
+    """Avtopilot 2.0 salomatlik darajasi, Circuit Breaker (Auto-Pause) va Karantin holati."""
+    if not autopilot_engine:
+        raise HTTPException(status_code=503, detail="Autopilot 2.0 moduli mavjud emas.")
+    return {"success": True, "status": autopilot_engine.get_engine_status()}
+
+
+@router.get("/autopilot-v2/quarantine")
+async def get_quarantine_items(
+    category: str = Query("all", description="all, season_missing, tmdb_missing"),
+    admin=Depends(require_scraper)
+):
+    """Karantindagi ("Faslsiz kutish qutisi" va shubhali) materiallar ro'yxati."""
+    if not quarantine_manager:
+        raise HTTPException(status_code=503, detail="Quarantine moduli mavjud emas.")
+    items = quarantine_manager.get_quarantine_items(category=category)
+    return {"success": True, "total": len(items), "items": items}
+
+
+@router.post("/autopilot-v2/quarantine/{item_id}/season")
+async def assign_quarantine_season(
+    item_id: str,
+    req: AssignSeasonRequest,
+    admin=Depends(require_scraper)
+):
+    """Admin tomonidan faslsiz serial qismiga fasl raqamini biriktirish va bazaga o'tkazish."""
+    if not quarantine_manager:
+        raise HTTPException(status_code=503, detail="Quarantine moduli mavjud emas.")
+    ok, msg, item = quarantine_manager.assign_season(item_id, req.season_number)
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg, "item": item}
+
+
+@router.post("/autopilot-v2/quarantine/{item_id}/tmdb")
+async def bind_quarantine_tmdb(
+    item_id: str,
+    req: BindTmdbRequest,
+    admin=Depends(require_scraper)
+):
+    """Admin tomonidan TMDB ID bog'lash va qayta tekshiruvdan o'tkazish."""
+    if not quarantine_manager:
+        raise HTTPException(status_code=503, detail="Quarantine moduli mavjud emas.")
+    ok, msg, item = quarantine_manager.bind_tmdb(item_id, req.tmdb_id, req.original_title)
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg, "item": item}
+
+
+@router.delete("/autopilot-v2/quarantine/{item_id}")
+async def reject_quarantine_item(
+    item_id: str,
+    admin=Depends(require_scraper)
+):
+    """Karantindagi yaroqsiz materialni rad etish va o'chirish."""
+    if not quarantine_manager:
+        raise HTTPException(status_code=503, detail="Quarantine moduli mavjud emas.")
+    ok = quarantine_manager.reject_item(item_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Material karantindan topilmadi")
+    return {"success": True, "message": f"{item_id} karantindan o'chirildi."}
+
+
+@router.post("/autopilot-v2/circuit-breaker/resume")
+async def resume_circuit_breaker(admin=Depends(require_scraper)):
+    """Baza sifatini sozlagandan so'ng avtopilotni qayta davom ettirish."""
+    if not health_evaluator:
+        raise HTTPException(status_code=503, detail="Health evaluator mavjud emas.")
+    health_evaluator.manual_resume()
+    return {"success": True, "message": "Circuit Breaker qayta ishga tushirildi. Avtopilot faol."}
+
 

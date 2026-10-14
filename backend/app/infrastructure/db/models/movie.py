@@ -46,6 +46,9 @@ class MovieModel(Base):
     
     source_chat_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
     source_topic_id: Mapped[int | None] = mapped_column(Integer, index=True)
+    source_type: Mapped[str | None] = mapped_column(String(50), default="uzmovi", server_default="uzmovi")
+    custom_source_name: Mapped[str | None] = mapped_column(String(255))
+    custom_source_logo: Mapped[str | None] = mapped_column(String(1024))
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

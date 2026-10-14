@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinochi Ecosystem — Senior Full Stack Architectural Blueprint & Review Dossier</title>
+  <meta name="description" content="Kinochi ekotizimining to'liq texnik arxitekturasi: FastAPI DDD, Aiogram 3, Next.js 14, PostgreSQL, Redis, Scraper va Telegram Cloud CDN yechimi. Senior dasturchi tahlili uchun.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Fira Code"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+              950: '#2e1065',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            },
+            dark: {
+              bg: '#0a0b10',
+              card: '#12141f',
+              card2: '#181b2a',
+              border: '#23273e',
+              hover: '#2a304e'
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-8px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0b10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #23273e;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7c3aed;
+    }
+
+    .glass-card {
+      background: rgba(18, 20, 31, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card-hover:hover {
+      transform: translateY(-3px);
+      border-color: rgba(139, 92, 246, 0.4);
+      box-shadow: 0 12px 30px -10px rgba(124, 58, 237, 0.25);
+    }
+
+    .neon-glow {
+      box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.35);
+    }
+    .neon-cyan {
+      box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.35);
+    }
+    .neon-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .code-block {
+      background: #0d0f18;
+      border: 1px solid #1f2438;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* Print styling */
+    @media print {
+      body { background: white !important; color: black !important; }
+      .no-print { display: none !important; }
+      .glass-card { border: 1px solid #ccc !important; background: none !important; box-shadow: none !important; }
+      .gradient-text { -webkit-text-fill-color: black !important; }
+    }
+  </style>
+</head>
+<body class="bg-dark-bg text-slate-200 font-sans min-h-screen selection:bg-brand-500 selection:text-white">
+
+  <!-- TOP BAR / NOTIFICATION -->
+  <div class="bg-gradient-to-r from-brand-950 via-dark-card to-brand-950 border-b border-brand-900/40 py-2.5 px-4 text-xs font-mono text-center flex items-center justify-between no-print">
+    <div class="flex items-center gap-2 mx-auto">
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/40 animate-pulse">
+        ● PRODUCTION READY
+      </span>
+      <span class="text-slate-300">FastAPI (DDD) + Aiogram 3.x + Next.js 14 App Router + PostgreSQL + Redis</span>
+      <span class="text-slate-500 hidden md:inline">|</span>
+      <span class="text-brand-300 font-semibold hidden md:inline">Senior Full Stack Review Architecture Dossier</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="window.print()" class="px-2.5 py-1 bg-dark-card2 hover:bg-dark-hover border border-dark-border rounded text-[11px] text-slate-300 flex items-center gap-1.5 transition">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+        <span>PDF / Print</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-50 glass-card border-b border-dark-border/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-cyan flex items-center justify-center font-black text-xl text-white shadow-lg shadow-brand-500/30">
+          K
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-lg text-white tracking-tight">KINOCHI</span>
+            <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 rounded">v1.2</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-mono">Senior Engineering Dossier</p>
+        </div>
+      </div>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden lg:flex items-center gap-1 text-sm font-medium">
+        <a href="#summary" class="px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition">Xulosa (Pitch)</a>
+        <a href="#architecture" class="px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition">Arxitektura</a>
+        <a href="#modules" class="px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition">Modullar (5 ustun)</a>
+        <a href="#database" class="px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition">Baza (ERD)</a>
+        <a href="#audit" class="px-3 py-1.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition">Audit & Status</a>
+        <a href="#senior-questions" class="px-3 py-1.5 text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 rounded-lg transition font-semibold flex items-center gap-1.5">
+          <i data-lucide="help-circle" class="w-4 h-4"></i>
+          <span>Seniorga Savollar</span>
+        </a>
+      </nav>
+
+      <!-- Action Button -->
+      <div class="flex items-center gap-2">
+        <button onclick="copyPitchModal()" class="px-3.5 py-2 rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold text-xs flex items-center gap-2 shadow-md shadow-brand-500/25 transition">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Seniorga Taqdimot Matni</span>
+          <span class="sm:hidden">Pitch</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="relative pt-12 pb-16 overflow-hidden">
+    <!-- Glow Background Accents -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-brand-600/15 blur-[120px] rounded-full pointer-events-none"></div>
+    <div class="absolute top-1/3 left-1/4 w-[350px] h-[250px] bg-accent-cyan/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div class="text-center max-w-3xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-card border border-dark-border text-xs font-mono text-slate-300 mb-6 shadow-inner">
+          <span class="w-2 h-2 rounded-full bg-accent-emerald animate-ping"></span>
+          <span>Full Stack Senior Dasturchi Konsultatsiyasi Uchun Maxsus</span>
+        </div>
+        
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] mb-6">
+          Kinochi Ekotizimi: <br>
+          <span class="gradient-text">Ipidan Ignasigacha</span> Tahlil
+        </h1>
+        
+        <p class="text-base sm:text-lg text-slate-300 leading-relaxed mb-8">
+          Ushbu vebsayt loyihaning <span class="text-white font-semibold">biznes modeli, Clean Architecture & DDD backend arxitekturasi, Telegram Cloud CDN integratsiyasi, Next.js vebsayti va skraper tizimini</span> to'liq ochib beradi. Senior dasturchi bilan 15 daqiqada arxitektura darajasida gaplashishingiz uchun tayyorlandi.
+        </p>
+
+        <!-- Metrics pill box -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto text-left">
+          <div class="glass-card rounded-xl p-4 border border-dark-border">
+            <div class="text-xs font-mono text-slate-400 mb-1">Testing Coverage</div>
+            <div class="text-2xl font-black text-accent-emerald flex items-center gap-1.5">
+              40 / 40
+              <i data-lucide="check-circle" class="w-4 h-4 text-accent-emerald"></i>
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono">100% tests passing</div>
+          </div>
+          <div class="glass-card rounded-xl p-4 border border-dark-border">
+            <div class="text-xs font-mono text-slate-400 mb-1">Video Hosting Cost</div>
+            <div class="text-2xl font-black text-accent-cyan flex items-center gap-1.5">
+              $0.00 / oy
+              <i data-lucide="zap" class="w-4 h-4 text-accent-cyan"></i>
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono">Telegram Cloud Storage</div>
+          </div>
+          <div class="glass-card rounded-xl p-4 border border-dark-border">
+            <div class="text-xs font-mono text-slate-400 mb-1">Cache Performance</div>
+            <div class="text-2xl font-black text-brand-400 flex items-center gap-1.5">
+              2447x
+              <i data-lucide="trending-up" class="w-4 h-4 text-brand-400"></i>
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono">7.34s &rarr; 0.003s (Redis)</div>
+          </div>
+          <div class="glass-card rounded-xl p-4 border border-dark-border">
+            <div class="text-xs font-mono text-slate-400 mb-1">Architecture</div>
+            <div class="text-2xl font-black text-accent-amber flex items-center gap-1.5">
+              DDD + Clean
+              <i data-lucide="layers" class="w-4 h-4 text-accent-amber"></i>
+            </div>
+            <div class="text-[11px] text-slate-500 font-mono">FastAPI + Aiogram 3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK EXECUTIVE SUMMARY (BUSINESS & TECH THESIS) -->
+  <section id="summary" class="py-12 border-t border-dark-border/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-2.5 rounded-lg bg-brand-500/10 border border-brand-500/30 text-brand-400">
+          <i data-lucide="compass" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">1. Loyihaning Asosiy G'oyasi va Biznes-Gipotezasi</h2>
+          <p class="text-xs sm:text-sm text-slate-400">Nega bu loyiha oddiy kino saytlaridan tubdan farq qiladi?</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Problem Card -->
+        <div class="glass-card rounded-2xl p-6 border-l-4 border-l-accent-rose">
+          <div class="flex items-center gap-2 text-accent-rose font-bold text-sm mb-3">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>KLASSIK STRIMING MUAMMOSI</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Qimmat serverlar va DMCA blokirovkalar</h3>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">
+            Oddiy kino saytlar (Netflix klonlari) 100K foydalanuvchiga oyiga <strong>$2,000 &ndash; $8,000</strong> video egress (CDN) to'laydi. Bundan tashqari, xosting provayderlari DMCA (mualliflik huquqi) tufayli domenni tezda bloklaydi.
+          </p>
+          <div class="bg-dark-bg/80 p-3 rounded-lg border border-dark-border text-xs font-mono text-slate-400">
+            &bull; Server xarajati: juda yuqori<br>
+            &bull; Huquqiy xavf: domain & IP blok<br>
+            &bull; Monetizatsiya: qiyin va xavfli
+          </div>
+        </div>
+
+        <!-- Solution Card -->
+        <div class="glass-card rounded-2xl p-6 border-l-4 border-l-accent-emerald">
+          <div class="flex items-center gap-2 text-accent-emerald font-bold text-sm mb-3">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>KINOCHI STRATEGIK YECHIMI</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Webda SEO & Katalog, Telegramda Video</h3>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">
+            Vebsaytda <strong>hech qanday video striming yo'q</strong>! Sayt faqatgina metadata, trailer va Google SEO reytingi uchun xizmat qiladi. Foydalanuvchi "Telegram'da Ko'rish" tugmasini bosganda, Telegram Botga yo'naltiriladi.
+          </p>
+          <div class="bg-dark-bg/80 p-3 rounded-lg border border-dark-border text-xs font-mono text-accent-emerald">
+            &bull; Web Hosting xarajati: deyarli $0 (Vercel)<br>
+            &bull; Video Storage: Telegram Cloud (tekin)<br>
+            &bull; Trafik konversiyasi: 100% o'z botiga
+          </div>
+        </div>
+
+        <!-- Funnel Card -->
+        <div class="glass-card rounded-2xl p-6 border-l-4 border-l-brand-500">
+          <div class="flex items-center gap-2 text-brand-400 font-bold text-sm mb-3">
+            <i data-lucide="repeat" class="w-4 h-4"></i>
+            <span>VIRAL DISTRIBUTSIYA VORONKASI</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Ijtimoiy tarmoq &rarr; Bot &rarr; Homiylar</h3>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">
+            TikTok, Reels va Shorts orqali qiziqarli fragmentlar tarqatiladi. Profil havolasi orqali foydalanuvchi kino kodiga ega bo'ladi. Botga kirganda homiy kanallarga a'zo bo'lish (majburiy obuna) orqali daromad olinadi.
+          </p>
+          <div class="bg-dark-bg/80 p-3 rounded-lg border border-dark-border text-xs font-mono text-brand-300">
+            &bull; Kirish: TikTok / Reels / SEO<br>
+            &bull; Gateway: Majburiy obuna tekshiruvi<br>
+            &bull; Yetkazish: Kod bo'yicha HD video fayl
+          </div>
+        </div>
+      </div>
+
+      <!-- User Flow Visual Diagram -->
+      <div class="mt-8 glass-card rounded-2xl p-6 border border-dark-border">
+        <h4 class="text-sm font-mono uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+          <i data-lucide="git-branch" class="w-4 h-4 text-brand-400"></i>
+          Foydalanuvchi Harakati & O'zaro Integratsiya Zanjiri (End-to-End User Flow)
+        </h4>
+        
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 relative text-center text-xs">
+          <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border flex flex-col items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-accent-rose/20 text-accent-rose flex items-center justify-center font-bold mb-2">1</div>
+            <span class="font-bold text-white mb-1">Qisqa Video (Viral)</span>
+            <span class="text-slate-400">TikTok / Reels / Shorts "Kino kodi: 184"</span>
+          </div>
+
+          <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border flex flex-col items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-accent-amber/20 text-accent-amber flex items-center justify-center font-bold mb-2">2</div>
+            <span class="font-bold text-white mb-1">Web Katalog (SEO)</span>
+            <span class="text-slate-400">Next.js SSR sahifa, reyting, treyler, aktyorlar</span>
+          </div>
+
+          <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border flex flex-col items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-accent-cyan/20 text-accent-cyan flex items-center justify-center font-bold mb-2">3</div>
+            <span class="font-bold text-white mb-1">Deep Link CTA</span>
+            <span class="text-slate-400">t.me/KinochiBot?start=movie_184</span>
+          </div>
+
+          <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border flex flex-col items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center font-bold mb-2">4</div>
+            <span class="font-bold text-white mb-1">Gating (Obuna)</span>
+            <span class="text-slate-400">Majburiy homiy kanalga obuna tekshiruvi (Redis)</span>
+          </div>
+
+          <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border flex flex-col items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-accent-emerald/20 text-accent-emerald flex items-center justify-center font-bold mb-2">5</div>
+            <span class="font-bold text-white mb-1">HD Video Delivery</span>
+            <span class="text-slate-400">copy_message orqali toza video + audio studiyalar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE SYSTEM ARCHITECTURE VISUALIZER -->
+  <section id="architecture" class="py-12 border-t border-dark-border/60 bg-dark-bg/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 text-accent-cyan">
+            <i data-lucide="cpu" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">2. Tizim Arxitekturasi (System Architecture & C4)</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Qatlamlar, ma'lumotlar oqimi va xavfsizlik chegaralari</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-slate-400">Interaktiv qatlamlar:</span>
+          <button onclick="highlightLayer('all')" class="px-3 py-1 bg-dark-card2 hover:bg-dark-hover border border-dark-border rounded text-xs text-white transition">Barchasi</button>
+          <button onclick="highlightLayer('client')" class="px-3 py-1 bg-dark-card2 hover:bg-dark-hover border border-dark-border rounded text-xs text-accent-cyan transition">Mijozlar</button>
+          <button onclick="highlightLayer('backend')" class="px-3 py-1 bg-dark-card2 hover:bg-dark-hover border border-dark-border rounded text-xs text-brand-400 transition">Backend (DDD)</button>
+          <button onclick="highlightLayer('data')" class="px-3 py-1 bg-dark-card2 hover:bg-dark-hover border border-dark-border rounded text-xs text-accent-emerald transition">Baza & Kesh</button>
+        </div>
+      </div>
+
+      <!-- Architecture Block Diagram -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left 8 Cols: Visual Diagram -->
+        <div class="lg:col-span-8 space-y-4">
+          
+          <!-- CLIENT LAYER -->
+          <div id="layer-client" class="glass-card rounded-2xl p-5 border border-dark-border transition duration-300">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-accent-cyan font-bold flex items-center gap-1.5">
+                <i data-lucide="monitor" class="w-4 h-4"></i>
+                1. PRESENTATION / CLIENT LAYER (Mijoz Ilovalari)
+              </span>
+              <span class="text-[10px] font-mono text-slate-400">Next.js 14 & Aiogram 3</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div onclick="selectArchComponent('website')" class="cursor-pointer p-3.5 rounded-xl bg-dark-card2 hover:border-accent-cyan/50 border border-dark-border transition group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-bold text-white text-sm group-hover:text-accent-cyan transition">Kinochi Web</span>
+                  <span class="text-[10px] bg-accent-cyan/20 text-accent-cyan px-1.5 py-0.5 rounded">Next.js 14</span>
+                </div>
+                <p class="text-xs text-slate-400">SSR, SEO Catalog, Schema.org, 18+ filter, no video streaming.</p>
+              </div>
+
+              <div onclick="selectArchComponent('bot')" class="cursor-pointer p-3.5 rounded-xl bg-dark-card2 hover:border-brand-400/50 border border-dark-border transition group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-bold text-white text-sm group-hover:text-brand-400 transition">Telegram Bot</span>
+                  <span class="text-[10px] bg-brand-500/20 text-brand-300 px-1.5 py-0.5 rounded">Aiogram 3</span>
+                </div>
+                <p class="text-xs text-slate-400">Deep-link resolver, Sponsor Gate, CopyMessage video deliverer.</p>
+              </div>
+
+              <div onclick="selectArchComponent('admin')" class="cursor-pointer p-3.5 rounded-xl bg-dark-card2 hover:border-accent-amber/50 border border-dark-border transition group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-bold text-white text-sm group-hover:text-accent-amber transition">Admin Panel</span>
+                  <span class="text-[10px] bg-accent-amber/20 text-accent-amber px-1.5 py-0.5 rounded">Next.js + JWT</span>
+                </div>
+                <p class="text-xs text-slate-400">CRUD filmlar, seriallar, sponsor kanallar, broadcast, skraper boshqaruvi.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONNECTING PROTOCOL ARROW -->
+          <div class="flex items-center justify-center gap-4 text-xs font-mono text-slate-500">
+            <div class="h-6 w-px bg-gradient-to-b from-accent-cyan to-brand-500"></div>
+            <span>HTTPS REST API (JWT / Internal API Key)</span>
+            <div class="h-6 w-px bg-gradient-to-b from-accent-cyan to-brand-500"></div>
+          </div>
+
+          <!-- BACKEND LAYER (DDD) -->
+          <div id="layer-backend" class="glass-card rounded-2xl p-5 border border-brand-500/30 neon-glow transition duration-300">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-brand-400 font-bold flex items-center gap-1.5">
+                <i data-lucide="server" class="w-4 h-4"></i>
+                2. CORE BACKEND LAYER (FastAPI Clean Architecture / DDD)
+              </span>
+              <span class="text-[10px] font-mono text-brand-300 bg-brand-500/20 px-2 py-0.5 rounded">Stateless & Async</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div onclick="selectArchComponent('api-layer')" class="cursor-pointer p-3 rounded-lg bg-dark-card2 border border-dark-border hover:border-brand-400 transition">
+                <div class="font-bold text-white mb-1">API v1 Router</div>
+                <div class="text-[11px] text-slate-400">Endpoints, Pydantic DTOs, SlowAPI rate-limiting</div>
+              </div>
+              <div onclick="selectArchComponent('application-layer')" class="cursor-pointer p-3 rounded-lg bg-dark-card2 border border-dark-border hover:border-brand-400 transition">
+                <div class="font-bold text-white mb-1">Application Layer</div>
+                <div class="text-[11px] text-slate-400">Use Cases: Movies, Series, Channels, Broadcasts</div>
+              </div>
+              <div onclick="selectArchComponent('domain-layer')" class="cursor-pointer p-3 rounded-lg bg-dark-card2 border border-dark-border hover:border-brand-400 transition">
+                <div class="font-bold text-white mb-1">Domain Layer</div>
+                <div class="text-[11px] text-slate-400">Entities, Value Objects, sof biznes qoidalari</div>
+              </div>
+              <div onclick="selectArchComponent('infra-layer')" class="cursor-pointer p-3 rounded-lg bg-dark-card2 border border-dark-border hover:border-brand-400 transition">
+                <div class="font-bold text-white mb-1">Infrastructure</div>
+                <div class="text-[11px] text-slate-400">SQLAlchemy ORM, TMDb, Redis, Telegram client</div>
+              </div>
+            </div>
+
+            <!-- Single Process Execution Box -->
+            <div class="mt-3 p-3 bg-dark-bg/90 rounded-lg border border-dark-border flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-accent-emerald animate-ping"></span>
+                <span class="font-mono text-slate-300"><strong>run.py Concurrency Model:</strong> 1 dona Render dyno (512MB RAM) ichida Uvicorn API + Aiogram Polling parallel ishlaydi.</span>
+              </div>
+              <span class="text-[10px] font-mono text-accent-emerald bg-accent-emerald/10 px-2 py-0.5 rounded border border-accent-emerald/20">asyncio.gather()</span>
+            </div>
+          </div>
+
+          <!-- CONNECTING PROTOCOL ARROW -->
+          <div class="flex items-center justify-center gap-4 text-xs font-mono text-slate-500">
+            <div class="h-6 w-px bg-gradient-to-b from-brand-500 to-accent-emerald"></div>
+            <span>asyncpg connection pool / Redis protocol</span>
+            <div class="h-6 w-px bg-gradient-to-b from-brand-500 to-accent-emerald"></div>
+          </div>
+
+          <!-- PERSISTENCE LAYER -->
+          <div id="layer-data" class="glass-card rounded-2xl p-5 border border-dark-border transition duration-300">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-accent-emerald font-bold flex items-center gap-1.5">
+                <i data-lucide="database" class="w-4 h-4"></i>
+                3. DATA PERSISTENCE & STORAGE (Baza va Tashqi Servislar)
+              </span>
+              <span class="text-[10px] font-mono text-slate-400">PostgreSQL + Redis + Telegram Cloud</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div onclick="selectArchComponent('postgres')" class="cursor-pointer p-3.5 rounded-xl bg-dark-card2 border border-dark-border hover:border-accent-emerald/50 transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-bold text-white text-sm">PostgreSQL (Neon)</span>
+                  <span class="text-[10px] bg-accent-emerald/20 text-accent-emerald px-1.5 py-0.5 rounded font-mono">SQLAlchemy 2.0</span>
+                </div>
+                <p class="text-xs text-slate-400">14 ta jadvallar, M:N bog'lanishlar, Alembic migratsiyalari, IPv6 patch.</p>
+              </div>
+
+              <div onclick="selectArchComponent('redis')" class="cursor-pointer p-3.5 rounded-xl bg-dark-card2 border border-dark-border hover:border-accent-rose/50 transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-bold text-white text-sm">Redis (Upstash / Cloud)</span>
+                  <span class="text-[10px] bg-accent-rose/20 text-accent-rose px-1.5 py-0.5 rounded font-mono">Cache & Throttle</span>
+                </div>
+                <p class="text-xs text-slate-400">5-minutlik katalog keshi (0.003s), Bot throttling, Background upload jobs.</p>
+              </div>
+
+              <div onclick="selectArchComponent('telegram-storage')" class="cursor-pointer p-3.5 rounded-xl bg-dark-card2 border border-dark-border hover:border-accent-cyan/50 transition">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-bold text-white text-sm">Telegram Storage</span>
+                  <span class="text-[10px] bg-accent-cyan/20 text-accent-cyan px-1.5 py-0.5 rounded font-mono">Cloud CDN</span>
+                </div>
+                <p class="text-xs text-slate-400">Yopiq kanal, file_id & message_id. Bepul, cheksiz, xavfsiz video ombori.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right 4 Cols: Interactive Component Inspector -->
+        <div class="lg:col-span-4">
+          <div class="glass-card rounded-2xl p-6 border border-dark-border h-full flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-dark-border mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-2">
+                  <i data-lucide="info" class="w-4 h-4 text-brand-400"></i>
+                  Komponent Detallari
+                </h3>
+                <span class="text-[10px] font-mono text-slate-500">Klik qilib ko'ring</span>
+              </div>
+
+              <div id="inspector-content">
+                <div class="text-center py-8 text-slate-500">
+                  <i data-lucide="mouse-pointer-click" class="w-8 h-8 mx-auto mb-2 opacity-50 text-brand-400"></i>
+                  <p class="text-xs">Chap tarafdagi arxitektura qismlaridan birini bosing va to'liq texnik tafsilotlarni ko'ring.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Socket Patch Code Sneak-Peek -->
+            <div class="mt-6 pt-4 border-t border-dark-border">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-mono text-slate-400">Muhim Infratuzilma Fix:</span>
+                <span class="text-[10px] font-mono text-accent-emerald">Render IPv6 Fix</span>
+              </div>
+              <pre class="text-[10px] code-block p-2.5 rounded-lg text-slate-300 overflow-x-auto leading-tight"><code>def _ipv4_only_getaddrinfo(h, p, ...):
+  res = _original_getaddrinfo(h, p, ...)
+  ipv4 = [r for r in res if r[0] == AF_INET]
+  return ipv4 if ipv4 else res
+socket.getaddrinfo = _ipv4_only_getaddrinfo</code></pre>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- DEEP DIVE: THE 5 PILLARS ("IPIDAN IGNASIGACHA") -->
+  <section id="modules" class="py-12 border-t border-dark-border/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-2.5 rounded-lg bg-brand-500/10 border border-brand-500/30 text-brand-400">
+          <i data-lucide="package-open" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">3. Loyihaning 5 Asosiy Ustuni: Chuqur Tahlil</h2>
+          <p class="text-xs sm:text-sm text-slate-400">Backend, Telegram Bot, Web Portal, Admin Panel va Skraper Quvuri</p>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-6 border-b border-dark-border text-xs sm:text-sm font-semibold scrollbar-none">
+        <button onclick="switchTab('tab-backend')" id="btn-tab-backend" class="px-4 py-2.5 rounded-xl bg-brand-500 text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i data-lucide="server" class="w-4 h-4"></i>
+          <span>1. Backend (FastAPI DDD)</span>
+        </button>
+        <button onclick="switchTab('tab-bot')" id="btn-tab-bot" class="px-4 py-2.5 rounded-xl bg-dark-card2 hover:bg-dark-hover text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+          <span>2. Telegram Bot (Aiogram 3)</span>
+        </button>
+        <button onclick="switchTab('tab-web')" id="btn-tab-web" class="px-4 py-2.5 rounded-xl bg-dark-card2 hover:bg-dark-hover text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i data-lucide="globe" class="w-4 h-4"></i>
+          <span>3. Vebsayt (Next.js 14)</span>
+        </button>
+        <button onclick="switchTab('tab-admin')" id="btn-tab-admin" class="px-4 py-2.5 rounded-xl bg-dark-card2 hover:bg-dark-hover text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i data-lucide="shield" class="w-4 h-4"></i>
+          <span>4. Admin Panel</span>
+        </button>
+        <button onclick="switchTab('tab-scraper')" id="btn-tab-scraper" class="px-4 py-2.5 rounded-xl bg-dark-card2 hover:bg-dark-hover text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>5. Skraper & AI Enricher</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: BACKEND -->
+      <div id="tab-backend" class="tab-pane space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-dark-border">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="code-2" class="w-5 h-5 text-brand-400"></i>
+              FastAPI: Domain-Driven Design (DDD) va Clean Architecture Qatlamlari
+            </h3>
+            <span class="text-xs font-mono bg-dark-card2 px-2.5 py-1 rounded text-slate-300 border border-dark-border">backend/app/</span>
+          </div>
+
+          <p class="text-sm text-slate-300 mb-6 leading-relaxed">
+            Backend qatlamlari qat'iy ajratilgan. <code>domain</code> qatlami hech qanday tashqi framework (FastAPI, SQLAlchemy)ga bog'lanmagan sof Python obyektlari. <code>application</code> qatlami barcha use-case'larni orkestratsiya qiladi, <code>infrastructure</code> esa PostgreSQL, Redis va Telegram API bilan ishlaydi.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border">
+              <div class="font-mono text-xs text-accent-cyan font-bold mb-1">domain/</div>
+              <div class="font-bold text-white text-sm mb-2">Entitiylar & Interfeyslar</div>
+              <ul class="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>&bull; movies/entities.py</li>
+                <li>&bull; series/source_entities.py</li>
+                <li>&bull; channels/entities.py</li>
+                <li>&bull; broadcasts/entities.py</li>
+              </ul>
+              <p class="text-[11px] text-slate-500 mt-2">Biznes mantig'i faqat shu yerda belgilanadi.</p>
+            </div>
+
+            <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border">
+              <div class="font-mono text-xs text-brand-400 font-bold mb-1">application/</div>
+              <div class="font-bold text-white text-sm mb-2">Use Cases / Xizmatlar</div>
+              <ul class="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>&bull; movies/service.py</li>
+                <li>&bull; series/series_service.py</li>
+                <li>&bull; broadcasts/sender.py</li>
+                <li>&bull; users/service.py</li>
+              </ul>
+              <p class="text-[11px] text-slate-500 mt-2">Biznes operatsiyalarini boshqaruvchi xizmatlar.</p>
+            </div>
+
+            <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border">
+              <div class="font-mono text-xs text-accent-emerald font-bold mb-1">infrastructure/</div>
+              <div class="font-bold text-white text-sm mb-2">DB, Kesh, Integratsiyalar</div>
+              <ul class="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>&bull; db/models/*.py (14 ta)</li>
+                <li>&bull; db/session.py (Asyncpg)</li>
+                <li>&bull; external/tmdb_client.py</li>
+                <li>&bull; security/jwt_handler.py</li>
+              </ul>
+              <p class="text-[11px] text-slate-500 mt-2">PostgreSQL, Redis va TMDB API bog'lovchilari.</p>
+            </div>
+
+            <div class="bg-dark-card2 p-4 rounded-xl border border-dark-border">
+              <div class="font-mono text-xs text-accent-amber font-bold mb-1">api/v1/</div>
+              <div class="font-bold text-white text-sm mb-2">FastAPI Routerlari</div>
+              <ul class="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>&bull; movies.py, series.py</li>
+                <li>&bull; telegram_auth.py</li>
+                <li>&bull; limiter.py (SlowAPI)</li>
+                <li>&bull; audit.py, broadcasts.py</li>
+              </ul>
+              <p class="text-[11px] text-slate-500 mt-2">HTTP kirish nuqtasi va Pydantic validatsiyasi.</p>
+            </div>
+          </div>
+
+          <!-- Technical Innovations in Backend -->
+          <div class="mt-6 p-4 rounded-xl bg-dark-bg border border-dark-border">
+            <h4 class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold mb-3 flex items-center gap-2">
+              <i data-lucide="zap" class="w-4 h-4 text-accent-amber"></i>
+              Backenddagi Muhim Muhandislik Yechimlari:
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-300">
+              <div class="p-3 bg-dark-card2 rounded-lg border border-dark-border">
+                <span class="font-bold text-white block mb-1">1. Redis 5-min TTL Keshlash</span>
+                Katalog sahifalari keshlanadi. Yangi film qo'shilganda yoki tahrirlanganda kesh avtomatik <code>invalidate</code> qilinadi.
+              </div>
+              <div class="p-3 bg-dark-card2 rounded-lg border border-dark-border">
+                <span class="font-bold text-white block mb-1">2. SlowAPI Rate-Limiting</span>
+                IP va foydalanuvchi bo'yicha qidiruv va yuklash so'rovlarini cheklash orqali DBni ortiqcha yuklama va DDoSdan himoyalaydi.
+              </div>
+              <div class="p-3 bg-dark-card2 rounded-lg border border-dark-border">
+                <span class="font-bold text-white block mb-1">3. Eager Loading (lazy="selectin")</span>
+                N+1 muammosi to'liq bartaraf etilgan. Seriallar, fasllar, qismlar va tarjimalar bitta samarali <code>IN(...)</code> so'rovi bilan olinadi.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 2: TELEGRAM BOT -->
+      <div id="tab-bot" class="tab-pane hidden space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-dark-border">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="bot" class="w-5 h-5 text-accent-cyan"></i>
+              Aiogram 3.x: Kontent Yetkazish va Obuna Darvozasi
+            </h3>
+            <span class="text-xs font-mono bg-dark-card2 px-2.5 py-1 rounded text-slate-300 border border-dark-border">bot/</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="w-8 h-8 rounded-lg bg-accent-cyan/15 text-accent-cyan flex items-center justify-center font-bold mb-3">
+                <i data-lucide="link-2" class="w-4 h-4"></i>
+              </div>
+              <h4 class="font-bold text-white text-sm mb-1">Universal Kod Resolver</h4>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                <code>clean_and_extract_code()</code> funksiyasi: <code>movie_PT3BQB</code>, <code>serial_30</code>, <code>s_30</code>, <code>ep_12</code>, yoki oddiy <code>123</code> kiritilganda ham qaysi tur ekanini aniqlab avtomatik ochib beradi.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="w-8 h-8 rounded-lg bg-accent-emerald/15 text-accent-emerald flex items-center justify-center font-bold mb-3">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <h4 class="font-bold text-white text-sm mb-1">SubscriptionMiddleware</h4>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Foydalanuvchi xabar yozganda yoki tugma bosganda majburiy homiy kanallariga a'zoligi tekshiriladi. Kanal limitga yetgan bo'lsa, navbatdagi homiy kanal avtomatik faollashadi.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="w-8 h-8 rounded-lg bg-accent-amber/15 text-accent-amber flex items-center justify-center font-bold mb-3">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </div>
+              <h4 class="font-bold text-white text-sm mb-1">Toza copy_message()</h4>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Video foydalanuvchiga <code>forward</code> emas, aynan <code>copy_message</code> orqali yuboriladi. Bunda "Forwarded from" belgisi bo'lmaydi va xabarga bot o'zining chiroyli formatlangan tavsifini qo'shadi.
+              </p>
+            </div>
+          </div>
+
+          <!-- Multi-Audio Studio Switcher -->
+          <div class="p-4 rounded-xl bg-dark-bg border border-dark-border">
+            <h4 class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold mb-2 flex items-center gap-2">
+              <i data-lucide="headphones" class="w-4 h-4 text-brand-400"></i>
+              Ko'p Ovozli Tarjimalar / Ovoz Berish Studiyalari (Translations):
+            </h4>
+            <p class="text-xs text-slate-400 mb-3">
+              Bir film yoki qism uchun bir nechta tarjima (Dublyaj, Subtitr, Original, UzMovi, AsilMedia) bo'lsa, bot foydalanuvchiga tugmalar orqali studiyani tanlash imkonini beradi:
+            </p>
+            <div class="flex flex-wrap gap-2 text-xs font-mono">
+              <span class="px-2.5 py-1 rounded bg-dark-card2 border border-dark-border text-white">🎙 AsilMedia (O'zbekcha)</span>
+              <span class="px-2.5 py-1 rounded bg-dark-card2 border border-dark-border text-white">🎙 UzMovi Professional</span>
+              <span class="px-2.5 py-1 rounded bg-dark-card2 border border-dark-border text-white">📝 O'zbekcha Subtitr</span>
+              <span class="px-2.5 py-1 rounded bg-dark-card2 border border-dark-border text-slate-400">🇺🇸 Original Audio</span>
+            </div>
+          </div>
+
+          <!-- Magic Login Feature -->
+          <div class="mt-4 p-4 rounded-xl bg-brand-950/40 border border-brand-800/40 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="p-2 rounded-lg bg-brand-500/20 text-brand-300">
+                <i data-lucide="key" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="font-bold text-white text-sm">1-Click Magic Login (/login buyrug'i)</span>
+                <p class="text-xs text-slate-300">Foydalanuvchi Telegramda /login desa, vebsaytga parolsiz bir klikda avtorizatsiyadan o'tish havolasi generatsiya qilinadi.</p>
+              </div>
+            </div>
+            <span class="text-xs font-mono text-brand-300 bg-brand-500/10 px-2.5 py-1 rounded border border-brand-500/30">JWT Magic Token</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 3: WEBSAYT -->
+      <div id="tab-web" class="tab-pane hidden space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-dark-border">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="globe" class="w-5 h-5 text-accent-emerald"></i>
+              Next.js 14 App Router: SEO, Tezlik va Yuqori Konversiya
+            </h3>
+            <span class="text-xs font-mono bg-dark-card2 px-2.5 py-1 rounded text-slate-300 border border-dark-border">website/</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                <i data-lucide="search" class="w-4 h-4 text-accent-cyan"></i>
+                SEO & Server Components (SSR)
+              </h4>
+              <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                Har bir film va serial sahifasi serverda generatsiya qilinadi. Google botlari uchun quyidagilar avtomatik yaratiladi:
+              </p>
+              <ul class="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>&bull; Schema.org <code>Movie</code> va <code>TVSeries</code> JSON-LD</li>
+                <li>&bull; OpenGraph va Twitter Card metateglari</li>
+                <li>&bull; Dinamik <code>sitemap.ts</code> va <code>robots.ts</code></li>
+                <li>&bull; Canonical URL va toza SEO sluglar</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-accent-amber"></i>
+                Zamonaviy Foydalanuvchi Tajribasi (UX)
+              </h4>
+              <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                Foydalanuvchini ushlab qolish va botga o'tkazish uchun boy interaktiv elementlar:
+              </p>
+              <ul class="text-xs text-slate-400 space-y-1.5 font-mono">
+                <li>&bull; <strong>LiveSearch:</strong> Harf terilishi bilan tezkor natija</li>
+                <li>&bull; <strong>Franchise Timeline:</strong> Bir olamga tegishli kinolar xronologiyasi</li>
+                <li>&bull; <strong>18+ Age Modal:</strong> Blur qilingan posterlar va yosh tasdig'i</li>
+                <li>&bull; <strong>TrailerModal:</strong> YouTube treylerni saytning o'zida ko'rish</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Web Conversion CTA Highlight -->
+          <div class="p-4 rounded-xl bg-accent-cyan/10 border border-accent-cyan/25 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <span class="font-bold text-white text-sm flex items-center gap-2">
+                <i data-lucide="play-circle" class="w-4 h-4 text-accent-cyan"></i>
+                "Telegram'da Tomosha Qilish" — Asosiy Konversiya Tugmasi
+              </span>
+              <p class="text-xs text-slate-300 mt-1">
+                Har bir sahifadagi bosh tugma foydalanuvchini <code>https://t.me/KinochiBot?start=movie_CODE</code> orqali to'g'ridan-to'g'ri kerakli videoga olib o'tadi.
+              </p>
+            </div>
+            <div class="px-4 py-2 rounded-lg bg-accent-cyan text-dark-bg font-extrabold text-xs">
+              0% Drop-off Funnel
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 4: ADMIN PANEL -->
+      <div id="tab-admin" class="tab-pane hidden space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-dark-border">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="shield" class="w-5 h-5 text-accent-rose"></i>
+              Admin Panel: To'liq Operatsion Boshqaruv
+            </h3>
+            <span class="text-xs font-mono bg-dark-card2 px-2.5 py-1 rounded text-slate-300 border border-dark-border">admin-panel/</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="film" class="w-4 h-4 text-brand-400"></i>
+                Filmlar & Seriallar CRUD
+              </div>
+              <p class="text-xs text-slate-400">
+                Fasllar, qismlar, audio tarjimalar, posterlar va Telegram <code>file_id</code> / <code>message_id</code> ma'lumotlarini qulay boshqarish.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="upload-cloud" class="w-4 h-4 text-accent-cyan"></i>
+                Video Upload Modal & Redis Job
+              </div>
+              <p class="text-xs text-slate-400">
+                Katta hajmdagi videolarni yuklash. Background Redis worker orqali Telegram storage kanaliga ko'chirish va progressni real-vaqtda kuzatish.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="radio" class="w-4 h-4 text-accent-emerald"></i>
+                Homiy Kanallar Boshqaruvi
+              </div>
+              <p class="text-xs text-slate-400">
+                Majburiy obuna kanallarini qo'shish, a'zo bo'lganlar soni hisobi va obunachilar limiti (subscriber_limit) to'lganda avtomatik almashtirish.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="send" class="w-4 h-4 text-accent-amber"></i>
+                Broadcast Xabar Yuboruvchi
+              </div>
+              <p class="text-xs text-slate-400">
+                O'n minglab bot foydalanuvchilariga rasm, video yoki matnli xabarlarni Telegram rate limitlarini buzmagan holda xavfsiz jo'natish.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="flag" class="w-4 h-4 text-accent-rose"></i>
+                Shikoyatlar (Reports) Tizimi
+              </div>
+              <p class="text-xs text-slate-400">
+                Foydalanuvchilar tomonidan ishlamayotgan video, xato tarjima yoki audio bo'yicha yuborilgan shikoyatlarni ko'rish va bartaraf etish.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="font-bold text-white text-sm mb-1 flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-brand-300"></i>
+                Audit & Tizim Diagnostikasi
+              </div>
+              <p class="text-xs text-slate-400">
+                Adminlarning har bir harakati loglanadi. Baza holati, xotira sarfi va API javob tezligini doimiy nazorat qilish paneli.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 5: SKRAPER & AI -->
+      <div id="tab-scraper" class="tab-pane hidden space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-dark-border">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-5 h-5 text-accent-amber"></i>
+              Skraper, Auto-Index va Smart Metadata Boyitish
+            </h3>
+            <span class="text-xs font-mono bg-dark-card2 px-2.5 py-1 rounded text-slate-300 border border-dark-border">scraper/ & bot/handlers/auto_index.py</span>
+          </div>
+
+          <div class="space-y-4">
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-white text-sm">1. Telegram Kanallaridan Auto-Indexing (auto_index.py)</span>
+                <span class="text-[10px] font-mono text-accent-cyan bg-accent-cyan/10 px-2 py-0.5 rounded">Regex Engine</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Maxsus yuklovchi admin kanallarga video tashlaganda, bot avtomatik caption'dagi qism raqami (<code>8-qism</code>, <code>S01E08</code>) va mavsum raqamini regex orqali taniydi. Sequential lock (<code>source_locks</code>) yordamida qismlar bazada tartibli joylashadi.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-white text-sm">2. Smart Enricher & Anime Xaritasi (smart_enricher.py)</span>
+                <span class="text-[10px] font-mono text-accent-emerald bg-accent-emerald/10 px-2 py-0.5 rounded">TMDb + Shikimori + Gemini AI</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                O'zbek tilidagi kinolar va animelar (masalan, "Iblislar qotili", "Metal alximik") avtomatik ravishda global nomlariga ("Demon Slayer", "Fullmetal Alchemist") xaritalanadi. TMDb API'dan HD poster, aktyorlar va reyting olinadi. Gemini AI esa tavsifni chiroyli tarjima qiladi.
+              </p>
+              <div class="text-[11px] font-mono text-slate-400 bg-dark-bg p-2.5 rounded border border-dark-border">
+                "iblislar qotili" &rarr; TMDb: "Demon Slayer: Kimetsu no Yaiba" &rarr; Poster + Cast + 8.7 IMDb
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-dark-card2 border border-dark-border">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-white text-sm">3. Asilmedia va Anitoob Parserlari (Telethon / Pyrogram)</span>
+                <span class="text-[10px] font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded">Userbot Automation</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Tashqi o'zbek kino kanallari va saytlaridagi yangi chiqayotgan qismlarni monitoring qilib, yangiliklarni avtomatik bazaga qo'shish va Telegram storage kanaliga ko'chirish imkonini beruvchi quvur.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- DATABASE SCHEMA & ERD EXPLORER -->
+  <section id="database" class="py-12 border-t border-dark-border/60 bg-dark-bg/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-lg bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald">
+            <i data-lucide="database" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">4. Ma'lumotlar Bazasi Modeli (PostgreSQL ERD)</h2>
+            <p class="text-xs sm:text-sm text-slate-400">14 ta jadval, indekslar, kaskadli o'chirishlar va M:N assotsiatsiyalar</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="text" id="schema-search" oninput="filterTables()" placeholder="Jadval yoki ustun qidirish..." class="px-3 py-1.5 rounded-lg bg-dark-card border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 w-48 sm:w-64">
+        </div>
+      </div>
+
+      <!-- Tables Grid -->
+      <div id="tables-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <!-- Table: movies -->
+        <div class="schema-card glass-card rounded-xl p-4 border border-dark-border">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dark-border">
+            <span class="font-mono font-bold text-sm text-accent-cyan flex items-center gap-1.5">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              movies
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">Core Catalog</span>
+          </div>
+          <div class="text-xs font-mono space-y-1 text-slate-300">
+            <div class="flex justify-between"><span class="text-accent-amber font-semibold">id</span> <span class="text-slate-500">INT (PK, Index)</span></div>
+            <div class="flex justify-between"><span class="text-white font-semibold">code</span> <span class="text-slate-400">VARCHAR(8) (UQ, Index)</span></div>
+            <div class="flex justify-between"><span>title</span> <span class="text-slate-500">VARCHAR(255) (Index)</span></div>
+            <div class="flex justify-between"><span>release_year</span> <span class="text-slate-500">INT (Index)</span></div>
+            <div class="flex justify-between"><span>imdb_rating, tmdb_rating</span> <span class="text-slate-500">FLOAT</span></div>
+            <div class="flex justify-between"><span>source_chat_id</span> <span class="text-slate-500">BIGINT (Index)</span></div>
+            <div class="flex justify-between"><span>trailer_url, poster_url</span> <span class="text-slate-500">VARCHAR(1024)</span></div>
+            <div class="flex justify-between"><span>is_18_plus</span> <span class="text-slate-500">BOOL (default false)</span></div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dark-border text-[11px] text-slate-400">
+            <strong>Aloqalar:</strong> categories (M:N), translations (1:N), reviews (1:N), watch_history (1:N)
+          </div>
+        </div>
+
+        <!-- Table: series -->
+        <div class="schema-card glass-card rounded-xl p-4 border border-dark-border">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dark-border">
+            <span class="font-mono font-bold text-sm text-accent-cyan flex items-center gap-1.5">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              series
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">TV Shows</span>
+          </div>
+          <div class="text-xs font-mono space-y-1 text-slate-300">
+            <div class="flex justify-between"><span class="text-accent-amber font-semibold">id</span> <span class="text-slate-500">INT (PK, Index)</span></div>
+            <div class="flex justify-between"><span>title</span> <span class="text-slate-500">VARCHAR(255) (Index)</span></div>
+            <div class="flex justify-between"><span>status</span> <span class="text-slate-500">VARCHAR(50) (ongoing)</span></div>
+            <div class="flex justify-between"><span>release_year</span> <span class="text-slate-500">INT (Index)</span></div>
+            <div class="flex justify-between"><span>source_id</span> <span class="text-slate-500">FK &rarr; series_sources</span></div>
+            <div class="flex justify-between"><span>is_18_plus</span> <span class="text-slate-500">BOOL</span></div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dark-border text-[11px] text-slate-400">
+            <strong>Aloqalar:</strong> seasons (1:N, cascade delete), categories (M:N), reviews
+          </div>
+        </div>
+
+        <!-- Table: episodes -->
+        <div class="schema-card glass-card rounded-xl p-4 border border-dark-border">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dark-border">
+            <span class="font-mono font-bold text-sm text-accent-cyan flex items-center gap-1.5">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              episodes
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">Single Episode</span>
+          </div>
+          <div class="text-xs font-mono space-y-1 text-slate-300">
+            <div class="flex justify-between"><span class="text-accent-amber font-semibold">id</span> <span class="text-slate-500">INT (PK)</span></div>
+            <div class="flex justify-between"><span class="text-white font-semibold">season_id</span> <span class="text-slate-400">FK &rarr; seasons.id</span></div>
+            <div class="flex justify-between"><span>episode_number</span> <span class="text-slate-500">INT</span></div>
+            <div class="flex justify-between"><span class="text-white font-semibold">code</span> <span class="text-slate-400">VARCHAR(20) (UQ)</span></div>
+            <div class="flex justify-between"><span>display_code</span> <span class="text-slate-500">VARCHAR(50) ("S1-CH1")</span></div>
+            <div class="flex justify-between"><span>source_message_id</span> <span class="text-slate-500">BIGINT (Index)</span></div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dark-border text-[11px] text-slate-400">
+            <strong>Constraint:</strong> UNIQUE(season_id, episode_number)
+          </div>
+        </div>
+
+        <!-- Table: movie_translations & episode_translations -->
+        <div class="schema-card glass-card rounded-xl p-4 border border-dark-border">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dark-border">
+            <span class="font-mono font-bold text-sm text-brand-300 flex items-center gap-1.5">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              translations
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">Multi-Audio & Dub</span>
+          </div>
+          <div class="text-xs font-mono space-y-1 text-slate-300">
+            <div class="flex justify-between"><span class="text-accent-amber font-semibold">id</span> <span class="text-slate-500">INT (PK)</span></div>
+            <div class="flex justify-between"><span>movie_id / episode_id</span> <span class="text-slate-500">FK (Cascade)</span></div>
+            <div class="flex justify-between"><span class="text-accent-emerald font-semibold">language / studio</span> <span class="text-slate-400">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span class="text-accent-cyan">telegram_file_id</span> <span class="text-slate-400">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>storage_channel_msg_id</span> <span class="text-slate-500">INT</span></div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dark-border text-[11px] text-slate-400">
+            <strong>Maqsad:</strong> Har bir til/ovoz uchun video fayl identifikatori.
+          </div>
+        </div>
+
+        <!-- Table: mandatory_channels -->
+        <div class="schema-card glass-card rounded-xl p-4 border border-dark-border">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dark-border">
+            <span class="font-mono font-bold text-sm text-brand-300 flex items-center gap-1.5">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              mandatory_channels
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">Sponsor Gating</span>
+          </div>
+          <div class="text-xs font-mono space-y-1 text-slate-300">
+            <div class="flex justify-between"><span class="text-accent-amber font-semibold">id</span> <span class="text-slate-500">INT (PK)</span></div>
+            <div class="flex justify-between"><span class="text-white font-semibold">channel_id</span> <span class="text-slate-400">BIGINT (UQ)</span></div>
+            <div class="flex justify-between"><span>channel_username</span> <span class="text-slate-500">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>is_active</span> <span class="text-slate-500">BOOL (default true)</span></div>
+            <div class="flex justify-between"><span>subscriber_limit</span> <span class="text-slate-500">INT (nullable)</span></div>
+            <div class="flex justify-between"><span>current_subscriber_count</span> <span class="text-slate-500">INT</span></div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dark-border text-[11px] text-slate-400">
+            <strong>Bog'liq:</strong> verified_subscriptions (foydalanuvchi obuna kesh)
+          </div>
+        </div>
+
+        <!-- Table: users & achievements -->
+        <div class="schema-card glass-card rounded-xl p-4 border border-dark-border">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-dark-border">
+            <span class="font-mono font-bold text-sm text-brand-300 flex items-center gap-1.5">
+              <i data-lucide="table" class="w-4 h-4"></i>
+              users & gamification
+            </span>
+            <span class="text-[10px] font-mono text-slate-400">Audience & History</span>
+          </div>
+          <div class="text-xs font-mono space-y-1 text-slate-300">
+            <div class="flex justify-between"><span class="text-accent-amber font-semibold">telegram_id</span> <span class="text-slate-400">BIGINT (UQ, Index)</span></div>
+            <div class="flex justify-between"><span>username, first_name</span> <span class="text-slate-500">VARCHAR(255)</span></div>
+            <div class="flex justify-between"><span>watch_history</span> <span class="text-slate-500">movie_id, status, hour</span></div>
+            <div class="flex justify-between"><span class="text-accent-emerald">user_achievements</span> <span class="text-slate-400">8 xil yutuqlar</span></div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-dark-border text-[11px] text-slate-400">
+            <strong>Yutuqlar:</strong> first_blood, marathoner, night_owl, anime_fan va b.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- AUDIT REPORT & STATUS SNAPSHOT -->
+  <section id="audit" class="py-12 border-t border-dark-border/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-2.5 rounded-lg bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald">
+          <i data-lucide="check-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">5. Texnik Audit va Ishlab Chiqish Statusi</h2>
+          <p class="text-xs sm:text-sm text-slate-400">Hozirgi holat, hal qilingan qiyinchiliklar va o'tgan testlar</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Resolved Audit Items -->
+        <div class="glass-card rounded-2xl p-6 border border-dark-border">
+          <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-5 h-5 text-accent-emerald"></i>
+            Muvaffaqiyatli Hal Qilingan Texnik To'siqlar
+          </h3>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3 rounded-lg bg-dark-card2 border border-dark-border flex items-start gap-3">
+              <span class="text-accent-emerald font-bold font-mono">1.</span>
+              <div>
+                <span class="font-bold text-white">Render IPv6 DNS Blackhole Muammosi</span>
+                <p class="text-slate-400 mt-0.5">Render muhitida Neon DBga asyncpg ulanishida IPv6 AAAA yozuvlari tufayli DNS qotib qolardi. <code>socket.getaddrinfo</code> ni faqat AF_INET qaytaradigan qilib monkey-patch qilindi. Natijada ulanish 0.34s ga tushdi.</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-lg bg-dark-card2 border border-dark-border flex items-start gap-3">
+              <span class="text-accent-emerald font-bold font-mono">2.</span>
+              <div>
+                <span class="font-bold text-white">Bot HTML Escape Xavfsizligi</span>
+                <p class="text-slate-400 mt-0.5">Film nomlarida <code>&lt;</code> yoki <code>&amp;</code> bo'lganda TelegramBadRequest xatosi yuz berardi. Barcha xabarlarga <code>html.escape</code> qo'shildi va 40 ta test to'liq o'tdi.</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-lg bg-dark-card2 border border-dark-border flex items-start gap-3">
+              <span class="text-accent-emerald font-bold font-mono">3.</span>
+              <div>
+                <span class="font-bold text-white">Next.js DYNAMIC_SERVER_USAGE Xatosi</span>
+                <p class="text-slate-400 mt-0.5"><code>searchParams</code> ishlatilgan /movies va /series marshrutlariga <code>export const dynamic = 'force-dynamic'</code> berildi. Next.js build 0 xato bilan yig'iladi.</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-lg bg-dark-card2 border border-dark-border flex items-start gap-3">
+              <span class="text-accent-emerald font-bold font-mono">4.</span>
+              <div>
+                <span class="font-bold text-white">Redis Katalog Kesh (2447x Tezlashish)</span>
+                <p class="text-slate-400 mt-0.5">Baza so'rovi 7.34s &rarr; Redis keshi orqali 0.003s ga qisqardi. Create, Update, Delete amallarida kesh avtomatik tozalanadi.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testing & Production Readiness -->
+        <div class="glass-card rounded-2xl p-6 border border-dark-border flex flex-col justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="terminal" class="w-5 h-5 text-accent-cyan"></i>
+              Avtomatlashtirilgan Testlar Natijasi
+            </h3>
+
+            <div class="code-block rounded-xl p-4 text-xs font-mono text-slate-300 mb-4 overflow-x-auto">
+              <div class="text-slate-500 mb-1">$ pytest backend/tests</div>
+              <div class="text-slate-400">collecting ... collected 40 items</div>
+              <div class="text-accent-emerald py-1">
+                tests/test_auth.py ........... [ 27%]<br>
+                tests/test_movies.py .......... [ 52%]<br>
+                tests/test_series.py .......... [ 77%]<br>
+                tests/test_throttling.py ...... [ 92%]<br>
+                tests/test_cache.py ... [100%]
+              </div>
+              <div class="text-accent-emerald font-bold border-t border-dark-border pt-2 mt-2">
+                ================ 40 passed, 0 failed in 4.12s ================
+              </div>
+            </div>
+
+            <div class="space-y-2 text-xs text-slate-300">
+              <div class="flex items-center justify-between p-2 rounded bg-dark-card2 border border-dark-border">
+                <span>Alembic Migrations Head:</span>
+                <span class="font-mono text-brand-300">66bfb6a20149 (Clean)</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded bg-dark-card2 border border-dark-border">
+                <span>Render Keep-Alive Pinger:</span>
+                <span class="font-mono text-accent-emerald">Har 14 daqiqada /health ping</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded bg-dark-card2 border border-dark-border">
+                <span>ESLint & TypeScript:</span>
+                <span class="font-mono text-slate-300">0 xato, core-web-vitals</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-dark-border flex items-center justify-between text-xs text-slate-400">
+            <span>Infratuzilma holati:</span>
+            <span class="text-accent-emerald font-bold font-mono">STABLE & MONITORED</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SENIOR CONSULTATION AGENDA & QUESTIONS -->
+  <section id="senior-questions" class="py-12 border-t border-dark-border/60 bg-dark-bg/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 rounded-lg bg-brand-500/10 border border-brand-500/30 text-brand-400">
+            <i data-lucide="help-circle" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">6. Senior Dasturchi Bilan Muhokama Qilinadigan 6 Savol</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Ushbu savollar konsultatsiyangizni maksimal darajada samarali qiladi</p>
+          </div>
+        </div>
+
+        <button onclick="exportConsultationNotes()" class="px-3.5 py-1.5 rounded-lg bg-dark-card2 hover:bg-dark-hover border border-dark-border text-xs text-slate-300 flex items-center gap-2 transition">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Konsultatsiya Qaydlarini Yuklab Olish</span>
+        </button>
+      </div>
+
+      <!-- Questions List (Accordion / Interactive Checklist) -->
+      <div class="space-y-4">
+        
+        <!-- Question 1 -->
+        <div class="glass-card rounded-xl p-5 border border-dark-border">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="q1-check" class="mt-1 w-4 h-4 rounded text-brand-500 focus:ring-brand-400 bg-dark-bg border-dark-border">
+              <div>
+                <span class="text-xs font-mono text-brand-400 uppercase font-bold">1-Mavzu: Concurrency & Process Ajratish</span>
+                <h3 class="text-base font-bold text-white mt-0.5">
+                  Hozir <code>run.py</code> da FastAPI va Aiogram bitta jarayonda (asyncio.gather) ishlamoqda. 50,000+ DAU bo'lganda bularni qanday ajratish kerak?
+                </h3>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <strong>Seniorga kontekst:</strong> Hozir tejamkorlik uchun Renderda bitta 512MB dyno ichida ishga tushirilgan. Katta yuklamada Uvicorn va Telegram Polling bir-birining event loop resursini yeb qo'yishi mumkin. 
+                  <em>Variantlar:</em> 1) Docker Compose orqali 2 ta alohida container; 2) Pollingdan Webhook rejimiga o'tish; 3) Nginx reverse proxy o'rnatish.
+                </p>
+                <textarea id="notes-q1" placeholder="Senior maslahati va qaydlar..." class="mt-3 w-full p-2.5 rounded-lg bg-dark-bg border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="glass-card rounded-xl p-5 border border-dark-border">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="q2-check" class="mt-1 w-4 h-4 rounded text-brand-500 focus:ring-brand-400 bg-dark-bg border-dark-border">
+              <div>
+                <span class="text-xs font-mono text-accent-cyan uppercase font-bold">2-Mavzu: PostgreSQL Connection Pooling & PgBouncer</span>
+                <h3 class="text-base font-bold text-white mt-0.5">
+                  Neon Direct ulanish o'rniga PgBouncer (Pooled Endpoint) ga o'tish qanchalik zarur?
+                </h3>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <strong>Seniorga kontekst:</strong> Hozir <code>create_async_engine</code> to'g'ridan-to'g'ri Neon direct endpointiga ulanadi. Foydalanuvchilar oqimi keskin oshganda (masalan, TikTokdagi video 500K ko'rilsa), connection exhaustion (ulanishlar tugashi) yuz berishi mumkin.
+                </p>
+                <textarea id="notes-q2" placeholder="Senior maslahati va qaydlar..." class="mt-3 w-full p-2.5 rounded-lg bg-dark-bg border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="glass-card rounded-xl p-5 border border-dark-border">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="q3-check" class="mt-1 w-4 h-4 rounded text-brand-500 focus:ring-brand-400 bg-dark-bg border-dark-border">
+              <div>
+                <span class="text-xs font-mono text-accent-emerald uppercase font-bold">3-Mavzu: Telegram Broadcast Rate Limits & Queue</span>
+                <h3 class="text-base font-bold text-white mt-0.5">
+                  Telegram sekundiga 30 ta xabar limitiga ega. 100,000 foydalanuvchiga xabar tarqatish uchun qaysi navbat (Queue) arxitekturasi eng ma'qul?
+                </h3>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <strong>Seniorga kontekst:</strong> Hozir oddiy batch loop ishlatilmoqda. Agar jarayon o'rtasida uzilsa yoki xatolik bersa, qayta jo'natish xavfi bor. 
+                  <em>Variantlar:</em> Celery + Redis, BullMQ (Node), yoki Python RQ? Qanday qilib botni bloklanishdan saqlash mumkin?
+                </p>
+                <textarea id="notes-q3" placeholder="Senior maslahati va qaydlar..." class="mt-3 w-full p-2.5 rounded-lg bg-dark-bg border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="glass-card rounded-xl p-5 border border-dark-border">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="q4-check" class="mt-1 w-4 h-4 rounded text-brand-500 focus:ring-brand-400 bg-dark-bg border-dark-border">
+              <div>
+                <span class="text-xs font-mono text-accent-amber uppercase font-bold">4-Mavzu: Qidiruv Tizimi (Search Engine)</span>
+                <h3 class="text-base font-bold text-white mt-0.5">
+                  PostgreSQL Trigram (ILIKE) qidiruvidan Meilisearch yoki Elasticsearch ga qachon o'tish lozim?
+                </h3>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <strong>Seniorga kontekst:</strong> Hozir kinolar bazasida 2,000+ film bor va SQL <code>ILIKE</code> tez ishlayapti. Lekin 20,000+ film bo'lganda xato bilan yozilgan so'zlar (typo-tolerance) va kirill/lotin transliteratsiyasi uchun qaysi yengil search engine eng qulay?
+                </p>
+                <textarea id="notes-q4" placeholder="Senior maslahati va qaydlar..." class="mt-3 w-full p-2.5 rounded-lg bg-dark-bg border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="glass-card rounded-xl p-5 border border-dark-border">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="q5-check" class="mt-1 w-4 h-4 rounded text-brand-500 focus:ring-brand-400 bg-dark-bg border-dark-border">
+              <div>
+                <span class="text-xs font-mono text-accent-rose uppercase font-bold">5-Mavzu: Telegram File ID Eskirishi (Self-Healing Storage)</span>
+                <h3 class="text-base font-bold text-white mt-0.5">
+                  Telegram file_id ba'zi holatlarda yaroqsiz bo'lib qolishi mumkin. Buni avtomatik tiklash mexanizmi qanday bo'lishi kerak?
+                </h3>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <strong>Seniorga kontekst:</strong> Hozir bazada ikkita identifikator bor: <code>telegram_file_id</code> va <code>storage_channel_message_id</code>. Agar <code>file_id</code> xato bersa, bot <code>copy_message(message_id)</code> orqali tiklaydi. Ushbu fallback strategiyasini yanada mustahkamlash bo'yicha maslahat.
+                </p>
+                <textarea id="notes-q5" placeholder="Senior maslahati va qaydlar..." class="mt-3 w-full p-2.5 rounded-lg bg-dark-bg border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="glass-card rounded-xl p-5 border border-dark-border">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" id="q6-check" class="mt-1 w-4 h-4 rounded text-brand-500 focus:ring-brand-400 bg-dark-bg border-dark-border">
+              <div>
+                <span class="text-xs font-mono text-brand-300 uppercase font-bold">6-Mavzu: Monetizatsiya & Telegram Stars / WebApp</span>
+                <h3 class="text-base font-bold text-white mt-0.5">
+                  Telegram Stars orqali VIP obuna qo'shish va WebApp orqali to'lovlarni xavfsiz qabul qilish arxitekturasi.
+                </h3>
+                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <strong>Seniorga kontekst:</strong> Hozir monetizatsiya faqat majburiy homiy kanallari orqali ishlaydi. Keyingi bosqichda reklamasiz VIP bot, tezkor yuklab olish kanali yoki Telegram Stars to'lovlarini backend bilan qanday xavfsiz integratsiya qilish kerak?
+                </p>
+                <textarea id="notes-q6" placeholder="Senior maslahati va qaydlar..." class="mt-3 w-full p-2.5 rounded-lg bg-dark-bg border border-dark-border text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PITCH MODAL (SENIORGA YUBORISH UCHUN TAYYOR MATN) -->
+  <div id="pitch-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass-card rounded-2xl max-w-2xl w-full p-6 border border-brand-500/40 neon-glow relative">
+      <button onclick="closePitchModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-2 mb-4">
+        <div class="p-2 rounded-lg bg-brand-500/20 text-brand-400">
+          <i data-lucide="send" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white">Senior Dasturchiga Yuborish Uchun Tayyor Matn</h3>
+      </div>
+
+      <p class="text-xs text-slate-300 mb-3">
+        Quyidagi matnni nusxalab olib, Telegram yoki messenjeringiz orqali Senior dasturchiga yuboring. U loyihangizning barcha texnik jihatlarini darhol tushunadi:
+      </p>
+
+      <div class="relative mb-4">
+        <textarea id="pitch-text" readonly class="w-full h-64 p-3.5 rounded-xl bg-dark-bg border border-dark-border text-xs font-mono text-slate-200 resize-none focus:outline-none leading-relaxed">
+Assalomu alaykum! Loyihamiz arxitekturasi bo'yicha sizning senior darajadagi tajribangiz va maslahatingiz kerak edi.
+
+Loyiha nomi: KINOCHI (Kino & Seriallar ekotizimi)
+Stack: FastAPI (Clean Architecture/DDD), Aiogram 3.x, Next.js 14 (App Router), PostgreSQL (Neon), Redis, Telethon skraperlari.
+
+Asosiy arxitektura konsepsiyasi:
+1. Video hosting xarajatini $0 qilish maqsadida vebsaytda umuman video striming yo'q — u faqat SEO, reytinglar va katalog vazifasini bajaradi.
+2. Butun media yetkazib berish Telegram Bot va Telegram Cloud Storage orqali deep-link (t.me/bot?start=movie_code) bilan amalga oshiriladi.
+3. Obuna darvozasi (gating): Foydalanuvchi homiy kanallarga a'zo bo'lgachgina HD videoni copy_message orqali oladi. Ko'p ovozli studiyalar (tarjimalar) switcheri mavjud.
+4. Hozirda 40/40 testlar o'tgan, Redis katalog keshi (0.003s) va Render IPv6 DNS tuzatishlari qilingan.
+
+Siz bilan quyidagi savollarni muhokama qilmoqchimiz:
+- Bitta dyno ichidagi run.py (FastAPI + Aiogram) ni 50k+ DAU da mikroservis/alohida konteynerlarga ajratish strategiyasi;
+- Neon PostgreSQL connection pooling va PgBouncer zarurati;
+- 100k+ foydalanuvchiga Telegram broadcast xabarlarini queue (Celery/BullMQ) orqali bloklanmasdan yuborish.
+
+Loyihaning interaktiv arxitektura vebsaytini tayyorladik. Ko'rib berishga vaqtingiz bo'ladimi?
+        </textarea>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span id="copy-status" class="text-xs font-mono text-accent-emerald hidden">Nusxalandi! &check;</span>
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="copyPitchText()" class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs flex items-center gap-2 transition">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            <span>Nusxalash (Copy)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="py-12 border-t border-dark-border text-center text-xs text-slate-500 font-mono">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+        <span class="text-slate-300 font-bold">Kinochi Project Technical Architecture</span>
+      </div>
+      <p>Clean Architecture &bull; Domain-Driven Design &bull; Zero-Bandwidth Cloud Media Solution</p>
+      <p class="mt-2 text-slate-600">&copy; 2026 Kinochi Engineering Team. Barcha huquqlar himoyalangan.</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Tab Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('[id^="btn-tab-"]').forEach(btn => {
+        btn.classList.remove('bg-brand-500', 'text-white');
+        btn.classList.add('bg-dark-card2', 'text-slate-400');
+      });
+
+      document.getElementById(tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('btn-' + tabId);
+      activeBtn.classList.remove('bg-dark-card2', 'text-slate-400');
+      activeBtn.classList.add('bg-brand-500', 'text-white');
+      lucide.createIcons();
+    }
+
+    // Interactive Architecture Inspector
+    const archDetails = {
+      website: {
+        title: "Kinochi Web (Next.js 14 App Router)",
+        badge: "Next.js 14 + Tailwind",
+        desc: "Ommaviy kino katalogi. Server-side rendering (SSR) orqali Google SEOda yuqori o'rinlarni oladi. Foydalanuvchilar qidiruv, janrlar, 18+ filtri, aktyorlar va YouTube treylerni ko'rishadi.",
+        keyPoints: [
+          "Hech qanday video striming yo'q &mdash; server va litsenziya xarajati nolga teng",
+          "Schema.org Movie va TVSeries JSON-LD avtomatik qo'shiladi",
+          "Har bir filmda 'Telegramda Tomosha Qilish' CTA tugmasi mavjud",
+          "Next.js build: force-dynamic orqali barqaror kompilyatsiya qilingan"
+        ]
+      },
+      bot: {
+        title: "Telegram Bot (Aiogram 3.x)",
+        badge: "Aiogram 3 + Python 3.11",
+        desc: "Foydalanuvchiga videoni yetkazib beruvchi yagona markaz. Deep link orqali tushgan foydalanuvchini ro'yxatga oladi, homiy kanallarni tekshiradi va faylni jo'natadi.",
+        keyPoints: [
+          "clean_and_extract_code: Har qanday formatdagi kino/serial kodini taniydi",
+          "SubscriptionMiddleware: Majburiy obunani server darajasida tekshiradi",
+          "copy_message: Videoni toza, reklamasiz nusxa qilib uzatadi",
+          "Ko'p ovozli studiyalarni inline tugmalar orqali almashtirish"
+        ]
+      },
+      admin: {
+        title: "Admin Panel (Next.js 14)",
+        badge: "Next.js + JWT Auth",
+        desc: "Kontent menejerlari va adminlar uchun boshqaruv markazi. Filmlar, seriallar, fasllar, homiy kanallar va bildirishnomalarni qulay boshqarish imkonini beradi.",
+        keyPoints: [
+          "VideoUploadModal: Telegram storage kanaliga fayl yuklash va progress bar",
+          "Homiy kanallar limiti bo'yicha avtomatik rotatsiya",
+          "Foydalanuvchilar va yuklamalar statistikasi",
+          "JWT asosidagi xavfsiz sessiya va audit loglar"
+        ]
+      },
+      "api-layer": {
+        title: "FastAPI REST API Layer",
+        badge: "FastAPI + Pydantic v2",
+        desc: "Barcha mijozlar (Bot, Web, Admin) uchun yagona kirish nuqtasi. Har bir so'rov Pydantic v2 sxemalari orqali qat'iy tekshiriladi.",
+        keyPoints: [
+          "SlowAPI orqali IP va foydalanuvchi bo'yicha rate limiting",
+          "CORS xavfsizligi va maxfiy Bot API kalitlari",
+          "Telegram login widgeti uchun HMAC-SHA256 validatsiyasi",
+          "Clean Architecture presentation qatlami"
+        ]
+      },
+      "application-layer": {
+        title: "Application Layer (Use Cases)",
+        badge: "Orchestration Layer",
+        desc: "Biznes jarayonlarini muvofiqlashtiruvchi xizmatlar to'plami. Repozitoriylar bilan ishlaydi, tranzaksiyalarni boshqaradi.",
+        keyPoints: [
+          "MovieService: Filmlarni yaratish, yangilash, keshni tozalash",
+          "SeriesService: Fasl va qismlar ierarxiyasini boshqarish",
+          "BroadcastSender: Mass xabarlarni xavfsiz yuborish",
+          "UserService: Foydalanuvchi profili va faollik hisobi"
+        ]
+      },
+      "domain-layer": {
+        title: "Domain Layer (Pure Business Logic)",
+        badge: "DDD Core",
+        desc: "Loyiha yadrosi. Hech qanday framework yoki tashqi kutubxonalarga bog'liq bo'lmagan sof entitiylar va qiymat obyektlari.",
+        keyPoints: [
+          "Mustaqil va unit testlar uchun juda qulay",
+          "Biznes qoidalari va invariantlar shu yerda saqlanadi",
+          "Almashuvchan repozitoriy interfeyslari (Protocol/ABC)"
+        ]
+      },
+      "infra-layer": {
+        title: "Infrastructure Layer",
+        badge: "SQLAlchemy 2.0 + Redis",
+        desc: "Ma'lumotlar bazasi, kesh, tashqi API'lar va Telegram mijozlari bilan bevosita bog'lanish qatlami.",
+        keyPoints: [
+          "SQLAlchemy 2.0 AsyncSession (asyncpg drayveri)",
+          "Render IPv6 DNS tuzatish (socket monkey patch)",
+          "TMDB va Shikimori metadata API klientlari",
+          "Redis client wrapper va xatoliklarni qayta ishlash"
+        ]
+      },
+      postgres: {
+        title: "PostgreSQL (Neon Serverless)",
+        badge: "PostgreSQL 16 + Asyncpg",
+        desc: "Asosiy ma'lumotlar ombori. 14 ta normallashtirilgan jadval, kaskadli yaxlitlik va Alembic orqali boshqariladigan migratsiyalar.",
+        keyPoints: [
+          "Barcha munosabatlar lazy='selectin' orqali N+1 muammosisiz yuklanadi",
+          "Tez-tez qidiriladigan ustunlarda B-Tree indekslar mavjud",
+          "Alembic migratsiyalari head versiyada (toza holatda)"
+        ]
+      },
+      redis: {
+        title: "Redis Kesh & Throttle",
+        badge: "In-Memory Datastore",
+        desc: "Juda yuqori tezlikdagi kesh va fon vazifalari boshqaruvi. API javoblarini 7 soniyadan 3 millisekundga qisqartirdi.",
+        keyPoints: [
+          "5 minutlik katalog keshi (mutatsiyada avtomatik o'chadi)",
+          "Bot uchun ThrottlingMiddleware (spamlardan himoya)",
+          "Video yuklash jarayonlari (upload jobs) progress holati"
+        ]
+      },
+      "telegram-storage": {
+        title: "Telegram Cloud CDN",
+        badge: "Infinite Free Bandwidth",
+        desc: "Yopiq Telegram kanali videolarni bepul va cheksiz saqlash ombori sifatida ishlatiladi.",
+        keyPoints: [
+          "Videolar Telegram serverlarida saqlanadi, server xarajati $0",
+          "Bazada faqat file_id va message_id saqlanadi",
+          "Foydalanuvchilarga global Telegram CDN orqali tezkor uzatiladi"
+        ]
+      }
+    };
+
+    function selectArchComponent(key) {
+      const data = archDetails[key];
+      if (!data) return;
+
+      const html = `
+        <div class="animate-fadeIn">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono font-bold text-brand-400">${data.badge}</span>
+            <span class="text-[10px] text-accent-emerald font-mono">Faol Komponent</span>
+          </div>
+          <h4 class="text-base font-bold text-white mb-2">${data.title}</h4>
+          <p class="text-xs text-slate-300 leading-relaxed mb-4">${data.desc}</p>
+          <div class="space-y-2">
+            <div class="text-[11px] font-mono uppercase text-slate-400 font-bold">Asosiy Xususiyatlari:</div>
+            <ul class="text-xs text-slate-400 space-y-1.5">
+              ${data.keyPoints.map(p => `<li class="flex items-start gap-1.5"><span class="text-brand-400">&bull;</span><span>${p}</span></li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+      document.getElementById('inspector-content').innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // Highlight layers
+    function highlightLayer(type) {
+      const client = document.getElementById('layer-client');
+      const backend = document.getElementById('layer-backend');
+      const data = document.getElementById('layer-data');
+
+      [client, backend, data].forEach(el => {
+        el.style.opacity = '0.35';
+        el.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+      });
+
+      if (type === 'all') {
+        [client, backend, data].forEach(el => {
+          el.style.opacity = '1';
+        });
+      } else if (type === 'client') {
+        client.style.opacity = '1';
+        client.style.borderColor = '#06b6d4';
+      } else if (type === 'backend') {
+        backend.style.opacity = '1';
+        backend.style.borderColor = '#8b5cf6';
+      } else if (type === 'data') {
+        data.style.opacity = '1';
+        data.style.borderColor = '#10b981';
+      }
+    }
+
+    // Filter tables in Schema section
+    function filterTables() {
+      const q = document.getElementById('schema-search').value.toLowerCase();
+      document.querySelectorAll('.schema-card').forEach(card => {
+        const text = card.innerText.toLowerCase();
+        if (text.includes(q)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // Pitch Modal Logic
+    function copyPitchModal() {
+      document.getElementById('pitch-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closePitchModal() {
+      document.getElementById('pitch-modal').classList.add('hidden');
+    }
+    function copyPitchText() {
+      const textarea = document.getElementById('pitch-text');
+      textarea.select();
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        const status = document.getElementById('copy-status');
+        status.classList.remove('hidden');
+        setTimeout(() => status.classList.add('hidden'), 3000);
+      });
+    }
+
+    // Export Notes from Senior Consultation
+    function exportConsultationNotes() {
+      let content = "=== KINOCHI SENIOR FULL STACK KONSULTATSIYA QAYDLARI ===\n\n";
+      content += `Sana: ${new Date().toLocaleDateString()}\n\n`;
+
+      for (let i = 1; i <= 6; i++) {
+        const checked = document.getElementById(`q${i}-check`).checked;
+        const notes = document.getElementById(`notes-q${i}`).value;
+        content += `[${checked ? 'X' : ' '}] Savol #${i}:\nQaydlar: ${notes ? notes : "(Qayd yozilmadi)"}\n\n`;
+      }
+
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "kinochi_senior_consultation_notes.txt";
+      a.click();
+    }
+
+    // Default select on page load
+    selectArchComponent('backend');
+  </script>
+</body>
+</html>

@@ -454,5 +454,45 @@ class TelegramClient:
             logger.error(f"send_video exception: {e}")
             return False
 
+    async def delete_forum_topic(self, chat_id: int | str, message_thread_id: int) -> bool:
+        """
+        Telegram superguruhdagi forum topicni butunlay o'chiradi.
+        Bot API yoki Userbot orqali o'chiradi.
+        """
+        if not chat_id or not message_thread_id:
+            return False
+        # 1. Bot API
+        if self.bot_token:
+            url = f"{self.base_url}/deleteForumTopic"
+            payload = {"chat_id": chat_id, "message_thread_id": message_thread_id}
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.status_code == 200 and resp.json().get("ok"):
+                        logger.info(f"✅ Forum topic {message_thread_id} bot orqali o'chirildi ({chat_id})")
+                        return True
+                    logger.warning(f"deleteForumTopic Bot API returned {resp.status_code}: {resp.text}")
+            except Exception as e:
+                logger.warning(f"deleteForumTopic Bot API error: {e}")
+
+        # 2. Userbot fallback
+        try:
+            from scraper.telethon_moderator_pipeline import create_telethon_client
+            from telethon.tl.functions.channels import DeleteTopicHistoryRequest
+            client = create_telethon_client()
+            await client.connect()
+            try:
+                cid = int(chat_id) if (isinstance(chat_id, int) or (isinstance(chat_id, str) and chat_id.lstrip('-').isdigit())) else chat_id
+                peer = await client.get_input_entity(cid)
+                await client(DeleteTopicHistoryRequest(channel=peer, top_msg_id=message_thread_id))
+                logger.info(f"✅ Forum topic {message_thread_id} userbot orqali o'chirildi ({chat_id})")
+                return True
+            finally:
+                await client.disconnect()
+        except Exception as e:
+            logger.warning(f"delete_forum_topic userbot error: {e}")
+            return False
+
 telegram_client = TelegramClient()
+
 

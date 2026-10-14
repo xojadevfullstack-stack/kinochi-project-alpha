@@ -179,7 +179,18 @@ async def delete_series(
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
-    """Delete a series (Admin only)."""
+    """Delete a series (Admin only) with full cascade: DB + Telegram topic + Cache."""
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+
+    if series.source and series.source.chat_id and series.source.topic_id:
+        try:
+            from app.infrastructure.telegram.telegram_client import telegram_client
+            await telegram_client.delete_forum_topic(series.source.chat_id, series.source.topic_id)
+        except Exception as e:
+            logger.warning(f"Could not cascade delete telegram topic for series {series_id}: {e}")
+
     success = await service.delete_series(series_id)
     if not success:
         raise HTTPException(status_code=404, detail="Series not found")
