@@ -828,36 +828,73 @@ async def find_duplicates(
                 ]
             })
 
-        # 2. Normalized title matching
-        all_movies_stmt = select(MovieModel.id, MovieModel.title, MovieModel.original_title, MovieModel.release_year, MovieModel.code, MovieModel.poster_url).order_by(MovieModel.id.desc()).limit(1000)
+        # 2. Normalized title matching (using Uzbek stem normalization)
+        all_movies_stmt = select(MovieModel.id, MovieModel.title, MovieModel.original_title, MovieModel.release_year, MovieModel.code, MovieModel.poster_url).order_by(MovieModel.id.desc()).limit(1500)
         all_m = (await db.execute(all_movies_stmt)).all()
         import re
 
-        def norm(t: str) -> str:
+        def uzbek_stem_word(word: str) -> str:
+            if not word or len(word) < 4:
+                return word
+            w = word.lower()
+            w = re.sub(r'(?:larning|larimiz|laringiz|larida|laridan|lariga|larini)$', '', w)
+            if len(w) >= 5:
+                w = re.sub(r'(?:dagi|ning|dan|lar|ga|ka|qa|da|ni|si|imiz|ingiz)$', '', w)
+            if len(w) >= 4 and w.endswith('i') and w[-2] not in 'aeiouy':
+                w = w[:-1]
+            return w if len(w) >= 3 else word
+
+        def norm_stem(t: str) -> str:
             if not t:
                 return ""
-            return re.sub(r"[^\w\s]", "", t.lower()).strip()
+            cleaned = re.sub(r"[^\w\s]", "", t.lower()).strip()
+            words = [uzbek_stem_word(w) for w in cleaned.split() if w]
+            return "".join(words)
 
+        already_grouped_ids = {m["id"] for g in duplicates_groups for m in g["items"]}
         seen_titles = {}
         for mid, mtitle, morig, myear, mcode, mposter in all_m:
-            clean = norm(mtitle)
+            clean = norm_stem(mtitle)
             if not clean or len(clean) < 3:
                 continue
             key = f"{clean}_{myear}" if myear else clean
+            item_entry = {"id": mid, "title": mtitle, "year": myear, "code": mcode, "poster_url": mposter}
             if key in seen_titles:
-                seen_titles[key].append({"id": mid, "title": mtitle, "year": myear, "code": mcode, "poster_url": mposter})
+                seen_titles[key].append(item_entry)
             else:
-                seen_titles[key] = [{"id": mid, "title": mtitle, "year": myear, "code": mcode, "poster_url": mposter}]
+                seen_titles[key] = [item_entry]
 
         for k, items in seen_titles.items():
-            if len(items) > 1 and not any(any(it["id"] == m["id"] for m in g["items"]) for g in duplicates_groups):
+            if len(items) > 1 and not any(cand["id"] in already_grouped_ids for cand in items):
                 duplicates_groups.append({
                     "match_reason": f"Nom o'xshashligi: {items[0]['title']}",
                     "items": items
                 })
+                already_grouped_ids.update(cand["id"] for cand in items)
 
     else:
         # Series
+        import re
+
+        def uzbek_stem_word(word: str) -> str:
+            if not word or len(word) < 4:
+                return word
+            w = word.lower()
+            w = re.sub(r'(?:larning|larimiz|laringiz|larida|laridan|lariga|larini)$', '', w)
+            if len(w) >= 5:
+                w = re.sub(r'(?:dagi|ning|dan|lar|ga|ka|qa|da|ni|si|imiz|ingiz)$', '', w)
+            if len(w) >= 4 and w.endswith('i') and w[-2] not in 'aeiouy':
+                w = w[:-1]
+            return w if len(w) >= 3 else word
+
+        def norm_stem(t: str) -> str:
+            if not t:
+                return ""
+            cleaned = re.sub(r"[^\w\s]", "", t.lower()).strip()
+            words = [uzbek_stem_word(w) for w in cleaned.split() if w]
+            return "".join(words)
+
+        # 1. TMDb ID based duplicate series
         tmdb_dup_query = (
             select(SeriesModel.tmdb_id)
             .where(SeriesModel.tmdb_id.isnot(None), SeriesModel.tmdb_id > 0)
@@ -868,12 +905,22 @@ async def find_duplicates(
 
         for tid in tmdb_dups:
             stmt = (
-                select(SeriesModel)
-                .options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes))
+                select(
+                    SeriesModel.id,
+                    SeriesModel.title,
+                    SeriesModel.release_year,
+                    SeriesModel.poster_url,
+                    SeriesModel.created_at,
+                    func.count(func.distinct(SeasonModel.id)).label("seasons_count"),
+                    func.count(func.distinct(EpisodeModel.id)).label("episodes_count"),
+                )
+                .outerjoin(SeasonModel, SeasonModel.series_id == SeriesModel.id)
+                .outerjoin(EpisodeModel, EpisodeModel.season_id == SeasonModel.id)
                 .where(SeriesModel.tmdb_id == tid)
+                .group_by(SeriesModel.id)
                 .order_by(SeriesModel.id.asc())
             )
-            series_list = (await db.execute(stmt)).scalars().all()
+            series_list = (await db.execute(stmt)).all()
             duplicates_groups.append({
                 "match_reason": f"TMDb ID: {tid}",
                 "items": [
@@ -883,13 +930,62 @@ async def find_duplicates(
                         "code": f"S{s.id}",
                         "release_year": s.release_year,
                         "poster_url": s.poster_url,
-                        "seasons_count": len(s.seasons or []),
-                        "episodes_count": sum(len(sz.episodes or []) for sz in (s.seasons or [])),
+                        "seasons_count": s.seasons_count or 0,
+                        "episodes_count": s.episodes_count or 0,
                         "created_at": s.created_at.isoformat() if s.created_at else None,
                     }
                     for s in series_list
                 ]
             })
+
+        # 2. Stemmed title similarity for Series (finds e.g. Iyerusalimning vs Iyerusalim)
+        already_grouped_series_ids = {m["id"] for g in duplicates_groups for m in g["items"]}
+        all_series_stmt = (
+            select(
+                SeriesModel.id,
+                SeriesModel.title,
+                SeriesModel.release_year,
+                SeriesModel.poster_url,
+                SeriesModel.created_at,
+                func.count(func.distinct(SeasonModel.id)).label("seasons_count"),
+                func.count(func.distinct(EpisodeModel.id)).label("episodes_count"),
+            )
+            .outerjoin(SeasonModel, SeasonModel.series_id == SeriesModel.id)
+            .outerjoin(EpisodeModel, EpisodeModel.season_id == SeasonModel.id)
+            .group_by(SeriesModel.id)
+            .order_by(SeriesModel.id.desc())
+            .limit(1500)
+        )
+        all_s = (await db.execute(all_series_stmt)).all()
+
+        seen_series = {}
+        for s in all_s:
+            clean = norm_stem(s.title)
+            if not clean or len(clean) < 3:
+                continue
+            key = f"{clean}_{s.release_year}" if s.release_year else clean
+            item_entry = {
+                "id": s.id,
+                "title": s.title,
+                "code": f"S{s.id}",
+                "release_year": s.release_year,
+                "poster_url": s.poster_url,
+                "seasons_count": s.seasons_count or 0,
+                "episodes_count": s.episodes_count or 0,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            if key in seen_series:
+                seen_series[key].append(item_entry)
+            else:
+                seen_series[key] = [item_entry]
+
+        for k, items in seen_series.items():
+            if len(items) > 1 and not any(cand["id"] in already_grouped_series_ids for cand in items):
+                duplicates_groups.append({
+                    "match_reason": f"Nom o'xshashligi: {items[0]['title']}",
+                    "items": items
+                })
+                already_grouped_series_ids.update(cand["id"] for cand in items)
 
     return {"total_groups": len(duplicates_groups), "groups": duplicates_groups}
 
@@ -1034,8 +1130,6 @@ async def merge_duplicates(
             primary.poster_url = dup.poster_url
         if (not primary.description or len(primary.description.strip()) < 30) and dup.description:
             primary.description = dup.description
-        if not primary.genres and dup.genres:
-            primary.genres = dup.genres
         if not primary.trailer_url and dup.trailer_url:
             primary.trailer_url = dup.trailer_url
 
@@ -1114,37 +1208,64 @@ async def check_sequence_gaps(
 ):
     """
     Checks all series seasons for missing episode numbers in the sequence (e.g. 1 to 41 gap).
+    High-performance SQL query: selects only seasons where MAX(episode_number) > COUNT(episodes).
     """
-    stmt = (
-        select(SeriesModel)
-        .options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes))
+    gap_seasons_stmt = (
+        select(
+            SeriesModel.id.label("series_id"),
+            SeriesModel.title.label("series_title"),
+            SeasonModel.id.label("season_id"),
+            SeasonModel.season_number.label("season_number"),
+            func.count(EpisodeModel.id).label("total_episodes"),
+            func.max(EpisodeModel.episode_number).label("max_episode_number"),
+        )
+        .join(SeasonModel, SeasonModel.series_id == SeriesModel.id)
+        .join(EpisodeModel, EpisodeModel.season_id == SeasonModel.id)
+        .group_by(SeriesModel.id, SeriesModel.title, SeasonModel.id, SeasonModel.season_number)
+        .having(
+            func.count(EpisodeModel.id) >= 2,
+            func.max(EpisodeModel.episode_number) > func.count(EpisodeModel.id)
+        )
         .order_by(SeriesModel.id.desc())
+        .limit(200)
     )
-    result = await db.execute(stmt)
-    series_list = result.scalars().all()
+    gap_seasons = (await db.execute(gap_seasons_stmt)).all()
+
+    if not gap_seasons:
+        return {"total_gaps": 0, "items": []}
+
+    season_ids = [row.season_id for row in gap_seasons]
+    ep_stmt = (
+        select(EpisodeModel.season_id, EpisodeModel.episode_number)
+        .where(EpisodeModel.season_id.in_(season_ids))
+        .order_by(EpisodeModel.season_id, EpisodeModel.episode_number)
+    )
+    ep_rows = (await db.execute(ep_stmt)).all()
+
+    season_ep_map = {}
+    for s_id, ep_num in ep_rows:
+        if s_id not in season_ep_map:
+            season_ep_map[s_id] = set()
+        season_ep_map[s_id].add(ep_num)
 
     gaps = []
-    for s in series_list:
-        for sz in (s.seasons or []):
-            episodes = sz.episodes or []
-            if len(episodes) < 2:
-                continue
-            ep_numbers = sorted([e.episode_number for e in episodes])
-            max_num = max(ep_numbers)
-            if max_num > len(ep_numbers):
-                missing = sorted(list(set(range(1, max_num + 1)) - set(ep_numbers)))
-                if missing:
-                    gaps.append({
-                        "series_id": s.id,
-                        "series_title": s.title,
-                        "season_id": sz.id,
-                        "season_number": sz.season_number,
-                        "total_episodes": len(episodes),
-                        "max_episode_number": max_num,
-                        "missing_count": len(missing),
-                        "missing_episodes": missing[:20],  # preview first 20
-                        "gap_summary": f"1 dan {max_num} gacha bo'lgan ketma-ketlikda {len(missing)} ta qism yetishmayapti",
-                    })
+    for row in gap_seasons:
+        ep_numbers = season_ep_map.get(row.season_id, set())
+        max_num = row.max_episode_number or 0
+        if max_num > len(ep_numbers):
+            missing = sorted(list(set(range(1, max_num + 1)) - ep_numbers))
+            if missing:
+                gaps.append({
+                    "series_id": row.series_id,
+                    "series_title": row.series_title,
+                    "season_id": row.season_id,
+                    "season_number": row.season_number,
+                    "total_episodes": row.total_episodes,
+                    "max_episode_number": max_num,
+                    "missing_count": len(missing),
+                    "missing_episodes": missing[:20],
+                    "gap_summary": f"1 dan {max_num} gacha bo'lgan ketma-ketlikda {len(missing)} ta qism yetishmayapti",
+                })
 
     return {"total_gaps": len(gaps), "items": gaps}
 
@@ -1159,33 +1280,41 @@ async def check_incomplete_series(
     """
     Finds series where season.episode_count is known but actual episodes in DB is fewer.
     Sorted by biggest gap descending.
+    Fast grouped SQL query executed directly on DB.
     """
     stmt = (
-        select(SeriesModel)
-        .options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes))
-        .order_by(SeriesModel.id.desc())
+        select(
+            SeriesModel.id.label("series_id"),
+            SeriesModel.title.label("series_title"),
+            SeriesModel.poster_url.label("poster_url"),
+            SeasonModel.season_number.label("season_number"),
+            SeasonModel.episode_count.label("expected_episodes"),
+            func.count(EpisodeModel.id).label("existing_episodes"),
+            (SeasonModel.episode_count - func.count(EpisodeModel.id)).label("missing_count"),
+        )
+        .join(SeasonModel, SeasonModel.series_id == SeriesModel.id)
+        .outerjoin(EpisodeModel, EpisodeModel.season_id == SeasonModel.id)
+        .where(SeasonModel.episode_count.isnot(None), SeasonModel.episode_count > 0)
+        .group_by(SeriesModel.id, SeriesModel.title, SeriesModel.poster_url, SeasonModel.id, SeasonModel.season_number, SeasonModel.episode_count)
+        .having(func.count(EpisodeModel.id) < SeasonModel.episode_count)
+        .order_by((SeasonModel.episode_count - func.count(EpisodeModel.id)).desc())
+        .limit(200)
     )
-    result = await db.execute(stmt)
-    series_list = result.scalars().all()
+    rows = (await db.execute(stmt)).all()
 
-    incomplete = []
-    for s in series_list:
-        for sz in (s.seasons or []):
-            if sz.episode_count and sz.episode_count > 0:
-                actual_count = len(sz.episodes or [])
-                if actual_count < sz.episode_count:
-                    gap = sz.episode_count - actual_count
-                    incomplete.append({
-                        "series_id": s.id,
-                        "series_title": s.title,
-                        "season_number": sz.season_number,
-                        "expected_episodes": sz.episode_count,
-                        "existing_episodes": actual_count,
-                        "missing_count": gap,
-                        "poster_url": s.poster_url,
-                    })
+    incomplete = [
+        {
+            "series_id": r.series_id,
+            "series_title": r.series_title,
+            "season_number": r.season_number,
+            "expected_episodes": r.expected_episodes,
+            "existing_episodes": r.existing_episodes,
+            "missing_count": r.missing_count,
+            "poster_url": r.poster_url,
+        }
+        for r in rows
+    ]
 
-    incomplete.sort(key=lambda x: x["missing_count"], reverse=True)
     return {"total_incomplete": len(incomplete), "items": incomplete}
 
 

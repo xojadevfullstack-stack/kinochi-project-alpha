@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # List of common Uzbek noise words and phrases to strip for clean comparison
 NOISE_PATTERNS = [
     r'\b(?:premyera|premyera\s*\d{4})\b',
+    r'\b(?:yangi\s+premyera|yangi\s+marvel|yangi\s+dc|yangi\s+fasl|yangi\s+mavsum)\b',
     r'\b(?:uzbek|o[\'ʻ`’]zbek|ozbek)\s*tilida\b',
     r'\b(?:tarjima|tarjima\s*kino|tarjima\s*film|tarjima\s*serial)\b',
     r'\b(?:koreys|hind|turk|xitoy|rus|amerika)\s*(?:filmi|kino|seriali)\b',
@@ -28,6 +29,35 @@ NOISE_PATTERNS = [
     r'\b(?:multfilm|multik|multfilmi)\b',
     r'\b(?:kino|film|serial)\b',
 ]
+
+def uzbek_stem_word(word: str) -> str:
+    """
+    O'zbek tili grammatik qo'shimchalarini (kelishik, egalik, ko'plik) tozalab o'zagini ajratadi.
+    Masalan:
+    'iyerusalimning' -> 'iyerusalim'
+    'qirolichasi' -> 'qirolicha'
+    'bolalar' -> 'bola'
+    'shaharda' -> 'shahar'
+    """
+    if not word or len(word) < 4:
+        return word
+    w = word.lower()
+    # 1. Murakkab uzun qo'shimchalar
+    w = re.sub(r'(?:larning|larimiz|laringiz|larida|laridan|lariga|larini)$', '', w)
+    # 2. Standart kelishik, ko'plik va egalik qo'shimchalari
+    if len(w) >= 5:
+        w = re.sub(r'(?:dagi|ning|dan|lar|ga|ka|qa|da|ni|si|imiz|ingiz|miz)$', '', w)
+    # 3. Yolg'iz -i yoki -si qo'shimchasi
+    if len(w) >= 4 and w.endswith('i') and w[-2] not in 'aeiouy':
+        w = w[:-1]
+    return w if len(w) >= 3 else word
+
+def uzbek_stem_text(text: Optional[str]) -> str:
+    """Matndagi har bir so'zni o'zbekcha stem qiladi."""
+    if not text:
+        return ""
+    words = text.split()
+    return " ".join(uzbek_stem_word(w) for w in words)
 
 def normalize_uzbek_text(text: Optional[str]) -> str:
     """
@@ -68,6 +98,19 @@ def to_slug(text: Optional[str]) -> str:
     norm = normalize_uzbek_text(text)
     norm = re.sub(r'(?<![sc])x', 'h', norm)
     return re.sub(r'[^a-z0-9]', '', norm)
+
+def to_stem_slug(text: Optional[str]) -> str:
+    """
+    Grammatik qo'shimchalardan tozalangan o'zak slug hosil qiladi:
+    'Iyerusalimning go\'zallik qirolichasi' -> 'iyerusalimgozallikqirolicha'
+    'Iyerusalim go\'zallik qirolichasi' -> 'iyerusalimgozallikqirolicha'
+    """
+    if not text:
+        return ""
+    norm = normalize_uzbek_text(text)
+    stemmed = uzbek_stem_text(norm)
+    stemmed = re.sub(r'(?<![sc])x', 'h', stemmed)
+    return re.sub(r'[^a-z0-9]', '', stemmed)
 
 def extract_title_variants(raw_title: str) -> List[str]:
     """
@@ -265,14 +308,26 @@ class DuplicateChecker:
                 m_dict["type"] = "movie"
                 m_dict["is_incomplete"] = False
                 slug = to_slug(m_dict["title"])
+                stem_slug = to_stem_slug(m_dict["title"])
                 m_dict["slug"] = slug
-                m_dict["variants_slugs"] = [to_slug(v) for v in extract_title_variants(m_dict["title"])]
+                m_dict["stem_slug"] = stem_slug
+                v_slugs = set()
+                for v in extract_title_variants(m_dict["title"]):
+                    s1 = to_slug(v)
+                    if s1:
+                        v_slugs.add(s1)
+                    s2 = to_stem_slug(v)
+                    if s2:
+                        v_slugs.add(s2)
+                m_dict["variants_slugs"] = list(v_slugs)
                 if m_dict.get("original_title"):
                     m_dict["orig_slug"] = to_slug(m_dict["original_title"])
                 
                 self._movies.append(m_dict)
                 if slug:
                     self._movie_slug_map[slug] = m_dict
+                if stem_slug and stem_slug not in self._movie_slug_map:
+                    self._movie_slug_map[stem_slug] = m_dict
 
             self._series = []
             self._series_slug_map = {}
@@ -281,12 +336,24 @@ class DuplicateChecker:
                 s_dict["type"] = "series"
                 s_dict["is_incomplete"] = (s_dict.get("episode_count", 0) == 0 or s_dict.get("translation_count", 0) == 0)
                 slug = to_slug(s_dict["title"])
+                stem_slug = to_stem_slug(s_dict["title"])
                 s_dict["slug"] = slug
-                s_dict["variants_slugs"] = [to_slug(v) for v in extract_title_variants(s_dict["title"])]
+                s_dict["stem_slug"] = stem_slug
+                v_slugs = set()
+                for v in extract_title_variants(s_dict["title"]):
+                    s1 = to_slug(v)
+                    if s1:
+                        v_slugs.add(s1)
+                    s2 = to_stem_slug(v)
+                    if s2:
+                        v_slugs.add(s2)
+                s_dict["variants_slugs"] = list(v_slugs)
                 
                 self._series.append(s_dict)
                 if slug:
                     self._series_slug_map[slug] = s_dict
+                if stem_slug and stem_slug not in self._series_slug_map:
+                    self._series_slug_map[stem_slug] = s_dict
 
             self._last_cache_time = now
             logger.info(
@@ -339,7 +406,18 @@ class DuplicateChecker:
             return DuplicateCheckResult(is_duplicate=False)
 
         candidate_variants = extract_title_variants(title)
-        candidate_slugs = [to_slug(v) for v in candidate_variants if to_slug(v)]
+        c_slugs = set()
+        for v in candidate_variants:
+            s1 = to_slug(v)
+            if s1:
+                c_slugs.add(s1)
+            s2 = to_stem_slug(v)
+            if s2:
+                c_slugs.add(s2)
+        c_stem = to_stem_slug(title)
+        if c_stem:
+            c_slugs.add(c_stem)
+        candidate_slugs = list(c_slugs)
         cand_orig_slug = to_slug(original_title) if original_title else ""
 
         # Qaysi ro'yxatlarni tekshiramiz? media_type berilgan bo'lsa, qat'iy o'z turi bo'yicha tekshiriladi
@@ -392,7 +470,7 @@ class DuplicateChecker:
             except (ValueError, TypeError):
                 pass
 
-        # ── 1. To'g'ridan-to'g'ri Slug bo'yicha tekshirish (Variantlar bilan) ──
+        # ── 1. To'g'ridan-to'g'ri Slug bo'yicha tekshirish (Variantlar va Stem bilan) ──
         for cand_slug in candidate_slugs:
             for item in db_items:
                 db_part = extract_part_number(item.get("title"))
@@ -404,9 +482,10 @@ class DuplicateChecker:
                 if db_part is not None and db_part > 1 and (cand_part is None or cand_part == 1):
                     continue
 
-                # Agar itemning asosiy slugi yoki variantlaridan biriga to'liq teng bo'lsa
+                # Agar itemning asosiy slugi, stem slugi yoki variantlaridan biriga to'liq teng bo'lsa
                 is_slug_match = (
                     cand_slug == item.get("slug") or
+                    cand_slug == item.get("stem_slug") or
                     cand_slug in item.get("variants_slugs", [])
                 )
 
@@ -450,12 +529,11 @@ class DuplicateChecker:
                         candidate_ep_count=episodes_count
                     )
 
-        # ── 3. So'zlar to'plami (Token Overlap) bo'yicha tekshirish ──
-        # Agar sarlavha 3 yoki undan ko'p so'zdan iborat bo'lsa
+        # ── 3. So'zlar to'plami (Stemmed Token Overlap) bo'yicha tekshirish ──
         cand_norm = normalize_uzbek_text(title)
-        cand_words = set(w for w in cand_norm.split() if len(w) > 2)
+        cand_words = set(uzbek_stem_word(w) for w in cand_norm.split() if len(w) > 2)
 
-        if len(cand_words) >= 3:
+        if len(cand_words) >= 2:
             for item in db_items:
                 db_part = extract_part_number(item.get("title"))
                 if cand_part is not None and db_part is not None and cand_part != db_part:
@@ -466,15 +544,16 @@ class DuplicateChecker:
                     continue
 
                 db_norm = normalize_uzbek_text(item["title"])
-                db_words = set(w for w in db_norm.split() if len(w) > 2)
+                db_words = set(uzbek_stem_word(w) for w in db_norm.split() if len(w) > 2)
                 if not db_words:
                     continue
 
                 intersection = cand_words.intersection(db_words)
                 overlap_ratio = len(intersection) / max(len(cand_words), len(db_words))
 
-                # Kamida 85% moslik va yil bo'lishi, yili 1 yildan ortiq farq qilmasligi SHART
-                if overlap_ratio >= 0.85:
+                # Kamida 75% moslik (yoki 2 ta so'zdan iborat bo'lsa 100% moslik)
+                min_ratio = 1.0 if len(cand_words) == 2 else 0.75
+                if overlap_ratio >= min_ratio:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series:

@@ -24,6 +24,36 @@ interface LiveSearchProps {
   isMobileDrawer?: boolean;
 }
 
+function SearchPoster({ item }: { item: SearchResultItem }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!item.poster_url || hasError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-white/30 text-xs bg-white/5">
+        <span className="material-symbols-outlined text-lg">
+          {item.type === "movie"
+            ? "movie"
+            : item.type === "series"
+            ? "live_tv"
+            : "auto_awesome_motion"}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={item.poster_url}
+      alt={item.title}
+      fill
+      sizes="40px"
+      className="object-cover"
+      unoptimized={item.poster_url.includes("uzmovi") || item.poster_url.includes("asilmedia")}
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
 export default function LiveSearch({
   placeholder = "Kino, serial yoki #kod qidirish...",
   className = "",
@@ -199,25 +229,7 @@ export default function LiveSearch({
                   >
                     {/* Poster Thumbnail */}
                     <div className="w-10 h-14 rounded-lg bg-surface-container-high overflow-hidden shrink-0 relative border border-white/10">
-                      {item.poster_url ? (
-                        <Image
-                          src={item.poster_url}
-                          alt={item.title}
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
-                          <span className="material-symbols-outlined text-lg">
-                            {item.type === "movie"
-                              ? "movie"
-                              : item.type === "series"
-                              ? "live_tv"
-                              : "auto_awesome_motion"}
-                          </span>
-                        </div>
-                      )}
+                      <SearchPoster item={item} />
                     </div>
 
                     {/* Metadata */}

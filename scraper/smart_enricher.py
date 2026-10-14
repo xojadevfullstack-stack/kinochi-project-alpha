@@ -402,7 +402,7 @@ def score_tmdb_candidate(
             match_found = True
             title_overlap = max(title_overlap, ratio)
 
-    # Substring tekshiruvi (kamida 4 ta belgi)
+    # Substring / exact slug tekshiruvi (xavfsiz taqqoslash)
     q_clean = re.sub(r'[^\w]', '', query.lower())
     orig_clean = re.sub(r'[^\w]', '', (expected_original_title or '').lower())
     c_clean = re.sub(r'[^\w]', '', cand_title.lower())
@@ -410,9 +410,15 @@ def score_tmdb_candidate(
 
     for t in [q_clean, orig_clean]:
         if len(t) >= 4:
-            if t in c_clean or t in co_clean or c_clean in t or co_clean in t:
-                match_found = True
-                title_overlap = max(title_overlap, 0.8)
+            for cand in [c_clean, co_clean]:
+                if not cand or len(cand) < 4:
+                    continue
+                if t == cand:
+                    match_found = True
+                    title_overlap = max(title_overlap, 1.0)
+                elif (t in cand or cand in t) and (min(len(t), len(cand)) / max(len(t), len(cand)) >= 0.70):
+                    match_found = True
+                    title_overlap = max(title_overlap, 0.8)
 
     # Agar nomzod Kanji/Kirill bo'lsa va TMDb qidiruvida topilgan bo'lsa (yapon animelari uchun)
     if not match_found and (expected_original_title or query):
@@ -749,9 +755,9 @@ async def enrich_movie_smart(
             if best_score >= 90.0:
                 break
 
-    # 3. TMDb tafsilotlarini yuklash (Faqatgina 100% mos kelgandagina!)
+    # 3. TMDb tafsilotlarini yuklash (Faqatgina ball yuqori va mos kelgandagina!)
     details = None
-    if matched_tmdb and matched_tmdb.get("id"):
+    if matched_tmdb and matched_tmdb.get("id") and best_score >= 50.0:
         tmdb_id = matched_tmdb["id"]
         tmdb_type = matched_tmdb.get("content_type", "movie")
         try:
