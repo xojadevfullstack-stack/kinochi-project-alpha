@@ -144,23 +144,30 @@ async def create_report(
             valid_movie_id = movie.id
             media_title = movie.title
             site_url = f"https://kinochi.uz/movie/{movie.code}"
-    elif media_type == "series" and series_id:
-        s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == series_id))
-        series_item = s_res.scalar_one_or_none()
-        if series_item:
-            valid_series_id = series_item.id
-            media_title = series_item.title
-            site_url = f"https://kinochi.uz/series/{series_id}"
-
+    elif media_type in ("series", "episode") or series_id or episode_id:
         if episode_id:
             ep_res = await db.execute(select(EpisodeModel).where(EpisodeModel.id == episode_id))
             episode = ep_res.scalar_one_or_none()
             if episode:
                 valid_episode_id = episode.id
+                valid_series_id = episode.series_id
                 seas_res = await db.execute(select(SeasonModel).where(SeasonModel.id == episode.season_id))
                 season = seas_res.scalar_one_or_none()
                 s_num = season.season_number if season else 1
                 ep_info = f"({s_num}-mavsum, {episode.episode_number}-qism)"
+                
+                s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == episode.series_id))
+                series_item = s_res.scalar_one_or_none()
+                if series_item:
+                    media_title = series_item.title
+                    site_url = f"https://kinochi.uz/series/{series_item.id}"
+        elif series_id:
+            s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == series_id))
+            series_item = s_res.scalar_one_or_none()
+            if series_item:
+                valid_series_id = series_item.id
+                media_title = series_item.title
+                site_url = f"https://kinochi.uz/series/{series_id}"
 
     # DB ga saqlash
     report = ReportModel(

@@ -43,7 +43,7 @@ export default function NotificationsPage() {
 
         // 1. Fetch system broadcasts / announcements
         try {
-          const bData = await fetchApi("/broadcasts?limit=5");
+          const bData = await fetchApi("/broadcasts/public?limit=5");
           if (bData && bData.items) {
             bData.items.forEach((b: any) => {
               const id = `sys-${b.id}`;

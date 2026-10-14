@@ -25,7 +25,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const res = await fetch(url, defaultOptions);
   
   if (!res.ok) {
-    if (res.status === 401) {
+    if (res.status === 401 && token) {
       clearToken();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("auth:unauthorized"));

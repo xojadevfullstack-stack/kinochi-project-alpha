@@ -55,6 +55,17 @@ async def list_broadcasts(
     return {"items": broadcasts, "total": total}
 
 
+@router.get("/public", response_model=PaginatedBroadcastsResponse)
+async def list_public_broadcasts(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=50),
+    service: BroadcastService = Depends(get_broadcast_service)
+):
+    """List public announcements/broadcasts for website notifications without admin auth."""
+    broadcasts, total = await service.list_broadcasts(skip=skip, limit=limit)
+    return {"items": broadcasts, "total": total}
+
+
 @router.get("/{broadcast_id}", response_model=BroadcastResponse)
 async def get_broadcast(
     broadcast_id: int,

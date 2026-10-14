@@ -330,9 +330,10 @@ class APIClient:
         issue_type: str,
         movie_id: Optional[int] = None,
         series_id: Optional[int] = None,
+        episode_id: Optional[int] = None,
         description: Optional[str] = None
     ) -> bool:
-        """Submits an issue report for a movie or series."""
+        """Submits an issue report for a movie, series, or episode."""
         try:
             data = {
                 "media_type": media_type,
@@ -342,6 +343,8 @@ class APIClient:
                 data["movie_id"] = str(movie_id)
             if series_id:
                 data["series_id"] = str(series_id)
+            if episode_id:
+                data["episode_id"] = str(episode_id)
             if description:
                 data["description"] = description
 

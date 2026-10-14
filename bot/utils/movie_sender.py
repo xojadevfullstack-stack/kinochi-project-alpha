@@ -76,14 +76,16 @@ async def send_video_translation(bot: Bot, chat_id: int, translation: dict, capt
     
     success = False
     
-    # 0. Append Watch History button for movies if item_id is present
+    # 0. Append Watch History and Report button for movies if item_id is present
     if item_id and item_type == 'M':
         btn = InlineKeyboardButton(text="✅ Ko'rib bo'ldim", callback_data=f"history_complete_movie_{item_id}")
+        rep_btn = InlineKeyboardButton(text="⚠️ Nosozlik haqida xabar", callback_data=f"report_m_{item_id}")
         if reply_markup is None:
-            reply_markup = InlineKeyboardMarkup(inline_keyboard=[[btn]])
+            reply_markup = InlineKeyboardMarkup(inline_keyboard=[[btn], [rep_btn]])
         else:
             inline_kb = reply_markup.inline_keyboard.copy()
             inline_kb.append([btn])
+            inline_kb.append([rep_btn])
             reply_markup = InlineKeyboardMarkup(inline_keyboard=inline_kb)
 
     # 1. Try sending via telegram_file_id

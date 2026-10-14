@@ -29,10 +29,12 @@ def build_episode_keyboard(episode: dict) -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_ep_{ep_id}")
         ])
 
-    # Row 3: Info
+    # Row 3: Info & Report
     series_id = episode.get("series_id")
     if series_id:
         rows.append([InlineKeyboardButton(text="Serial haqida", callback_data=f"series_info:{series_id}")])
+    if ep_id:
+        rows.append([InlineKeyboardButton(text="⚠️ Nosozlik haqida xabar", callback_data=f"report_e_{ep_id}")])
     
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
