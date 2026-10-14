@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
 import CollectionTimelineView from "@/components/CollectionTimelineView";
+import BackButton from "@/components/BackButton";
 
 type Props = {
   params: { slug: string };
@@ -56,8 +57,13 @@ export default async function CollectionDetailPage({ params }: Props) {
           <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/80 to-transparent"></div>
         </div>
 
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter py-12 sm:py-16 md:py-20 flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
-          {/* Poster Card */}
+        <div className="relative z-10 max-w-container-max mx-auto px-gutter py-8 sm:py-12 md:py-16 flex flex-col gap-6">
+          <div className="self-start">
+            <BackButton fallbackUrl="/collections" />
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
+            {/* Poster Card */}
           {collection.poster_url && (
             <div className="w-36 sm:w-44 md:w-56 aspect-[2/3] rounded-2xl bg-surface-container-high overflow-hidden shadow-2xl border border-white/15 relative shrink-0">
               <Image
@@ -99,6 +105,7 @@ export default async function CollectionDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Main Timeline View with Dual Toggle */}
       <div className="max-w-container-max mx-auto px-gutter">

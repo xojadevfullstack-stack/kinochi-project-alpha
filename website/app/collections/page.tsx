@@ -2,6 +2,7 @@ import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
+import BackButton from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Kinoxronologiyalar & Franchisalar - MediaPlus",
@@ -36,6 +37,11 @@ export default async function CollectionsPage() {
     <div className="min-h-screen bg-background-obsidian text-text-primary pt-24 sm:pt-28 md:pt-32 pb-16">
       {/* Hero Header */}
       <div className="max-w-container-max mx-auto px-gutter mb-10 sm:mb-14">
+        {/* Smart Back Navigation */}
+        <div className="mb-4 sm:mb-6">
+          <BackButton fallbackUrl="/" />
+        </div>
+
         <div className="relative rounded-3xl bg-gradient-to-r from-red-950/60 via-surface-container-high/60 to-black/80 border border-primary-container/20 p-6 sm:p-10 md:p-12 overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-container/15 rounded-full blur-3xl pointer-events-none"></div>
 

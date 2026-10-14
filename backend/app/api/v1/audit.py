@@ -16,6 +16,10 @@ from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.models.translation import MovieTranslationModel, EpisodeTranslationModel
 from app.infrastructure.db.models.category import CategoryModel
+from app.infrastructure.db.models.watch_history import WatchHistoryModel
+from app.infrastructure.db.models.review import ReviewModel
+from app.infrastructure.db.models.collection import CollectionItemModel
+from app.infrastructure.db.models.series_subscription import SeriesSubscriptionModel
 from app.infrastructure.external.tmdb_client import tmdb_client
 from app.infrastructure.external.translator import translator_service
 from app.infrastructure.external.genre_mapper import map_tmdb_genres
@@ -949,6 +953,45 @@ async def merge_duplicates(
             if p.id not in prim_page_ids:
                 primary.pages.append(p)
 
+        # Migrate associated WatchHistoryModel
+        stmt_wh = select(WatchHistoryModel).where(WatchHistoryModel.movie_id == dup.id)
+        dup_wh_list = (await db.execute(stmt_wh)).scalars().all()
+        if dup_wh_list:
+            stmt_p_wh = select(WatchHistoryModel.user_id).where(WatchHistoryModel.movie_id == primary.id)
+            prim_wh_user_ids = set((await db.execute(stmt_p_wh)).scalars().all())
+            for wh in dup_wh_list:
+                if wh.user_id not in prim_wh_user_ids:
+                    wh.movie_id = primary.id
+                    prim_wh_user_ids.add(wh.user_id)
+                else:
+                    await db.delete(wh)
+
+        # Migrate associated ReviewModel
+        stmt_rev = select(ReviewModel).where(ReviewModel.movie_id == dup.id)
+        dup_rev_list = (await db.execute(stmt_rev)).scalars().all()
+        if dup_rev_list:
+            stmt_p_rev = select(ReviewModel.user_id).where(ReviewModel.movie_id == primary.id)
+            prim_rev_user_ids = set((await db.execute(stmt_p_rev)).scalars().all())
+            for rev in dup_rev_list:
+                if rev.user_id not in prim_rev_user_ids:
+                    rev.movie_id = primary.id
+                    prim_rev_user_ids.add(rev.user_id)
+                else:
+                    await db.delete(rev)
+
+        # Migrate associated CollectionItemModel
+        stmt_ci = select(CollectionItemModel).where(CollectionItemModel.movie_id == dup.id)
+        dup_ci_list = (await db.execute(stmt_ci)).scalars().all()
+        if dup_ci_list:
+            stmt_p_ci = select(CollectionItemModel.collection_id).where(CollectionItemModel.movie_id == primary.id)
+            prim_ci_collection_ids = set((await db.execute(stmt_p_ci)).scalars().all())
+            for ci in dup_ci_list:
+                if ci.collection_id not in prim_ci_collection_ids:
+                    ci.movie_id = primary.id
+                    prim_ci_collection_ids.add(ci.collection_id)
+                else:
+                    await db.delete(ci)
+
         # Delete duplicate topic in Telegram if exists
         if dup.source_chat_id and dup.source_topic_id:
             try:
@@ -968,7 +1011,7 @@ async def merge_duplicates(
         # Series merge
         stmt_p = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes), selectinload(SeriesModel.categories), selectinload(SeriesModel.pages)).where(SeriesModel.id == payload.primary_id)
         primary = (await db.execute(stmt_p)).scalar_one_or_none()
-        stmt_d = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations), selectinload(SeriesModel.categories), selectinload(SeriesModel.pages)).where(SeriesModel.id == payload.duplicate_id)
+        stmt_d = select(SeriesModel).options(selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations), selectinload(SeriesModel.categories), selectinload(SeriesModel.pages), selectinload(SeriesModel.source)).where(SeriesModel.id == payload.duplicate_id)
         dup = (await db.execute(stmt_d)).scalar_one_or_none()
 
         if not primary or not dup:
@@ -985,6 +1028,74 @@ async def merge_duplicates(
                 for ep in (d_sz.episodes or []):
                     if ep.episode_number not in target_ep_nums:
                         ep.season_id = target_sz.id
+
+        # Fill missing metadata on primary series
+        if (not primary.poster_url or not primary.poster_url.strip()) and dup.poster_url:
+            primary.poster_url = dup.poster_url
+        if (not primary.description or len(primary.description.strip()) < 30) and dup.description:
+            primary.description = dup.description
+        if not primary.genres and dup.genres:
+            primary.genres = dup.genres
+        if not primary.trailer_url and dup.trailer_url:
+            primary.trailer_url = dup.trailer_url
+
+        # Copy missing categories & pages
+        prim_cat_ids = {c.id for c in primary.categories}
+        for c in dup.categories:
+            if c.id not in prim_cat_ids:
+                primary.categories.append(c)
+
+        prim_page_ids = {p.id for p in primary.pages}
+        for p in dup.pages:
+            if p.id not in prim_page_ids:
+                primary.pages.append(p)
+
+        # Migrate associated ReviewModel
+        stmt_rev = select(ReviewModel).where(ReviewModel.series_id == dup.id)
+        dup_rev_list = (await db.execute(stmt_rev)).scalars().all()
+        if dup_rev_list:
+            stmt_p_rev = select(ReviewModel.user_id).where(ReviewModel.series_id == primary.id)
+            prim_rev_user_ids = set((await db.execute(stmt_p_rev)).scalars().all())
+            for rev in dup_rev_list:
+                if rev.user_id not in prim_rev_user_ids:
+                    rev.series_id = primary.id
+                    prim_rev_user_ids.add(rev.user_id)
+                else:
+                    await db.delete(rev)
+
+        # Migrate associated CollectionItemModel
+        stmt_ci = select(CollectionItemModel).where(CollectionItemModel.series_id == dup.id)
+        dup_ci_list = (await db.execute(stmt_ci)).scalars().all()
+        if dup_ci_list:
+            stmt_p_ci = select(CollectionItemModel.collection_id).where(CollectionItemModel.series_id == primary.id)
+            prim_ci_collection_ids = set((await db.execute(stmt_p_ci)).scalars().all())
+            for ci in dup_ci_list:
+                if ci.collection_id not in prim_ci_collection_ids:
+                    ci.series_id = primary.id
+                    prim_ci_collection_ids.add(ci.collection_id)
+                else:
+                    await db.delete(ci)
+
+        # Migrate associated SeriesSubscriptionModel
+        stmt_sub = select(SeriesSubscriptionModel).where(SeriesSubscriptionModel.series_id == dup.id)
+        dup_sub_list = (await db.execute(stmt_sub)).scalars().all()
+        if dup_sub_list:
+            stmt_p_sub = select(SeriesSubscriptionModel.telegram_user_id).where(SeriesSubscriptionModel.series_id == primary.id)
+            prim_sub_user_ids = set((await db.execute(stmt_p_sub)).scalars().all())
+            for sub in dup_sub_list:
+                if sub.telegram_user_id not in prim_sub_user_ids:
+                    sub.series_id = primary.id
+                    prim_sub_user_ids.add(sub.telegram_user_id)
+                else:
+                    await db.delete(sub)
+
+        # Delete duplicate series topic in Telegram if exists
+        if dup.source and dup.source.chat_id and dup.source.topic_id:
+            try:
+                from app.infrastructure.telegram.telegram_client import telegram_client
+                await telegram_client.delete_forum_topic(dup.source.chat_id, dup.source.topic_id)
+            except Exception as e:
+                logger.warning(f"Failed to delete duplicate series topic: {e}")
 
         # Delete duplicate series from DB
         await db.delete(dup)

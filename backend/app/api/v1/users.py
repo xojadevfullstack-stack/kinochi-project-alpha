@@ -1,4 +1,5 @@
 """API v1 — Users endpoints."""
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
 from pydantic import BaseModel
@@ -10,11 +11,14 @@ from app.infrastructure.db.models.watch_history import WatchHistoryModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.achievement import UserAchievementModel
+from app.infrastructure.db.models.series_subscription import SeriesSubscriptionModel
 from app.core.recommendations import get_user_recommendations
 from app.core.achievements import ACHIEVEMENTS
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -212,4 +216,106 @@ async def unban_user(
     success = await service.unban(telegram_id)
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.get("/by-telegram/{telegram_id}/summary", dependencies=[Depends(verify_bot_secret)])
+async def get_user_summary_by_telegram(
+    telegram_id: int,
+    session: AsyncSession = Depends(get_db_session),
+    service: UserService = Depends(get_user_service),
+):
+    """Full user profile summary for Telegram Bot (Profile, Watch History, Achievements, Subscriptions, Recommendations)."""
+    user = await service.get_by_telegram_id(telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+
+    # 1. Watch history (latest 5)
+    stmt_wh = (
+        select(WatchHistoryModel)
+        .where(WatchHistoryModel.user_id == user.id)
+        .order_by(desc(WatchHistoryModel.last_watched_at))
+        .limit(5)
+        .options(
+            selectinload(WatchHistoryModel.movie),
+            selectinload(WatchHistoryModel.episode).selectinload(EpisodeModel.season).selectinload(SeasonModel.series)
+        )
+    )
+    history_records = (await session.execute(stmt_wh)).scalars().all()
+    history_items = []
+    for h in history_records:
+        if h.movie:
+            history_items.append({
+                "type": "movie",
+                "title": h.movie.title,
+                "code": h.movie.code,
+                "status": h.status
+            })
+        elif h.episode and h.episode.season and h.episode.season.series:
+            history_items.append({
+                "type": "episode",
+                "title": f"{h.episode.season.series.title} ({h.episode.season.season_number}-mavsum, {h.episode.episode_number}-qism)",
+                "code": h.episode.display_code or h.episode.code,
+                "status": h.status
+            })
+
+    total_history = (await session.execute(
+        select(func.count(WatchHistoryModel.id)).where(WatchHistoryModel.user_id == user.id)
+    )).scalar() or 0
+
+    # 2. Achievements
+    stmt_ach = (
+        select(UserAchievementModel)
+        .where(UserAchievementModel.user_id == user.id)
+        .order_by(desc(UserAchievementModel.earned_at))
+    )
+    ach_records = (await session.execute(stmt_ach)).scalars().all()
+    achievements = []
+    for a in ach_records:
+        achievements.append({
+            "code": a.achievement_code,
+            "title": ACHIEVEMENTS.get(a.achievement_code, a.achievement_code),
+            "earned_at": a.earned_at.isoformat() if a.earned_at else None
+        })
+
+    # 3. Series Subscriptions
+    stmt_sub = (
+        select(SeriesSubscriptionModel)
+        .where(SeriesSubscriptionModel.telegram_user_id == telegram_id)
+        .options(selectinload(SeriesSubscriptionModel.series))
+        .order_by(desc(SeriesSubscriptionModel.created_at))
+    )
+    sub_records = (await session.execute(stmt_sub)).scalars().all()
+    subscriptions = []
+    for s in sub_records:
+        if s.series:
+            subscriptions.append({
+                "series_id": s.series.id,
+                "title": s.series.title,
+                "poster_url": s.series.poster_url,
+                "rating": s.series.imdb_rating
+            })
+
+    # 4. Recommendations
+    try:
+        recs = await get_user_recommendations(user.id)
+    except Exception as e:
+        logger.warning(f"Error fetching recommendations: {e}")
+        recs = []
+
+    return {
+        "user": {
+            "id": user.id,
+            "telegram_id": user.telegram_id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "joined_at": user.joined_at.isoformat() if user.joined_at else None,
+        },
+        "total_watched": total_history,
+        "recent_history": history_items,
+        "achievements": achievements,
+        "subscriptions": subscriptions,
+        "recommendations": recs[:5]
+    }
+
 

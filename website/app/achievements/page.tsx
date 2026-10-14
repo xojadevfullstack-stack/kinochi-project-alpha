@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import TelegramLoginWidget from "@/components/auth/TelegramLoginWidget";
+import BackButton from "@/components/BackButton";
 
 interface Achievement {
   code: string;
@@ -129,15 +130,9 @@ export default function AchievementsPage() {
   return (
     <div className="min-h-screen bg-background-obsidian pt-24 sm:pt-28 pb-28">
       <div className="max-w-container-max mx-auto px-gutter">
-        {/* Navigation Breadcrumb / Back Button */}
+        {/* Smart Back Navigation */}
         <div className="mb-4 sm:mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm text-text-secondary hover:text-white transition-colors bg-white/[0.04] hover:bg-white/[0.08] px-3.5 py-1.5 rounded-xl border border-white/10"
-          >
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            <span>Bosh sahifaga</span>
-          </Link>
+          <BackButton fallbackUrl="/" />
         </div>
 
         {/* Hero Banner & Stats Card */}

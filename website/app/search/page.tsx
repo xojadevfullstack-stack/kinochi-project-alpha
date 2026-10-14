@@ -2,6 +2,7 @@ import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
+import BackButton from "@/components/BackButton";
 
 // This page reads query params, so it will be dynamically rendered
 export const dynamic = "force-dynamic";
@@ -145,6 +146,11 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
     <div className="min-h-screen pt-20 sm:pt-24 md:pt-28 pb-margin-desktop px-gutter bg-background-obsidian">
       <div className="max-w-container-max mx-auto">
         
+        {/* Smart Back Navigation */}
+        <div className="mb-4 sm:mb-6">
+          <BackButton fallbackUrl="/" />
+        </div>
+
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-display-hero font-bold text-white mb-2">

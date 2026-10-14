@@ -7,6 +7,7 @@ import TelegramLoginWidget from "@/components/auth/TelegramLoginWidget";
 import ContinueWatchingBanner from "@/components/history/ContinueWatchingBanner";
 import HistoryTabs from "@/components/history/HistoryTabs";
 import HistoryGrid from "@/components/history/HistoryGrid";
+import BackButton from "@/components/BackButton";
 
 export default function HistoryPage() {
   const { status, environment: env } = useAuth();
@@ -45,7 +46,10 @@ export default function HistoryPage() {
 
   if (status === "unauthenticated") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-obsidian px-gutter pt-20 pb-24">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background-obsidian px-gutter pt-20 pb-24">
+        <div className="w-full max-w-md mb-4 flex justify-start">
+          <BackButton fallbackUrl="/" />
+        </div>
         <div className="text-center bg-white/[0.04] backdrop-blur-xl p-8 rounded-3xl border border-white/10 max-w-md w-full shadow-2xl">
           <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-5 text-rating-gold">
             <span className="material-symbols-outlined text-3xl">history</span>
@@ -69,8 +73,13 @@ export default function HistoryPage() {
   const displayedItems = activeTab === "in_progress" ? inProgressItems : completedItems;
 
   return (
-    <div className="min-h-screen bg-background-obsidian pt-28 pb-24 px-gutter">
+    <div className="min-h-screen bg-background-obsidian pt-24 sm:pt-28 pb-24 px-gutter">
       <div className="max-w-container-max mx-auto">
+        {/* Smart Back Navigation */}
+        <div className="mb-4 sm:mb-6">
+          <BackButton fallbackUrl="/" />
+        </div>
+
         {/* Header with Title and Stats */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>

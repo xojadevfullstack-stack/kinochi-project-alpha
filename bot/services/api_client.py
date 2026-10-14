@@ -313,5 +313,43 @@ class APIClient:
             logger.warning(f"Error calling notify_new_episode for series {series_id}: {e}")
             return False
 
+    async def get_user_summary(self, telegram_id: int) -> Optional[Dict[str, Any]]:
+        """Fetches complete user profile summary from backend."""
+        try:
+            resp = await self.client.get(f"/users/by-telegram/{telegram_id}/summary")
+            if resp.status_code == 200:
+                return resp.json()
+            return None
+        except Exception as e:
+            logger.warning(f"Error fetching user summary for {telegram_id}: {e}")
+            return None
+
+    async def submit_report(
+        self,
+        media_type: str,
+        issue_type: str,
+        movie_id: Optional[int] = None,
+        series_id: Optional[int] = None,
+        description: Optional[str] = None
+    ) -> bool:
+        """Submits an issue report for a movie or series."""
+        try:
+            data = {
+                "media_type": media_type,
+                "issue_type": issue_type,
+            }
+            if movie_id:
+                data["movie_id"] = str(movie_id)
+            if series_id:
+                data["series_id"] = str(series_id)
+            if description:
+                data["description"] = description
+
+            resp = await self.client.post("/reports", data=data)
+            return resp.status_code in (200, 201)
+        except Exception as e:
+            logger.warning(f"Error submitting report: {e}")
+            return False
+
 api_client = APIClient()
 

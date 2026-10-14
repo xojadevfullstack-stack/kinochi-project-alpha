@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { getHistory, HistoryItem } from "@/lib/api/history";
 import { fetchApi } from "@/lib/api";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 
 interface NotificationItem {
   id: string;
@@ -186,6 +187,11 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-background-obsidian pt-24 pb-20">
       <div className="max-w-container-max mx-auto px-gutter">
+        {/* Smart Back Navigation */}
+        <div className="mb-4 sm:mb-6">
+          <BackButton fallbackUrl="/" />
+        </div>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>

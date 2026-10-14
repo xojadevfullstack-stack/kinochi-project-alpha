@@ -68,3 +68,46 @@ export function openTelegramUrl(url: string) {
   // 4. Desktop browser
   window.open(url, "_blank", "noopener,noreferrer");
 }
+
+export function triggerTelegramHaptic(style: "light" | "medium" | "heavy" = "light") {
+  if (typeof window === "undefined") return;
+  const tg = (window as any).Telegram?.WebApp;
+  if (tg?.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === "function") {
+    try {
+      tg.HapticFeedback.impactOccurred(style);
+    } catch (e) {
+      // Ignore if not supported
+    }
+  }
+}
+
+export function setupTelegramBackButton(onBack: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const tg = (window as any).Telegram?.WebApp;
+  if (!tg?.BackButton) return () => {};
+
+  try {
+    tg.BackButton.show();
+    tg.BackButton.onClick(onBack);
+    return () => {
+      try {
+        tg.BackButton.offClick(onBack);
+      } catch (e) {}
+    };
+  } catch (e) {
+    console.warn("Telegram BackButton setup error:", e);
+    return () => {};
+  }
+}
+
+export function hideTelegramBackButton() {
+  if (typeof window === "undefined") return;
+  const tg = (window as any).Telegram?.WebApp;
+  if (!tg?.BackButton) return;
+
+  try {
+    tg.BackButton.hide();
+  } catch (e) {
+    console.warn("Telegram BackButton hide error:", e);
+  }
+}

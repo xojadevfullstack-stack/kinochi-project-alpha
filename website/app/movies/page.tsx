@@ -4,6 +4,7 @@ import CategoryFilter from "@/components/CategoryFilter";
 import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
+import BackButton from "@/components/BackButton";
 
 export const revalidate = 60; // 60s ISR kesh: Vercel CDN orqali Render trafigini tejaydi
 
@@ -45,6 +46,11 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
     <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian">
       <div className="max-w-container-max mx-auto">
         
+        {/* Smart Back Navigation */}
+        <div className="mb-4 sm:mb-6">
+          <BackButton fallbackUrl="/" />
+        </div>
+
         {/* Header & Categories */}
         <div className="mb-stack-lg">
           <div className="mb-stack-md text-center md:text-left">

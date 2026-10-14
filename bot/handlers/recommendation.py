@@ -17,6 +17,7 @@ async def handle_recommendation_menu(callback: CallbackQuery):
         "Qaysi yo'nalish bo'yicha film yoki serial tavsiya qilaylik?"
     )
     builder = InlineKeyboardBuilder()
+    builder.button(text="✨ Didga mos (AI Shaxsiy)", callback_data="rec_cat:personalized:0")
     builder.button(text="🎬 Kinolar", callback_data="rec_cat:movie:0")
     builder.button(text="📺 Seriallar", callback_data="rec_cat:series:0")
     
@@ -101,6 +102,29 @@ async def handle_get_recommendation(callback: CallbackQuery):
                 idx = skip % len(all_page_items)
                 item = all_page_items[idx]
                 item_type = item.get("_item_type", "movie")
+
+        elif cat_type == "personalized":
+            summary = await api_client.get_user_summary(callback.from_user.id)
+            recs = summary.get("recommendations", []) if summary else []
+            if recs:
+                idx = skip % len(recs)
+                rec_meta = recs[idx]
+                r_type = rec_meta.get("type", "movie")
+                if r_type == "movie":
+                    m = await api_client.get_movie_by_code(rec_meta.get("code") or str(rec_meta.get("id")))
+                    item = m if m else rec_meta
+                    item_type = "movie"
+                else:
+                    s = await api_client.get_series_by_id(rec_meta.get("id"))
+                    item = s if s else rec_meta
+                    item_type = "series"
+            else:
+                # Cold start: user has no history yet, fallback to top trending
+                data = await api_client.get_movies(limit=15)
+                items = data.get("items", [])
+                if items:
+                    item = random.choice(items)
+                    item_type = "movie"
 
         elif cat_type == "any":
             choice = random.choice(["movie", "series"])

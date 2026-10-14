@@ -13,6 +13,7 @@ import ReportIssueButton from "@/components/ReportIssueButton";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
+import BackButton from "@/components/BackButton";
 
 type Props = {
   params: { id: string };
@@ -102,9 +103,15 @@ export default async function SeriesDetailsPage({ params }: Props) {
         <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block pointer-events-none"></div>
         
         {/* Content Container */}
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
-          {/* Left: Poster */}
-          <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
+        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
+          {/* Smart Back Navigation */}
+          <div className="flex items-center">
+            <BackButton fallbackUrl="/series" />
+          </div>
+
+          <div className="w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
+            {/* Left: Poster */}
+            <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
             <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-black/80 relative bg-surface-container-high">
               {series.poster_url ? (
                 <AdultPoster 
@@ -238,7 +245,8 @@ export default async function SeriesDetailsPage({ params }: Props) {
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Trailer Section */}
       {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (

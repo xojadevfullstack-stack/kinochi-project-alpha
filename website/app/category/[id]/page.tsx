@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
+import BackButton from "@/components/BackButton";
 
 export const revalidate = 60;
 
@@ -60,6 +61,11 @@ export default async function CategoryPage({ params }: { params: { id: string } 
     <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian">
       <div className="max-w-container-max mx-auto">
         
+        {/* Smart Back Navigation */}
+        <div className="mb-4 sm:mb-6">
+          <BackButton fallbackUrl="/movies" />
+        </div>
+
         {/* Header & Categories */}
         <div className="mb-stack-lg">
           <div className="mb-stack-md">
