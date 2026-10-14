@@ -101,28 +101,87 @@ def get_catalog_categories_inline(pages: list[dict] = None) -> InlineKeyboardMar
     builder.adjust(2)
     return builder.as_markup()
 
-def build_catalog_items_list(items: list[dict], item_type: str) -> InlineKeyboardMarkup:
+import math
+
+def build_catalog_items_list(
+    items: list[dict],
+    item_type: str,
+    page: int = 1,
+    total: int = 0,
+    page_size: int = 10
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    total_pages = max(1, math.ceil(total / page_size)) if total > 0 else 1
+
     for item in items:
         title = item.get("title", "Noma'lum")
+        year = item.get("release_year") or item.get("year")
+        year_str = f" ({year})" if year else ""
         if item_type == "movie":
-            builder.button(text=f"🎬 {title}", callback_data=f"catalog_item_movie_{item.get('id')}")
+            builder.button(text=f"🎬 {title}{year_str}", callback_data=f"catalog_item_movie_{item.get('id')}")
         else:
-            builder.button(text=f"📺 {title}", callback_data=f"catalog_item_series_{item.get('id')}")
+            builder.button(text=f"📺 {title}{year_str}", callback_data=f"catalog_item_series_{item.get('id')}")
             
-    builder.button(text="🔙 Katalogga qaytish", callback_data="menu_catalog")
     builder.adjust(1)
+
+    # Navigatsiya tugmalari (Pagination)
+    if total_pages > 1:
+        prefix = "cat_movies" if item_type == "movie" else "cat_series"
+        pagination_row = []
+        if page > 1:
+            pagination_row.append(InlineKeyboardButton(text="◀️ Oldingi", callback_data=f"{prefix}:{page-1}"))
+        else:
+            pagination_row.append(InlineKeyboardButton(text="▪️", callback_data="cat_noop"))
+            
+        pagination_row.append(InlineKeyboardButton(text=f"📄 {page}/{total_pages}", callback_data=f"cat_info:{page}:{total_pages}:{total}"))
+        
+        if page < total_pages:
+            pagination_row.append(InlineKeyboardButton(text="Keyingi ▶️", callback_data=f"{prefix}:{page+1}"))
+        else:
+            pagination_row.append(InlineKeyboardButton(text="▪️", callback_data="cat_noop"))
+            
+        builder.row(*pagination_row)
+
+    builder.row(InlineKeyboardButton(text="🔙 Katalogga qaytish", callback_data="menu_catalog"))
     return builder.as_markup()
 
-def build_page_items_list(items: list[dict]) -> InlineKeyboardMarkup:
+def build_page_items_list(
+    items: list[dict],
+    page_id: int,
+    page: int = 1,
+    total: int = 0,
+    page_size: int = 10
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    total_pages = max(1, math.ceil(total / page_size)) if total > 0 else 1
+
     for item in items:
         title = item.get("title", "Noma'lum")
+        year = item.get("release_year") or item.get("year")
+        year_str = f" ({year})" if year else ""
         if item.get("type") == "movie":
-            builder.button(text=f"🎬 {title}", callback_data=f"catalog_item_movie_{item.get('id')}")
+            builder.button(text=f"🎬 {title}{year_str}", callback_data=f"catalog_item_movie_{item.get('id')}")
         elif item.get("type") == "series":
-            builder.button(text=f"📺 {title}", callback_data=f"catalog_item_series_{item.get('id')}")
+            builder.button(text=f"📺 {title}{year_str}", callback_data=f"catalog_item_series_{item.get('id')}")
             
-    builder.button(text="🔙 Katalogga qaytish", callback_data="menu_catalog")
     builder.adjust(1)
+
+    # Navigatsiya tugmalari (Pagination)
+    if total_pages > 1:
+        pagination_row = []
+        if page > 1:
+            pagination_row.append(InlineKeyboardButton(text="◀️ Oldingi", callback_data=f"cat_dyn:{page_id}:{page-1}"))
+        else:
+            pagination_row.append(InlineKeyboardButton(text="▪️", callback_data="cat_noop"))
+            
+        pagination_row.append(InlineKeyboardButton(text=f"📄 {page}/{total_pages}", callback_data=f"cat_info:{page}:{total_pages}:{total}"))
+        
+        if page < total_pages:
+            pagination_row.append(InlineKeyboardButton(text="Keyingi ▶️", callback_data=f"cat_dyn:{page_id}:{page+1}"))
+        else:
+            pagination_row.append(InlineKeyboardButton(text="▪️", callback_data="cat_noop"))
+            
+        builder.row(*pagination_row)
+
+    builder.row(InlineKeyboardButton(text="🔙 Katalogga qaytish", callback_data="menu_catalog"))
     return builder.as_markup()

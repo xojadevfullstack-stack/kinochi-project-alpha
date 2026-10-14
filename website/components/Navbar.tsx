@@ -100,28 +100,20 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     setProfileDropdownOpen(false);
   }, [pathname]);
 
-  const handleLinkClick = (href: string) => {
+  const handleLinkClick = (href?: string) => {
     if (typeof window !== "undefined") {
       document.body.style.overflow = "";
     }
-    if (pathname === href) {
-      setMobileMenuOpen(false);
-      setProfileDropdownOpen(false);
-      return;
-    }
+    setMobileMenuOpen(false);
+    setProfileDropdownOpen(false);
 
-    // Inside Telegram WebApp, direct navigation ensures rock-solid transition without WebView touch drops
-    const tg = typeof window !== "undefined" && (window as any).Telegram?.WebApp;
-    if (tg && tg.initData) {
-      window.location.href = href;
-      return;
+    // If explicit href is passed and it's inside Telegram WebApp, support fallback
+    if (href && typeof window !== "undefined") {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg && tg.initData && pathname !== href) {
+        window.location.href = href;
+      }
     }
-
-    router.push(href);
-    setTimeout(() => {
-      setMobileMenuOpen(false);
-      setProfileDropdownOpen(false);
-    }, 150);
   };
 
   const navLinks = [

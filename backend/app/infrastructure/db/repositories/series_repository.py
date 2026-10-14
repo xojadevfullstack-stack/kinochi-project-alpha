@@ -41,17 +41,22 @@ class SeriesRepository:
 
     async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[SeriesModel], int]:
         clean_q = str(title_query).strip()
+        code_q = clean_q.lstrip("#").strip()
         search_pattern = f"%{clean_q}%"
         
         conditions = [
             SeriesModel.title.ilike(search_pattern),
         ]
-        if clean_q.isdigit():
-            conditions.append(SeriesModel.id == int(clean_q))
-        elif clean_q.lower().startswith("s_") and clean_q[2:].isdigit():
-            conditions.append(SeriesModel.id == int(clean_q[2:]))
-        elif clean_q.lower().startswith("s") and clean_q[1:].isdigit():
-            conditions.append(SeriesModel.id == int(clean_q[1:]))
+        if code_q != clean_q and code_q:
+            conditions.append(SeriesModel.title.ilike(f"%{code_q}%"))
+
+        target_num = code_q if code_q.isdigit() else (clean_q if clean_q.isdigit() else None)
+        if target_num:
+            conditions.append(SeriesModel.id == int(target_num))
+        elif code_q.lower().startswith("s_") and code_q[2:].isdigit():
+            conditions.append(SeriesModel.id == int(code_q[2:]))
+        elif code_q.lower().startswith("s") and code_q[1:].isdigit():
+            conditions.append(SeriesModel.id == int(code_q[1:]))
 
         total_stmt = select(func.count(SeriesModel.id)).where(or_(*conditions))
         total = await self.session.scalar(total_stmt)

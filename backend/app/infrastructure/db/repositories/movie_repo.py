@@ -120,12 +120,16 @@ class MovieRepositoryImpl(IMovieRepository):
 
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
         clean_q = str(title_query).strip()
+        code_q = clean_q.lstrip("#").strip()
         conditions = [
             MovieModel.title.ilike(f"%{clean_q}%"),
             MovieModel.original_title.ilike(f"%{clean_q}%"),
-            MovieModel.code.ilike(f"%{clean_q}%")
         ]
-        if clean_q.isdigit():
+        if code_q:
+            conditions.append(MovieModel.code.ilike(f"%{code_q}%"))
+            if code_q.isdigit():
+                conditions.append(MovieModel.id == int(code_q))
+        elif clean_q.isdigit():
             conditions.append(MovieModel.id == int(clean_q))
 
         query = select(MovieModel).options(

@@ -300,6 +300,5 @@ export default function BlacklistPage() {
           </div>
         )}
       </div>
-    </AdminShell>
   );
 }

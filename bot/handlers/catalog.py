@@ -91,53 +91,139 @@ async def handle_back_to_main(callback: CallbackQuery):
         )
     await callback.answer()
 
+import math
+
+@router.callback_query(F.data == "cat_noop")
+async def handle_catalog_noop(callback: CallbackQuery):
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("cat_info:"))
+async def handle_catalog_info(callback: CallbackQuery):
+    parts = callback.data.split(":")
+    if len(parts) >= 4:
+        page, total_pages, total = parts[1], parts[2], parts[3]
+        await callback.answer(f"📄 Sahifa {page} / {total_pages}\n📊 Jami: {total} ta", show_alert=True)
+    else:
+        await callback.answer()
+
 @router.callback_query(F.data == "catalog_all_movies")
+@router.callback_query(F.data.startswith("cat_movies:"))
 async def handle_catalog_all_movies(callback: CallbackQuery):
-    movies_data = await api_client.get_movies(limit=10)
+    await callback.answer()
+    page = 1
+    if callback.data.startswith("cat_movies:"):
+        try:
+            page = max(1, int(callback.data.split(":")[1]))
+        except ValueError:
+            page = 1
+
+    limit = 10
+    skip = (page - 1) * limit
+    movies_data = await api_client.get_movies(skip=skip, limit=limit)
     items = movies_data.get("items", [])
+    total = movies_data.get("total", 0)
+
+    if not items and page > 1:
+        page = 1
+        skip = 0
+        movies_data = await api_client.get_movies(skip=skip, limit=limit)
+        items = movies_data.get("items", [])
+        total = movies_data.get("total", 0)
+
     if not items:
         await callback.answer("Hozircha kinolar mavjud emas.", show_alert=True)
         return
-    text = "🎬 <b>Kinolar ro'yxati:</b>\n<i>Quyidagi kinolardan birini tanlang:</i>"
-    markup = build_catalog_items_list(items, "movie")
+
+    total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
+    text = (
+        f"🎬 <b>Kinolar ro'yxati</b> (Sahifa {page}/{total_pages})\n"
+        f"<i>Jami: {total} ta kino. Quyidagilardan birini tanlang:</i>"
+    )
+    markup = build_catalog_items_list(items, "movie", page=page, total=total, page_size=limit)
     try:
         if callback.message.photo or callback.message.video:
-            await callback.message.delete()
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
             await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
         else:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+            try:
+                await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+            except Exception:
+                await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     except Exception as e:
         logger.warning(f"Error in handle_catalog_all_movies: {e}")
         await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-    await callback.answer()
 
 @router.callback_query(F.data == "catalog_all_series")
+@router.callback_query(F.data.startswith("cat_series:"))
 async def handle_catalog_all_series(callback: CallbackQuery):
-    series_data = await api_client.get_series(limit=10)
+    await callback.answer()
+    page = 1
+    if callback.data.startswith("cat_series:"):
+        try:
+            page = max(1, int(callback.data.split(":")[1]))
+        except ValueError:
+            page = 1
+
+    limit = 10
+    skip = (page - 1) * limit
+    series_data = await api_client.get_series(skip=skip, limit=limit)
     items = series_data.get("items", [])
+    total = series_data.get("total", 0)
+
+    if not items and page > 1:
+        page = 1
+        skip = 0
+        series_data = await api_client.get_series(skip=skip, limit=limit)
+        items = series_data.get("items", [])
+        total = series_data.get("total", 0)
+
     if not items:
         await callback.answer("Hozircha seriallar mavjud emas.", show_alert=True)
         return
-    text = "📺 <b>Seriallar ro'yxati:</b>\n<i>Quyidagi seriallardan birini tanlang:</i>"
-    markup = build_catalog_items_list(items, "series")
+
+    total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
+    text = (
+        f"📺 <b>Seriallar ro'yxati</b> (Sahifa {page}/{total_pages})\n"
+        f"<i>Jami: {total} ta serial. Quyidagilardan birini tanlang:</i>"
+    )
+    markup = build_catalog_items_list(items, "series", page=page, total=total, page_size=limit)
     try:
         if callback.message.photo or callback.message.video:
-            await callback.message.delete()
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
             await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
         else:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+            try:
+                await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+            except Exception:
+                await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     except Exception as e:
         logger.warning(f"Error in handle_catalog_all_series: {e}")
         await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-    await callback.answer()
 
 @router.callback_query(F.data.startswith("menu_page_"))
+@router.callback_query(F.data.startswith("cat_dyn:"))
 async def handle_page_catalog(callback: CallbackQuery):
-    page_id = int(callback.data.split("_")[-1])
-    
+    await callback.answer()
+    page = 1
+    if callback.data.startswith("cat_dyn:"):
+        parts = callback.data.split(":")
+        page_id = int(parts[1])
+        page = max(1, int(parts[2])) if len(parts) > 2 else 1
+    else:
+        page_id = int(callback.data.split("_")[-1])
+
+    limit = 10
+    skip = (page - 1) * limit
+
     # Fetch movies and series for this page
-    movies_data = await api_client.get_movies(limit=10, page_id=page_id)
-    series_data = await api_client.get_series(limit=10, page_id=page_id)
+    movies_data = await api_client.get_movies(skip=skip, limit=limit, page_id=page_id)
+    series_data = await api_client.get_series(skip=skip, limit=limit, page_id=page_id)
     
     results = []
     for m in movies_data.get("items", []):
@@ -146,23 +232,48 @@ async def handle_page_catalog(callback: CallbackQuery):
     for s in series_data.get("items", []):
         s["type"] = "series"
         results.append(s)
+
+    total = (movies_data.get("total") or 0) + (series_data.get("total") or 0)
         
+    if not results and page > 1:
+        page = 1
+        skip = 0
+        movies_data = await api_client.get_movies(skip=skip, limit=limit, page_id=page_id)
+        series_data = await api_client.get_series(skip=skip, limit=limit, page_id=page_id)
+        results = []
+        for m in movies_data.get("items", []):
+            m["type"] = "movie"
+            results.append(m)
+        for s in series_data.get("items", []):
+            s["type"] = "series"
+            results.append(s)
+        total = (movies_data.get("total") or 0) + (series_data.get("total") or 0)
+
     if not results:
         await callback.answer("Hozircha ushbu sahifada hech narsa yo'q.", show_alert=True)
         return
-        
-    text = "📂 <b>Sahifa natijalari:</b>\n<i>Quyidagi ro'yxatdan birini tanlang:</i>"
-    markup = build_page_items_list(results)
+
+    total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
+    text = (
+        f"📂 <b>Sahifa natijalari</b> (Sahifa {page}/{total_pages})\n"
+        f"<i>Jami: {total} ta material. Quyidagilardan birini tanlang:</i>"
+    )
+    markup = build_page_items_list(results, page_id=page_id, page=page, total=total, page_size=limit)
     try:
         if callback.message.photo or callback.message.video:
-            await callback.message.delete()
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
             await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
         else:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+            try:
+                await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+            except Exception:
+                await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     except Exception as e:
         logger.warning(f"Error in handle_page_catalog: {e}")
         await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-    await callback.answer()
 
 @router.callback_query(F.data.startswith("catalog_item_movie_"))
 async def handle_catalog_movie_select(callback: CallbackQuery):
