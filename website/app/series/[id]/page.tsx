@@ -221,6 +221,9 @@ export default async function SeriesDetailsPage({ params }: Props) {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
               <TelegramWatchButton 
                 url={telegramDeepLink}
+                mediaTitle={series.title}
+                mediaType="series"
+                posterUrl={series.poster_url || ""}
                 className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 group font-bold cursor-pointer"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -337,6 +340,10 @@ export default async function SeriesDetailsPage({ params }: Props) {
                             <div key={episode.id} className="relative group/ep">
                               <TelegramWatchButton 
                                 url={episodeLink}
+                                mediaTitle={`${series.title} (${episode.episode_number}-qism)`}
+                                mediaCode={episode.code}
+                                mediaType="episode"
+                                posterUrl={season.poster_url || series.poster_url || ""}
                                 className="w-full group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-container/50 rounded-xl p-4 transition-all duration-300 flex flex-col relative overflow-hidden text-left cursor-pointer"
                               >
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary-container/0 to-primary-container/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
