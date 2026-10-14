@@ -298,5 +298,20 @@ class APIClient:
             logger.error(f"Error checking series subscription: {e}")
             return False
 
+    async def notify_new_episode(self, series_id: int, season_number: int, episode_number: int, display_code: str, episode_title: Optional[str] = None) -> bool:
+        """Calls backend to notify all subscribers that a new episode is ready."""
+        try:
+            payload = {
+                "season_number": season_number,
+                "episode_number": episode_number,
+                "display_code": display_code,
+                "episode_title": episode_title
+            }
+            resp = await self.client.post(f"/series/{series_id}/notify-new-episode", json=payload)
+            return resp.status_code == 200
+        except Exception as e:
+            logger.warning(f"Error calling notify_new_episode for series {series_id}: {e}")
+            return False
+
 api_client = APIClient()
 

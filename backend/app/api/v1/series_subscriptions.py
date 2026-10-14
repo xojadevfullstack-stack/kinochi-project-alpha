@@ -93,19 +93,21 @@ async def check_series_subscription(
     )
 
 
-@router.post("/{series_id}/notify-new-episode")
-async def notify_subscribers_endpoint(
+async def broadcast_new_episode_notification(
+    db: AsyncSession,
     series_id: int,
-    payload: NotifyNewEpisodeRequest,
-    db: AsyncSession = Depends(get_db_session),
-    admin: dict = Depends(get_admin_or_bot)
-):
+    season_number: int,
+    episode_number: int,
+    display_code: str,
+    episode_title: str | None = None
+) -> dict:
     """
     Broadcast 'Yangi qism chiqdi 🔔' message to all subscribed users of this series.
+    Can be called directly from Python backend / scraper or via HTTP endpoint.
     """
     series = await db.get(SeriesModel, series_id)
     if not series:
-        raise HTTPException(status_code=404, detail="Serial topilmadi")
+        return {"success": False, "notified_count": 0, "message": "Serial topilmadi"}
 
     stmt = select(SeriesSubscriptionModel.telegram_user_id).where(
         SeriesSubscriptionModel.series_id == series_id
@@ -118,9 +120,9 @@ async def notify_subscribers_endpoint(
 
     import html
     title = html.escape(series.title)
-    s_num = payload.season_number
-    e_num = payload.episode_number
-    code = html.escape(payload.display_code)
+    s_num = season_number
+    e_num = episode_number
+    code = html.escape(display_code)
 
     text = (
         f"🔔 <b>YANGI QISM CHIQDI!</b>\n\n"
@@ -134,6 +136,7 @@ async def notify_subscribers_endpoint(
     sent_count = 0
     bot_token = settings.BOT_TOKEN
     import httpx
+    import json
 
     async with httpx.AsyncClient(timeout=5.0) as client:
         for uid in subscribers:
@@ -145,7 +148,6 @@ async def notify_subscribers_endpoint(
                         [{"text": "🌐 Saytda ko'rish", "url": f"{settings.WEBSITE_URL}/series/{series_id}"}]
                     ]
                 }
-                import json
                 resp = await client.post(url, json={
                     "chat_id": uid,
                     "text": text,
@@ -157,8 +159,32 @@ async def notify_subscribers_endpoint(
             except Exception as e:
                 logger.warning(f"Error sending episode notification to {uid}: {e}")
 
+    logger.info(f"Broadcasted new episode notification for series {series_id} (S{s_num}E{e_num}) to {sent_count}/{len(subscribers)} subscribers")
     return {
         "success": True,
         "notified_count": sent_count,
         "total_subscribers": len(subscribers)
     }
+
+
+@router.post("/{series_id}/notify-new-episode")
+async def notify_subscribers_endpoint(
+    series_id: int,
+    payload: NotifyNewEpisodeRequest,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """
+    Broadcast 'Yangi qism chiqdi 🔔' message to all subscribed users of this series (API endpoint).
+    """
+    res = await broadcast_new_episode_notification(
+        db=db,
+        series_id=series_id,
+        season_number=payload.season_number,
+        episode_number=payload.episode_number,
+        display_code=payload.display_code,
+        episode_title=payload.episode_title
+    )
+    if not res.get("success") and res.get("message") == "Serial topilmadi":
+        raise HTTPException(status_code=404, detail="Serial topilmadi")
+    return res

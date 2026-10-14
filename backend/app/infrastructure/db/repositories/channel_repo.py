@@ -19,7 +19,8 @@ class MandatoryChannelRepositoryImpl(IMandatoryChannelRepository):
             channel_id=channel.channel_id,
             channel_username=channel.channel_username,
             channel_title=channel.channel_title,
-            is_active=channel.is_active
+            is_active=channel.is_active,
+            subscriber_limit=channel.subscriber_limit
         )
         self.session.add(model)
         await self.session.commit()
@@ -38,6 +39,7 @@ class MandatoryChannelRepositoryImpl(IMandatoryChannelRepository):
         model.channel_username = channel.channel_username
         model.channel_title = channel.channel_title
         model.is_active = channel.is_active
+        model.subscriber_limit = channel.subscriber_limit
         await self.session.commit()
         await self.session.refresh(model)
         return self._to_entity(model)

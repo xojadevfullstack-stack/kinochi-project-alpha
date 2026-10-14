@@ -35,6 +35,7 @@ from scraper.duplicate_checker import DuplicateChecker
 from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, create_telethon_client
 from telethon.errors import FloodWaitError
 from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH
+from scraper.autopilot_v2 import autopilot_engine
 
 async def cmd_parse(
     source: str,
@@ -103,23 +104,34 @@ async def cmd_parse(
     # Dublikatlarni parallel tekshirish (1 soniyada yuzlab kinolar tekshiriladi)
     print(f"🔄 {len(all_items)} ta kino/serial bazadagi dublikatlarga parallel tekshirilmoqda...")
     dup_tasks = [
-        checker.check(item.title, year=item.year, original_title=item.original_title, media_type=item.media_type)
+        checker.check(
+            item.title,
+            year=item.year,
+            original_title=item.original_title,
+            media_type=item.media_type,
+            url=getattr(item, "url", None)
+        )
         for item in all_items
     ]
     dup_results = await asyncio.gather(*dup_tasks, return_exceptions=True)
 
     duplicates_detected = 0
+    blacklisted_detected = 0
     for item, dup_res in zip(all_items, dup_results):
         if isinstance(dup_res, Exception):
             continue
-        if dup_res.is_duplicate:
+        if dup_res.match_type == "blacklist":
+            item.status = "blacklisted"
+            item.error_message = f"Qora ro'yxatda: {dup_res.reason}"
+            blacklisted_detected += 1
+        elif dup_res.is_duplicate:
             item.status = "already_exists"
             item.error_message = f"Bazada mavjud: {dup_res.reason} (ID: {dup_res.matched_id})"
             duplicates_detected += 1
 
     total_added = qm.add_items_batch(all_items)
     next_page = sm.advance_page(source, max_pages, from_page=start_page)
-    print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}")
+    print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}, Qora ro'yxatda: {blacklisted_detected}")
     print(f"📑 [STATE] {source.upper()} keyingi sahifa: {next_page}")
     print(f"📊 Navbat holati: {qm.stats()}\n")
 
@@ -177,6 +189,11 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
 
         print(f"\n🚀 {len(pending)} ta kino/serialni yuklash boshlanmoqda (Maqsadli bot: @{bot_username})...")
 
+    cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+    if cb_status.is_paused:
+        print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Yuklash to'xtatildi!", flush=True)
+        return
+
     client = create_telethon_client()
     try:
         await client.connect()
@@ -223,17 +240,27 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             qm = QueueManager()
             downloaded_count = 0
             for idx, item in enumerate(pending, 1):
+                cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+                if cb_status.is_paused:
+                    print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Navbat to'xtatildi!", flush=True)
+                    break
+
                 media_label = "SERIAL" if item.media_type == "series" else "KINO"
 
-                # Pre-check duplicate in DB
+                # Pre-check duplicate and blacklist in DB
                 dup = await checker.check(
                     title=item.title,
                     year=item.year,
                     original_title=item.original_title,
                     media_type=item.media_type,
-                    episodes_count=item.episodes_count
+                    episodes_count=item.episodes_count,
+                    url=getattr(item, "url", None)
                 )
-                if dup.is_duplicate:
+                if dup.match_type == "blacklist":
+                    qm.update_status(item.id, "blacklisted", error_message=f"Qora ro'yxatda: {dup.reason}")
+                    print(f"🛑 [{media_label}] '{item.title}' qora ro'yxatda: {dup.reason}. O'tkazib yuborildi.")
+                    continue
+                elif dup.is_duplicate:
                     qm.update_status(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
                     print(f"⏭️ [{media_label}] '{item.title}' bazada mavjud: [{dup.matched_type}] '{dup.matched_title}' (ID: {dup.matched_id}). O'tkazib yuborildi.")
                     continue
@@ -367,9 +394,18 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
         print(f"   Rejim: Cheksiz Avtonom (Xotiradan to'xtovsiz davom etish)", flush=True)
     print("="*60 + "\n", flush=True)
 
+    cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+    if cb_status.is_paused:
+        print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
+        return
+
     # 1. Agar foydalanuvchi qat'iy cheklangan pages/limit bergan bo'lsa (parametrli rejim):
     if pages and limit:
         for s in sources_to_run:
+            cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+            if cb_status.is_paused:
+                print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
+                return
             target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
             await cmd_parse(source=s, max_pages=pages, media_type=media_type, min_rating=min_rating)
             await cmd_download(limit=limit, target=target_bot, media_type=media_type)
@@ -378,6 +414,10 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 
     # 2. Cheksiz rejimda: agar oldingi sessiyadan qolib ketgan kutilayotgan filmlar bo'lsa, avval ularni yuklaymiz
     for s in sources_to_run:
+        cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+        if cb_status.is_paused:
+            print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
+            return
         target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
         old_pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
         if old_pending:
@@ -387,6 +427,11 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
     # 3. CHEKSIZ AVTONOM REJIM (Foydalanuvchi xohlagan yangi uzluksiz avtopilot)
     cycle_count = 0
     while True:
+        cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+        if cb_status.is_paused:
+            print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim pauzaga tushdi!", flush=True)
+            break
+
         cycle_count += 1
         any_pages_left = False
 

@@ -52,6 +52,7 @@ from scraper.queue_manager import QueueManager, QueueItem
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.smart_enricher import enrich_movie_smart, clean_movie_title
 from scraper.state_manager import StateManager
+from scraper.autopilot_v2 import autopilot_engine
 
 # Backend DB & Services
 from app.infrastructure.db.session import async_session_factory
@@ -518,6 +519,14 @@ class TelethonModeratorPipeline:
             return False
 
     async def _run_item_inner(self, item: QueueItem, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
+        # Autopilot 2.0 Circuit Breaker Check
+        cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+        if cb_status.is_paused:
+            logger.warning(f"⛔ [AUTOPILOT 2.0]: Circuit Breaker faol (to'xtatilgan): {cb_status.pause_reason}")
+            print(f"⛔ [AUTOPILOT 2.0]: Circuit Breaker faol: {cb_status.pause_reason}", flush=True)
+            QueueManager().update_status(item.id, "needs_review", error_message=f"Circuit Breaker: {cb_status.pause_reason}")
+            return False
+
         try:
             StateManager().set_bot_status("online")
         except Exception:
@@ -557,13 +566,21 @@ class TelethonModeratorPipeline:
         clean_query = re.sub(r'^\d+\s+', '', clean_query).strip()
         clean_query = clean_movie_title(clean_query)
 
-        # 1. Dublikat tekshiruvi (bazada bormi?)
+        # 1. Dublikat va Qora ro'yxat tekshiruvi (bazada bormi?)
         dup_check = await self.dup_checker.check(
             title=clean_query or item.title,
             year=item.year,
             original_title=item.original_title,
-            media_type="series"
+            media_type="series",
+            url=getattr(item, "url", None)
         )
+        if dup_check.match_type == "blacklist":
+            logger.warning(
+                f"🛑 [QORA RO'YXAT] '{item.title}' taqiqlangan: {dup_check.reason}. Serial sikli to'xtatildi."
+            )
+            QueueManager().update_status(item.id, "blacklisted", error_message=dup_check.reason)
+            return False
+
         existing_series_id = None
         if dup_check.is_duplicate:
             logger.info(
@@ -731,6 +748,32 @@ class TelethonModeratorPipeline:
                     f"Yangi serial/topic ochilmaydi, mavjudiga ulanadi."
                 )
                 series_id = sec_dup.matched_id
+
+        # Autopilot 2.0 Health & Quarantine Check
+        if item.status != "manually_verified":
+            first_season_num = season_entries[0][0] if season_entries else None
+            series_eval = {
+                "id": item.id,
+                "title": title,
+                "original_title": meta.get("original_title") or title,
+                "tmdb_id": meta.get("tmdb_id"),
+                "source": getattr(item, "source", "asilmedia") or "asilmedia",
+                "poster_url": meta.get("poster_url") or item.poster_url,
+                "description": meta.get("description") or "Kinochi serial tavsifi",
+                "genres": meta.get("genres") or "Serial",
+                "voiceover": meta.get("voiceover") or "O'zbek tilida",
+                "file_size": 500 * 1024 * 1024,
+                "quality": "720p",
+                "media_type": "series",
+                "season_number": first_season_num,
+                "episode_number": 1
+            }
+            ap_ok, ap_msg, _ = autopilot_engine.process_incoming_media(series_eval)
+            if not ap_ok:
+                logger.warning(f"🛡️ [AUTOPILOT 2.0]: Serial '{title}' qabul qilinmadi: {ap_msg}")
+                QueueManager().update_status(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
+                return False
+
         thread_id = None
         target_chat = AUTO_TOPIC_CHAT_ID
 
@@ -1252,6 +1295,19 @@ class TelethonModeratorPipeline:
                         )
                         await session.commit()
 
+                        # Obunachilarga yangi qism xabarnomasi
+                        try:
+                            from app.api.v1.series_subscriptions import broadcast_new_episode_notification
+                            await broadcast_new_episode_notification(
+                                db=session,
+                                series_id=series_id,
+                                season_number=s_num,
+                                episode_number=ep_num,
+                                display_code=ep_entity.display_code
+                            )
+                        except Exception as sub_err:
+                            logger.warning(f"Error broadcasting episode notification: {sub_err}")
+
                     try:
                         await delete_cache_pattern("cache:series:*")
                     except Exception:
@@ -1353,14 +1409,25 @@ class TelethonModeratorPipeline:
         logger.info(f"🎬 MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
         logger.info("="*55)
 
-        # 1. Dublikat tekshiruvi
+        # 1. Dublikat va Qora ro'yxat tekshiruvi
         dup_check = await self.dup_checker.check(
             title=item.title,
             year=item.year,
             original_title=item.original_title,
-            media_type=item.media_type
+            media_type=item.media_type,
+            url=getattr(item, "url", None)
         )
-        if dup_check.is_duplicate:
+        if dup_check.match_type == "blacklist":
+            logger.warning(
+                f"🛑 [QORA RO'YXAT] '{item.title}' taqiqlangan: {dup_check.reason}. O'tkazib yuborildi."
+            )
+            QueueManager().update_status(
+                item.id,
+                "blacklisted",
+                error_message=f"Qora ro'yxatda: {dup_check.reason}"
+            )
+            return False
+        elif dup_check.is_duplicate:
             logger.warning(
                 f"⚠️ [DUBLIKAT] '{item.title}' bazada mavjud: "
                 f"[{dup_check.matched_type}] '{dup_check.matched_title}' "
@@ -1942,6 +2009,19 @@ class TelethonModeratorPipeline:
                     storage_channel_message_id=storage_msg.id
                 )
                 await session.commit()
+
+                # Obunachilarga yangi qism xabarnomasi
+                try:
+                    from app.api.v1.series_subscriptions import broadcast_new_episode_notification
+                    await broadcast_new_episode_notification(
+                        db=session,
+                        series_id=series_id,
+                        season_number=1,
+                        episode_number=current_ep,
+                        display_code=ep_entity.display_code
+                    )
+                except Exception as sub_err:
+                    logger.warning(f"Error broadcasting episode notification: {sub_err}")
 
             downloaded_in_session += 1
             existing_episodes_set.add(current_ep)
@@ -2565,6 +2645,19 @@ class TelethonModeratorPipeline:
                 )
                 await session.commit()
 
+                # Obunachilarga yangi qism xabarnomasi
+                try:
+                    from app.api.v1.series_subscriptions import broadcast_new_episode_notification
+                    await broadcast_new_episode_notification(
+                        db=session,
+                        series_id=series_id,
+                        season_number=1,
+                        episode_number=current_ep,
+                        display_code=ep_entity.display_code
+                    )
+                except Exception as sub_err:
+                    logger.warning(f"Error broadcasting episode notification: {sub_err}")
+
             downloaded_in_session += 1
             existing_episodes_set.add(current_ep)
             item.downloaded_episodes = downloaded_in_session
@@ -2797,7 +2890,7 @@ class TelethonModeratorPipeline:
             )
             return False
 
-        # ── Sifat nazorati (Quality Guard) ──
+        # ── Sifat nazorati (Quality Guard & Autopilot 2.0) ──
         # Agar sarlavha "Kino", "Film" kabi noaniq bo'lsa, bazaga va kanalga xato kirmasligi uchun to'xtatiladi
         GENERIC_WORDS = {"kino", "film", "serial", "tarjima kino", "premyera", "yangi kino", "noma'lum", "movie"}
         if (title.strip().lower() in GENERIC_WORDS or len(title.strip()) < 3) and item.status != "manually_verified":
@@ -2810,6 +2903,33 @@ class TelethonModeratorPipeline:
                 error_message=f"⚠️ Nomi noaniq ('{title}'). Moderatsiya bo'limida to'g'ri nomini kiriting."
             )
             return False
+
+        if item.status != "manually_verified":
+            v_size = 0
+            if hasattr(video_msg, "file") and video_msg.file:
+                v_size = getattr(video_msg.file, "size", 0) or 0
+            elif hasattr(video_msg, "video") and video_msg.video:
+                v_size = getattr(video_msg.video, "size", 0) or 0
+
+            movie_eval = {
+                "id": item.id,
+                "title": title,
+                "original_title": meta.get("original_title") or title,
+                "tmdb_id": meta.get("tmdb_id"),
+                "source": getattr(item, "source", "asilmedia") or "asilmedia",
+                "poster_url": meta.get("poster_url") or item.poster_url,
+                "description": meta.get("description") or "Kinochi tafsilotlari",
+                "genres": meta.get("genres") or "Badiiy film",
+                "voiceover": meta.get("voiceover") or "O'zbek tilida",
+                "file_size": v_size,
+                "quality": getattr(item, "quality", "720p") or "720p",
+                "media_type": "movie"
+            }
+            ap_ok, ap_msg, _ = autopilot_engine.process_incoming_media(movie_eval)
+            if not ap_ok:
+                logger.warning(f"🛡️ [AUTOPILOT 2.0]: Film '{title}' karantinga olindi: {ap_msg}")
+                QueueManager().update_status(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
+                return False
 
         # ── 2. PostgreSQL bazasida kino yaratish ──
         logger.info(f"ℹ️ 2-QADAM: Websayt bazasiga yangi kino qo'shilmoqda: '{title}'...")

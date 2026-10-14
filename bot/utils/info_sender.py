@@ -33,6 +33,20 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     else:
         caption += f"💜 <b>Kinochi:</b> Yangi\n"
 
+    # Manba brendingi (Source branding)
+    src_type = (movie.get("source_type") or "").lower()
+    custom_src = movie.get("custom_source_name")
+    if custom_src:
+        caption += f"🏷️ <b>Manba:</b> {html.escape(custom_src)}\n"
+    elif src_type == "uzmovi":
+        caption += "🏷️ <b>Manba:</b> UzMovi\n"
+    elif src_type == "asilmedia":
+        caption += "🏷️ <b>Manba:</b> AsilMedia\n"
+    elif src_type == "anitoob":
+        caption += "🏷️ <b>Manba:</b> AniToob\n"
+    elif src_type == "animeelar":
+        caption += "🏷️ <b>Manba:</b> Animeelar\n"
+
     caption += f"\n📝 <b>Tavsif:</b> {desc}"
     
     # Cap description length to avoid Telegram limits
@@ -52,6 +66,7 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     if trailer_url:
         buttons.append([InlineKeyboardButton(text="🎬 Treyler", callback_data=f"trailer_m_{code}")])
         
+    buttons.append([InlineKeyboardButton(text="⚠️ Xatolikni bildirish", callback_data=f"report_m_{code}")])
     buttons.append([
         InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_movies"),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
@@ -130,6 +145,20 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     else:
         caption += f"💜 <b>Kinochi:</b> Yangi\n"
 
+    # Manba brendingi (Source branding)
+    src_type = (series.get("source_type") or "").lower()
+    custom_src = series.get("custom_source_name")
+    if custom_src:
+        caption += f"🏷️ <b>Manba:</b> {html.escape(custom_src)}\n"
+    elif src_type == "uzmovi":
+        caption += "🏷️ <b>Manba:</b> UzMovi\n"
+    elif src_type == "asilmedia":
+        caption += "🏷️ <b>Manba:</b> AsilMedia\n"
+    elif src_type == "anitoob":
+        caption += "🏷️ <b>Manba:</b> AniToob\n"
+    elif src_type == "animeelar":
+        caption += "🏷️ <b>Manba:</b> Animeelar\n"
+
     caption += f"\n📝 <b>Tavsif:</b> {desc}\n\n📚 <b>Fasllar:</b> Quyidan faslni tanlang:"
     
     if len(caption) > 1000:
@@ -181,6 +210,7 @@ async def send_series_info(bot: Bot, chat_id: int, series: dict, edit_message_id
     if trailer_url:
         rows.append([InlineKeyboardButton(text="🎬 Treyler", callback_data=f"trailer_s_{series_id}")])
         
+    rows.append([InlineKeyboardButton(text="⚠️ Xatolikni bildirish", callback_data=f"report_s_{series_id}")])
     rows.append([
         InlineKeyboardButton(text="◀️ Ortga", callback_data="menu_series"),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")

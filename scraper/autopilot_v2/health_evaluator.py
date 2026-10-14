@@ -74,6 +74,9 @@ class HealthEvaluator:
         poster_url = (item.get("poster_url") or "").strip()
         if not poster_url or not (poster_url.startswith("http://") or poster_url.startswith("https://")):
             defects.append("missing_or_invalid_poster")
+        elif "uzmovi.net" in poster_url.lower() or "uzmovi.com" in poster_url.lower():
+            if not tmdb_id or int(tmdb_id) <= 0:
+                defects.append("unverified_watermarked_poster")
 
         genres = item.get("genres")
         if not genres:

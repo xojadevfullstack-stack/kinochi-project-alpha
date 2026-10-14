@@ -667,6 +667,27 @@ async def enrich_movie_smart(
     if cyr_clean and cyr_clean not in [q[0] for q in search_queries]:
         search_queries.append((cyr_clean, default_tmdb_type))
 
+    # Smart Subtitle and Variant generator for TMDb:
+    # 1. Qism/subtitle ajratuvchilarni qirqish (Masalan: "Lara Kroft 2: Hayot beshigi" -> "Lara Kroft 2")
+    sub_parts = re.split(r"[:\-\–\—\/]", clean_title)
+    if len(sub_parts) > 1:
+        base_part = sub_parts[0].strip()
+        if base_part and len(base_part) >= 2 and base_part not in [q[0] for q in search_queries]:
+            search_queries.append((base_part, default_tmdb_type))
+
+    # 2. O'zbekcha-Lotin yozilishidan xalqaro inglizcha nomga fonetik transliteratsiya
+    # Masalan: Kroft -> Croft, Kler -> Claire, Jon -> John
+    expanded_queries = []
+    for q_text, q_type in list(search_queries):
+        translit_t = q_text
+        translit_t = re.sub(r"\bKroft\b", "Croft", translit_t, flags=re.IGNORECASE)
+        translit_t = re.sub(r"\bKler\b", "Claire", translit_t, flags=re.IGNORECASE)
+        translit_t = re.sub(r"\bMaykl\b", "Michael", translit_t, flags=re.IGNORECASE)
+        translit_t = re.sub(r"\bJon\b", "John", translit_t, flags=re.IGNORECASE)
+        if translit_t != q_text and translit_t not in [q[0] for q in search_queries]:
+            expanded_queries.append((translit_t, q_type))
+    search_queries.extend(expanded_queries)
+
     matched_tmdb = None
     best_score = 0.0
     target_year = metadata["release_year"] or year
@@ -786,7 +807,23 @@ async def enrich_movie_smart(
         except Exception as e:
             logger.warning(f"TMDb get_details error: {e}")
     else:
-        logger.info("ℹ️ TMDb dan to'g'ri keluvchi kino topilmadi. Sayt/botning asl ma'lumotlari va posteri saqlanadi.")
+        logger.info("ℹ️ TMDb dan to'g'ri keluvchi kino topilmadi.")
+
+    # 4. Strict TMDb Reconciliation & Watermark Verification Gateway
+    is_uzmovi_watermarked = False
+    if metadata.get("poster_url"):
+        p_url = metadata["poster_url"].lower()
+        if "uzmovi.net" in p_url or "uzmovi.com" in p_url:
+            is_uzmovi_watermarked = True
+
+    metadata["is_watermarked_poster"] = is_uzmovi_watermarked
+    if not metadata.get("tmdb_id"):
+        metadata["defects"] = metadata.get("defects", [])
+        if "missing_tmdb_id" not in metadata["defects"]:
+            metadata["defects"].append("missing_tmdb_id")
+        if is_uzmovi_watermarked and "unverified_watermarked_poster" not in metadata["defects"]:
+            metadata["defects"].append("unverified_watermarked_poster")
+            logger.warning(f"⚠️ Shubhali/suv belgili Uzmovi rasmi aniqlandi va TMDb birikmadi: '{clean_title}'.")
 
     # 4. Agar poster topilmagan bo'lsa va item_url mavjud bo'lsa, saytdagi og:image ni olamiz
     if not metadata["poster_url"] and item_url:

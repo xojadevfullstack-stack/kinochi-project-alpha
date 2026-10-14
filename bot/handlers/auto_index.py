@@ -445,6 +445,16 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                     f"📺 Serial kodi: <code>s_{series['id']}</code>",
                     parse_mode="HTML"
                 )
+                # Obunachilarga yangi qism chiqqani haqida bildirishnoma yuborish
+                try:
+                    await api_client.notify_new_episode(
+                        series_id=series["id"],
+                        season_number=s_num,
+                        episode_number=ep_num,
+                        display_code=ep_code
+                    )
+                except Exception as notify_err:
+                    logger.warning(f"Failed to notify subscribers: {notify_err}")
         except Exception as e:
             logger.error(f"Error linking video for episode {ep_id}: {e}")
             try:

@@ -136,31 +136,66 @@ async def handle_inline_search(inline_query: InlineQuery):
         combined_results = []
 
     results = []
+    bot_username = (settings.BOT_USERNAME or "kinochi_mvp_bot").lstrip("@")
+    base_site = (settings.WEBSITE_URL or "https://kinochi-project-alpha.vercel.app").rstrip("/")
+
     for item in combined_results:
         c_type = item.get("type", "movie")
         title = item.get("title", "Nomsiz")
-        year = item.get("release_year")
+        year = item.get("release_year") or item.get("year")
         code = item.get("code")
         item_id = item.get("id")
         poster_url = item.get("poster_url")
-        desc = f"{year} • {c_type.capitalize()}" if year else c_type.capitalize()
+        rating = item.get("imdb_rating")
+        rating_str = f" ⭐ {rating:.1f}" if rating else ""
 
-        deep_link = f"https://t.me/{settings.BOT_USERNAME or 'kinochi_mvp_bot'}?start={code if code else f's_{item_id}'}"
-        web_link = f"{settings.WEBSITE_URL}/{c_type}/{code if code else item_id}"
-
-        msg_text = (
-            f"🎬 <b>{html.escape(title)}</b>\n\n"
-            f"📅 <b>Yili:</b> {year or 'N/A'}\n"
-            f"🔑 <b>Kodi:</b> <code>{code or f's_{item_id}'}</code>\n\n"
-            f"<i>Kinochi platformasida eng sara sifatda tomosha qiling!</i>"
-        )
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link)
-            ]
-        ])
+        if c_type == "collection":
+            slug = item.get("code") or item.get("slug") or str(item_id)
+            desc = "🌌 Xronologiya to'plami"
+            deep_link = f"https://t.me/{bot_username}?start=menu"
+            web_link = f"{base_site}/collections/{slug}"
+            msg_text = (
+                f"🌌 <b>{html.escape(title)}</b> (Franshiza Xronologiyasi)\n\n"
+                f"📚 Kinokoinotning barcha qismlarini to'liq voqealar ketma-ketligi bo'yicha tomosha qiling!\n\n"
+                f"<i>Kinochi platformasida eng sara sifatda tomosha qiling!</i>"
+            )
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🌐 Franshizani ko'rish", url=web_link)]
+            ])
+        elif c_type == "series":
+            desc = f"📺 Serial • {year or 'N/A'}{rating_str}"
+            deep_link = f"https://t.me/{bot_username}?start=s_{item_id}"
+            web_link = f"{base_site}/series/{item_id}"
+            msg_text = (
+                f"📺 <b>{html.escape(title)}</b>\n\n"
+                f"📅 <b>Yili:</b> {year or 'N/A'}\n"
+                f"🔑 <b>Serial kodi:</b> <code>s_{item_id}</code>\n"
+                f"{rating_str}\n\n"
+                f"<i>Kinochi platformasida barcha fasl va qismlarni tomosha qiling!</i>"
+            )
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
+                    InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link)
+                ]
+            ])
+        else:
+            desc = f"🎬 Kino • {year or 'N/A'}{rating_str}"
+            deep_link = f"https://t.me/{bot_username}?start={code}" if code else f"https://t.me/{bot_username}"
+            web_link = f"{base_site}/movie/{code or item_id}"
+            msg_text = (
+                f"🎬 <b>{html.escape(title)}</b>\n\n"
+                f"📅 <b>Yili:</b> {year or 'N/A'}\n"
+                f"🔑 <b>Kino kodi:</b> <code>{code or 'N/A'}</code>\n"
+                f"{rating_str}\n\n"
+                f"<i>Kinochi platformasida eng sara sifatda tomosha qiling!</i>"
+            )
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
+                    InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link)
+                ]
+            ])
 
         results.append(
             InlineQueryResultArticle(
