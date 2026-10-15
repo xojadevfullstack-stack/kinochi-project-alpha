@@ -5,7 +5,7 @@ import logging
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 from pydantic import BaseModel
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session, get_current_admin
@@ -42,6 +42,7 @@ ISSUE_LABELS = {
 # ── Schemas ──────────────────────────────────────────────────────
 class ReportUpdateStatus(BaseModel):
     status: str  # pending | resolved | rejected
+    restore_media: bool = False
 
 
 class ReportItemResponse(BaseModel):
@@ -56,6 +57,7 @@ class ReportItemResponse(BaseModel):
     file_type: Optional[str] = None
     status: str
     ip_address: Optional[str] = None
+    telegram_user_id: Optional[int] = None
     created_at: Optional[str] = None
     media_title: Optional[str] = None
     media_code_or_id: Optional[str] = None
@@ -82,6 +84,7 @@ async def create_report(
     series_id: Optional[int] = Form(None),
     episode_id: Optional[int] = Form(None),
     description: Optional[str] = Form(None),
+    telegram_user_id: Optional[int] = Form(None),
     file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db_session)
 ):
@@ -90,14 +93,21 @@ async def create_report(
     Skrinshot yoki video biriktirish mumkin.
     """
     client_ip = request.client.host if request.client else None
-    clean_desc = (description or "").strip()[:2000]
+    clean_desc = (description if isinstance(description, str) else "").strip()[:2000]
+    tg_user_id = telegram_user_id if isinstance(telegram_user_id, int) else None
+    if tg_user_id is None and isinstance(telegram_user_id, str) and telegram_user_id.isdigit():
+        tg_user_id = int(telegram_user_id)
+
+    mid = int(movie_id) if (isinstance(movie_id, int) or (isinstance(movie_id, str) and movie_id.isdigit())) else None
+    sid = int(series_id) if (isinstance(series_id, int) or (isinstance(series_id, str) and series_id.isdigit())) else None
+    eid = int(episode_id) if (isinstance(episode_id, int) or (isinstance(episode_id, str) and episode_id.isdigit())) else None
 
     saved_file_url = None
     detected_file_type = None
     file_bytes = None
     saved_filename = None
 
-    if file and file.filename:
+    if isinstance(file, UploadFile) and file.filename:
         _, ext = os.path.splitext(file.filename.lower())
         if ext in ALLOWED_IMAGE_EXTS:
             detected_file_type = "image"
@@ -137,16 +147,16 @@ async def create_report(
     valid_series_id = None
     valid_episode_id = None
 
-    if media_type == "movie" and movie_id:
-        m_res = await db.execute(select(MovieModel).where(MovieModel.id == movie_id))
+    if media_type == "movie" and mid:
+        m_res = await db.execute(select(MovieModel).where(MovieModel.id == mid))
         movie = m_res.scalar_one_or_none()
         if movie:
             valid_movie_id = movie.id
             media_title = movie.title
             site_url = f"https://kinochi.uz/movie/{movie.code}"
-    elif media_type in ("series", "episode") or series_id or episode_id:
-        if episode_id:
-            ep_res = await db.execute(select(EpisodeModel).where(EpisodeModel.id == episode_id))
+    elif media_type in ("series", "episode") or sid or eid:
+        if eid:
+            ep_res = await db.execute(select(EpisodeModel).where(EpisodeModel.id == eid))
             episode = ep_res.scalar_one_or_none()
             if episode:
                 valid_episode_id = episode.id
@@ -161,13 +171,68 @@ async def create_report(
                 if series_item:
                     media_title = series_item.title
                     site_url = f"https://kinochi.uz/series/{series_item.id}"
-        elif series_id:
-            s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == series_id))
+        elif sid:
+            s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == sid))
             series_item = s_res.scalar_one_or_none()
             if series_item:
                 valid_series_id = series_item.id
                 media_title = series_item.title
-                site_url = f"https://kinochi.uz/series/{series_id}"
+                site_url = f"https://kinochi.uz/series/{sid}"
+
+    # 1. Per-user / per-IP dedup tekshiruvi (takroriy pending shikoyatni bloklash)
+    dedup_cond = [ReportModel.status == "pending", ReportModel.issue_type == issue_type]
+    if valid_movie_id:
+        dedup_cond.append(ReportModel.movie_id == valid_movie_id)
+    elif valid_series_id:
+        dedup_cond.append(ReportModel.series_id == valid_series_id)
+    elif valid_episode_id:
+        dedup_cond.append(ReportModel.episode_id == valid_episode_id)
+
+    if tg_user_id:
+        dedup_cond.append(ReportModel.telegram_user_id == tg_user_id)
+        dedup_query = select(ReportModel.id).where(and_(*dedup_cond)).limit(1)
+    elif client_ip:
+        dedup_cond.append(ReportModel.ip_address == client_ip)
+        dedup_query = select(ReportModel.id).where(and_(*dedup_cond)).limit(1)
+    else:
+        dedup_query = None
+
+    if dedup_query is not None:
+        existing_report = (await db.execute(dedup_query)).scalar_one_or_none()
+        if existing_report:
+            raise HTTPException(
+                status_code=400,
+                detail="Ushbu media bo'yicha shikoyatingiz allaqachon qabul qilingan va ko'rib chiqilmoqda."
+            )
+
+    # 2. Shikoyatlar soni chegarasi (Threshold auto-hide: 5 ta shikoyat)
+    REPORT_THRESHOLD = 5
+    if valid_movie_id:
+        cnt_res = await db.execute(
+            select(func.count(ReportModel.id)).where(
+                ReportModel.movie_id == valid_movie_id,
+                ReportModel.status == "pending"
+            )
+        )
+        if (cnt_res.scalar() or 0) + 1 >= REPORT_THRESHOLD:
+            m_res = await db.execute(select(MovieModel).where(MovieModel.id == valid_movie_id))
+            target_movie = m_res.scalar_one_or_none()
+            if target_movie and target_movie.publish_status != "hidden":
+                target_movie.publish_status = "hidden"
+                logger.warning(f"Kino (ID: {valid_movie_id}) {REPORT_THRESHOLD} ta shikoyat tufayli 'hidden' holatiga o'tkazildi.")
+    elif valid_series_id:
+        cnt_res = await db.execute(
+            select(func.count(ReportModel.id)).where(
+                ReportModel.series_id == valid_series_id,
+                ReportModel.status == "pending"
+            )
+        )
+        if (cnt_res.scalar() or 0) + 1 >= REPORT_THRESHOLD:
+            s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == valid_series_id))
+            target_series = s_res.scalar_one_or_none()
+            if target_series and target_series.publish_status != "hidden":
+                target_series.publish_status = "hidden"
+                logger.warning(f"Serial (ID: {valid_series_id}) {REPORT_THRESHOLD} ta shikoyat tufayli 'hidden' holatiga o'tkazildi.")
 
     # DB ga saqlash
     report = ReportModel(
@@ -180,7 +245,8 @@ async def create_report(
         file_url=saved_file_url,
         file_type=detected_file_type,
         status="pending",
-        ip_address=client_ip
+        ip_address=client_ip,
+        telegram_user_id=tg_user_id
     )
     db.add(report)
     await db.commit()
@@ -289,6 +355,7 @@ async def list_reports(
                 file_type=r.file_type,
                 status=r.status,
                 ip_address=r.ip_address,
+                telegram_user_id=r.telegram_user_id,
                 created_at=r.created_at.isoformat() if r.created_at else None,
                 media_title=media_title,
                 media_code_or_id=code_or_id
@@ -302,6 +369,53 @@ async def list_reports(
     )
 
 
+@router.get("/grouped")
+async def list_reports_grouped(
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin)
+):
+    """Shikoyatlarni media bo'yicha guruhlangan holda ko'rish (Faqat admin uchun)."""
+    query = (
+        select(
+            ReportModel.media_type,
+            ReportModel.movie_id,
+            ReportModel.series_id,
+            func.count(ReportModel.id).label("report_count"),
+            func.max(ReportModel.created_at).label("latest_report_at")
+        )
+        .where(ReportModel.status == "pending")
+        .group_by(ReportModel.media_type, ReportModel.movie_id, ReportModel.series_id)
+        .order_by(desc("report_count"))
+    )
+    res = await db.execute(query)
+    groups = []
+    for row in res.all():
+        media_type, movie_id, series_id, count, latest_at = row
+        title = "Noma'lum"
+        code_or_id = None
+        if media_type == "movie" and movie_id:
+            m_res = await db.execute(select(MovieModel.title, MovieModel.code).where(MovieModel.id == movie_id))
+            m_row = m_res.first()
+            if m_row:
+                title, code_or_id = m_row
+        elif media_type in ("series", "episode") and series_id:
+            s_res = await db.execute(select(SeriesModel.title).where(SeriesModel.id == series_id))
+            s_row = s_res.first()
+            if s_row:
+                title = s_row[0]
+                code_or_id = str(series_id)
+        groups.append({
+            "media_type": media_type,
+            "movie_id": movie_id,
+            "series_id": series_id,
+            "media_title": title,
+            "media_code_or_id": code_or_id,
+            "report_count": count,
+            "latest_report_at": latest_at.isoformat() if latest_at else None
+        })
+    return {"groups": groups, "total_groups": len(groups)}
+
+
 @router.patch("/{report_id}")
 async def update_report_status(
     report_id: int,
@@ -309,7 +423,7 @@ async def update_report_status(
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin)
 ):
-    """Shikoyat statusini o'zgartirish (pending, resolved, rejected)."""
+    """Shikoyat statusini o'zgartirish (pending, resolved, rejected) va mediani tiklash."""
     valid_statuses = {"pending", "resolved", "rejected"}
     if data.status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Noto'g'ri status. Ruxsat etilgan: {valid_statuses}")
@@ -320,6 +434,38 @@ async def update_report_status(
         raise HTTPException(status_code=404, detail="Shikoyat topilmadi")
 
     report.status = data.status
+
+    # Mediani qayta tiklash (restore_media)
+    if data.restore_media:
+        if report.media_type == "movie" and report.movie_id:
+            rem_res = await db.execute(
+                select(func.count(ReportModel.id)).where(
+                    ReportModel.movie_id == report.movie_id,
+                    ReportModel.id != report.id,
+                    ReportModel.status == "pending"
+                )
+            )
+            if (rem_res.scalar() or 0) == 0:
+                m_res = await db.execute(select(MovieModel).where(MovieModel.id == report.movie_id))
+                m = m_res.scalar_one_or_none()
+                if m and m.publish_status == "hidden":
+                    m.publish_status = "published"
+                    logger.info(f"Kino (ID: {report.movie_id}) shikoyat hal bo'lgach 'published' holatiga tiklandi.")
+        elif report.media_type in ("series", "episode") and report.series_id:
+            rem_res = await db.execute(
+                select(func.count(ReportModel.id)).where(
+                    ReportModel.series_id == report.series_id,
+                    ReportModel.id != report.id,
+                    ReportModel.status == "pending"
+                )
+            )
+            if (rem_res.scalar() or 0) == 0:
+                s_res = await db.execute(select(SeriesModel).where(SeriesModel.id == report.series_id))
+                s = s_res.scalar_one_or_none()
+                if s and s.publish_status == "hidden":
+                    s.publish_status = "published"
+                    logger.info(f"Serial (ID: {report.series_id}) shikoyat hal bo'lgach 'published' holatiga tiklandi.")
+
     await db.commit()
     await db.refresh(report)
 

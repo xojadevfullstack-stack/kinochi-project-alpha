@@ -2,7 +2,7 @@
 Report (Error / Issue feedback) ORM model.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, Text, ForeignKey, func, DateTime
+from sqlalchemy import String, Integer, Text, ForeignKey, func, DateTime, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
@@ -25,6 +25,7 @@ class ReportModel(Base):
     
     status: Mapped[str] = mapped_column(String(20), default="pending", server_default="pending", nullable=False, index=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    telegram_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now(), nullable=False)
