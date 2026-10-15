@@ -17,6 +17,7 @@ export default function ChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     channel_username: "",
@@ -33,9 +34,11 @@ export default function ChannelsPage() {
     try {
       const data = await fetchApi("/channels?limit=100");
       setChannels(data.items || []);
-      setLoading(false);
+      setErrorMsg(null);
     } catch (e: any) {
-      alert("Xato: " + e.message);
+      console.error("Xato:", e);
+      setErrorMsg(e.message || "Kanallarni yuklashda xatolik yuz berdi");
+    } finally {
       setLoading(false);
     }
   };

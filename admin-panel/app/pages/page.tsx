@@ -13,6 +13,7 @@ type PageItem = {
 export default function PagesPage() {
   const [pages, setPages] = useState<PageItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", slug: "", is_active: true });
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -30,8 +31,10 @@ export default function PagesPage() {
       } else {
           setPages([]);
       }
+      setErrorMsg(null);
     } catch (e: any) {
-      alert("Xato: " + e.message);
+      console.error("Xato:", e);
+      setErrorMsg(e.message || "Sahifalarni yuklashda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }

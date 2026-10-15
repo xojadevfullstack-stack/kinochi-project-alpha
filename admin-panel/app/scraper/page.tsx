@@ -743,6 +743,27 @@ export default function ScraperPage() {
         </div>
       </div>
 
+      {/* Status Warning Banner (if connection lost or session refreshing) */}
+      {statusError && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-300 text-xs sm:text-sm animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-amber-400 text-xl shrink-0 animate-pulse">cloud_sync</span>
+            <span>
+              <strong>Server bilan aloqa yoki sessiya:</strong> {statusError}. Tizim avtomatik qayta ulanmoqda...
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              fetchStatus();
+              fetchQueue(1);
+            }}
+            className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-white font-medium text-xs whitespace-nowrap transition-all self-start sm:self-auto"
+          >
+            Qayta ulanish
+          </button>
+        </div>
+      )}
+
       {/* ── 1. REAL-TIME MISSION CONTROL ───────────────────────────── */}
       <div className="bg-surface-container-lowest/80 border border-white/10 rounded-2xl p-5 sm:p-6 backdrop-blur-md relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary-container/10 rounded-full blur-3xl pointer-events-none -z-0" />
@@ -847,19 +868,19 @@ export default function ScraperPage() {
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
                 <span className="material-symbols-outlined text-sm text-blue-400">auto_stories</span>
-                <span>Uzmovi: <strong className="text-white">{status?.state?.uzmovi_current_page ?? 1}</strong>-sahifa</span>
+                <span>Uzmovi: <strong className="text-white">{status?.state?.uzmovi_current_page !== undefined ? `${status.state.uzmovi_current_page}-sahifa` : "..."}</strong></span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
                 <span className="material-symbols-outlined text-sm text-emerald-400">auto_stories</span>
-                <span>Asilmedia: <strong className="text-white">{status?.state?.asilmedia_current_page ?? 1}</strong>-sahifa</span>
+                <span>Asilmedia: <strong className="text-white">{status?.state?.asilmedia_current_page !== undefined ? `${status.state.asilmedia_current_page}-sahifa` : "..."}</strong></span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
                 <span className="material-symbols-outlined text-sm text-amber-400">auto_stories</span>
-                <span>AniToob: <strong className="text-white">{status?.state?.anitoob_current_page ?? 1}</strong>-sahifa</span>
+                <span>AniToob: <strong className="text-white">{status?.state?.anitoob_current_page !== undefined ? `${status.state.anitoob_current_page}-sahifa` : "..."}</strong></span>
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-300 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
                 <span className="material-symbols-outlined text-sm text-purple-400">auto_stories</span>
-                <span>Animeelar: <strong className="text-white">{status?.state?.animeelar_current_page ?? 1}</strong>-sahifa</span>
+                <span>Animeelar: <strong className="text-white">{status?.state?.animeelar_current_page !== undefined ? `${status.state.animeelar_current_page}-sahifa` : "..."}</strong></span>
               </div>
             </div>
 
@@ -903,7 +924,7 @@ export default function ScraperPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Jami Navbat</span>
             <span className="material-symbols-outlined text-lg">format_list_bulleted</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-white">{stats.total}</div>
+          <div className="mt-2 text-2xl font-bold text-white">{status ? stats.total : <span className="text-zinc-600 animate-pulse text-xl">...</span>}</div>
         </div>
 
         {/* Pending */}
@@ -912,7 +933,7 @@ export default function ScraperPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Kutilmoqda</span>
             <span className="material-symbols-outlined text-lg">pending_actions</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-amber-300">{stats.pending}</div>
+          <div className="mt-2 text-2xl font-bold text-amber-300">{status ? stats.pending : <span className="text-zinc-600 animate-pulse text-xl">...</span>}</div>
         </div>
 
         {/* Completed */}
@@ -921,7 +942,7 @@ export default function ScraperPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Bajarildi</span>
             <span className="material-symbols-outlined text-lg">check_circle</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-300">{stats.completed}</div>
+          <div className="mt-2 text-2xl font-bold text-emerald-300">{status ? stats.completed : <span className="text-zinc-600 animate-pulse text-xl">...</span>}</div>
         </div>
 
         {/* Already exists */}
@@ -930,7 +951,7 @@ export default function ScraperPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Bazada Bor</span>
             <span className="material-symbols-outlined text-lg">dataset_linked</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-sky-300">{stats.already_exists}</div>
+          <div className="mt-2 text-2xl font-bold text-sky-300">{status ? stats.already_exists : <span className="text-zinc-600 animate-pulse text-xl">...</span>}</div>
         </div>
 
         {/* Failed */}
@@ -939,7 +960,7 @@ export default function ScraperPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Xatolik</span>
             <span className="material-symbols-outlined text-lg">error</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-red-400">{stats.failed}</div>
+          <div className="mt-2 text-2xl font-bold text-red-400">{status ? stats.failed : <span className="text-zinc-600 animate-pulse text-xl">...</span>}</div>
         </div>
 
         {/* In progress */}
@@ -948,7 +969,7 @@ export default function ScraperPage() {
             <span className="text-xs font-semibold uppercase tracking-wider">Yuklanmoqda</span>
             <span className="material-symbols-outlined text-lg">autorenew</span>
           </div>
-          <div className="mt-2 text-2xl font-bold text-primary-container">{stats.in_progress}</div>
+          <div className="mt-2 text-2xl font-bold text-primary-container">{status ? stats.in_progress : <span className="text-zinc-600 animate-pulse text-xl">...</span>}</div>
         </div>
       </div>
 
@@ -1075,23 +1096,23 @@ export default function ScraperPage() {
                     <div className="grid grid-cols-4 gap-2 text-xs">
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">Uzmovi:</span>
-                        <strong className="text-white text-sm">{status?.state?.uzmovi_current_page ?? 1}</strong>
-                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.uzmovi_total_pages ?? 350}</span>
+                        <strong className="text-white text-sm">{status?.state?.uzmovi_current_page ?? "..."}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.uzmovi_total_pages ?? "..."}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">Asilmedia:</span>
-                        <strong className="text-white text-sm">{status?.state?.asilmedia_current_page ?? 1}</strong>
-                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.asilmedia_total_pages ?? 400}</span>
+                        <strong className="text-white text-sm">{status?.state?.asilmedia_current_page ?? "..."}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.asilmedia_total_pages ?? "..."}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">AniToob:</span>
-                        <strong className="text-white text-sm">{status?.state?.anitoob_current_page ?? 1}</strong>
-                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.anitoob_total_pages ?? 20}</span>
+                        <strong className="text-white text-sm">{status?.state?.anitoob_current_page ?? "..."}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.anitoob_total_pages ?? "..."}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">Animeelar:</span>
-                        <strong className="text-white text-sm">{status?.state?.animeelar_current_page ?? 1}</strong>
-                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.animeelar_total_pages ?? 50}</span>
+                        <strong className="text-white text-sm">{status?.state?.animeelar_current_page ?? "..."}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.animeelar_total_pages ?? "..."}</span>
                       </div>
                     </div>
                   ) : (

@@ -5,10 +5,27 @@ const DIRECT_API_URL = BASE_API_URL;
 
 export const HEALTH_URL = `${RENDER_BASE_URL}/health`;
 
-async function getOrRefreshToken(): Promise<string | null> {
+function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (!payload.exp) return false;
+    // Check if expired or within 30 seconds of expiry
+    return Date.now() >= (payload.exp * 1000 - 30000);
+  } catch {
+    return true;
+  }
+}
+
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  let token = localStorage.getItem("access_token");
-  if (!token) {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
     try {
       const storedRefreshToken = localStorage.getItem("refresh_token");
       const refreshHeaders: Record<string, string> = { "Content-Type": "application/json" };
@@ -23,15 +40,31 @@ async function getOrRefreshToken(): Promise<string | null> {
       if (refreshRes.ok) {
         const refreshData = await refreshRes.json();
         if (refreshData.access_token) {
-          token = refreshData.access_token;
-          localStorage.setItem("access_token", token as string);
-          document.cookie = `access_token=${token}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+          const newToken = refreshData.access_token as string;
+          localStorage.setItem("access_token", newToken);
+          document.cookie = `access_token=${newToken}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
           if (refreshData.refresh_token) {
             localStorage.setItem("refresh_token", refreshData.refresh_token);
           }
+          return newToken;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Auto-refresh token failed:", e);
+    } finally {
+      refreshPromise = null;
+    }
+    return null;
+  })();
+
+  return refreshPromise;
+}
+
+async function getOrRefreshToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  let token = localStorage.getItem("access_token");
+  if (!token || isTokenExpired(token)) {
+    token = await refreshAccessToken();
   }
   return token;
 }
@@ -69,6 +102,16 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     console.error("fetchApi network error:", networkError);
     // "Failed to fetch" — server o'chiq yoki internet yo'q
     throw new Error("Server bilan ulanib bo'lmadi. Backend server ishlaydimi? Bir oz kuting va qayta urinib ko'ring.");
+  }
+
+  if (response.status === 401 && !(options as any)._isRetry) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return fetchApi(endpoint, {
+        ...options,
+        _isRetry: true,
+      } as any);
+    }
   }
 
   if (!response.ok) {

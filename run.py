@@ -9,7 +9,9 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(os.path.join(PROJECT_ROOT, "backend", ".env"), override=False)
 load_dotenv(os.path.join(PROJECT_ROOT, "bot", ".env"), override=False)
 
-# Ensure python path includes backend and bot directories
+# Ensure python path includes project root, backend, and bot directories
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 sys.path.append(os.path.join(PROJECT_ROOT, "backend"))
 sys.path.append(os.path.join(PROJECT_ROOT, "bot"))
 

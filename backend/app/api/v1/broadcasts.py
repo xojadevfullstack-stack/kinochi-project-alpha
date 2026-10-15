@@ -63,7 +63,8 @@ async def list_public_broadcasts(
 ):
     """List public announcements/broadcasts for website notifications without admin auth."""
     broadcasts, total = await service.list_broadcasts(skip=skip, limit=limit)
-    return {"items": broadcasts, "total": total}
+    public_items = [b for b in broadcasts if b.status != BroadcastStatus.DRAFT]
+    return {"items": public_items, "total": len(public_items)}
 
 
 @router.get("/{broadcast_id}", response_model=BroadcastResponse)

@@ -59,12 +59,21 @@ async def live_search(
 
     results: list[LiveSearchResultItem] = []
 
-    # 1. Check if user typed a movie code (e.g., "#BYVC33" or "BYVC33" or "s_30")
-    code_query = clean_query.lstrip("#").upper()
-    if len(code_query) >= 2:
-        # Check movie code
+    # 1. Check if user typed a movie code or ID (e.g., "#BYVC33", "BYVC33", "#190", "190", "s_993")
+    code_query = clean_query.lstrip("#").strip()
+    series_id_target: int | None = None
+    if code_query.lower().startswith("s_") and code_query[2:].isdigit():
+        series_id_target = int(code_query[2:])
+    elif code_query.isdigit():
+        series_id_target = int(code_query)
+
+    if code_query:
+        # Check movie code or ID
+        movie_code_conditions = [MovieModel.code.ilike(code_query)]
+        if code_query.isdigit():
+            movie_code_conditions.append(MovieModel.id == int(code_query))
         movie_code_res = await db.execute(
-            select(MovieModel).where(MovieModel.code == code_query).limit(1)
+            select(MovieModel).where(or_(*movie_code_conditions)).limit(1)
         )
         movie_by_code = movie_code_res.scalar_one_or_none()
         if movie_by_code:
@@ -81,6 +90,26 @@ async def live_search(
                     extra="Kod bo'yicha topildi",
                 )
             )
+
+        if series_id_target:
+            series_by_id_res = await db.execute(
+                select(SeriesModel).where(SeriesModel.id == series_id_target).limit(1)
+            )
+            series_by_id = series_by_id_res.scalar_one_or_none()
+            if series_by_id and not any(r.id == series_by_id.id and r.type == "series" for r in results):
+                results.append(
+                    LiveSearchResultItem(
+                        id=series_by_id.id,
+                        title=series_by_id.title,
+                        original_title=None,
+                        code=f"s_{series_by_id.id}",
+                        year=series_by_id.release_year,
+                        poster_url=series_by_id.poster_url,
+                        imdb_rating=series_by_id.imdb_rating,
+                        type="series",
+                        extra="ID bo'yicha topildi",
+                    )
+                )
 
     # 2. Check collections / franchises
     col_filter = or_(
@@ -109,11 +138,16 @@ async def live_search(
         )
 
     # 3. Search Movies
-    movie_filter = or_(
+    movie_conditions = [
         MovieModel.title.ilike(f"%{clean_query}%"),
         MovieModel.original_title.ilike(f"%{clean_query}%"),
-        MovieModel.code.ilike(f"%{clean_query}%"),
-    )
+    ]
+    if code_query:
+        movie_conditions.append(MovieModel.code.ilike(f"%{code_query}%"))
+        if code_query.isdigit():
+            movie_conditions.append(MovieModel.id == int(code_query))
+    movie_filter = or_(*movie_conditions)
+
     # Order by starts_with first for natural ranking
     movie_order = case(
         (MovieModel.title.ilike(f"{clean_query}%"), 1),
@@ -143,9 +177,15 @@ async def live_search(
             )
 
     # 4. Search Series
-    series_filter = or_(
+    series_conditions = [
         SeriesModel.title.ilike(f"%{clean_query}%"),
-    )
+    ]
+    if code_query and code_query != clean_query:
+        series_conditions.append(SeriesModel.title.ilike(f"%{code_query}%"))
+    if series_id_target:
+        series_conditions.append(SeriesModel.id == series_id_target)
+    series_filter = or_(*series_conditions)
+
     series_stmt = (
         select(SeriesModel)
         .where(series_filter)
@@ -154,18 +194,19 @@ async def live_search(
     )
     series_res = await db.execute(series_stmt)
     for s in series_res.scalars().all():
-        results.append(
-            LiveSearchResultItem(
-                id=s.id,
-                title=s.title,
-                original_title=None,
-                code=f"s_{s.id}",
-                year=s.release_year,
-                poster_url=s.poster_url,
-                imdb_rating=s.imdb_rating,
-                type="series",
+        if not any(r.id == s.id and r.type == "series" for r in results):
+            results.append(
+                LiveSearchResultItem(
+                    id=s.id,
+                    title=s.title,
+                    original_title=None,
+                    code=f"s_{s.id}",
+                    year=s.release_year,
+                    poster_url=s.poster_url,
+                    imdb_rating=s.imdb_rating,
+                    type="series",
+                )
             )
-        )
 
     # Trim to limit
     trimmed_results = results[:limit]

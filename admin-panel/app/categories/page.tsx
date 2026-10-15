@@ -15,6 +15,7 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", slug: "", is_active: true });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -23,9 +24,11 @@ export default function CategoriesPage() {
   const loadCategories = async () => {
     try {
       const data = await fetchApi("/categories");
-      setCategories(data);
+      setCategories(Array.isArray(data) ? data : (data?.items || []));
+      setErrorMsg(null);
     } catch (e: any) {
-      alert("Xato: " + e.message);
+      console.error("Xato:", e);
+      setErrorMsg(e.message || "Kategoriyalarni yuklashda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }

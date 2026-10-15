@@ -21,13 +21,18 @@ export default function BroadcastsPage() {
   
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const loadBroadcasts = async () => {
     try {
       const data = await fetchApi("/broadcasts?limit=100");
-      setBroadcasts(data.items);
-      return data.items as Broadcast[];
+      const items = data?.items || [];
+      setBroadcasts(items);
+      setErrorMsg(null);
+      return items as Broadcast[];
     } catch (e: any) {
-      alert("Xato: " + e.message);
+      console.error("Xato:", e);
+      setErrorMsg(e.message || "Xatolik yuz berdi");
       return [];
     }
   };

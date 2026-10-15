@@ -1401,7 +1401,7 @@ export default function MoviesPage() {
               {movies.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-text-secondary"
                   >
                     {searchQuery

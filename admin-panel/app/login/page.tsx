@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 const HEALTH_URL = API_URL.replace(/\/api\/v1\/?$/, "") + "/health";
 
 export default function LoginPage() {
@@ -50,7 +50,7 @@ export default function LoginPage() {
         document.cookie = `access_token=${data.access_token}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
       }
 
-      router.push("/");
+      window.location.href = "/";
     } catch (err) {
       setError("Serverga ulanib bo'lmadi. Backend ishga tushirilganligini tekshiring.");
     } finally {

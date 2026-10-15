@@ -72,12 +72,16 @@ export default function CollectionsAdminPage() {
     loadCollections();
   }, []);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const loadCollections = async () => {
     try {
       const data = await fetchApi("/collections");
-      setCollections(data);
+      setCollections(Array.isArray(data) ? data : (data?.items || []));
+      setErrorMsg(null);
     } catch (e: any) {
-      alert("Yuklashda xato: " + e.message);
+      console.error("Yuklashda xato:", e);
+      setErrorMsg(e.message || "Xronologiyalarni yuklashda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }

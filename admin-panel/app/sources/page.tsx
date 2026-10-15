@@ -14,6 +14,7 @@ type Source = {
 export default function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", link_or_id: "", type: "superguruh" });
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -24,9 +25,11 @@ export default function SourcesPage() {
   const loadSources = async () => {
     try {
       const data = await fetchApi("/sources");
-      setSources(data);
+      setSources(Array.isArray(data) ? data : (data?.items || []));
+      setErrorMsg(null);
     } catch (e: any) {
-      alert("Xato: " + e.message);
+      console.error("Xato:", e);
+      setErrorMsg(e.message || "Manbalarni yuklashda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }

@@ -15,35 +15,63 @@ from app.core.cache import delete_cache_pattern
 
 logger = logging.getLogger(__name__)
 
-# The scraper lives next to backend/ (project root). In the production Docker image
-# only backend/ is copied, so the import must be optional: the rest of the API
-# must keep working and these endpoints answer 503 with a clear message.
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+# Discover and register scraper directory across any deployment mode (Docker, VPS, Render, local dev)
+candidate_roots = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
+    os.path.abspath(os.getcwd()),
+]
+ROOT_DIR = candidate_roots[0]
+for p in candidate_roots:
+    if os.path.exists(os.path.join(p, "scraper")):
+        ROOT_DIR = p
+        if p not in sys.path:
+            sys.path.insert(0, p)
+        break
 
-try:
-    from scraper.queue_manager import QueueManager, QueueItem
-    from scraper.process_manager import ProcessManager
-    from scraper.state_manager import StateManager
-    from scraper.autopilot_v2 import autopilot_engine, quarantine_manager, health_evaluator
-    SCRAPER_AVAILABLE = True
-except Exception as _exc:  # pragma: no cover
-    QueueManager = None  # type: ignore
-    ProcessManager = None  # type: ignore
-    StateManager = None  # type: ignore
-    autopilot_engine = None  # type: ignore
-    quarantine_manager = None  # type: ignore
-    health_evaluator = None  # type: ignore
-    SCRAPER_AVAILABLE = False
-    logger.warning(f"Scraper moduli yuklanmadi (faqat lokal kompyuterda ishlaydi): {_exc}")
+QueueManager = None
+QueueItem = None
+ProcessManager = None
+StateManager = None
+autopilot_engine = None
+quarantine_manager = None
+health_evaluator = None
+SCRAPER_AVAILABLE = False
+
+
+def _init_scraper():
+    global QueueManager, QueueItem, ProcessManager, StateManager
+    global autopilot_engine, quarantine_manager, health_evaluator, SCRAPER_AVAILABLE
+    try:
+        from scraper.queue_manager import QueueManager as _QM, QueueItem as _QI
+        from scraper.process_manager import ProcessManager as _PM
+        from scraper.state_manager import StateManager as _SM
+        from scraper.autopilot_v2 import autopilot_engine as _AE, quarantine_manager as _QM2, health_evaluator as _HE
+        QueueManager = _QM
+        QueueItem = _QI
+        ProcessManager = _PM
+        StateManager = _SM
+        autopilot_engine = _AE
+        quarantine_manager = _QM2
+        health_evaluator = _HE
+        SCRAPER_AVAILABLE = True
+    except Exception as _exc:  # pragma: no cover
+        SCRAPER_AVAILABLE = False
+        logger.warning(f"Scraper moduli yuklanmadi: {_exc}")
+
+
+_init_scraper()
 
 
 def require_scraper(admin=Depends(get_current_admin)):
     if not SCRAPER_AVAILABLE:
+        _init_scraper()
+    if not SCRAPER_AVAILABLE:
         raise HTTPException(
             status_code=503,
-            detail="Parser & Grabber faqat scraper papkasi mavjud bo'lgan lokal serverda ishlaydi.",
+            detail="Parser & Grabber moduli serverda yuklanmadi. Iltimos, server loglarini tekshiring.",
         )
     return admin
 
