@@ -17,10 +17,13 @@ from app.domain.series.entities import (
     Episode, EpisodeCreate, EpisodeUpdate
 )
 from app.infrastructure.telegram.telegram_client import telegram_client
+import time
 from app.core.job_manager import job_manager, JobStatus
 from app.api.limiter import limiter
 from app.utils.trailer import validate_and_normalize_trailer_url
 from app.core.cache import get_cache, set_cache, delete_cache_pattern
+from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
+from app.infrastructure.db.models.series import SeriesModel
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +38,24 @@ async def create_series(
     request: Request,
     series_in: SeriesCreate,
     service: SeriesService = Depends(get_series_service),
+    db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin)
 ):
     """Create a new series (Admin only)."""
     create_dict = series_in.model_dump(exclude_unset=True)
     if create_dict.get("trailer_url"):
         create_dict["trailer_url"] = await validate_and_normalize_trailer_url(create_dict["trailer_url"])
+
+    # Admission Gate pre_check
+    gate_payload = dict(create_dict)
+    gate_payload["source"] = gate_payload.get("source") or create_dict.get("source_type") or "admin"
+    gate_payload["source_key"] = gate_payload.get("source_key") or f"admin_{int(time.time())}"
+    if not gate_payload.get("manual_verified"):
+        gate_payload["manual_verified"] = True
+    is_valid, defects = await pre_check("series", gate_payload, session=db, check_reachability=False)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
+
     series = await service.create_series(create_dict)
     await delete_cache_pattern("cache:series:*")
     return series
@@ -598,12 +613,49 @@ async def link_episode_video(
     episode_id: int,
     request: LinkVideoRequest,
     service: SeriesService = Depends(get_series_service),
+    db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_admin_or_bot)
 ):
     try:
         episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
+
+        # Admission Gate final_check
+        is_valid, defects = final_check("episode", {
+            "telegram_file_id": request.telegram_file_id,
+            "storage_channel_message_id": request.message_id,
+            "language": request.language
+        })
+        if is_valid:
+            # Series ni tekshirib, agar pending bo'lsa uni 'published' qilish
+            ep_model = await service.repository.get_episode_by_id(episode_id)
+            if ep_model and ep_model.season:
+                series_model = await db.get(SeriesModel, ep_model.season.series_id)
+                if series_model and series_model.publish_status == "pending":
+                    await promote_to_published(db, series_model)
+                    await db.commit()
+        else:
+            ep_model = await service.repository.get_episode_by_id(episode_id)
+            title = ep_model.title if ep_model else f"Episode {episode_id}"
+            await record_rejection(
+                session=db,
+                media_type="episode",
+                source="bot_or_admin",
+                source_key=f"episode_{episode_id}",
+                title=title,
+                payload={
+                    "telegram_file_id": request.telegram_file_id,
+                    "storage_channel_message_id": request.message_id,
+                    "language": request.language,
+                    "source_url": request.source_url
+                },
+                defects=defects,
+                media_id=episode_id
+            )
+            await db.commit()
+
+        await delete_cache_pattern("cache:series:*")
         return episode
     except HTTPException:
         raise

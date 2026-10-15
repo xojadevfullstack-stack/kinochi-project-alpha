@@ -63,6 +63,7 @@ from app.infrastructure.db.repositories.series_repository import SeriesRepositor
 from app.application.series.series_service import SeriesService
 from app.domain.series.entities import SeriesCreate, SeasonCreate, EpisodeCreate
 from app.infrastructure.db.models.source import SourceModel
+from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.core.cache import delete_cache_pattern
 
@@ -2002,12 +2003,40 @@ class TelethonModeratorPipeline:
                 except Exception:
                     pass
 
+                ep_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
+                if str(ep_lang).strip().lower() in ("asosiy", "", "none"):
+                    ep_lang = "O'zbekcha"
                 await series_repo.add_episode_translation(
                     episode_id=ep_id,
-                    language="Asosiy",
+                    language=ep_lang,
                     telegram_file_id=ep_bot_file_id,
                     storage_channel_message_id=storage_msg.id
                 )
+                from scraper.admission_gate import final_check, promote_to_published, record_rejection
+                is_valid, defects = final_check("episode", {
+                    "telegram_file_id": ep_bot_file_id,
+                    "storage_channel_message_id": storage_msg.id,
+                    "language": ep_lang
+                })
+                if is_valid:
+                    s_obj = await session.get(SeriesModel, series_id)
+                    if s_obj and s_obj.publish_status == "pending":
+                        await promote_to_published(
+                            session, s_obj,
+                            source=getattr(item, "source", "scraper"),
+                            source_key=str(getattr(item, "source_id", series_id))
+                        )
+                else:
+                    await record_rejection(
+                        session=session,
+                        media_type="episode",
+                        source=getattr(item, "source", "scraper"),
+                        source_key=f"ep_{series_id}_{current_ep}",
+                        title=f"{title} (S1:E{current_ep})",
+                        payload={"telegram_file_id": ep_bot_file_id, "storage_channel_message_id": storage_msg.id, "language": ep_lang},
+                        defects=defects,
+                        media_id=ep_id
+                    )
                 await session.commit()
 
                 # Obunachilarga yangi qism xabarnomasi
@@ -2637,12 +2666,40 @@ class TelethonModeratorPipeline:
                 except Exception:
                     pass
 
+                ep_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
+                if str(ep_lang).strip().lower() in ("asosiy", "", "none"):
+                    ep_lang = "O'zbekcha"
                 await series_repo.add_episode_translation(
                     episode_id=ep_id,
-                    language="Asosiy",
+                    language=ep_lang,
                     telegram_file_id=ep_bot_file_id,
                     storage_channel_message_id=storage_msg.id
                 )
+                from scraper.admission_gate import final_check, promote_to_published, record_rejection
+                is_valid, defects = final_check("episode", {
+                    "telegram_file_id": ep_bot_file_id,
+                    "storage_channel_message_id": storage_msg.id,
+                    "language": ep_lang
+                })
+                if is_valid:
+                    s_obj = await session.get(SeriesModel, series_id)
+                    if s_obj and s_obj.publish_status == "pending":
+                        await promote_to_published(
+                            session, s_obj,
+                            source=getattr(item, "source", "scraper"),
+                            source_key=str(getattr(item, "source_id", series_id))
+                        )
+                else:
+                    await record_rejection(
+                        session=session,
+                        media_type="episode",
+                        source=getattr(item, "source", "scraper"),
+                        source_key=f"ep_{series_id}_{current_ep}",
+                        title=f"{title} (S1:E{current_ep})",
+                        payload={"telegram_file_id": ep_bot_file_id, "storage_channel_message_id": storage_msg.id, "language": ep_lang},
+                        defects=defects,
+                        media_id=ep_id
+                    )
                 await session.commit()
 
                 # Obunachilarga yangi qism xabarnomasi
@@ -3087,12 +3144,45 @@ class TelethonModeratorPipeline:
         async with async_session_factory() as session:
             repo = MovieRepositoryImpl(session)
             service = MovieService(repo)
+            movie_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
+            if str(movie_lang).strip().lower() in ("asosiy", "", "none"):
+                movie_lang = "O'zbekcha"
             await service.link_movie_video_from_message(
                 movie_id=movie_id,
                 message_id=storage_msg.id,
-                language="Asosiy",
+                language=movie_lang,
                 telegram_file_id=bot_file_id
             )
+            # Admission Gate final_check va nashr qilish
+            from scraper.admission_gate import final_check, promote_to_published, record_rejection
+            is_valid, defects = final_check("movie", {
+                "telegram_file_id": bot_file_id,
+                "storage_channel_message_id": storage_msg.id,
+                "language": movie_lang
+            })
+            if is_valid:
+                m_obj = await session.get(MovieModel, movie_id)
+                if m_obj:
+                    await promote_to_published(
+                        session, m_obj,
+                        source=getattr(item, "source", "scraper"),
+                        source_key=str(getattr(item, "source_id", movie_id))
+                    )
+            else:
+                await record_rejection(
+                    session=session,
+                    media_type="movie",
+                    source=getattr(item, "source", "scraper"),
+                    source_key=str(getattr(item, "source_id", movie_id)),
+                    title=title,
+                    payload={
+                        "telegram_file_id": bot_file_id,
+                        "storage_channel_message_id": storage_msg.id,
+                        "language": movie_lang
+                    },
+                    defects=defects,
+                    media_id=movie_id
+                )
             await session.commit()
             logger.info(f"🎉 WEBSAYTDA VIDEO TO'LIQ FAOLLASHTIRILDI! Onlayn tomosha qilishga tayyor! (Kod: #{movie_code})")
 

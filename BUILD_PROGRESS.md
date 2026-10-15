@@ -36,7 +36,7 @@ Ushbu hujjat loyihadagi barcha bosqichlar, arxitekturaviy qarorlar va bajarilgan
   - Dublikatlar (tmdb_id/shikimori_id, so'ng normalizatsiyalangan nom+yil, `rejected_items` va blacklist).
   - Qism (episode) tekshiruvlari.
   - Holat mashinasi (State machine): `pre_check` -> `pending` row -> video biriktirish -> `final_check` -> faqat gate ichida `published`. Commit: `692cbb2`
-- [ ] **B3**. BARCHA yozish yo'llarini gate orqali yo'naltirish (API, auto_index, scraper moderator pipeline, ingest_pusu).
+- [x] **B3**. BARCHA yozish yo'llarini gate orqali yo'naltirish (API, auto_index, scraper moderator pipeline, ingest_pusu). Commit: `f1b65fd`
 - [ ] **B4**. Non-blocking pipeline, CircuitBreaker faqat infratuzilma xatolarida to'xtashi, Autopilot `rejected`/`blacklisted` elementlarni qayta navbatga qo'ymasligi.
 
 ---

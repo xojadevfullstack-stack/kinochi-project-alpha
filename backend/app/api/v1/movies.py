@@ -19,9 +19,13 @@ from app.api.v1.pages import PageResponse
 from app.infrastructure.telegram.telegram_client import telegram_client
 from app.utils.telegram_link_parser import parse_telegram_link
 from app.core.job_manager import job_manager, JobStatus
+import time
 from app.api.limiter import limiter
 from app.utils.trailer import validate_and_normalize_trailer_url
 from app.core.cache import get_cache, set_cache, delete_cache_pattern
+from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
+from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.session import async_session_factory
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -156,7 +160,17 @@ async def create_movie(
             
     if data.get("trailer_url"):
         data["trailer_url"] = await validate_and_normalize_trailer_url(data["trailer_url"])
-            
+
+    # Admission Gate pre_check
+    gate_payload = dict(data)
+    gate_payload["source"] = gate_payload.get("source") or data.get("source_type") or "admin"
+    gate_payload["source_key"] = gate_payload.get("source_key") or f"admin_{int(time.time())}_{data.get('code', '')}"
+    if not gate_payload.get("manual_verified"):
+        gate_payload["manual_verified"] = True
+    is_valid, defects = await pre_check("movie", gate_payload, session=db, check_reachability=False)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
+
     movie = await service.create_movie(**data)
     await delete_cache_pattern("cache:movies:*")
     return movie
@@ -393,6 +407,31 @@ async def upload_movie_video(
                 await job_manager.set_failed(job_id, "Kino topilmadi (ID noto'g'ri).")
                 return
 
+            # Admission Gate final_check
+            is_valid, defects = final_check("movie", {
+                "telegram_file_id": file_id,
+                "storage_channel_message_id": message_id,
+                "language": language
+            })
+            async with async_session_factory() as sess:
+                m_model = await sess.get(MovieModel, movie_id)
+                if is_valid and m_model:
+                    await promote_to_published(sess, m_model)
+                    await sess.commit()
+                elif m_model:
+                    await record_rejection(
+                        session=sess,
+                        media_type="movie",
+                        source=getattr(m_model, "custom_source_name", None) or "upload",
+                        source_key=f"movie_{movie_id}",
+                        title=m_model.title,
+                        payload={"telegram_file_id": file_id, "storage_channel_message_id": message_id, "language": language},
+                        defects=defects,
+                        media_id=movie_id
+                    )
+                    await sess.commit()
+
+            await delete_cache_pattern("cache:movies:*")
             await job_manager.set_done(job_id, result={"movie_id": movie_id, "language": language})
         except Exception as e:
             err_msg = str(e)
@@ -440,6 +479,7 @@ async def link_movie_video(
     movie_id: int,
     request: LinkVideoRequest,
     service: MovieService = Depends(get_movie_service),
+    db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_admin_or_bot)
 ):
     """Link video for a movie from an existing message ID in the storage channel (Admin or Bot)."""
@@ -447,6 +487,37 @@ async def link_movie_video(
         movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
+
+        # Admission Gate final_check
+        is_valid, defects = final_check("movie", {
+            "telegram_file_id": request.telegram_file_id,
+            "storage_channel_message_id": request.message_id,
+            "language": request.language
+        })
+        movie_model = await db.get(MovieModel, movie_id)
+        if is_valid and movie_model:
+            await promote_to_published(db, movie_model)
+            await db.commit()
+            movie.publish_status = "published"
+        elif movie_model:
+            await record_rejection(
+                session=db,
+                media_type="movie",
+                source=getattr(movie_model, "custom_source_name", None) or "manual",
+                source_key=f"movie_{movie_id}",
+                title=movie_model.title,
+                payload={
+                    "telegram_file_id": request.telegram_file_id,
+                    "storage_channel_message_id": request.message_id,
+                    "language": request.language,
+                    "source_url": request.source_url
+                },
+                defects=defects,
+                media_id=movie_id
+            )
+            await db.commit()
+
+        await delete_cache_pattern("cache:movies:*")
         return movie
     except HTTPException:
         raise
