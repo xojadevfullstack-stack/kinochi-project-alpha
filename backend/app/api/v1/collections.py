@@ -191,7 +191,7 @@ async def get_collection(
     if cached:
         return cached
 
-    query = select(CollectionModel)
+    query = select(CollectionModel).where(CollectionModel.is_active == True)
     if slug_or_id.isdigit():
         query = query.where(CollectionModel.id == int(slug_or_id))
     else:
@@ -218,7 +218,14 @@ async def get_collection(
         items_query = items_query.order_by(CollectionItemModel.chronological_order.asc(), CollectionItemModel.id.asc())
 
     items_res = await db.execute(items_query)
-    items = items_res.scalars().all()
+    raw_items = items_res.scalars().all()
+
+    # Ommaviy ko'rinishda faqat nashr qilingan (published) mediani qaytarish
+    items = [
+        it for it in raw_items
+        if (it.movie and getattr(it.movie, "publish_status", None) == "published") or
+           (it.series and getattr(it.series, "publish_status", None) == "published")
+    ]
 
     detail = CollectionDetailResponse(
         id=collection.id,
@@ -255,8 +262,13 @@ async def get_movie_franchise_context(
     if cached:
         return cached
 
-    # Find movie by code
-    movie_res = await db.execute(select(MovieModel).where(MovieModel.code == movie_code.upper()))
+    # Find movie by code and ensure it is published
+    movie_res = await db.execute(
+        select(MovieModel).where(
+            MovieModel.code == movie_code.upper(),
+            MovieModel.publish_status == "published",
+        )
+    )
     movie = movie_res.scalar_one_or_none()
     if not movie:
         raise HTTPException(status_code=404, detail="Kino topilmadi")
@@ -272,6 +284,8 @@ async def get_movie_franchise_context(
         return None
 
     col = current_item.collection
+    if not col.is_active:
+        return None
 
     # Fetch all items in this collection ordered chronologically
     all_items_res = await db.execute(
@@ -283,7 +297,12 @@ async def get_movie_franchise_context(
         )
         .order_by(CollectionItemModel.chronological_order.asc(), CollectionItemModel.id.asc())
     )
-    all_items = all_items_res.scalars().all()
+    raw_items = all_items_res.scalars().all()
+    all_items = [
+        it for it in raw_items
+        if (it.movie and getattr(it.movie, "publish_status", None) == "published") or
+           (it.series and getattr(it.series, "publish_status", None) == "published")
+    ]
 
     # Determine prev and next items
     current_idx = -1
