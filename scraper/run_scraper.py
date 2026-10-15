@@ -150,9 +150,61 @@ def parse_codes_arg(codes_str: str) -> list:
             res.append(p)
     return res
 
+async def handle_flood_wait(
+    fe: FloodWaitError,
+    attempt: int,
+    max_attempts: int = 3,
+    item_label: str = ""
+) -> bool:
+    """
+    Telegram FloodWait xatoligini markazlashgan holda xavfsiz boshqarish:
+    1. Agar attempt > max_attempts bo'lsa, limit oshgani sababli False qaytaradi.
+    2. Aks holda: Holatni 'flood_wait' ga o'zgartiradi
+    3. fe.seconds + 2 soniya kutadi
+    4. Holatni 'online' ga qaytaradi va True qaytaradi (retry).
+    """
+    label_str = f" [{item_label}]" if item_label else ""
+    if attempt > max_attempts:
+        logging.warning(
+            f"❌ Telegram FloodWait{label_str}: Maksimal urinishlar ({max_attempts}) limitidan oshdi!"
+        )
+        return False
+
+    wait_sec = fe.seconds + 2
+    wait_m = round(fe.seconds / 60, 1)
+    logging.warning(
+        f"🛑 Telegram FloodWaitError{label_str}: {fe.seconds} soniya ({wait_m} daqiqa) kutish talab qilinadi. "
+        f"Urinish {attempt}/{max_attempts}. Kutish boshlanmoqda..."
+    )
+    print(
+        f"\n🛑 Telegram FloodWait{label_str}: {fe.seconds} soniya ({wait_m} daqiqa) kutish talab qilinadi. "
+        f"Urinish {attempt}/{max_attempts}. Kutish boshlanmoqda...",
+        flush=True
+    )
+    try:
+        StateManager().set_bot_status("flood_wait")
+    except Exception as e:
+        logging.error(f"StateManager statusini o'rnatishda xatolik: {e}")
+
+    await asyncio.sleep(wait_sec)
+
+    try:
+        StateManager().set_bot_status("online")
+    except Exception as e:
+        logging.error(f"StateManager statusini qaytarishda xatolik: {e}")
+
+    logging.info(f"🔄 FloodWait kutish yakunlandi. Element qayta urinilmoqda (urinish #{attempt})...")
+    print(f"🔄 FloodWait kutish yakunlandi. Qayta urinilmoqda (urinish #{attempt})...", flush=True)
+    return True
+
 async def cmd_download(limit: int, target: str, codes: str = None, media_type: str = "all", item_id: str = None):
     checker = DuplicateChecker()
     await checker.refresh_cache(force=True)
+
+    qm = QueueManager()
+    recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
+    if recovered > 0:
+        print(f"♻️ {recovered} ta qolib ketgan (stale in_progress) element 'pending' holatiga qaytarildi.")
 
     bot_username = TARGET_BOTS.get(target, target)
     code_list = parse_codes_arg(codes) if (codes and not item_id) else []
@@ -211,19 +263,29 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             qm = QueueManager()
             for idx, c in enumerate(code_list, 1):
                 print(f"\n[{idx}/{len(code_list)}] 🎬 Kod #{c} bo'yicha moderator sikli boshlanmoqda...")
-                try:
-                    success = await pipeline.run_by_code(code=c, target_bot=bot_username)
-                except FloodWaitError as fe:
-                    wait_m = round(fe.seconds / 60, 1)
-                    print(f"\n🛑 Telegram FloodWait: {fe.seconds} soniya ({wait_m} daqiqa) kutish talab qilinadi. Akkaunt xavfsizligi uchun navbat to'xtatildi!", flush=True)
+                success = False
+                fw_attempt = 0
+                max_fw_retries = 3
+                while True:
                     try:
-                        StateManager().set_bot_status("flood_wait")
-                    except Exception:
-                        pass
-                    break
-                except Exception as ex:
-                    print(f"❌ Kod #{c} da kutilmagan xatolik: {ex}")
-                    success = False
+                        success = await pipeline.run_by_code(code=c, target_bot=bot_username)
+                        break
+                    except FloodWaitError as fe:
+                        fw_attempt += 1
+                        can_retry = await handle_flood_wait(fe, attempt=fw_attempt, max_attempts=max_fw_retries, item_label=f"Kod #{c}")
+                        if can_retry:
+                            continue
+                        else:
+                            print(f"\n❌ Kod #{c}: Telegram FloodWait maksimal urinishlar sonidan oshdi ({max_fw_retries} marta). Element o'tkazib yuborilmoqda.", flush=True)
+                            for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"animeelar_{c}", f"anitoob_{c}"]:
+                                if qid in qm.items:
+                                    qm.update_status(qid, "failed", error_message=f"Telegram FloodWait limiti oshdi ({fe.seconds}s, {max_fw_retries} urinish)")
+                            success = False
+                            break
+                    except Exception as ex:
+                        print(f"❌ Kod #{c} da kutilmagan xatolik: {ex}")
+                        success = False
+                        break
 
                 if success:
                     print(f"✅ Kod #{c} muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi.")
@@ -270,21 +332,28 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 print(f"\n[{downloaded_count + 1}/{limit}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
                 qm.update_status(item.id, "in_progress")
                 
-                try:
-                    success = await pipeline.run_item(item, target_bot=bot_username)
-                except FloodWaitError as fe:
-                    wait_m = round(fe.seconds / 60, 1)
-                    print(f"\n🛑 Telegram FloodWait: {fe.seconds} soniya ({wait_m} daqiqa) kutish talab qilinadi. Akkaunt xavfsizligi uchun navbat to'xtatildi!", flush=True)
-                    qm.update_status(item.id, "failed", error_message=f"Telegram FloodWait ({fe.seconds}s)")
+                success = False
+                fw_attempt = 0
+                max_fw_retries = 3
+                while True:
                     try:
-                        StateManager().set_bot_status("flood_wait")
-                    except Exception:
-                        pass
-                    break
-                except Exception as ex:
-                    print(f"❌ '{item.title}' yuklashda kutilmagan xatolik: {ex}")
-                    qm.update_status(item.id, "failed", error_message=f"Kutilmagan xatolik: {ex}")
-                    success = False
+                        success = await pipeline.run_item(item, target_bot=bot_username)
+                        break
+                    except FloodWaitError as fe:
+                        fw_attempt += 1
+                        can_retry = await handle_flood_wait(fe, attempt=fw_attempt, max_attempts=max_fw_retries, item_label=item.title)
+                        if can_retry:
+                            continue
+                        else:
+                            print(f"\n❌ '{item.title}': Telegram FloodWait maksimal urinishlar sonidan oshdi ({max_fw_retries} marta). Element 'failed' holatiga o'tkazildi.", flush=True)
+                            qm.update_status(item.id, "failed", error_message=f"Telegram FloodWait limiti oshdi ({fe.seconds}s, {max_fw_retries} urinish)")
+                            success = False
+                            break
+                    except Exception as ex:
+                        print(f"❌ '{item.title}' yuklashda kutilmagan xatolik: {ex}")
+                        qm.update_status(item.id, "failed", error_message=f"Kutilmagan xatolik: {ex}")
+                        success = False
+                        break
 
                 if success:
                     qm.update_status(item.id, "completed")
@@ -373,6 +442,9 @@ def cmd_retry_failed():
 
 async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = None, media_type: str = "all", min_rating: float = None):
     qm = QueueManager()
+    recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
+    if recovered > 0:
+        print(f"♻️ {recovered} ta qolib ketgan (stale in_progress) element 'pending' holatiga qaytarildi.")
     sm = StateManager()
     checker = DuplicateChecker()
     await checker.refresh_cache(force=True)

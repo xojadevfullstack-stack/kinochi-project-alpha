@@ -28,6 +28,7 @@ class QueueItem:
     episodes_count: Optional[int] = None
     downloaded_episodes: int = 0
     error_message: Optional[str] = None
+    updated_at: Optional[float] = None
 
 
 def _known_fields():
@@ -116,6 +117,8 @@ class QueueManager:
             self.load()
             if item.id in self.items:
                 return False
+            if getattr(item, "updated_at", None) is None:
+                item.updated_at = time.time()
             self.items[item.id] = item
             self.save()
             return True
@@ -124,8 +127,11 @@ class QueueManager:
         with _FILE_LOCK:
             self.load()
             added = 0
+            now = time.time()
             for item in items:
                 if item.id not in self.items:
+                    if getattr(item, "updated_at", None) is None:
+                        item.updated_at = now
                     self.items[item.id] = item
                     added += 1
             if added > 0:
@@ -144,6 +150,7 @@ class QueueManager:
             self.load()
             if item_id in self.items:
                 self.items[item_id].status = status
+                self.items[item_id].updated_at = time.time()
                 if episodes_count is not None:
                     self.items[item_id].episodes_count = episodes_count
                 if downloaded_episodes is not None:
@@ -230,6 +237,28 @@ class QueueManager:
                     count += 1
             if count > 0:
                 self.save()
+            return count
+
+    def recover_stale_in_progress(self, max_age_seconds: int = 1800) -> int:
+        """
+        Crash yoki kutilmagan to'xtash sababli 'in_progress' holatida 30 daqiqadan (1800 soniya)
+        ko'p qolib ketgan elementlarni avtomatik 'pending' holatiga qaytarish (stale recovery).
+        """
+        with _FILE_LOCK:
+            self.load()
+            now = time.time()
+            count = 0
+            for item in self.items.values():
+                if item.status == "in_progress":
+                    last_time = getattr(item, "updated_at", None)
+                    if last_time is None or (now - last_time) >= max_age_seconds:
+                        item.status = "pending"
+                        item.error_message = None
+                        item.updated_at = now
+                        count += 1
+            if count > 0:
+                self.save()
+                logger.info(f"♻️ {count} ta eskirgan (stale) 'in_progress' element 'pending' holatiga qaytarildi.")
             return count
 
     def clear_by_status(self, status: str) -> int:
