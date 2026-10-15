@@ -2,7 +2,7 @@
 Movie ORM model and association tables.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, Boolean
+from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, Boolean, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
@@ -19,6 +19,9 @@ movie_category_table = Table(
 
 class MovieModel(Base):
     __tablename__ = "movies"
+    __table_args__ = (
+        Index("uq_movies_tmdb_id", "tmdb_id", unique=True, postgresql_where=text("tmdb_id IS NOT NULL")),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)

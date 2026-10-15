@@ -22,7 +22,7 @@ import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
-from sqlalchemy import select, or_, and_, func
+from sqlalchemy import select, or_, and_, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models.rejected_item import RejectedItemModel
@@ -277,10 +277,19 @@ async def pre_check(
                 })
 
         # C. TMDb ID dublikati
+        # C. TMDb ID dublikati va parallel poyga nazorati
         tmdb_val = payload.get("tmdb_id")
         if tmdb_val:
             try:
                 tmdb_int = int(tmdb_val)
+                if session is not None:
+                    # Concurrency nazorati: bir xil tmdb_id bo'yicha tranzaksiya darajasida advisory lock olish
+                    try:
+                        lock_key = 1000000000 + (tmdb_int % 1000000000)
+                        await session.execute(text(f"SELECT pg_advisory_xact_lock({lock_key})"))
+                    except Exception:
+                        pass
+
                 if kind == "movie":
                     dup_stmt = select(MovieModel.id).where(MovieModel.tmdb_id == tmdb_int).limit(1)
                     dup_res = await session.execute(dup_stmt)
@@ -311,7 +320,7 @@ async def pre_check(
                 model_cls = MovieModel if kind == "movie" else SeriesModel
                 name_stmt = select(model_cls.id).where(
                     func.lower(model_cls.title) == title_val.strip().lower(),
-                    model_cls.year == y_int
+                    model_cls.release_year == y_int
                 ).limit(1)
                 name_res = await session.execute(name_stmt)
                 if name_res.scalar_one_or_none():

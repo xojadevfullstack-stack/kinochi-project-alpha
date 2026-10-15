@@ -2,7 +2,7 @@
 Series ORM models.
 """
 from datetime import datetime
-from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, UniqueConstraint, Boolean
+from sqlalchemy import String, Integer, Float, Text, ForeignKey, Column, Table, func, BigInteger, UniqueConstraint, Boolean, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.session import Base
@@ -17,6 +17,9 @@ series_category_table = Table(
 
 class SeriesModel(Base):
     __tablename__ = "series"
+    __table_args__ = (
+        Index("uq_series_tmdb_id", "tmdb_id", unique=True, postgresql_where=text("tmdb_id IS NOT NULL")),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
