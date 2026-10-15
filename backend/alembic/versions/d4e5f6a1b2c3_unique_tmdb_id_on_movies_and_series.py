@@ -17,7 +17,32 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Additive unique partial indexes: only non-null tmdb_id values must be unique
+    # 1. Mavjud tarixiy dublikat tmdb_id larni xavfsiz tozalash (DELETE emas, faqat dublikatlarni NULL qilish)
+    op.execute(sa.text("""
+        UPDATE movies
+        SET tmdb_id = NULL
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id, ROW_NUMBER() OVER (PARTITION BY tmdb_id ORDER BY id ASC) as rn
+                FROM movies
+                WHERE tmdb_id IS NOT NULL
+            ) t WHERE t.rn > 1
+        )
+    """))
+
+    op.execute(sa.text("""
+        UPDATE series
+        SET tmdb_id = NULL
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id, ROW_NUMBER() OVER (PARTITION BY tmdb_id ORDER BY id ASC) as rn
+                FROM series
+                WHERE tmdb_id IS NOT NULL
+            ) t WHERE t.rn > 1
+        )
+    """))
+
+    # 2. Additive unique partial indexes: only non-null tmdb_id values must be unique
     op.create_index(
         'uq_movies_tmdb_id',
         'movies',
