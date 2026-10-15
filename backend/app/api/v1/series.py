@@ -179,6 +179,7 @@ async def update_series(
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     await delete_cache_pattern("cache:series:*")
+    await delete_cache_pattern("cache:search:*")
     return series
 
 
@@ -269,8 +270,8 @@ async def get_season(
     season_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get a season by ID (Public)."""
-    season = await service.get_season_by_id(season_id)
+    """Get a season by ID (Public: published)."""
+    season = await service.get_season_by_id(season_id, publish_status="published")
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
     return season
@@ -361,8 +362,8 @@ async def get_episode_by_code(
     code: str,
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get episode details by code (Public, for Bot)."""
-    episode = await service.get_episode_detail_by_code(code)
+    """Get episode details by code (Public: published, for Bot)."""
+    episode = await service.get_episode_detail_by_code(code, publish_status="published")
     if not episode:
         raise HTTPException(status_code=404, detail="Episode not found")
     return episode
@@ -430,8 +431,8 @@ async def list_episodes(
     season_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get all episodes for a season (Public)."""
-    season = await service.get_season_by_id(season_id)
+    """Get all episodes for a season (Public: published)."""
+    season = await service.get_season_by_id(season_id, publish_status="published")
     if not season:
         raise HTTPException(status_code=404, detail="Season not found")
     return season.episodes

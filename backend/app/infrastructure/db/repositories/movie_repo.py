@@ -11,6 +11,7 @@ from app.domain.movies.repository import IMovieRepository
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.category import CategoryModel
 from app.infrastructure.db.models.translation import MovieTranslationModel
+from app.infrastructure.db.query_filters import published_only
 
 
 class MovieRepositoryImpl(IMovieRepository):
@@ -82,7 +83,9 @@ class MovieRepositoryImpl(IMovieRepository):
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         ).where(MovieModel.id == movie_id)
-        if publish_status is not None:
+        if publish_status == "published":
+            stmt = published_only(stmt, MovieModel)
+        elif publish_status is not None:
             stmt = stmt.where(MovieModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -101,7 +104,9 @@ class MovieRepositoryImpl(IMovieRepository):
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         ).where(or_(*where_conditions))
-        if publish_status is not None:
+        if publish_status == "published":
+            stmt = published_only(stmt, MovieModel)
+        elif publish_status is not None:
             stmt = stmt.where(MovieModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         model = result.scalars().first()
@@ -141,7 +146,9 @@ class MovieRepositoryImpl(IMovieRepository):
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         ).where(or_(*conditions))
-        if publish_status is not None:
+        if publish_status == "published":
+            query = published_only(query, MovieModel)
+        elif publish_status is not None:
             query = query.filter(MovieModel.publish_status == publish_status)
         
         count_query = select(func.count()).select_from(query.subquery())
@@ -158,7 +165,9 @@ class MovieRepositoryImpl(IMovieRepository):
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         )
-        if publish_status is not None:
+        if publish_status == "published":
+            query = published_only(query, MovieModel)
+        elif publish_status is not None:
             query = query.filter(MovieModel.publish_status == publish_status)
 
         if category_id:

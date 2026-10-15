@@ -74,8 +74,11 @@ class SeriesService:
         return await self.repository.delete_series(series_id)
 
     # --- Seasons ---
-    async def get_season_by_id(self, season_id: int) -> Season | None:
-        season_model = await self.repository.get_season_by_id(season_id)
+    async def get_season_by_id(self, season_id: int, publish_status: str | None = None) -> Season | None:
+        if publish_status is not None:
+            season_model = await self.repository.get_season_by_id(season_id, publish_status=publish_status)
+        else:
+            season_model = await self.repository.get_season_by_id(season_id)
         if not season_model:
             return None
         return Season.model_validate(season_model)
@@ -99,21 +102,30 @@ class SeriesService:
         return await self.repository.delete_season(season_id)
 
     # --- Episodes ---
-    async def get_episode_by_id(self, episode_id: int) -> Episode | None:
-        episode_model = await self.repository.get_episode_by_id(episode_id)
+    async def get_episode_by_id(self, episode_id: int, publish_status: str | None = None) -> Episode | None:
+        if publish_status is not None:
+            episode_model = await self.repository.get_episode_by_id(episode_id, publish_status=publish_status)
+        else:
+            episode_model = await self.repository.get_episode_by_id(episode_id)
         if not episode_model:
             return None
         return Episode.model_validate(episode_model)
         
-    async def get_episode_by_code(self, code: str) -> Episode | None:
-        episode_model = await self.repository.get_episode_by_code(code)
+    async def get_episode_by_code(self, code: str, publish_status: str | None = None) -> Episode | None:
+        if publish_status is not None:
+            episode_model = await self.repository.get_episode_by_code(code, publish_status=publish_status)
+        else:
+            episode_model = await self.repository.get_episode_by_code(code)
         if not episode_model:
             return None
         return Episode.model_validate(episode_model)
 
-    async def get_episode_detail_by_code(self, code: str) -> EpisodeDetail | None:
+    async def get_episode_detail_by_code(self, code: str, publish_status: str | None = None) -> EpisodeDetail | None:
         # Repository'dagi optimallashtirilgan metod — 3 ta alohida so'rov o'rniga bitta
-        episode_model, season_model, series_model = await self.repository.get_episode_with_context_by_code(code)
+        if publish_status is not None:
+            episode_model, season_model, series_model = await self.repository.get_episode_with_context_by_code(code, publish_status=publish_status)
+        else:
+            episode_model, season_model, series_model = await self.repository.get_episode_with_context_by_code(code)
 
         if not episode_model:
             return None

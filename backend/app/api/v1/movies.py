@@ -299,6 +299,7 @@ async def update_movie(
         raise HTTPException(status_code=404, detail="Movie not found")
         
     await delete_cache_pattern("cache:movies:*")
+    await delete_cache_pattern("cache:search:*")
     return updated_movie
 
 

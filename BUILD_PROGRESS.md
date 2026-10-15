@@ -12,17 +12,17 @@ Ushbu hujjat loyihadagi barcha bosqichlar, arxitekturaviy qarorlar va bajarilgan
 ## CHECKLIST
 
 ### [A] Finish publish_status (ships together with the gate)
-- [ ] **A1**. Migratsiya `b3a1c2d4e5f6`: `ADD COLUMN ... DEFAULT 'published' NOT NULL` saqlanadi (mavjud qatorlar ochiq qoladi), so'ngra shu migratsiyaning o'zida `movies` va `series` uchun `ALTER COLUMN ... SET DEFAULT 'pending'` qilinadi. Modellar: `default='pending'`, `server_default='pending'`. Gate'ni aylanib o'tgan har qanday insert `'pending'` (ko'rinmas) bo'lib tushadi.
-- [ ] **A2**. O'qish yo'llaridagi barcha ochiq teshiklarni yopish:
+- [x] **A1**. Migratsiya `b3a1c2d4e5f6`: `ADD COLUMN ... DEFAULT 'published' NOT NULL` saqlanadi (mavjud qatorlar ochiq qoladi), so'ngra shu migratsiyaning o'zida `movies` va `series` uchun `ALTER COLUMN ... SET DEFAULT 'pending'` qilinadi. Modellar: `default='pending'`, `server_default='pending'`. Gate'ni aylanib o'tgan har qanday insert `'pending'` (ko'rinmas) bo'lib tushadi. Commit: `9ca99f3`
+- [x] **A2**. O'qish yo'llaridagi barcha ochiq teshiklarni yopish:
   - `recommendations.py:93-120` va `133-140` (recommendations + trending)
   - `series.py:273` (`seasons/{id}`)
   - `series.py:365` + `series_repository.py:280-318` (`episodes/code/{code}` va barcha episode lookup lari)
   - mavsum/qism ID orqali olinadigan barcha public endpointlar
   - bot inline rejimi
   - *Qoida*: media/mavsum/qismning ommaviy o'qilishi uning ota `publish_status == 'published'` bo'lishini talab qiladi.
-  - *Filtrsiz qoladiganlar*: faqat `by-source` lookup (`auto_index`), admin/audit endpointlar, scraper dedupe, foydalanuvchining shaxsiy `watch_history` si.
-- [ ] **A3**. Barcha ad-hoc filtrlar o'rniga bitta yagona yordamchi helper (`published_only(stmt, Model)`) qo'llanilishi. Test: barcha `/api/v1` yo'nalishlarini tekshirib, har bir public yo'l pending/hidden ma'lumotlarni yashirishini assert qilish.
-- [ ] **A4**. Redis kesh kalitlari `publish_status` filtrini hisobga olishi va status o'zgarganda kesh tozalanishi.
+  - *Filtrsiz qoladiganlar*: faqat `by-source` lookup (`auto_index`), admin/audit endpointlar, scraper dedupe, foydalanuvchining shaxsiy `watch_history` si. Commit: `b3ba4c1`
+- [x] **A3**. Barcha ad-hoc filtrlar o'rniga bitta yagona yordamchi helper (`published_only(stmt, Model)`) qo'llanilishi. Test: barcha `/api/v1` yo'nalishlarini tekshirib, har bir public yo'l pending/hidden ma'lumotlarni yashirishini assert qilish. Commit: `b3ba4c1`
+- [x] **A4**. Redis kesh kalitlari `publish_status` filtrini hisobga olishi va status o'zgarganda kesh tozalanishi. Commit: `b3ba4c1`
 
 ### [B] Admission gate + rejected_items
 - [ ] **B1**. Migratsiya + model `rejected_items`:

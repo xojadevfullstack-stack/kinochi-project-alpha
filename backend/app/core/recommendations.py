@@ -6,6 +6,7 @@ from app.infrastructure.db.session import async_session_factory
 from app.infrastructure.db.models.watch_history import WatchHistoryModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
+from app.infrastructure.db.query_filters import published_only
 from app.api.v1.pages import get_cache, set_cache
 import json
 
@@ -98,6 +99,7 @@ async def get_user_recommendations(user_id: int):
                 .order_by(desc(MovieModel.imdb_rating))
                 .limit(5)
             )
+            m_stmt = published_only(m_stmt, MovieModel)
             m_res = await session.execute(m_stmt)
             movies = m_res.scalars().all()
             
@@ -117,6 +119,7 @@ async def get_user_recommendations(user_id: int):
                 .order_by(desc(SeriesModel.imdb_rating))
                 .limit(5)
             )
+            s_stmt = published_only(s_stmt, SeriesModel)
             s_res = await session.execute(s_stmt)
             series = s_res.scalars().all()
             
@@ -129,12 +132,14 @@ async def get_user_recommendations(user_id: int):
                 
         # Cold start fallback / if not enough recommendations
         if len(recommendations) < 5:
-            # Fallback to trending/latest
+            # Fallback to trending/latest (published only)
             m_stmt = select(MovieModel).options(selectinload(MovieModel.categories)).order_by(desc(MovieModel.created_at)).limit(5)
+            m_stmt = published_only(m_stmt, MovieModel)
             m_res = await session.execute(m_stmt)
             movies = m_res.scalars().all()
             
             s_stmt = select(SeriesModel).options(selectinload(SeriesModel.categories)).order_by(desc(SeriesModel.created_at)).limit(5)
+            s_stmt = published_only(s_stmt, SeriesModel)
             s_res = await session.execute(s_stmt)
             series = s_res.scalars().all()
             

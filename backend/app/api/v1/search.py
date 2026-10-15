@@ -13,6 +13,7 @@ from app.api.limiter import limiter
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel
 from app.infrastructure.db.models.collection import CollectionModel
+from app.infrastructure.db.query_filters import published_only
 from app.core.cache import get_cache, set_cache
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -72,9 +73,10 @@ async def live_search(
         movie_code_conditions = [MovieModel.code.ilike(code_query)]
         if code_query.isdigit():
             movie_code_conditions.append(MovieModel.id == int(code_query))
-        movie_code_res = await db.execute(
-            select(MovieModel).where(or_(*movie_code_conditions)).limit(1)
+        movie_code_stmt = published_only(
+            select(MovieModel).where(or_(*movie_code_conditions)).limit(1), MovieModel
         )
+        movie_code_res = await db.execute(movie_code_stmt)
         movie_by_code = movie_code_res.scalar_one_or_none()
         if movie_by_code:
             results.append(
@@ -92,9 +94,10 @@ async def live_search(
             )
 
         if series_id_target:
-            series_by_id_res = await db.execute(
-                select(SeriesModel).where(SeriesModel.id == series_id_target).limit(1)
+            series_by_id_stmt = published_only(
+                select(SeriesModel).where(SeriesModel.id == series_id_target).limit(1), SeriesModel
             )
+            series_by_id_res = await db.execute(series_by_id_stmt)
             series_by_id = series_by_id_res.scalar_one_or_none()
             if series_by_id and not any(r.id == series_by_id.id and r.type == "series" for r in results):
                 results.append(
@@ -160,6 +163,7 @@ async def live_search(
         .order_by(movie_order, MovieModel.imdb_rating.desc().nullslast())
         .limit(limit)
     )
+    movie_stmt = published_only(movie_stmt, MovieModel)
     movies_res = await db.execute(movie_stmt)
     for m in movies_res.scalars().all():
         if not any(r.id == m.id and r.type == "movie" for r in results):
@@ -192,6 +196,7 @@ async def live_search(
         .order_by(SeriesModel.imdb_rating.desc().nullslast())
         .limit(limit)
     )
+    series_stmt = published_only(series_stmt, SeriesModel)
     series_res = await db.execute(series_stmt)
     for s in series_res.scalars().all():
         if not any(r.id == s.id and r.type == "series" for r in results):

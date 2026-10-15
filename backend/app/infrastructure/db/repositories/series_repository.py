@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.models.category import CategoryModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel
+from app.infrastructure.db.query_filters import published_only
 from app.domain.series.entities import SeriesCreate, SeriesUpdate, SeasonCreate, SeasonUpdate, EpisodeCreate, EpisodeUpdate
 
 class SeriesRepository:
@@ -19,7 +20,9 @@ class SeriesRepository:
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         )
-        if publish_status is not None:
+        if publish_status == "published":
+            stmt = published_only(stmt, SeriesModel)
+        elif publish_status is not None:
             stmt = stmt.filter(SeriesModel.publish_status == publish_status)
         
         if category_id:
@@ -61,7 +64,9 @@ class SeriesRepository:
             conditions.append(SeriesModel.id == int(code_q[1:]))
 
         stmt_where = or_(*conditions)
-        if publish_status is not None:
+        if publish_status == "published":
+            stmt_where = and_(stmt_where, SeriesModel.publish_status == "published")
+        elif publish_status is not None:
             stmt_where = and_(stmt_where, SeriesModel.publish_status == publish_status)
 
         total_stmt = select(func.count(SeriesModel.id)).where(stmt_where)
@@ -85,7 +90,9 @@ class SeriesRepository:
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         ).where(SeriesModel.id == series_id)
-        if publish_status is not None:
+        if publish_status == "published":
+            stmt = published_only(stmt, SeriesModel)
+        elif publish_status is not None:
             stmt = stmt.where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -201,13 +208,21 @@ class SeriesRepository:
         return True
 
     # --- Seasons ---
-    async def get_season_by_id(self, season_id: int) -> SeasonModel | None:
+    async def get_season_by_id(self, season_id: int, publish_status: str | None = None) -> SeasonModel | None:
         stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)).where(SeasonModel.id == season_id)
+        if publish_status == "published":
+            stmt = published_only(stmt, SeasonModel)
+        elif publish_status is not None:
+            stmt = stmt.join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
         
-    async def get_seasons_by_series(self, series_id: int) -> List[SeasonModel]:
+    async def get_seasons_by_series(self, series_id: int, publish_status: str | None = None) -> List[SeasonModel]:
         stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)).where(SeasonModel.series_id == series_id).order_by(SeasonModel.season_number)
+        if publish_status == "published":
+            stmt = published_only(stmt, SeasonModel)
+        elif publish_status is not None:
+            stmt = stmt.join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -237,12 +252,16 @@ class SeriesRepository:
         return True
 
     # --- Episodes ---
-    async def get_episode_by_id(self, episode_id: int) -> EpisodeModel | None:
+    async def get_episode_by_id(self, episode_id: int, publish_status: str | None = None) -> EpisodeModel | None:
         stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(EpisodeModel.id == episode_id)
+        if publish_status == "published":
+            stmt = published_only(stmt, EpisodeModel)
+        elif publish_status is not None:
+            stmt = stmt.join(SeasonModel, EpisodeModel.season_id == SeasonModel.id).join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_episode_by_code(self, code: str) -> EpisodeModel | None:
+    async def get_episode_by_code(self, code: str, publish_status: str | None = None) -> EpisodeModel | None:
         clean_code = str(code).strip()
         norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
         db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
@@ -256,10 +275,14 @@ class SeriesRepository:
             where_conditions.append(EpisodeModel.id == int(clean_code))
 
         stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(or_(*where_conditions))
+        if publish_status == "published":
+            stmt = published_only(stmt, EpisodeModel)
+        elif publish_status is not None:
+            stmt = stmt.join(SeasonModel, EpisodeModel.season_id == SeasonModel.id).join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def get_episode_with_context_by_code(self, code: str):
+    async def get_episode_with_context_by_code(self, code: str, publish_status: str | None = None):
         """
         Bitta SQL so'rovida episode + uning season + series + barcha episodlarini yuklaydi.
         Bu get_episode_detail_by_code uchun N+1 muammosini bartaraf etadi.
@@ -316,6 +339,10 @@ class SeriesRepository:
         )
         series_result = await self.session.execute(series_stmt)
         series = series_result.scalar_one_or_none()
+
+        if publish_status is not None:
+            if not series or series.publish_status != publish_status:
+                return None, None, None
 
         return episode, season, series
 
