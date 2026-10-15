@@ -66,6 +66,13 @@ from app.infrastructure.db.models.source import SourceModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.core.cache import delete_cache_pattern
+from scraper.admission_gate import (
+    pre_check,
+    final_check,
+    record_rejection,
+    resolve_rejection,
+    promote_to_published,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -398,6 +405,58 @@ class TelethonModeratorPipeline:
         self.client = client
         self.dup_checker = duplicate_checker
         self._last_card_msg: Optional[Message] = None
+
+    async def _validate_and_pre_check(
+        self,
+        session: Any,
+        kind: str,
+        title: str,
+        meta: Dict[str, Any],
+        item: Any
+    ) -> bool:
+        """
+        Bazada media yaratishdan oldin majburiy maydonlar va admission gate pre_check tekshiruvi.
+        """
+        source_name = getattr(item, "source", None) or "telethon"
+        source_key = getattr(item, "code", None) or getattr(item, "url", None) or title
+        genres = meta.get("genres")
+        if isinstance(genres, str):
+            genres_list = [g.strip() for g in genres.split(",") if g.strip()]
+        elif isinstance(genres, list):
+            genres_list = genres
+        else:
+            genres_list = ["Kino"] if kind == "movie" else ["Serial"]
+
+        pre_payload = {
+            "title": title,
+            "year": meta.get("release_year") or meta.get("year") or getattr(item, "year", None),
+            "description": meta.get("description"),
+            "poster_url": meta.get("poster_url") or getattr(item, "poster_url", None),
+            "trailer_url": meta.get("trailer_url"),
+            "genres": genres_list,
+            "tmdb_id": meta.get("tmdb_id"),
+            "shikimori_id": meta.get("shikimori_id"),
+            "is_anime": "anime" in str(genres).lower() or source_name in ("anitoob", "animeelar"),
+            "source": source_name,
+            "source_key": str(source_key),
+        }
+        is_ok, defects = await pre_check(kind=kind, payload=pre_payload, session=session)
+        if not is_ok:
+            logger.warning(f"Admission Gate pre_check rad etildi ({kind}: '{title}'): {defects}")
+            await record_rejection(
+                session=session,
+                media_type=kind,
+                source=str(source_name),
+                source_key=str(source_key),
+                title=title,
+                payload=pre_payload,
+                defects=defects
+            )
+            await session.commit()
+            if hasattr(item, "id"):
+                QueueManager().update_status(item.id, "rejected", error_message=f"Pre-check rad etildi: {defects}")
+            return False
+        return True
 
     async def safe_click(self, msg: Message, row: int, col: int) -> tuple[bool, int]:
         """
@@ -821,6 +880,16 @@ class TelethonModeratorPipeline:
                     logger.info(f"🔞 Mavjud serial 18+ sifatida belgilandi: '{title}' (ID: {series_id})")
 
             if not series_id:
+                pre_ok = await self._validate_and_pre_check(
+                    session=session,
+                    kind="series",
+                    title=title,
+                    meta=meta,
+                    item=item
+                )
+                if not pre_ok:
+                    return False
+
                 topic_name = f"🎬 {title} (Serial){year_str}"
                 logger.info(f"ℹ️ Forum Topic ochilmoqda: '{topic_name}'...")
                 thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
@@ -1290,10 +1359,36 @@ class TelethonModeratorPipeline:
 
                         await series_repo.add_episode_translation(
                             episode_id=ep_id,
-                            language="Asosiy",
+                            language="O'zbekcha",
                             telegram_file_id=ep_bot_file_id,
                             storage_channel_message_id=storage_msg.id
                         )
+                        fin_payload = {
+                            "telegram_file_id": ep_bot_file_id,
+                            "storage_channel_message_id": storage_msg.id,
+                            "language": "O'zbekcha",
+                            "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
+                        }
+                        f_ok, f_defects = final_check("episode", fin_payload, fin_payload)
+                        if f_ok:
+                            cur_series = await session.get(SeriesModel, series_id)
+                            if cur_series and cur_series.publish_status == "pending":
+                                await promote_to_published(
+                                    session,
+                                    cur_series,
+                                    source=getattr(item, 'source', 'telethon'),
+                                    source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
+                                )
+                        else:
+                            await record_rejection(
+                                session=session,
+                                media_type="episode",
+                                source=getattr(item, 'source', 'telethon'),
+                                source_key=f"ep_{series_id}_{s_num}_{ep_num}",
+                                title=f"{title} (S{s_num}:E{ep_num})",
+                                payload=fin_payload,
+                                defects=f_defects
+                            )
                         await session.commit()
 
                         # Obunachilarga yangi qism xabarnomasi
@@ -1706,6 +1801,16 @@ class TelethonModeratorPipeline:
                 pass
 
             async with async_session_factory() as session:
+                pre_ok = await self._validate_and_pre_check(
+                    session=session,
+                    kind="movie",
+                    title=title,
+                    meta=meta,
+                    item=item
+                )
+                if not pre_ok:
+                    return False
+
                 repo = MovieRepositoryImpl(session)
                 service = MovieService(repo)
                 created_movie = await service.create_movie(
@@ -1730,9 +1835,33 @@ class TelethonModeratorPipeline:
                 await service.link_movie_video_from_message(
                     movie_id=movie_id,
                     message_id=storage_msg.id,
-                    language="Asosiy",
+                    language="O'zbekcha",
                     telegram_file_id=bot_file_id
                 )
+                fin_payload = {
+                    "telegram_file_id": bot_file_id,
+                    "storage_channel_message_id": storage_msg.id,
+                    "language": "O'zbekcha",
+                    "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
+                }
+                f_ok, f_defects = final_check("movie", fin_payload, fin_payload)
+                if f_ok:
+                    await promote_to_published(
+                        session,
+                        created_movie,
+                        source=getattr(item, 'source', 'animeelar'),
+                        source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
+                    )
+                else:
+                    await record_rejection(
+                        session=session,
+                        media_type="movie",
+                        source=getattr(item, 'source', 'animeelar'),
+                        source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title),
+                        title=title,
+                        payload=fin_payload,
+                        defects=f_defects
+                    )
                 await session.commit()
 
             try:
@@ -1856,6 +1985,16 @@ class TelethonModeratorPipeline:
                     status="ongoing",
                     is_18_plus=bool(meta.get("is_18_plus", False))
                 )
+                pre_ok = await self._validate_and_pre_check(
+                    session=session,
+                    kind="series",
+                    title=title,
+                    meta=meta,
+                    item=item
+                )
+                if not pre_ok:
+                    return False
+
                 created_series = await series_service.create_series(series_data)
                 series_id = created_series.id
 
@@ -2340,6 +2479,16 @@ class TelethonModeratorPipeline:
                 pass
 
             async with async_session_factory() as session:
+                pre_ok = await self._validate_and_pre_check(
+                    session=session,
+                    kind="movie",
+                    title=title,
+                    meta=meta,
+                    item=item
+                )
+                if not pre_ok:
+                    return False
+
                 repo = MovieRepositoryImpl(session)
                 service = MovieService(repo)
                 created_movie = await service.create_movie(
@@ -2364,9 +2513,33 @@ class TelethonModeratorPipeline:
                 await service.link_movie_video_from_message(
                     movie_id=movie_id,
                     message_id=storage_msg.id,
-                    language="Asosiy",
+                    language="O'zbekcha",
                     telegram_file_id=bot_file_id
                 )
+                fin_payload = {
+                    "telegram_file_id": bot_file_id,
+                    "storage_channel_message_id": storage_msg.id,
+                    "language": "O'zbekcha",
+                    "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
+                }
+                f_ok, f_defects = final_check("movie", fin_payload, fin_payload)
+                if f_ok:
+                    await promote_to_published(
+                        session,
+                        created_movie,
+                        source=getattr(item, 'source', 'anitoob'),
+                        source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
+                    )
+                else:
+                    await record_rejection(
+                        session=session,
+                        media_type="movie",
+                        source=getattr(item, 'source', 'anitoob'),
+                        source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title),
+                        title=title,
+                        payload=fin_payload,
+                        defects=f_defects
+                    )
                 await session.commit()
 
             try:
@@ -2472,6 +2645,16 @@ class TelethonModeratorPipeline:
                 anime_cat_ids = list(meta.get("category_ids") or [])
                 if 2 not in anime_cat_ids:
                     anime_cat_ids.append(2)
+
+                pre_ok = await self._validate_and_pre_check(
+                    session=session,
+                    kind="series",
+                    title=title,
+                    meta=meta,
+                    item=item
+                )
+                if not pre_ok:
+                    return False
 
                 created_series = await series_service.create_series(SeriesCreate(
                     title=title,
@@ -2991,6 +3174,16 @@ class TelethonModeratorPipeline:
         # ── 2. PostgreSQL bazasida kino yaratish ──
         logger.info(f"ℹ️ 2-QADAM: Websayt bazasiga yangi kino qo'shilmoqda: '{title}'...")
         async with async_session_factory() as session:
+            pre_ok = await self._validate_and_pre_check(
+                session=session,
+                kind="movie",
+                title=title,
+                meta=meta,
+                item=item
+            )
+            if not pre_ok:
+                return False
+
             repo = MovieRepositoryImpl(session)
             service = MovieService(repo)
             created_movie = await service.create_movie(
