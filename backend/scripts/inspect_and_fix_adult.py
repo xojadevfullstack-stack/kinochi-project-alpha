@@ -165,4 +165,8 @@ async def run(dry_run: bool = True):
 
 if __name__ == "__main__":
     dry_run = "--apply" not in sys.argv
+    if not dry_run and "--i-know-this-bypasses-gate" not in sys.argv:
+        print("XATOLIK: Ushbu skript to'g'ridan-to'g'ri DB bilan ishlaydi va Admission Gate tekshiruvlarini chetlab o'tadi.")
+        print("Ishga tushirish uchun '--i-know-this-bypasses-gate' kalitini ko'rsating.")
+        sys.exit(1)
     asyncio.run(run(dry_run=dry_run))

@@ -61,4 +61,8 @@ async def main():
     print("\n✅ Migration complete!")
 
 if __name__ == "__main__":
+    if "--i-know-this-bypasses-gate" not in sys.argv:
+        print("XATOLIK: Ushbu skript to'g'ridan-to'g'ri DB bilan ishlaydi va Admission Gate tekshiruvlarini chetlab o'tadi.")
+        print("Ishga tushirish uchun '--i-know-this-bypasses-gate' kalitini ko'rsating.")
+        sys.exit(1)
     asyncio.run(main())
