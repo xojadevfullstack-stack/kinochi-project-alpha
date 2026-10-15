@@ -516,8 +516,8 @@ async def upload_episode_video(
         try:
             tmp_file.close()
             os.remove(tmp_path)
-        except Exception:
-            pass
+        except Exception as cleanup_err:
+            logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
         raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
 
     ep_data = await service.get_episode_by_id(episode_id)
@@ -604,8 +604,8 @@ async def upload_episode_video(
             try:
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
-            except Exception:
-                pass
+            except Exception as cleanup_err:
+                logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
 
     asyncio.create_task(_background_upload())
     await job_manager.cleanup_old_jobs()

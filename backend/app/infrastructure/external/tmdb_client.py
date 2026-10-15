@@ -183,8 +183,8 @@ class TMDbClient:
                     resp_en = await client.get(f"{TMDB_BASE_URL}/{endpoint_type}/{tmdb_id}", headers=headers, params=en_params)
                     if resp_en.status_code == 200:
                         overview = resp_en.json().get("overview") or ""
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"TMDb inglizcha tavsifni olishda xatolik: {e}")
 
         title = data.get("title") if endpoint_type == "movie" else data.get("name")
         orig_title = data.get("original_title") if endpoint_type == "movie" else data.get("original_name")
@@ -239,8 +239,8 @@ class TMDbClient:
                     en_data = resp_en.json()
                     if en_data.get("poster_path"):
                         poster_path = en_data["poster_path"]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"TMDb toza posterni olishda xatolik: {e}")
 
         poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
 

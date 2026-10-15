@@ -366,8 +366,8 @@ async def upload_movie_video(
         try:
             tmp_file.close()
             os.remove(tmp_path)
-        except Exception:
-            pass
+        except Exception as cleanup_err:
+            logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
         logger.error(f"Error saving tmp file: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
 
@@ -441,8 +441,8 @@ async def upload_movie_video(
             try:
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
-            except Exception:
-                pass
+            except Exception as cleanup_err:
+                logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
 
     # Orqa fonda ishga tushirish — HTTP response shu yerda qaytadi
     asyncio.create_task(_background_upload())

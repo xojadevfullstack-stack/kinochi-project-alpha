@@ -1,10 +1,13 @@
 """
 Concrete implementation of IMovieRepository.
 """
+import logging
 from typing import Sequence
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+logger = logging.getLogger(__name__)
 
 from app.domain.movies.entities import Movie
 from app.domain.movies.repository import IMovieRepository
@@ -72,8 +75,8 @@ class MovieRepositoryImpl(IMovieRepository):
                         )
                         self.session.add(new_ci)
                         await self.session.flush()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Avtomatik franshiza kanonik joylashtirishda xatolik: {e}")
 
         return self._to_domain(model)
 

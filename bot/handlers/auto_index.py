@@ -113,16 +113,16 @@ async def safe_copy_message_with_retry(
                         f"Kutilmoqda, vaqt tugagach yuklash avtomatik davom etadi...",
                         parse_mode="HTML"
                     )
-                except Exception:
-                    pass
+                except Exception as reply_err:
+                    logger.debug(f"Flood control xabarini yuborishda xatolik: {reply_err}")
 
             await asyncio.sleep(wait_seconds)
 
             if wait_msg:
                 try:
                     await wait_msg.delete()
-                except Exception:
-                    pass
+                except Exception as del_err:
+                    logger.debug(f"Flood control xabarini o'chirishda xatolik: {del_err}")
         except Exception:
             raise
 
@@ -171,8 +171,8 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
     if not telegram_file_id:
         try:
             await message.reply("❌ Yuborilgan fayl video emas yoki video formati qo'llab-quvvatlanmaydi.")
-        except Exception:
-            pass
+        except Exception as reply_err:
+            logger.debug(f"Foydalanuvchiga xato xabarini yuborishda muammo: {reply_err}")
         return
 
     movie_title = html.escape(movie.get("title") or "Noma'lum kino")
@@ -204,8 +204,8 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
         logger.error(f"Cannot copy movie message to storage: {e}")
         try:
             await message.reply(f"❌ Videoni Storage kanalga ko'chirib bo'lmadi: {e}")
-        except Exception:
-            pass
+        except Exception as reply_err:
+            logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
         return
 
     # Link video to movie
@@ -221,8 +221,8 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
         logger.error(f"Error linking video for movie {movie['id']}: {e}")
         try:
             await message.reply(f"❌ Kino bazaga qo'shildi, lekin videoni ulashda xatolik yuz berdi: {e}")
-        except Exception:
-            pass
+        except Exception as reply_err:
+            logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
 
 
 async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
@@ -232,8 +232,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         for msg in messages:
             try:
                 await msg.reply("❌ STORAGE_CHANNEL_ID sozlanmagan! Videoni saqlab bo'lmaydi.")
-            except Exception:
-                pass
+            except Exception as reply_err:
+                logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
         return
 
     seasons = series.get("seasons", [])
@@ -265,8 +265,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 for msg in messages:
                     try:
                         await msg.reply(f"❌ {target_season_num}-mavsumni yaratishda xato: {e}")
-                    except Exception:
-                        pass
+                    except Exception as reply_err:
+                        logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
                 return
     else:
         ongoing_seasons = [s for s in seasons if s.get("status") == "ongoing"]
@@ -291,8 +291,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 for msg in messages:
                     try:
                         await msg.reply(f"❌ 1-mavsumni yaratishda xato: {e}")
-                    except Exception:
-                        pass
+                    except Exception as reply_err:
+                        logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
                 return
 
     season_id = season['id']
@@ -314,8 +314,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         for msg in messages:
             try:
                 await msg.reply("❌ Qismlarni DB'da band qilishda tizimli xato yuz berdi.")
-            except Exception:
-                pass
+            except Exception as reply_err:
+                logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
         return
 
     # Map reserved episodes by source_message_id
@@ -375,8 +375,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         if not telegram_file_id:
             try:
                 await msg.reply(f"❌ <b>{ep_num}-qism</b>: Yuborilgan fayl video emas.", parse_mode="HTML")
-            except Exception:
-                pass
+            except Exception as reply_err:
+                logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
             continue
 
         caption_lines = [
@@ -412,8 +412,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                     f"⚠️ <b>{ep_num}-qism</b> bazada band qilindi ({ep_code}), lekin videoni Storage kanalga ko'chirishda xatolik: {e}",
                     parse_mode="HTML"
                 )
-            except Exception:
-                pass
+            except Exception as reply_err:
+                logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
             continue
 
         # Link video to reserved episode
@@ -459,8 +459,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
             logger.error(f"Error linking video for episode {ep_id}: {e}")
             try:
                 await msg.reply(f"❌ <b>{ep_num}-qism</b> videosini ulashda xatolik yuz berdi: {e}", parse_mode="HTML")
-            except Exception:
-                pass
+            except Exception as reply_err:
+                logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
 
         # Throttle between consecutive copies to stay within Telegram rate limits (~20 msgs/min)
         if idx < len(messages) - 1:
@@ -549,8 +549,8 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
             for msg in messages:
                 try:
                     await msg.reply(f"❌ Serial backenddan qidirilayotganda tizimli xato: {e}")
-                except Exception:
-                    pass
+                except Exception as reply_err:
+                    logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
             return
 
         # 3. Series uchun qismlarni ketma-ket indekslash

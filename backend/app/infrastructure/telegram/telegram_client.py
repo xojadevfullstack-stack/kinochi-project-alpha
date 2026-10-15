@@ -206,8 +206,8 @@ class TelegramClient:
                             retry_after = 3
                             try:
                                 retry_after = response.json().get("parameters", {}).get("retry_after", 3)
-                            except Exception:
-                                pass
+                            except Exception as parse_err:
+                                logger.debug(f"retry_after parametrini ajratishda xatolik: {parse_err}")
                             logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
                             await asyncio.sleep(retry_after + 1)
                             continue
@@ -237,8 +237,8 @@ class TelegramClient:
                             retry_after = 3
                             try:
                                 retry_after = e.response.json().get("parameters", {}).get("retry_after", 3)
-                            except Exception:
-                                pass
+                            except Exception as parse_err:
+                                logger.debug(f"retry_after parametrini ajratishda xatolik: {parse_err}")
                             logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
                             await asyncio.sleep(retry_after + 1)
                             continue

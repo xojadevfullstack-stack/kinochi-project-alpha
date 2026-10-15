@@ -3,9 +3,12 @@ Content Lookup API endpoints (Admin only).
 Allows searching TMDb and fetching movie/series metadata.
 """
 from typing import Any, Literal
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+
+logger = logging.getLogger(__name__)
 
 from app.api.deps import get_current_admin, get_db_session
 from app.api.limiter import limiter
@@ -96,8 +99,8 @@ async def get_content_details(
             for cat_id, cat_name in res.all():
                 if cat_name in uz_genres:
                     suggested_category_ids.append(cat_id)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Kategoriyalarni qidirishda xatolik: {e}")
     details["suggested_category_ids"] = suggested_category_ids
 
     return details
