@@ -28,14 +28,14 @@ Ushbu hujjat loyihadagi barcha bosqichlar, arxitekturaviy qarorlar va bajarilgan
 - [x] **B1**. Migratsiya + model `rejected_items`:
   - Maydonlar: `id`, `media_type` ('movie'/'series'/'episode'), `source`, `source_key`, `title`, `payload` JSONB, `defects` JSONB (list of `{field, code, message}`), `media_id` NULL, `attempts` int default 1, `status` ('rejected','resolved','blacklisted'), `created_at`, `updated_at`.
   - `UNIQUE(source, source_key)`; takroriy urinishda `attempts += 1` va payload yangilanadi. (needs DB verification) Commit: `895bc43`
-- [ ] **B2**. Yagona umumiy modul `admission_gate` (backend va scraper bir xil kodni import qiladi, mantiq takrorlanmaydi):
+- [x] **B2**. Yagona umumiy modul `admission_gate` (backend va scraper bir xil kodni import qiladi, mantiq takrorlanmaydi):
   - `pre_check(kind, payload)` va `final_check(kind, media)`.
   - Yagona konfiguratsiya (`REQUIRED_FIELDS`).
   - Tashqi ID qoidasi (TMDb / Shikimori).
   - Reachability (poster, trailer HEAD tekshiruvi).
   - Dublikatlar (tmdb_id/shikimori_id, so'ng normalizatsiyalangan nom+yil, `rejected_items` va blacklist).
   - Qism (episode) tekshiruvlari.
-  - Holat mashinasi (State machine): `pre_check` -> `pending` row -> video biriktirish -> `final_check` -> faqat gate ichida `published`.
+  - Holat mashinasi (State machine): `pre_check` -> `pending` row -> video biriktirish -> `final_check` -> faqat gate ichida `published`. Commit: `692cbb2`
 - [ ] **B3**. BARCHA yozish yo'llarini gate orqali yo'naltirish (API, auto_index, scraper moderator pipeline, ingest_pusu).
 - [ ] **B4**. Non-blocking pipeline, CircuitBreaker faqat infratuzilma xatolarida to'xtashi, Autopilot `rejected`/`blacklisted` elementlarni qayta navbatga qo'ymasligi.
 
