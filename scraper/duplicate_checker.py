@@ -59,10 +59,29 @@ def uzbek_stem_text(text: Optional[str]) -> str:
     words = text.split()
     return " ".join(uzbek_stem_word(w) for w in words)
 
+CYRILLIC_TO_LATIN = {
+    'ш': 'sh', 'ч': 'ch', 'ц': 'ts', 'ё': 'yo', 'ю': 'yu', 'я': 'ya',
+    'ў': 'o', 'ғ': 'g', 'қ': 'q', 'ҳ': 'h', 'щ': 'sh', 'ж': 'j',
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'з': 'z',
+    'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h',
+    'ы': 'y', 'э': 'e', 'ъ': '', 'ь': ''
+}
+
+def transliterate_cyrillic_to_latin(text: str) -> str:
+    """Kirill alifbosidagi (o'zbek va rus) harflarni lotinchaga transliteratsiya qiladi."""
+    if not text:
+        return ""
+    res = text.lower()
+    for cyr, lat in CYRILLIC_TO_LATIN.items():
+        res = res.replace(cyr, lat)
+    return res
+
 def normalize_uzbek_text(text: Optional[str]) -> str:
     """
     O'zbekcha matnni solishtirish uchun normalizatsiya qiladi:
     - Kichik harflarga o'tkazadi
+    - Kirill yozuvidagi belgilarni lotinchaga transliteratsiya qiladi
     - Barcha apostrof turlarini (', ʻ, ’, `, ´) birxillashtiradi yoki olib tashlaydi
     - Belgilar, tinish belgilari va ortiqcha so'zlarni tozalaydi
     """
@@ -70,6 +89,9 @@ def normalize_uzbek_text(text: Optional[str]) -> str:
         return ""
     
     t = text.lower().strip()
+    
+    # Kirill yozuvini lotinchaga o'tkazish
+    t = transliterate_cyrillic_to_latin(t)
     
     # Apostroflarni standartlashtirish
     t = re.sub(r'[\u02bb\u02bc\u2018\u2019\u0060\u00b4\']', "'", t)
