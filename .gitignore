@@ -84,3 +84,10 @@ website/mock_*.js
 website/test_*.js
 website/verify_*.js
 scripts/inspect_*.py
+
+# Scraper runtime state and queue JSON files (BOSQICH 2)
+scraper/scraper_queue.json
+scraper/scraper_state.json
+scraper/autopilot_v2/quarantine_items.json
+*.lock
+

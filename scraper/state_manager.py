@@ -9,6 +9,7 @@ import json
 import time
 import logging
 from typing import Dict, Any
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -40,36 +41,40 @@ class StateManager:
         if cls._instance is None:
             cls._instance = super(StateManager, cls).__new__(cls)
             cls._instance.filepath = filepath
+            cls._instance.lock_path = f"{filepath}.lock"
+            cls._instance._lock = FileLock(cls._instance.lock_path, timeout=15)
             cls._instance.state = dict(DEFAULT_STATE)
             cls._instance.load()
         return cls._instance
 
     def load(self) -> Dict[str, Any]:
-        if not os.path.exists(self.filepath):
-            self.state = dict(DEFAULT_STATE)
-            self.save()
+        with self._lock:
+            if not os.path.exists(self.filepath):
+                self.state = dict(DEFAULT_STATE)
+                self.save()
+                return self.state
+
+            try:
+                with open(self.filepath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    # Merge with defaults for any missing keys
+                    merged = dict(DEFAULT_STATE)
+                    merged.update(data)
+                    self.state = merged
+            except Exception as e:
+                logger.warning(f"Error loading scraper state from {self.filepath}: {e}")
+                self.state = dict(DEFAULT_STATE)
             return self.state
 
-        try:
-            with open(self.filepath, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Merge with defaults for any missing keys
-                merged = dict(DEFAULT_STATE)
-                merged.update(data)
-                self.state = merged
-        except Exception as e:
-            logger.warning(f"Error loading scraper state from {self.filepath}: {e}")
-            self.state = dict(DEFAULT_STATE)
-        return self.state
-
     def save(self):
-        try:
-            tmp_path = f"{self.filepath}.tmp"
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(self.state, f, ensure_ascii=False, indent=2)
-            os.replace(tmp_path, self.filepath)
-        except Exception as e:
-            logger.error(f"Error saving scraper state to {self.filepath}: {e}")
+        with self._lock:
+            try:
+                tmp_path = f"{self.filepath}.tmp"
+                with open(tmp_path, "w", encoding="utf-8") as f:
+                    json.dump(self.state, f, ensure_ascii=False, indent=2)
+                os.replace(tmp_path, self.filepath)
+            except Exception as e:
+                logger.error(f"Error saving scraper state to {self.filepath}: {e}")
 
     def get_state(self) -> Dict[str, Any]:
         self.load()

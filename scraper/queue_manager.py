@@ -5,6 +5,7 @@ import logging
 import threading
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass, asdict, fields
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -50,15 +51,26 @@ class QueueManager:
 
     def __init__(self, filepath: str = QUEUE_FILE):
         self.filepath = filepath
+        self.lock_path = f"{filepath}.lock"
+        self._interprocess_lock = FileLock(self.lock_path, timeout=15)
         self.items: Dict[str, QueueItem] = {}
         self.load()
 
     # ── persistence ──────────────────────────────────────────
+    def _create_empty_file(self):
+        try:
+            with open(self.filepath, "w", encoding="utf-8") as f:
+                json.dump([], f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error(f"Bo'sh navbat faylini yaratishda xatolik: {e}")
+
     def load(self):
-        with _FILE_LOCK:
-            if not os.path.exists(self.filepath):
-                self.items = {}
-                return
+        with self._interprocess_lock:
+            with _FILE_LOCK:
+                if not os.path.exists(self.filepath):
+                    self.items = {}
+                    self._create_empty_file()
+                    return
             data = None
             for attempt in range(5):
                 try:
@@ -85,8 +97,9 @@ class QueueManager:
             self.items = items
 
     def save(self):
-        with _FILE_LOCK:
-            tmp_path = f"{self.filepath}.{os.getpid()}.tmp"
+        with self._interprocess_lock:
+            with _FILE_LOCK:
+                tmp_path = f"{self.filepath}.{os.getpid()}.tmp"
             try:
                 with open(tmp_path, "w", encoding="utf-8") as f:
                     json.dump([asdict(item) for item in self.items.values()], f, ensure_ascii=False, indent=2)

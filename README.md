@@ -54,3 +54,9 @@ CORS_ORIGINS='["https://your-website.com"]'
 BACKEND_API_URL="http://127.0.0.1:8000/api/v1" # Ichki tarmoqda ishlagani uchun localhost yetarli!
 WEBSITE_URL="https://your-website.com"
 ```
+
+## ⚠️ Fayl Tizimi va Saqlash Eslatmasi (Storage Note)
+Render kabi bulutli platformalarda konteyner fayl tizimi vaqtinchalik (ephemeral). 
+Scraperning navbat va holat fayllari (`scraper_queue.json`, `scraper_state.json`, `quarantine_items.json`) Git omboridan chiqarilgan va lokal diskda `.lock` (jarayonlararo qulf) orqali boshqariladi.
+Karantindagi elementlar 4-bosqichda to'liq PostgreSQL ma'lumotlar bazasiga (`rejected_items` jadvali) ko'chiriladi.
+

@@ -18,39 +18,56 @@ import os
 import json
 import time
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
+from filelock import FileLock
 from scraper.autopilot_v2.health_evaluator import health_evaluator, ItemHealthResult
 
 logger = logging.getLogger(__name__)
 
+# ESLATMA: Render platformasida fayl tizimi vaqtinchalik (ephemeral).
+# Ushbu JSON fayllar faqat vaqtinchalik oraliq saqlash uchun ishlatiladi;
+# Karantindagi barcha rad etilgan elementlar 4-bosqichda to'liq PostgreSQL dagi
+# rejected_items jadvaliga ko'chiriladi.
 QUARANTINE_FILE = os.path.join(os.path.dirname(__file__), "quarantine_items.json")
 
 
 class QuarantineManager:
     def __init__(self, filepath: str = QUARANTINE_FILE):
         self.filepath = filepath
+        self.lock_path = f"{filepath}.lock"
+        self._lock = FileLock(self.lock_path, timeout=15)
         self.items: Dict[str, Dict[str, Any]] = {}
         self.load()
 
-    def load(self):
-        if not os.path.exists(self.filepath):
-            self.items = {}
-            return
+    def _create_empty_file(self):
         try:
-            with open(self.filepath, "r", encoding="utf-8") as f:
-                self.items = json.load(f)
+            with open(self.filepath, "w", encoding="utf-8") as f:
+                json.dump({}, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            logger.warning(f"Quarantine file load error: {e}")
-            self.items = {}
+            logger.error(f"Bo'sh karantin faylini yaratishda xatolik: {e}")
+
+    def load(self):
+        with self._lock:
+            if not os.path.exists(self.filepath):
+                self.items = {}
+                self._create_empty_file()
+                return
+            try:
+                with open(self.filepath, "r", encoding="utf-8") as f:
+                    self.items = json.load(f)
+            except Exception as e:
+                logger.warning(f"Quarantine file load error: {e}")
+                self.items = {}
 
     def save(self):
-        try:
-            tmp_path = f"{self.filepath}.tmp"
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(self.items, f, ensure_ascii=False, indent=2)
-            os.replace(tmp_path, self.filepath)
-        except Exception as e:
-            logger.error(f"Quarantine file save error: {e}")
+        with self._lock:
+            try:
+                tmp_path = f"{self.filepath}.tmp"
+                with open(tmp_path, "w", encoding="utf-8") as f:
+                    json.dump(self.items, f, ensure_ascii=False, indent=2)
+                os.replace(tmp_path, self.filepath)
+            except Exception as e:
+                logger.error(f"Quarantine file save error: {e}")
 
     def add_to_quarantine(self, item: Dict[str, Any], health_result: ItemHealthResult):
         item_id = str(item.get("id") or f"item_{int(time.time()*1000)}")
