@@ -42,7 +42,7 @@ class MovieModel(Base):
     trailer_url: Mapped[str | None] = mapped_column(String(1024))
     
     code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True)
-    publish_status: Mapped[str] = mapped_column(String(50), default="pending", server_default="published", nullable=False, index=True)
+    publish_status: Mapped[str] = mapped_column(String(50), default="pending", server_default="pending", nullable=False, index=True)
     is_18_plus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     
     source_chat_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
