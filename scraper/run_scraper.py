@@ -36,6 +36,68 @@ from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, creat
 from telethon.errors import FloodWaitError
 from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH
 from scraper.autopilot_v2 import autopilot_engine
+from filelock import FileLock, Timeout
+
+DEFAULT_CLI_LOCK_FILE = os.path.join(os.path.dirname(__file__), ".scraper_cli.lock")
+DEFAULT_CLI_PID_FILE = os.path.join(os.path.dirname(__file__), ".scraper_cli.pid")
+
+
+class ScraperAlreadyRunningError(Exception):
+    """Boshqa scraper jarayoni allaqachon ishlayotganida chiqariladi."""
+    pass
+
+
+class ScraperCliLock:
+    """CLI orqali ishga tushirilganda faqat bitta faol nusxa bo'lishini ta'minlovchi lock."""
+    def __init__(self, lock_file: str | None = None, pid_file: str | None = None):
+        self.lock_file = lock_file or DEFAULT_CLI_LOCK_FILE
+        self.pid_file = pid_file or DEFAULT_CLI_PID_FILE
+        self._lock = FileLock(self.lock_file, timeout=0.2)
+        self._is_locked = False
+
+    def acquire(self) -> bool:
+        try:
+            self._lock.acquire()
+            self._is_locked = True
+            try:
+                with open(self.pid_file, "w", encoding="utf-8") as f:
+                    f.write(str(os.getpid()))
+            except Exception:
+                pass
+            return True
+        except Timeout:
+            running_pid = "noma'lum"
+            if os.path.exists(self.pid_file):
+                try:
+                    with open(self.pid_file, "r", encoding="utf-8") as f:
+                        running_pid = f.read().strip()
+                except Exception:
+                    pass
+            raise ScraperAlreadyRunningError(
+                f"Scraperning boshqa nusxasi allaqachon ishlayapti (PID: {running_pid}). "
+                f"Bir vaqtning o'zida bir nechta CLI scraper jarayonini ishga tushirish taqiqlanadi."
+            )
+
+    def release(self):
+        if self._is_locked:
+            try:
+                self._lock.release()
+            except Exception:
+                pass
+            self._is_locked = False
+            if os.path.exists(self.pid_file):
+                try:
+                    os.remove(self.pid_file)
+                except Exception:
+                    pass
+
+    def __enter__(self):
+        self.acquire()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
 
 async def cmd_parse(
     source: str,
@@ -590,18 +652,30 @@ def main():
 
     if args.stats:
         cmd_stats()
-    elif args.clean_duplicates:
-        asyncio.run(cmd_clean_duplicates())
-    elif args.retry_failed:
-        cmd_retry_failed()
-    elif args.autopilot:
-        asyncio.run(cmd_autopilot(args.source, args.pages, args.limit, args.media_type, args.min_rating))
-    elif args.parse:
-        asyncio.run(cmd_parse(args.source, args.pages or 3, args.media_type, args.start_page, args.min_rating))
-    elif args.download:
-        asyncio.run(cmd_download(args.limit, args.target, args.codes, args.media_type, args.item_id))
-    else:
-        parser.print_help()
+        return
+
+    lock = ScraperCliLock()
+    try:
+        lock.acquire()
+    except ScraperAlreadyRunningError as e:
+        print(f"❌ {e}", flush=True)
+        sys.exit(1)
+
+    try:
+        if args.clean_duplicates:
+            asyncio.run(cmd_clean_duplicates())
+        elif args.retry_failed:
+            cmd_retry_failed()
+        elif args.autopilot:
+            asyncio.run(cmd_autopilot(args.source, args.pages, args.limit, args.media_type, args.min_rating))
+        elif args.parse:
+            asyncio.run(cmd_parse(args.source, args.pages or 3, args.media_type, args.start_page, args.min_rating))
+        elif args.download:
+            asyncio.run(cmd_download(args.limit, args.target, args.codes, args.media_type, args.item_id))
+        else:
+            parser.print_help()
+    finally:
+        lock.release()
 
 if __name__ == "__main__":
     main()
