@@ -76,17 +76,19 @@ class MovieRepositoryImpl(IMovieRepository):
 
         return self._to_domain(model)
 
-    async def get_by_id(self, movie_id: int) -> Movie | None:
+    async def get_by_id(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
         stmt = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         ).where(MovieModel.id == movie_id)
+        if publish_status is not None:
+            stmt = stmt.where(MovieModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def get_by_code(self, code: str) -> Movie | None:
+    async def get_by_code(self, code: str, publish_status: str | None = None) -> Movie | None:
         clean_code = code.strip()
         where_conditions = [
             func.lower(MovieModel.code) == func.lower(clean_code)
@@ -99,6 +101,8 @@ class MovieRepositoryImpl(IMovieRepository):
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         ).where(or_(*where_conditions))
+        if publish_status is not None:
+            stmt = stmt.where(MovieModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         model = result.scalars().first()
         return self._to_domain(model) if model else None
@@ -118,7 +122,7 @@ class MovieRepositoryImpl(IMovieRepository):
         model = result.scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
+    async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
         clean_q = str(title_query).strip()
         code_q = clean_q.lstrip("#").strip()
         conditions = [
@@ -137,6 +141,8 @@ class MovieRepositoryImpl(IMovieRepository):
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         ).where(or_(*conditions))
+        if publish_status is not None:
+            query = query.filter(MovieModel.publish_status == publish_status)
         
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)
@@ -146,12 +152,15 @@ class MovieRepositoryImpl(IMovieRepository):
         
         return [self._to_domain(m) for m in models], total or 0
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> tuple[Sequence[Movie], int]:
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
         )
+        if publish_status is not None:
+            query = query.filter(MovieModel.publish_status == publish_status)
+
         if category_id:
             query = query.filter(MovieModel.categories.any(id=category_id))
         

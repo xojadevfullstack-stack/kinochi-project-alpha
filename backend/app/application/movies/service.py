@@ -74,22 +74,32 @@ class MovieService:
         )
         return await self.movie_repo.create(movie, category_ids=category_ids, page_ids=page_ids)
 
-    async def get_movie(self, movie_id: int) -> Movie | None:
+    async def get_movie(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
+        if publish_status is not None:
+            return await self.movie_repo.get_by_id(movie_id, publish_status=publish_status)
         return await self.movie_repo.get_by_id(movie_id)
 
-    async def get_movie_by_id(self, movie_id: int) -> Movie | None:
+    async def get_movie_by_id(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
+        if publish_status is not None:
+            return await self.movie_repo.get_by_id(movie_id, publish_status=publish_status)
         return await self.movie_repo.get_by_id(movie_id)
 
-    async def get_movie_by_code(self, code: str) -> Movie | None:
+    async def get_movie_by_code(self, code: str, publish_status: str | None = None) -> Movie | None:
+        if publish_status is not None:
+            return await self.movie_repo.get_by_code(code, publish_status=publish_status)
         return await self.movie_repo.get_by_code(code)
 
     async def get_movie_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
         return await self.movie_repo.get_by_source(chat_id, topic_id)
 
-    async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
+    async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
+        if publish_status is not None:
+            return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit, publish_status=publish_status)
         return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> tuple[Sequence[Movie], int]:
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
+        if publish_status is not None:
+            return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged, publish_status=publish_status)
         return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
 
     async def update_movie(

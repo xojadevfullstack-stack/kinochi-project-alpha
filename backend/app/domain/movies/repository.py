@@ -13,11 +13,11 @@ class IMovieRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(self, movie_id: int) -> Movie | None:
+    async def get_by_id(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
         pass
 
     @abstractmethod
-    async def get_by_code(self, code: str) -> Movie | None:
+    async def get_by_code(self, code: str, publish_status: str | None = None) -> Movie | None:
         pass
 
     @abstractmethod
@@ -25,12 +25,12 @@ class IMovieRepository(ABC):
         pass
 
     @abstractmethod
-    async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20) -> tuple[Sequence[Movie], int]:
+    async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
         """Returns a tuple of (movies, total_count)"""
         pass
 
     @abstractmethod
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> tuple[Sequence[Movie], int]:
+    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
         """Returns a tuple of (movies, total_count)"""
         pass
 

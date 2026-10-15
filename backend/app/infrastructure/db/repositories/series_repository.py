@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
@@ -12,13 +12,15 @@ class SeriesRepository:
         self.session = session
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> Tuple[List[SeriesModel], int]:
+    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         )
+        if publish_status is not None:
+            stmt = stmt.filter(SeriesModel.publish_status == publish_status)
         
         if category_id:
             stmt = stmt.filter(SeriesModel.categories.any(id=category_id))
@@ -39,7 +41,7 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
-    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[SeriesModel], int]:
+    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100, publish_status: str | None = None) -> Tuple[List[SeriesModel], int]:
         clean_q = str(title_query).strip()
         code_q = clean_q.lstrip("#").strip()
         search_pattern = f"%{clean_q}%"
@@ -58,7 +60,11 @@ class SeriesRepository:
         elif code_q.lower().startswith("s") and code_q[1:].isdigit():
             conditions.append(SeriesModel.id == int(code_q[1:]))
 
-        total_stmt = select(func.count(SeriesModel.id)).where(or_(*conditions))
+        stmt_where = or_(*conditions)
+        if publish_status is not None:
+            stmt_where = and_(stmt_where, SeriesModel.publish_status == publish_status)
+
+        total_stmt = select(func.count(SeriesModel.id)).where(stmt_where)
         total = await self.session.scalar(total_stmt)
         
         stmt = select(SeriesModel).options(
@@ -66,23 +72,25 @@ class SeriesRepository:
             selectinload(SeriesModel.categories),
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
-        ).where(or_(*conditions)).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
+        ).where(stmt_where).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
 
-    async def get_series_by_id(self, series_id: int) -> SeriesModel | None:
+    async def get_series_by_id(self, series_id: int, publish_status: str | None = None) -> SeriesModel | None:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         ).where(SeriesModel.id == series_id)
+        if publish_status is not None:
+            stmt = stmt.where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_series_by_code(self, code: str) -> SeriesModel | None:
+    async def get_series_by_code(self, code: str, publish_status: str | None = None) -> SeriesModel | None:
         clean_code = str(code).strip()
         series_id = None
         if clean_code.isdigit():
@@ -97,7 +105,7 @@ class SeriesRepository:
             series_id = int(clean_code[7:])
             
         if series_id is not None:
-            return await self.get_series_by_id(series_id)
+            return await self.get_series_by_id(series_id, publish_status=publish_status)
         return None
 
 

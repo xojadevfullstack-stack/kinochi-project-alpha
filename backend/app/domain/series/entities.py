@@ -86,6 +86,7 @@ class SeriesBase(BaseModel):
     director: str | None = None
     cast: str | None = None
     status: str = "ongoing"
+    publish_status: str = "pending"
     is_18_plus: bool = False
     source_type: str | None = "uzmovi"
     custom_source_name: str | None = None
@@ -106,10 +107,11 @@ class SeriesUpdate(BaseModel):
     release_year: int | None = None
     director: str | None = None
     cast: str | None = None
+    status: str | None = None
+    publish_status: str | None = None
     category_ids: list[int] | None = None
     page_ids: list[int] | None = None
     source_id: int | None = None
-    status: str | None = None
     is_18_plus: bool | None = None
     source_type: str | None = None
     custom_source_name: str | None = None

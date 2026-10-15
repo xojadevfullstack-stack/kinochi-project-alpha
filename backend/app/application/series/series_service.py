@@ -21,22 +21,34 @@ class SeriesService:
         return shortuuid.uuid()[:8]
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False) -> Tuple[List[Series], int]:
-        series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged)
+    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> Tuple[List[Series], int]:
+        if publish_status is not None:
+            series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged, publish_status=publish_status)
+        else:
+            series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged)
         return [Series.model_validate(s) for s in series_models], total
 
-    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100) -> Tuple[List[Series], int]:
-        series_models, total = await self.repository.search_series(title_query, skip, limit)
+    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100, publish_status: str | None = None) -> Tuple[List[Series], int]:
+        if publish_status is not None:
+            series_models, total = await self.repository.search_series(title_query, skip, limit, publish_status=publish_status)
+        else:
+            series_models, total = await self.repository.search_series(title_query, skip, limit)
         return [Series.model_validate(s) for s in series_models], total
 
-    async def get_series_by_id(self, series_id: int) -> Series | None:
-        series_model = await self.repository.get_series_by_id(series_id)
+    async def get_series_by_id(self, series_id: int, publish_status: str | None = None) -> Series | None:
+        if publish_status is not None:
+            series_model = await self.repository.get_series_by_id(series_id, publish_status=publish_status)
+        else:
+            series_model = await self.repository.get_series_by_id(series_id)
         if not series_model:
             return None
         return Series.model_validate(series_model)
 
-    async def get_series_by_code(self, code: str) -> Series | None:
-        series_model = await self.repository.get_series_by_code(code)
+    async def get_series_by_code(self, code: str, publish_status: str | None = None) -> Series | None:
+        if publish_status is not None:
+            series_model = await self.repository.get_series_by_code(code, publish_status=publish_status)
+        else:
+            series_model = await self.repository.get_series_by_code(code)
         if not series_model:
             return None
         return Series.model_validate(series_model)

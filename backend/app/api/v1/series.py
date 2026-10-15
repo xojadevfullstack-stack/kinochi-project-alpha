@@ -55,15 +55,23 @@ async def list_series(
     category_id: int | None = None,
     page_id: int | None = None,
     exclude_paged: bool = False,
+    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden')"),
     service: SeriesService = Depends(get_series_service)
 ):
-    """List series (Public)."""
-    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}"
+    """List series (Public: published)."""
+    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{publish_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
 
-    items, total = await service.get_all_series(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
+    items, total = await service.get_all_series(
+        skip=skip,
+        limit=limit,
+        category_id=category_id,
+        page_id=page_id,
+        exclude_paged=exclude_paged,
+        publish_status=publish_status
+    )
     
     # Calculate pages
     pages = (total + limit - 1) // limit if total > 0 else 0
@@ -88,15 +96,16 @@ async def search_series(
     q: str = Query(..., min_length=2),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    publish_status: str | None = Query("published", description="Nashr holati"),
     service: SeriesService = Depends(get_series_service)
 ):
-    """Search series by title (Public)."""
-    cache_key = f"cache:series:search:{q}:{skip}:{limit}"
+    """Search series by title (Public: published)."""
+    cache_key = f"cache:series:search:{q}:{skip}:{limit}:{publish_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
 
-    items, total = await service.search_series(title_query=q, skip=skip, limit=limit)
+    items, total = await service.search_series(title_query=q, skip=skip, limit=limit, publish_status=publish_status)
     
     pages = (total + limit - 1) // limit if total > 0 else 0
     page = (skip // limit) + 1 if limit > 0 else 1
@@ -135,8 +144,8 @@ async def get_series_by_code(
     code: str,
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get series by code or ID (e.g. s_30, s30, 30) (Public)."""
-    series = await service.get_series_by_code(code)
+    """Get series by code or ID (e.g. s_30, s30, 30) (Public: published)."""
+    series = await service.get_series_by_code(code, publish_status="published")
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series
@@ -148,8 +157,8 @@ async def get_series(
     series_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get series by ID (Public)."""
-    series = await service.get_series_by_id(series_id)
+    """Get series by ID (Public: published)."""
+    series = await service.get_series_by_id(series_id, publish_status="published")
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series

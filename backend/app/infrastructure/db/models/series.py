@@ -24,6 +24,7 @@ class SeriesModel(Base):
     poster_url: Mapped[str | None] = mapped_column(String(1024))
     trailer_url: Mapped[str | None] = mapped_column(String(1024))
     status: Mapped[str] = mapped_column(String(50), server_default="ongoing", nullable=False)
+    publish_status: Mapped[str] = mapped_column(String(50), default="pending", server_default="published", nullable=False, index=True)
     is_18_plus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     
     imdb_rating: Mapped[float | None] = mapped_column(Float)
