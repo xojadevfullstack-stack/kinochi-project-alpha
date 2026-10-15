@@ -20,6 +20,7 @@ from app.infrastructure.db.repositories.series_repository import SeriesRepositor
 from app.application.series.series_service import SeriesService
 from app.domain.series.entities import EpisodeCreate, SeasonCreate
 from scraper.config import TELEGRAM_API_ID, TELEGRAM_API_HASH, TELEGRAM_STRING_SESSION, AUTO_TOPIC_CHAT_ID, STORAGE_CHANNEL_ID
+from scraper.admission_gate import pre_check, final_check, promote_to_published, record_rejection, resolve_rejection
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ingest_pusu")
@@ -176,7 +177,16 @@ async def ingest_single_episode(
     source_msg_id: int,
     topic_id: int
 ) -> bool:
-    # 1. Check if already exists in DB
+    source_key = f"{source_ch}_{source_msg_id}"
+    pre_payload = {
+        "source": "telegram",
+        "source_key": source_key,
+        "season_number": season_num,
+        "episode_number": ep_num,
+        "series_id": SERIES_ID,
+    }
+
+    # 1. Check if already exists in DB & pre-check admission gate
     async with async_session_factory() as session:
         from sqlalchemy import text
         res = await session.execute(
@@ -186,6 +196,25 @@ async def ingest_single_episode(
         if res.scalar():
             logger.info(f"  ⏭️ Season {season_num} Ep {ep_num} allaqachon bazada mavjud. O'tkazib yuborildi.")
             return True
+
+        pre_ok, defects = await pre_check(
+            kind="episode",
+            payload=pre_payload,
+            session=session
+        )
+        if not pre_ok:
+            logger.warning(f"  ⚠️ Pre-check rad etildi: Season {season_num} Ep {ep_num}: {defects}")
+            await record_rejection(
+                session=session,
+                media_type="episode",
+                source="telegram",
+                source_key=source_key,
+                title=f"Qashqirlar makoni: Pistirma {season_num}-Mavsum {ep_num}-Qism",
+                payload=pre_payload,
+                defects=defects
+            )
+            await session.commit()
+            return False
 
     # 2. Fetch source message
     try:
@@ -251,7 +280,7 @@ async def ingest_single_episode(
         logger.error(f"Failed to copy Ep {ep_num} to storage!")
         return False
 
-    # 5. Pack bot file ID and save to DB
+    # 5. Pack bot file ID and perform final admission check
     bot_file_id = None
     try:
         if storage_msg.media:
@@ -259,7 +288,35 @@ async def ingest_single_episode(
     except Exception:
         pass
 
+    final_payload = {
+        "telegram_file_id": bot_file_id,
+        "storage_channel_message_id": storage_msg.id,
+        "language": "O'zbekcha",
+        "duration": getattr(getattr(src_msg, 'file', None), 'duration', 1) or 1,
+        "file_size": getattr(getattr(src_msg, 'file', None), 'size', None),
+    }
+
+    final_ok, final_defects = final_check(
+        kind="episode",
+        media=final_payload,
+        payload=final_payload
+    )
+
     async with async_session_factory() as session:
+        if not final_ok:
+            logger.error(f"  ❌ Final check xatosi: Season {season_num} Ep {ep_num}: {final_defects}")
+            await record_rejection(
+                session=session,
+                media_type="episode",
+                source="telegram",
+                source_key=source_key,
+                title=f"Qashqirlar makoni: Pistirma {season_num}-Mavsum {ep_num}-Qism",
+                payload=final_payload,
+                defects=final_defects
+            )
+            await session.commit()
+            return False
+
         series_repo = SeriesRepository(session)
         series_service = SeriesService(repository=series_repo, telegram_api=None)
 
@@ -270,10 +327,15 @@ async def ingest_single_episode(
         ))
         await series_repo.add_episode_translation(
             episode_id=ep_entity.id,
-            language="Asosiy",
+            language="O'zbekcha",
             telegram_file_id=bot_file_id,
             storage_channel_message_id=storage_msg.id
         )
+        series_obj = await session.get(SeriesModel, SERIES_ID)
+        if series_obj:
+            await promote_to_published(session, series_obj, source="telegram", source_key=source_key)
+        else:
+            await resolve_rejection(session, "telegram", source_key)
         await session.commit()
 
     logger.info(f"  ✅ Season {season_num} Ep {ep_num} muvaffaqiyatli saqlandi! (Topic #{topic_msg.id}, Storage #{storage_msg.id})")

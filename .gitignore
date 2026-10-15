@@ -59,7 +59,8 @@ unknown_errors.txt
 scratch_*.py
 test_*.js
 test_*.ts
-test_*.py
+/test_*.py
+!backend/tests/**
 mock_test_*.py
 check_live_bundle.py
 backend/test_*.py
