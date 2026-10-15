@@ -115,12 +115,34 @@ async def cmd_parse(
     ]
     dup_results = await asyncio.gather(*dup_tasks, return_exceptions=True)
 
+    blocked_rejected_keys = set()
+    try:
+        from app.infrastructure.db.session import async_session_factory
+        from app.infrastructure.db.models.rejected_item import RejectedItemModel
+        from sqlalchemy import select
+        async with async_session_factory() as rej_sess:
+            r_stmt = select(RejectedItemModel.source, RejectedItemModel.source_key).where(
+                RejectedItemModel.status.in_(["rejected", "blacklisted"])
+            )
+            r_res = await rej_sess.execute(r_stmt)
+            for r_src, r_key in r_res.all():
+                blocked_rejected_keys.add((str(r_src).lower(), str(r_key)))
+    except Exception as rej_err:
+        logger.debug(f"Could not check rejected_items DB: {rej_err}")
+
     duplicates_detected = 0
     blacklisted_detected = 0
+    rejected_detected = 0
     for item, dup_res in zip(all_items, dup_results):
         if isinstance(dup_res, Exception):
             continue
-        if dup_res.match_type == "blacklist":
+        item_src = str(item.source).lower()
+        item_key = str(getattr(item, "id", "")).replace(f"{item_src}_", "")
+        if (item_src, item.id) in blocked_rejected_keys or (item_src, item_key) in blocked_rejected_keys:
+            item.status = "rejected"
+            item.error_message = "Rad etilgan yoki qora ro'yxatga kiritilgan (rejected_items)"
+            rejected_detected += 1
+        elif dup_res.match_type == "blacklist":
             item.status = "blacklisted"
             item.error_message = f"Qora ro'yxatda: {dup_res.reason}"
             blacklisted_detected += 1
@@ -131,7 +153,7 @@ async def cmd_parse(
 
     total_added = qm.add_items_batch(all_items)
     next_page = sm.advance_page(source, max_pages, from_page=start_page)
-    print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}, Qora ro'yxatda: {blacklisted_detected}")
+    print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}, Qora ro'yxatda: {blacklisted_detected}, Rad etilganlar: {rejected_detected}")
     print(f"📑 [STATE] {source.upper()} keyingi sahifa: {next_page}")
     print(f"📊 Navbat holati: {qm.stats()}\n")
 

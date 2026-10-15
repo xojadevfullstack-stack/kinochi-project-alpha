@@ -69,16 +69,11 @@ class AutopilotEngine:
         health_result = self.health_evaluator.evaluate_item(raw_item)
 
         if not health_result.is_healthy:
-            # Defect detected! Send directly to Quarantine
+            # Kamchilik aniqlandi! Non-blocking: karantinga oladi va navbat davom etadi
             self.quarantined_count += 1
             self.quarantine_manager.add_to_quarantine(raw_item, health_result)
-            
-            # Check circuit breaker again after defect
-            cb_after = self.health_evaluator.check_circuit_breaker()
-            if cb_after.is_paused:
-                return False, f"Karantinga olindi va avtopilot pauzaga tushdi: {cb_after.pause_reason}", raw_item
-
-            return False, f"Karantinga olindi: {health_result.review_reason}", raw_item
+            logger.warning(f"⚠️ Kontent sifati qoniqarsiz: {health_result.review_reason}. Karantinga olindi, navbat davom etadi.")
+            return False, f"Kamchilik aniqlandi va karantinga olindi: {health_result.review_reason}", raw_item
 
         # 5. Fully Healthy Item: Approved for DB insertion!
         self.approved_count += 1

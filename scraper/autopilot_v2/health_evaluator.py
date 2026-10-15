@@ -117,7 +117,7 @@ class HealthEvaluator:
             if episode_num is None or int(episode_num) <= 0:
                 defects.append("missing_episode_number")
 
-        # Evaluation verdict: Zero tolerance
+        # Evaluation verdict: Zero tolerance for content quality
         if defects:
             result = ItemHealthResult(
                 is_healthy=False,
@@ -126,18 +126,25 @@ class HealthEvaluator:
                 needs_review=True,
                 review_reason=f"Kamchiliklar mavjud: {', '.join(defects)}"
             )
-            self._record_sample(False)
+            # DIQQAT: Kontent rad etilishi CircuitBreaker'ni to'xtatmaydi!
             return result
 
-        result = ItemHealthResult(
+        return ItemHealthResult(
             is_healthy=True,
             score=100,
             defects=[],
             needs_review=False,
             review_reason=None
         )
+
+    def record_infrastructure_failure(self, error_type: str, details: str = ""):
+        """Infratuzilma xatosi (FloodWait, bot javobsiz, DB xato) yuz berganda chaqiriladi."""
+        self._record_sample(False)
+        logger.critical(f"🚨 INFRATUZILMA XATOSI: {error_type} - {details} (CircuitBreaker'ga qayd etildi)")
+
+    def record_infrastructure_success(self):
+        """Muvaffaqiyatli infratuzilma aloqasida chaqiriladi."""
         self._record_sample(True)
-        return result
 
     def _record_sample(self, is_healthy: bool):
         self.history.append(is_healthy)
@@ -166,15 +173,15 @@ class HealthEvaluator:
         if total >= self.min_sample_size and health_pct < self.pause_threshold_percent:
             self.is_paused = True
             self.pause_reason = (
-                f"Baza salomatligi {self.pause_threshold_percent:.1f}% dan tushib ketdi "
+                f"Infratuzilma salomatligi {self.pause_threshold_percent:.1f}% dan tushib ketdi "
                 f"(Hozirgi ko'rsatkich: {health_pct:.1f}%). "
-                f"So'nggi {total} ta materialdan {defective_count} tasida kamchilik aniqlandi. "
-                f"Avtopilot to'xtatildi. Admin aralashuvi talab qilinadi."
+                f"So'nggi {total} ta so'rovdan {defective_count} tasida infratuzilma xatosi "
+                f"(FloodWait, bot javobsiz yoki DB) aniqlandi. Avtopilot to'xtatildi."
             )
             logger.critical(f"🚨 CIRCUIT BREAKER TRIP: {self.pause_reason}")
         else:
             if self.is_paused and health_pct >= self.pause_threshold_percent:
-                logger.info(f"✅ CIRCUIT BREAKER RECOVERED: Health at {health_pct:.1f}%. Auto-resuming.")
+                logger.info(f"✅ CIRCUIT BREAKER RECOVERED: Infratuzilma {health_pct:.1f}% ga tiklandi. Auto-resuming.")
                 self.is_paused = False
                 self.pause_reason = None
 
