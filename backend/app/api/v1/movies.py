@@ -328,7 +328,7 @@ async def upload_movie_video(
     movie_id: int,
     request: Request,
     file: UploadFile = File(...),
-    language: str = Form("Asosiy"),
+    language: str = Form("O'zbekcha"),
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin)
 ):
@@ -470,7 +470,7 @@ async def get_upload_job_status(
 
 class LinkVideoRequest(BaseModel):
     message_id: int
-    language: str = "Asosiy"
+    language: str = "O'zbekcha"
     source_url: str | None = None
     telegram_file_id: str | None = None
 

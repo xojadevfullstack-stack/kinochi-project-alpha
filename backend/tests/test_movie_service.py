@@ -84,4 +84,4 @@ async def test_link_movie_video_with_telegram_file_id(service, mock_repo):
     
     assert result == expected_movie
     mock_repo.get_by_id.assert_called_once_with(1)
-    mock_repo.add_translation.assert_called_once_with(1, "Asosiy", "mock_file_id_123", 99999)
+    mock_repo.add_translation.assert_called_once_with(1, "O'zbekcha", "mock_file_id_123", 99999)

@@ -212,7 +212,7 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
     try:
         resp = await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
             "message_id": storage_msg_id,
-            "language": "Asosiy",
+            "language": "O'zbekcha",
             "telegram_file_id": telegram_file_id
         })
         resp.raise_for_status()
@@ -420,7 +420,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         try:
             resp = await api_client.client.post(f"/series/episodes/{ep_id}/link-video", json={
                 "message_id": storage_msg_id,
-                "language": "Asosiy",
+                "language": "O'zbekcha",
                 "telegram_file_id": telegram_file_id
             })
             resp.raise_for_status()

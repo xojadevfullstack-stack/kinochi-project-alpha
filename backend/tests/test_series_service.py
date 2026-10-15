@@ -168,7 +168,7 @@ async def test_link_episode_video_with_telegram_file_id(service, mock_repo, mock
     assert result is not None
     mock_repo.add_episode_translation.assert_called_once_with(
         episode_id=1, 
-        language="Asosiy", 
+        language="O'zbekcha", 
         telegram_file_id="mock_series_file_id_123", 
         storage_channel_message_id=99999
     )

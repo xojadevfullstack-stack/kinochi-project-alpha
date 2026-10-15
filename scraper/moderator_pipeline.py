@@ -454,7 +454,7 @@ class ModeratorPipeline:
             await service.link_movie_video_from_message(
                 movie_id=movie_id,
                 message_id=storage_msg.id,
-                language="Asosiy",
+                language="O'zbekcha",
                 telegram_file_id=telegram_file_id
             )
             await session.commit()

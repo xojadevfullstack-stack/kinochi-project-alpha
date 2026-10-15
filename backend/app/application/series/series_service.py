@@ -200,7 +200,7 @@ class SeriesService:
     async def delete_episode(self, episode_id: int) -> bool:
         return await self.repository.delete_episode(episode_id)
 
-    async def upload_episode_video(self, episode_id: int, file: UploadFile, language: str = "Asosiy") -> Episode | None:
+    async def upload_episode_video(self, episode_id: int, file: UploadFile, language: str = "O'zbekcha") -> Episode | None:
         episode = await self.repository.get_episode_by_id(episode_id)
         if not episode:
             return None
@@ -223,7 +223,7 @@ class SeriesService:
         
         return Episode.model_validate(updated_episode)
 
-    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "Asosiy", source_url: str | None = None, telegram_file_id: str | None = None) -> Episode | None:
+    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "O'zbekcha", source_url: str | None = None, telegram_file_id: str | None = None) -> Episode | None:
         episode = await self.repository.get_episode_by_id(episode_id)
         if not episode:
             return None

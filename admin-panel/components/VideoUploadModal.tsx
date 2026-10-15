@@ -31,7 +31,7 @@ export default function VideoUploadModal({
 }: VideoUploadModalProps) {
   const [uploadMethod, setUploadMethod] = useState<"file" | "message">("file");
   const [messageId, setMessageId] = useState("");
-  const [language, setLanguage] = useState("Asosiy");
+  const [language, setLanguage] = useState("O'zbekcha");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [phase, setPhase] = useState<UploadPhase>("idle");
@@ -285,7 +285,7 @@ export default function VideoUploadModal({
             </label>
             <input
               type="text"
-              placeholder="Masalan: Asosiy, O'zbekcha, Tarjima Kinolar..."
+              placeholder="Masalan: O'zbekcha, Ruscha, Inglizcha..."
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               disabled={phase !== "idle" && phase !== "failed"}

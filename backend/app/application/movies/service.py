@@ -125,7 +125,7 @@ class MovieService:
     async def delete_movie(self, movie_id: int) -> bool:
         return await self.movie_repo.delete(movie_id)
 
-    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "Asosiy", source_url: str | None = None, telegram_file_id: str | None = None) -> Movie | None:
+    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "O'zbekcha", source_url: str | None = None, telegram_file_id: str | None = None) -> Movie | None:
         movie = await self.movie_repo.get_by_id(movie_id)
         if not movie:
             return None

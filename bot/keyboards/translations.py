@@ -11,7 +11,7 @@ def get_translations_keyboard(item_type: str, item_code: str, translations: list
     
     for t in translations:
         builder.button(
-            text=t.get("language", "Asosiy"),
+            text=t.get("language", "O'zbekcha"),
             callback_data=f"tr_{item_type}_{item_code}_{t['id']}"
         )
         
