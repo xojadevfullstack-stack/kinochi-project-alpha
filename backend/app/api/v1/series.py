@@ -273,8 +273,8 @@ async def list_seasons(
     series_id: int,
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get all seasons for a series (Public)."""
-    series = await service.get_series_by_id(series_id)
+    """Get all seasons for a series (Public: published only)."""
+    series = await service.get_series_by_id(series_id, publish_status="published")
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series.seasons
