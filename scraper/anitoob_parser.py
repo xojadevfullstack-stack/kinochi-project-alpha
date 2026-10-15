@@ -85,7 +85,7 @@ async def fetch_anitoob_sitemap_async(session: Optional[aiohttp.ClientSession] =
 
     if session:
         try:
-            async with session.get(sitemap_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            async with session.get(sitemap_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status == 200:
                     xml_data = await resp.text(errors="ignore")
         except Exception as e:
@@ -150,7 +150,7 @@ async def fetch_anitoob_metadata_async(code: str, session: Optional[aiohttp.Clie
 
     if session:
         try:
-            async with session.get(page_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+            async with session.get(page_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
                 if resp.status == 200:
                     html_text = await resp.text(errors="ignore")
         except Exception as e:

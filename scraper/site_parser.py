@@ -255,7 +255,7 @@ def parse_asilmedia_page(page_url: str, min_rating: float = 0.0) -> List[QueueIt
 async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
     target_url = normalize_uzmovi_url(page_url)
     try:
-        async with session.get(target_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+        async with session.get(target_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
                 return _extract_uzmovi_items_from_html(html, min_rating=min_rating)
@@ -267,7 +267,7 @@ async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str,
 
 async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
     try:
-        async with session.get(page_url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+        async with session.get(page_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
                 return _extract_asilmedia_items_from_html(html, min_rating=min_rating)

@@ -80,7 +80,7 @@ async def cmd_parse(
 
     # Parallel aiohttp orqali barcha sahifalarni bir vaqtda tortamiz
     import aiohttp
-    conn = aiohttp.TCPConnector(ssl=False)
+    conn = aiohttp.TCPConnector()
     async with aiohttp.ClientSession(connector=conn) as session:
         if source == "uzmovi":
             tasks = [parse_uzmovi_page_async(session, u, min_rating=min_rating) for u in urls]

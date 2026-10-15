@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 async def _search_uzmovi(session: aiohttp.ClientSession, query: str) -> List[QueueItem]:
     url = f"https://uzmovi.net/search?q={urllib.parse.quote(query)}"
     try:
-        async with session.get(url, headers=HEADERS, ssl=False, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+        async with session.get(url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
                 return _extract_uzmovi_items_from_html(html)
@@ -73,7 +73,7 @@ async def search_sites(
         qm = QueueManager()
 
     tasks = []
-    conn = aiohttp.TCPConnector(ssl=False)
+    conn = aiohttp.TCPConnector()
     async with aiohttp.ClientSession(connector=conn) as session:
         if source in ("all", "uzmovi"):
             tasks.append(_search_uzmovi(session, clean_q))
