@@ -1,8 +1,17 @@
-import asyncio, asyncpg
+import os
+import sys
+import asyncio
+import asyncpg
+
+DATABASE_URL = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    print("XATO: DATABASE_URL yoki TEST_DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan.")
+    sys.exit(1)
+DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
 
 async def check():
     conn = await asyncpg.connect(
-        "postgresql://neondb_owner:npg_2eToVwtng7Os@ep-frosty-cherry-aitqstf5.c-4.us-east-1.aws.neon.tech/neondb?ssl=require",
+        DATABASE_URL,
         timeout=15
     )
     try:
@@ -27,8 +36,8 @@ async def check():
             "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name='series_sources' AND table_schema='public')"
         )
         print("series_sources table exists:", exists3)
-        
     finally:
         await conn.close()
 
-asyncio.run(check())
+if __name__ == "__main__":
+    asyncio.run(check())
