@@ -20,14 +20,14 @@ Ushbu hujjat loyihadagi barcha bosqichlar, arxitekturaviy qarorlar va bajarilgan
   - mavsum/qism ID orqali olinadigan barcha public endpointlar
   - bot inline rejimi
   - *Qoida*: media/mavsum/qismning ommaviy o'qilishi uning ota `publish_status == 'published'` bo'lishini talab qiladi.
-  - *Filtrsiz qoladiganlar*: faqat `by-source` lookup (`auto_index`), admin/audit endpointlar, scraper dedupe, foydalanuvchining shaxsiy `watch_history` si. Commit: `b3ba4c1`
-- [x] **A3**. Barcha ad-hoc filtrlar o'rniga bitta yagona yordamchi helper (`published_only(stmt, Model)`) qo'llanilishi. Test: barcha `/api/v1` yo'nalishlarini tekshirib, har bir public yo'l pending/hidden ma'lumotlarni yashirishini assert qilish. Commit: `b3ba4c1`
-- [x] **A4**. Redis kesh kalitlari `publish_status` filtrini hisobga olishi va status o'zgarganda kesh tozalanishi. Commit: `b3ba4c1`
+  - *Filtrsiz qoladiganlar*: faqat `by-source` lookup (`auto_index`), admin/audit endpointlar, scraper dedupe, foydalanuvchining shaxsiy `watch_history` si. Commit: `0c6c979`
+- [x] **A3**. Barcha ad-hoc filtrlar o'rniga bitta yagona yordamchi helper (`published_only(stmt, Model)`) qo'llanilishi. Test: barcha `/api/v1` yo'nalishlarini tekshirib, har bir public yo'l pending/hidden ma'lumotlarni yashirishini assert qilish. Commit: `0c6c979`
+- [x] **A4**. Redis kesh kalitlari `publish_status` filtrini hisobga olishi va status o'zgarganda kesh tozalanishi. Commit: `0c6c979`
 
 ### [B] Admission gate + rejected_items
 - [x] **B1**. Migratsiya + model `rejected_items`:
   - Maydonlar: `id`, `media_type` ('movie'/'series'/'episode'), `source`, `source_key`, `title`, `payload` JSONB, `defects` JSONB (list of `{field, code, message}`), `media_id` NULL, `attempts` int default 1, `status` ('rejected','resolved','blacklisted'), `created_at`, `updated_at`.
-  - `UNIQUE(source, source_key)`; takroriy urinishda `attempts += 1` va payload yangilanadi. (needs DB verification) Commit: `895bc43`
+  - `UNIQUE(source, source_key)`; takroriy urinishda `attempts += 1` va payload yangilanadi. (needs DB verification) Commit: `69255c8`
 - [x] **B2**. Yagona umumiy modul `admission_gate` (backend va scraper bir xil kodni import qiladi, mantiq takrorlanmaydi):
   - `pre_check(kind, payload)` va `final_check(kind, media)`.
   - Yagona konfiguratsiya (`REQUIRED_FIELDS`).
@@ -35,9 +35,9 @@ Ushbu hujjat loyihadagi barcha bosqichlar, arxitekturaviy qarorlar va bajarilgan
   - Reachability (poster, trailer HEAD tekshiruvi).
   - Dublikatlar (tmdb_id/shikimori_id, so'ng normalizatsiyalangan nom+yil, `rejected_items` va blacklist).
   - Qism (episode) tekshiruvlari.
-  - Holat mashinasi (State machine): `pre_check` -> `pending` row -> video biriktirish -> `final_check` -> faqat gate ichida `published`. Commit: `692cbb2`
+  - Holat mashinasi (State machine): `pre_check` -> `pending` row -> video biriktirish -> `final_check` -> faqat gate ichida `published`. Commit: `01b0620`
 - [x] **B3**. BARCHA yozish yo'llarini gate orqali yo'naltirish (API, auto_index, scraper moderator pipeline, ingest_pusu). Commit: `0b96e6c`
-- [x] **B4**. Non-blocking pipeline, CircuitBreaker faqat infratuzilma xatolarida to'xtashi, Autopilot `rejected`/`blacklisted` elementlarni qayta navbatga qo'ymasligi. Commit: `f800f59`
+- [x] **B4**. Non-blocking pipeline, CircuitBreaker faqat infratuzilma xatolarida to'xtashi, Autopilot `rejected`/`blacklisted` elementlarni qayta navbatga qo'ymasligi. Commit: `d2d8aed`
 
 ---
 
