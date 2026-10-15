@@ -24,6 +24,7 @@ from app.utils.trailer import validate_and_normalize_trailer_url
 from app.core.cache import get_cache, set_cache, delete_cache_pattern
 from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
 from app.infrastructure.db.models.series import SeriesModel
+from app.infrastructure.db.session import async_session_factory
 
 logger = logging.getLogger(__name__)
 
@@ -532,7 +533,7 @@ async def upload_episode_video(
         e_num = ep_detail.episode_number
         caption_lines = [
             f"🍿 <b>{s_title}</b>",
-            f"📌 <b>{s_num}-mavsum, {ep_num}-qism</b>"
+            f"📌 <b>{s_num}-mavsum, {e_num}-qism</b>"
         ]
         if ep_detail.display_code:
             caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{ep_detail.display_code}</code>")
@@ -568,6 +569,33 @@ async def upload_episode_video(
             if not episode:
                 await job_manager.set_failed(job_id, "Qism topilmadi.")
                 return
+
+            # Admission Gate final_check & parent series promotion
+            is_valid, defects = final_check("episode", {
+                "telegram_file_id": file_id,
+                "storage_channel_message_id": message_id,
+                "language": language
+            })
+            async with async_session_factory() as sess:
+                s_model = await sess.get(SeriesModel, ep_detail.series_id) if (ep_detail and ep_detail.series_id) else None
+                if is_valid and s_model:
+                    if s_model.publish_status == "pending":
+                        await promote_to_published(sess, s_model)
+                        await sess.commit()
+                elif s_model:
+                    await record_rejection(
+                        session=sess,
+                        media_type="episode",
+                        source=getattr(s_model, "custom_source_name", None) or "upload",
+                        source_key=f"ep_{episode_id}",
+                        title=f"{s_model.title} (Ep {ep_detail.episode_number})",
+                        payload={"telegram_file_id": file_id, "storage_channel_message_id": message_id, "language": language},
+                        defects=defects,
+                        media_id=ep_detail.series_id
+                    )
+                    await sess.commit()
+
+            await delete_cache_pattern("cache:series:*")
             await job_manager.set_done(job_id, result={"episode_id": episode_id, "language": language})
         except Exception as e:
             err_msg = str(e)
