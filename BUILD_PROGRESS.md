@@ -25,9 +25,9 @@ Ushbu hujjat loyihadagi barcha bosqichlar, arxitekturaviy qarorlar va bajarilgan
 - [x] **A4**. Redis kesh kalitlari `publish_status` filtrini hisobga olishi va status o'zgarganda kesh tozalanishi. Commit: `b3ba4c1`
 
 ### [B] Admission gate + rejected_items
-- [ ] **B1**. Migratsiya + model `rejected_items`:
+- [x] **B1**. Migratsiya + model `rejected_items`:
   - Maydonlar: `id`, `media_type` ('movie'/'series'/'episode'), `source`, `source_key`, `title`, `payload` JSONB, `defects` JSONB (list of `{field, code, message}`), `media_id` NULL, `attempts` int default 1, `status` ('rejected','resolved','blacklisted'), `created_at`, `updated_at`.
-  - `UNIQUE(source, source_key)`; takroriy urinishda `attempts += 1` va payload yangilanadi.
+  - `UNIQUE(source, source_key)`; takroriy urinishda `attempts += 1` va payload yangilanadi. (needs DB verification) Commit: `895bc43`
 - [ ] **B2**. Yagona umumiy modul `admission_gate` (backend va scraper bir xil kodni import qiladi, mantiq takrorlanmaydi):
   - `pre_check(kind, payload)` va `final_check(kind, media)`.
   - Yagona konfiguratsiya (`REQUIRED_FIELDS`).
