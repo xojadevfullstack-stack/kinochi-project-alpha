@@ -6,6 +6,7 @@ together all routers, middleware, and lifecycle hooks.  No business
 logic lives here.
 """
 
+import re
 import logging
 logging.info("CHECKPOINT 5: main.py moduli import qilinmoqda")
 
@@ -99,10 +100,18 @@ async def generic_exception_handler(request: Request, exc: Exception):
     headers = {}
     origin = request.headers.get("origin")
     if origin:
-        headers["Access-Control-Allow-Origin"] = origin
-        headers["Access-Control-Allow-Credentials"] = "true"
-        headers["Access-Control-Allow-Headers"] = "*"
-        headers["Access-Control-Allow-Methods"] = "*"
+        is_allowed = False
+        if origin in settings.CORS_ORIGINS:
+            is_allowed = True
+        elif re.match(r"^https://.*\.vercel\.app$", origin):
+            is_allowed = True
+
+        if is_allowed:
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+            headers["Access-Control-Allow-Headers"] = "*"
+            headers["Access-Control-Allow-Methods"] = "*"
+
     return JSONResponse(
         status_code=500,
         content={"detail": "Serverda kutilmagan xatolik yuz berdi. Bir ozdan so'ng qayta urinib ko'ring."},
