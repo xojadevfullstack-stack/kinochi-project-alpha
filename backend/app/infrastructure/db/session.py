@@ -28,12 +28,19 @@ def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
 
 socket.getaddrinfo = _ipv4_only_getaddrinfo
 logging.info("CHECKPOINT 5b: DB engine yaratilmoqda")
+import re
+
 db_url = settings.DATABASE_URL
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 elif db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-db_url = db_url.replace("sslmode=", "ssl=")
+db_url = re.sub(r"([?&])sslmode=([a-zA-Z0-9_-]+)", r"\1ssl=\2", db_url)
+db_url = re.sub(r"[?&]channel_binding=[^&]+", "", db_url)
+db_url = re.sub(r"[?&]gssencmode=[^&]+", "", db_url)
+if "?" not in db_url and "&" in db_url:
+    db_url = db_url.replace("&", "?", 1)
+db_url = re.sub(r"\?&", "?", db_url).rstrip("?&")
 
 engine = create_async_engine(
     db_url,

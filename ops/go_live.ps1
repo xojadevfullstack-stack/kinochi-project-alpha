@@ -113,6 +113,24 @@ function Convert-ToLibpqUrl {
     return $Converted
 }
 
+function Convert-ToAsyncpgUrl {
+    param([string]$RawUrl)
+    if ([string]::IsNullOrWhiteSpace($RawUrl)) { return "" }
+    $u = $RawUrl -replace "-pooler\.", "."
+    if ($u -match "^postgres(?:ql)?://") {
+        $u = $u -replace "^postgres(?:ql)?://", "postgresql+asyncpg://"
+    }
+    $u = $u -replace "([?&])sslmode=([a-zA-Z0-9_-]+)", '$1ssl=$2'
+    $u = $u -replace "([?&])sslmode=", '$1ssl='
+    $u = $u -replace "[?&]channel_binding=[^&]+", ""
+    $u = $u -replace "[?&]gssencmode=[^&]+", ""
+    if ($u -notmatch "\?" -and $u -match "&") {
+        $u = [regex]::new("&").Replace($u, "?", 1)
+    }
+    $u = ($u -replace "\?&", "?").TrimEnd("?&")
+    return $u
+}
+
 # Python va Alembic dasturlarini aniqlash
 $VenvScripts = Join-Path $RepoRoot "backend\.venv\Scripts"
 if (Test-Path $VenvScripts) {
@@ -149,6 +167,7 @@ if ([string]::IsNullOrWhiteSpace($TargetDbUrl)) {
 }
 $DbHost = Get-DbHostName -RawUrl $TargetDbUrl
 Log-Message -Message "Nishon DB Xosti: $DbHost (Muhit: $UrlEnvVar)" -Phase "INIT"
+$DirectDbUrl = Convert-ToAsyncpgUrl -RawUrl $TargetDbUrl
 
 # Rehearsal auto-confirm faqat localhost yoki 127.0.0.1 uchun ruxsat etiladi
 if ($RehearsalAutoConfirm) {
@@ -247,7 +266,7 @@ if ($StartPhaseNum -le 1) {
         Log-Message "DB ulanishi va jadvallar tekshirilmoqda..." -Phase "PREFLIGHT"
         $PrevEnv = $env:DATABASE_URL
         try {
-            $env:DATABASE_URL = $TargetDbUrl
+            $env:DATABASE_URL = $DirectDbUrl
             & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --allow-empty
             if ($LASTEXITCODE -ne 0) {
                 Log-Error "DB preflight tekshiruvi muvaffaqiyatsiz tugadi (kod: $LASTEXITCODE)!" -Phase "PREFLIGHT"
@@ -271,7 +290,7 @@ $MinDumpSize = if ($RehearsalAutoConfirm) { 10240 } else { 1048576 }
 if ($StartPhaseNum -le 2) {
     Write-Host "`n>>> FAZA B: ZAXIRA NUSXA OLISH..." -ForegroundColor Yellow
 
-    if ($SkipBackup) {
+    if ($SkipBackup -or (-not [string]::IsNullOrWhiteSpace($BackupFile) -and (Test-Path $BackupFile))) {
         if (-not [string]::IsNullOrWhiteSpace($BackupFile)) {
             if (-not (Test-Path $BackupFile)) {
                 Log-Error "Ko'rsatilgan -BackupFile fayli topilmadi: '$BackupFile'" -Phase "BACKUP"
@@ -375,11 +394,6 @@ if ($StartPhaseNum -le 3) {
         $OldEAP = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'
         try {
-            $DirectDbUrl = $TargetDbUrl -replace "-pooler\.", "."
-            if ($DirectDbUrl -match "^postgres(?:ql)?://") {
-                $DirectDbUrl = $DirectDbUrl -replace "^postgres(?:ql)?://", "postgresql+asyncpg://"
-            }
-            $DirectDbUrl = $DirectDbUrl -replace "([?&])sslmode=", '$1ssl='
             $env:DATABASE_URL = $DirectDbUrl
 
             # alembic heads

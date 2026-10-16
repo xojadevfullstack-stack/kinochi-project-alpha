@@ -29,7 +29,13 @@ class Settings(BaseSettings):
                 v = v.replace("postgres://", "postgresql+asyncpg://", 1)
             elif v.startswith("postgresql://"):
                 v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-            v = v.replace("sslmode=", "ssl=")
+            import re
+            v = re.sub(r"([?&])sslmode=([a-zA-Z0-9_-]+)", r"\1ssl=\2", v)
+            v = re.sub(r"[?&]channel_binding=[^&]+", "", v)
+            v = re.sub(r"[?&]gssencmode=[^&]+", "", v)
+            if "?" not in v and "&" in v:
+                v = v.replace("&", "?", 1)
+            v = re.sub(r"\?&", "?", v).rstrip("?&")
         return v
 
     # ── Redis ────────────────────────────────────────────────────

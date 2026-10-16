@@ -191,7 +191,7 @@ def test_db_checks_host_sanitization():
 
 
 def test_db_checks_normalize_async_url():
-    """URL sxemasini asyncpg ga to'g'rilash tekshiruvi."""
+    """URL sxemasini asyncpg ga to'g'rilash va mos kelmaydigan parametrlarni tozalash tekshiruvi."""
     u1 = "postgresql://user:pass@host/db"
     assert normalize_async_url(u1) == "postgresql+asyncpg://user:pass@host/db"
 
@@ -200,6 +200,17 @@ def test_db_checks_normalize_async_url():
 
     u3 = "postgresql+asyncpg://user:pass@host/db"
     assert normalize_async_url(u3) == "postgresql+asyncpg://user:pass@host/db"
+
+    # sslmode -> ssl va channel_binding / gssencmode ni olib tashlash
+    u4 = "postgresql://user:pass@host/db?sslmode=require&channel_binding=require&gssencmode=disable"
+    res4 = normalize_async_url(u4)
+    assert res4 == "postgresql+asyncpg://user:pass@host/db?ssl=require"
+    assert "channel_binding" not in res4
+    assert "gssencmode" not in res4
+    assert "sslmode" not in res4
+
+    u5 = "postgresql://user:pass@host/db?channel_binding=require"
+    assert normalize_async_url(u5) == "postgresql+asyncpg://user:pass@host/db"
 
 
 @pytest.mark.asyncio

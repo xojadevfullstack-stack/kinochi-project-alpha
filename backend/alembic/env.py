@@ -26,12 +26,20 @@ from app.infrastructure.db import models  # noqa: F401
 config = context.config
 
 # Override sqlalchemy.url with runtime settings
+import re
 runtime_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL
 if "-pooler." in runtime_url:
     runtime_url = runtime_url.replace("-pooler.", ".")
-if runtime_url.startswith("postgresql://"):
+if runtime_url.startswith("postgres://"):
+    runtime_url = runtime_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif runtime_url.startswith("postgresql://"):
     runtime_url = runtime_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-runtime_url = runtime_url.replace("sslmode=", "ssl=")
+runtime_url = re.sub(r"([?&])sslmode=([a-zA-Z0-9_-]+)", r"\1ssl=\2", runtime_url)
+runtime_url = re.sub(r"[?&]channel_binding=[^&]+", "", runtime_url)
+runtime_url = re.sub(r"[?&]gssencmode=[^&]+", "", runtime_url)
+if "?" not in runtime_url and "&" in runtime_url:
+    runtime_url = runtime_url.replace("&", "?", 1)
+runtime_url = re.sub(r"\?&", "?", runtime_url).rstrip("?&")
 config.set_main_option("sqlalchemy.url", runtime_url)
 
 # Logging setup

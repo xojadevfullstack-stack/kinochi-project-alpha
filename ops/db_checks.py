@@ -41,11 +41,20 @@ def get_sanitized_host(url_str: Optional[str]) -> str:
 
 def normalize_async_url(url_str: str) -> str:
     """Async engine uchun URL sxemasini to'g'rilaydi."""
+    if not url_str:
+        return ""
+    import re
     if url_str.startswith("postgres://"):
-        return url_str.replace("postgres://", "postgresql+asyncpg://", 1)
-    if url_str.startswith("postgresql://"):
-        return url_str.replace("postgresql://", "postgresql+asyncpg://", 1).replace("sslmode=", "ssl=")
-    return url_str.replace("sslmode=", "ssl=")
+        url_str = url_str.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url_str.startswith("postgresql://"):
+        url_str = url_str.replace("postgresql://", "postgresql+asyncpg://", 1)
+    url_str = re.sub(r"([?&])sslmode=([a-zA-Z0-9_-]+)", r"\1ssl=\2", url_str)
+    url_str = re.sub(r"[?&]channel_binding=[^&]+", "", url_str)
+    url_str = re.sub(r"[?&]gssencmode=[^&]+", "", url_str)
+    if "?" not in url_str and "&" in url_str:
+        url_str = url_str.replace("&", "?", 1)
+    url_str = re.sub(r"\?&", "?", url_str).rstrip("?&")
+    return url_str
 
 
 import subprocess
