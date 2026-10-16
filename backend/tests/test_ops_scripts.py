@@ -54,6 +54,19 @@ def test_go_live_halts_on_alembic_check_failure():
     assert "exit 1" in sub, "alembic check xatolik berganda exit 1 chaqirilmagan!"
 
 
+def test_go_live_verifies_backup_with_pg_restore():
+    """go_live.ps1 zaxira olingandan so'ng pg_restore --list orqali yaxlitlikni tekshirishi shart (OF-003)."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    with open(script_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "& pg_dump" in content
+    idx = content.find("& pg_dump")
+    sub = content[idx:idx+800]
+    assert "pg_restore --list" in sub, "pg_restore --list chaqirilmagan!"
+
+
+
 
 def test_powershell_pilot_syntax():
     """ops/pilot.ps1 sintaksisini [scriptblock]::Create orqali tekshirish."""

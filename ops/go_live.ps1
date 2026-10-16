@@ -211,6 +211,14 @@ if ($SkipBackup) {
         exit 1
     }
 
+    # pg_restore --list orqali arxiv katalogi va yaxlitligini tekshirish
+    Log-Message "Zaxira fayli yaxlitligi (pg_restore --list) tekshirilmoqda..." -Phase "BACKUP"
+    & pg_restore --list "$BackupDumpFile" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Log-Error "Zaxira fayli yaxlitligi tekshiruvidan o'tmadi (pg_restore xatosi)! Fayl shikastlangan bo'lishi mumkin." -Phase "BACKUP"
+        exit 1
+    }
+
     $FileHash = (Get-FileHash -Algorithm SHA256 -Path $BackupDumpFile).Hash
     Log-Success "Zaxira muvaffaqiyatli olindi: $BackupDumpFile ($DumpSizeMB MB)" -Phase "BACKUP"
     Log-Message "Zaxira SHA256: $FileHash" -Phase "BACKUP"
