@@ -92,3 +92,9 @@ scraper/scraper_state.json
 scraper/autopilot_v2/quarantine_items.json
 *.lock
 
+# Database backups and dumps
+*.dump
+*.sql
+kinochi_*.dump
+
+
