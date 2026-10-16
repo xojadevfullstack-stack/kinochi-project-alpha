@@ -17,7 +17,7 @@ Ushbu hujjat Kinochi loyihasida TMDb Oltin Kolleksiya (Top 1000 filmlar va 500 s
 - [x] **S7**: `start.bat` menyusiga integratsiya: build seeds, search, enqueue dry-run, enqueue execute (tasdiq so'raladi), seed stats, reset dry-run. (Commit: `755c4a7`)
 - [x] **S8**: `scripts/reset_media.py` kengaytmasi: `seed_candidates` holatlarini yangilash va scraper json fayllarini tozalash (3 ta guard: `--execute`, tasdiqlash, quruq rejim). (Commit: `755c4a7`)
 - [x] **S9**: Avtomatlashtirilgan testlar (TMDb va O'zbek manbalari mock/fixture bilan, 0 ta tashqi tarmoq so'rovi). (Commit: `8890712`)
-- [x] **S10**: Hujjatlashtirish: `docs/SEED_INGESTOR.md` (o'zbek tilida to'liq qo'llanma, parametrlar va pilot reja). (Commit: `c00f9bf`)
+- [x] **S10**: Hujjatlashtirish: `docs/SEED_INGESTOR.md` (o'zbek tilida to'liq qo'llanma, parametrlar va pilot reja). (Commit: `1c04017`)
 
 ## Decisions
 - Production ma'lumotlar bazasiga hech qachon tegmaslik. Barcha testlar va mocklar xavfsiz muhitda bajariladi.
