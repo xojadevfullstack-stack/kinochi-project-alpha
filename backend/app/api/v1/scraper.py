@@ -70,8 +70,8 @@ def require_scraper(admin=Depends(get_current_admin)):
         _init_scraper()
     if not SCRAPER_AVAILABLE:
         raise HTTPException(
-            status_code=503,
-            detail="Parser & Grabber moduli serverda yuklanmadi. Iltimos, server loglarini tekshiring.",
+            status_code=400,
+            detail="Scraper va Grabber jarayonlari bulutda emas, lokal kompyuterda (start_grabber.bat) ishga tushiriladi.",
         )
     return admin
 
@@ -142,15 +142,49 @@ def _ensure_ok(res: Dict[str, Any]) -> Dict[str, Any]:
 # bookkeeping never blocks the event loop.
 
 @router.get("/status", response_model=StatusResponse)
-def get_status(admin=Depends(require_scraper)):
+def get_status(admin=Depends(get_current_admin)):
     """Scraper jarayonining hozirgi holati, progressi va loglarini olish."""
-    return ProcessManager().get_status()
+    if not SCRAPER_AVAILABLE:
+        _init_scraper()
+    if SCRAPER_AVAILABLE and ProcessManager:
+        try:
+            return ProcessManager().get_status()
+        except Exception as e:
+            logger.warning(f"ProcessManager status olishda xatolik: {e}")
+
+    return StatusResponse(
+        is_running=False,
+        task_type="idle",
+        current_action="Tizim kutish rejimida (Scraper worker kutmoqda)",
+        current_item=None,
+        progress={},
+        started_at=None,
+        elapsed_seconds=0,
+        speed_movies_per_min=0.0,
+        bot_status="idle",
+        logs=[],
+        stats={"total": 0, "pending": 0, "completed": 0, "failed": 0},
+        state=None
+    )
 
 
 @router.get("/state")
-def get_scraper_state(admin=Depends(require_scraper)):
+def get_scraper_state(admin=Depends(get_current_admin)):
     """Scraper sahifa xotirasi (checkpoint) va parametrlarini olish."""
-    return StateManager().get_state()
+    if not SCRAPER_AVAILABLE:
+        _init_scraper()
+    if SCRAPER_AVAILABLE and StateManager:
+        try:
+            return StateManager().get_state()
+        except Exception:
+            pass
+    return {
+        "uzmovi_current_page": 1,
+        "uzmovi_total_pages": 1,
+        "asilmedia_current_page": 1,
+        "asilmedia_total_pages": 1,
+        "min_rating": 6.0
+    }
 
 
 @router.post("/state")
@@ -187,27 +221,43 @@ def get_queue(
     status: Optional[str] = Query("all"),
     source: Optional[str] = Query("all"),
     search: Optional[str] = Query(None, max_length=200),
-    admin=Depends(require_scraper),
+    admin=Depends(get_current_admin),
 ):
     """Scraper navbatidagi filmlar va seriallar ro'yxatini olish."""
-    if status and status != "all" and status not in STATUSES:
-        raise HTTPException(status_code=400, detail="Noto'g'ri status filtri")
-    if source and source != "all" and source not in SOURCES:
-        raise HTTPException(status_code=400, detail="Noto'g'ri manba filtri")
+    if not SCRAPER_AVAILABLE:
+        _init_scraper()
+    if SCRAPER_AVAILABLE and QueueManager:
+        try:
+            if status and status != "all" and status not in STATUSES:
+                raise HTTPException(status_code=400, detail="Noto'g'ri status filtri")
+            if source and source != "all" and source not in SOURCES:
+                raise HTTPException(status_code=400, detail="Noto'g'ri manba filtri")
 
-    qm = QueueManager()
-    skip = (page - 1) * page_size
-    items, total_count = qm.get_filtered(status=status, source=source, search=search, skip=skip, limit=page_size)
-    total_pages = max(1, (total_count + page_size - 1) // page_size)
+            qm = QueueManager()
+            skip = (page - 1) * page_size
+            items, total_count = qm.get_filtered(status=status, source=source, search=search, skip=skip, limit=page_size)
+            total_pages = max(1, (total_count + page_size - 1) // page_size)
+
+            return {
+                "items": [item.__dict__ for item in items],
+                "total": total_count,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": total_pages,
+                "stats": qm.stats(),
+            }
+        except Exception as e:
+            logger.warning(f"QueueManager get_queue xatolik: {e}")
 
     return {
-        "items": [item.__dict__ for item in items],
-        "total": total_count,
+        "items": [],
+        "total": 0,
         "page": page,
         "page_size": page_size,
-        "total_pages": total_pages,
-        "stats": qm.stats(),
+        "total_pages": 1,
+        "stats": {"total": 0, "pending": 0, "completed": 0, "failed": 0},
     }
+
 
 
 @router.post("/start-parse")
