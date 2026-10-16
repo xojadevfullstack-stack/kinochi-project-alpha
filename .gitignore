@@ -96,5 +96,11 @@ scraper/autopilot_v2/quarantine_items.json
 *.dump
 *.sql
 kinochi_*.dump
+backups/
+
+# Ops and local secrets
+ops/logs/
+.env.local
+
 
 
