@@ -25,8 +25,6 @@ def upgrade() -> None:
         sa.Column('publish_status', sa.String(length=50), nullable=False, server_default='published')
     )
     op.create_index(op.f('ix_movies_publish_status'), 'movies', ['publish_status'], unique=False)
-    # Kelajakdagi yangi yozuvlar uchun default 'pending' ga o'tkaziladi
-    op.alter_column('movies', 'publish_status', server_default='pending')
 
     # 2. series jadvaliga publish_status ustunini qo'shish
     # server_default='published' orqali mavjud barcha qatorlar 'published' bo'lib qoladi
@@ -35,8 +33,6 @@ def upgrade() -> None:
         sa.Column('publish_status', sa.String(length=50), nullable=False, server_default='published')
     )
     op.create_index(op.f('ix_series_publish_status'), 'series', ['publish_status'], unique=False)
-    # Kelajakdagi yangi yozuvlar uchun default 'pending' ga o'tkaziladi
-    op.alter_column('series', 'publish_status', server_default='pending')
 
 
 def downgrade() -> None:
