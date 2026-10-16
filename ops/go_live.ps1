@@ -111,11 +111,16 @@ function Convert-ToLibpqUrl {
     return $Converted
 }
 
-# Python dasturini aniqlash
-$PythonExe = Join-Path $RepoRoot "backend\.venv\Scripts\python.exe"
+# Python va Alembic dasturlarini aniqlash
+$VenvScripts = Join-Path $RepoRoot "backend\.venv\Scripts"
+if (Test-Path $VenvScripts) {
+    $env:PATH = "$VenvScripts;$env:PATH"
+}
+$PythonExe = Join-Path $VenvScripts "python.exe"
 if (-not (Test-Path $PythonExe)) {
     $PythonExe = "python"
 }
+$env:PYTHONPATH = "$RepoRoot;$BackendDir;$env:PYTHONPATH"
 
 Write-Host "=================================================================" -ForegroundColor Cyan
 Write-Host "          KINOCHI PRODUCTION GO-LIVE VA RESET PROTOKOLI          " -ForegroundColor Cyan

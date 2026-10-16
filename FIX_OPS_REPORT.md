@@ -16,6 +16,8 @@ Holat: Barcha topilmalar (CRITICAL, HIGH, MEDIUM, LOW) to'liq tuzatildi va avtom
 | **OF-004** (MEDIUM) | FIXED | `4f6934b` | `test_ops_scripts.py::test_go_live_accepts_backup_file_with_skip_backup` | Yo'q: Operator oldindan olingan zaxira faylini `-BackupFile` orqali taqdim etishi mumkin. |
 | **OF-005** (LOW) | FIXED | `894d8db` | `test_ops_scripts.py::test_go_live_halts_on_redis_flush_failure` | Past: Redis ulanishi mavjud bo'lmasa, operator aniq `-IgnoreRedisError` kalitini kiritishi lozim. |
 | **OF-006** (LOW) | FIXED | `e170434` | `test_ops_scripts.py::test_go_live_supports_start_phase_parameter` | Minimal: Operator to'g'ri boshlang'ich fazani (`PREFLIGHT`, `BACKUP`, `MIGRATE`, `DEPLOY_GATE`, `RESET`) tanlashi lozim. |
+| **OF-007** (MEDIUM) | FIXED | `7ed582a` | `test_ops_scripts.py::test_to_libpq_url_conversion` | Minimal: libpq URL konvertatsiyasi va xost/Docker backup fallback qo'shildi. |
+| **OF-008** (HIGH) | FIXED | `a71020c` | `test_reset_media_s8.py::test_s8_reset_media_with_wipe_media` | Yo'q: `reset_media.py` da jadvallarni bog'lanish tartibida (child-to-parent) tozalash va mavjud jadvallarni tekshirish ta'minlandi. |
 
 ---
 
@@ -33,7 +35,7 @@ Holat: Barcha topilmalar (CRITICAL, HIGH, MEDIUM, LOW) to'liq tuzatildi va avtom
    - `ops/` katalogidagi barcha fayllar skanerlandi: parol, ulanish URL, token yoki sessiya stringlari logga yoki konsolga chiqmaydi.
    - `.gitignore` da `*.dump`, `backups/`, `ops/logs/`, `.env.local` to'liq kiritilgan va `git ls-files` da kuzatilmaydi.
 5. **Destructive-Path Analysis**:
-   - Hech qanday ma'lumotni o'chirish amali tasdiqlangan zaxira fayli (`pg_restore --list` va hajm > 1MB) hamda operator tasdig'isiz yuritilmaydi.
+   - Hech qanday ma'lumotni o'chirish amali tasdiqlangan zaxira fayli (`pg_restore --list` va hajm tekshiruvi) hamda operator tasdig'isiz yuritilmaydi.
    - `alembic check` yoki migratsiya yiqilganda tozalash bosqichiga yetib bormaydi.
 6. **Test Suite**:
-   - `pytest backend/tests/test_ops_scripts.py backend/tests/test_reset_media_s8.py` -> 24 ta test barchasi muvaffaqiyatli o'tdi (PASSED).
+   - `pytest backend/tests/test_ops_scripts.py backend/tests/test_reset_media_s8.py` -> 29 ta test barchasi muvaffaqiyatli o'tdi (PASSED).
