@@ -114,11 +114,42 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
     return JSONResponse(
         status_code=500,
-        content={"detail": "Serverda kutilmagan xatolik yuz berdi. Bir ozdan so'ng qayta urinib ko'ring."},
+        content={
+            "detail": "Serverda kutilmagan xatolik yuz berdi. Bir ozdan so'ng qayta urinib ko'ring.",
+            "error_type": type(exc).__name__,
+            "error_message": str(exc),
+        },
         headers=headers,
     )
 
 app.add_middleware(SlowAPIMiddleware)
+
+@app.get("/api/v1/diag")
+async def diag():
+    import traceback
+    from app.infrastructure.db.session import async_session_factory
+    from sqlalchemy import text
+    db_status = "unknown"
+    err = None
+    count = -1
+    try:
+        async with async_session_factory() as session:
+            res = await session.execute(text("SELECT count(*) FROM movies"))
+            count = res.scalar()
+            db_status = "connected"
+    except Exception as e:
+        db_status = "error"
+        err = f"{type(e).__name__}: {str(e)}"
+    
+    return {
+        "version": settings.VERSION,
+        "commit": "diag-v1",
+        "db_status": db_status,
+        "movies_count": count,
+        "db_error": err,
+        "database_url_masked": settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "not_set",
+    }
+
 
 # ── Routers ──────────────────────────────────────────────────────
 app.include_router(movies.router, prefix="/api/v1")
