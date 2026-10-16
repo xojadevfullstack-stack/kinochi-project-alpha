@@ -473,6 +473,25 @@ async def record_rejection(
         )
         session.add(item)
 
+    # S6: Agar bu element seed nomzodi bo'lsa, gate rad etganda seed_candidates.status='skipped' qilinadi
+    tmdb_id = (payload or {}).get("tmdb_id")
+    if not tmdb_id and source_key.startswith("tmdb:"):
+        parts = source_key.split(":")
+        if len(parts) >= 3 and parts[2].isdigit():
+            tmdb_id = int(parts[2])
+
+    if tmdb_id:
+        try:
+            from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
+            stmt_cand = select(SeedCandidateModel).where(SeedCandidateModel.tmdb_id == tmdb_id)
+            cand_res = await session.execute(stmt_cand)
+            cand = cand_res.scalar_one_or_none()
+            if cand and cand.status not in ("ingested", "skipped"):
+                cand.status = "skipped"
+                cand.updated_at = func.now()
+        except Exception as e:
+            logger.debug(f"SeedCandidate holatini 'skipped' ga yangilashda xatolik: {e}")
+
     await session.flush()
     return item
 
@@ -535,6 +554,20 @@ async def promote_to_published(
 
     if source and source_key:
         await resolve_rejection(session, source, source_key)
+
+    # S6: Agar ushbu media TMDb seed nomzodi bo'lsa, holatini 'ingested' ga o'tkazamiz
+    tmdb_id = getattr(media_obj, "tmdb_id", None)
+    if tmdb_id:
+        try:
+            from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
+            stmt_cand = select(SeedCandidateModel).where(SeedCandidateModel.tmdb_id == tmdb_id)
+            cand_res = await session.execute(stmt_cand)
+            cand = cand_res.scalar_one_or_none()
+            if cand and cand.status != "ingested":
+                cand.status = "ingested"
+                cand.updated_at = func.now()
+        except Exception as e:
+            logger.debug(f"SeedCandidate holatini 'ingested' ga yangilashda xatolik: {e}")
 
     logger.info(f"Admission Gate: {type(media_obj).__name__} (ID: {getattr(media_obj, 'id', None)}) publish_status='published' ga o'tkazildi.")
     return True
