@@ -297,3 +297,41 @@ async def test_reset_media_on_branch_guards_and_execution(pg_session_factory, tm
 
         cand_db = (await session.execute(select(SeedCandidateModel).where(SeedCandidateModel.tmdb_id == 99990009))).scalar_one()
         assert cand_db.status == "new", "seed_candidates holati 'new' ga qaytishi kerak!"
+
+
+@skip_no_test_db
+@pytest.mark.asyncio
+async def test_raw_insert_without_publish_status_defaults_to_pending(pg_session_factory):
+    """
+    publish_status ustunisiz to'g'ridan-to'g'ri raw INSERT (SQL) bajarilganda
+    bazaning server_default darajasida 'pending' qiymati avtomatik o'rnatilishi tekshiriladi.
+    """
+    async with pg_session_factory() as session:
+        # 1. movies jadvaliga raw INSERT
+        await session.execute(text("""
+            INSERT INTO movies (title, code, created_at, updated_at)
+            VALUES ('Raw Insert Test Movie', 'RAW001', now(), now())
+        """))
+        await session.commit()
+
+        # Tekshirish
+        res_m = await session.execute(text("""
+            SELECT publish_status FROM movies WHERE code = 'RAW001'
+        """))
+        status_m = res_m.scalar()
+        assert status_m == "pending", f"movies uchun server_default 'pending' bo'lishi kerak, ammo '{status_m}'"
+
+        # 2. series jadvaliga raw INSERT
+        await session.execute(text("""
+            INSERT INTO series (title, status, created_at, updated_at)
+            VALUES ('Raw Insert Test Series', 'ongoing', now(), now())
+        """))
+        await session.commit()
+
+        # Tekshirish
+        res_s = await session.execute(text("""
+            SELECT publish_status FROM series WHERE title = 'Raw Insert Test Series'
+        """))
+        status_s = res_s.scalar()
+        assert status_s == "pending", f"series uchun server_default 'pending' bo'lishi kerak, ammo '{status_s}'"
+
