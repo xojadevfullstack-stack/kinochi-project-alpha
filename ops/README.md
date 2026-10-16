@@ -38,12 +38,17 @@ Haqiqiy Go-Live jarayonini ishga tushiring:
 ```powershell
 .\ops\go_live.ps1 -UrlEnvVar DATABASE_URL
 ```
+
+> [!WARNING]
+> `scripts/reset_media.py` skriptini hech qachon qo'lda, eski bayroqlar bilan to'g'ridan-to'g'ri ishga tushirmang!
+> Yangi tozalash mexanizmi `--wipe-media` bayrog'ini talab etadi va faqat `ops/go_live.ps1` orqali to'liq zaxira olingandan so'ng xavfsiz tartibda chaqirilishi shart. Qo'lda bajarilgan reset zaxira kafolatini yo'qotishi mumkin.
+
 Jarayon fazalari:
-- **Preflight**: Disk va DB ulanishini tekshiradi.
-- **Backup**: `backups/kinochi_pre_reset_<timestamp>.dump` fayliga to'liq zaxira oladi (hajm > 1MB va SHA256 tekshiriladi).
-- **Migrate**: `alembic upgrade head` ni ishga tushirib, `e8f9a0b1c2d3` versiyasiga ko'taradi va yangi yozuvlar uchun `publish_status='pending'` qiladi.
-- **Deploy Gate**: Backendda SEED_GATE_MODE faolligini bildiradi.
-- **Reset**: Foydalanuvchilar va kanallarni saqlab, faqat media jadvallarini (`movies`, `series`, `episodes`) tozalaydi hamda Redis `cache:*` kalitlarini o'chiradi.
+- **Preflight**: Disk va DB ulanishini tekshiradi (xost yoki Docker orqali pg_dump mavjudligini tasdiqlaydi).
+- **Backup**: `backups/kinochi_pre_reset_<timestamp>.dump` fayliga to'liq zaxira oladi, `pg_restore --list` orqali arxiv katalogi yaxlitligini tekshiradi va SHA256 qayd etadi.
+- **Migrate**: `alembic upgrade head` ni ishga tushirib, `e8f9a0b1c2d3` versiyasiga ko'taradi va yangi yozuvlar uchun `publish_status='pending'` qiladi. Agar model va baza orasida tafovut aniqlansa, jarayon to'xtatiladi (zarur bo'lsa `-IgnoreAlembicCheck` orqali o'tish mumkin).
+- **Deploy Gate**: Backendda SEED_GATE_MODE faolligini bildiradi va operator tasdig'ini (`DEPLOYED`) oladi.
+- **Reset**: Foydalanuvchilar va kanallarni saqlab, `scripts/reset_media.py --wipe-media` orqali barcha media jadvallarini (`movies`, `series`, `episodes`, `reports`, `reviews`, `watch_history`, `rejected_items`) 0 ga tushiradi hamda Redis `cache:*` kalitlarini tozalaydi.
 - **Final**: Natijaviy hisobot jadvalini chiqaradi.
 
 ### 4-bosqich: TMDb Seed Ingestor Pilot Ishga Tushirish
