@@ -72,10 +72,30 @@ from app.core.seed_config import (
 )
 from scraper.queue_manager import QueueManager, QueueItem
 from scraper.title_cleaner import clean_scraped_title
+import re
 from scraper.duplicate_checker import extract_part_number, to_slug, to_stem_slug
 from scraper.site_search import search_sites
 
 logger = logging.getLogger(__name__)
+
+
+def extract_tmdb_ids_from_url(url: Optional[str]) -> set[int]:
+    """
+    URL ichidan alohida raqamli identifikatorlarni (masalan TMDb ID) ajratib oladi.
+    TMDb yo'llari (/movie/123, /tv/123, tmdb:123) va alohida raqamli segmentlarni
+    ajratadi. '155' hech qachon '71550' kabi boshqa raqamning ichki qismi
+    sifatida olinmaydi.
+    """
+    if not url:
+        return set()
+    found: set[int] = set()
+    for m in re.finditer(r'(?:/(?:movie|tv)/|tmdb:(?:(?:movie|tv):)?|^tmdb:)(\d+)', url, re.IGNORECASE):
+        found.add(int(m.group(1)))
+    for seg in re.split(r'[/_?&=#\-]', url):
+        seg_clean = re.sub(r'\.(html|htm|php|json)$', '', seg, flags=re.IGNORECASE)
+        if seg_clean.isdigit():
+            found.add(int(seg_clean))
+    return found
 
 
 # ── Moslikni tekshirish mexanizmi (3-qismli qat'iy qoida) ──
@@ -180,16 +200,41 @@ class TmdbTopIngestor:
                 return True, "Allaqachon series jadvalida mavjud"
 
         # 2. Blacklist da bormi?
-        bl_conditions = [BlacklistModel.url.ilike(f"%{tmdb_id}%")]
+        # A) Agar BlacklistModel da tmdb_id ustuni mavjud bo'lsa
+        if hasattr(BlacklistModel, "tmdb_id"):
+            bl_tmdb = await session.execute(
+                select(BlacklistModel.id).where(getattr(BlacklistModel, "tmdb_id") == tmdb_id).limit(1)
+            )
+            if bl_tmdb.scalar_one_or_none():
+                return True, "Qora ro'yxatda (blacklist) mavjud (tmdb_id bo'yicha)"
+
+        # B) Aniq normallashtirilgan sarlavha tengligi (exact normalized-title equality)
         clean_title = (title or "").strip()
         if clean_title:
-            bl_conditions.append(BlacklistModel.title.ilike(f"%{clean_title}%"))
+            cand_slug = to_slug(clean_title)
+            bl_exact = await session.execute(
+                select(BlacklistModel.id).where(
+                    func.lower(func.trim(BlacklistModel.title)) == clean_title.lower()
+                ).limit(1)
+            )
+            if bl_exact.scalar_one_or_none():
+                return True, "Qora ro'yxatda (blacklist) mavjud (aniq nomi bo'yicha)"
 
-        bl_res = await session.execute(
-            select(BlacklistModel.id).where(or_(*bl_conditions)).limit(1)
+            if cand_slug:
+                all_bl_titles = await session.execute(
+                    select(BlacklistModel.title).where(BlacklistModel.title.isnot(None))
+                )
+                for (bl_t,) in all_bl_titles.all():
+                    if bl_t and to_slug(bl_t) == cand_slug:
+                        return True, "Qora ro'yxatda (blacklist) mavjud (normallashtirilgan slug bo'yicha)"
+
+        # C) URL bo'yicha exact id match (no '%id%')
+        all_bl_urls = await session.execute(
+            select(BlacklistModel.url).where(BlacklistModel.url.isnot(None))
         )
-        if bl_res.scalar_one_or_none():
-            return True, "Qora ro'yxatda (blacklist) mavjud"
+        for (bl_u,) in all_bl_urls.all():
+            if bl_u and tmdb_id in extract_tmdb_ids_from_url(bl_u):
+                return True, "Qora ro'yxatda (blacklist) mavjud (URL dagi aniq identifikator bo'yicha)"
 
         # 3. RejectedItems da rad etilgan yoki bloklanganmi?
         rej_key = f"tmdb:{kind}:{tmdb_id}"
