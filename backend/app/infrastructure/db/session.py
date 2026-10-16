@@ -30,7 +30,7 @@ socket.getaddrinfo = _ipv4_only_getaddrinfo
 logging.info("CHECKPOINT 5b: DB engine yaratilmoqda")
 import re
 
-db_url = settings.DATABASE_URL
+db_url = re.sub(r"\s+", "", str(settings.DATABASE_URL))
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 elif db_url.startswith("postgresql://"):

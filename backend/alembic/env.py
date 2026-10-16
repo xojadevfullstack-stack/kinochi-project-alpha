@@ -28,6 +28,7 @@ config = context.config
 # Override sqlalchemy.url with runtime settings
 import re
 runtime_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL
+runtime_url = re.sub(r"\s+", "", str(runtime_url))
 if "-pooler." in runtime_url:
     runtime_url = runtime_url.replace("-pooler.", ".")
 if runtime_url.startswith("postgres://"):

@@ -25,11 +25,12 @@ class Settings(BaseSettings):
     @classmethod
     def validate_database_url(cls, v: str) -> str:
         if v:
+            import re
+            v = re.sub(r"\s+", "", str(v))
             if v.startswith("postgres://"):
                 v = v.replace("postgres://", "postgresql+asyncpg://", 1)
             elif v.startswith("postgresql://"):
                 v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-            import re
             v = re.sub(r"([?&])sslmode=([a-zA-Z0-9_-]+)", r"\1ssl=\2", v)
             v = re.sub(r"[?&]channel_binding=[^&]+", "", v)
             v = re.sub(r"[?&]gssencmode=[^&]+", "", v)
