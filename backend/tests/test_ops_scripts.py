@@ -87,6 +87,16 @@ def test_go_live_halts_on_redis_flush_failure():
     assert "exit 1" in sub, "redis_flush_cache xatolik berganda exit 1 chaqirilmagan!"
 
 
+def test_go_live_supports_start_phase_parameter():
+    """go_live.ps1 -StartPhase parametrini qabul qilishi shart (OF-006)."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    with open(script_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "[string]$StartPhase" in content, "StartPhase parametri e'lon qilinmagan!"
+
+
+
 
 
 
