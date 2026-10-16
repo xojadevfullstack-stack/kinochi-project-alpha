@@ -44,8 +44,8 @@ def normalize_async_url(url_str: str) -> str:
     if url_str.startswith("postgres://"):
         return url_str.replace("postgres://", "postgresql+asyncpg://", 1)
     if url_str.startswith("postgresql://"):
-        return url_str.replace("postgresql://", "postgresql+asyncpg://", 1)
-    return url_str
+        return url_str.replace("postgresql://", "postgresql+asyncpg://", 1).replace("sslmode=", "ssl=")
+    return url_str.replace("sslmode=", "ssl=")
 
 
 import subprocess

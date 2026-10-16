@@ -31,6 +31,7 @@ if "-pooler." in runtime_url:
     runtime_url = runtime_url.replace("-pooler.", ".")
 if runtime_url.startswith("postgresql://"):
     runtime_url = runtime_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+runtime_url = runtime_url.replace("sslmode=", "ssl=")
 config.set_main_option("sqlalchemy.url", runtime_url)
 
 # Logging setup

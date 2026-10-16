@@ -379,6 +379,7 @@ if ($StartPhaseNum -le 3) {
             if ($DirectDbUrl -match "^postgres(?:ql)?://") {
                 $DirectDbUrl = $DirectDbUrl -replace "^postgres(?:ql)?://", "postgresql+asyncpg://"
             }
+            $DirectDbUrl = $DirectDbUrl -replace "([?&])sslmode=", '$1ssl='
             $env:DATABASE_URL = $DirectDbUrl
 
             # alembic heads
@@ -497,7 +498,7 @@ if ($StartPhaseNum -le 5) {
 
         # E.1. Saqlanadigan jadvallar bazasini yozib olish
         Log-Message "Qatorlar soni saqlanmoqda: $BaselineCountsPath" -Phase "RESET"
-        $env:DATABASE_URL = $TargetDbUrl
+        $env:DATABASE_URL = $DirectDbUrl
         & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --save-baseline "$BaselineCountsPath"
         if ($LASTEXITCODE -ne 0) {
             Log-Error "Baseline qatorlar sonini saqlashda xatolik yuz berdi!" -Phase "RESET"
