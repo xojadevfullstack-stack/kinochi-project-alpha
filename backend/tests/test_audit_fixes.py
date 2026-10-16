@@ -30,3 +30,35 @@ def test_sf_001_adversarial_matcher_no_substring_false_positive():
         scraped_url="https://uzmovi.tv/103-avatar.html",
     )
     assert matched2 is False, f"Avatar 2 (subtitle) va Avatar (no year) mos kelmasligi kerak! Sabab: {reason2}"
+
+
+@pytest.mark.asyncio
+async def test_sf_002_empty_title_blacklist_does_not_match_all(setup_test_db, engine):
+    """
+    SF-002: Sarlavha bo'sh bo'lganda (title="") BlacklistModel dagi ixtiyoriy elementga
+    LIKE '%%' orqali mos kelib, nomzodni asossiz rad etilishini oldini olish.
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+    from app.infrastructure.db.models.blacklist import BlacklistModel
+    from scraper.tmdb_top_ingestor import TmdbTopIngestor
+
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with session_factory() as session:
+        # Qora ro'yxatga bitta film qo'shamiz
+        banned = BlacklistModel(title="Zararli Film", url="https://example.com/banned/999")
+        session.add(banned)
+        await session.commit()
+
+        ingestor = TmdbTopIngestor()
+
+        # tmdb_id = 777777, title = "" (bo'sh satr)
+        already_in, reason = await ingestor.is_candidate_already_in_system(
+            session=session,
+            kind="movie",
+            tmdb_id=777777,
+            title="",
+        )
+
+        assert already_in is False, f"Bo'sh sarlavha qora ro'yxatga mos kelmasligi kerak! Sabab: {reason}"
+

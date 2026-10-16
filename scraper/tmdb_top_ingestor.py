@@ -168,13 +168,13 @@ class TmdbTopIngestor:
                 return True, "Allaqachon series jadvalida mavjud"
 
         # 2. Blacklist da bormi?
+        bl_conditions = [BlacklistModel.url.ilike(f"%{tmdb_id}%")]
+        clean_title = (title or "").strip()
+        if clean_title:
+            bl_conditions.append(BlacklistModel.title.ilike(f"%{clean_title}%"))
+
         bl_res = await session.execute(
-            select(BlacklistModel.id).where(
-                or_(
-                    BlacklistModel.title.ilike(f"%{title}%"),
-                    BlacklistModel.url.ilike(f"%{tmdb_id}%")
-                )
-            ).limit(1)
+            select(BlacklistModel.id).where(or_(*bl_conditions)).limit(1)
         )
         if bl_res.scalar_one_or_none():
             return True, "Qora ro'yxatda (blacklist) mavjud"
