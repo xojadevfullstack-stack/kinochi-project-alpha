@@ -17,8 +17,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('reports', sa.Column('telegram_user_id', sa.BigInteger(), nullable=True))
-    op.create_index(op.f('ix_reports_telegram_user_id'), 'reports', ['telegram_user_id'], unique=False)
+    conn = op.get_bind()
+    has_reports = conn.execute(sa.text("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'reports')")).scalar()
+    if has_reports:
+        op.execute("""
+            DO $$ BEGIN
+                ALTER TABLE reports ADD COLUMN IF NOT EXISTS telegram_user_id BIGINT;
+            EXCEPTION WHEN others THEN NULL;
+            END $$;
+        """)
+        op.execute("CREATE INDEX IF NOT EXISTS ix_reports_telegram_user_id ON reports (telegram_user_id)")
 
 
 def downgrade() -> None:

@@ -19,6 +19,9 @@ param (
     [switch]$SkipBackup,
 
     [Parameter(Mandatory = $false)]
+    [switch]$RehearsalAutoConfirm,
+
+    [Parameter(Mandatory = $false)]
     [switch]$IgnoreRedisError,
 
     [Parameter(Mandatory = $false)]
@@ -95,6 +98,16 @@ function Get-DbHostName {
     }
 }
 
+function Convert-ToLibpqUrl {
+    param([string]$RawUrl)
+    if ([string]::IsNullOrWhiteSpace($RawUrl)) { return "" }
+    $Converted = $RawUrl -replace "^postgres(?:ql)?\+[a-zA-Z0-9_]+://", "postgresql://"
+    $Converted = $Converted -replace "^postgres://", "postgresql://"
+    $Converted = $Converted -replace "([?&])ssl=([a-zA-Z0-9_-]+)", '$1sslmode=$2'
+    $Converted = $Converted -replace "([?&])sslmode=true", '$1sslmode=require'
+    return $Converted
+}
+
 # Python dasturini aniqlash
 $PythonExe = Join-Path $RepoRoot "backend\.venv\Scripts\python.exe"
 if (-not (Test-Path $PythonExe)) {
@@ -114,6 +127,15 @@ if ([string]::IsNullOrWhiteSpace($TargetDbUrl)) {
 }
 $DbHost = Get-DbHostName -RawUrl $TargetDbUrl
 Log-Message -Message "Nishon DB Xosti: $DbHost (Muhit: $UrlEnvVar)" -Phase "INIT"
+
+# Rehearsal auto-confirm faqat localhost yoki 127.0.0.1 uchun ruxsat etiladi
+if ($RehearsalAutoConfirm) {
+    if ($DbHost -ne "localhost" -and $DbHost -ne "127.0.0.1") {
+        Log-Error "-RehearsalAutoConfirm faqat localhost yoki 127.0.0.1 xosti uchun ruxsat etilgan! Joriy xost: $DbHost" -Phase "INIT"
+        exit 1
+    }
+    Log-Warn "-RehearsalAutoConfirm faollashtirildi (faqat mahalliy sinov bazasi: $DbHost uchun)." -Phase "INIT"
+}
 
 if ($DryRun) {
     Log-Warn "DIQQAT: -DryRun rejimi faol. Hech qanday ma'lumot o'zgartirilmaydi." -Phase "INIT"
@@ -193,7 +215,7 @@ if ($StartPhaseNum -le 1) {
         $PrevEnv = $env:DATABASE_URL
         try {
             $env:DATABASE_URL = $TargetDbUrl
-            & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar
+            & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --allow-empty
             if ($LASTEXITCODE -ne 0) {
                 Log-Error "DB preflight tekshiruvi muvaffaqiyatsiz tugadi (kod: $LASTEXITCODE)!" -Phase "PREFLIGHT"
                 exit 1
@@ -237,8 +259,9 @@ if ($StartPhaseNum -le 2) {
         $BackupDumpFile = "SIMULATED_BACKUP"
     } else {
         Log-Message "pg_dump orqali zaxira olinmoqda..." -Phase "BACKUP"
+        $LibpqDbUrl = Convert-ToLibpqUrl -RawUrl $TargetDbUrl
         # Maxfiy URL ni faqat native process argumentida beramiz, konsol/logga chiqarmaymiz
-        & pg_dump -Fc --no-owner --dbname "$TargetDbUrl" -f "$BackupDumpFile"
+        & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile"
         if ($LASTEXITCODE -ne 0 -or (-not (Test-Path $BackupDumpFile))) {
             Log-Error "pg_dump xatolik bilan tugadi yoki fayl yaratilmadi!" -Phase "BACKUP"
             exit 1
@@ -346,6 +369,19 @@ if ($StartPhaseNum -le 4) {
     } catch {
         Log-Message "Mahalliy backend (port 8000) hozir ishlamayapti (masofaviy server tekshirilishi kerak)." -Phase "DEPLOY_GATE"
     }
+
+    # Gate deploy qilinganini tasdiqlash
+    if (-not $DryRun) {
+        if ($RehearsalAutoConfirm) {
+            Log-Message "[RehearsalAutoConfirm] DEPLOYED avtomatik tasdiqlandi." -Phase "DEPLOY_GATE"
+        } else {
+            $TypedGate = Read-Host "Davom etishdan oldin backend SEED_GATE_MODE bilan yangilanganini tasdiqlang ('DEPLOYED' deb yozing)"
+            if ($TypedGate -ne "DEPLOYED") {
+                Log-Error "Tasdiqlash kodi noto'g'ri kiritildi ('$TypedGate'). Jarayon to'xtatildi!" -Phase "DEPLOY_GATE"
+                exit 1
+            }
+        }
+    }
 } else {
     Log-Message "DEPLOY_GATE fazasi o'tkazib yuborildi (-StartPhase $StartPhase)" -Phase "DEPLOY_GATE"
 }
@@ -365,6 +401,17 @@ if ($StartPhaseNum -le 5) {
         if (-not $BackupDumpFile -or (-not (Test-Path $BackupDumpFile))) {
             Log-Error "Tozalashni boshlashdan oldin haqiqiy zaxira fayli mavjud bo'lishi shart!" -Phase "RESET"
             exit 1
+        }
+
+        # E.0. Media tozalashni tasdiqlash
+        if ($RehearsalAutoConfirm) {
+            Log-Message "[RehearsalAutoConfirm] WIPE-MEDIA avtomatik tasdiqlandi." -Phase "RESET"
+        } else {
+            $TypedReset = Read-Host "Media jadvallarini tozalashni tasdiqlash uchun 'WIPE-MEDIA' deb yozing"
+            if ($TypedReset -ne "WIPE-MEDIA") {
+                Log-Error "Tasdiqlash kodi noto'g'ri kiritildi ('$TypedReset'). Jarayon to'xtatildi!" -Phase "RESET"
+                exit 1
+            }
         }
 
         # E.1. Saqlanadigan jadvallar bazasini yozib olish

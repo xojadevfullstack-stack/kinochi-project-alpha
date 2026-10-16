@@ -48,6 +48,21 @@ def normalize_async_url(url_str: str) -> str:
     return url_str
 
 
+def to_libpq_url(url_str: str) -> str:
+    """SQLAlchemy/asyncpg URL ni libpq/pg_dump/pg_restore formatiga o'tkazadi."""
+    if not url_str:
+        return ""
+    import re
+    # 1. postgresql+asyncpg:// -> postgresql://
+    converted = re.sub(r"^postgres(?:ql)?\+[a-zA-Z0-9_]+://", "postgresql://", url_str)
+    # 2. postgres:// -> postgresql://
+    converted = re.sub(r"^postgres://", "postgresql://", converted)
+    # 3. ssl=... parametrini sslmode=... ga o'tkazish
+    converted = re.sub(r"([?&])ssl=([a-zA-Z0-9_-]+)", r"\1sslmode=\2", converted)
+    converted = re.sub(r"([?&])sslmode=true", r"\1sslmode=require", converted)
+    return converted
+
+
 PRESERVED_TABLES = [
     "users",
     "admin_users",
@@ -83,6 +98,7 @@ async def run_db_checks(
     check_zero_media: bool = False,
     baseline_file: Optional[str] = None,
     output_json: bool = False,
+    allow_empty: bool = False,
 ) -> Dict[str, Any]:
     url_str = os.environ.get(env_var_name)
     host_name = get_sanitized_host(url_str)
@@ -126,7 +142,16 @@ async def run_db_checks(
                         f"alembic_version kutilgan '{expected_alembic}' emas, hozirgi: '{results['alembic_version']}'"
                     )
             except Exception as e:
-                results["issues"].append(f"alembic_version jadvali tekshirilmadi: {e}")
+                if allow_empty:
+                    results["is_empty_db"] = True
+                    results["alembic_version"] = None
+                else:
+                    results["issues"].append(f"alembic_version jadvali tekshirilmadi: {e}")
+
+            # Agar bo'sh baza bo'lsa va allow_empty faol bo'lsa, qolgan tekshiruvlarni o'tkazib yuboramiz
+            if results.get("is_empty_db"):
+                results["ok"] = len(results["issues"]) == 0
+                return results
 
             # 2. publish_status ustunining default qiymatini tekshirish
             for tbl in ["movies", "series"]:
@@ -223,6 +248,8 @@ def main():
                         help="Hozirgi qatorlar sonini json faylga saqlash")
     parser.add_argument("--check-preserved-counts", "--baseline-file", dest="baseline_file", type=str, default=None,
                         help="Saqlangan qatorlar soni bilan solishtirish (kamaymaganligini tasdiqlash)")
+    parser.add_argument("--allow-empty", action="store_true",
+                        help="Bo'sh bazada alembic_version yo'qligiga ruxsat berish")
     parser.add_argument("--json", action="store_true", help="JSON formatida chiqarish")
 
     args = parser.parse_args()
@@ -235,6 +262,7 @@ def main():
             check_zero_media=args.check_zero_media,
             baseline_file=args.baseline_file,
             output_json=args.json,
+            allow_empty=args.allow_empty,
         )
     )
 

@@ -54,8 +54,13 @@ def upgrade() -> None:
         )
     """)
 
-    # series indekslari — IF NOT EXISTS bilan xavfsiz
-    op.execute("CREATE INDEX IF NOT EXISTS ix_series_source_id ON series (source_id)")
+    # series indekslari — IF NOT EXISTS va EXCEPTION bilan xavfsiz
+    op.execute("""
+        DO $$ BEGIN
+            CREATE INDEX IF NOT EXISTS ix_series_source_id ON series (source_id);
+        EXCEPTION WHEN others THEN NULL;
+        END $$;
+    """)
 
     op.execute("""
         DO $$ BEGIN
@@ -65,9 +70,14 @@ def upgrade() -> None:
         END $$;
     """)
 
-    op.execute("CREATE INDEX IF NOT EXISTS ix_series_sources_chat_id ON series_sources (chat_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_series_sources_id ON series_sources (id)")
-    op.execute("CREATE INDEX IF NOT EXISTS ix_series_sources_topic_id ON series_sources (topic_id)")
+    op.execute("""
+        DO $$ BEGIN
+            CREATE INDEX IF NOT EXISTS ix_series_sources_chat_id ON series_sources (chat_id);
+            CREATE INDEX IF NOT EXISTS ix_series_sources_id ON series_sources (id);
+            CREATE INDEX IF NOT EXISTS ix_series_sources_topic_id ON series_sources (topic_id);
+        EXCEPTION WHEN others THEN NULL;
+        END $$;
+    """)
     # ### end Alembic commands ###
 
 

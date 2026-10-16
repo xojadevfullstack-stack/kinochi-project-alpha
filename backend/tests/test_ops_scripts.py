@@ -345,3 +345,54 @@ def test_telegram_session_creation_mock():
     mock_client.send_code_request.assert_called_once_with("+998901234567")
     mock_client.sign_in.assert_called_once_with("+998901234567", "12345")
     mock_client.disconnect.assert_called_once()
+
+
+def test_to_libpq_url_conversion():
+    """to_libpq_url funksiyasi SQLAlchemy URL larni libpq/pg_dump formatiga o'tkazishi shart."""
+    from ops.db_checks import to_libpq_url
+
+    # asyncpg sxemasini olib tashlash
+    url1 = "postgresql+asyncpg://myuser:mypassword@db.example.com:5432/mydb"
+    assert to_libpq_url(url1) == "postgresql://myuser:mypassword@db.example.com:5432/mydb"
+
+    # ssl=require -> sslmode=require
+    url2 = "postgresql+asyncpg://myuser:mypassword@db.example.com:5432/mydb?ssl=require"
+    assert to_libpq_url(url2) == "postgresql://myuser:mypassword@db.example.com:5432/mydb?sslmode=require"
+
+    # ssl=true -> sslmode=require
+    url3 = "postgresql+asyncpg://myuser:mypassword@db.example.com:5432/mydb?ssl=true"
+    assert to_libpq_url(url3) == "postgresql://myuser:mypassword@db.example.com:5432/mydb?sslmode=require"
+
+    # postgres:// -> postgresql://
+    url4 = "postgres://myuser:mypassword@localhost:5433/mydb"
+    assert to_libpq_url(url4) == "postgresql://myuser:mypassword@localhost:5433/mydb"
+
+
+def test_go_live_rehearsal_auto_confirm_refuses_non_localhost():
+    """go_live.ps1 -RehearsalAutoConfirm berilganda, agar DB xosti localhost bo'lmasa, qat'iy rad etishi kerak."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    cmd = [
+        "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+        f"& {{ $env:MOCK_REMOTE_URL = 'postgresql+asyncpg://u:p@remote-production.db:5432/kinochi'; & '{script_path}' -UrlEnvVar MOCK_REMOTE_URL -RehearsalAutoConfirm -DryRun; exit $LASTEXITCODE }}"
+    ]
+    proc = subprocess.run(cmd, text=True, capture_output=True)
+    assert proc.returncode != 0
+    assert "RehearsalAutoConfirm faqat localhost yoki 127.0.0.1" in proc.stdout or "RehearsalAutoConfirm faqat localhost yoki 127.0.0.1" in proc.stderr
+
+
+@pytest.mark.asyncio
+async def test_db_checks_allow_empty_database():
+    """db_checks.py bo'sh bazada (--allow-empty) alembic_version yo'qligini xato deb hisoblamasligi kerak."""
+    mock_session = AsyncMock()
+    # alembic_version jadvali yo'q deb xato berishini simulyatsiya qilish
+    mock_session.execute.side_effect = Exception('relation "alembic_version" does not exist')
+
+    with patch.dict(os.environ, {"DUMMY_URL_ENV": "postgresql+asyncpg://u:p@localhost:5432/kinochi_empty"}):
+        with patch("ops.db_checks.async_sessionmaker") as mock_sm:
+            mock_sm.return_value.__aenter__.return_value = mock_session
+            res = await run_db_checks(env_var_name="DUMMY_URL_ENV", expected_alembic=None, allow_empty=True)
+            # allow_empty=True bo'lganda bu xato bo'lmasligi kerak
+            assert res["ok"] is True
+            assert res["alembic_version"] is None
+
+
