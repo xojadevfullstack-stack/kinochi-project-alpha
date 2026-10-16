@@ -612,7 +612,7 @@ class TmdbTopIngestor:
                 .where(RejectedItemModel.source == "tmdb_seed")
                 .group_by(RejectedItemModel.defects)
             )
-            rejection_counts = dict(rej_q.all())
+            rejection_counts = {str(k): v for k, v in rej_q.all()}
 
         total = sum(status_counts.values())
         print("\n" + "=" * 65)
