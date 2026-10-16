@@ -252,7 +252,8 @@ if ($DryRun) {
         Log-Message "Alembic modellar sinxronligini tekshirish (alembic check)..." -Phase "MIGRATE"
         & alembic check
         if ($LASTEXITCODE -ne 0) {
-            Log-Warn "Alembic check model va baza o'rtasida farq aniqladi (yoki ogohlantirish berdi)." -Phase "MIGRATE"
+            Log-Error "Alembic check model va baza o'rtasida farq aniqladi! Yangi migratsiya talab etiladi." -Phase "MIGRATE"
+            exit 1
         }
 
         # db_checks orqali tasdiqlash

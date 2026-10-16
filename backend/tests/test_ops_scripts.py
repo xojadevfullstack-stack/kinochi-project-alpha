@@ -42,6 +42,19 @@ def test_powershell_go_live_syntax():
     assert proc.returncode == 0, f"go_live.ps1 sintaksisida xatolik: {proc.stderr}"
 
 
+def test_go_live_halts_on_alembic_check_failure():
+    """go_live.ps1 alembic check xato (diff) berganda exit 1 bilan to'xtashi shart (OF-002)."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    with open(script_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "& alembic check" in content
+    idx = content.find("& alembic check")
+    sub = content[idx:idx+250]
+    assert "exit 1" in sub, "alembic check xatolik berganda exit 1 chaqirilmagan!"
+
+
+
 def test_powershell_pilot_syntax():
     """ops/pilot.ps1 sintaksisini [scriptblock]::Create orqali tekshirish."""
     script_path = os.path.join(ROOT_DIR, "ops", "pilot.ps1")
