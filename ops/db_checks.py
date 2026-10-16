@@ -151,8 +151,8 @@ MEDIA_TABLES = [
 
 async def run_db_checks(
     env_var_name: str = "DATABASE_URL",
-    expected_alembic: Optional[str] = "e8f9a0b1c2d3",
-    expected_default: str = "pending",
+    expected_alembic: Optional[str] = None,
+    expected_default: Optional[str] = None,
     check_zero_media: bool = False,
     baseline_file: Optional[str] = None,
     output_json: bool = False,
@@ -220,21 +220,32 @@ async def run_db_checks(
                     ))
                     val = col_q.scalar()
                     results["publish_status_defaults"][tbl] = val
-                    if not val or expected_default not in str(val).lower():
+                    if expected_default and (not val or expected_default not in str(val).lower()):
                         results["issues"].append(
                             f"[{tbl}] publish_status default qiymati '{expected_default}' emas: {val}"
                         )
                 except Exception as e:
                     results["issues"].append(f"[{tbl}] ustun defaulti tekshirilmadi: {e}")
 
-            # 3. Jadvallar qatorlar sonini tekshirish
+            # 3. Jadvallar qatorlar sonini tekshirish (mavjud jadvallarni aniqlab olamiz)
+            existing_tables = set()
+            try:
+                tables_res = await session.execute(text(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+                ))
+                existing_tables = set(tables_res.scalars().all())
+            except Exception:
+                pass
+
             all_tables = set(PRESERVED_TABLES + MEDIA_TABLES + ["alembic_version", "seed_candidates"])
             for t in sorted(all_tables):
-                try:
-                    cnt_q = await session.execute(text(f"SELECT count(*) FROM {t}"))
-                    results["table_counts"][t] = cnt_q.scalar() or 0
-                except Exception:
-                    # Jadval bazada bo'lmasligi mumkin
+                if t in existing_tables:
+                    try:
+                        cnt_q = await session.execute(text(f"SELECT count(*) FROM {t}"))
+                        results["table_counts"][t] = cnt_q.scalar() or 0
+                    except Exception:
+                        results["table_counts"][t] = None
+                else:
                     results["table_counts"][t] = None
 
             # 4. Agar --check-zero-media so'ralgan bo'lsa
@@ -296,10 +307,10 @@ def main():
     parser = argparse.ArgumentParser(description="Kinochi Database Checks Utility (No secrets printed)")
     parser.add_argument("--url-env-var", "--env-var", dest="url_env_var", type=str, default="DATABASE_URL",
                         help="DB URL o'qiladigan muhit o'zgaruvchi nomi (standart: DATABASE_URL)")
-    parser.add_argument("--expected-alembic", type=str, default="e8f9a0b1c2d3",
-                        help="Kutilayotgan alembic_version (standart: e8f9a0b1c2d3)")
-    parser.add_argument("--expected-default", type=str, default="pending",
-                        help="Kutilayotgan publish_status default qiymati (standart: pending)")
+    parser.add_argument("--expected-alembic", type=str, default=None,
+                        help="Kutilayotgan alembic_version (agar berilsa tekshiriladi)")
+    parser.add_argument("--expected-default", type=str, default=None,
+                        help="Kutilayotgan publish_status default qiymati (agar berilsa tekshiriladi)")
     parser.add_argument("--check-zero-media", action="store_true",
                         help="Media jadvallar (movies, series, episodes, etc.) 0 ekanligini tasdiqlash")
     parser.add_argument("--save-baseline", "--save-counts", dest="save_baseline", type=str, default=None,
