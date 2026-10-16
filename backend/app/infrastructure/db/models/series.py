@@ -116,7 +116,7 @@ class EpisodeModel(Base):
     
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
-    season: Mapped["SeasonModel"] = relationship(back_populates="episodes")
+    season: Mapped["SeasonModel"] = relationship(back_populates="episodes", lazy="selectin")
 
     translations: Mapped[list["EpisodeTranslationModel"]] = relationship(
         back_populates="episode", cascade="all, delete-orphan", lazy="selectin", passive_deletes=True
