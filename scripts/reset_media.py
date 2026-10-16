@@ -191,32 +191,51 @@ async def reset_media(
     # C) Media jadvallarini tozalash (agar wipe_media so'ralgan bo'lsa)
     if wipe_media:
         media_tables_to_wipe = [
-            "reports",
-            "reviews",
-            "watch_history",
-            "rejected_items",
-            "episode_translations",
-            "movie_translations",
-            "movie_sources",
-            "series_sources",
-            "sources",
-            "episodes",
-            "seasons",
+            "movie_category",
             "movie_categories",
+            "series_category",
             "series_categories",
             "page_movie",
             "page_movies",
             "page_series",
             "collection_items",
+            "series_subscriptions",
+            "watch_history",
+            "reviews",
+            "reports",
+            "rejected_items",
+            "movie_translations",
+            "episode_translations",
+            "movie_sources",
+            "episodes",
+            "seasons",
             "movies",
             "series",
+            "series_sources",
+            "sources",
         ]
         async with async_session_factory() as session:
-            for tbl in media_tables_to_wipe:
+            existing_tables = set()
+            try:
+                tables_res = await session.execute(text(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+                ))
+                existing_tables = set(tables_res.scalars().all())
+            except Exception:
                 try:
-                    await session.execute(text(f"DELETE FROM {tbl}"))
+                    tables_res = await session.execute(text(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    ))
+                    existing_tables = set(tables_res.scalars().all())
                 except Exception:
                     pass
+
+            for tbl in media_tables_to_wipe:
+                if tbl in existing_tables:
+                    try:
+                        await session.execute(text(f"DELETE FROM {tbl}"))
+                    except Exception as e:
+                        logger.warning(f"{tbl} jadvalidan o'chirishda xatolik: {e}")
             await session.commit()
         print("✅ Media jadvallari (movies, series, episodes, sources, reports, reviews, watch_history, rejected_items) muvaffaqiyatli tozalandi.")
 
