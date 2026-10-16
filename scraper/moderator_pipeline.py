@@ -78,6 +78,8 @@ async def enrich_movie_metadata(
     clean_title = raw_title.split('/')[0].split('|')[0].strip()
     clean_title = re.sub(r'\(.*?\)', '', clean_title).strip()
     clean_title = re.sub(r'^\d+\s+', '', clean_title).strip()
+    if source_desc:
+        source_desc = re.sub(r'^(?:\d{3,4}p\s*)+', '', source_desc).strip()
 
     metadata = {
         "title": clean_title or raw_title,

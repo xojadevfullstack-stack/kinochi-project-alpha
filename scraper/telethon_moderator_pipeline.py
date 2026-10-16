@@ -3477,7 +3477,12 @@ class TelethonModeratorPipeline:
             clean_name = clean_movie_title(clean_name)
             if clean_name:
                 logger.info(f"UzmovieTV_Bot dan olinmadi. Zaxira tarzida @asilmediabot dan '{clean_name}' qidirilmoqda...")
-                return await self._fetch_asilmedia_video(query=clean_name, year=item.year)
+                vid = await self._fetch_asilmedia_video(query=clean_name, year=item.year)
+                if vid:
+                    if item:
+                        item.source = "asilmedia"
+                    return vid
+                return None
 
         return None
 
