@@ -116,6 +116,17 @@ $VenvScripts = Join-Path $RepoRoot "backend\.venv\Scripts"
 if (Test-Path $VenvScripts) {
     $env:PATH = "$VenvScripts;$env:PATH"
 }
+$PgPaths = @(
+    "C:\Program Files\PostgreSQL\17\bin",
+    "C:\Program Files\PostgreSQL\16\bin",
+    "C:\Program Files\PostgreSQL\15\bin"
+)
+foreach ($P in $PgPaths) {
+    if (Test-Path $P) {
+        $env:PATH = "$P;$env:PATH"
+        break
+    }
+}
 $PythonExe = Join-Path $VenvScripts "python.exe"
 if (-not (Test-Path $PythonExe)) {
     $PythonExe = "python"
