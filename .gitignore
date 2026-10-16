@@ -61,6 +61,8 @@ test_*.js
 test_*.ts
 /test_*.py
 !backend/tests/**
+backend/tests/**/__pycache__/
+backend/tests/**/.pytest_cache/
 mock_test_*.py
 check_live_bundle.py
 backend/test_*.py

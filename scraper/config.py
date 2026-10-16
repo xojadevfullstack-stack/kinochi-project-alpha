@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 # Load env files
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 for env_path in [
+    os.path.join(BASE_DIR, ".env.local"),
+    os.path.join(BASE_DIR, "backend", ".env.local"),
+    os.path.join(os.getcwd(), ".env.local"),
+    os.path.join(os.getcwd(), "backend", ".env.local"),
     os.path.join(BASE_DIR, "backend", ".env"),
     os.path.join(BASE_DIR, "bot", ".env"),
     os.path.join(BASE_DIR, ".env"),

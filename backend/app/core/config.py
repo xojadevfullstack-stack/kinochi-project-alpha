@@ -81,7 +81,7 @@ class Settings(BaseSettings):
     SEED_SEARCH_CONCURRENCY: int = 2
 
     model_config = {
-        "env_file": ".env",
+        "env_file": (".env.local", "backend/.env.local", ".env", "backend/.env"),
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "extra": "ignore",  # Testlar va Docker muhitida extra o'zgaruvchilar xato bermasligi uchun
