@@ -83,6 +83,7 @@ def clean_scraped_title(raw_title: str, url_or_slug: Optional[str] = None) -> Di
         r"\bkino\b",
         r"\bfilm\b",
         r"\btarjima\b",
+        r"\b(?:dublyaj(?:li|da)?|dub|dubbed)\b",
         r"\b(?:to['\"`‘’]?liq|toliq)\b",
         r"\b(?:uzmovi|uzmovi\.com|uzmovi\.net)\b",
         r"\b(?:asilmedia|asilmedia\.net|asilmedia\.org)\b",

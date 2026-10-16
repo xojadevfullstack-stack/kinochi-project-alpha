@@ -139,14 +139,6 @@ def evaluate_candidate_match(
     if intersection:
         return True, "Sarlavha, yil va qism to'liq mos keldi"
 
-    # Agar qat'iy slug teng bo'lmasa, birining ichida ikkinchisi to'liq so'z sifatida mavjudligini tekshirish
-    norm_scraped = to_slug(scraped_clean.get("title") or scraped_title)
-    for st in seed_variants:
-        norm_seed = to_slug(st)
-        if norm_seed and len(norm_seed) >= 5:
-            if norm_seed in norm_scraped or norm_scraped in norm_seed:
-                return True, "Sarlavha qisman o'zak mos keldi"
-
     return False, "Sarlavha mos kelmadi"
 
 
