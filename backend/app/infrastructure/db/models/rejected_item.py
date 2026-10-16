@@ -18,7 +18,7 @@ JsonType = JSON().with_variant(JSONB(), "postgresql")
 class RejectedItemModel(Base):
     __tablename__ = "rejected_items"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     media_type: Mapped[str] = mapped_column(String(20), nullable=False)  # 'movie', 'series', 'episode'
     source: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     source_key: Mapped[str] = mapped_column(String(255), nullable=False, index=True)

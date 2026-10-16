@@ -30,6 +30,9 @@ class QueueItem:
     downloaded_episodes: int = 0
     error_message: Optional[str] = None
     updated_at: Optional[float] = None
+    priority: int = 0         # Yuqori ustuvorlik (masalan 100) birinchi ishlanadi
+    tmdb_id: Optional[int] = None
+    payload: Optional[Dict[str, Any]] = None
 
 
 def _known_fields():
@@ -331,6 +334,8 @@ class QueueManager:
                 and (not source or item.source == source)
                 and (not media_type or item.media_type == media_type)
             ]
+            # Yuqori ustuvorlik (priority) birinchi o'rinda olinadi
+            pending.sort(key=lambda x: getattr(x, "priority", 0) or 0, reverse=True)
             return pending[:limit]
 
     def get_filtered(

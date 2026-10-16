@@ -25,8 +25,8 @@ class SeedGenerator:
         """Fetches worldwide top-rated & popular movies and series from TMDB."""
         seeds = []
         try:
-            # 1. TMDB Popular Movies
-            data = await tmdb_client.get_popular_movies(page=1)
+            # 1. TMDB Popular & Top Rated Movies
+            data = await tmdb_client.list_popular(kind="movie", page=1)
             results = data.get("results") or []
             for item in results[:limit // 2]:
                 seeds.append({
@@ -40,7 +40,7 @@ class SeedGenerator:
                 })
 
             # 2. TMDB Top Rated Series
-            tv_data = await tmdb_client.get_popular_tv(page=1)
+            tv_data = await tmdb_client.list_popular(kind="tv", page=1)
             tv_results = tv_data.get("results") or []
             for item in tv_results[:limit // 2]:
                 seeds.append({
