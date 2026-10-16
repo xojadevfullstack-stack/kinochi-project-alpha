@@ -288,6 +288,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
                         src={season.poster_url} 
                         alt={`${season.season_number}-fasl`}
                         fill
+                        unoptimized
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : series.poster_url ? (
@@ -295,6 +296,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
                         src={series.poster_url} 
                         alt="Fasl"
                         fill
+                        unoptimized
                         className="object-cover opacity-40 grayscale blur-[2px]"
                       />
                     ) : (

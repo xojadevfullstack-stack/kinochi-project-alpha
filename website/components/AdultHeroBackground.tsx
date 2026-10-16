@@ -25,6 +25,7 @@ export default function AdultHeroBackground({
       alt={alt}
       fill
       priority
+      unoptimized
       className={`object-cover transition-all duration-700 ease-out ${
         shouldBlur
           ? "opacity-20 scale-125 blur-3xl"

@@ -50,6 +50,7 @@ export default function AdultPoster({
         fill={fill}
         priority={priority}
         sizes={sizes}
+        unoptimized
         className={imageClassName || className}
         onError={() => setHasError(true)}
       />
@@ -69,6 +70,7 @@ export default function AdultPoster({
         fill={fill}
         priority={priority}
         sizes={sizes}
+        unoptimized
         className={`${imageClassName || className} transition-all duration-700 ease-out ${
           shouldBlur
             ? "blur-xl scale-110 brightness-75 select-none"
