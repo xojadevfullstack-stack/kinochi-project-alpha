@@ -372,6 +372,8 @@ if ($StartPhaseNum -le 3) {
         Log-Message "[DRY-RUN] alembic upgrade head simulyatsiyasi." -Phase "MIGRATE"
     } else {
         Push-Location $BackendDir
+        $OldEAP = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
         try {
             $DirectDbUrl = $TargetDbUrl -replace "-pooler\.", "."
             if ($DirectDbUrl -match "^postgres(?:ql)?://") {
@@ -404,7 +406,7 @@ if ($StartPhaseNum -le 3) {
 
             # alembic check
             Log-Message "Alembic modellar sinxronligini tekshirish (alembic check)..." -Phase "MIGRATE"
-            & alembic check
+            $CheckOutput = & alembic check 2>&1
             if ($LASTEXITCODE -ne 0) {
                 if (-not $IgnoreAlembicCheck) {
                     Log-Error "Alembic check farq aniqladi! Yangi migratsiya talab etiladi." -Phase "MIGRATE"
@@ -421,6 +423,7 @@ if ($StartPhaseNum -le 3) {
                 exit 1
             }
         } finally {
+            $ErrorActionPreference = $OldEAP
             Pop-Location
         }
         Log-Success "Migratsiya muvaffaqiyatli yakunlandi." -Phase "MIGRATE"
