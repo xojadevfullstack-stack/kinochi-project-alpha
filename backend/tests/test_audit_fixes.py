@@ -120,3 +120,36 @@ async def test_sf_003_retry_rejected_item_resets_seed_candidate(setup_test_db, e
         assert cand_db.attempts == 0
 
 
+def test_sf_004_windows_console_unicode_encoding():
+    """
+    SF-004: Windows konsolida non-UTF8 muhitda (masalan cp1251) skriptlar emojilar tufayli
+    UnicodeEncodeError bermasdan xavfsiz ishlashini ta'minlash.
+    """
+    import subprocess
+    import sys
+    import os
+
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "cp1251"
+
+    code = """
+import sys
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+print("❌ [XAVFSIZLIK BLOKIROVKASI] Production muhitida taqiqlanadi!")
+print("🎯 [FOUND] Interstellar")
+print("⚠️ [AMBIGUOUS] Conflicting")
+print("✅ [OK] scraper_queue.json bo'shatildi")
+"""
+    res = subprocess.run(
+        [sys.executable, "-c", code],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode == 0, f"Skript UnicodeEncodeError bilan to'xtadi! Stderr: {res.stderr}"
+    assert "[FOUND]" in res.stdout
+    assert "[XAVFSIZLIK BLOKIROVKASI]" in res.stdout
+
+
+
