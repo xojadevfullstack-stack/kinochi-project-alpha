@@ -67,6 +67,19 @@ class Settings(BaseSettings):
     AUTO_TOPIC_CHAT_ID: int | None = None
     AUTO_CONTENT_ENABLED: bool = True
 
+    # ── TMDb Top Seed Ingestor (S2) ──────────────────────────────────
+    SEED_MOVIE_TARGET: int = 1000
+    SEED_TV_TARGET: int = 500
+    SEED_INCLUDE_SERIES: bool = False
+    SEED_MIN_VOTE_COUNT: int = 1000
+    SEED_MIN_RATING: float = 7.0
+    SEED_EXCLUDE_ADULT: bool = True
+    SEED_BATCH_SIZE: int = 20
+    SEED_NOT_FOUND_RETRY_DAYS: int = 30
+    SEED_PRIORITY: int = 100
+    SEED_SEARCH_DELAY_SECONDS: float = 1.0
+    SEED_SEARCH_CONCURRENCY: int = 2
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

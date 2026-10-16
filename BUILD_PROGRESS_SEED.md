@@ -4,7 +4,7 @@ Ushbu hujjat Kinochi loyihasida TMDb Oltin Kolleksiya (Top 1000 filmlar va 500 s
 
 ## Checklist
 
-- [ ] **S1**: TMDb client kengaytmasi (`backend/app/infrastructure/external/tmdb_client.py`). `list_top_rated(kind, page)`, `list_popular(kind, page)`, `get_details(tmdb_id, kind)` with `append_to_response=videos,credits,translations,external_ids`. Rate limiter, retry-after (429), timeouts, response caching, xavfsiz API key.
+- [x] **S1**: TMDb client kengaytmasi (`backend/app/infrastructure/external/tmdb_client.py`). `list_top_rated(kind, page)`, `list_popular(kind, page)`, `get_details(tmdb_id, kind)` with `append_to_response=videos,credits,translations,external_ids`. Rate limiter, retry-after (429), timeouts, response caching, xavfsiz API key. (Commit: `33a75f5`)
 - [ ] **S2**: Markazlashtirilgan sozlamalar (`SEED_MOVIE_TARGET=1000`, `SEED_TV_TARGET=500`, `SEED_INCLUDE_SERIES=false`, `SEED_MIN_VOTE_COUNT=1000`, `SEED_MIN_RATING=7.0`, `SEED_EXCLUDE_ADULT=true`, `SEED_BATCH_SIZE=20`, `SEED_NOT_FOUND_RETRY_DAYS=30`, `SEED_PRIORITY=100`, anime routing qoidasi).
 - [ ] **S3**: `seed_candidates` jadvali va modeli (SQLAlchemy + Alembic additiv migratsiya). `id`, `kind`, `tmdb_id`, `title_en`, `title_ru`, `original_title`, `release_year`, `vote_average`, `vote_count`, `popularity`, `is_anime`, `status`, `matches`, `attempts`, `last_searched_at`, `created_at`, `updated_at`, `UNIQUE(kind, tmdb_id)`.
 - [ ] **S4**: `scraper/tmdb_top_ingestor.py` CLI:
