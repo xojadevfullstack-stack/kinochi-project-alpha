@@ -119,6 +119,7 @@ if (Test-Path $VenvScripts) {
     $env:PATH = "$VenvScripts;$env:PATH"
 }
 $PgPaths = @(
+    "C:\Program Files\PostgreSQL\18\bin",
     "C:\Program Files\PostgreSQL\17\bin",
     "C:\Program Files\PostgreSQL\16\bin",
     "C:\Program Files\PostgreSQL\15\bin"
