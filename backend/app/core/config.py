@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     # ── Database (async PostgreSQL) ──────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://kinochi:kinochi_secret@localhost:5432/kinochi"
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        if v:
+            if v.startswith("postgres://"):
+                v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif v.startswith("postgresql://"):
+                v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
     # ── Redis ────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
 

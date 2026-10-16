@@ -26,7 +26,12 @@ from app.infrastructure.db import models  # noqa: F401
 config = context.config
 
 # Override sqlalchemy.url with runtime settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+runtime_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL
+if "-pooler." in runtime_url:
+    runtime_url = runtime_url.replace("-pooler.", ".")
+if runtime_url.startswith("postgresql://"):
+    runtime_url = runtime_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+config.set_main_option("sqlalchemy.url", runtime_url)
 
 # Logging setup
 if config.config_file_name is not None:
@@ -62,6 +67,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"statement_cache_size": 0},
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

@@ -373,13 +373,18 @@ if ($StartPhaseNum -le 3) {
     } else {
         Push-Location $BackendDir
         try {
-            $env:DATABASE_URL = $TargetDbUrl
+            $DirectDbUrl = $TargetDbUrl -replace "-pooler\.", "."
+            if ($DirectDbUrl -match "^postgres(?:ql)?://") {
+                $DirectDbUrl = $DirectDbUrl -replace "^postgres(?:ql)?://", "postgresql+asyncpg://"
+            }
+            $env:DATABASE_URL = $DirectDbUrl
 
             # alembic heads
             Log-Message "Alembic boshlarini tekshirish..." -Phase "MIGRATE"
-            $HeadsOutput = & alembic heads
+            $HeadsOutput = & alembic heads 2>&1
             if ($LASTEXITCODE -ne 0) {
-                Log-Error "Alembic heads buyrug'i xatolik berdi!" -Phase "MIGRATE"
+                $SanitizedHeadsErr = ($HeadsOutput | Out-String).Trim() -replace "://[^@]+@", "://***@"
+                Log-Error "Alembic heads buyrug'i xatolik berdi: $SanitizedHeadsErr" -Phase "MIGRATE"
                 exit 1
             }
             $HeadCount = ($HeadsOutput | Where-Object { $_ -match "\S+" }).Count
@@ -390,9 +395,10 @@ if ($StartPhaseNum -le 3) {
 
             # alembic upgrade head
             Log-Message "Alembic upgrade head ishga tushirilmoqda..." -Phase "MIGRATE"
-            & alembic upgrade head
+            $UpgradeOutput = & alembic upgrade head 2>&1
             if ($LASTEXITCODE -ne 0) {
-                Log-Error "Alembic upgrade head xatolik bilan tugadi!" -Phase "MIGRATE"
+                $SanitizedUpErr = ($UpgradeOutput | Out-String).Trim() -replace "://[^@]+@", "://***@"
+                Log-Error "Alembic upgrade head xatolik bilan tugadi: $SanitizedUpErr" -Phase "MIGRATE"
                 exit 1
             }
 
