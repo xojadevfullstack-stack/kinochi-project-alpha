@@ -445,7 +445,9 @@ echo.
 echo Agar siz haqiqatan ham bazani 3 ta himoya (Guards) bilan tozalamoqchi bo'lsangiz,
 echo terminalda quyidagi buyruqni qo'lda kiritishingiz shart:
 echo.
-echo   backend\.venv\Scripts\python.exe scripts/reset_media.py --execute --confirm YES
+echo   backend\.venv\Scripts\python.exe scripts/reset_media.py --execute --confirm YES --backup-file ^<zaxira_fayli^>
+echo.
+echo   (Eslatma: Agar production bazasi bo'lsa, qo'shimcha ravishda --i-am-wiping-production talab qilinadi)
 echo.
 if not "%1"=="" exit /b
 pause
