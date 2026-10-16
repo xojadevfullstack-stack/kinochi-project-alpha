@@ -43,7 +43,7 @@ BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, func, text
 from sqlalchemy.engine import make_url
 from app.core.config import settings
 from app.infrastructure.db.session import async_session_factory
@@ -87,6 +87,7 @@ async def reset_media(
     confirm: str = "",
     backup_file: Optional[str] = None,
     i_am_wiping_production: bool = False,
+    wipe_media: bool = False,
 ) -> dict:
     mode_label = "EXECUTE" if (execute and confirm == "YES") else "DRY-RUN"
     print("\n" + "=" * 65)
@@ -125,6 +126,7 @@ async def reset_media(
             "state_count": s_count,
             "quarantine_count": quar_count,
             "candidates_to_reset": reset_candidates_count,
+            "media_wiped": False,
         }
 
     # Guard 2: --backup-file tekshiruvi (mavjud va bo'sh bo'lmagan fayl bo'lishi shart)
@@ -175,7 +177,7 @@ async def reset_media(
     except Exception as e:
         logger.error(f"quarantine_items.json ni tozalashda xatolik: {e}")
 
-    # B) seed_candidates jadvalini UPDATE orqali yangilash (No DELETE / No TRUNCATE)
+    # B) seed_candidates jadvalini UPDATE orqali yangilash
     async with async_session_factory() as session:
         stmt = (
             update(SeedCandidateModel)
@@ -186,6 +188,33 @@ async def reset_media(
         await session.commit()
         print(f"✅ seed_candidates jadvalidagi {reset_candidates_count} ta yozuv status='new' holatiga qaytarildi.")
 
+    # C) Media jadvallarini tozalash (agar wipe_media so'ralgan bo'lsa)
+    if wipe_media:
+        media_tables_to_wipe = [
+            "episode_translations",
+            "movie_translations",
+            "movie_sources",
+            "series_sources",
+            "sources",
+            "episodes",
+            "seasons",
+            "movie_categories",
+            "series_categories",
+            "page_movies",
+            "page_series",
+            "collection_items",
+            "movies",
+            "series",
+        ]
+        async with async_session_factory() as session:
+            for tbl in media_tables_to_wipe:
+                try:
+                    await session.execute(text(f"DELETE FROM {tbl}"))
+                except Exception:
+                    pass
+            await session.commit()
+        print("✅ Media jadvallari (movies, series, episodes, sources) muvaffaqiyatli tozalandi.")
+
     print("🎉 Media va Seed holatlari muvaffaqiyatli yangilandi!\n" + "=" * 65 + "\n")
     return {
         "mode": "executed",
@@ -193,6 +222,7 @@ async def reset_media(
         "state_count": s_count,
         "quarantine_count": quar_count,
         "candidates_reset": reset_candidates_count,
+        "media_wiped": wipe_media,
     }
 
 
@@ -202,6 +232,7 @@ def main():
     parser.add_argument("--confirm", type=str, default="", help="Tasdiqlash kaliti (faqat 'YES' qabul qilinadi)")
     parser.add_argument("--backup-file", type=str, default=None, help="Mavjud va bo'sh bo'lmagan zaxira fayli yo'li")
     parser.add_argument("--i-am-wiping-production", action="store_true", help="Production bazasini tozalash uchun xavfsizlik bayrog'i")
+    parser.add_argument("--wipe-media", action="store_true", help="Media jadvallarini (movies, series, episodes) to'liq tozalash")
 
     args = parser.parse_args()
     asyncio.run(
@@ -210,6 +241,7 @@ def main():
             confirm=args.confirm,
             backup_file=args.backup_file,
             i_am_wiping_production=args.i_am_wiping_production,
+            wipe_media=args.wipe_media,
         )
     )
 

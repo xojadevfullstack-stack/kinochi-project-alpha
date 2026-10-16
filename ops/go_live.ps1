@@ -314,7 +314,7 @@ if ($SkipReset) {
     # E.2. scripts/reset_media.py ni chaqirish
     $ResetScript = Join-Path $RepoRoot "scripts\reset_media.py"
     Log-Message "scripts/reset_media.py orqali media jadvallar tozalanmoqda..." -Phase "RESET"
-    & $PythonExe "$ResetScript" --backup-file "$BackupDumpFile" --execute --confirm YES --i-am-wiping-production
+    & $PythonExe "$ResetScript" --backup-file "$BackupDumpFile" --execute --confirm YES --i-am-wiping-production --wipe-media
     if ($LASTEXITCODE -ne 0) {
         Log-Error "Media jadvallarni tozalash (reset_media.py) xatolik bilan tugadi!" -Phase "RESET"
         exit 1

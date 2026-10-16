@@ -182,3 +182,49 @@ async def test_s8_reset_media_guard_3_matching_test_host_succeeds(setup_test_db,
         assert c3.status == "new"
         c4 = (await session.execute(select(SeedCandidateModel).where(SeedCandidateModel.tmdb_id == 704))).scalar_one()
         assert c4.status == "not_found"
+
+
+@pytest.mark.asyncio
+async def test_s8_reset_media_with_wipe_media(setup_test_db, engine, tmp_path):
+    """wipe_media=True bo'lganda media jadvallari (movies, series) tozalanadi."""
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+    from app.infrastructure.db.models.movie import MovieModel
+    from sqlalchemy import select, func
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with session_factory() as session:
+        movie = MovieModel(title="Test Movie To Wipe", code=12345, tmdb_id=8888, release_year=2024, publish_status="published")
+        session.add(movie)
+        await session.commit()
+
+    valid_backup = str(tmp_path / "valid_backup.sql")
+    with open(valid_backup, "w") as f:
+        f.write("-- valid backup content")
+
+    q_file = str(tmp_path / "q.json")
+    s_file = str(tmp_path / "s.json")
+    quar_file = str(tmp_path / "quar.json")
+    for fpath, data in [(q_file, []), (s_file, {}), (quar_file, [])]:
+        with open(fpath, "w") as f:
+            json.dump(data, f)
+
+    with patch("scripts.reset_media.async_session_factory", return_value=session_factory()):
+        with patch("scripts.reset_media.QUEUE_FILE", q_file):
+            with patch("scripts.reset_media.STATE_FILE", s_file):
+                with patch("scripts.reset_media.QUARANTINE_FILE", quar_file):
+                    test_host_url = "postgresql+asyncpg://user:pass@test-branch.neon.tech/kinochi"
+                    with patch("scripts.reset_media.settings.DATABASE_URL", test_host_url):
+                        with patch.dict(os.environ, {"TEST_DATABASE_URL": test_host_url}):
+                            res = await reset_media(
+                                execute=True,
+                                confirm="YES",
+                                backup_file=valid_backup,
+                                wipe_media=True,
+                            )
+                            assert res["mode"] == "executed"
+                            assert res.get("media_wiped") is True
+
+    async with session_factory() as session:
+        count = (await session.execute(select(func.count(MovieModel.id)))).scalar()
+        assert count == 0
+
