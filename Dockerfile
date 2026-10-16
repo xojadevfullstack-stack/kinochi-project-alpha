@@ -14,7 +14,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all project files (backend, bot, run.py, etc.)
 COPY . .
 
-EXPOSE 8000
+CMD sh -c "cd backend && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
 
-# Run migrations from backend folder, then start run.py from root
-CMD sh -c "cd backend && alembic upgrade head && cd .. && python run.py"

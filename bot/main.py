@@ -109,8 +109,20 @@ async def run_bot():
         await bot.session.close()
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    import sys
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
+    except Exception:
+        pass
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+        force=True
+    )
     try:
         asyncio.run(run_bot())
     except (KeyboardInterrupt, SystemExit):
         logging.info("Bot to'xtatildi.")
+
