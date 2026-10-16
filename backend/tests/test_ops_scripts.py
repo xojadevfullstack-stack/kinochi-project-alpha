@@ -66,6 +66,16 @@ def test_go_live_verifies_backup_with_pg_restore():
     assert "pg_restore --list" in sub, "pg_restore --list chaqirilmagan!"
 
 
+def test_go_live_accepts_backup_file_with_skip_backup():
+    """go_live.ps1 -SkipBackup berilganda mavjud -BackupFile ni qabul qilishi shart (OF-004)."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    with open(script_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "[string]$BackupFile" in content, "BackupFile parametri e'lon qilinmagan!"
+
+
+
 
 
 def test_powershell_pilot_syntax():

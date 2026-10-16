@@ -7,6 +7,9 @@ param (
     [string]$UrlEnvVar = "DATABASE_URL",
 
     [Parameter(Mandatory = $false)]
+    [string]$BackupFile = "",
+
+    [Parameter(Mandatory = $false)]
     [switch]$DryRun,
 
     [Parameter(Mandatory = $false)]
@@ -190,8 +193,22 @@ Write-Host "`n>>> FAZA B: ZAXIRA NUSXA OLISH..." -ForegroundColor Yellow
 $BackupDumpFile = Join-Path $BackupsDir "kinochi_pre_reset_$Timestamp.dump"
 
 if ($SkipBackup) {
-    Log-Warn "OGOHLANTIRISH: -SkipBackup tanlangan! Zaxira nusxa olinmadi. Bu XAVFLI!" -Phase "BACKUP"
-    $BackupDumpFile = $null
+    if (-not [string]::IsNullOrWhiteSpace($BackupFile)) {
+        if (-not (Test-Path $BackupFile)) {
+            Log-Error "Ko'rsatilgan -BackupFile fayli topilmadi: '$BackupFile'" -Phase "BACKUP"
+            exit 1
+        }
+        $DumpSize = (Get-Item $BackupFile).Length
+        if ($DumpSize -lt 1048576) {
+            Log-Error "Ko'rsatilgan -BackupFile hajmi 1 MB dan kichik! Zaxira to'liq emas bo'lishi mumkin." -Phase "BACKUP"
+            exit 1
+        }
+        $BackupDumpFile = (Resolve-Path $BackupFile).Path
+        Log-Success "Mavjud zaxira fayli tasdiqlandi: $BackupDumpFile" -Phase "BACKUP"
+    } else {
+        Log-Warn "OGOHLANTIRISH: -SkipBackup tanlangan va -BackupFile ko'rsatilmadi! Zaxira nusxa olinmadi. Bu XAVFLI!" -Phase "BACKUP"
+        $BackupDumpFile = $null
+    }
 } elseif ($DryRun) {
     Log-Message "[DRY-RUN] pg_dump simulyatsiyasi: '$BackupDumpFile' yaratilishi kerak edi." -Phase "BACKUP"
     $BackupDumpFile = "SIMULATED_BACKUP"
