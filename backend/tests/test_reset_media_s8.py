@@ -89,3 +89,14 @@ async def test_s8_reset_media_execute_with_guards(setup_test_db, engine, tmp_pat
         assert c3.status == "new"
         c4 = (await session.execute(select(SeedCandidateModel).where(SeedCandidateModel.tmdb_id == 704))).scalar_one()
         assert c4.status == "not_found"
+
+
+@pytest.mark.asyncio
+async def test_s8_reset_media_guard_3_production_blocked():
+    """
+    Guard 3: APP_ENV='production' bo'lganda hatto --execute va --confirm YES
+    berilgan bo'lsa ham skript qat'iyan to'xtatiladi.
+    """
+    with patch("scripts.reset_media.settings.APP_ENV", "production"):
+        res = await reset_media(execute=True, confirm="YES")
+        assert res == {"error": "production_blocked"}
