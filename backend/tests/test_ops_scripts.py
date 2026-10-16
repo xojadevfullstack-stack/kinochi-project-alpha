@@ -75,6 +75,19 @@ def test_go_live_accepts_backup_file_with_skip_backup():
     assert "[string]$BackupFile" in content, "BackupFile parametri e'lon qilinmagan!"
 
 
+def test_go_live_halts_on_redis_flush_failure():
+    """go_live.ps1 redis_flush_cache muvaffaqiyatsiz tugasa exit 1 bilan to'xtashi shart (OF-005)."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    with open(script_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "& $PythonExe -m ops.redis_flush_cache" in content
+    idx = content.find("& $PythonExe -m ops.redis_flush_cache")
+    sub = content[idx:idx+500]
+    assert "exit 1" in sub, "redis_flush_cache xatolik berganda exit 1 chaqirilmagan!"
+
+
+
 
 
 

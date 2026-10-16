@@ -16,7 +16,10 @@ param (
     [switch]$SkipReset,
 
     [Parameter(Mandatory = $false)]
-    [switch]$SkipBackup
+    [switch]$SkipBackup,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$IgnoreRedisError
 )
 
 $ErrorActionPreference = 'Stop'
@@ -350,7 +353,12 @@ if ($SkipReset) {
     Log-Message "Redis 'cache:*' kesh kalitlari tozalanmoqda..." -Phase "RESET"
     & $PythonExe -m ops.redis_flush_cache --execute --confirm YES
     if ($LASTEXITCODE -ne 0) {
-        Log-Warn "Redis keshini tozalashda ogohlantirish yoki xatolik yuz berdi." -Phase "RESET"
+        if ($IgnoreRedisError) {
+            Log-Warn "Redis keshini tozalashda xatolik yuz berdi, lekin -IgnoreRedisError sababli davom etilmoqda." -Phase "RESET"
+        } else {
+            Log-Error "Redis keshini tozalash muvaffaqiyatsiz bo'ldi! To'xtatildi (o'tkazib yuborish uchun -IgnoreRedisError bering)." -Phase "RESET"
+            exit 1
+        }
     }
 
     # E.4. Natijani qayta tekshirish
