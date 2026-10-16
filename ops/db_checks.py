@@ -192,6 +192,16 @@ async def run_db_checks(
 
     try:
         async with session_factory() as session:
+            # 0. PostgreSQL server versiyasini olish
+            try:
+                ver_res = await session.execute(text("SHOW server_version"))
+                server_ver = str(ver_res.scalar() or "unknown")
+                results["server_version"] = server_ver
+                if not output_json:
+                    print(f"PostgreSQL Server Versiyasi: {server_ver}")
+            except Exception:
+                pass
+
             # 1. alembic_version ni tekshirish
             try:
                 av_res = await session.execute(text("SELECT version_num FROM alembic_version"))

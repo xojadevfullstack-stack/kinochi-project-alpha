@@ -235,7 +235,8 @@ if ($StartPhaseNum -le 1) {
             exit 1
         }
     } else {
-        Log-Success "pg_dump vositasi topildi: $($PgDumpCmd.Source)" -Phase "PREFLIGHT"
+        $PgDumpVer = (& $PgDumpCmd.Source --version 2>&1 | Out-String).Trim()
+        Log-Success "pg_dump vositasi topildi: $($PgDumpCmd.Source) ($PgDumpVer)" -Phase "PREFLIGHT"
     }
 
     # A.4. DB ulanishi tekshiruvi
@@ -293,21 +294,27 @@ if ($StartPhaseNum -le 2) {
         Log-Message "pg_dump orqali zaxira olinmoqda..." -Phase "BACKUP"
         $DumpSuccess = $false
         $PgDumpError = ""
-        if ($PgDumpCmd) {
-            $LibpqDbUrl = Convert-ToLibpqUrl -RawUrl $TargetDbUrl
-            $PgDumpOutput = & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile" 2>&1
-            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile) -and ((Get-Item $BackupDumpFile).Length -ge $MinDumpSize)) {
-                $DumpSuccess = $true
+        $OldEAP = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            if ($PgDumpCmd) {
+                $LibpqDbUrl = Convert-ToLibpqUrl -RawUrl $TargetDbUrl
+                $PgDumpOutput = & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile" 2>&1
+                if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile) -and ((Get-Item $BackupDumpFile).Length -ge $MinDumpSize)) {
+                    $DumpSuccess = $true
+                } else {
+                    $PgDumpError = ($PgDumpOutput | Out-String).Trim()
+                }
             } else {
-                $PgDumpError = ($PgDumpOutput | Out-String).Trim()
+                $PyDumpOutput = & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --create-backup "$BackupDumpFile" 2>&1
+                if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile) -and ((Get-Item $BackupDumpFile).Length -ge $MinDumpSize)) {
+                    $DumpSuccess = $true
+                } else {
+                    $PgDumpError = ($PyDumpOutput | Out-String).Trim()
+                }
             }
-        } else {
-            $PyDumpOutput = & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --create-backup "$BackupDumpFile" 2>&1
-            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile) -and ((Get-Item $BackupDumpFile).Length -ge $MinDumpSize)) {
-                $DumpSuccess = $true
-            } else {
-                $PgDumpError = ($PyDumpOutput | Out-String).Trim()
-            }
+        } finally {
+            $ErrorActionPreference = $OldEAP
         }
         if (-not $DumpSuccess) {
             if (Test-Path $BackupDumpFile) {
