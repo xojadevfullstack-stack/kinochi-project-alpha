@@ -43,12 +43,22 @@ echo.
 echo   [ TO'LIQ TIZIM ]
 echo   13) Barcha xizmatlarni yoqish (Backend + Bot + Admin Panel + Website)
 echo.
+echo   [ TMDB TOP SEED INGESTOR (OLTIN KOLLEKSIYA) ]
+echo   14) TMDb Top Seed nomzodlarini yig'ish (--build-seeds)
+echo   15) O'zbek manbalaridan nomzodlarni qidirish (--search)
+echo   16) Navbatga qo'yish: DRY-RUN (sinov rejimi)
+echo   17) Navbatga qo'yish: EXECUTE (haqiqiy navbatga kiritish - "YES" tasdig'i bilan)
+echo   18) TMDb Seed statistikasini ko'rish (--stats)
+echo.
+echo   [ MEDIA VA SEED RESET (XAVFSIZLIK NAZORATI) ]
+echo   19) Media va Seed holatlarini ko'rikdan o'tkazish (Faqat DRY-RUN ko'rik)
+echo.
 echo   0) Chiqish
 echo ======================================================================
 echo.
 
 set choice=
-set /p choice="Tanlovingizni kiriting (0-13): "
+set /p choice="Tanlovingizni kiriting (0-19): "
 
 if "%choice%"=="" exit /b
 
@@ -68,6 +78,12 @@ if "%choice%"=="11" goto opt_clean
 if "%choice%"=="12" goto opt_stats
 if "%choice%"=="stats" goto opt_stats
 if "%choice%"=="13" goto opt_all
+if "%choice%"=="14" goto opt_seed_build
+if "%choice%"=="15" goto opt_seed_search
+if "%choice%"=="16" goto opt_seed_enqueue_dry
+if "%choice%"=="17" goto opt_seed_enqueue_exec
+if "%choice%"=="18" goto opt_seed_stats
+if "%choice%"=="19" goto opt_seed_reset_dry
 if "%choice%"=="0" exit /b
 
 echo.
@@ -334,3 +350,104 @@ start http://localhost:3001/scraper
 if not "%1"=="" exit /b
 pause
 goto menu
+
+:opt_seed_build
+cls
+echo ======================================================================
+echo   TMDB TOP SEED NOMZODLARINI YIG'ISH (--build-seeds)
+echo ======================================================================
+echo.
+echo TMDb Top-Rated va Popular kinolar ro'yxatini yuklash boshlanmoqda...
+backend\.venv\Scripts\python.exe scraper/tmdb_top_ingestor.py --build-seeds
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_seed_search
+cls
+echo ======================================================================
+echo   O'ZBEK MANBALARIDAN NOMZODLARNI QIDIRISH (--search)
+echo ======================================================================
+echo.
+set search_limit=20
+if "%1"=="" (
+    set /p search_limit="Nechta nomzod qidirilsin? [Standart: 20]: "
+)
+echo.
+echo Qidiruv boshlanmoqda (Hajm: %search_limit%)...
+backend\.venv\Scripts\python.exe scraper/tmdb_top_ingestor.py --search --limit %search_limit%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_seed_enqueue_dry
+cls
+echo ======================================================================
+echo   NAVBATGA QO'YISH: DRY-RUN SINOV REJIMI (--enqueue)
+echo ======================================================================
+echo.
+echo Topilgan nomzodlar sinov tariqasida tekshiriladi (navbat o'zgarmaydi)...
+backend\.venv\Scripts\python.exe scraper/tmdb_top_ingestor.py --enqueue
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_seed_enqueue_exec
+cls
+echo ======================================================================
+echo   NAVBATGA QO'YISH: EXECUTE HAQIQIY REJIM (--enqueue --execute)
+echo ======================================================================
+echo.
+echo [DIQQAT] Topilgan barcha kinolar Priority=100 bilan haqiqiy navbatga kiritiladi!
+set confirm_enq=
+set /p confirm_enq="Haqiqatdan ham navbatga qo'shmoqchimisiz? [Faqat 'YES' deb yozing]: "
+if not "%confirm_enq%"=="YES" (
+    echo.
+    echo [BEKOR QILINDI] 'YES' kiritilmadi. Navbat o'zgartirilmadi.
+    echo.
+    pause
+    goto menu
+)
+echo.
+echo Navbatga kiritish boshlanmoqda...
+backend\.venv\Scripts\python.exe scraper/tmdb_top_ingestor.py --enqueue --execute
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_seed_stats
+cls
+echo ======================================================================
+echo   TMDB TOP SEED INGESTOR STATISTIKASI (--stats)
+echo ======================================================================
+echo.
+backend\.venv\Scripts\python.exe scraper/tmdb_top_ingestor.py --stats
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_seed_reset_dry
+cls
+echo ======================================================================
+echo   MEDIA VA SEED RESET (XAVFSIZLIK: FAQAT DRY-RUN KO'RIK)
+echo ======================================================================
+echo.
+echo [XAVFSIZLIK QOIDASI] start.bat orqali bazani bir tugma bilan o'chirib yuborish taqiqlanadi!
+echo Hozir faqat DRY-RUN (quruq ko'rik) bajariladi va qanday elementlar borligi ko'rsatiladi:
+echo.
+backend\.venv\Scripts\python.exe scripts/reset_media.py
+echo.
+echo Agar siz haqiqatan ham bazani 3 ta himoya (Guards) bilan tozalamoqchi bo'lsangiz,
+echo terminalda quyidagi buyruqni qo'lda kiritishingiz shart:
+echo.
+echo   backend\.venv\Scripts\python.exe scripts/reset_media.py --execute --confirm YES
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+

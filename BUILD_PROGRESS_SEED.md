@@ -13,7 +13,7 @@ Ushbu hujjat Kinochi loyihasida TMDb Oltin Kolleksiya (Top 1000 filmlar va 500 s
   - `--enqueue --limit N`: default DRY-RUN, `--execute` bilan haqiqiy navbatga qo'yish (`priority=SEED_PRIORITY`, to'liq TMDb metadata payload).
   - `--stats`: Holat va rad etish sabablari statistikasi.
 - [x] **S5**: Ambiguous va noto'g'ri mosliklarni `rejected_items` jadvaliga yozish (`source='tmdb_seed'`, `defect='ambiguous_source_match'`), Admin paneldan qayta qidirish imkoniyati. (Commit: `491204e`)
-- [ ] **S6**: Pipeline integratsiyasi: Navbatdagi seed elementlari `tmdb_id` ga ega bo'ladi, Admission Gate qoidalaridan o'tadi. Tasdiqlansa `ingested`, rad etilsa `skipped`.
+- [x] **S6**: Pipeline integratsiyasi: Navbatdagi seed elementlari `tmdb_id` ga ega bo'ladi, Admission Gate qoidalaridan o'tadi. Tasdiqlansa `ingested`, rad etilsa `skipped`. (Commit: `e6cb2bf`)
 - [ ] **S7**: `start.bat` menyusiga integratsiya: build seeds, search, enqueue dry-run, enqueue execute (tasdiq so'raladi), seed stats, reset dry-run.
 - [ ] **S8**: `scripts/reset_media.py` kengaytmasi: `seed_candidates` holatlarini yangilash va scraper json fayllarini tozalash (3 ta guard: `--execute`, tasdiqlash, quruq rejim).
 - [ ] **S9**: Avtomatlashtirilgan testlar (TMDb va O'zbek manbalari mock/fixture bilan, 0 ta tashqi tarmoq so'rovi).
