@@ -131,6 +131,23 @@ def main():
 
     args = parser.parse_args()
 
+    try:
+        from dotenv import load_dotenv
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        for env_path in [
+            os.path.join(repo_root, "backend", ".env"),
+            os.path.join(repo_root, ".env"),
+            os.path.join(os.getcwd(), "backend", ".env"),
+            os.path.join(os.getcwd(), ".env"),
+        ]:
+            if os.path.exists(env_path):
+                load_dotenv(env_path)
+    except Exception:
+        pass
+
+    default_api_id = os.environ.get("TELEGRAM_API_ID") or "32571063"
+    default_api_hash = os.environ.get("TELEGRAM_API_HASH") or "fe3038cd47d8c37788a5f4bdeef00138"
+
     api_id = args.api_id or os.environ.get("TELEGRAM_API_ID")
     api_hash = args.api_hash or os.environ.get("TELEGRAM_API_HASH")
     phone = args.phone or os.environ.get("TELEGRAM_PHONE")
@@ -143,7 +160,7 @@ def main():
     print("-" * 65)
 
     if not api_id:
-        val = prompt_for_input("TELEGRAM_API_ID ni kiriting")
+        val = prompt_for_input("TELEGRAM_API_ID ni kiriting", default=str(default_api_id))
         try:
             api_id = int(val)
         except ValueError:
@@ -153,7 +170,7 @@ def main():
         api_id = int(api_id)
 
     if not api_hash:
-        api_hash = prompt_for_input("TELEGRAM_API_HASH ni kiriting")
+        api_hash = prompt_for_input("TELEGRAM_API_HASH ni kiriting", default=default_api_hash)
         if not api_hash:
             print("[XATO] API HASH kiritilmadi!")
             sys.exit(1)
