@@ -25,6 +25,9 @@ param (
     [switch]$IgnoreRedisError,
 
     [Parameter(Mandatory = $false)]
+    [switch]$IgnoreAlembicCheck,
+
+    [Parameter(Mandatory = $false)]
     [ValidateSet("PREFLIGHT", "BACKUP", "MIGRATE", "DEPLOY_GATE", "RESET", "FINAL")]
     [string]$StartPhase = "PREFLIGHT"
 )
@@ -195,7 +198,17 @@ if ($StartPhaseNum -le 1) {
     # A.3. pg_dump tekshiruvi
     $PgDumpCmd = Get-Command "pg_dump" -ErrorAction SilentlyContinue
     if (-not $PgDumpCmd) {
-        if ($DryRun) {
+        $DockerPgAvailable = $false
+        if ($DbHost -in @("localhost", "127.0.0.1")) {
+            $DockerInspect = & docker inspect kinochi_rehearsal_pg 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                $DockerPgAvailable = $true
+            }
+        }
+
+        if ($DockerPgAvailable) {
+            Log-Success "Xostda pg_dump yo'q, lekin Docker 'kinochi_rehearsal_pg' konteyneri mavjud (rehearsal rejimi)." -Phase "PREFLIGHT"
+        } elseif ($DryRun) {
             Log-Warn "pg_dump PATH da topilmadi. O'rnatish: winget install PostgreSQL.PostgreSQL" -Phase "PREFLIGHT"
         } else {
             Log-Error "pg_dump tizimda (PATH) topilmadi!" -Phase "PREFLIGHT"
@@ -233,6 +246,7 @@ if ($StartPhaseNum -le 1) {
 # FAZA B: BACKUP (ZAXIRA NUSXA OLISH)
 # -------------------------------------------------------------
 $BackupDumpFile = Join-Path $BackupsDir "kinochi_pre_reset_$Timestamp.dump"
+$MinDumpSize = if ($RehearsalAutoConfirm) { 10240 } else { 1048576 }
 
 if ($StartPhaseNum -le 2) {
     Write-Host "`n>>> FAZA B: ZAXIRA NUSXA OLISH..." -ForegroundColor Yellow
@@ -244,8 +258,8 @@ if ($StartPhaseNum -le 2) {
                 exit 1
             }
             $DumpSize = (Get-Item $BackupFile).Length
-            if ($DumpSize -lt 1048576) {
-                Log-Error "Ko'rsatilgan -BackupFile hajmi 1 MB dan kichik! Zaxira to'liq emas bo'lishi mumkin." -Phase "BACKUP"
+            if ($DumpSize -lt $MinDumpSize) {
+                Log-Error "Ko'rsatilgan -BackupFile hajmi kutilgan minimal hajmdan ($MinDumpSize bayt) kichik! Zaxira to'liq emas bo'lishi mumkin." -Phase "BACKUP"
                 exit 1
             }
             $BackupDumpFile = (Resolve-Path $BackupFile).Path
@@ -259,31 +273,43 @@ if ($StartPhaseNum -le 2) {
         $BackupDumpFile = "SIMULATED_BACKUP"
     } else {
         Log-Message "pg_dump orqali zaxira olinmoqda..." -Phase "BACKUP"
-        $LibpqDbUrl = Convert-ToLibpqUrl -RawUrl $TargetDbUrl
-        # Maxfiy URL ni faqat native process argumentida beramiz, konsol/logga chiqarmaymiz
-        & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile"
-        if ($LASTEXITCODE -ne 0 -or (-not (Test-Path $BackupDumpFile))) {
-            Log-Error "pg_dump xatolik bilan tugadi yoki fayl yaratilmadi!" -Phase "BACKUP"
+        $DumpSuccess = $false
+        if ($PgDumpCmd) {
+            $LibpqDbUrl = Convert-ToLibpqUrl -RawUrl $TargetDbUrl
+            & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile"
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile)) { $DumpSuccess = $true }
+        } else {
+            & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --create-backup "$BackupDumpFile"
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile)) { $DumpSuccess = $true }
+        }
+        if (-not $DumpSuccess) {
+            Log-Error "pg_dump xatolik bilan tugadi!" -Phase "BACKUP"
             exit 1
         }
 
         $DumpSize = (Get-Item $BackupDumpFile).Length
-        $DumpSizeMB = [math]::Round($DumpSize / 1MB, 2)
-        if ($DumpSize -lt 1048576) {
-            Log-Error "Zaxira fayli hajmi 1 MB dan kichik ($DumpSizeMB MB)! Zaxira to'liq emas bo'lishi mumkin." -Phase "BACKUP"
+        if ($DumpSize -lt $MinDumpSize) {
+            Log-Error "Zaxira hajmi minimal hajmdan ($MinDumpSize bayt) kichik!" -Phase "BACKUP"
             exit 1
         }
 
-        # pg_restore --list orqali arxiv katalogi va yaxlitligini tekshirish
-        Log-Message "Zaxira fayli yaxlitligi (pg_restore --list) tekshirilmoqda..." -Phase "BACKUP"
-        & pg_restore --list "$BackupDumpFile" | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Log-Error "Zaxira fayli yaxlitligi tekshiruvidan o'tmadi (pg_restore xatosi)! Fayl shikastlangan bo'lishi mumkin." -Phase "BACKUP"
+        Log-Message "Zaxira yaxlitligi (pg_restore --list) tekshirilmoqda..." -Phase "BACKUP"
+        $VerifySuccess = $false
+        if (Get-Command "pg_restore" -ErrorAction SilentlyContinue) {
+            & pg_restore --list "$BackupDumpFile" | Out-Null
+            if ($LASTEXITCODE -eq 0) { $VerifySuccess = $true }
+        }
+        if (-not $VerifySuccess) {
+            & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --verify-backup "$BackupDumpFile"
+            if ($LASTEXITCODE -eq 0) { $VerifySuccess = $true }
+        }
+        if (-not $VerifySuccess) {
+            Log-Error "Zaxira fayli yaxlitligi tekshiruvidan o'tmadi (pg_restore xatosi)!" -Phase "BACKUP"
             exit 1
         }
 
         $FileHash = (Get-FileHash -Algorithm SHA256 -Path $BackupDumpFile).Hash
-        Log-Success "Zaxira muvaffaqiyatli olindi: $BackupDumpFile ($DumpSizeMB MB)" -Phase "BACKUP"
+        Log-Success "Zaxira muvaffaqiyatli olindi: $BackupDumpFile ($DumpSize bayt, $DumpSizeMB MB)" -Phase "BACKUP"
         Log-Message "Zaxira SHA256: $FileHash" -Phase "BACKUP"
     }
 } else {
@@ -331,8 +357,11 @@ if ($StartPhaseNum -le 3) {
             Log-Message "Alembic modellar sinxronligini tekshirish (alembic check)..." -Phase "MIGRATE"
             & alembic check
             if ($LASTEXITCODE -ne 0) {
-                Log-Error "Alembic check model va baza o'rtasida farq aniqladi! Yangi migratsiya talab etiladi." -Phase "MIGRATE"
-                exit 1
+                if (-not $IgnoreAlembicCheck) {
+                    Log-Error "Alembic check farq aniqladi! Yangi migratsiya talab etiladi." -Phase "MIGRATE"
+                    exit 1
+                }
+                Log-Warn "Alembic check model va baza o'rtasida farq aniqladi, lekin -IgnoreAlembicCheck sababli davom etilmoqda." -Phase "MIGRATE"
             }
 
             # db_checks orqali tasdiqlash

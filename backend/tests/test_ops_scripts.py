@@ -396,3 +396,24 @@ async def test_db_checks_allow_empty_database():
             assert res["alembic_version"] is None
 
 
+def test_go_live_supports_ignore_alembic_check():
+    """go_live.ps1 -IgnoreAlembicCheck parametri bilan chaqirilishi mumkinligini tasdiqlash."""
+    script_path = os.path.join(ROOT_DIR, "ops", "go_live.ps1")
+    with open(script_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "$IgnoreAlembicCheck" in content
+
+
+def test_db_checks_create_and_verify_backup_mocked(tmp_path):
+    """create_backup va verify_backup_integrity funksiyalari mock bilan ishlashini tekshirish."""
+    from ops.db_checks import create_backup, verify_backup_integrity
+
+    dump_file = tmp_path / "test.dump"
+    # url bo'sh bo'lsa False
+    assert create_backup("", str(dump_file)) is False
+
+    # mavjud bo'lmagan fayl verify qilinganda False
+    assert verify_backup_integrity(str(tmp_path / "nonexistent.dump")) is False
+
+

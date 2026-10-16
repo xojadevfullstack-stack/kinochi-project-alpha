@@ -191,6 +191,10 @@ async def reset_media(
     # C) Media jadvallarini tozalash (agar wipe_media so'ralgan bo'lsa)
     if wipe_media:
         media_tables_to_wipe = [
+            "reports",
+            "reviews",
+            "watch_history",
+            "rejected_items",
             "episode_translations",
             "movie_translations",
             "movie_sources",
@@ -200,6 +204,7 @@ async def reset_media(
             "seasons",
             "movie_categories",
             "series_categories",
+            "page_movie",
             "page_movies",
             "page_series",
             "collection_items",
@@ -213,7 +218,7 @@ async def reset_media(
                 except Exception:
                     pass
             await session.commit()
-        print("✅ Media jadvallari (movies, series, episodes, sources) muvaffaqiyatli tozalandi.")
+        print("✅ Media jadvallari (movies, series, episodes, sources, reports, reviews, watch_history, rejected_items) muvaffaqiyatli tozalandi.")
 
     print("🎉 Media va Seed holatlari muvaffaqiyatli yangilandi!\n" + "=" * 65 + "\n")
     return {

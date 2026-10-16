@@ -48,6 +48,9 @@ def normalize_async_url(url_str: str) -> str:
     return url_str
 
 
+import subprocess
+import shutil
+
 def to_libpq_url(url_str: str) -> str:
     """SQLAlchemy/asyncpg URL ni libpq/pg_dump/pg_restore formatiga o'tkazadi."""
     if not url_str:
@@ -63,6 +66,57 @@ def to_libpq_url(url_str: str) -> str:
     return converted
 
 
+def create_backup(url_str: str, dump_path: str) -> bool:
+    """pg_dump orqali zaxira oladi (xostda yoki Docker orqali)."""
+    if not url_str:
+        return False
+    libpq_url = to_libpq_url(url_str)
+    host = get_sanitized_host(url_str)
+    os.makedirs(os.path.dirname(os.path.abspath(dump_path)), exist_ok=True)
+
+    # 1. Xostdagi pg_dump ni tekshirish
+    pg_dump_cmd = shutil.which("pg_dump")
+    if pg_dump_cmd:
+        cmd = [pg_dump_cmd, "-Fc", "--no-owner", "--dbname", libpq_url, "-f", dump_path]
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if p.returncode == 0 and os.path.exists(dump_path) and os.path.getsize(dump_path) > 0:
+            return True
+
+    # 2. Agar localhost/Docker bo'lsa va kinochi_rehearsal_pg konteyneri mavjud bo'lsa
+    if host in ["localhost", "127.0.0.1"]:
+        db_name = url_str.split("/")[-1].split("?")[0]
+        with open(dump_path, "wb") as f:
+            p = subprocess.run(
+                ["docker", "exec", "kinochi_rehearsal_pg", "pg_dump", "-U", "postgres", "-Fc", db_name],
+                stdout=f,
+                stderr=subprocess.PIPE,
+            )
+            if p.returncode == 0 and os.path.exists(dump_path) and os.path.getsize(dump_path) > 0:
+                return True
+
+    return False
+
+
+def verify_backup_integrity(dump_path: str) -> bool:
+    """pg_restore --list orqali zaxira yaxlitligini tekshiradi."""
+    if not os.path.exists(dump_path) or os.path.getsize(dump_path) == 0:
+        return False
+
+    pg_restore_cmd = shutil.which("pg_restore")
+    if pg_restore_cmd:
+        p = subprocess.run([pg_restore_cmd, "--list", dump_path], capture_output=True)
+        return p.returncode == 0
+
+    # Docker fallback
+    with open(dump_path, "rb") as f:
+        p = subprocess.run(
+            ["docker", "exec", "-i", "kinochi_rehearsal_pg", "pg_restore", "--list"],
+            stdin=f,
+            capture_output=True,
+        )
+        return p.returncode == 0
+
+
 PRESERVED_TABLES = [
     "users",
     "admin_users",
@@ -73,7 +127,6 @@ PRESERVED_TABLES = [
     "verified_subscriptions",
     "system_settings",
     "scraper_logs",
-    "rejected_items",
     "pages",
     "blacklist",
 ]
@@ -88,6 +141,11 @@ MEDIA_TABLES = [
     "series_sources",
     "movie_translations",
     "episode_translations",
+    "reports",
+    "reviews",
+    "watch_history",
+    "rejected_items",
+    "page_movie",
 ]
 
 
@@ -250,9 +308,35 @@ def main():
                         help="Saqlangan qatorlar soni bilan solishtirish (kamaymaganligini tasdiqlash)")
     parser.add_argument("--allow-empty", action="store_true",
                         help="Bo'sh bazada alembic_version yo'qligiga ruxsat berish")
+    parser.add_argument("--create-backup", type=str, default=None,
+                        help="pg_dump orqali zaxira olish va ko'rsatilgan faylga yozish")
+    parser.add_argument("--verify-backup", type=str, default=None,
+                        help="pg_restore --list orqali zaxira fayli yaxlitligini tekshirish")
     parser.add_argument("--json", action="store_true", help="JSON formatida chiqarish")
 
     args = parser.parse_args()
+
+    # Agar --create-backup so'ralgan bo'lsa
+    if args.create_backup:
+        url_str = os.environ.get(args.url_env_var)
+        if not url_str:
+            print(f"[XATO] '{args.url_env_var}' muhit o'zgaruvchisi topilmadi!")
+            sys.exit(1)
+        ok = create_backup(url_str, args.create_backup)
+        if not ok:
+            print(f"[XATO] Zaxira nusxa olish muvaffaqiyatsiz bo'ldi: {args.create_backup}")
+            sys.exit(1)
+        print(f"[OK] Zaxira muvaffaqiyatli olindi: {args.create_backup}")
+        sys.exit(0)
+
+    # Agar --verify-backup so'ralgan bo'lsa
+    if args.verify_backup:
+        ok = verify_backup_integrity(args.verify_backup)
+        if not ok:
+            print(f"[XATO] Zaxira fayli yaxlitligi tekshiruvdan o'tmadi: {args.verify_backup}")
+            sys.exit(1)
+        print(f"[OK] Zaxira fayli yaxlitligi tasdiqlandi: {args.verify_backup}")
+        sys.exit(0)
 
     results = asyncio.run(
         run_db_checks(
