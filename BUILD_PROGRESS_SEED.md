@@ -14,10 +14,10 @@ Ushbu hujjat Kinochi loyihasida TMDb Oltin Kolleksiya (Top 1000 filmlar va 500 s
   - `--stats`: Holat va rad etish sabablari statistikasi.
 - [x] **S5**: Ambiguous va noto'g'ri mosliklarni `rejected_items` jadvaliga yozish (`source='tmdb_seed'`, `defect='ambiguous_source_match'`), Admin paneldan qayta qidirish imkoniyati. (Commit: `491204e`)
 - [x] **S6**: Pipeline integratsiyasi: Navbatdagi seed elementlari `tmdb_id` ga ega bo'ladi, Admission Gate qoidalaridan o'tadi. Tasdiqlansa `ingested`, rad etilsa `skipped`. (Commit: `e6cb2bf`)
-- [ ] **S7**: `start.bat` menyusiga integratsiya: build seeds, search, enqueue dry-run, enqueue execute (tasdiq so'raladi), seed stats, reset dry-run.
-- [ ] **S8**: `scripts/reset_media.py` kengaytmasi: `seed_candidates` holatlarini yangilash va scraper json fayllarini tozalash (3 ta guard: `--execute`, tasdiqlash, quruq rejim).
-- [ ] **S9**: Avtomatlashtirilgan testlar (TMDb va O'zbek manbalari mock/fixture bilan, 0 ta tashqi tarmoq so'rovi).
-- [ ] **S10**: Hujjatlashtirish: `docs/SEED_INGESTOR.md` (o'zbek tilida to'liq qo'llanma, parametrlar va pilot reja).
+- [x] **S7**: `start.bat` menyusiga integratsiya: build seeds, search, enqueue dry-run, enqueue execute (tasdiq so'raladi), seed stats, reset dry-run. (Commit: `755c4a7`)
+- [x] **S8**: `scripts/reset_media.py` kengaytmasi: `seed_candidates` holatlarini yangilash va scraper json fayllarini tozalash (3 ta guard: `--execute`, tasdiqlash, quruq rejim). (Commit: `755c4a7`)
+- [x] **S9**: Avtomatlashtirilgan testlar (TMDb va O'zbek manbalari mock/fixture bilan, 0 ta tashqi tarmoq so'rovi). (Commit: `8890712`)
+- [x] **S10**: Hujjatlashtirish: `docs/SEED_INGESTOR.md` (o'zbek tilida to'liq qo'llanma, parametrlar va pilot reja). (Commit: `c00f9bf`)
 
 ## Decisions
 - Production ma'lumotlar bazasiga hech qachon tegmaslik. Barcha testlar va mocklar xavfsiz muhitda bajariladi.
