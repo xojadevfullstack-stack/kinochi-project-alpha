@@ -152,4 +152,24 @@ print("✅ [OK] scraper_queue.json bo'shatildi")
     assert "[XAVFSIZLIK BLOKIROVKASI]" in res.stdout
 
 
+def test_sf_005_linter_checks_clean():
+    """
+    SF-005: tmdb_top_ingestor.py va reset_media.py da linter ogohlantirishlari
+    (E402, F401) to'liq bartaraf etilganini tekshirish.
+    """
+    import subprocess
+    import sys
+    import os
+
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    res = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "scraper/tmdb_top_ingestor.py", "scripts/reset_media.py"],
+        cwd=root_dir,
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode == 0, f"Ruff linter xatoliklari mavjud: {res.stdout}"
+
+
+
 

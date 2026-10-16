@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """
 Media and Seed Candidates Reset Utility (S8).
 
@@ -39,7 +40,7 @@ BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from sqlalchemy import select, update, func, text
+from sqlalchemy import select, update, func
 from app.core.config import settings
 from app.infrastructure.db.session import async_session_factory
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel

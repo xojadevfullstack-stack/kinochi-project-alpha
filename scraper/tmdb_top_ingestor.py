@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 """
 TMDb Top Seed Ingestor (S4 & S5) for Kinochi Project.
 
@@ -33,7 +34,6 @@ if sys.stderr and hasattr(sys.stderr, "reconfigure"):
     except Exception:
         pass
 
-import re
 import asyncio
 import argparse
 import logging
@@ -48,7 +48,7 @@ BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from sqlalchemy import select, func, and_, or_, text
+from sqlalchemy import select, func, and_, or_
 from app.infrastructure.db.session import async_session_factory
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
 from app.infrastructure.db.models.rejected_item import RejectedItemModel
