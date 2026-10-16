@@ -62,7 +62,7 @@ def test_go_live_verifies_backup_with_pg_restore():
 
     assert "& pg_dump" in content
     idx = content.find("& pg_dump")
-    sub = content[idx:idx+800]
+    sub = content[idx:idx+2500]
     assert "pg_restore --list" in sub, "pg_restore --list chaqirilmagan!"
 
 
@@ -366,6 +366,10 @@ def test_to_libpq_url_conversion():
     # postgres:// -> postgresql://
     url4 = "postgres://myuser:mypassword@localhost:5433/mydb"
     assert to_libpq_url(url4) == "postgresql://myuser:mypassword@localhost:5433/mydb"
+
+    # Neon direct: strip -pooler for pg_dump/pg_restore
+    url5 = "postgresql+asyncpg://myuser:mypassword@ep-test-12345-pooler.c-4.us-east-1.aws.neon.tech/neondb?ssl=require"
+    assert to_libpq_url(url5) == "postgresql://myuser:mypassword@ep-test-12345.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
 
 def test_go_live_rehearsal_auto_confirm_refuses_non_localhost():

@@ -63,6 +63,8 @@ def to_libpq_url(url_str: str) -> str:
     # 3. ssl=... parametrini sslmode=... ga o'tkazish
     converted = re.sub(r"([?&])ssl=([a-zA-Z0-9_-]+)", r"\1sslmode=\2", converted)
     converted = re.sub(r"([?&])sslmode=true", r"\1sslmode=require", converted)
+    # 4. Neon pooled connection (-pooler): pg_dump/pg_restore requires direct unpooled connection
+    converted = converted.replace("-pooler.", ".")
     return converted
 
 

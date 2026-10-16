@@ -108,6 +108,8 @@ function Convert-ToLibpqUrl {
     $Converted = $Converted -replace "^postgres://", "postgresql://"
     $Converted = $Converted -replace "([?&])ssl=([a-zA-Z0-9_-]+)", '$1sslmode=$2'
     $Converted = $Converted -replace "([?&])sslmode=true", '$1sslmode=require'
+    # Neon direct connection: pg_dump/pg_restore requires direct unpooled connection (strip -pooler)
+    $Converted = $Converted -replace "-pooler\.", "."
     return $Converted
 }
 
@@ -290,15 +292,32 @@ if ($StartPhaseNum -le 2) {
     } else {
         Log-Message "pg_dump orqali zaxira olinmoqda..." -Phase "BACKUP"
         $DumpSuccess = $false
+        $PgDumpError = ""
         if ($PgDumpCmd) {
             $LibpqDbUrl = Convert-ToLibpqUrl -RawUrl $TargetDbUrl
-            & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile"
-            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile)) { $DumpSuccess = $true }
+            $PgDumpOutput = & pg_dump -Fc --no-owner --dbname "$LibpqDbUrl" -f "$BackupDumpFile" 2>&1
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile) -and ((Get-Item $BackupDumpFile).Length -ge $MinDumpSize)) {
+                $DumpSuccess = $true
+            } else {
+                $PgDumpError = ($PgDumpOutput | Out-String).Trim()
+            }
         } else {
-            & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --create-backup "$BackupDumpFile"
-            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile)) { $DumpSuccess = $true }
+            $PyDumpOutput = & $PythonExe -m ops.db_checks --url-env-var $UrlEnvVar --create-backup "$BackupDumpFile" 2>&1
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $BackupDumpFile) -and ((Get-Item $BackupDumpFile).Length -ge $MinDumpSize)) {
+                $DumpSuccess = $true
+            } else {
+                $PgDumpError = ($PyDumpOutput | Out-String).Trim()
+            }
         }
         if (-not $DumpSuccess) {
+            if (Test-Path $BackupDumpFile) {
+                Remove-Item -Path $BackupDumpFile -Force -ErrorAction SilentlyContinue
+            }
+            if ($PgDumpError) {
+                # Maxfiy ma'lumotlarni yashirish
+                $SanitizedErr = $PgDumpError -replace "://[^@]+@", "://***@"
+                Log-Warn "pg_dump tafsiloti: $SanitizedErr" -Phase "BACKUP"
+            }
             Log-Error "pg_dump xatolik bilan tugadi!" -Phase "BACKUP"
             exit 1
         }
