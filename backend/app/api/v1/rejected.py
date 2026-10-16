@@ -91,6 +91,25 @@ async def retry_rejected_item(
     # Statusini 'resolved' yoki 'pending' qilib qayta urinishga ruxsat berish
     item.status = "resolved"
     item.updated_at = func.now()
+
+    # S5 / SF-003: Agar bu element tmdb_seed bo'lsa, seed_candidates holatini ham 'new' ga qaytarish
+    if item.source == "tmdb_seed" and item.source_key and item.source_key.startswith("tmdb:"):
+        parts = item.source_key.split(":")
+        if len(parts) >= 3 and parts[2].isdigit():
+            cand_kind = parts[1]
+            cand_tmdb_id = int(parts[2])
+            from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
+            stmt_cand = select(SeedCandidateModel).where(
+                SeedCandidateModel.kind == cand_kind,
+                SeedCandidateModel.tmdb_id == cand_tmdb_id
+            )
+            cand_res = await db.execute(stmt_cand)
+            cand = cand_res.scalar_one_or_none()
+            if cand:
+                cand.status = "new"
+                cand.attempts = 0
+                cand.updated_at = func.now()
+
     await db.commit()
 
     logger.info(f"Admin {admin.get('username')} tomonidan rejected item {item_id} qayta urinishga ruxsat berildi.")

@@ -62,3 +62,61 @@ async def test_sf_002_empty_title_blacklist_does_not_match_all(setup_test_db, en
 
         assert already_in is False, f"Bo'sh sarlavha qora ro'yxatga mos kelmasligi kerak! Sabab: {reason}"
 
+
+@pytest.mark.asyncio
+async def test_sf_003_retry_rejected_item_resets_seed_candidate(setup_test_db, engine):
+    """
+    SF-003: Admin paneldan 'tmdb_seed' manbali rejected item qayta urinishga (retry) yuborilganda,
+    tegishli SeedCandidateModel yozuvining holati ham 'new' ga qaytishi va qayta qidiruvga tushishini ta'minlash.
+    """
+    from unittest.mock import MagicMock
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+    from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
+    from app.infrastructure.db.models.rejected_item import RejectedItemModel
+    from app.api.v1.rejected import retry_rejected_item
+
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with session_factory() as session:
+        cand = SeedCandidateModel(
+            kind="movie",
+            tmdb_id=555555,
+            title_en="Ambiguous Movie",
+            status="ambiguous",
+            attempts=1,
+        )
+        session.add(cand)
+
+        rej_item = RejectedItemModel(
+            media_type="movie",
+            source="tmdb_seed",
+            source_key="tmdb:movie:555555",
+            title="Ambiguous Movie",
+            payload={"kind": "movie", "tmdb_id": 555555},
+            defects=[{"defect": "ambiguous_source_match"}],
+            status="rejected",
+        )
+        session.add(rej_item)
+        await session.commit()
+        await session.refresh(rej_item)
+        rej_id = rej_item.id
+
+    # Admin retry chaqiramiz
+    async with session_factory() as session:
+        from starlette.requests import Request
+        mock_req = Request({"type": "http", "path": "/api/v1/rejected/retry", "headers": [], "client": ("127.0.0.1", 12345)})
+        mock_admin = {"username": "superadmin", "role": "admin"}
+        res = await retry_rejected_item(request=mock_req, item_id=rej_id, db=session, admin=mock_admin)
+        assert res["id"] == rej_id
+
+    # SeedCandidate statusi 'new' ga qaytganini tekshiramiz
+    async with session_factory() as session:
+        from sqlalchemy import select
+        cand_db = (await session.execute(
+            select(SeedCandidateModel).where(SeedCandidateModel.tmdb_id == 555555)
+        )).scalar_one()
+
+        assert cand_db.status == "new", f"SeedCandidate statusi 'new' bo'lishi kerak, lekin '{cand_db.status}'!"
+        assert cand_db.attempts == 0
+
+
