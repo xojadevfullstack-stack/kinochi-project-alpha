@@ -570,10 +570,25 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
         url = f"/series/by-source?chat_id={chat_id}&topic_id={topic_id}"
         resp = await api_client.client.get(url)
 
+        if resp.status_code == 409:
+            for msg in messages:
+                logger.warning(
+                    f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
+                    f"decision=REJECTED_AMBIGUOUS reason=topic maps to multiple entities or both movie and series"
+                )
+            return
+
         if resp.status_code == 404:
             # Movie tekshirish
             movie_url = f"/movies/by-source?chat_id={chat_id}&topic_id={topic_id}"
             resp_movie = await api_client.client.get(movie_url)
+            if resp_movie.status_code == 409:
+                for msg in messages:
+                    logger.warning(
+                        f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
+                        f"decision=REJECTED_AMBIGUOUS reason=topic maps to multiple entities or both movie and series"
+                    )
+                return
             if resp_movie.status_code == 404:
                 for msg in messages:
                     logger.info(

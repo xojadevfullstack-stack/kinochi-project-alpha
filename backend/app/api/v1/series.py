@@ -24,6 +24,10 @@ from app.utils.trailer import validate_and_normalize_trailer_url
 from app.core.cache import get_cache, set_cache, delete_cache_pattern
 from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
 from app.core.config import settings
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from app.infrastructure.db.models.source import SourceModel
+from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.session import async_session_factory
 
@@ -176,15 +180,65 @@ async def search_series(
 @limiter.limit("120/minute")
 async def get_series_by_source(
     request: Request,
-    chat_id: int = Query(...),
-    topic_id: int | None = Query(None),
+    chat_id: int = Query(..., description="Telegram kanal/guruh chat ID"),
+    topic_id: int = Query(..., description="Forum mavzu (topic/message_thread_id) ID - majburiy"),
+    db: AsyncSession = Depends(get_db_session),
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get series by source (chat_id and topic_id) (Public)."""
-    series = await service.get_series_by_source(chat_id, topic_id)
-    if not series:
-        raise HTTPException(status_code=404, detail="Series not found")
-    return series
+    """Get series by source (chat_id and topic_id). Aniq qidiruv, noaniqlik bo'lsa rad etiladi."""
+    # 1. Ushbu chat_id va topic_id ga biriktirilgan seriallarni qidiramiz
+    stmt_series = (
+        select(SeriesModel)
+        .options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
+            selectinload(SeriesModel.source)
+        )
+        .join(SourceModel, SeriesModel.source_id == SourceModel.id)
+        .where(
+            SourceModel.chat_id == chat_id,
+            SourceModel.topic_id == topic_id
+        )
+    )
+    res_s = await db.execute(stmt_series)
+    series_models = list(res_s.scalars().all())
+
+    # 2. Ushbu chat_id va topic_id ga biriktirilgan kinolar bormi-yo'qligini tekshiramiz
+    stmt_movies = (
+        select(MovieModel)
+        .where(
+            MovieModel.source_chat_id == chat_id,
+            MovieModel.source_topic_id == topic_id,
+        )
+    )
+    res_m = await db.execute(stmt_movies)
+    movie_models = list(res_m.scalars().all())
+
+    # 3. Noaniqlik (ambiguous topic): 1 tadan ortiq serial yoki bir vaqtda ham film, ham serial mavjud bo'lsa
+    if len(series_models) > 1 or (len(series_models) >= 1 and len(movie_models) >= 1):
+        defect_msg = f"Topic maps to {len(series_models)} series and {len(movie_models)} movies"
+        logger.warning(f"Ambiguous topic detected: chat_id={chat_id}, topic_id={topic_id}. {defect_msg}")
+        await record_rejection(
+            session=db,
+            media_type="series",
+            source="auto_index",
+            source_key=f"{chat_id}:{topic_id}",
+            title=f"Ambiguous topic {chat_id}:{topic_id}",
+            payload={"chat_id": chat_id, "topic_id": topic_id, "series_count": len(series_models), "movie_count": len(movie_models)},
+            defects=[{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}],
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "Noaniq mavzu: bitta topic birdan ortiq ob'ektga yoki ham serial, ham filmga biriktirilgan", "defect": "ambiguous_topic"}
+        )
+
+    if len(series_models) == 0:
+        raise HTTPException(status_code=404, detail="Series not found by source")
+
+    return Series.model_validate(series_models[0])
 
 
 @router.get("/code/{code}", response_model=Series)

@@ -25,7 +25,10 @@ from app.utils.trailer import validate_and_normalize_trailer_url
 from app.core.cache import get_cache, set_cache, delete_cache_pattern
 from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
 from app.core.config import settings
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.models.source import SourceModel
 from app.infrastructure.db.session import async_session_factory
 
 router = APIRouter(prefix="/movies", tags=["movies"])
@@ -284,15 +287,66 @@ async def get_movie_by_code(
 @limiter.limit("120/minute")
 async def get_movie_by_source(
     request: Request,
-    chat_id: int,
-    topic_id: int | None = None,
+    chat_id: int = Query(..., description="Manba chat ID"),
+    topic_id: int = Query(..., description="Manba mavzu (topic) ID — majburiy"),
+    db: AsyncSession = Depends(get_db_session),
     service: MovieService = Depends(get_movie_service)
 ):
-    """Get movie by source chat and topic (Used by Bot)."""
-    movie = await service.get_movie_by_source(chat_id, topic_id)
-    if not movie:
+    """Get movie by source chat and topic exactly. Topic_id is mandatory."""
+    from app.infrastructure.db.models.source import SourceModel
+    from sqlalchemy.orm import selectinload
+
+    # 1. Aniq topic_id bo'yicha filmlarni qidiramiz
+    stmt_movies = (
+        select(MovieModel)
+        .options(
+            selectinload(MovieModel.categories),
+            selectinload(MovieModel.translations),
+            selectinload(MovieModel.pages),
+        )
+        .where(
+            MovieModel.source_chat_id == chat_id,
+            MovieModel.source_topic_id == topic_id,
+        )
+    )
+    res_m = await db.execute(stmt_movies)
+    movie_models = list(res_m.scalars().all())
+
+    # 2. Ushbu chat_id va topic_id ga biriktirilgan seriallar bormi-yo'qligini tekshiramiz
+    stmt_series = (
+        select(SourceModel)
+        .where(
+            SourceModel.chat_id == chat_id,
+            SourceModel.topic_id == topic_id,
+        )
+    )
+    res_s = await db.execute(stmt_series)
+    series_sources = list(res_s.scalars().all())
+
+    # 3. Noaniqlik (ambiguous topic): 1 tadan ortiq kino yoki bir vaqtda ham kino, ham serial mavjud bo'lsa
+    if len(movie_models) > 1 or (len(movie_models) >= 1 and len(series_sources) >= 1):
+        defect_msg = f"Topic maps to {len(movie_models)} movies and {len(series_sources)} series"
+        logger.warning(f"Ambiguous topic detected: chat_id={chat_id}, topic_id={topic_id}. {defect_msg}")
+        await record_rejection(
+            session=db,
+            media_type="movie",
+            source="auto_index",
+            source_key=f"{chat_id}:{topic_id}",
+            title=f"Ambiguous topic {chat_id}:{topic_id}",
+            payload={"chat_id": chat_id, "topic_id": topic_id, "movie_count": len(movie_models), "series_count": len(series_sources)},
+            defects=[{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}],
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "Noaniq mavzu: bitta topic birdan ortiq ob'ektga yoki ham film, ham serialga biriktirilgan", "defect": "ambiguous_topic"}
+        )
+
+    if len(movie_models) == 0:
         raise HTTPException(status_code=404, detail="Movie not found by source")
-    return movie
+
+    return MovieResponse.model_validate(movie_models[0])
 
 
 @router.get("/{movie_id}", response_model=MovieResponse)

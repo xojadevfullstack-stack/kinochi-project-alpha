@@ -40,7 +40,7 @@ class SeriesRepository:
         total_stmt = select(func.count()).select_from(stmt.subquery())
         total = await self.session.scalar(total_stmt)
         
-        stmt = stmt.order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
+        stmt = stmt.order_by(SeriesModel.id.asc()).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
@@ -117,19 +117,25 @@ class SeriesRepository:
 
 
     async def get_series_by_source(self, chat_id: int, topic_id: int | None) -> SeriesModel | None:
+        if topic_id is None:
+            raise ValueError("topic_id is mandatory for get_series_by_source")
         from app.infrastructure.db.models.source import SourceModel
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
             selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
-        ).join(SourceModel, SeriesModel.source_id == SourceModel.id).where(SourceModel.chat_id == chat_id)
-        
-        if topic_id is not None:
-            stmt = stmt.where(SourceModel.topic_id == topic_id)
-            
+        ).join(SourceModel, SeriesModel.source_id == SourceModel.id).where(
+            SourceModel.chat_id == chat_id,
+            SourceModel.topic_id == topic_id
+        )
         result = await self.session.execute(stmt)
-        return result.scalars().first()
+        models = list(result.scalars().all())
+        if len(models) == 0:
+            return None
+        if len(models) > 1:
+            raise ValueError(f"Ambiguous topic: multiple series ({len(models)}) found for chat_id={chat_id}, topic_id={topic_id}")
+        return models[0]
 
     async def get_series_by_title_and_year(self, title: str, release_year: int | None = None) -> SeriesModel | None:
         clean_title = str(title).strip().lower()
@@ -289,25 +295,34 @@ class SeriesRepository:
         Returns: (episode, season, series) yoki (None, None, None)
         """
         clean_code = str(code).strip()
-        norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
-        db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
-        
-        where_conditions = [
-            func.lower(EpisodeModel.code) == func.lower(clean_code),
-            func.lower(EpisodeModel.display_code) == func.lower(clean_code),
-            db_norm == norm_code
-        ]
+        code_conds = [func.lower(EpisodeModel.code) == func.lower(clean_code)]
         if clean_code.isdigit():
-            where_conditions.append(EpisodeModel.id == int(clean_code))
+            code_conds.append(EpisodeModel.id == int(clean_code))
 
-        # 1. Episode + translations va season_id'ni ol
+        # 1. Episode + translations: Birinchi navbatda unikal kod (code) yoki ID bo'yicha qidiramiz
         stmt = (
             select(EpisodeModel)
             .options(selectinload(EpisodeModel.translations))
-            .where(or_(*where_conditions))
+            .where(or_(*code_conds))
         )
         result = await self.session.execute(stmt)
         episode = result.scalars().first()
+
+        # Agar unikal kod bo'yicha topilmasa, display_code bo'yicha qidiramiz
+        if not episode:
+            norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
+            db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
+            stmt_disp = (
+                select(EpisodeModel)
+                .options(selectinload(EpisodeModel.translations))
+                .where(or_(
+                    func.lower(EpisodeModel.display_code) == func.lower(clean_code),
+                    db_norm == norm_code
+                ))
+            )
+            res_disp = await self.session.execute(stmt_disp)
+            episode = res_disp.scalars().first()
+
         if not episode:
             return None, None, None
 

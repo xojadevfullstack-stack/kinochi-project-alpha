@@ -117,18 +117,23 @@ class MovieRepositoryImpl(IMovieRepository):
 
 
     async def get_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
+        if topic_id is None:
+            raise ValueError("topic_id is mandatory for get_by_source")
         stmt = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
             selectinload(MovieModel.pages)
-        ).where(MovieModel.source_chat_id == chat_id)
-        if topic_id:
-            stmt = stmt.where(MovieModel.source_topic_id == topic_id)
-        else:
-            stmt = stmt.where(MovieModel.source_topic_id.is_(None))
+        ).where(
+            MovieModel.source_chat_id == chat_id,
+            MovieModel.source_topic_id == topic_id
+        )
         result = await self.session.execute(stmt)
-        model = result.scalar_one_or_none()
-        return self._to_domain(model) if model else None
+        models = list(result.scalars().all())
+        if len(models) == 0:
+            return None
+        if len(models) > 1:
+            raise ValueError(f"Ambiguous topic: multiple movies ({len(models)}) found for chat_id={chat_id}, topic_id={topic_id}")
+        return self._to_domain(models[0])
 
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
         clean_q = str(title_query).strip()
@@ -189,7 +194,7 @@ class MovieRepositoryImpl(IMovieRepository):
         count_query = select(func.count()).select_from(query.subquery())
         total = await self.session.scalar(count_query)
         
-        result = await self.session.execute(query.order_by(MovieModel.id.desc()).offset(skip).limit(limit))
+        result = await self.session.execute(query.order_by(MovieModel.id.asc()).offset(skip).limit(limit))
         models = result.scalars().all()
         
         return [self._to_domain(m) for m in models], total or 0
