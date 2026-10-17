@@ -39,6 +39,7 @@ async def test_allowlist_empty_ignores_all_chats(caplog):
     bot = MagicMock()
 
     with patch.object(settings, "AUTO_CONTENT_ENABLED", True), \
+         patch.object(settings, "AUTO_INDEX_DRY_RUN", False), \
          patch.object(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", []), \
          caplog.at_level(logging.INFO):
         await enqueue_video_message(msg, bot)
@@ -56,6 +57,7 @@ async def test_unlisted_chat_ignored(caplog):
     bot = MagicMock()
 
     with patch.object(settings, "AUTO_CONTENT_ENABLED", True), \
+         patch.object(settings, "AUTO_INDEX_DRY_RUN", False), \
          patch.object(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", [-100123456]), \
          caplog.at_level(logging.INFO):
         await enqueue_video_message(msg, bot)
@@ -71,6 +73,7 @@ async def test_missing_topic_id_ignored(caplog):
     bot = MagicMock()
 
     with patch.object(settings, "AUTO_CONTENT_ENABLED", True), \
+         patch.object(settings, "AUTO_INDEX_DRY_RUN", False), \
          patch.object(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", [-100123456]), \
          caplog.at_level(logging.INFO):
         await enqueue_video_message(msg, bot)
@@ -87,6 +90,7 @@ async def test_allowed_chat_and_valid_topic_buffered(caplog):
     bot = MagicMock()
 
     with patch.object(settings, "AUTO_CONTENT_ENABLED", True), \
+         patch.object(settings, "AUTO_INDEX_DRY_RUN", False), \
          patch.object(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", [-100123456]), \
          caplog.at_level(logging.INFO):
         await enqueue_video_message(msg, bot)

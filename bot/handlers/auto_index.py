@@ -199,9 +199,8 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
     # DRY-RUN TEKSHIRUVI: Agar AUTO_INDEX_DRY_RUN True bo'lsa, videoni saqlash va link qilish bajarilmaydi
     if getattr(settings, "AUTO_INDEX_DRY_RUN", True):
         logger.info(
-            f"[AUTO_INDEX DRY-RUN DECISION] chat={message.chat.id} topic={message.message_thread_id} "
-            f"msg_id={message.message_id} decision=DRY_RUN_WOULD_INDEX movie_id={movie.get('id')} "
-            f"title='{movie.get('title')}' code={movie_code} reason=AUTO_INDEX_DRY_RUN is True (no backend writes)"
+            f"[AUTO_INDEX][DRY_RUN] {message.chat.id} {message.message_thread_id} "
+            f"WOULD_INDEX valid movie video for movie_id={movie.get('id')} title='{movie.get('title')}' code={movie_code}"
         )
         return
 
@@ -274,9 +273,8 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         for msg in messages:
             explicit_ep = extract_episode_num_from_caption(msg.caption)
             logger.info(
-                f"[AUTO_INDEX DRY-RUN DECISION] chat={msg.chat.id} topic={msg.message_thread_id} "
-                f"msg_id={msg.message_id} decision=DRY_RUN_WOULD_INDEX series_id={series.get('id')} "
-                f"title='{series.get('title')}' ep={explicit_ep} reason=AUTO_INDEX_DRY_RUN is True (no backend writes)"
+                f"[AUTO_INDEX][DRY_RUN] {msg.chat.id} {msg.message_thread_id} "
+                f"WOULD_INDEX valid series episode ep={explicit_ep} for series_id={series.get('id')} title='{series.get('title')}'"
             )
         return
 
@@ -680,11 +678,162 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
         await process_series_batch(messages, bot, series)
 
 
+async def evaluate_dry_run_decision(message: Message, bot: Bot | None = None) -> tuple[str, str]:
+    """
+    AUTO_INDEX_DRY_RUN=True bo'lganda to'liq qarorlar zanjirini (decision pipeline) ishga tushiradi:
+    1. Allowlist tekshiruvi (AUTO_INDEX_ALLOWED_CHAT_IDS)
+    2. Topic mavjudligi tekshiruvi (message_thread_id)
+    3. Serial va Kino uchun bir vaqtning o'zida read-only by-source qidiruvi
+    4. Admission gate pre-checks (video fayl, davomiylik/qism, overwrite tekshiruvi)
+    
+    Qaror va sabab log formatida yoziladi:
+    [AUTO_INDEX][DRY_RUN] chat topic decision reason
+    Hech qachon backendga yoki Telegram storage kanalga yozmaydi.
+    """
+    chat_id = message.chat.id
+    topic_id = message.message_thread_id
+    chat_str = str(chat_id)
+    topic_str = str(topic_id) if topic_id is not None else "None"
+
+    # 1. Allowlist check
+    allowed_chats = getattr(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", []) or []
+    if isinstance(allowed_chats, str):
+        allowed_chats = [int(x.strip()) for x in allowed_chats.split(",") if x.strip()]
+    if chat_id not in allowed_chats:
+        decision = "REJECTED_ALLOWLIST"
+        reason = f"chat_id {chat_id} not in AUTO_INDEX_ALLOWED_CHAT_IDS allowlist"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    # 2. Topic check
+    if topic_id is None:
+        decision = "REJECTED_NO_TOPIC"
+        reason = "message has no topic_id (message_thread_id is required)"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    # 3. Read-only by-source lookups for BOTH series and movies
+    series_resp = None
+    movie_resp = None
+    try:
+        series_resp = await api_client.client.get(f"/series/by-source?chat_id={chat_id}&topic_id={topic_id}")
+    except Exception as e:
+        logger.error(f"[AUTO_INDEX][DRY_RUN] Error looking up series by-source: {e}")
+
+    try:
+        movie_resp = await api_client.client.get(f"/movies/by-source?chat_id={chat_id}&topic_id={topic_id}")
+    except Exception as e:
+        logger.error(f"[AUTO_INDEX][DRY_RUN] Error looking up movie by-source: {e}")
+
+    series_status = series_resp.status_code if series_resp is not None else 500
+    movie_status = movie_resp.status_code if movie_resp is not None else 500
+
+    if series_status == 409 or movie_status == 409:
+        decision = "REJECTED_AMBIGUOUS"
+        reason = "topic maps to multiple entities in backend"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    if series_status == 200 and movie_status == 200:
+        decision = "REJECTED_AMBIGUOUS"
+        reason = "topic maps to both movie and series"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    if series_status == 404 and movie_status == 404:
+        decision = "SKIPPED_NOT_FOUND"
+        reason = "topic maps to zero entities in backend"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    # 4. Gate pre-checks
+    telegram_file_id, file_name = extract_media_info(message)
+    if not telegram_file_id:
+        decision = "REJECTED_GATE"
+        reason = "file is not a video or unsupported format"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    # Case: Series
+    if series_status == 200:
+        series = series_resp.json()
+        explicit_ep = extract_episode_num_from_caption(message.caption)
+        if explicit_ep is None:
+            decision = "REJECTED_GATE"
+            reason = "cannot extract explicit episode number from caption"
+            logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+            return decision, reason
+
+        has_ep_video = False
+        for s in series.get("seasons", []) or []:
+            for ep in s.get("episodes", []) or []:
+                if ep.get("episode_number") == explicit_ep:
+                    if ep.get("translations") or ep.get("storage_channel_message_id") or ep.get("telegram_file_id"):
+                        has_ep_video = True
+                        break
+        if has_ep_video:
+            decision = "SKIPPED_ALREADY_ATTACHED"
+            reason = f"series id={series.get('id')} already has video for episode {explicit_ep} (no overwrite)"
+            logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+            return decision, reason
+
+        decision = "WOULD_INDEX"
+        reason = f"valid series episode ep={explicit_ep} for series_id={series.get('id')} title='{series.get('title')}'"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    # Case: Movie
+    if movie_status == 200:
+        movie = movie_resp.json()
+        video_duration = getattr(message.video, "duration", None) if message.video else None
+        if not video_duration or video_duration <= 0:
+            decision = "REJECTED_GATE"
+            reason = "duration_unknown"
+            logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+            return decision, reason
+
+        existing_translations = movie.get("translations", []) or []
+        has_video = any(tr.get("telegram_file_id") or tr.get("storage_channel_message_id") for tr in existing_translations if tr.get("language") == "O'zbekcha")
+        if has_video:
+            decision = "SKIPPED_ALREADY_ATTACHED"
+            reason = f"movie id={movie.get('id')} already has O'zbekcha video translation (no overwrite)"
+            logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+            return decision, reason
+
+        expected_runtime = movie.get("duration") or movie.get("runtime")
+        if expected_runtime:
+            tol_pct = getattr(settings, "MOVIE_RUNTIME_TOLERANCE_PERCENT", 15)
+            tol_min = max(expected_runtime * (tol_pct / 100.0), 5.0)
+            video_min = video_duration / 60.0
+            if abs(video_min - expected_runtime) > tol_min:
+                decision = "REJECTED_GATE"
+                reason = f"runtime_mismatch: video duration {video_min:.1f}m differs from expected {expected_runtime}m by more than {tol_min:.1f}m"
+                logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+                return decision, reason
+
+        decision = "WOULD_INDEX"
+        reason = f"valid movie video for movie_id={movie.get('id')} title='{movie.get('title')}' code={movie.get('code')}"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
+    decision = "UNKNOWN"
+    reason = "unhandled dry run state"
+    logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+    return decision, reason
+
+
 async def enqueue_video_message(message: Message, bot: Bot):
     chat_id = message.chat.id
     topic_id = message.message_thread_id
 
-    # 1. KILL SWITCH: AUTO_CONTENT_ENABLED tekshiruvi (default False: hech narsa qabul qilinmaydi)
+    # 1. DRY-RUN TEKSHIRUVI: Agar AUTO_INDEX_DRY_RUN True bo'lsa (default True):
+    # To'liq qarorlar zanjirini (decision pipeline) bajaramiz, log qilamiz va hech narsa yozmaymiz!
+    # Bu AUTO_CONTENT_ENABLED=False bo'lganda ham to'liq ishlaydi.
+    if getattr(settings, "AUTO_INDEX_DRY_RUN", True):
+        await evaluate_dry_run_decision(message, bot)
+        return
+
+    # 2. KILL SWITCH: AUTO_CONTENT_ENABLED tekshiruvi (default False: hech narsa qabul qilinmaydi)
     if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
         logger.info(
             f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={message.message_id} "
@@ -692,7 +841,7 @@ async def enqueue_video_message(message: Message, bot: Bot):
         )
         return
 
-    # 2. ALLOWLIST: Faqat AUTO_INDEX_ALLOWED_CHAT_IDS ro'yxatidagi chat_id lar qabul qilinadi (default bo'sh = hech narsa olinmaydi)
+    # 3. ALLOWLIST: Faqat AUTO_INDEX_ALLOWED_CHAT_IDS ro'yxatidagi chat_id lar qabul qilinadi (default bo'sh = hech narsa olinmaydi)
     allowed_chats = getattr(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", []) or []
     if isinstance(allowed_chats, str):
         allowed_chats = [int(x.strip()) for x in allowed_chats.split(",") if x.strip()]
@@ -703,7 +852,7 @@ async def enqueue_video_message(message: Message, bot: Bot):
         )
         return
 
-    # 3. TOPIC_ID MAJBURIY: Faqat topic_id (message_thread_id) mavjud xabarlar qayta ishlanadi (mavzusiz = ignore)
+    # 4. TOPIC_ID MAJBURIY: Faqat topic_id (message_thread_id) mavjud xabarlar qayta ishlanadi (mavzusiz = ignore)
     if topic_id is None:
         logger.info(
             f"[AUTO_INDEX DECISION] chat={chat_id} topic=None msg_id={message.message_id} "
