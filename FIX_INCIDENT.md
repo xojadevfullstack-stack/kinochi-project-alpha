@@ -54,3 +54,5 @@
 - [x] 20. CODE RESOLVER NUMERIC MOVIE CODE (check get_movie_by_code first, reject digit-only if not found) - Commit: `0e67fb8`
 - [x] 21. LOCAL POSTGRES VERIFICATION - NOT-RUN (Docker daemon mavjud emas, 8 ta integratsiya testi TEST_DATABASE_URL yo'qligi sababli LOUD SKIP qilingan; tashqi bazaga ulanish taqiqlangan)
 
+- [x] 22. ONE DECISION FUNCTION (decide_topic: jonli va dry-run bir xil qaror; serial 200 bo'lsa ham kino tekshiriladi) - Commit: see git log
+- [x] 23. BACKEND CROSS-CHECK - o'zgarish talab qilinmadi: series/movies by-source ikkalasi ham ham-kino-ham-serial holatida 409 qaytaradi va rejected_items ni mustaqil sessiyada yozadi (92a7d9a, testlar test_exact_lookups_item3.py)

@@ -561,6 +561,55 @@ class SourceBatch:
 
 source_batches: dict[str, SourceBatch] = {}
 
+
+class _EntityResp:
+    """Dry-run keyingi tekshiruvlari uchun .json() beruvchi yengil o'ram."""
+    def __init__(self, data: dict):
+        self._data = data
+
+    def json(self) -> dict:
+        return self._data
+
+
+async def decide_topic(chat_id: int, topic_id: int) -> tuple[str, dict | None, str]:
+    """Topic -> entity qarori (faqat o'qish, hech qachon yozmaydi).
+
+    Qaytaradi: (decision, entity, reason)
+    - serial yoki kinoda 409, yoki ikkalasida 200 -> REJECTED_AMBIGUOUS
+    - aynan bittasida 200 -> INDEX_SERIES / INDEX_MOVIE
+    - ikkalasida 404 -> SKIPPED_NOT_FOUND
+    - boshqa status yoki xatolik -> SKIPPED_ERROR
+    """
+    async def _get(path: str):
+        try:
+            return await api_client.client.get(f"{path}?chat_id={chat_id}&topic_id={topic_id}")
+        except Exception as e:
+            logger.error(f"[AUTO_INDEX] by-source xatosi {path}: {e}")
+            return None
+
+    series_resp = await _get("/series/by-source")
+    movie_resp = await _get("/movies/by-source")
+    s = series_resp.status_code if series_resp is not None else 500
+    m = movie_resp.status_code if movie_resp is not None else 500
+
+    if s == 409 or m == 409:
+        return "REJECTED_AMBIGUOUS", None, "topic maps to multiple entities in backend"
+    if s == 200 and m == 200:
+        return "REJECTED_AMBIGUOUS", None, "topic maps to both movie and series"
+    if s == 404 and m == 404:
+        return "SKIPPED_NOT_FOUND", None, "topic maps to zero entities in backend"
+    if s == 200 and m == 404:
+        try:
+            return "INDEX_SERIES", series_resp.json(), "topic mapped to series"
+        except Exception as e:
+            return "SKIPPED_ERROR", None, f"series json error: {e}"
+    if m == 200 and s == 404:
+        try:
+            return "INDEX_MOVIE", movie_resp.json(), "topic mapped to movie"
+        except Exception as e:
+            return "SKIPPED_ERROR", None, f"movie json error: {e}"
+    return "SKIPPED_ERROR", None, f"unexpected by-source status series={s} movie={m}"
+
 async def flush_source_batch(source_key: str, bot: Bot, delay: float):
     try:
         if delay > 0:
@@ -612,43 +661,20 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
         # 1. Telegram xabarlarini message_id bo'yicha o'sish tartibida saralash (1-qismdan boshlab)
         messages = sorted(batch.messages, key=lambda m: m.message_id)
 
-        # 2. Source orqali Series yoki Movie qidirish
-        url = f"/series/by-source?chat_id={chat_id}&topic_id={topic_id}"
-        resp = await api_client.client.get(url)
+        # 2. Yagona qaror funksiyasi (dry-run bilan bir xil): serial va kino ikkalasi tekshiriladi
+        decision, entity, reason = await decide_topic(chat_id, topic_id)
 
-        if resp.status_code == 409:
+        if decision not in ("INDEX_SERIES", "INDEX_MOVIE"):
+            log_fn = logger.warning if decision in ("REJECTED_AMBIGUOUS", "SKIPPED_ERROR") else logger.info
             for msg in messages:
-                logger.warning(
+                log_fn(
                     f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
-                    f"decision=REJECTED_AMBIGUOUS reason=topic maps to multiple entities or both movie and series"
+                    f"decision={decision} reason={reason}"
                 )
             return
 
-        if resp.status_code == 404:
-            # Movie tekshirish
-            movie_url = f"/movies/by-source?chat_id={chat_id}&topic_id={topic_id}"
-            resp_movie = await api_client.client.get(movie_url)
-            if resp_movie.status_code == 409:
-                for msg in messages:
-                    logger.warning(
-                        f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
-                        f"decision=REJECTED_AMBIGUOUS reason=topic maps to multiple entities or both movie and series"
-                    )
-                return
-            if resp_movie.status_code == 404:
-                for msg in messages:
-                    logger.info(
-                        f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
-                        f"decision=SKIPPED_NOT_FOUND reason=topic maps to zero entities in backend"
-                    )
-                return
-            try:
-                resp_movie.raise_for_status()
-                movie = resp_movie.json()
-            except Exception as e:
-                logger.error(f"Error fetching movie by source: {e}")
-                return
-
+        if decision == "INDEX_MOVIE":
+            movie = entity
             for msg in messages:
                 logger.info(
                     f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
@@ -657,18 +683,7 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
                 await process_movie_message(msg, bot, movie)
             return
 
-        try:
-            resp.raise_for_status()
-            series = resp.json()
-        except Exception as e:
-            logger.error(f"Error fetching series by source: {e}")
-            for msg in messages:
-                try:
-                    await msg.reply(f"❌ Serial backenddan qidirilayotganda tizimli xato: {e}")
-                except Exception as reply_err:
-                    logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
-            return
-
+        series = entity
         # 3. Series uchun qismlarni ketma-ket indekslash
         for msg in messages:
             logger.info(
@@ -712,39 +727,15 @@ async def evaluate_dry_run_decision(message: Message, bot: Bot | None = None) ->
         logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
         return decision, reason
 
-    # 3. Read-only by-source lookups for BOTH series and movies
-    series_resp = None
-    movie_resp = None
-    try:
-        series_resp = await api_client.client.get(f"/series/by-source?chat_id={chat_id}&topic_id={topic_id}")
-    except Exception as e:
-        logger.error(f"[AUTO_INDEX][DRY_RUN] Error looking up series by-source: {e}")
-
-    try:
-        movie_resp = await api_client.client.get(f"/movies/by-source?chat_id={chat_id}&topic_id={topic_id}")
-    except Exception as e:
-        logger.error(f"[AUTO_INDEX][DRY_RUN] Error looking up movie by-source: {e}")
-
-    series_status = series_resp.status_code if series_resp is not None else 500
-    movie_status = movie_resp.status_code if movie_resp is not None else 500
-
-    if series_status == 409 or movie_status == 409:
-        decision = "REJECTED_AMBIGUOUS"
-        reason = "topic maps to multiple entities in backend"
-        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
-        return decision, reason
-
-    if series_status == 200 and movie_status == 200:
-        decision = "REJECTED_AMBIGUOUS"
-        reason = "topic maps to both movie and series"
-        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
-        return decision, reason
-
-    if series_status == 404 and movie_status == 404:
-        decision = "SKIPPED_NOT_FOUND"
-        reason = "topic maps to zero entities in backend"
-        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
-        return decision, reason
+    # 3. Yagona qaror funksiyasi (jonli yo'l bilan bir xil)
+    topic_decision, entity, topic_reason = await decide_topic(chat_id, topic_id)
+    if topic_decision not in ("INDEX_SERIES", "INDEX_MOVIE"):
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {topic_decision} {topic_reason}")
+        return topic_decision, topic_reason
+    series_status = 200 if topic_decision == "INDEX_SERIES" else 404
+    movie_status = 200 if topic_decision == "INDEX_MOVIE" else 404
+    series_resp = _EntityResp(entity) if topic_decision == "INDEX_SERIES" else None
+    movie_resp = _EntityResp(entity) if topic_decision == "INDEX_MOVIE" else None
 
     # 4. Gate pre-checks
     telegram_file_id, file_name = extract_media_info(message)

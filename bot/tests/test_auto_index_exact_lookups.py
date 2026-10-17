@@ -40,7 +40,7 @@ async def test_flush_source_batch_rejects_ambiguous_series():
     with patch("handlers.auto_index.api_client.client.get", return_value=mock_resp) as mock_get:
         await flush_source_batch(key, mock_bot, delay=0)
 
-        mock_get.assert_called_once()
+        assert mock_get.call_count == 2  # serial va kino ikkalasi o'qiladi (faqat o'qish)
         assert not mock_bot.copy_message.called
 
 
