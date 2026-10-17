@@ -10,78 +10,97 @@ router = Router()
 
 @router.callback_query(F.data.startswith("ep_prev:") | F.data.startswith("ep_next:"))
 async def handle_episode_navigation(callback: CallbackQuery):
-    code = callback.data.split(":", 1)[1]
-    
-    episode = await api_client.get_episode_by_code(code)
-    if not episode:
-        await callback.answer("⚠️ Qism topilmadi yoki o'chirilgan!", show_alert=True)
-        return
+    try:
+        code = callback.data.split(":", 1)[1]
         
-    translations = episode.get("translations", [])
-    if not translations:
-        await callback.answer("⏳ Bu qism videosi hozircha yuklanmagan.", show_alert=True)
-        return
+        episode = await api_client.get_episode_by_code(code)
+        if not episode:
+            await callback.answer("⚠️ Qism topilmadi yoki o'chirilgan!", show_alert=True)
+            return
+            
+        translations = episode.get("translations", [])
+        if not translations:
+            await callback.answer("⏳ Bu qism videosi hozircha yuklanmagan.", show_alert=True)
+            return
+            
+        from utils.episode_sender import send_episode_to_user
+        success = await send_episode_to_user(callback.bot, callback.from_user.id, episode)
         
-    from utils.episode_sender import send_episode_to_user
-    success = await send_episode_to_user(callback.bot, callback.from_user.id, episode)
-    
-    if success:
+        if success:
+            try:
+                await callback.message.delete()
+            except Exception as e:
+                logger.warning(f"Could not delete message in handle_episode_navigation: {e}")
+        else:
+            await callback.answer("Xatolik yuz berdi.", show_alert=True)
+    finally:
         try:
-            await callback.message.delete()
-        except Exception as e:
-            logger.warning(f"Could not delete message in handle_episode_navigation: {e}")
-        await callback.answer()
-    else:
-        await callback.answer("Xatolik yuz berdi.", show_alert=True)
+            await callback.answer()
+        except Exception:
+            pass
 
 
 @router.callback_query(F.data.startswith("series_info:"))
 async def handle_series_info(callback: CallbackQuery):
-    series_id = int(callback.data.split(":", 1)[1])
-    
-    series = await api_client.get_series_by_id(series_id)
-    if not series:
-        await callback.answer("⚠️ Serial ma'lumotlari topilmadi!", show_alert=True)
-        return
+    try:
+        series_id = int(callback.data.split(":", 1)[1])
         
-    from utils.info_sender import send_series_info
-    success = await send_series_info(callback.bot, callback.from_user.id, series)
-    
-    if success:
+        series = await api_client.get_series_by_id(series_id)
+        if not series:
+            await callback.answer("⚠️ Serial ma'lumotlari topilmadi!", show_alert=True)
+            return
+            
+        from utils.info_sender import send_series_info
+        success = await send_series_info(callback.bot, callback.from_user.id, series)
+        
+        if success:
+            try:
+                await callback.message.delete()
+            except Exception as e:
+                logger.warning(f"Could not delete message in handle_series_info: {e}")
+        else:
+            await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
+    finally:
         try:
-            await callback.message.delete()
-        except Exception as e:
-            logger.warning(f"Could not delete message in handle_series_info: {e}")
-        await callback.answer()
-    else:
-        await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
+            await callback.answer()
+        except Exception:
+            pass
 
 @router.callback_query(F.data.startswith("back_to_series:"))
 async def handle_back_to_series(callback: CallbackQuery):
-    series_id = int(callback.data.split(":", 1)[1])
-    
-    series = await api_client.get_series_by_id(series_id)
-    if not series:
-        await callback.answer("⚠️ Serial ma'lumotlari topilmadi!", show_alert=True)
-        return
+    try:
+        series_id = int(callback.data.split(":", 1)[1])
         
-    from utils.info_sender import send_series_info
-    success = await send_series_info(callback.bot, callback.from_user.id, series, edit_message_id=callback.message.message_id)
-    
-    if success:
-        await callback.answer()
-    else:
-        await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
+        series = await api_client.get_series_by_id(series_id)
+        if not series:
+            await callback.answer("⚠️ Serial ma'lumotlari topilmadi!", show_alert=True)
+            return
+            
+        from utils.info_sender import send_series_info
+        success = await send_series_info(callback.bot, callback.from_user.id, series, edit_message_id=callback.message.message_id)
+        
+        if not success:
+            await callback.answer("⚠️ Xatolik yuz berdi.", show_alert=True)
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 
 @router.callback_query(F.data == "main_menu")
 async def handle_main_menu_callback(callback: CallbackQuery):
-    await callback.answer()
-    from keyboards.reply import main_menu
-    welcome_text = (
-        "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
-        "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
-        "🎥 Kinoni ko'rish uchun <b>kino kodini</b> yuboring yoki saytimiz orqali tanlang!\n\n"
-        "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
-    )
-    await callback.message.answer(welcome_text, parse_mode="HTML", reply_markup=main_menu)
+    try:
+        from keyboards.reply import main_menu
+        welcome_text = (
+            "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
+            "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
+            "🎥 Kinoni ko'rish uchun <b>kino kodini</b> yuboring yoki saytimiz orqali tanlang!\n\n"
+            "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
+        )
+        await callback.message.answer(welcome_text, parse_mode="HTML", reply_markup=main_menu)
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass

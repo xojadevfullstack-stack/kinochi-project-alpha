@@ -110,20 +110,25 @@ async def render_user_profile(user_id: int, first_name: str, username: str = Non
 
 @router.callback_query(F.data == "menu_profile")
 async def handle_profile_callback(callback: CallbackQuery):
-    text, markup = await render_user_profile(
-        user_id=callback.from_user.id,
-        first_name=callback.from_user.first_name,
-        username=callback.from_user.username
-    )
     try:
-        if callback.message.photo or callback.message.video:
-            await callback.message.delete()
+        text, markup = await render_user_profile(
+            user_id=callback.from_user.id,
+            first_name=callback.from_user.first_name,
+            username=callback.from_user.username
+        )
+        try:
+            if callback.message.photo or callback.message.video:
+                await callback.message.delete()
+                await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+            else:
+                await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+        except Exception:
             await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-        else:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
-    except Exception:
-        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
-    await callback.answer()
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 
 @router.message(Command("profile"))

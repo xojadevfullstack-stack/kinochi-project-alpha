@@ -71,59 +71,73 @@ async def handle_search_query(message: Message):
 
 @router.callback_query(F.data.startswith("movie_"))
 async def handle_movie_selection(callback: CallbackQuery):
-    code = callback.data.split("_", 1)[1]
-    
-    await callback.answer() # Acknowledge callback
-    
-    movie = await api_client.get_movie_by_code(code)
-    
-    if not movie:
-        await callback.message.answer("⚠️ <b>Xatolik:</b> Bu kino bazadan topilmadi. Balki o'chirilgandir?", parse_mode="HTML")
-        return
+    try:
+        code = callback.data.split("_", 1)[1]
         
-    from utils.info_sender import send_movie_info
-    success = await send_movie_info(callback.bot, callback.from_user.id, movie)
-    
-    if not success:
-        await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")
+        movie = await api_client.get_movie_by_code(code)
+        
+        if not movie:
+            await callback.message.answer("⚠️ <b>Xatolik:</b> Bu kino bazadan topilmadi. Balki o'chirilgandir?", parse_mode="HTML")
+            return
+            
+        from utils.info_sender import send_movie_info
+        success = await send_movie_info(callback.bot, callback.from_user.id, movie)
+        
+        if not success:
+            await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 @router.callback_query(F.data.startswith("search_series_"))
 async def handle_series_selection(callback: CallbackQuery):
-    series_id_str = callback.data.split("_", 2)[2]
-    
-    await callback.answer() # Acknowledge callback
-    
-    series_id = int(series_id_str)
-    series = await api_client.get_series_by_id(series_id)
-    
-    if not series:
-        await callback.message.answer("⚠️ <b>Xatolik:</b> Bu serial bazadan topilmadi. Balki o'chirilgandir?", parse_mode="HTML")
-        return
+    try:
+        series_id_str = callback.data.split("_", 2)[2]
         
-    from utils.info_sender import send_series_info
-    success = await send_series_info(callback.bot, callback.from_user.id, series)
-    
-    if not success:
-        await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")
+        series_id = int(series_id_str)
+        series = await api_client.get_series_by_id(series_id)
+        
+        if not series:
+            await callback.message.answer("⚠️ <b>Xatolik:</b> Bu serial bazadan topilmadi. Balki o'chirilgandir?", parse_mode="HTML")
+            return
+            
+        from utils.info_sender import send_series_info
+        success = await send_series_info(callback.bot, callback.from_user.id, series)
+        
+        if not success:
+            await callback.message.answer("⚠️ Xatolik yuz berdi.", parse_mode="HTML")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 @router.callback_query(F.data.startswith("sub_series_"))
 async def handle_series_subscription(callback: CallbackQuery):
-    series_id_str = callback.data.split("_", 2)[2]
-    series_id = int(series_id_str)
-    
-    res = await api_client.toggle_series_subscription(series_id, callback.from_user.id)
-    is_sub = res.get("is_subscribed", False)
-    
-    if is_sub:
-        await callback.answer("🔔 Obuna bo'ldingiz! Yangi qism chiqishi bilan xabar yuboramiz.", show_alert=True)
-    else:
-        await callback.answer("🔕 Obuna bekor qilindi.", show_alert=True)
+    try:
+        series_id_str = callback.data.split("_", 2)[2]
+        series_id = int(series_id_str)
         
-    # Refresh series card to reflect new subscription button state
-    series = await api_client.get_series_by_id(series_id)
-    if series:
-        from utils.info_sender import send_series_info
-        await send_series_info(callback.bot, callback.from_user.id, series, edit_message_id=callback.message.message_id)
+        res = await api_client.toggle_series_subscription(series_id, callback.from_user.id)
+        is_sub = res.get("is_subscribed", False)
+        
+        if is_sub:
+            await callback.answer("🔔 Obuna bo'ldingiz! Yangi qism chiqishi bilan xabar yuboramiz.", show_alert=True)
+        else:
+            await callback.answer("🔕 Obuna bekor qilindi.", show_alert=True)
+            
+        # Refresh series card to reflect new subscription button state
+        series = await api_client.get_series_by_id(series_id)
+        if series:
+            from utils.info_sender import send_series_info
+            await send_series_info(callback.bot, callback.from_user.id, series, edit_message_id=callback.message.message_id)
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 
 # ── Telegram Inline Search Handler ──────────────────────────────────

@@ -79,28 +79,37 @@ async def send_trailer(bot: Bot, chat_id: int, trailer_url: str):
 
 @router.callback_query(F.data.startswith("trailer_m_"))
 async def handle_movie_trailer(callback: CallbackQuery):
-    code = callback.data.split("_", 2)[2]
-    await callback.answer()
-    
-    movie = await api_client.get_movie_by_code(code)
-    if not movie or not movie.get("trailer_url"):
-        await callback.message.answer("⚠️ Treyler topilmadi.", show_alert=True)
-        return
-        
-    await send_trailer(callback.bot, callback.from_user.id, movie["trailer_url"])
+    try:
+        code = callback.data.split("_", 2)[2]
+        movie = await api_client.get_movie_by_code(code)
+        if not movie or not movie.get("trailer_url"):
+            await callback.answer("⚠️ Treyler topilmadi.", show_alert=True)
+            return
+            
+        await send_trailer(callback.bot, callback.from_user.id, movie["trailer_url"])
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 @router.callback_query(F.data.startswith("trailer_s_"))
 async def handle_series_trailer(callback: CallbackQuery):
-    series_id_str = callback.data.split("_", 2)[2]
-    await callback.answer()
-    
     try:
-        series_id = int(series_id_str)
-        series = await api_client.get_series_by_id(series_id)
-        if not series or not series.get("trailer_url"):
-            await callback.message.answer("⚠️ Treyler topilmadi.", show_alert=True)
-            return
-            
-        await send_trailer(callback.bot, callback.from_user.id, series["trailer_url"])
-    except ValueError:
-        await callback.message.answer("⚠️ Xatolik.", show_alert=True)
+        series_id_str = callback.data.split("_", 2)[2]
+        try:
+            series_id = int(series_id_str)
+            series = await api_client.get_series_by_id(series_id)
+            if not series or not series.get("trailer_url"):
+                await callback.answer("⚠️ Treyler topilmadi.", show_alert=True)
+                return
+                
+            await send_trailer(callback.bot, callback.from_user.id, series["trailer_url"])
+        except ValueError:
+            await callback.answer("⚠️ Xatolik.", show_alert=True)
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
