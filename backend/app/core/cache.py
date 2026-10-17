@@ -63,7 +63,7 @@ async def set_cache(key: str, data: Any, ttl_seconds: int = 300) -> bool:
     return True
 
 async def delete_cache_pattern(pattern: str) -> None:
-    """Delete keys matching a specific pattern."""
+    """Delete keys matching a specific pattern from both memory and Redis."""
     global _redis_disabled
     to_delete = [k for k in list(_memory_cache.keys()) if fnmatch.fnmatch(k, pattern)]
     for k in to_delete:
@@ -73,9 +73,58 @@ async def delete_cache_pattern(pattern: str) -> None:
         return
 
     try:
-        keys = await job_manager._redis.keys(pattern)
-        if keys:
-            await job_manager._redis.delete(*keys)
+        if job_manager._redis:
+            keys = await job_manager._redis.keys(pattern)
+            if keys:
+                await job_manager._redis.delete(*keys)
     except RedisError as e:
         if not _redis_disabled:
             _redis_disabled = True
+    except Exception as e:
+        logger.debug(f"Redis delete keys error: {e}")
+
+
+def clear_memory_cache() -> None:
+    """In-memory zaxira keshini to'liq tozalaydi."""
+    global _memory_cache
+    _memory_cache.clear()
+
+
+def get_memory_cache_keys() -> list[str]:
+    """In-memory kesh kalitlarini qaytaradi (testlar va audit uchun)."""
+    return list(_memory_cache.keys())
+
+
+async def flush_all_cache() -> None:
+    """In-memory va Redis keshlarini bir vaqtda to'liq tozalaydi."""
+    clear_memory_cache()
+    global _redis_disabled
+    if _redis_disabled:
+        return
+
+    try:
+        if job_manager._redis:
+            await job_manager._redis.flushdb()
+    except RedisError as e:
+        if not _redis_disabled:
+            logger.warning(f"Redis flushdb xatosi ({e}).")
+            _redis_disabled = True
+    except Exception as e:
+        logger.debug(f"Cache flush error: {e}")
+
+
+async def invalidate_media_cache(media_type: str = "all") -> None:
+    """
+    Publish status o'zgarganda yoki media yozilganda keshni (memory + Redis) tozalaydi.
+    """
+    if media_type in ("movie", "movies"):
+        await delete_cache_pattern("cache:movies:*")
+        await delete_cache_pattern("cache:search:*")
+    elif media_type in ("series", "season", "episode"):
+        await delete_cache_pattern("cache:series:*")
+        await delete_cache_pattern("cache:search:*")
+    else:
+        await delete_cache_pattern("cache:movies:*")
+        await delete_cache_pattern("cache:series:*")
+        await delete_cache_pattern("cache:search:*")
+        await delete_cache_pattern("*")

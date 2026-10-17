@@ -220,6 +220,11 @@ async def create_report(
             if target_movie and target_movie.publish_status != "hidden":
                 target_movie.publish_status = "hidden"
                 logger.warning(f"Kino (ID: {valid_movie_id}) {REPORT_THRESHOLD} ta shikoyat tufayli 'hidden' holatiga o'tkazildi.")
+                try:
+                    from app.core.cache import invalidate_media_cache
+                    await invalidate_media_cache("movie")
+                except Exception as c_err:
+                    logger.debug(f"Cache invalidation error: {c_err}")
     elif valid_series_id:
         cnt_res = await db.execute(
             select(func.count(ReportModel.id)).where(
@@ -233,6 +238,11 @@ async def create_report(
             if target_series and target_series.publish_status != "hidden":
                 target_series.publish_status = "hidden"
                 logger.warning(f"Serial (ID: {valid_series_id}) {REPORT_THRESHOLD} ta shikoyat tufayli 'hidden' holatiga o'tkazildi.")
+                try:
+                    from app.core.cache import invalidate_media_cache
+                    await invalidate_media_cache("series")
+                except Exception as c_err:
+                    logger.debug(f"Cache invalidation error: {c_err}")
 
     # DB ga saqlash
     report = ReportModel(
@@ -451,6 +461,11 @@ async def update_report_status(
                 if m and m.publish_status == "hidden":
                     m.publish_status = "published"
                     logger.info(f"Kino (ID: {report.movie_id}) shikoyat hal bo'lgach 'published' holatiga tiklandi.")
+                    try:
+                        from app.core.cache import invalidate_media_cache
+                        await invalidate_media_cache("movie")
+                    except Exception as c_err:
+                        logger.debug(f"Cache invalidation error: {c_err}")
         elif report.media_type in ("series", "episode") and report.series_id:
             rem_res = await db.execute(
                 select(func.count(ReportModel.id)).where(
@@ -465,6 +480,11 @@ async def update_report_status(
                 if s and s.publish_status == "hidden":
                     s.publish_status = "published"
                     logger.info(f"Serial (ID: {report.series_id}) shikoyat hal bo'lgach 'published' holatiga tiklandi.")
+                    try:
+                        from app.core.cache import invalidate_media_cache
+                        await invalidate_media_cache("series")
+                    except Exception as c_err:
+                        logger.debug(f"Cache invalidation error: {c_err}")
 
     await db.commit()
     await db.refresh(report)

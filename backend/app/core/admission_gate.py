@@ -636,5 +636,18 @@ async def promote_to_published(
         except Exception as e:
             logger.debug(f"SeedCandidate holatini 'ingested' ga yangilashda xatolik: {e}")
 
+    # Keshni (in-memory + Redis) publish_status o'zgarganda tozalash
+    try:
+        from app.core.cache import invalidate_media_cache
+        obj_name = type(media_obj).__name__.lower()
+        if "movie" in obj_name:
+            await invalidate_media_cache("movie")
+        elif "series" in obj_name or "episode" in obj_name:
+            await invalidate_media_cache("series")
+        else:
+            await invalidate_media_cache("all")
+    except Exception as cache_err:
+        logger.debug(f"Cache invalidation error in promote_to_published: {cache_err}")
+
     logger.info(f"Admission Gate: {type(media_obj).__name__} (ID: {getattr(media_obj, 'id', None)}) publish_status='published' ga o'tkazildi.")
     return True

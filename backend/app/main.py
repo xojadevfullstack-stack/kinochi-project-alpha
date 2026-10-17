@@ -21,7 +21,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search, reports, audit, blacklist, series_subscriptions, rejected
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search, reports, audit, blacklist, series_subscriptions, rejected, admin_cache
 from app.api.limiter import limiter
 from fastapi.staticfiles import StaticFiles
 import os
@@ -173,6 +173,7 @@ app.include_router(audit.router, prefix="/api/v1")
 app.include_router(blacklist.router, prefix="/api/v1")
 app.include_router(series_subscriptions.router, prefix="/api/v1")
 app.include_router(rejected.router, prefix="/api/v1")
+app.include_router(admin_cache.router, prefix="/api/v1")
 
 # ── Static Uploads ───────────────────────────────────────────────
 os.makedirs("uploads/reports", exist_ok=True)
