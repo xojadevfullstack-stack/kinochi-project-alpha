@@ -1,7 +1,7 @@
 from typing import Any, Awaitable, Callable, Dict
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from services.api_client import api_client
 import time
 import logging
@@ -50,14 +50,14 @@ class SubscriptionMiddleware(BaseMiddleware):
                     logger.warning(f"Kanal identifikatorsiz topildi, o'tkazib yuborildi: {ch}")
                     continue
 
+            channel_id_ref = ch.get('channel_id') or ch.get('id') or chat_identifier
             try:
                 member = await bot.get_chat_member(chat_id=chat_identifier, user_id=user_id)
                 if member.status in ["left", "kicked"]:
                     unsubscribed_channels.append(ch)
-            except TelegramBadRequest as e:
-                # Bot admin emas yoki chat topilmadi => obuna tekshirib bo'lmaydi
-                logging.warning(f"Obuna tekshiruvi muvaffaqiyatsiz: {chat_identifier} — {e}")
-                unsubscribed_channels.append(ch)
+            except (TelegramBadRequest, TelegramForbiddenError) as e:
+                # Fail-open: Bot admin emas yoki chat topilmadi => kanal talab qilinganlar ro'yxatiga qo'shilmaydi va foydalanuvchi bloklanmaydi
+                logger.warning(f"Obuna tekshiruvi muvaffaqiyatsiz (channel_id={channel_id_ref}, chat={chat_identifier}): {e}. Fail-open: foydalanuvchi bloklanmadi.")
 
         if unsubscribed_channels:
             buttons = []
