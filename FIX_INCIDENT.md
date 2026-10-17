@@ -45,8 +45,8 @@
 - [x] 11. CACHE (`cache.py` in-memory + Redis flush, `POST /api/v1/admin/cache/flush` endpointi) - Commit: `157fcfe`
 - [x] 12. TOOLING (`enumerate_sources.py` topic creation date, old channel message count, unit testlar) - Commit: `258b68b`
 - [x] 13. DOCS (`docs/INCIDENT_2026-10-17/FIXES.md` before/after tahlili, sozlamalar va yoqish ketma-ketligi) - Commit: `7f43d28`
-- [x] 14. AUTO_INDEX DRY-RUN FULL PIPELINE (allowlist, topic, series & movie lookups, gate pre-checks, log format, work with AUTO_CONTENT_ENABLED=False) - Commit: `bfb192c`
-- [ ] 15. TRAILER CALLBACK ANSWER GUARD (answer once, alert only on missing, catch TelegramBadRequest)
+- [x] 14. AUTO_INDEX DRY-RUN FULL PIPELINE (allowlist, topic, series & movie lookups, gate pre-checks, log format, work with AUTO_CONTENT_ENABLED=False) - Commit: `8440a9d`
+- [x] 15. TRAILER CALLBACK ANSWER GUARD (answer once, alert only on missing, catch TelegramBadRequest) - Commit: `23c025a`
 - [ ] 16. AMBIGUOUS TOPICS INDEPENDENT SESSION (independent session for rejected_items, reject both movie and series)
 - [ ] 17. RELATIVE RUNTIME TOLERANCE & DURATION UNKNOWN (relative tolerance 15%, min 5m; duration_unknown rejection)
 - [ ] 18. ADMIN-ONLY EXPLICIT REPLACE (replace=true + reason for admin, auto-index replace=False)

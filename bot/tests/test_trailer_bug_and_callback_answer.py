@@ -9,7 +9,7 @@ from handlers.trailer import handle_movie_trailer, handle_series_trailer
 
 @pytest.mark.asyncio
 async def test_handle_movie_trailer_missing_trailer_shows_alert():
-    """Film treyleri mavjud bo'lmaganda callback.answer(..., show_alert=True) chaqirilishi kerak."""
+    """Film treyleri mavjud bo'lmaganda callback.answer faqat 1 marta show_alert=True bilan chaqirilishi kerak."""
     callback = MagicMock(spec=CallbackQuery)
     callback.data = "trailer_m_1001"
     callback.from_user = MagicMock(spec=User)
@@ -23,15 +23,33 @@ async def test_handle_movie_trailer_missing_trailer_shows_alert():
         
         await handle_movie_trailer(callback)
 
-        # Message.answer show_alert bilan chaqirilmasligi kerak (TypeError oldini olish)
         callback.message.answer.assert_not_called()
-        # callback.answer show_alert=True bilan chaqirilgan bo'lishi kerak
-        callback.answer.assert_any_await("⚠️ Treyler topilmadi.", show_alert=True)
+        callback.answer.assert_called_once_with("⚠️ Treyler topilmadi.", show_alert=True)
+
+
+@pytest.mark.asyncio
+async def test_handle_movie_trailer_found_answers_once_without_alert():
+    """Film treyleri topilganda callback.answer faqat 1 marta alertsiz chaqirilishi kerak."""
+    callback = MagicMock(spec=CallbackQuery)
+    callback.data = "trailer_m_1001"
+    callback.from_user = MagicMock(spec=User)
+    callback.from_user.id = 12345
+    callback.bot = MagicMock()
+    callback.answer = AsyncMock()
+
+    with patch("handlers.trailer.api_client.get_movie_by_code", new_callable=AsyncMock) as mock_get, \
+         patch("handlers.trailer.send_trailer", new_callable=AsyncMock) as mock_send:
+        mock_get.return_value = {"id": 1, "code": "1001", "trailer_url": "https://youtu.be/xyz"}
+        
+        await handle_movie_trailer(callback)
+
+        mock_send.assert_called_once_with(callback.bot, 12345, "https://youtu.be/xyz")
+        callback.answer.assert_called_once_with()
 
 
 @pytest.mark.asyncio
 async def test_handle_series_trailer_missing_trailer_shows_alert():
-    """Serial treyleri mavjud bo'lmaganda callback.answer(..., show_alert=True) chaqirilishi kerak."""
+    """Serial treyleri mavjud bo'lmaganda callback.answer faqat 1 marta show_alert=True bilan chaqirilishi kerak."""
     callback = MagicMock(spec=CallbackQuery)
     callback.data = "trailer_s_2002"
     callback.from_user = MagicMock(spec=User)
@@ -46,7 +64,46 @@ async def test_handle_series_trailer_missing_trailer_shows_alert():
         await handle_series_trailer(callback)
 
         callback.message.answer.assert_not_called()
-        callback.answer.assert_any_await("⚠️ Treyler topilmadi.", show_alert=True)
+        callback.answer.assert_called_once_with("⚠️ Treyler topilmadi.", show_alert=True)
+
+
+@pytest.mark.asyncio
+async def test_handle_series_trailer_found_answers_once_without_alert():
+    """Serial treyleri topilganda callback.answer faqat 1 marta alertsiz chaqirilishi kerak."""
+    callback = MagicMock(spec=CallbackQuery)
+    callback.data = "trailer_s_2002"
+    callback.from_user = MagicMock(spec=User)
+    callback.from_user.id = 12345
+    callback.bot = MagicMock()
+    callback.answer = AsyncMock()
+
+    with patch("handlers.trailer.api_client.get_series_by_id", new_callable=AsyncMock) as mock_get, \
+         patch("handlers.trailer.send_trailer", new_callable=AsyncMock) as mock_send:
+        mock_get.return_value = {"id": 2002, "trailer_url": "https://youtu.be/series123"}
+        
+        await handle_series_trailer(callback)
+
+        mock_send.assert_called_once_with(callback.bot, 12345, "https://youtu.be/series123")
+        callback.answer.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_trailer_callback_guards_against_telegram_bad_request():
+    """callback.answer da TelegramBadRequest bo'lganda xato yutib yuborilishi (guard) kerak."""
+    from aiogram.exceptions import TelegramBadRequest
+
+    callback = MagicMock(spec=CallbackQuery)
+    callback.data = "trailer_m_1001"
+    callback.from_user = MagicMock(spec=User)
+    callback.from_user.id = 12345
+    callback.answer = AsyncMock(side_effect=TelegramBadRequest(method="answerCallbackQuery", message="query is too old"))
+
+    with patch("handlers.trailer.api_client.get_movie_by_code", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = {"id": 1, "code": "1001", "trailer_url": None}
+        
+        # Hech qanday exception tashlanmasligi kerak
+        await handle_movie_trailer(callback)
+        callback.answer.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -63,7 +120,7 @@ async def test_handle_series_trailer_invalid_id_shows_alert():
     await handle_series_trailer(callback)
 
     callback.message.answer.assert_not_called()
-    callback.answer.assert_any_await("⚠️ Xatolik.", show_alert=True)
+    callback.answer.assert_called_once_with("⚠️ Xatolik.", show_alert=True)
 
 
 @pytest.mark.asyncio
