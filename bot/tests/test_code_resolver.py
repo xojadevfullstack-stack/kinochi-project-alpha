@@ -40,14 +40,14 @@ def test_clean_and_extract_code_prefixed_episode():
 
 
 @pytest.mark.asyncio
-async def test_numeric_only_query_is_not_resolved():
-    """Faqat raqamdan iborat so'rov (30, 17, 123) rad etiladi va ID qidiruvi amalga oshirilmaydi."""
+async def test_numeric_only_query_is_not_resolved_when_code_not_found():
+    """Faqat raqamdan iborat so'rov (30, 17, 123) avval movie code sifatida qidiriladi, topilmasa ID qidiruvi rad etiladi."""
     bot = AsyncMock()
     chat_id = 123456789
 
     with patch("services.api_client.api_client.get_movie_by_id", new_callable=AsyncMock) as mock_movie_id, \
          patch("services.api_client.api_client.get_series_by_id", new_callable=AsyncMock) as mock_series_id, \
-         patch("services.api_client.api_client.get_movie_by_code", new_callable=AsyncMock) as mock_movie_code:
+         patch("services.api_client.api_client.get_movie_by_code", new_callable=AsyncMock, return_value=None) as mock_movie_code:
 
         # 1. Sof raqam
         result = await resolve_and_send_content(bot, chat_id, "30")
@@ -61,10 +61,32 @@ async def test_numeric_only_query_is_not_resolved():
         result_kod = await resolve_and_send_content(bot, chat_id, "kod: 30")
         assert result_kod is False
 
-        # Hech qanday ID yoki kod chaqirilmagan bo'lishi shart
+        # Film kodi sifatida qidirilgan bo'lishi kerak
+        assert mock_movie_code.call_count == 3
+        # Lekin noaniq ID qidiruvlari chaqirilmagan bo'lishi shart
         mock_movie_id.assert_not_called()
         mock_series_id.assert_not_called()
-        mock_movie_code.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_numeric_movie_code_is_resolved():
+    """Film kodi sof raqam bo'lgan holatda (masalan: '123456'), u get_movie_by_code orqali muvaffaqiyatli topiladi."""
+    bot = AsyncMock()
+    chat_id = 123456789
+    fake_movie = {"id": 10, "code": "123456", "title": "Raqamli Kodli Film"}
+
+    with patch("services.api_client.api_client.get_movie_by_code", new_callable=AsyncMock, return_value=fake_movie) as mock_movie_code, \
+         patch("services.api_client.api_client.get_movie_by_id", new_callable=AsyncMock) as mock_movie_id, \
+         patch("services.api_client.api_client.get_series_by_id", new_callable=AsyncMock) as mock_series_id, \
+         patch("utils.code_resolver.send_movie_info", new_callable=AsyncMock) as mock_send_movie:
+
+        result = await resolve_and_send_content(bot, chat_id, "123456")
+        assert result is True
+        mock_movie_code.assert_called_once_with("123456")
+        mock_send_movie.assert_called_once_with(bot, chat_id, fake_movie)
+        # ID qidiruvi chaqirilmagan bo'lishi shart
+        mock_movie_id.assert_not_called()
+        mock_series_id.assert_not_called()
 
 
 @pytest.mark.asyncio

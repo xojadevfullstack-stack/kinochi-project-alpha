@@ -119,11 +119,15 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
 
     # ── 4. Noaniq tur (hech qanday aniq prefiks ko'rsatilmagan) ──
 
-    # Faqat raqamdan iborat so'rovlar (masalan: "17", "30", "123") rad etiladi.
-    # Kino vs serial ID noaniqligi (ambiguous numeric ID) ning oldini olish uchun
-    # raqamli ID faqat s_<id> prefiksi bilan ruxsat etiladi.
+    # Faqat raqamdan iborat so'rovlar (masalan: "123456", "30", "17"):
+    # Avval film kodi (get_movie_by_code) sifatida tekshiriladi.
+    # Agar film kodi sifatida topilmasa, ID bo'yicha qidirish (kino vs serial noaniqligi oldini olish uchun) rad etiladi.
     if cleaned_code.isdigit():
-        logger.info(f"Numeric-only query '{cleaned_code}' rad etildi (kino vs serial noaniqligi oldini olish).")
+        movie = await api_client.get_movie_by_code(cleaned_code)
+        if movie:
+            await send_movie_info(bot, chat_id, movie)
+            return True
+        logger.info(f"Numeric-only query '{cleaned_code}' bo'yicha film topilmadi va ID qidiruvi noaniqlik tufayli rad etildi.")
         return False
 
     # 4a. Serial formatidagi kod: s_30, s30
