@@ -37,15 +37,11 @@ class APIClient:
         try:
             response = await self.client.get(f"/movies/code/{clean_code}")
             if response.status_code == 404:
-                if clean_code.isdigit():
-                    return await self.get_movie_by_id(int(clean_code))
                 return None
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
             logger.error(f"Error fetching movie {code}: {e}")
-            if clean_code.isdigit():
-                return await self.get_movie_by_id(int(clean_code))
             return None
 
     async def get_movie_by_id(self, movie_id: int) -> Optional[Dict[str, Any]]:

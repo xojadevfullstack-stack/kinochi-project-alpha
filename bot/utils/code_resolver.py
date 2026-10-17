@@ -79,7 +79,7 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
 
     logger.info(f"Resolving code: '{query}' -> cleaned='{cleaned_code}', type_hint='{type_hint}'")
 
-    # ── 1. Aniq 'series' turiga ishora bo'lsa ──
+    # ── 1. Aniq 'series' turiga ishora bo'lsa (s_<id> yoki serial prefiksi) ──
     if type_hint == 'series':
         # Agar s_30 yoki s30 bo'lsa raqamini ajratish
         s_match = re.match(r'^s_?(\d+)$', cleaned_code, re.IGNORECASE)
@@ -95,20 +95,16 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
             return True
         return False
 
-    # ── 2. Aniq 'movie' turiga ishora bo'lsa ──
+    # ── 2. Aniq 'movie' turiga ishora bo'lsa (m_, movie_, kino_ prefikslari) ──
     if type_hint == 'movie':
+        # Faqat movie kodi bo'yicha qidiriladi, numeric ID bo'yicha emas
         movie = await api_client.get_movie_by_code(cleaned_code)
         if movie:
             await send_movie_info(bot, chat_id, movie)
             return True
-        if cleaned_code.isdigit():
-            movie = await api_client.get_movie_by_id(int(cleaned_code))
-            if movie:
-                await send_movie_info(bot, chat_id, movie)
-                return True
         return False
 
-    # ── 3. Aniq 'episode' turiga ishora bo'lsa ──
+    # ── 3. Aniq 'episode' turiga ishora bo'lsa (ep_, episode_, S1-CH1) ──
     if type_hint == 'episode':
         episode = await api_client.get_episode_by_code(cleaned_code)
         if episode:
@@ -121,7 +117,14 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
             return True
         return False
 
-    # ── 4. Noaniq tur (foydalanuvchi faqat kod/raqam yozgan holat) ──
+    # ── 4. Noaniq tur (hech qanday aniq prefiks ko'rsatilmagan) ──
+
+    # Faqat raqamdan iborat so'rovlar (masalan: "17", "30", "123") rad etiladi.
+    # Kino vs serial ID noaniqligi (ambiguous numeric ID) ning oldini olish uchun
+    # raqamli ID faqat s_<id> prefiksi bilan ruxsat etiladi.
+    if cleaned_code.isdigit():
+        logger.info(f"Numeric-only query '{cleaned_code}' rad etildi (kino vs serial noaniqligi oldini olish).")
+        return False
 
     # 4a. Serial formatidagi kod: s_30, s30
     s_match = re.match(r'^s_?(\d+)$', cleaned_code, re.IGNORECASE)
@@ -138,21 +141,7 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
         await send_movie_info(bot, chat_id, movie)
         return True
 
-    # 4c. Agar toza raqam bo'lsa (masalan: "17", "30")
-    if cleaned_code.isdigit():
-        num_id = int(cleaned_code)
-        # Avval kino ID si sifatida tekshiramiz
-        movie = await api_client.get_movie_by_id(num_id)
-        if movie:
-            await send_movie_info(bot, chat_id, movie)
-            return True
-        # Keyin serial ID si sifatida tekshiramiz
-        series = await api_client.get_series_by_id(num_id)
-        if series:
-            await send_series_info(bot, chat_id, series)
-            return True
-
-    # 4d. Qism kodi bo'yicha tekshirish (masalan: S1-CH1, 68313833)
+    # 4c. Qism kodi bo'yicha tekshirish (masalan: S1-CH1, EP001)
     episode = await api_client.get_episode_by_code(cleaned_code)
     if episode:
         success = await send_episode_to_user(bot, chat_id, episode)
@@ -163,7 +152,7 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
                 return True
         return True
 
-    # 4e. Serial kodi bo'yicha tekshirish
+    # 4d. Serial kodi bo'yicha tekshirish
     series = await api_client.get_series_by_code(cleaned_code)
     if series:
         await send_series_info(bot, chat_id, series)
