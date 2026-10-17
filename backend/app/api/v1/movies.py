@@ -609,6 +609,29 @@ async def link_movie_video(
         return movie
     except HTTPException:
         raise
+    except ValueError as e:
+        logger.warning(f"Rejecting movie video link for movie {movie_id}: {e}")
+        await record_rejection(
+            session=db,
+            media_type="movie",
+            source="auto_index",
+            source_key=f"movie_{movie_id}",
+            title=f"Movie {movie_id}",
+            payload={
+                "telegram_file_id": request.telegram_file_id,
+                "storage_channel_message_id": request.message_id,
+                "language": request.language,
+                "source_url": request.source_url
+            },
+            defects=[{"field": "video", "defect": "no_overwrite", "reason": str(e)}],
+            media_id=movie_id,
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": str(e), "defect": "no_overwrite"}
+        )
     except Exception as e:
         logger.error(f"Error in link_movie_video endpoint for movie {movie_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")

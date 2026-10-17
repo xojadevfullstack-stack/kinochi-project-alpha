@@ -408,12 +408,51 @@ class SeriesRepository:
         return await self.get_episode_by_id(episode.id)
 
     async def add_episode_translation(self, episode_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> EpisodeModel | None:
+        from app.infrastructure.db.models.translation import MovieTranslationModel
+
+        # 1. NO OVERWRITES: Mavjud qism videosi ustiga yozmaslik
         stmt = select(EpisodeTranslationModel).where(
             EpisodeTranslationModel.episode_id == episode_id,
             EpisodeTranslationModel.language == language
         )
         res = await self.session.execute(stmt)
         existing_tr = res.scalar_one_or_none()
+        if existing_tr and (existing_tr.telegram_file_id or existing_tr.storage_channel_message_id):
+            raise ValueError(f"Mavjud qism videosini almashtirish taqiqlangan (No overwrite): episode_id={episode_id}, lang={language}")
+
+        # 2. CROSS-TITLE CHECK: Bir xil telegram_file_id yoki storage_channel_message_id boshqa nomga biriktirilgan bo'lmasligi kerak
+        if telegram_file_id:
+            m_stmt = select(MovieTranslationModel).where(
+                MovieTranslationModel.telegram_file_id == telegram_file_id
+            )
+            m_tr = (await self.session.execute(m_stmt)).scalar_one_or_none()
+            if m_tr:
+                raise ValueError(f"Fayl kinoga biriktirilgan (attached to movie_id={m_tr.movie_id}): file_id={telegram_file_id}")
+
+            other_ep_stmt = select(EpisodeTranslationModel).where(
+                EpisodeTranslationModel.telegram_file_id == telegram_file_id,
+                EpisodeTranslationModel.episode_id != episode_id
+            )
+            other_ep = (await self.session.execute(other_ep_stmt)).scalar_one_or_none()
+            if other_ep:
+                raise ValueError(f"Fayl boshqa qismga biriktirilgan (attached to episode_id={other_ep.episode_id}): file_id={telegram_file_id}")
+
+        if storage_channel_message_id:
+            m_msg_stmt = select(MovieTranslationModel).where(
+                MovieTranslationModel.storage_channel_message_id == storage_channel_message_id
+            )
+            m_msg_tr = (await self.session.execute(m_msg_stmt)).scalar_one_or_none()
+            if m_msg_tr:
+                raise ValueError(f"Xabar kinoga biriktirilgan (attached to movie_id={m_msg_tr.movie_id}): msg_id={storage_channel_message_id}")
+
+            other_ep_msg_stmt = select(EpisodeTranslationModel).where(
+                EpisodeTranslationModel.storage_channel_message_id == storage_channel_message_id,
+                EpisodeTranslationModel.episode_id != episode_id
+            )
+            other_ep_msg = (await self.session.execute(other_ep_msg_stmt)).scalar_one_or_none()
+            if other_ep_msg:
+                raise ValueError(f"Xabar boshqa qismga biriktirilgan (attached to episode_id={other_ep_msg.episode_id}): msg_id={storage_channel_message_id}")
+
         if existing_tr:
             existing_tr.telegram_file_id = telegram_file_id
             existing_tr.storage_channel_message_id = storage_channel_message_id
@@ -472,15 +511,25 @@ class SeriesRepository:
         if not season:
             raise ValueError(f"Season with ID {season_id} not found")
 
-        # 2. Mavjud barcha qismlarni o'qish (lock ichida)
+        # 2. Mavjud barcha qismlarni o'qish (lock ichida, tarjimalari bilan birga)
         episodes_stmt = (
             select(EpisodeModel)
+            .options(selectinload(EpisodeModel.translations))
             .where(EpisodeModel.season_id == season_id)
             .order_by(EpisodeModel.episode_number)
         )
         episodes_res = await self.session.execute(episodes_stmt)
         existing_episodes = list(episodes_res.scalars().all())
         existing_by_num = {e.episode_number: e for e in existing_episodes}
+        existing_by_msg = {e.source_message_id: e for e in existing_episodes if e.source_message_id}
+
+        # Mavjud qismlarga biriktirilgan telegram_file_id larni to'plash
+        file_to_ep = {}
+        for e in existing_episodes:
+            for tr in e.translations:
+                if tr.telegram_file_id:
+                    file_to_ep[tr.telegram_file_id] = e
+
         current_max = max(existing_by_num.keys(), default=0)
 
         reserved_results = []
@@ -488,7 +537,29 @@ class SeriesRepository:
         for item in items:
             source_msg_id = item.get("source_message_id")
             explicit_ep = item.get("explicit_episode_number")
+            telegram_file_id = item.get("telegram_file_id")
             title = item.get("title")
+
+            # Qayta forward qilingan dublikat tekshiruvi (Re-forwarded duplicate check)
+            duplicate_ep = None
+            if source_msg_id and source_msg_id in existing_by_msg:
+                duplicate_ep = existing_by_msg[source_msg_id]
+            elif telegram_file_id and telegram_file_id in file_to_ep:
+                duplicate_ep = file_to_ep[telegram_file_id]
+
+            if duplicate_ep is not None:
+                # Dublikat: yangi qism YARATILMAYDI va qayta indekslanmaydi
+                reserved_results.append({
+                    "id": duplicate_ep.id,
+                    "episode_number": duplicate_ep.episode_number,
+                    "code": duplicate_ep.code,
+                    "display_code": duplicate_ep.display_code,
+                    "source_message_id": source_msg_id,
+                    "season_number": season.season_number,
+                    "is_update": False,
+                    "is_duplicate": True
+                })
+                continue
 
             if explicit_ep is not None:
                 ep_num = explicit_ep
@@ -499,6 +570,21 @@ class SeriesRepository:
 
             if ep_num in existing_by_num:
                 ep = existing_by_num[ep_num]
+                # Agar ushbu qismda allaqachon video bo'lsa, uni almashtirmaslik kerak (No overwrite)
+                has_video = any(tr.telegram_file_id or tr.storage_channel_message_id for tr in ep.translations)
+                if has_video:
+                    reserved_results.append({
+                        "id": ep.id,
+                        "episode_number": ep.episode_number,
+                        "code": ep.code,
+                        "display_code": ep.display_code,
+                        "source_message_id": source_msg_id,
+                        "season_number": season.season_number,
+                        "is_update": True,
+                        "is_duplicate": True
+                    })
+                    continue
+
                 if source_msg_id:
                     ep.source_message_id = source_msg_id
                 is_update = True
@@ -515,6 +601,8 @@ class SeriesRepository:
                 )
                 self.session.add(ep)
                 existing_by_num[ep_num] = ep
+                if source_msg_id:
+                    existing_by_msg[source_msg_id] = ep
                 is_update = False
 
             await self.session.flush()
@@ -526,7 +614,8 @@ class SeriesRepository:
                 "display_code": ep.display_code,
                 "source_message_id": source_msg_id,
                 "season_number": season.season_number,
-                "is_update": is_update
+                "is_update": is_update,
+                "is_duplicate": False
             })
 
         return reserved_results

@@ -232,12 +232,51 @@ class MovieRepositoryImpl(IMovieRepository):
         return True
 
     async def add_translation(self, movie_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> Movie | None:
+        from app.infrastructure.db.models.translation import EpisodeTranslationModel
+
+        # 1. NO OVERWRITES: Mavjud tarjima ustiga yozmaslik
         stmt = select(MovieTranslationModel).where(
             MovieTranslationModel.movie_id == movie_id,
             MovieTranslationModel.language == language
         )
         res = await self.session.execute(stmt)
         existing_tr = res.scalar_one_or_none()
+        if existing_tr and (existing_tr.telegram_file_id or existing_tr.storage_channel_message_id):
+            raise ValueError(f"Mavjud kino tarjimasini almashtirish taqiqlangan (No overwrite): movie_id={movie_id}, lang={language}")
+
+        # 2. CROSS-TITLE CHECK: Bir xil telegram_file_id yoki storage_channel_message_id boshqa nomga biriktirilgan bo'lmasligi kerak
+        if telegram_file_id:
+            other_m_stmt = select(MovieTranslationModel).where(
+                MovieTranslationModel.telegram_file_id == telegram_file_id,
+                MovieTranslationModel.movie_id != movie_id
+            )
+            other_m = (await self.session.execute(other_m_stmt)).scalar_one_or_none()
+            if other_m:
+                raise ValueError(f"Fayl boshqa kinoga biriktirilgan (attached to movie_id={other_m.movie_id}): file_id={telegram_file_id}")
+
+            ep_stmt = select(EpisodeTranslationModel).where(
+                EpisodeTranslationModel.telegram_file_id == telegram_file_id
+            )
+            ep_tr = (await self.session.execute(ep_stmt)).scalar_one_or_none()
+            if ep_tr:
+                raise ValueError(f"Fayl serial qismiga biriktirilgan (attached to episode_id={ep_tr.episode_id}): file_id={telegram_file_id}")
+
+        if storage_channel_message_id:
+            other_msg_stmt = select(MovieTranslationModel).where(
+                MovieTranslationModel.storage_channel_message_id == storage_channel_message_id,
+                MovieTranslationModel.movie_id != movie_id
+            )
+            other_msg = (await self.session.execute(other_msg_stmt)).scalar_one_or_none()
+            if other_msg:
+                raise ValueError(f"Xabar boshqa kinoga biriktirilgan (attached to movie_id={other_msg.movie_id}): msg_id={storage_channel_message_id}")
+
+            ep_msg_stmt = select(EpisodeTranslationModel).where(
+                EpisodeTranslationModel.storage_channel_message_id == storage_channel_message_id
+            )
+            ep_msg_tr = (await self.session.execute(ep_msg_stmt)).scalar_one_or_none()
+            if ep_msg_tr:
+                raise ValueError(f"Xabar serial qismiga biriktirilgan (attached to episode_id={ep_msg_tr.episode_id}): msg_id={storage_channel_message_id}")
+
         if existing_tr:
             existing_tr.telegram_file_id = telegram_file_id
             existing_tr.storage_channel_message_id = storage_channel_message_id

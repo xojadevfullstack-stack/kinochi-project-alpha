@@ -493,6 +493,7 @@ class EpisodeReservationItem(BaseModel):
     source_message_id: int
     explicit_episode_number: int | None = None
     title: str | None = None
+    telegram_file_id: str | None = None
 
 class ReserveEpisodesRequest(BaseModel):
     items: list[EpisodeReservationItem]
@@ -505,6 +506,7 @@ class ReservedEpisodeResponse(BaseModel):
     source_message_id: int | None = None
     season_number: int
     is_update: bool = False
+    is_duplicate: bool = False
 
 @router.post("/seasons/{season_id}/reserve-episodes", response_model=List[ReservedEpisodeResponse])
 async def reserve_episodes(
@@ -776,6 +778,29 @@ async def link_episode_video(
         return episode
     except HTTPException:
         raise
+    except ValueError as e:
+        logger.warning(f"Rejecting episode video link for episode {episode_id}: {e}")
+        await record_rejection(
+            session=db,
+            media_type="episode",
+            source="auto_index",
+            source_key=f"episode_{episode_id}",
+            title=f"Episode {episode_id}",
+            payload={
+                "telegram_file_id": request.telegram_file_id,
+                "storage_channel_message_id": request.message_id,
+                "language": request.language,
+                "source_url": request.source_url
+            },
+            defects=[{"field": "video", "defect": "no_overwrite", "reason": str(e)}],
+            media_id=episode_id,
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": str(e), "defect": "no_overwrite"}
+        )
     except Exception as e:
         logger.error(f"Error in link_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")

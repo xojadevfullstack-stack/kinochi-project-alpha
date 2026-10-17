@@ -186,6 +186,16 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
         caption_lines.append(f"📅 <b>Yili:</b> {release_year}")
     storage_caption = "\n".join(caption_lines)
 
+    # NO OVERWRITES: Agar filmda O'zbekcha video tarjimasi allaqachon mavjud bo'lsa, tashlab yuboramiz
+    existing_translations = movie.get("translations", []) or []
+    has_video = any(tr.get("telegram_file_id") or tr.get("storage_channel_message_id") for tr in existing_translations if tr.get("language") == "O'zbekcha")
+    if has_video:
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={message.chat.id} topic={message.message_thread_id} msg_id={message.message_id} "
+            f"decision=SKIPPED_ALREADY_ATTACHED reason=movie id={movie.get('id')} already has O'zbekcha video translation (no overwrite)"
+        )
+        return
+
     # DRY-RUN TEKSHIRUVI: Agar AUTO_INDEX_DRY_RUN True bo'lsa, videoni saqlash va link qilish bajarilmaydi
     if getattr(settings, "AUTO_INDEX_DRY_RUN", True):
         logger.info(
@@ -224,6 +234,12 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
             "language": "O'zbekcha",
             "telegram_file_id": telegram_file_id
         })
+        if resp.status_code == 409:
+            logger.warning(
+                f"[AUTO_INDEX DECISION] chat={message.chat.id} topic={message.message_thread_id} msg_id={message.message_id} "
+                f"decision=REJECTED_OVERWRITE reason=movie {movie.get('id')} already has video or file attached to another title"
+            )
+            return
         resp.raise_for_status()
         await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
     except Exception as e:
@@ -321,9 +337,11 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
     reservation_items = []
     for msg in messages:
         explicit_ep = extract_episode_num_from_caption(msg.caption)
+        t_file_id, _ = extract_media_info(msg)
         reservation_items.append({
             "source_message_id": msg.message_id,
             "explicit_episode_number": explicit_ep,
+            "telegram_file_id": t_file_id,
             "title": f"{explicit_ep}-qism" if explicit_ep else None
         })
 
@@ -386,6 +404,14 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
         if not reserved_info:
             continue
 
+        # DUBLIKAT TEKSHIRUVI: Agar qayta forward qilingan xabar bo'lsa, yangi qism yaratmaymiz va qayta yuklamaymiz
+        if reserved_info.get("is_duplicate"):
+            logger.info(
+                f"[AUTO_INDEX DECISION] chat={msg.chat.id} topic={msg.message_thread_id} msg_id={msg.message_id} "
+                f"decision=SKIPPED_DUPLICATE reason=re-forwarded duplicate of episode {reserved_info.get('episode_number')} (code={reserved_info.get('display_code')})"
+            )
+            continue
+
         ep_num = reserved_info["episode_number"]
         ep_id = reserved_info["id"]
         ep_code = reserved_info["display_code"]
@@ -443,6 +469,12 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 "language": "O'zbekcha",
                 "telegram_file_id": telegram_file_id
             })
+            if resp.status_code == 409:
+                logger.warning(
+                    f"[AUTO_INDEX DECISION] chat={msg.chat.id} topic={msg.message_thread_id} msg_id={msg.message_id} "
+                    f"decision=REJECTED_OVERWRITE reason=episode {ep_num} already has video or file attached to another title"
+                )
+                continue
             resp.raise_for_status()
             logger.info(
                 f"[ORDER_AUDIT] msg_id={msg.message_id} | "
