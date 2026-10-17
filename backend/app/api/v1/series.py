@@ -219,17 +219,40 @@ async def get_series_by_source(
     if len(series_models) > 1 or (len(series_models) >= 1 and len(movie_models) >= 1):
         defect_msg = f"Topic maps to {len(series_models)} series and {len(movie_models)} movies"
         logger.warning(f"Ambiguous topic detected: chat_id={chat_id}, topic_id={topic_id}. {defect_msg}")
-        await record_rejection(
-            session=db,
-            media_type="series",
-            source="auto_index",
-            source_key=f"{chat_id}:{topic_id}",
-            title=f"Ambiguous topic {chat_id}:{topic_id}",
-            payload={"chat_id": chat_id, "topic_id": topic_id, "series_count": len(series_models), "movie_count": len(movie_models)},
-            defects=[{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}],
-            status="rejected"
-        )
-        await db.commit()
+        rejection_payload = {
+            "chat_id": chat_id,
+            "topic_id": topic_id,
+            "series_count": len(series_models),
+            "movie_count": len(movie_models),
+        }
+        rejection_defects = [{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}]
+        try:
+            async with async_session_factory() as reject_session:
+                await record_rejection(
+                    session=reject_session,
+                    media_type="series",
+                    source="auto_index",
+                    source_key=f"{chat_id}:{topic_id}",
+                    title=f"Ambiguous topic {chat_id}:{topic_id}",
+                    payload=rejection_payload,
+                    defects=rejection_defects,
+                    status="rejected"
+                )
+                await reject_session.commit()
+        except Exception as e:
+            logger.warning(f"Could not commit rejection in independent session: {e}")
+            await record_rejection(
+                session=db,
+                media_type="series",
+                source="auto_index",
+                source_key=f"{chat_id}:{topic_id}",
+                title=f"Ambiguous topic {chat_id}:{topic_id}",
+                payload=rejection_payload,
+                defects=rejection_defects,
+                status="rejected"
+            )
+            await db.commit()
+
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"message": "Noaniq mavzu: bitta topic birdan ortiq ob'ektga yoki ham serial, ham filmga biriktirilgan", "defect": "ambiguous_topic"}

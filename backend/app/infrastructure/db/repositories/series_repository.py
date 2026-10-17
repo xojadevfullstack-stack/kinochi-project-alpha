@@ -1,3 +1,4 @@
+import logging
 from typing import List, Tuple
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,8 @@ from app.infrastructure.db.models.category import CategoryModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel
 from app.infrastructure.db.query_filters import published_only
 from app.domain.series.entities import SeriesCreate, SeriesUpdate, SeasonCreate, SeasonUpdate, EpisodeCreate, EpisodeUpdate
+
+logger = logging.getLogger(__name__)
 
 class SeriesRepository:
     def __init__(self, session: AsyncSession):
@@ -131,10 +134,40 @@ class SeriesRepository:
         )
         result = await self.session.execute(stmt)
         models = list(result.scalars().all())
+
+        # Ham serial ham kino mavjudligini tekshirish
+        from app.infrastructure.db.models.movie import MovieModel
+        from app.infrastructure.db.session import async_session_factory
+        from app.core.admission_gate import record_rejection
+
+        stmt_m = select(MovieModel).where(
+            MovieModel.source_chat_id == chat_id,
+            MovieModel.source_topic_id == topic_id,
+        )
+        res_m = await self.session.execute(stmt_m)
+        movie_models = list(res_m.scalars().all())
+
+        if len(models) > 1 or (len(models) >= 1 and len(movie_models) >= 1):
+            defect_msg = f"Ambiguous topic: multiple entities ({len(models)} series, {len(movie_models)} movies) found for chat_id={chat_id}, topic_id={topic_id}"
+            try:
+                async with async_session_factory() as reject_session:
+                    await record_rejection(
+                        session=reject_session,
+                        media_type="series",
+                        source="auto_index",
+                        source_key=f"{chat_id}:{topic_id}",
+                        title=f"Ambiguous topic {chat_id}:{topic_id}",
+                        payload={"chat_id": chat_id, "topic_id": topic_id, "series_count": len(models), "movie_count": len(movie_models)},
+                        defects=[{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}],
+                        status="rejected"
+                    )
+                    await reject_session.commit()
+            except Exception as e:
+                logger.warning(f"Could not record rejection in independent session: {e}")
+            raise ValueError(defect_msg)
+
         if len(models) == 0:
             return None
-        if len(models) > 1:
-            raise ValueError(f"Ambiguous topic: multiple series ({len(models)}) found for chat_id={chat_id}, topic_id={topic_id}")
         return models[0]
 
     async def get_series_by_title_and_year(self, title: str, release_year: int | None = None) -> SeriesModel | None:

@@ -129,10 +129,40 @@ class MovieRepositoryImpl(IMovieRepository):
         )
         result = await self.session.execute(stmt)
         models = list(result.scalars().all())
+
+        # Ham kino ham serial manbasi borligini tekshirish
+        from app.infrastructure.db.models.source import SourceModel
+        from app.infrastructure.db.session import async_session_factory
+        from app.core.admission_gate import record_rejection
+
+        stmt_s = select(SourceModel).where(
+            SourceModel.chat_id == chat_id,
+            SourceModel.topic_id == topic_id,
+        )
+        res_s = await self.session.execute(stmt_s)
+        series_sources = list(res_s.scalars().all())
+
+        if len(models) > 1 or (len(models) >= 1 and len(series_sources) >= 1):
+            defect_msg = f"Ambiguous topic: multiple entities ({len(models)} movies, {len(series_sources)} series) found for chat_id={chat_id}, topic_id={topic_id}"
+            try:
+                async with async_session_factory() as reject_session:
+                    await record_rejection(
+                        session=reject_session,
+                        media_type="movie",
+                        source="auto_index",
+                        source_key=f"{chat_id}:{topic_id}",
+                        title=f"Ambiguous topic {chat_id}:{topic_id}",
+                        payload={"chat_id": chat_id, "topic_id": topic_id, "movie_count": len(models), "series_count": len(series_sources)},
+                        defects=[{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}],
+                        status="rejected"
+                    )
+                    await reject_session.commit()
+            except Exception as e:
+                logger.warning(f"Could not record rejection in independent session: {e}")
+            raise ValueError(defect_msg)
+
         if len(models) == 0:
             return None
-        if len(models) > 1:
-            raise ValueError(f"Ambiguous topic: multiple movies ({len(models)}) found for chat_id={chat_id}, topic_id={topic_id}")
         return self._to_domain(models[0])
 
     async def search_by_title(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
