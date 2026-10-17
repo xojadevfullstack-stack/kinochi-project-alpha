@@ -96,21 +96,9 @@ def get_memory_cache_keys() -> list[str]:
 
 
 async def flush_all_cache() -> None:
-    """In-memory va Redis keshlarini bir vaqtda to'liq tozalaydi."""
+    """In-memory va Redis keshlarini (faqat cache:* kalitlarini) xavfsiz tozalaydi (flushdb ishlatilmaydi)."""
     clear_memory_cache()
-    global _redis_disabled
-    if _redis_disabled:
-        return
-
-    try:
-        if job_manager._redis:
-            await job_manager._redis.flushdb()
-    except RedisError as e:
-        if not _redis_disabled:
-            logger.warning(f"Redis flushdb xatosi ({e}).")
-            _redis_disabled = True
-    except Exception as e:
-        logger.debug(f"Cache flush error: {e}")
+    await delete_cache_pattern("cache:*")
 
 
 async def invalidate_media_cache(media_type: str = "all") -> None:
@@ -127,4 +115,4 @@ async def invalidate_media_cache(media_type: str = "all") -> None:
         await delete_cache_pattern("cache:movies:*")
         await delete_cache_pattern("cache:series:*")
         await delete_cache_pattern("cache:search:*")
-        await delete_cache_pattern("*")
+        await delete_cache_pattern("cache:*")

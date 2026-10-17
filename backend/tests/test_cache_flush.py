@@ -66,22 +66,26 @@ async def test_delete_cache_pattern_clears_memory_and_redis():
 
 @pytest.mark.asyncio
 async def test_flush_all_cache_clears_both_memory_and_redis():
-    """flush_all_cache() ham in-memory keshni, ham Redis flushdb() ni to'liq tozalaydi."""
+    """flush_all_cache() in-memory keshni tozalaydi va faqat cache:* kalitlarini o'chiradi (flushdb chaqirilmaydi)."""
     mock_redis = AsyncMock()
+    mock_redis.keys.return_value = ["cache:movies:1", "cache:series:1"]
 
     with patch("app.core.job_manager.job_manager._redis", mock_redis), \
          patch("app.core.cache._redis_disabled", False):
 
-        await set_cache("key1", "val1", 300)
-        await set_cache("key2", "val2", 300)
+        await set_cache("cache:key1", "val1", 300)
+        await set_cache("cache:key2", "val2", 300)
         assert len(get_memory_cache_keys()) == 2
 
         await flush_all_cache()
 
         # In-memory butunlay bo'sh bo'lishi shart
         assert len(get_memory_cache_keys()) == 0
-        # Redis flushdb() chaqirilgan bo'lishi shart
-        mock_redis.flushdb.assert_called_once()
+        # Redis flushdb() chaqirilmasligi shart (xavfsiz tozalash)
+        mock_redis.flushdb.assert_not_called()
+        # Faqat cache:* kalitlari qidirilib o'chirilishi shart
+        mock_redis.keys.assert_called_with("cache:*")
+        mock_redis.delete.assert_called_with("cache:movies:1", "cache:series:1")
 
 
 @pytest.mark.asyncio
@@ -142,5 +146,6 @@ async def test_admin_cache_flush_endpoint_success():
         assert data["status"] == "success"
         # In-memory kesh tozalangan bo'lishi shart
         assert len(get_memory_cache_keys()) == 0
-        # Redis flushdb chaqirilgan bo'lishi shart
-        mock_redis.flushdb.assert_called_once()
+        # Redis flushdb chaqirilmasligi shart (faqat cache:* o'chiriladi)
+        mock_redis.flushdb.assert_not_called()
+        mock_redis.keys.assert_called_with("cache:*")
