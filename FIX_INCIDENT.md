@@ -47,10 +47,10 @@
 - [x] 13. DOCS (`docs/INCIDENT_2026-10-17/FIXES.md` before/after tahlili, sozlamalar va yoqish ketma-ketligi) - Commit: `7f43d28`
 - [x] 14. AUTO_INDEX DRY-RUN FULL PIPELINE (allowlist, topic, series & movie lookups, gate pre-checks, log format, work with AUTO_CONTENT_ENABLED=False) - Commit: `8440a9d`
 - [x] 15. TRAILER CALLBACK ANSWER GUARD (answer once, alert only on missing, catch TelegramBadRequest) - Commit: `63555dc`
-- [x] 16. AMBIGUOUS TOPICS INDEPENDENT SESSION (independent session for rejected_items, reject both movie and series) - Commit: `3999e49`
-- [x] 17. RELATIVE RUNTIME TOLERANCE & DURATION UNKNOWN (relative tolerance 15%, min 5m; duration_unknown rejection) - Commit: `ba38cd2`
-- [x] 18. ADMIN-ONLY EXPLICIT REPLACE (replace=true + reason for admin, auto-index replace=False) - Commit: `eae1cd8`
-- [x] 19. CACHE FLUSH WITHOUT FLUSHDB (delete only cache:* keys, no flushdb) - Commit: `031249b`
-- [x] 20. CODE RESOLVER NUMERIC MOVIE CODE (check get_movie_by_code first, reject digit-only if not found) - Commit: `856144a`
-- [ ] 21. LOCAL POSTGRES VERIFICATION (localhost:5433 only, NOT-RUN if docker daemon unavailable)
+- [x] 16. AMBIGUOUS TOPICS INDEPENDENT SESSION (independent session for rejected_items, reject both movie and series) - Commit: `92a7d9a`
+- [x] 17. RELATIVE RUNTIME TOLERANCE & DURATION UNKNOWN (relative tolerance 15%, min 5m; duration_unknown rejection) - Commit: `4f5c09a`
+- [x] 18. ADMIN-ONLY EXPLICIT REPLACE (replace=true + reason for admin, auto-index replace=False) - Commit: `b5bdb96`
+- [x] 19. CACHE FLUSH WITHOUT FLUSHDB (delete only cache:* keys, no flushdb) - Commit: `0586d91`
+- [x] 20. CODE RESOLVER NUMERIC MOVIE CODE (check get_movie_by_code first, reject digit-only if not found) - Commit: `0e67fb8`
+- [x] 21. LOCAL POSTGRES VERIFICATION - NOT-RUN (Docker daemon mavjud emas, 8 ta integratsiya testi TEST_DATABASE_URL yo'qligi sababli LOUD SKIP qilingan; tashqi bazaga ulanish taqiqlangan)
 
