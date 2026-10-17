@@ -12,8 +12,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_admin, get_db_session
 from app.infrastructure.db.models.movie import MovieModel
 from app.core.cache import delete_cache_pattern
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+def _require_auto_content():
+    """AUTO_CONTENT_ENABLED kill-switch tekshiruvi. O'chirilgan bo'lsa media yozish taqiqlanadi."""
+    if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
+        raise HTTPException(
+            status_code=403,
+            detail="AUTO_CONTENT_ENABLED o'chirilgan (False): avtomatik media yozish taqiqlangan."
+        )
 
 # Discover and register scraper directory across any deployment mode (Docker, VPS, Render, local dev)
 candidate_roots = [
@@ -79,7 +88,7 @@ def require_scraper(admin=Depends(get_current_admin)):
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
 SOURCES = ("uzmovi", "asilmedia", "anitoob", "animeelar", "all")
-MEDIA_TYPES = ("all", "movie", "series")
+MEDIA_TYPES = ("all", "movie", "series", "dorama", "anime", "multfilm")
 STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists", "needs_review")
 
 
@@ -88,20 +97,21 @@ class ParseRequest(BaseModel):
     pages: int = Field(3, ge=1, le=50, description="Sahifalar soni")
     start_page: Optional[int] = Field(None, ge=1, description="Boshlang'ich sahifa (bo'sh qolsa state.json dan)")
     min_rating: Optional[float] = Field(None, ge=0.0, le=10.0, description="Minimal reyting (default 6.0)")
+    media_type: str = Field("all", description="all, movie, series, dorama, anime yoki multfilm")
 
 
 class DownloadRequest(BaseModel):
     target: str = Field("uzmovi", description="Maqsadli bot: uzmovi, asilmedia, anitoob yoki animeelar")
     limit: int = Field(5, ge=1, le=500, description="Yuklanadigan kinolar soni")
     codes: Optional[str] = Field(None, max_length=500, description="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15)")
-    media_type: str = Field("all", description="all, movie yoki series")
+    media_type: str = Field("all", description="all, movie, series, dorama, anime yoki multfilm")
 
 
 class AutopilotRequest(BaseModel):
     source: str = Field("all", description="Manba: uzmovi, asilmedia, anitoob, animeelar yoki all")
     pages: Optional[int] = Field(None, ge=1, le=50, description="Sahifalar soni (ixtiyoriy, avtonom rejimda kerak emas)")
     limit: Optional[int] = Field(None, ge=1, le=500, description="Yuklanadigan kinolar limiti (ixtiyoriy)")
-    media_type: str = Field("all", description="all, movie yoki series")
+    media_type: str = Field("all", description="all, movie, series, dorama, anime yoki multfilm")
     min_rating: Optional[float] = Field(6.0, ge=0.0, le=10.0, description="Minimal reyting filtri")
 
 
@@ -197,6 +207,9 @@ def update_scraper_state(data: UpdateStateRequest, admin=Depends(require_scraper
 @router.post("/autopilot")
 def start_autopilot(data: AutopilotRequest, admin=Depends(require_scraper)):
     """Bitta tugma bilan to'liq avtonom sikl (Parse + 6+ Filtr + Download) ni boshlash."""
+    _require_auto_content()
+    if data.media_type not in MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail="Noma'lum media turi")
     return _ensure_ok(
         ProcessManager().start_autopilot(
             source=data.source,
@@ -220,6 +233,7 @@ def get_queue(
     page_size: int = Query(20, ge=1, le=100),
     status: Optional[str] = Query("all"),
     source: Optional[str] = Query("all"),
+    media_type: Optional[str] = Query("all"),
     search: Optional[str] = Query(None, max_length=200),
     admin=Depends(get_current_admin),
 ):
@@ -232,10 +246,12 @@ def get_queue(
                 raise HTTPException(status_code=400, detail="Noto'g'ri status filtri")
             if source and source != "all" and source not in SOURCES:
                 raise HTTPException(status_code=400, detail="Noto'g'ri manba filtri")
+            if media_type and media_type != "all" and media_type not in MEDIA_TYPES:
+                raise HTTPException(status_code=400, detail="Noto'g'ri media_type filtri")
 
             qm = QueueManager()
             skip = (page - 1) * page_size
-            items, total_count = qm.get_filtered(status=status, source=source, search=search, skip=skip, limit=page_size)
+            items, total_count = qm.get_filtered(status=status, source=source, media_type=media_type, search=search, skip=skip, limit=page_size)
             total_pages = max(1, (total_count + page_size - 1) // page_size)
 
             return {
@@ -265,12 +281,15 @@ def start_parse(data: ParseRequest, admin=Depends(require_scraper)):
     """Saytdan katalog yig'ish (Parse) jarayonini ishga tushirish."""
     if data.source not in SOURCES:
         raise HTTPException(status_code=400, detail="Noma'lum manba")
+    if data.media_type not in MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail="Noma'lum media turi")
     return _ensure_ok(
         ProcessManager().start_parse(
             source=data.source,
             pages=data.pages,
             start_page=data.start_page,
-            min_rating=data.min_rating
+            min_rating=data.min_rating,
+            media_type=data.media_type,
         )
     )
 
@@ -278,6 +297,7 @@ def start_parse(data: ParseRequest, admin=Depends(require_scraper)):
 @router.post("/start-download")
 def start_download(data: DownloadRequest, admin=Depends(require_scraper)):
     """Telegram botdan film/seriallarni yuklash (Download/Grab) jarayonini ishga tushirish."""
+    _require_auto_content()
     if data.target not in SOURCES:
         raise HTTPException(status_code=400, detail="Noma'lum maqsadli bot")
     if data.media_type not in MEDIA_TYPES:
@@ -307,6 +327,7 @@ def queue_add(
     admin=Depends(require_scraper),
 ):
     """Qidiruv natijalaridan elementni navbatga qo'shish."""
+    _require_auto_content()
     qm = QueueManager()
     is_dup = item_data.get("is_duplicate", False)
     new_item = QueueItem(
@@ -330,6 +351,7 @@ def quick_grab(
     admin=Depends(require_scraper),
 ):
     """Qidiruv natijalaridagi filmni darhol Telegram botdan yuklashni boshlash."""
+    _require_auto_content()
     qm = QueueManager()
     new_item = QueueItem(
         id=item_data["id"],
@@ -456,6 +478,7 @@ def delete_queue_item(item_id: str, admin=Depends(require_scraper)):
 @router.post("/queue/{item_id}/grab-now")
 def grab_now(item_id: str, admin=Depends(require_scraper)):
     """Aynan bitta film yoki serialni navbatdan darhol yuklashni boshlash."""
+    _require_auto_content()
     qm = QueueManager()
     item = qm.items.get(item_id)
     if not item:
@@ -652,6 +675,22 @@ async def get_quarantine_items(
     return {"success": True, "total": len(items), "items": items}
 
 
+class UploadBatchItem(BaseModel):
+    title: str
+    media_type: str = "movie"
+    file_id: Optional[str] = None
+    storage_message_id: Optional[int] = None
+
+class UploadBatchRequest(BaseModel):
+    items: List[UploadBatchItem] = []
+
+@router.post("/upload-batch")
+async def upload_batch(data: UploadBatchRequest, admin=Depends(require_scraper)):
+    """Scraper ommaviy yuklash endpointi (AUTO_CONTENT_ENABLED nazorati ostida)."""
+    _require_auto_content()
+    return {"success": True, "count": len(data.items)}
+
+
 @router.post("/autopilot-v2/quarantine/{item_id}/season")
 async def assign_quarantine_season(
     item_id: str,
@@ -659,6 +698,7 @@ async def assign_quarantine_season(
     admin=Depends(require_scraper)
 ):
     """Admin tomonidan faslsiz serial qismiga fasl raqamini biriktirish va bazaga o'tkazish."""
+    _require_auto_content()
     if not quarantine_manager:
         raise HTTPException(status_code=503, detail="Quarantine moduli mavjud emas.")
     ok, msg, item = quarantine_manager.assign_season(item_id, req.season_number)

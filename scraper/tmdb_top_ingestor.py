@@ -56,6 +56,7 @@ from app.infrastructure.db.models.blacklist import BlacklistModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel
 from app.infrastructure.external.tmdb_client import tmdb_client
+from app.core.config import settings
 from app.core.seed_config import (
     SEED_MOVIE_TARGET,
     SEED_TV_TARGET,
@@ -508,6 +509,11 @@ class TmdbTopIngestor:
         """
         stats = {"found_ready": 0, "enqueued": 0, "skipped_existing": 0}
         mode_label = "EXECUTE" if execute else "DRY-RUN"
+        if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
+            print("\n🛑 [ENQUEUE: BLOCKED] AUTO_CONTENT_ENABLED=False (kill switch faol): Navbatga qo'yish to'xtatildi.", flush=True)
+            logger.warning("AUTO_CONTENT_ENABLED is False: seed ingestor enqueue blocked.")
+            return stats
+
         print(f"\n🚀 [ENQUEUE: {mode_label}] 'found' holatidagi nomzodlar ko'rib chiqilmoqda...", flush=True)
 
         async with async_session_factory() as session:

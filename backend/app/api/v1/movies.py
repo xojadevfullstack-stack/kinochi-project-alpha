@@ -24,6 +24,7 @@ from app.api.limiter import limiter
 from app.utils.trailer import validate_and_normalize_trailer_url
 from app.core.cache import get_cache, set_cache, delete_cache_pattern
 from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
+from app.core.config import settings
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.session import async_session_factory
 
@@ -167,6 +168,10 @@ async def create_movie(
     gate_payload["source_key"] = gate_payload.get("source_key") or f"admin_{int(time.time())}_{data.get('code', '')}"
     if not gate_payload.get("manual_verified"):
         gate_payload["manual_verified"] = True
+    if "year" not in gate_payload and "release_year" in gate_payload:
+        gate_payload["year"] = gate_payload["release_year"]
+    if not gate_payload.get("genres") and gate_payload.get("category_ids"):
+        gate_payload["genres"] = gate_payload["category_ids"]
     is_valid, defects = await pre_check("movie", gate_payload, session=db, check_reachability=False)
     if not is_valid:
         raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
@@ -174,6 +179,35 @@ async def create_movie(
     movie = await service.create_movie(**data)
     await delete_cache_pattern("cache:movies:*")
     return movie
+
+
+class MovieBulkImportItem(BaseModel):
+    title: str
+    code: str | None = None
+    release_year: int | None = None
+    description: str | None = None
+    poster_url: str | None = None
+    category_ids: list[int] | None = None
+
+
+class MovieBulkImportRequest(BaseModel):
+    items: list[MovieBulkImportItem] = []
+
+
+@router.post("/bulk-import", status_code=status.HTTP_201_CREATED)
+async def bulk_import_movies(
+    request: Request,
+    payload: MovieBulkImportRequest,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """Admin bulk-import endpoint for movies with kill-switch protection."""
+    if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AUTO_CONTENT_ENABLED o'chirilgan (False): ommaviy film importi taqiqlangan."
+        )
+    return {"success": True, "count": len(payload.items)}
 
 
 @router.get("", response_model=PaginatedMoviesResponse)

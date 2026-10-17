@@ -186,6 +186,15 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
         caption_lines.append(f"📅 <b>Yili:</b> {release_year}")
     storage_caption = "\n".join(caption_lines)
 
+    # DRY-RUN TEKSHIRUVI: Agar AUTO_INDEX_DRY_RUN True bo'lsa, videoni saqlash va link qilish bajarilmaydi
+    if getattr(settings, "AUTO_INDEX_DRY_RUN", True):
+        logger.info(
+            f"[AUTO_INDEX DRY-RUN DECISION] chat={message.chat.id} topic={message.message_thread_id} "
+            f"msg_id={message.message_id} decision=DRY_RUN_WOULD_INDEX movie_id={movie.get('id')} "
+            f"title='{movie.get('title')}' code={movie_code} reason=AUTO_INDEX_DRY_RUN is True (no backend writes)"
+        )
+        return
+
     # Copy video to storage channel with flood control retry
     try:
         storage_msg = await safe_copy_message_with_retry(
@@ -234,6 +243,17 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 await msg.reply("❌ STORAGE_CHANNEL_ID sozlanmagan! Videoni saqlab bo'lmaydi.")
             except Exception as reply_err:
                 logger.debug(f"Xabar yuborishda xatolik: {reply_err}")
+        return
+
+    # DRY-RUN TEKSHIRUVI: Agar AUTO_INDEX_DRY_RUN True bo'lsa, hech qanday mavsum/qism yaratilmaydi
+    if getattr(settings, "AUTO_INDEX_DRY_RUN", True):
+        for msg in messages:
+            explicit_ep = extract_episode_num_from_caption(msg.caption)
+            logger.info(
+                f"[AUTO_INDEX DRY-RUN DECISION] chat={msg.chat.id} topic={msg.message_thread_id} "
+                f"msg_id={msg.message_id} decision=DRY_RUN_WOULD_INDEX series_id={series.get('id')} "
+                f"title='{series.get('title')}' ep={explicit_ep} reason=AUTO_INDEX_DRY_RUN is True (no backend writes)"
+            )
         return
 
     seasons = series.get("seasons", [])
@@ -359,7 +379,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
     # ── BOSQICH B — UPLOAD (endi xavfsiz parallel yoki ketma-ket, order bazada band) ──
     s_num = season.get('season_number', 1)
-    series_title = html.escape(series.get('title', ''))
+    series_title = html.escape(series.get('title') or '')
 
     for idx, msg in enumerate(messages):
         reserved_info = reserved_map.get(msg.message_id)
@@ -506,6 +526,15 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
     chat_id = int(parts[0])
     topic_id = int(parts[1]) if len(parts) > 1 and parts[1] != "0" else None
 
+    # Kill switch tekshiruvi: agar AUTO_CONTENT_ENABLED o'chirilgan bo'lsa, xabarlar tashlab yuboriladi
+    if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id=N/A "
+            f"decision=IGNORED reason=AUTO_CONTENT_ENABLED is False (kill switch active)"
+        )
+        source_batches.pop(source_key, None)
+        return
+
     # Protect batch saving with source-level lock
     lock = get_source_lock(chat_id, topic_id)
     async with lock:
@@ -559,8 +588,17 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
 
 async def enqueue_video_message(message: Message, bot: Bot):
     chat_id = message.chat.id
-    topic_id = message.message_thread_id or 0
-    source_key = f"{chat_id}:{topic_id}"
+    topic_id = message.message_thread_id
+
+    # 1. KILL SWITCH: AUTO_CONTENT_ENABLED tekshiruvi (default False: hech narsa qabul qilinmaydi)
+    if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={message.message_id} "
+            f"decision=IGNORED reason=AUTO_CONTENT_ENABLED is False (kill switch active)"
+        )
+        return
+
+    source_key = f"{chat_id}:{topic_id or 0}"
 
     now = time.time()
     batch = source_batches.get(source_key)

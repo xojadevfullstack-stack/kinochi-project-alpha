@@ -83,7 +83,20 @@ class Settings(BaseSettings):
     TMDB_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     AUTO_TOPIC_CHAT_ID: int | None = None
-    AUTO_CONTENT_ENABLED: bool = True
+    AUTO_CONTENT_ENABLED: bool = False
+    AUTO_INDEX_DRY_RUN: bool = True
+    AUTO_INDEX_ALLOWED_CHAT_IDS: list[int] = []
+
+    @field_validator("AUTO_INDEX_ALLOWED_CHAT_IDS", mode="before")
+    @classmethod
+    def validate_allowed_chat_ids(cls, v):
+        if isinstance(v, str):
+            if not v.strip():
+                return []
+            return [int(x.strip()) for x in v.split(",") if x.strip()]
+        if isinstance(v, (list, tuple, set)):
+            return [int(x) for x in v]
+        return []
 
     # ── TMDb Top Seed Ingestor (S2) ──────────────────────────────────
     SEED_MOVIE_TARGET: int = 1000
