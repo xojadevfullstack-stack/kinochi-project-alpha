@@ -78,33 +78,49 @@ async def run_bot():
     dp.include_router(reports_router)
     
 
-    retry_delay = 5
-    max_delay = 60
-
     try:
-        while True:
-            try:
-                logging.info("[BOT] Starting Telegram bot polling...")
-                
-                # Set up the menu button for WebApp
-                from aiogram.types import MenuButtonWebApp, WebAppInfo
-                web_app_url = "https://kinochi-project-alpha.vercel.app/"
-                await bot.set_chat_menu_button(
-                    menu_button=MenuButtonWebApp(text="🌐 Sayt", web_app=WebAppInfo(url=web_app_url))
-                )
-                
-                logging.info("CHECKPOINT 11: bot.delete_webhook() chaqirilmoqda")
-                await bot.delete_webhook(drop_pending_updates=True)
-                logging.info("CHECKPOINT 12: dp.start_polling(bot) chaqirilmoqda")
-                await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
-                logging.info("CHECKPOINT 13: dp.start_polling(bot) tugadi")
-            except Exception as e:
-                logging.error(f"[BOT] Polling failed: {e}")
-                logging.info(f"[BOT] Retrying in {retry_delay} seconds...")
-                await asyncio.sleep(retry_delay)
-                # Exponential backoff
-                retry_delay = min(retry_delay * 2, max_delay)
+        # Set up the menu button for WebApp
+        from aiogram.types import MenuButtonWebApp, WebAppInfo
+        web_app_url = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app/").rstrip("/") + "/"
+        try:
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(text="🌐 Sayt", web_app=WebAppInfo(url=web_app_url))
+            )
+        except Exception as e:
+            logging.warning(f"[BOT] Could not set chat menu button: {e}")
+        
+        # Log pending update count at startup
+        try:
+            webhook_info = await bot.get_webhook_info()
+            pending_count = getattr(webhook_info, "pending_update_count", 0)
+            logging.info(f"[BOT] Startup pending update count: {pending_count}")
+        except Exception as e:
+            logging.warning(f"[BOT] Could not fetch pending update count: {e}")
+
+        # Configurable drop_pending_updates (default False)
+        env_val = os.environ.get("BOT_DROP_PENDING_UPDATES")
+        if env_val is not None:
+            drop_pending = env_val.lower() in ("true", "1", "yes")
+        else:
+            drop_pending = getattr(settings, "BOT_DROP_PENDING_UPDATES", False)
+        logging.info(f"CHECKPOINT 11: bot.delete_webhook(drop_pending_updates={drop_pending}) chaqirilmoqda")
+        await bot.delete_webhook(drop_pending_updates=drop_pending)
+
+        logging.info("CHECKPOINT 12: dp.start_polling(bot) chaqirilmoqda")
+        try:
+            from app.core.bot_status import set_bot_alive
+            set_bot_alive(True)
+        except Exception:
+            pass
+
+        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        logging.info("CHECKPOINT 13: dp.start_polling(bot) tugadi")
     finally:
+        try:
+            from app.core.bot_status import set_bot_alive
+            set_bot_alive(False)
+        except Exception:
+            pass
         await api_client.close()
         await bot.session.close()
 

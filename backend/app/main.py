@@ -202,10 +202,12 @@ async def health_check() -> dict:
     """
     Basic liveness probe.
     Returns 200 if the process is running.
-    Future phases will add readiness checks for DB / Redis.
+    Includes bot_alive status.
     """
+    from app.core.bot_status import is_bot_alive
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
+        "bot_alive": is_bot_alive(),
     }
