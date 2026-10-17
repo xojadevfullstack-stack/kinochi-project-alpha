@@ -223,7 +223,7 @@ class SeriesService:
         
         return Episode.model_validate(updated_episode)
 
-    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "O'zbekcha", source_url: str | None = None, telegram_file_id: str | None = None) -> Episode | None:
+    async def link_episode_video_from_message(self, episode_id: int, message_id: int, language: str = "O'zbekcha", source_url: str | None = None, telegram_file_id: str | None = None, allow_replace: bool = False) -> Episode | None:
         episode = await self.repository.get_episode_by_id(episode_id)
         if not episode:
             return None
@@ -233,12 +233,15 @@ class SeriesService:
         else:
             file_id = await self.telegram_api.get_video_file_id_from_message(message_id, source_url=source_url)
         
-        updated_episode = await self.repository.add_episode_translation(
-            episode_id=episode_id,
-            language=language,
-            telegram_file_id=file_id,
-            storage_channel_message_id=message_id
-        )
+        kwargs = {
+            "episode_id": episode_id,
+            "language": language,
+            "telegram_file_id": file_id,
+            "storage_channel_message_id": message_id
+        }
+        if allow_replace:
+            kwargs["allow_replace"] = True
+        updated_episode = await self.repository.add_episode_translation(**kwargs)
         
         return Episode.model_validate(updated_episode)
 

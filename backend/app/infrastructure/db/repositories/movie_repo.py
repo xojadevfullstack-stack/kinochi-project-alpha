@@ -261,17 +261,17 @@ class MovieRepositoryImpl(IMovieRepository):
         await self.session.flush()
         return True
 
-    async def add_translation(self, movie_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> Movie | None:
+    async def add_translation(self, movie_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int, allow_replace: bool = False) -> Movie | None:
         from app.infrastructure.db.models.translation import EpisodeTranslationModel
 
-        # 1. NO OVERWRITES: Mavjud tarjima ustiga yozmaslik
+        # 1. NO OVERWRITES: Mavjud tarjima ustiga yozmaslik (faqat allow_replace=True bo'lganda ruxsat etiladi)
         stmt = select(MovieTranslationModel).where(
             MovieTranslationModel.movie_id == movie_id,
             MovieTranslationModel.language == language
         )
         res = await self.session.execute(stmt)
         existing_tr = res.scalar_one_or_none()
-        if existing_tr and (existing_tr.telegram_file_id or existing_tr.storage_channel_message_id):
+        if not allow_replace and existing_tr and (existing_tr.telegram_file_id or existing_tr.storage_channel_message_id):
             raise ValueError(f"Mavjud kino tarjimasini almashtirish taqiqlangan (No overwrite): movie_id={movie_id}, lang={language}")
 
         # 2. CROSS-TITLE CHECK: Bir xil telegram_file_id yoki storage_channel_message_id boshqa nomga biriktirilgan bo'lmasligi kerak

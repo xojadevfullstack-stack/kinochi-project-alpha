@@ -340,7 +340,8 @@ async def pre_check(
 def final_check(
     kind: str,
     media: Any,
-    payload: Optional[Dict[str, Any]] = None
+    payload: Optional[Dict[str, Any]] = None,
+    allow_replace: bool = False
 ) -> Tuple[bool, List[Dict[str, str]]]:
     """
     Video yuklangandan keyingi yakuniy tekshiruv (file_id, message_id, duration, til, hajm).
@@ -455,7 +456,7 @@ def final_check(
             if tr_lang and lang and tr_lang.lower() == lang.lower() and (tr_fid or tr_mid):
                 has_existing = True
                 break
-        if has_existing or get_val("has_existing_video_for_language"):
+        if (has_existing or get_val("has_existing_video_for_language")) and not allow_replace:
             defects.append({
                 "field": "language",
                 "code": "movie_language_video_limit_exceeded",

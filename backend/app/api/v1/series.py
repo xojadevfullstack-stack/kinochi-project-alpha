@@ -749,11 +749,15 @@ class LinkVideoRequest(BaseModel):
     source_url: str | None = None
     telegram_file_id: str | None = None
     duration: int | None = None
+    replace: bool = False
+    reason: str | None = None
 
 @router.post("/episodes/{episode_id}/link-video", response_model=Episode)
 async def link_episode_video(
     episode_id: int,
     request: LinkVideoRequest,
+    replace: bool = Query(False),
+    reason: str | None = Query(None),
     service: SeriesService = Depends(get_series_service),
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_admin_or_bot)
@@ -761,6 +765,25 @@ async def link_episode_video(
     ep_model = await db.get(EpisodeModel, episode_id)
     if not ep_model:
         raise HTTPException(status_code=404, detail="Episode not found")
+
+    is_replace = replace or request.replace
+    replace_reason = reason or request.reason
+
+    if is_replace:
+        user_role = (admin or {}).get("role")
+        if user_role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Faqat admin videoni almashtirishi mumkin (replace=true)"
+            )
+        if not replace_reason or not replace_reason.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Videoni almashtirish uchun sabab (reason) ko'rsatilishi shart"
+            )
+        logger.warning(
+            f"[ADMIN_REPLACE] Episode {episode_id} video replaced by admin. Reason: '{replace_reason}'. Lang: {request.language}, MsgID: {request.message_id}"
+        )
 
     season_model = await db.get(SeasonModel, ep_model.season_id) if ep_model else None
 
@@ -774,7 +797,7 @@ async def link_episode_video(
     }
     if request.duration is not None:
         gate_payload["duration"] = request.duration
-    is_valid, defects = final_check("episode", gate_payload)
+    is_valid, defects = final_check("episode", gate_payload, allow_replace=is_replace)
     if not is_valid:
         title = ep_model.title or f"Episode {episode_id}"
         await record_rejection(
@@ -801,7 +824,14 @@ async def link_episode_video(
         )
 
     try:
-        episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
+        episode = await service.link_episode_video_from_message(
+            episode_id,
+            request.message_id,
+            request.language,
+            source_url=request.source_url,
+            telegram_file_id=request.telegram_file_id,
+            allow_replace=is_replace
+        )
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
 

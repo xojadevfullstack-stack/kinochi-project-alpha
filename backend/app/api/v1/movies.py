@@ -585,11 +585,15 @@ class LinkVideoRequest(BaseModel):
     source_url: str | None = None
     telegram_file_id: str | None = None
     duration: int | None = None
+    replace: bool = False
+    reason: str | None = None
 
 @router.post("/{movie_id}/link-video", response_model=MovieResponse)
 async def link_movie_video(
     movie_id: int,
     request: LinkVideoRequest,
+    replace: bool = Query(False),
+    reason: str | None = Query(None),
     service: MovieService = Depends(get_movie_service),
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_admin_or_bot)
@@ -598,6 +602,25 @@ async def link_movie_video(
     movie_model = await db.get(MovieModel, movie_id)
     if not movie_model:
         raise HTTPException(status_code=404, detail="Movie not found")
+
+    is_replace = replace or request.replace
+    replace_reason = reason or request.reason
+
+    if is_replace:
+        user_role = (admin or {}).get("role")
+        if user_role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Faqat admin videoni almashtirishi mumkin (replace=true)"
+            )
+        if not replace_reason or not replace_reason.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Videoni almashtirish uchun sabab (reason) ko'rsatilishi shart"
+            )
+        logger.warning(
+            f"[ADMIN_REPLACE] Movie {movie_id} video replaced by admin. Reason: '{replace_reason}'. Lang: {request.language}, MsgID: {request.message_id}"
+        )
 
     # Admission Gate final_check tekshiruvi (type consistency, duration vs TMDb runtime, limitlar)
     gate_payload = {
@@ -609,7 +632,7 @@ async def link_movie_video(
     if request.duration is not None:
         gate_payload["duration"] = request.duration
         gate_payload["runtime"] = movie_model.runtime
-    is_valid, defects = final_check("movie", gate_payload)
+    is_valid, defects = final_check("movie", gate_payload, allow_replace=is_replace)
     if not is_valid:
         logger.warning(f"Admission gate final_check failed for movie {movie_id}: {defects}")
         await record_rejection(
@@ -636,7 +659,14 @@ async def link_movie_video(
         )
 
     try:
-        movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
+        movie = await service.link_movie_video_from_message(
+            movie_id,
+            request.message_id,
+            request.language,
+            source_url=request.source_url,
+            telegram_file_id=request.telegram_file_id,
+            allow_replace=is_replace
+        )
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
 

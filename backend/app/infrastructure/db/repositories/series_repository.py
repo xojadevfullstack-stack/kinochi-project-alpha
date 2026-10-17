@@ -440,17 +440,17 @@ class SeriesRepository:
         await self.session.flush()
         return await self.get_episode_by_id(episode.id)
 
-    async def add_episode_translation(self, episode_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int) -> EpisodeModel | None:
+    async def add_episode_translation(self, episode_id: int, language: str, telegram_file_id: str, storage_channel_message_id: int, allow_replace: bool = False) -> EpisodeModel | None:
         from app.infrastructure.db.models.translation import MovieTranslationModel
 
-        # 1. NO OVERWRITES: Mavjud qism videosi ustiga yozmaslik
+        # 1. NO OVERWRITES: Mavjud qism videosi ustiga yozmaslik (faqat allow_replace=True bo'lganda ruxsat etiladi)
         stmt = select(EpisodeTranslationModel).where(
             EpisodeTranslationModel.episode_id == episode_id,
             EpisodeTranslationModel.language == language
         )
         res = await self.session.execute(stmt)
         existing_tr = res.scalar_one_or_none()
-        if existing_tr and (existing_tr.telegram_file_id or existing_tr.storage_channel_message_id):
+        if not allow_replace and existing_tr and (existing_tr.telegram_file_id or existing_tr.storage_channel_message_id):
             raise ValueError(f"Mavjud qism videosini almashtirish taqiqlangan (No overwrite): episode_id={episode_id}, lang={language}")
 
         # 2. CROSS-TITLE CHECK: Bir xil telegram_file_id yoki storage_channel_message_id boshqa nomga biriktirilgan bo'lmasligi kerak

@@ -49,7 +49,7 @@
 - [x] 15. TRAILER CALLBACK ANSWER GUARD (answer once, alert only on missing, catch TelegramBadRequest) - Commit: `63555dc`
 - [x] 16. AMBIGUOUS TOPICS INDEPENDENT SESSION (independent session for rejected_items, reject both movie and series) - Commit: `3999e49`
 - [x] 17. RELATIVE RUNTIME TOLERANCE & DURATION UNKNOWN (relative tolerance 15%, min 5m; duration_unknown rejection) - Commit: `ba38cd2`
-- [ ] 18. ADMIN-ONLY EXPLICIT REPLACE (replace=true + reason for admin, auto-index replace=False)
+- [x] 18. ADMIN-ONLY EXPLICIT REPLACE (replace=true + reason for admin, auto-index replace=False) - Commit: `eae1cd8`
 - [ ] 19. CACHE FLUSH WITHOUT FLUSHDB (delete only cache:* keys, no flushdb)
 - [ ] 20. CODE RESOLVER NUMERIC MOVIE CODE (check get_movie_by_code first, reject digit-only if not found)
 - [ ] 21. LOCAL POSTGRES VERIFICATION (localhost:5433 only, NOT-RUN if docker daemon unavailable)
