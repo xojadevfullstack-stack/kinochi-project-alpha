@@ -526,6 +526,27 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
     chat_id = int(parts[0])
     topic_id = int(parts[1]) if len(parts) > 1 and parts[1] != "0" else None
 
+    # Topic ID majburiy
+    if topic_id is None:
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic=None msg_id=N/A "
+            f"decision=IGNORED reason=topic_id is None in flush_source_batch"
+        )
+        source_batches.pop(source_key, None)
+        return
+
+    # Allowlist tekshiruvi
+    allowed_chats = getattr(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", []) or []
+    if isinstance(allowed_chats, str):
+        allowed_chats = [int(x.strip()) for x in allowed_chats.split(",") if x.strip()]
+    if chat_id not in allowed_chats:
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id=N/A "
+            f"decision=IGNORED reason=chat_id not in AUTO_INDEX_ALLOWED_CHAT_IDS allowlist"
+        )
+        source_batches.pop(source_key, None)
+        return
+
     # Kill switch tekshiruvi: agar AUTO_CONTENT_ENABLED o'chirilgan bo'lsa, xabarlar tashlab yuboriladi
     if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
         logger.info(
@@ -546,18 +567,19 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
         messages = sorted(batch.messages, key=lambda m: m.message_id)
 
         # 2. Source orqali Series yoki Movie qidirish
-        url = f"/series/by-source?chat_id={chat_id}"
-        if topic_id:
-            url += f"&topic_id={topic_id}"
+        url = f"/series/by-source?chat_id={chat_id}&topic_id={topic_id}"
         resp = await api_client.client.get(url)
 
         if resp.status_code == 404:
             # Movie tekshirish
-            movie_url = f"/movies/by-source?chat_id={chat_id}"
-            if topic_id:
-                movie_url += f"&topic_id={topic_id}"
+            movie_url = f"/movies/by-source?chat_id={chat_id}&topic_id={topic_id}"
             resp_movie = await api_client.client.get(movie_url)
             if resp_movie.status_code == 404:
+                for msg in messages:
+                    logger.info(
+                        f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
+                        f"decision=SKIPPED_NOT_FOUND reason=topic maps to zero entities in backend"
+                    )
                 return
             try:
                 resp_movie.raise_for_status()
@@ -567,6 +589,10 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
                 return
 
             for msg in messages:
+                logger.info(
+                    f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
+                    f"decision=ROUTED_MOVIE reason=topic mapped to movie id={movie.get('id')}"
+                )
                 await process_movie_message(msg, bot, movie)
             return
 
@@ -583,6 +609,11 @@ async def flush_source_batch(source_key: str, bot: Bot, delay: float):
             return
 
         # 3. Series uchun qismlarni ketma-ket indekslash
+        for msg in messages:
+            logger.info(
+                f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={msg.message_id} "
+                f"decision=ROUTED_SERIES reason=topic mapped to series id={series.get('id')}"
+            )
         await process_series_batch(messages, bot, series)
 
 
@@ -598,7 +629,30 @@ async def enqueue_video_message(message: Message, bot: Bot):
         )
         return
 
-    source_key = f"{chat_id}:{topic_id or 0}"
+    # 2. ALLOWLIST: Faqat AUTO_INDEX_ALLOWED_CHAT_IDS ro'yxatidagi chat_id lar qabul qilinadi (default bo'sh = hech narsa olinmaydi)
+    allowed_chats = getattr(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", []) or []
+    if isinstance(allowed_chats, str):
+        allowed_chats = [int(x.strip()) for x in allowed_chats.split(",") if x.strip()]
+    if chat_id not in allowed_chats:
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={message.message_id} "
+            f"decision=IGNORED reason=chat_id not in AUTO_INDEX_ALLOWED_CHAT_IDS allowlist"
+        )
+        return
+
+    # 3. TOPIC_ID MAJBURIY: Faqat topic_id (message_thread_id) mavjud xabarlar qayta ishlanadi (mavzusiz = ignore)
+    if topic_id is None:
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic=None msg_id={message.message_id} "
+            f"decision=IGNORED reason=message has no topic_id (message_thread_id is required)"
+        )
+        return
+
+    source_key = f"{chat_id}:{topic_id}"
+    logger.info(
+        f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={message.message_id} "
+        f"decision=BUFFERED reason=message enqueued into source buffer"
+    )
 
     now = time.time()
     batch = source_batches.get(source_key)
