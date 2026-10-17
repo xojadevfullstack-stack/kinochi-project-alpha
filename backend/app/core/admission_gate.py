@@ -387,23 +387,37 @@ def final_check(
             "message": "Saqlash kanali xabar ID butun son bo'lishi kerak"
         })
 
-    # 3. Video davomiyligi (duration > 0)
+    # 3. Video davomiyligi (agar duration kaliti berilgan bo'lsa, None yoki 0 bo'lsa duration_unknown, manfiy bo'lsa invalid_duration)
+    has_duration_key = ("duration" in payload) or (isinstance(media, dict) and "duration" in media) or (hasattr(media, "duration"))
     duration = get_val("duration")
-    if duration is not None:
-        try:
-            dur_int = int(duration)
-            if dur_int <= 0:
-                defects.append({
-                    "field": "duration",
-                    "code": "invalid_duration",
-                    "message": "Video davomiyligi 0 dan katta bo'lishi kerak"
-                })
-        except (ValueError, TypeError):
+    if has_duration_key:
+        if duration is None:
             defects.append({
                 "field": "duration",
-                "code": "invalid_duration_format",
-                "message": "Video davomiyligi butun son (soniya) formatida bo'lishi kerak"
+                "code": "duration_unknown",
+                "message": "Video davomiyligi noma'lum (None)"
             })
+        else:
+            try:
+                dur_int = int(duration)
+                if dur_int < 0:
+                    defects.append({
+                        "field": "duration",
+                        "code": "invalid_duration",
+                        "message": "Video davomiyligi 0 dan katta bo'lishi kerak"
+                    })
+                elif dur_int == 0:
+                    defects.append({
+                        "field": "duration",
+                        "code": "duration_unknown",
+                        "message": "Video davomiyligi 0 bo'lishi mumkin emas"
+                    })
+            except (ValueError, TypeError):
+                defects.append({
+                    "field": "duration",
+                    "code": "duration_unknown",
+                    "message": "Video davomiyligi butun son (soniya) formatida bo'lishi kerak"
+                })
 
     # 4. Til tekshiruvi ("Asosiy" yoki bo'sh placeholder bo'lmasligi kerak)
     lang = str(get_val("language") or get_val("voiceover") or "").strip()
@@ -463,7 +477,7 @@ def final_check(
                 "message": "Serial mavzusi uchun qism raqami (episode_number) talab qilinadi"
             })
 
-    # 7. Movie video duration vs TMDb runtime with configurable tolerance (reject extreme mismatches)
+    # 7. Movie video duration vs TMDb runtime with relative tolerance (default 15%, min 5 min)
     if kind == "movie":
         runtime = get_val("runtime") or get_val("tmdb_runtime")
         if duration is not None and runtime is not None:
@@ -474,13 +488,14 @@ def final_check(
                 rt_minutes = float(runtime)
                 if rt_minutes > 0 and dur_minutes > 0:
                     from app.core.config import settings
-                    tolerance = getattr(settings, "MOVIE_RUNTIME_TOLERANCE_MINUTES", 30)
+                    tol_percent = getattr(settings, "MOVIE_RUNTIME_TOLERANCE_PERCENT", 15)
+                    tolerance_minutes = max(rt_minutes * (tol_percent / 100.0), 5.0)
                     diff = abs(dur_minutes - rt_minutes)
-                    if diff > tolerance:
+                    if diff > tolerance_minutes:
                         defects.append({
                             "field": "duration",
                             "code": "runtime_mismatch",
-                            "message": f"Video davomiyligi ({int(dur_minutes)} daq) TMDb davomiyligiga ({int(rt_minutes)} daq) mos kelmadi (farq: {int(diff)} daq, ruxsat etilgan: {tolerance} daq)"
+                            "message": f"Video davomiyligi ({dur_minutes:.1f} daq) TMDb davomiyligiga ({rt_minutes:.1f} daq) mos kelmadi (farq: {diff:.1f} daq, ruxsat etilgan tolerantlik: {tolerance_minutes:.1f} daq / {tol_percent}%)"
                         })
             except (ValueError, TypeError):
                 pass

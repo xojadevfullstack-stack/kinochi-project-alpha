@@ -600,14 +600,16 @@ async def link_movie_video(
         raise HTTPException(status_code=404, detail="Movie not found")
 
     # Admission Gate final_check tekshiruvi (type consistency, duration vs TMDb runtime, limitlar)
-    is_valid, defects = final_check("movie", {
+    gate_payload = {
         "telegram_file_id": request.telegram_file_id,
         "storage_channel_message_id": request.message_id,
         "language": request.language,
-        "duration": request.duration,
-        "runtime": movie_model.runtime,
         "existing_translations": movie_model.translations
-    })
+    }
+    if request.duration is not None:
+        gate_payload["duration"] = request.duration
+        gate_payload["runtime"] = movie_model.runtime
+    is_valid, defects = final_check("movie", gate_payload)
     if not is_valid:
         logger.warning(f"Admission gate final_check failed for movie {movie_id}: {defects}")
         await record_rejection(

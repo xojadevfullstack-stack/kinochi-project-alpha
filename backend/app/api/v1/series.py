@@ -765,14 +765,16 @@ async def link_episode_video(
     season_model = await db.get(SeasonModel, ep_model.season_id) if ep_model else None
 
     # Admission Gate final_check tekshiruvi (type consistency, season/episode numbers, limits)
-    is_valid, defects = final_check("episode", {
+    gate_payload = {
         "telegram_file_id": request.telegram_file_id,
         "storage_channel_message_id": request.message_id,
         "language": request.language,
-        "duration": request.duration,
         "season_number": season_model.season_number if season_model else None,
         "episode_number": ep_model.episode_number if ep_model else None,
-    })
+    }
+    if request.duration is not None:
+        gate_payload["duration"] = request.duration
+    is_valid, defects = final_check("episode", gate_payload)
     if not is_valid:
         title = ep_model.title or f"Episode {episode_id}"
         await record_rejection(

@@ -48,7 +48,7 @@
 - [x] 14. AUTO_INDEX DRY-RUN FULL PIPELINE (allowlist, topic, series & movie lookups, gate pre-checks, log format, work with AUTO_CONTENT_ENABLED=False) - Commit: `8440a9d`
 - [x] 15. TRAILER CALLBACK ANSWER GUARD (answer once, alert only on missing, catch TelegramBadRequest) - Commit: `63555dc`
 - [x] 16. AMBIGUOUS TOPICS INDEPENDENT SESSION (independent session for rejected_items, reject both movie and series) - Commit: `3999e49`
-- [ ] 17. RELATIVE RUNTIME TOLERANCE & DURATION UNKNOWN (relative tolerance 15%, min 5m; duration_unknown rejection)
+- [x] 17. RELATIVE RUNTIME TOLERANCE & DURATION UNKNOWN (relative tolerance 15%, min 5m; duration_unknown rejection) - Commit: `ba38cd2`
 - [ ] 18. ADMIN-ONLY EXPLICIT REPLACE (replace=true + reason for admin, auto-index replace=False)
 - [ ] 19. CACHE FLUSH WITHOUT FLUSHDB (delete only cache:* keys, no flushdb)
 - [ ] 20. CODE RESOLVER NUMERIC MOVIE CODE (check get_movie_by_code first, reject digit-only if not found)
