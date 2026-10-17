@@ -88,19 +88,4 @@ async def handle_back_to_series(callback: CallbackQuery):
             pass
 
 
-@router.callback_query(F.data == "main_menu")
-async def handle_main_menu_callback(callback: CallbackQuery):
-    try:
-        from keyboards.reply import main_menu
-        welcome_text = (
-            "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
-            "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
-            "🎥 Kinoni ko'rish uchun <b>kino kodini</b> yuboring yoki saytimiz orqali tanlang!\n\n"
-            "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
-        )
-        await callback.message.answer(welcome_text, parse_mode="HTML", reply_markup=main_menu)
-    finally:
-        try:
-            await callback.answer()
-        except Exception:
-            pass
+

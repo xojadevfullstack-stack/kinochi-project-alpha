@@ -51,7 +51,7 @@ async def send_catalog(target: CallbackQuery | Message, state: FSMContext = None
     else:
         await target.answer(text, parse_mode="HTML", reply_markup=markup)
 
-@router.callback_query(F.data.in_(["menu_catalog", "menu_movies", "menu_series", "back_to_catalog"]))
+@router.callback_query(F.data == "menu_catalog")
 async def handle_catalog_btn(callback: CallbackQuery, state: FSMContext = None):
     try:
         await send_catalog(callback, state)
