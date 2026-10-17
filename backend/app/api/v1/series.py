@@ -725,6 +725,7 @@ class LinkVideoRequest(BaseModel):
     language: str = "O'zbekcha"
     source_url: str | None = None
     telegram_file_id: str | None = None
+    duration: int | None = None
 
 @router.post("/episodes/{episode_id}/link-video", response_model=Episode)
 async def link_episode_video(
@@ -734,44 +735,56 @@ async def link_episode_video(
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_admin_or_bot)
 ):
+    ep_model = await db.get(EpisodeModel, episode_id)
+    if not ep_model:
+        raise HTTPException(status_code=404, detail="Episode not found")
+
+    season_model = await db.get(SeasonModel, ep_model.season_id) if ep_model else None
+
+    # Admission Gate final_check tekshiruvi (type consistency, season/episode numbers, limits)
+    is_valid, defects = final_check("episode", {
+        "telegram_file_id": request.telegram_file_id,
+        "storage_channel_message_id": request.message_id,
+        "language": request.language,
+        "duration": request.duration,
+        "season_number": season_model.season_number if season_model else None,
+        "episode_number": ep_model.episode_number if ep_model else None,
+    })
+    if not is_valid:
+        title = ep_model.title or f"Episode {episode_id}"
+        await record_rejection(
+            session=db,
+            media_type="episode",
+            source="auto_index",
+            source_key=f"episode_{episode_id}",
+            title=title,
+            payload={
+                "telegram_file_id": request.telegram_file_id,
+                "storage_channel_message_id": request.message_id,
+                "language": request.language,
+                "duration": request.duration,
+                "source_url": request.source_url
+            },
+            defects=defects,
+            media_id=episode_id,
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Admission gate final_check xatosi", "defects": defects}
+        )
+
     try:
         episode = await service.link_episode_video_from_message(episode_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
         if not episode:
             raise HTTPException(status_code=404, detail="Episode not found")
 
-        # Admission Gate final_check
-        is_valid, defects = final_check("episode", {
-            "telegram_file_id": request.telegram_file_id,
-            "storage_channel_message_id": request.message_id,
-            "language": request.language
-        })
-        ep_model = await db.get(EpisodeModel, episode_id)
-        if ep_model:
-            if is_valid:
-                # Series ni tekshirib, agar pending bo'lsa uni 'published' qilish
-                season_model = await db.get(SeasonModel, ep_model.season_id)
-                if season_model and season_model.series_id:
-                    series_model = await db.get(SeriesModel, season_model.series_id)
-                    if series_model and series_model.publish_status == "pending":
-                        await promote_to_published(db, series_model)
-                        await db.commit()
-            else:
-                title = ep_model.title or f"Episode {episode_id}"
-                await record_rejection(
-                    session=db,
-                    media_type="episode",
-                    source="bot_or_admin",
-                    source_key=f"episode_{episode_id}",
-                    title=title,
-                    payload={
-                        "telegram_file_id": request.telegram_file_id,
-                        "storage_channel_message_id": request.message_id,
-                        "language": request.language,
-                        "source_url": request.source_url
-                    },
-                    defects=defects,
-                    media_id=episode_id
-                )
+        # Series ni tekshirib, agar pending bo'lsa uni 'published' qilish
+        if season_model and season_model.series_id:
+            series_model = await db.get(SeriesModel, season_model.series_id)
+            if series_model and series_model.publish_status == "pending":
+                await promote_to_published(db, series_model)
                 await db.commit()
 
         await delete_cache_pattern("cache:series:*")

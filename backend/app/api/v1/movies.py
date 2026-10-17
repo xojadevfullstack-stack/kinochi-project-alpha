@@ -561,6 +561,7 @@ class LinkVideoRequest(BaseModel):
     language: str = "O'zbekcha"
     source_url: str | None = None
     telegram_file_id: str | None = None
+    duration: int | None = None
 
 @router.post("/{movie_id}/link-video", response_model=MovieResponse)
 async def link_movie_video(
@@ -571,40 +572,52 @@ async def link_movie_video(
     admin: dict = Depends(get_admin_or_bot)
 ):
     """Link video for a movie from an existing message ID in the storage channel (Admin or Bot)."""
+    movie_model = await db.get(MovieModel, movie_id)
+    if not movie_model:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    # Admission Gate final_check tekshiruvi (type consistency, duration vs TMDb runtime, limitlar)
+    is_valid, defects = final_check("movie", {
+        "telegram_file_id": request.telegram_file_id,
+        "storage_channel_message_id": request.message_id,
+        "language": request.language,
+        "duration": request.duration,
+        "runtime": movie_model.runtime,
+        "existing_translations": movie_model.translations
+    })
+    if not is_valid:
+        logger.warning(f"Admission gate final_check failed for movie {movie_id}: {defects}")
+        await record_rejection(
+            session=db,
+            media_type="movie",
+            source=getattr(movie_model, "custom_source_name", None) or "auto_index",
+            source_key=f"movie_{movie_id}",
+            title=movie_model.title,
+            payload={
+                "telegram_file_id": request.telegram_file_id,
+                "storage_channel_message_id": request.message_id,
+                "language": request.language,
+                "duration": request.duration,
+                "source_url": request.source_url
+            },
+            defects=defects,
+            media_id=movie_id,
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Admission gate final_check xatosi", "defects": defects}
+        )
+
     try:
         movie = await service.link_movie_video_from_message(movie_id, request.message_id, request.language, source_url=request.source_url, telegram_file_id=request.telegram_file_id)
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
 
-        # Admission Gate final_check
-        is_valid, defects = final_check("movie", {
-            "telegram_file_id": request.telegram_file_id,
-            "storage_channel_message_id": request.message_id,
-            "language": request.language
-        })
-        movie_model = await db.get(MovieModel, movie_id)
-        if is_valid and movie_model:
-            await promote_to_published(db, movie_model)
-            await db.commit()
-            movie.publish_status = "published"
-        elif movie_model:
-            await record_rejection(
-                session=db,
-                media_type="movie",
-                source=getattr(movie_model, "custom_source_name", None) or "manual",
-                source_key=f"movie_{movie_id}",
-                title=movie_model.title,
-                payload={
-                    "telegram_file_id": request.telegram_file_id,
-                    "storage_channel_message_id": request.message_id,
-                    "language": request.language,
-                    "source_url": request.source_url
-                },
-                defects=defects,
-                media_id=movie_id
-            )
-            await db.commit()
-
+        await promote_to_published(db, movie_model)
+        await db.commit()
+        movie.publish_status = "published"
         await delete_cache_pattern("cache:movies:*")
         return movie
     except HTTPException:

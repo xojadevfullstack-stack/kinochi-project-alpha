@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     AUTO_INDEX_DRY_RUN: bool = True
     AUTO_INDEX_ALLOWED_CHAT_IDS: list[int] = []
     BOT_DROP_PENDING_UPDATES: bool = False
+    MOVIE_RUNTIME_TOLERANCE_MINUTES: int = 30
 
     @field_validator("AUTO_INDEX_ALLOWED_CHAT_IDS", mode="before")
     @classmethod

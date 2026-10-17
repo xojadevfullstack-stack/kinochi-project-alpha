@@ -123,7 +123,7 @@ async def pre_check(
             })
 
         # Yil
-        year = payload.get("year")
+        year = payload.get("year") if payload.get("year") is not None else payload.get("release_year")
         current_year = datetime.datetime.now().year
         try:
             year_int = int(year) if year is not None else None
@@ -142,6 +142,8 @@ async def pre_check(
 
         # Janrlar
         genres = payload.get("genres")
+        if not genres:
+            genres = payload.get("category_ids") or payload.get("categories")
         if not genres or (isinstance(genres, list) and len(genres) == 0):
             defects.append({
                 "field": "genres",
@@ -313,7 +315,7 @@ async def pre_check(
 
         # D. Nom + Yil dublikati (agar tmdb_id bo'lmasa yoki qo'shimcha nazorat)
         title_val = payload.get("title")
-        year_val = payload.get("year")
+        year_val = payload.get("year") if payload.get("year") is not None else payload.get("release_year")
         if title_val and year_val and kind in ("movie", "series"):
             try:
                 y_int = int(year_val)
@@ -425,6 +427,71 @@ def final_check(
                 })
         except (ValueError, TypeError):
             pass
+
+    # 6. Type consistency:
+    # (a) Kino mavzusi har bir til uchun faqat bitta asosiy videoni qabul qiladi
+    # (b) Serial mavzusi uchun mavsum va qism raqamlari majburiy
+    if kind == "movie":
+        existing_trs = get_val("existing_translations") or get_val("translations") or []
+        has_existing = False
+        for tr in existing_trs:
+            tr_lang = tr.get("language") if isinstance(tr, dict) else getattr(tr, "language", None)
+            tr_fid = tr.get("telegram_file_id") if isinstance(tr, dict) else getattr(tr, "telegram_file_id", None)
+            tr_mid = tr.get("storage_channel_message_id") if isinstance(tr, dict) else getattr(tr, "storage_channel_message_id", None)
+            if tr_lang and lang and tr_lang.lower() == lang.lower() and (tr_fid or tr_mid):
+                has_existing = True
+                break
+        if has_existing or get_val("has_existing_video_for_language"):
+            defects.append({
+                "field": "language",
+                "code": "movie_language_video_limit_exceeded",
+                "message": f"Kino uchun '{lang}' tilida faqat bitta asosiy video qabul qilinadi"
+            })
+    elif kind in ("episode", "series"):
+        season_num = get_val("season_number")
+        episode_num = get_val("episode_number")
+        if season_num is None or (isinstance(season_num, (int, str)) and str(season_num).isdigit() and int(season_num) <= 0):
+            defects.append({
+                "field": "season_number",
+                "code": "missing_season_number",
+                "message": "Serial mavzusi uchun mavsum raqami (season_number) talab qilinadi"
+            })
+        if episode_num is None or (isinstance(episode_num, (int, str)) and str(episode_num).isdigit() and int(episode_num) <= 0):
+            defects.append({
+                "field": "episode_number",
+                "code": "missing_episode_number",
+                "message": "Serial mavzusi uchun qism raqami (episode_number) talab qilinadi"
+            })
+
+    # 7. Movie video duration vs TMDb runtime with configurable tolerance (reject extreme mismatches)
+    if kind == "movie":
+        runtime = get_val("runtime") or get_val("tmdb_runtime")
+        if duration is not None and runtime is not None:
+            try:
+                dur_val = float(duration)
+                # Agar duration > 300 bo'lsa, soniyalarda berilgan; aks holda daqiqalarda
+                dur_minutes = (dur_val / 60.0) if dur_val > 300 else dur_val
+                rt_minutes = float(runtime)
+                if rt_minutes > 0 and dur_minutes > 0:
+                    from app.core.config import settings
+                    tolerance = getattr(settings, "MOVIE_RUNTIME_TOLERANCE_MINUTES", 30)
+                    diff = abs(dur_minutes - rt_minutes)
+                    if diff > tolerance:
+                        defects.append({
+                            "field": "duration",
+                            "code": "runtime_mismatch",
+                            "message": f"Video davomiyligi ({int(dur_minutes)} daq) TMDb davomiyligiga ({int(rt_minutes)} daq) mos kelmadi (farq: {int(diff)} daq, ruxsat etilgan: {tolerance} daq)"
+                        })
+            except (ValueError, TypeError):
+                pass
+
+    # 8. Bitta fayl birdan ortiq nomga tegishli bo'lishi mumkin emas (one file cannot belong to two titles)
+    if get_val("attached_to_other_title") or get_val("duplicate_file_cross_title"):
+        defects.append({
+            "field": "telegram_file_id",
+            "code": "file_belongs_to_multiple_titles",
+            "message": "Bitta fayl birdan ortiq nomga (title) tegishli bo'lishi mumkin emas"
+        })
 
     return len(defects) == 0, defects
 

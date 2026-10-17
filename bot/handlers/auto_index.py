@@ -228,12 +228,20 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
         return
 
     # Link video to movie
+    video_duration = getattr(message.video, "duration", None) if message.video else None
     try:
         resp = await api_client.client.post(f"/movies/{movie['id']}/link-video", json={
             "message_id": storage_msg_id,
             "language": "O'zbekcha",
-            "telegram_file_id": telegram_file_id
+            "telegram_file_id": telegram_file_id,
+            "duration": video_duration
         })
+        if resp.status_code == 400:
+            logger.warning(
+                f"[AUTO_INDEX DECISION] chat={message.chat.id} topic={message.message_thread_id} msg_id={message.message_id} "
+                f"decision=REJECTED_GATE reason=Admission gate final_check rejected movie video write"
+            )
+            return
         if resp.status_code == 409:
             logger.warning(
                 f"[AUTO_INDEX DECISION] chat={message.chat.id} topic={message.message_thread_id} msg_id={message.message_id} "
@@ -463,12 +471,20 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
             continue
 
         # Link video to reserved episode
+        video_duration = getattr(msg.video, "duration", None) if msg.video else None
         try:
             resp = await api_client.client.post(f"/series/episodes/{ep_id}/link-video", json={
                 "message_id": storage_msg_id,
                 "language": "O'zbekcha",
-                "telegram_file_id": telegram_file_id
+                "telegram_file_id": telegram_file_id,
+                "duration": video_duration
             })
+            if resp.status_code == 400:
+                logger.warning(
+                    f"[AUTO_INDEX DECISION] chat={msg.chat.id} topic={msg.message_thread_id} msg_id={msg.message_id} "
+                    f"decision=REJECTED_GATE reason=Admission gate final_check rejected episode video write"
+                )
+                continue
             if resp.status_code == 409:
                 logger.warning(
                     f"[AUTO_INDEX DECISION] chat={msg.chat.id} topic={msg.message_thread_id} msg_id={msg.message_id} "
