@@ -636,13 +636,18 @@ class TelethonModeratorPipeline:
             or any(w in (item.title or "").lower() for w in ["serial", "dorama", "fasl", "mavsum", "qismlar", "multserial"])
         )
         if is_multi_part:
-            # Seriallar va ko'p qismli doramalar Telegramda @asilmediabot orqali yuklanadi
-            return await self.run_single_series(item=item, target_bot="asilmediabot")
+            # Seriallar va ko'p qismli doramalar mos bot orqali yuklanadi
+            return await self.run_single_series(item=item, target_bot=effective_bot)
         return await self.run_single_movie(item=item, target_bot=effective_bot)
 
     async def run_single_series(self, item: QueueItem, target_bot: str = "asilmediabot") -> bool:
-        # Seriallar har doim asilmediabot orqali olinadi
-        target_bot = "asilmediabot"
+        # Manba bo'yicha mos botni aniqlash
+        if item and getattr(item, "source", None) == "uzmovi" and target_bot in ("asilmediabot", None, ""):
+            target_bot = "UzmovieTV_Bot"
+        elif item and getattr(item, "source", None) == "asilmedia":
+            target_bot = "asilmediabot"
+        elif not target_bot:
+            target_bot = TARGET_BOTS.get(getattr(item, "source", None), "asilmediabot")
 
         logger.info("\n" + "="*55)
         logger.info(f"📺 SERIAL MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
@@ -794,6 +799,13 @@ class TelethonModeratorPipeline:
                     logger.warning(f"[@{target_bot}] {err_msg}")
                     QueueManager().update_status(item.id, "failed", error_message=err_msg)
                     return False
+            if is_uzmovie:
+                logger.info(
+                    f"⚠️ [@{target_bot}] dan '{item.title}' bo'yicha serial tugmalari olinmadi. "
+                    f"Zaxira sifatida @asilmediabot orqali qidirilmoqda..."
+                )
+                return await self.run_single_series(item=item, target_bot="asilmediabot")
+
             logger.warning(f"[@{target_bot}] Serial qismlari yoki fasllari tugmalari topilmadi!")
             QueueManager().update_status(item.id, "failed", error_message=f"[@{target_bot}] Serial tugmalari topilmadi")
             return False
@@ -1325,8 +1337,8 @@ class TelethonModeratorPipeline:
                         if ep_video_msg:
                             break
 
-                        logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism ({ep_attempt + 1}/3) urinishda olinmadi, 4 soniyadan so'ng qayta uriniladi...")
-                        await asyncio.sleep(4.0)
+                        logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism ({ep_attempt + 1}/3) urinishda olinmadi, 2.5 soniyadan so'ng qayta uriniladi...")
+                        await asyncio.sleep(2.5)
                         card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
 
                     if not ep_video_msg:

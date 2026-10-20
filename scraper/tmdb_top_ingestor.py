@@ -257,15 +257,19 @@ class TmdbTopIngestor:
 
         return False, "Tizimda mavjud emas"
 
-    async def build_seeds(self) -> Dict[str, int]:
+    async def build_seeds(self, include_series: Optional[bool] = None, target_movies: Optional[int] = None, target_tv: Optional[int] = None) -> Dict[str, int]:
         """
         TMDb Top-Rated va Popular ro'yxatlarini sahifalab, filtrlar bilan seed_candidates jadvaliga kiritadi.
         Idempotent va davom ettiriluvchi (resumable).
         """
         stats = {"added": 0, "skipped_filter": 0, "existing": 0, "total_processed": 0}
-        targets = [("movie", SEED_MOVIE_TARGET)]
-        if SEED_INCLUDE_SERIES:
-            targets.append(("tv", SEED_TV_TARGET))
+        inc_series = SEED_INCLUDE_SERIES if include_series is None else include_series
+        m_target = SEED_MOVIE_TARGET if target_movies is None else target_movies
+        tv_target = SEED_TV_TARGET if target_tv is None else target_tv
+
+        targets = [("movie", m_target)]
+        if inc_series:
+            targets.append(("tv", tv_target))
 
         async with async_session_factory() as session:
             for kind, target_count in targets:
@@ -553,13 +557,14 @@ class TmdbTopIngestor:
                         print(f"⏩ [{mode_label}] Allaqachon navbatda mavjud: {item_id}", flush=True)
                         continue
 
+                    cand_media_type = "anime" if cand.is_anime else ("series" if cand.kind == "tv" else "movie")
                     queue_item = QueueItem(
                         id=item_id,
                         source=src,
                         title=match_info.get("title") or cand.title_ru or cand.title_en or "Nomlanmagan",
                         original_title=cand.original_title or cand.title_en,
                         year=cand.release_year,
-                        media_type=cand.kind,
+                        media_type=cand_media_type,
                         url=url,
                         poster_url=details.get("poster_url"),
                         status="pending",
@@ -594,6 +599,13 @@ class TmdbTopIngestor:
             flush=True
         )
         return stats
+
+    async def get_candidate_counts(self) -> Dict[str, int]:
+        """Nomzodlarning holat bo'yicha sonini qaytaradi."""
+        async with async_session_factory() as session:
+            stmt = select(SeedCandidateModel.status, func.count(SeedCandidateModel.id)).group_by(SeedCandidateModel.status)
+            res = await session.execute(stmt)
+            return dict(res.all())
 
     async def get_stats(self) -> Dict[str, Any]:
         """

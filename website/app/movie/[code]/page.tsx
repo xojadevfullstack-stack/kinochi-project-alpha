@@ -8,6 +8,7 @@ import KinochiRatingBadge from "@/components/reviews/KinochiRatingBadge";
 import TrailerModal from "@/components/TrailerModal";
 import TelegramWatchButton from "@/components/TelegramWatchButton";
 import FranchiseTimelineBar from "@/components/FranchiseTimelineBar";
+import FranchisePartsSection from "@/components/FranchisePartsSection";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import ReportIssueButton from "@/components/ReportIssueButton";
 
@@ -261,6 +262,13 @@ export default async function MovieDetailsPage({ params }: Props) {
       {franchiseContext && (
         <section className="max-w-container-max mx-auto px-gutter -mt-4 mb-4 relative z-20">
           <FranchiseTimelineBar context={franchiseContext} currentMovieCode={movie.code} />
+        </section>
+      )}
+
+      {/* Franshizaning boshqa qismlari */}
+      {franchiseContext && (
+        <section className="max-w-container-max mx-auto px-gutter my-6 relative z-20">
+          <FranchisePartsSection context={franchiseContext} currentMovieCode={movie.code} />
         </section>
       )}
 

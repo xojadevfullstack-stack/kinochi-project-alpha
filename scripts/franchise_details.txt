@@ -1,0 +1,671 @@
+
+========================================
+Qasoskorlar (50 ta element)
+========================================
+  ID 2755 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_Altron_davri_2015_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar 2: Altron davri 🔑 Kodi: JM2YDF 📅 Yili: 2015
+  ID 2756 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_Altron_davri_2015_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar 2: Altron davri 🔑 Kodi: JM2YDF 📅 Yili: 2015
+  ID 2757 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_Cheksizlik_Jangi_2018_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar 3: Cheksizlik jangi 🔑 Kodi: KDYCSG 📅 Yili: 2018
+  ID 2758 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_Cheksizlik_Jangi_2018_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar 3: Cheksizlik jangi 🔑 Kodi: KDYCSG 📅 Yili: 2018
+  ID 2759 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar 4 HD O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 4: Intiho 🔑 Kodi: 93ULZP 📅 Yili: 2019
+  ID 2760 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar 4 HD O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 4: Intiho 🔑 Kodi: 93ULZP 📅 Yili: 2019
+  ID 2761 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_4_Full_HD_1080p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar 4: Yakuniy jang 🔑 Kodi: PDTRN9 📅 Yili: 2019
+  ID 2762 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_4_Full_HD_1080p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar 4: Yakuniy jang 🔑 Kodi: PDTRN9 📅 Yili: 2019
+  ID 2763 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_Final_2019_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar: Final 🔑 Kodi: BPYBC2 📅 Yili: 2019
+  ID 2764 | Date: 2026-10-08 | Video: True | Doc: Qasoskorlar_Final_2019_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Qasoskorlar: Final 🔑 Kodi: BPYBC2 📅 Yili: 2019
+  ID 9452 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 1-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 1-Qism 📅 Yili: 2013
+  ID 9453 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 1-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9454 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 2-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 2-Qism 📅 Yili: 2013
+  ID 9455 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 2-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9456 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 3-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 3-Qism 📅 Yili: 2013
+  ID 9457 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 3-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9458 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 4-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 4-Qism 📅 Yili: 2013
+  ID 9459 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 4-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9460 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 5-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 5-Qism 📅 Yili: 2013
+  ID 9461 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 5-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9462 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 6-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 6-Qism 📅 Yili: 2013
+  ID 9463 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 6-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9464 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 7-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 7-Qism 📅 Yili: 2013
+  ID 9465 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 7-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9466 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 8-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 8-Qism 📅 Yili: 2013
+  ID 9467 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 8-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9468 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 9-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 9-Qism 📅 Yili: 2013
+  ID 9469 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 9-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9470 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 10-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 10-Qism 📅 Yili: 2013
+  ID 9471 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 10-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9472 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 11-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 11-Qism 📅 Yili: 2013
+  ID 9473 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 11-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 11-qism 🔑 Qism kodi: S1-CH11 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9474 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 12-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 12-Qism 📅 Yili: 2013
+  ID 9475 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 12-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 12-qism 🔑 Qism kodi: S1-CH12 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9476 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 13-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 13-Qism 📅 Yili: 2013
+  ID 9477 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 13-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 13-qism 🔑 Qism kodi: S1-CH13 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9478 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 14-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 14-Qism 📅 Yili: 2013
+  ID 9479 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 14-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 14-qism 🔑 Qism kodi: S1-CH14 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9480 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 15-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 15-Qism 📅 Yili: 2013
+  ID 9481 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 15-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 15-qism 🔑 Qism kodi: S1-CH15 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9482 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 16-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 16-Qism 📅 Yili: 2013
+  ID 9483 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 16-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 16-qism 🔑 Qism kodi: S1-CH16 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9484 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 17-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 17-Qism 📅 Yili: 2013
+  ID 9485 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 17-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 17-qism 🔑 Qism kodi: S1-CH17 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9486 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 18-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 18-Qism 📅 Yili: 2013
+  ID 9487 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 18-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 18-qism 🔑 Qism kodi: S1-CH18 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9488 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 19-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 19-Qism 📅 Yili: 2013
+  ID 9489 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 19-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 19-qism 🔑 Qism kodi: S1-CH19 📺 Serial kodi: s_460 📅 Yili: 2013
+  ID 9490 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 20-qism (asilmedia.net).mp4 | Text: 🎬 Qasoskorlar 🔢 1-Mavsum, 20-Qism 📅 Yili: 2013
+  ID 9491 | Date: 2026-10-09 | Video: True | Doc: Qasoskorlar Multfilm 20-qism (asilmedia.net).mp4 | Text: 🍿 Qasoskorlar 📌 1-mavsum, 20-qism 🔑 Qism kodi: S1-CH20 📺 Serial kodi: s_460 📅 Yili: 2013
+
+========================================
+Temir odam (8 ta element)
+========================================
+  ID 8018 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 3 2013 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 3 🔑 Kodi: CE2YYK 📅 Yili: 2013
+  ID 8019 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 3 2013 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 3 🔑 Kodi: CE2YYK 📅 Yili: 2013
+  ID 8020 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 3 2013 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 3 🔑 Kodi: 2CVWG8 📅 Yili: 2013
+  ID 8021 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 3 2013 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 3 🔑 Kodi: 2CVWG8 📅 Yili: 2013
+  ID 8022 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 2 (2010) 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 2 🔑 Kodi: AA5T3E 📅 Yili: 2010
+  ID 8023 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 2 (2010) 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 2 🔑 Kodi: AA5T3E 📅 Yili: 2010
+  ID 8040 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 1 🔑 Kodi: K2J988 📅 Yili: 2008
+  ID 8041 | Date: 2026-10-09 | Video: True | Doc: Temir Odam 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Temir odam 1 🔑 Kodi: K2J988 📅 Yili: 2008
+
+========================================
+Doktor Strenj (0 ta element)
+========================================
+
+========================================
+Orgimchak odam (41 ta element)
+========================================
+  ID 416 | Date: 2026-07-27 | Video: False | Doc:  | Text: 🎬 Orgimchak-Nuar  1930-yillardagi Nyu-Yorkda sobiq superqahramon va hozirgi xususiy detektiv Ben Reilly o'tmishidagi sir
+  ID 419 | Date: 2026-07-27 | Video: False | Doc:  | Text: 🎬 Orgimchak-Nuar  1930-yillardagi Nyu-Yorkda sobiq superqahramon va hozirgi xususiy detektiv Ben Reilly o'tmishidagi sir
+  ID 549 | Date: 2026-09-24 | Video: True | Doc:  | Text: 🍿 Orgimchak-Nuar 📌 2-mavsum, 1-qism
+  ID 2241 | Date: 2026-10-06 | Video: True | Doc: O'rgimchak_odam_U_Y_Y_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam: Uyga Yo'l yo'q 🔑 Kodi: 6AHH6P 📅 Yili: 2021
+  ID 2242 | Date: 2026-10-06 | Video: True | Doc: O'rgimchak_odam_U_Y_Y_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam: Uyga Yo'l yo'q 🔑 Kodi: 6AHH6P 📅 Yili: 2021
+  ID 2765 | Date: 2026-10-08 | Video: True | Doc: O'rgimchak_odam_1_2002_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam 1 🔑 Kodi: XW5QSA 📅 Yili: 2002
+  ID 2766 | Date: 2026-10-08 | Video: True | Doc: O'rgimchak_odam_1_2002_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam 1 🔑 Kodi: XW5QSA 📅 Yili: 2002
+  ID 2767 | Date: 2026-10-08 | Video: True | Doc: O'rgimchak_odam_3_2007_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam 3 🔑 Kodi: 2FGMRT 📅 Yili: 2007
+  ID 2768 | Date: 2026-10-08 | Video: True | Doc: O'rgimchak_odam_3_2007_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam 3 🔑 Kodi: 2FGMRT 📅 Yili: 2007
+  ID 2769 | Date: 2026-10-08 | Video: True | Doc: O'rgimchak_odam_2_2004_480p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam 2 🔑 Kodi: TDNAW8 📅 Yili: 2004
+  ID 2770 | Date: 2026-10-08 | Video: True | Doc: O'rgimchak_odam_2_2004_480p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam 2 🔑 Kodi: TDNAW8 📅 Yili: 2004
+  ID 8024 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_odam_uydan_yiroqda_2019_720p_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 O'rgimchak odam: Uydan uzoqda 🔑 Kodi: 2VMKJL 📅 Yili: 2019
+  ID 8025 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_odam_uydan_yiroqda_2019_720p_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 O'rgimchak odam: Uydan uzoqda 🔑 Kodi: 2VMKJL 📅 Yili: 2019
+  ID 8026 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_Odam_Uyga_qaytish_2017_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam: Uyga qaytish 🔑 Kodi: ADL8Q5 📅 Yili: 2017
+  ID 8027 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_Odam_Uyga_qaytish_2017_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam: Uyga qaytish 🔑 Kodi: ADL8Q5 📅 Yili: 2017
+  ID 8028 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_odam_koinotlar_aro_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam: Yondosh olam 🔑 Kodi: Y5ZYVR 📅 Yili: 2018
+  ID 8029 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_odam_koinotlar_aro_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 O'rgimchak odam: Yondosh olam 🔑 Kodi: Y5ZYVR 📅 Yili: 2018
+  ID 8030 | Date: 2026-10-09 | Video: True | Doc: Yangi_O'rgimchak_odam_1_2012_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Yangi o'rgimchak odam 1 🔑 Kodi: XRCLB3 📅 Yili: 2012
+  ID 8031 | Date: 2026-10-09 | Video: True | Doc: Yangi_O'rgimchak_odam_1_2012_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Yangi o'rgimchak odam 1 🔑 Kodi: XRCLB3 📅 Yili: 2012
+  ID 8042 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_odam_2_olamlar_to'ri_2023_480p_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 O'rgimchak odam: Olamlar to'ri 🔑 Kodi: P4PHES 📅 Yili: 2023
+  ID 8043 | Date: 2026-10-09 | Video: True | Doc: O'rgimchak_odam_2_olamlar_to'ri_2023_480p_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 O'rgimchak odam: Olamlar to'ri 🔑 Kodi: P4PHES 📅 Yili: 2023
+  ID 8044 | Date: 2026-10-09 | Video: True | Doc: Yangi_o'rgimchak_odam_2_2014_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Yangi o'rgimchak odam 2 🔑 Kodi: 6XM5EA 📅 Yili: 2014
+  ID 8045 | Date: 2026-10-09 | Video: True | Doc: Yangi_o'rgimchak_odam_2_2014_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Yangi o'rgimchak odam 2 🔑 Kodi: 6XM5EA 📅 Yili: 2014
+  ID 8046 | Date: 2026-10-09 | Video: True | Doc: Sherlok_Xolms_O'rgimchak_ayol_1943_720p_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Sherlok Xolms: O'rgimchak ayol 🔑 Kodi: LT88BA 📅 Yili: 1943
+  ID 8047 | Date: 2026-10-09 | Video: True | Doc: Sherlok_Xolms_O'rgimchak_ayol_1943_720p_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Sherlok Xolms: O'rgimchak ayol 🔑 Kodi: LT88BA 📅 Yili: 1943
+  ID 18142 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 1-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 1-Qism
+  ID 18143 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 1-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_726
+  ID 18144 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 2-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 2-Qism
+  ID 18145 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 2-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_726
+  ID 18146 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 3-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 3-Qism
+  ID 18147 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 3-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_726
+  ID 18148 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 4-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 4-Qism
+  ID 18149 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 4-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_726
+  ID 18150 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 5-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 5-Qism
+  ID 18151 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 5-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_726
+  ID 18152 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 6-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 6-Qism
+  ID 18153 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 6-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_726
+  ID 18154 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 7-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 7-Qism
+  ID 18155 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 7-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_726
+  ID 18156 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 8-qism 1080p (asilmedia.net).mp4 | Text: 🎬 O'rgimchak Noir Nuar 🔢 1-Mavsum, 8-Qism
+  ID 18157 | Date: 2026-10-12 | Video: True | Doc: O'rgimchak-Nuar 8-qism 1080p (asilmedia.net).mp4 | Text: 🍿 O'rgimchak Noir Nuar 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_726
+
+========================================
+Karib dengizi (10 ta element)
+========================================
+  ID 2743 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 1 720p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 1: Qora marvarid tavqi la'nati 🔑 Kodi: SQV6BD 📅 Yili: 2003
+  ID 2744 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 1 720p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 1: Qora marvarid tavqi la'nati 🔑 Kodi: SQV6BD 📅 Yili: 2003
+  ID 2745 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 2 480p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 2: Murdalar sandig'i 🔑 Kodi: LEC4D8 📅 Yili: 2006
+  ID 2746 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 2 480p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 2: Murdalar sandig'i 🔑 Kodi: LEC4D8 📅 Yili: 2006
+  ID 2747 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 3 720p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 3: Dunyolar chegarasida 🔑 Kodi: QBGCJ6 📅 Yili: 2007
+  ID 2748 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 3 720p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 3: Dunyolar chegarasida 🔑 Kodi: QBGCJ6 📅 Yili: 2007
+  ID 2749 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 4 720p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 4: Noma'lum sohillarda 🔑 Kodi: 7SHVUE 📅 Yili: 2011
+  ID 2750 | Date: 2026-10-08 | Video: True | Doc: Karib dengizi qaroqchilari 4 720p (asilmedia.net).mp4 | Text: 🍿 Karib dengizi qaroqchilari 4: Noma'lum sohillarda 🔑 Kodi: 7SHVUE 📅 Yili: 2011
+  ID 2751 | Date: 2026-10-08 | Video: True | Doc: Karib_dengizi_Qaroqchilari_5_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Karib dengizi qaroqchilari 5: Murdalar ertak aytmaydi 🔑 Kodi: EJG38N 📅 Yili: 2017
+  ID 2752 | Date: 2026-10-08 | Video: True | Doc: Karib_dengizi_Qaroqchilari_5_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Karib dengizi qaroqchilari 5: Murdalar ertak aytmaydi 🔑 Kodi: EJG38N 📅 Yili: 2017
+
+========================================
+Uzuklar va Xobbit (23 ta element)
+========================================
+  ID 1620 | Date: 2026-09-27 | Video: False | Doc:  | Text: 🎬 Uzuklar hukmdori: Qudrat uzuklari  O‘rta Yer tarixining Ikkinchi asrida kechadigan voqealar. Turli xalqlar — elflar, o
+  ID 1621 | Date: 2026-09-27 | Video: True | Doc:  | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1622 | Date: 2026-09-27 | Video: True | Doc:  | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1623 | Date: 2026-09-27 | Video: True | Doc:  | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1624 | Date: 2026-09-27 | Video: True | Doc:  | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1625 | Date: 2026-09-27 | Video: True | Doc: Uzuklar Hukumdori.S01E05.1080p  (UZB).mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1626 | Date: 2026-09-27 | Video: True | Doc: Uzuklar Hukumdori.S01E06.1080p  (UZB).mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1627 | Date: 2026-09-27 | Video: True | Doc: 7.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1628 | Date: 2026-09-27 | Video: True | Doc: Uzuklar hukumdori Qudrat uzuklari HD 720p.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1630 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 1-qism 🔑 Qism kodi: S2-CH1 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1631 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 2-qism 🔑 Qism kodi: S2-CH2 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1632 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 3-qism 🔑 Qism kodi: S2-CH3 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1633 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 4-qism 🔑 Qism kodi: S2-CH4 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1634 | Date: 2026-09-27 | Video: True | Doc: @@mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 5-qism 🔑 Qism kodi: S2-CH5 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1635 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 6-qism 🔑 Qism kodi: S2-CH6 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1636 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 7-qism 🔑 Qism kodi: S2-CH7 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 1637 | Date: 2026-09-27 | Video: True | Doc: @mediastudios.mp4 | Text: 🍿 Uzuklar hukmdori: Qudrat uzuklari 📌 2-mavsum, 8-qism 🔑 Qism kodi: S2-CH8 📺 Serial kodi: s_47 📅 Yili: 2022
+  ID 2909 | Date: 2026-10-08 | Video: True | Doc: Hobbit 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Hobbit: Besh qoʻshin jangi 🔑 Kodi: 6PSB9S 📅 Yili: 2014
+  ID 2910 | Date: 2026-10-08 | Video: True | Doc: Hobbit 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Hobbit: Besh qoʻshin jangi 🔑 Kodi: 6PSB9S 📅 Yili: 2014
+  ID 5822 | Date: 2026-10-09 | Video: True | Doc: Hobbit 1 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Hobbit 1 🔑 Kodi: BYVC33 📅 Yili: 2012
+  ID 5823 | Date: 2026-10-09 | Video: True | Doc: Hobbit 1 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Hobbit 1 🔑 Kodi: BYVC33 📅 Yili: 2012
+  ID 5824 | Date: 2026-10-09 | Video: True | Doc: Xobbit 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Hobbit 2 🔑 Kodi: JMNXXX 📅 Yili: 2013
+  ID 5825 | Date: 2026-10-09 | Video: True | Doc: Xobbit 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Hobbit 2 🔑 Kodi: JMNXXX 📅 Yili: 2013
+
+========================================
+Jon Uik (16 ta element)
+========================================
+  ID 2893 | Date: 2026-10-08 | Video: True | Doc: Jon Uik 4 most 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 4 🔑 Kodi: N7YU2X 📅 Yili: 2023
+  ID 2894 | Date: 2026-10-08 | Video: True | Doc: Jon Uik 4 most 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 4 🔑 Kodi: N7YU2X 📅 Yili: 2023
+  ID 2895 | Date: 2026-10-08 | Video: True | Doc: Balerina 2025 720p (asilmedia.net).mp4 | Text: 🍿 Balerina - Jon Uik olamidan 🔑 Kodi: 7ZG5HU 📅 Yili: 2025
+  ID 2896 | Date: 2026-10-08 | Video: True | Doc: Balerina 2025 720p (asilmedia.net).mp4 | Text: 🍿 Balerina - Jon Uik olamidan 🔑 Kodi: 7ZG5HU 📅 Yili: 2025
+  ID 2897 | Date: 2026-10-08 | Video: True | Doc: Kontinental_1_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4 | Text: 🎬 Kontinental: Jon Uik dunyosidan 🔢 1-Mavsum, 1-Qism 📅 Yili: 2023
+  ID 2898 | Date: 2026-10-08 | Video: True | Doc: Kontinental_1_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kontinental: Jon Uik dunyosidan 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_81 📅 Yili: 2023
+  ID 2899 | Date: 2026-10-08 | Video: True | Doc: Kontinental_2_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4 | Text: 🎬 Kontinental: Jon Uik dunyosidan 🔢 1-Mavsum, 2-Qism 📅 Yili: 2023
+  ID 2900 | Date: 2026-10-08 | Video: True | Doc: Kontinental_2_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kontinental: Jon Uik dunyosidan 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_81 📅 Yili: 2023
+  ID 2901 | Date: 2026-10-08 | Video: True | Doc: Kontinental_3_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4 | Text: 🎬 Kontinental: Jon Uik dunyosidan 🔢 1-Mavsum, 3-Qism 📅 Yili: 2023
+  ID 2902 | Date: 2026-10-08 | Video: True | Doc: Kontinental_3_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kontinental: Jon Uik dunyosidan 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_81 📅 Yili: 2023
+  ID 8012 | Date: 2026-10-09 | Video: True | Doc: Jon Uik 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 2 🔑 Kodi: 8KHAAS 📅 Yili: 2017
+  ID 8013 | Date: 2026-10-09 | Video: True | Doc: Jon Uik 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 2 🔑 Kodi: 8KHAAS 📅 Yili: 2017
+  ID 8014 | Date: 2026-10-09 | Video: True | Doc: Jon Uik 1 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 1 🔑 Kodi: RMQWFZ 📅 Yili: 2014
+  ID 8015 | Date: 2026-10-09 | Video: True | Doc: Jon Uik 1 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 1 🔑 Kodi: RMQWFZ 📅 Yili: 2014
+  ID 8016 | Date: 2026-10-09 | Video: True | Doc: Jon Uik 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 3 🔑 Kodi: KU7RP7 📅 Yili: 2019
+  ID 8017 | Date: 2026-10-09 | Video: True | Doc: Jon Uik 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Jon Uik 3 🔑 Kodi: KU7RP7 📅 Yili: 2019
+
+========================================
+Avatar (50 ta element)
+========================================
+  ID 11252 | Date: 2026-10-10 | Video: True | Doc: S01E17 The Northern Air Temple-muxed.mp4 | Text: 🎬 Avatar ang haqidagi afsona 🔢 16-Qism
+  ID 11253 | Date: 2026-10-10 | Video: True | Doc: S01E17 The Northern Air Temple-muxed.mp4 | Text: 🍿 Avatar ang haqidagi afsona 📌 1-mavsum, 16-qism 🔑 Qism kodi: S1-CH16 📺 Serial kodi: s_516 📅 Yili: 2002
+  ID 11254 | Date: 2026-10-10 | Video: True | Doc: S01E18+The+Waterbending+Master-muxed.mp4 | Text: 🎬 Avatar ang haqidagi afsona 🔢 17-Qism
+  ID 11255 | Date: 2026-10-10 | Video: True | Doc: S01E18+The+Waterbending+Master-muxed.mp4 | Text: 🍿 Avatar ang haqidagi afsona 📌 1-mavsum, 17-qism 🔑 Qism kodi: S1-CH17 📺 Serial kodi: s_516 📅 Yili: 2002
+  ID 11256 | Date: 2026-10-10 | Video: True | Doc: S01E19+The+Siege+of+the+North+-+1-muxed.mp4 | Text: 🎬 Avatar ang haqidagi afsona 🔢 18-Qism
+  ID 11257 | Date: 2026-10-10 | Video: True | Doc: S01E19+The+Siege+of+the+North+-+1-muxed.mp4 | Text: 🍿 Avatar ang haqidagi afsona 📌 1-mavsum, 18-qism 🔑 Qism kodi: S1-CH18 📺 Serial kodi: s_516 📅 Yili: 2002
+  ID 11258 | Date: 2026-10-10 | Video: True | Doc: S01E20+The+Siege+of+the+North+-+2-muxed.mp4 | Text: 🎬 Avatar ang haqidagi afsona 🔢 19-Qism
+  ID 11259 | Date: 2026-10-10 | Video: True | Doc: S01E20+The+Siege+of+the+North+-+2-muxed.mp4 | Text: 🍿 Avatar ang haqidagi afsona 📌 1-mavsum, 19-qism 🔑 Qism kodi: S1-CH19 📺 Serial kodi: s_516 📅 Yili: 2002
+  ID 13216 | Date: 2026-10-11 | Video: True | Doc: S01E01 The Boy in the Iceberg-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 1-Qism
+  ID 13217 | Date: 2026-10-11 | Video: True | Doc: S01E01 The Boy in the Iceberg-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_586
+  ID 13218 | Date: 2026-10-11 | Video: True | Doc: S01E02 The Avatar Returns-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 2-Qism
+  ID 13219 | Date: 2026-10-11 | Video: True | Doc: S01E02 The Avatar Returns-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_586
+  ID 13220 | Date: 2026-10-11 | Video: True | Doc: S01E03 The Southern Air Temple-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 3-Qism
+  ID 13221 | Date: 2026-10-11 | Video: True | Doc: S01E03 The Southern Air Temple-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_586
+  ID 13222 | Date: 2026-10-11 | Video: True | Doc: S01E04 The Warriors of Kyoshi-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 4-Qism
+  ID 13223 | Date: 2026-10-11 | Video: True | Doc: S01E04 The Warriors of Kyoshi-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_586
+  ID 13224 | Date: 2026-10-11 | Video: True | Doc: S01E05 The King of Omashu-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 5-Qism
+  ID 13225 | Date: 2026-10-11 | Video: True | Doc: S01E06 Imprisoned-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 6-Qism
+  ID 13226 | Date: 2026-10-11 | Video: True | Doc: S01E05 The King of Omashu-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_586
+  ID 13227 | Date: 2026-10-11 | Video: True | Doc: S01E06 Imprisoned-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_586
+  ID 13228 | Date: 2026-10-11 | Video: True | Doc: S01E07 Winter Solstice - 1-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 7-Qism
+  ID 13229 | Date: 2026-10-11 | Video: True | Doc: S01E07 Winter Solstice - 1-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_586
+  ID 13230 | Date: 2026-10-11 | Video: True | Doc: S01E08 Winter Solstice - 2-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 8-Qism
+  ID 13231 | Date: 2026-10-11 | Video: True | Doc: S01E08 Winter Solstice - 2-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_586
+  ID 13232 | Date: 2026-10-11 | Video: True | Doc: S01E09 The Waterbending Scroll-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 9-Qism
+  ID 13233 | Date: 2026-10-11 | Video: True | Doc: S01E09 The Waterbending Scroll-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_586
+  ID 13234 | Date: 2026-10-11 | Video: True | Doc: S01E10 Jet-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 10-Qism
+  ID 13235 | Date: 2026-10-11 | Video: True | Doc: S01E10 Jet-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_586
+  ID 13236 | Date: 2026-10-11 | Video: True | Doc: S01E11 The Great Divide-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 11-Qism
+  ID 13237 | Date: 2026-10-11 | Video: True | Doc: S01E11 The Great Divide-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 11-qism 🔑 Qism kodi: S1-CH11 📺 Serial kodi: s_586
+  ID 13238 | Date: 2026-10-11 | Video: True | Doc: S01E12 The Storm-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 12-Qism
+  ID 13239 | Date: 2026-10-11 | Video: True | Doc: S01E12 The Storm-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 12-qism 🔑 Qism kodi: S1-CH12 📺 Serial kodi: s_586
+  ID 13240 | Date: 2026-10-11 | Video: True | Doc: S01E13+The+Blue+Spirit-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 13-Qism
+  ID 13241 | Date: 2026-10-11 | Video: True | Doc: S01E13+The+Blue+Spirit-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 13-qism 🔑 Qism kodi: S1-CH13 📺 Serial kodi: s_586
+  ID 13242 | Date: 2026-10-11 | Video: True | Doc: S01E14+The+Fortuneteller-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 14-Qism
+  ID 13243 | Date: 2026-10-11 | Video: True | Doc: S01E14+The+Fortuneteller-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 14-qism 🔑 Qism kodi: S1-CH14 📺 Serial kodi: s_586
+  ID 13244 | Date: 2026-10-11 | Video: True | Doc: S01E15 Bato of the Water Tribe-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 15-Qism
+  ID 13245 | Date: 2026-10-11 | Video: True | Doc: S01E15 Bato of the Water Tribe-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 15-qism 🔑 Qism kodi: S1-CH15 📺 Serial kodi: s_586
+  ID 13246 | Date: 2026-10-11 | Video: True | Doc: S01E16 The Deserter-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 16-Qism
+  ID 13247 | Date: 2026-10-11 | Video: True | Doc: S01E16 The Deserter-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 16-qism 🔑 Qism kodi: S1-CH16 📺 Serial kodi: s_586
+  ID 13248 | Date: 2026-10-11 | Video: True | Doc: S01E17 The Northern Air Temple-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 17-Qism
+  ID 13249 | Date: 2026-10-11 | Video: True | Doc: S01E17 The Northern Air Temple-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 17-qism 🔑 Qism kodi: S1-CH17 📺 Serial kodi: s_586
+  ID 13250 | Date: 2026-10-11 | Video: True | Doc: S01E18+The+Waterbending+Master-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 18-Qism
+  ID 13251 | Date: 2026-10-11 | Video: True | Doc: S01E18+The+Waterbending+Master-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 18-qism 🔑 Qism kodi: S1-CH18 📺 Serial kodi: s_586
+  ID 13252 | Date: 2026-10-11 | Video: True | Doc: S01E19+The+Siege+of+the+North+-+1-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 19-Qism
+  ID 13253 | Date: 2026-10-11 | Video: True | Doc: S01E19+The+Siege+of+the+North+-+1-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 19-qism 🔑 Qism kodi: S1-CH19 📺 Serial kodi: s_586
+  ID 13254 | Date: 2026-10-11 | Video: True | Doc: S01E20+The+Siege+of+the+North+-+2-muxed.mp4 | Text: 🎬 Avatar ang haqida afsona 🔢 20-Qism
+  ID 13255 | Date: 2026-10-11 | Video: True | Doc: S01E20+The+Siege+of+the+North+-+2-muxed.mp4 | Text: 🍿 Avatar ang haqida afsona 📌 1-mavsum, 20-qism 🔑 Qism kodi: S1-CH20 📺 Serial kodi: s_586
+  ID 23686 | Date: 2026-10-13 | Video: True | Doc: Avatar The Way of Water 2022 480p (asilmedia.net).mp4 | Text: 🍿 Avatar 2: The Way of Water 🔑 Kodi: 454SQC 📅 Yili: 2005
+  ID 23687 | Date: 2026-10-13 | Video: True | Doc: Avatar The Way of Water 2022 480p (asilmedia.net).mp4 | Text: 🍿 Avatar 2: The Way of Water 🔑 Kodi: 454SQC 📅 Yili: 2005
+
+========================================
+Yura davri (50 ta element)
+========================================
+  ID 8060 | Date: 2026-10-09 | Video: True | Doc: Yura davri dunyosi-3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Yangi Yura davri dunyosi 3: Hukumronlik 🔑 Kodi: Y7C8Y4 📅 Yili: 2022
+  ID 8061 | Date: 2026-10-09 | Video: True | Doc: Yura davri dunyosi-3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Yangi Yura davri dunyosi 3: Hukumronlik 🔑 Kodi: Y7C8Y4 📅 Yili: 2022
+  ID 8155 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 1-Qism 📅 Yili: 2020
+  ID 8156 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_423 📅 Yili: 2020
+  ID 8157 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 2-Qism 📅 Yili: 2020
+  ID 8158 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_423 📅 Yili: 2020
+  ID 8159 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 3-Qism 📅 Yili: 2020
+  ID 8160 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_423 📅 Yili: 2020
+  ID 8161 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 4-Qism 📅 Yili: 2020
+  ID 8162 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_423 📅 Yili: 2020
+  ID 8163 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 5-Qism 📅 Yili: 2020
+  ID 8164 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_423 📅 Yili: 2020
+  ID 8165 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 6-Qism 📅 Yili: 2020
+  ID 8166 | Date: 2026-10-09 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_423 📅 Yili: 2020
+  ID 11033 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 1-Qism 📅 Yili: 2020
+  ID 11034 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_506 📅 Yili: 2020
+  ID 11035 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 2-Qism 📅 Yili: 2020
+  ID 11036 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_506 📅 Yili: 2020
+  ID 11037 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 3-Qism 📅 Yili: 2020
+  ID 11038 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_506 📅 Yili: 2020
+  ID 11039 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 4-Qism 📅 Yili: 2020
+  ID 11040 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_506 📅 Yili: 2020
+  ID 11041 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 5-Qism 📅 Yili: 2020
+  ID 11042 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_506 📅 Yili: 2020
+  ID 11043 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 6-Qism 📅 Yili: 2020
+  ID 11044 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_506 📅 Yili: 2020
+  ID 11829 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 1-Qism 📅 Yili: 2020
+  ID 11830 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_535 📅 Yili: 2020
+  ID 11831 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 2-Qism 📅 Yili: 2020
+  ID 11832 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_535 📅 Yili: 2020
+  ID 11833 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 3-Qism 📅 Yili: 2020
+  ID 11834 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_535 📅 Yili: 2020
+  ID 11835 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 4-Qism 📅 Yili: 2020
+  ID 11836 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_535 📅 Yili: 2020
+  ID 11837 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 5-Qism 📅 Yili: 2020
+  ID 11838 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_535 📅 Yili: 2020
+  ID 11839 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 6-Qism 📅 Yili: 2020
+  ID 11840 | Date: 2026-10-10 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_535 📅 Yili: 2020
+  ID 16723 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 1-Qism 📅 Yili: 2021
+  ID 16724 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_681 📅
+  ID 16725 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 2-Qism 📅 Yili: 2021
+  ID 16726 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_681 📅
+  ID 16727 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 3-Qism 📅 Yili: 2021
+  ID 16728 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_681 📅
+  ID 16729 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 4-Qism 📅 Yili: 2021
+  ID 16730 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_681 📅
+  ID 16731 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 5-Qism 📅 Yili: 2021
+  ID 16732 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_681 📅
+  ID 16733 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 6-Qism 📅 Yili: 2021
+  ID 16734 | Date: 2026-10-12 | Video: True | Doc: Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v | Text: 🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_681 📅
+
+========================================
+Betmen (14 ta element)
+========================================
+  ID 2771 | Date: 2026-10-08 | Video: True | Doc: Betmen 2022 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen 🔑 Kodi: 826ETS 📅 Yili: 2022
+  ID 2772 | Date: 2026-10-08 | Video: True | Doc: Betmen 2022 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen 🔑 Kodi: 826ETS 📅 Yili: 2022
+  ID 2773 | Date: 2026-10-08 | Video: True | Doc: Betmen_Supermenga_qarshi_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Betmen: Batman Supermenga qarshi 🔑 Kodi: SNGPBL 📅 Yili: 2016
+  ID 2774 | Date: 2026-10-08 | Video: True | Doc: Betmen_Supermenga_qarshi_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Betmen: Batman Supermenga qarshi 🔑 Kodi: SNGPBL 📅 Yili: 2016
+  ID 2775 | Date: 2026-10-08 | Video: True | Doc: Betmen 2012 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen: Afsonaning tug'ilishi 🔑 Kodi: DB94MZ 📅 Yili: 2012
+  ID 2776 | Date: 2026-10-08 | Video: True | Doc: Betmen 2012 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen: Afsonaning tug'ilishi 🔑 Kodi: DB94MZ 📅 Yili: 2012
+  ID 2777 | Date: 2026-10-08 | Video: True | Doc: Betmen Muqaddima 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen: Muqaddima 🔑 Kodi: DV87DY 📅 Yili: 2005
+  ID 2778 | Date: 2026-10-08 | Video: True | Doc: Betmen Muqaddima 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen: Muqaddima 🔑 Kodi: DV87DY 📅 Yili: 2005
+  ID 2779 | Date: 2026-10-08 | Video: True | Doc: Betmenning qaytishi 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmenning qaytishi 🔑 Kodi: AVDBNQ 📅 Yili: 1992
+  ID 2780 | Date: 2026-10-08 | Video: True | Doc: Betmenning qaytishi 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmenning qaytishi 🔑 Kodi: AVDBNQ 📅 Yili: 1992
+  ID 8048 | Date: 2026-10-09 | Video: True | Doc: Betmen qora ritsar 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen: Batman Jokerga qarshi 🔑 Kodi: 8LXQDK 📅 Yili: 2008
+  ID 8049 | Date: 2026-10-09 | Video: True | Doc: Betmen qora ritsar 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Betmen: Batman Jokerga qarshi 🔑 Kodi: 8LXQDK 📅 Yili: 2008
+  ID 8050 | Date: 2026-10-09 | Video: True | Doc: Betmen 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Unutilgan Betmen 🔑 Kodi: ASDW4G 📅 Yili: 1989
+  ID 8051 | Date: 2026-10-09 | Video: True | Doc: Betmen 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Unutilgan Betmen 🔑 Kodi: ASDW4G 📅 Yili: 1989
+
+========================================
+Matritsa (12 ta element)
+========================================
+  ID 8066 | Date: 2026-10-09 | Video: True | Doc: Matritsa HD O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Matritsa 🔑 Kodi: Q55U5P 📅 Yili: 1999
+  ID 8067 | Date: 2026-10-09 | Video: True | Doc: Matritsa HD O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Matritsa 🔑 Kodi: Q55U5P 📅 Yili: 1999
+  ID 8068 | Date: 2026-10-09 | Video: True | Doc: Matritsa 2 O'zbek tilida HD (asilmedia.net).mp4 | Text: 🍿 Matritsa 2: Qayta yuklanish 🔑 Kodi: TGC236 📅 Yili: 2003
+  ID 8069 | Date: 2026-10-09 | Video: True | Doc: Matritsa 2 O'zbek tilida HD (asilmedia.net).mp4 | Text: 🍿 Matritsa 2: Qayta yuklanish 🔑 Kodi: TGC236 📅 Yili: 2003
+  ID 8070 | Date: 2026-10-09 | Video: True | Doc: Matritsa 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Matritsa 3: Revolyutsiya 🔑 Kodi: 9JUQGQ 📅 Yili: 2003
+  ID 8071 | Date: 2026-10-09 | Video: True | Doc: Matritsa 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Matritsa 3: Revolyutsiya 🔑 Kodi: 9JUQGQ 📅 Yili: 2003
+  ID 8072 | Date: 2026-10-09 | Video: True | Doc: Matritsa_4_Qayta_tirilish_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Matritsa 4: Qayta tirilish 🔑 Kodi: ZXN74H 📅 Yili: 2021
+  ID 8073 | Date: 2026-10-09 | Video: True | Doc: Matritsa_4_Qayta_tirilish_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Matritsa 4: Qayta tirilish 🔑 Kodi: ZXN74H 📅 Yili: 2021
+  ID 16736 | Date: 2026-10-12 | Video: True | Doc: Matritsa 2 O'zbek tilida HD (asilmedia.net).mp4 | Text: 🍿 Matritsa 2 🔑 Kodi: EEAVPN 📅 Yili: 2003
+  ID 16737 | Date: 2026-10-12 | Video: True | Doc: Matritsa 2 O'zbek tilida HD (asilmedia.net).mp4 | Text: 🍿 Matritsa 2 🔑 Kodi: EEAVPN 📅 Yili: 2003
+  ID 16738 | Date: 2026-10-12 | Video: True | Doc: Matritsa 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Matritsa 3 🔑 Kodi: HL8TES 📅 Yili: 2003
+  ID 16739 | Date: 2026-10-12 | Video: True | Doc: Matritsa 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Matritsa 3 🔑 Kodi: HL8TES 📅 Yili: 2003
+
+========================================
+Terminator (16 ta element)
+========================================
+  ID 8086 | Date: 2026-10-09 | Video: True | Doc: video_273263.mp4 | Text: 🍿 Terminator Genesis 🔑 Kodi: SWYJEY 📅 Yili: 2015
+  ID 8087 | Date: 2026-10-09 | Video: True | Doc: video_273263.mp4 | Text: 🍿 Terminator Genesis 🔑 Kodi: SWYJEY 📅 Yili: 2015
+  ID 8088 | Date: 2026-10-09 | Video: True | Doc: Terminator 5 Genezis 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 5: Genezis 🔑 Kodi: M9MWCJ 📅 Yili: 2015
+  ID 8089 | Date: 2026-10-09 | Video: True | Doc: Terminator 5 Genezis 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 5: Genezis 🔑 Kodi: M9MWCJ 📅 Yili: 2015
+  ID 8090 | Date: 2026-10-09 | Video: True | Doc: Terminator 4 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 4: Najotkorning kelishi 🔑 Kodi: 5E9KG7 📅 Yili: 2009
+  ID 8091 | Date: 2026-10-09 | Video: True | Doc: Terminator 4 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 4: Najotkorning kelishi 🔑 Kodi: 5E9KG7 📅 Yili: 2009
+  ID 8110 | Date: 2026-10-09 | Video: True | Doc: Terminator 6 2019 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 6: Og'ir qismat 🔑 Kodi: EPEG2P 📅 Yili: 2019
+  ID 8111 | Date: 2026-10-09 | Video: True | Doc: Terminator 6 2019 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 6: Og'ir qismat 🔑 Kodi: EPEG2P 📅 Yili: 2019
+  ID 8112 | Date: 2026-10-09 | Video: True | Doc: Terminator_6_Qorong'u_taqdir_v2_O'zbek_tilida_720p_asilmedia_net.mp4 | Text: 🍿 Terminator 6: Qorong'u taqdir 🔑 Kodi: XFJXYQ 📅 Yili: 2019
+  ID 8113 | Date: 2026-10-09 | Video: True | Doc: Terminator_6_Qorong'u_taqdir_v2_O'zbek_tilida_720p_asilmedia_net.mp4 | Text: 🍿 Terminator 6: Qorong'u taqdir 🔑 Kodi: XFJXYQ 📅 Yili: 2019
+  ID 8114 | Date: 2026-10-09 | Video: True | Doc: Terminator 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 2: Qiyomat kuni 🔑 Kodi: 4W297K 📅 Yili: 1991
+  ID 8115 | Date: 2026-10-09 | Video: True | Doc: Terminator 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 2: Qiyomat kuni 🔑 Kodi: 4W297K 📅 Yili: 1991
+  ID 8116 | Date: 2026-10-09 | Video: True | Doc: Terminator 1 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 1 🔑 Kodi: GBMXT5 📅 Yili: 1984
+  ID 8117 | Date: 2026-10-09 | Video: True | Doc: Terminator 1 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 1 🔑 Kodi: GBMXT5 📅 Yili: 1984
+  ID 8118 | Date: 2026-10-09 | Video: True | Doc: Terminator 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 3: Mashinalar isyoni 🔑 Kodi: EPQ44M 📅 Yili: 2003
+  ID 8119 | Date: 2026-10-09 | Video: True | Doc: Terminator 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Terminator 3: Mashinalar isyoni 🔑 Kodi: EPQ44M 📅 Yili: 2003
+
+========================================
+Shrek (10 ta element)
+========================================
+  ID 8238 | Date: 2026-10-09 | Video: True | Doc: Shrek va uning do'stlari yangi yil bilan qutlaydi 720p.mp4 | Text: 🍿 Shrek va uning do'stlari 🔑 Kodi: CZW39Y 📅 Yili: 2007
+  ID 8239 | Date: 2026-10-09 | Video: True | Doc: Shrek va uning do'stlari yangi yil bilan qutlaydi 720p.mp4 | Text: 🍿 Shrek va uning do'stlari 🔑 Kodi: CZW39Y 📅 Yili: 2007
+  ID 14484 | Date: 2026-10-11 | Video: True | Doc: Shrek 4 Original 1080p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shrek 4 🔑 Kodi: 8UVD6Y 📅 Yili: 2010
+  ID 14485 | Date: 2026-10-11 | Video: True | Doc: Shrek 4 Original 1080p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shrek 4 🔑 Kodi: 8UVD6Y 📅 Yili: 2010
+  ID 14486 | Date: 2026-10-11 | Video: True | Doc: Shrek 3 Original 1080p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shrek 3 🔑 Kodi: W499WY 📅 Yili: 2007
+  ID 14487 | Date: 2026-10-11 | Video: True | Doc: Shrek 3 Original 1080p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shrek 3 🔑 Kodi: W499WY 📅 Yili: 2007
+  ID 14488 | Date: 2026-10-11 | Video: True | Doc: Shrek 1 480p multfilm (asilmedia.net).mp4 | Text: 🍿 Shrek 1 🔑 Kodi: YE5GXT 📅 Yili: 2001
+  ID 14489 | Date: 2026-10-11 | Video: True | Doc: Shrek 1 480p multfilm (asilmedia.net).mp4 | Text: 🍿 Shrek 1 🔑 Kodi: YE5GXT 📅 Yili: 2001
+  ID 14490 | Date: 2026-10-11 | Video: True | Doc: Shrek 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shrek 2 🔑 Kodi: ZMNERH 📅 Yili: 2004
+  ID 14491 | Date: 2026-10-11 | Video: True | Doc: Shrek 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shrek 2 🔑 Kodi: ZMNERH 📅 Yili: 2004
+
+========================================
+Kung-fu Panda (50 ta element)
+========================================
+  ID 8262 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 12-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 12-Qism 📅 Yili: 2008
+  ID 8263 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 12-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 12-qism 🔑 Qism kodi: S1-CH12 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8264 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 13-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 13-Qism 📅 Yili: 2008
+  ID 8265 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 13-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 13-qism 🔑 Qism kodi: S1-CH13 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8266 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 14-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 14-Qism 📅 Yili: 2008
+  ID 8267 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 14-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 14-qism 🔑 Qism kodi: S1-CH14 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8268 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 15-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 15-Qism 📅 Yili: 2008
+  ID 8269 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 15-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 15-qism 🔑 Qism kodi: S1-CH15 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8271 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 16-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 16-Qism 📅 Yili: 2008
+  ID 8272 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 16-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 16-qism 🔑 Qism kodi: S1-CH16 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8273 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 17-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 17-Qism 📅 Yili: 2008
+  ID 8274 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 17-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 17-qism 🔑 Qism kodi: S1-CH17 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8275 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 18-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 18-Qism 📅 Yili: 2008
+  ID 8276 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 18-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 18-qism 🔑 Qism kodi: S1-CH18 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8277 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 19-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 19-Qism 📅 Yili: 2008
+  ID 8278 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 19-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 19-qism 🔑 Qism kodi: S1-CH19 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8279 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 20-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🎬 Kung Fu Panda: Qoyilmaqom beshlik 🔢 1-Mavsum, 20-Qism 📅 Yili: 2008
+  ID 8280 | Date: 2026-10-09 | Video: True | Doc: Kung fu panda 20-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda: Qoyilmaqom beshlik 📌 1-mavsum, 20-qism 🔑 Qism kodi: S1-CH20 📺 Serial kodi: s_426 📅 Yili: 2008
+  ID 8281 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_1_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 1-Qism 📅 Yili: 2018
+  ID 8282 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_1_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8283 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_2_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 2-Qism 📅 Yili: 2018
+  ID 8284 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_2_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8285 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_3_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 3-Qism 📅 Yili: 2018
+  ID 8286 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_3_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8287 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_4_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 4-Qism 📅 Yili: 2018
+  ID 8288 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_4_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8289 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_5_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 5-Qism 📅 Yili: 2018
+  ID 8290 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_5_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8291 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_6_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 6-Qism 📅 Yili: 2018
+  ID 8292 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_6_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8293 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_7_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 7-Qism 📅 Yili: 2018
+  ID 8294 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_7_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8295 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_8_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 8-Qism 📅 Yili: 2018
+  ID 8296 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_8_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8297 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_9_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 9-Qism 📅 Yili: 2018
+  ID 8298 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_9_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8299 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_10_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🎬 Kung fu Panda: Taqdir panjalari 🔢 1-Mavsum, 10-Qism 📅 Yili: 2018
+  ID 8300 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Taqdir_panjalari_10_qism_AQSH_seriali_O'zbek_tilida.mp4 | Text: 🍿 Kung fu Panda: Taqdir panjalari 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_427 📅 Yili: 2018
+  ID 8301 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Bayram_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kung fu Panda - Bayram 🔑 Kodi: FTB8P3 📅 Yili: 2010
+  ID 8302 | Date: 2026-10-09 | Video: True | Doc: Kung_fu_Panda_Bayram_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kung fu Panda - Bayram 🔑 Kodi: FTB8P3 📅 Yili: 2010
+  ID 14492 | Date: 2026-10-11 | Video: True | Doc: Kung_Fu_Panda_1_HD_Multfilm_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kung Fu Panda 1 🔑 Kodi: JK4UL7 📅 Yili: 2008
+  ID 14493 | Date: 2026-10-11 | Video: True | Doc: Kung_Fu_Panda_1_HD_Multfilm_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kung Fu Panda 1 🔑 Kodi: JK4UL7 📅 Yili: 2008
+  ID 14494 | Date: 2026-10-11 | Video: True | Doc: Kung fu panda 3 480p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda 3 🔑 Kodi: 69BAPZ 📅 Yili: 2016
+  ID 14495 | Date: 2026-10-11 | Video: True | Doc: Kung fu panda 3 480p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda 3 🔑 Kodi: 69BAPZ 📅 Yili: 2016
+  ID 14496 | Date: 2026-10-11 | Video: True | Doc: video_279561.mp4 | Text: 🍿 Kung Fu Panda 4 🔑 Kodi: Z4HAYK 📅 Yili: 2024
+  ID 14497 | Date: 2026-10-11 | Video: True | Doc: video_279561.mp4 | Text: 🍿 Kung Fu Panda 4 🔑 Kodi: Z4HAYK 📅 Yili: 2024
+  ID 14498 | Date: 2026-10-11 | Video: True | Doc: Kung_Fu_Panda_2_HD_Multfilm_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kung Fu Panda 2 🔑 Kodi: BNLQQ9 📅 Yili: 2011
+  ID 14499 | Date: 2026-10-11 | Video: True | Doc: Kung_Fu_Panda_2_HD_Multfilm_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Kung Fu Panda 2 🔑 Kodi: BNLQQ9 📅 Yili: 2011
+  ID 14500 | Date: 2026-10-11 | Video: True | Doc: Kung Fu Panda 4 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda 4 🔑 Kodi: JTTKBQ 📅 Yili: 2024
+  ID 14501 | Date: 2026-10-11 | Video: True | Doc: Kung Fu Panda 4 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Kung Fu Panda 4 🔑 Kodi: JTTKBQ 📅 Yili: 2024
+
+========================================
+Muzlik davri (26 ta element)
+========================================
+  ID 8309 | Date: 2026-10-09 | Video: True | Doc: Muzlik_davrida_yangi_yil_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Muzlik davri 🔑 Kodi: M997D6 📅 Yili: 2011
+  ID 8310 | Date: 2026-10-09 | Video: True | Doc: Muzlik_davrida_yangi_yil_720p_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Muzlik davri 🔑 Kodi: M997D6 📅 Yili: 2011
+  ID 8311 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2002 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik Davri 🔑 Kodi: FN7BCG 📅 Yili: 2002
+  ID 8312 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2002 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik Davri 🔑 Kodi: FN7BCG 📅 Yili: 2002
+  ID 8313 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🎬 Muzlik davri: Olmaxon Skrat ertaklari 🔢 1-Mavsum, 1-Qism 📅 Yili: 2022
+  ID 8314 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Muzlik davri: Olmaxon Skrat ertaklari 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_428 📅 Yili: 2022
+  ID 8315 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🎬 Muzlik davri: Olmaxon Skrat ertaklari 🔢 1-Mavsum, 2-Qism 📅 Yili: 2022
+  ID 8316 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Muzlik davri: Olmaxon Skrat ertaklari 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_428 📅 Yili: 2022
+  ID 8317 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🎬 Muzlik davri: Olmaxon Skrat ertaklari 🔢 1-Mavsum, 3-Qism 📅 Yili: 2022
+  ID 8318 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Muzlik davri: Olmaxon Skrat ertaklari 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_428 📅 Yili: 2022
+  ID 8319 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🎬 Muzlik davri: Olmaxon Skrat ertaklari 🔢 1-Mavsum, 4-Qism 📅 Yili: 2022
+  ID 8320 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Muzlik davri: Olmaxon Skrat ertaklari 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_428 📅 Yili: 2022
+  ID 8321 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🎬 Muzlik davri: Olmaxon Skrat ertaklari 🔢 1-Mavsum, 5-Qism 📅 Yili: 2022
+  ID 8322 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Muzlik davri: Olmaxon Skrat ertaklari 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_428 📅 Yili: 2022
+  ID 8323 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🎬 Muzlik davri: Olmaxon Skrat ertaklari 🔢 1-Mavsum, 6-Qism 📅 Yili: 2022
+  ID 8324 | Date: 2026-10-09 | Video: True | Doc: Olmaxon_Skrat_ertaklari_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia.mp4 | Text: 🍿 Muzlik davri: Olmaxon Skrat ertaklari 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_428 📅 Yili: 2022
+  ID 8325 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2016 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 5: Muqarrar to'qnashuv 🔑 Kodi: 68UJVK 📅 Yili: 2016
+  ID 8326 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2016 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 5: Muqarrar to'qnashuv 🔑 Kodi: 68UJVK 📅 Yili: 2016
+  ID 8327 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2012 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 4: Ayro qit'alar 🔑 Kodi: JU9RQQ 📅 Yili: 2012
+  ID 8328 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2012 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 4: Ayro qit'alar 🔑 Kodi: JU9RQQ 📅 Yili: 2012
+  ID 8329 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2009 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 3: Dinazavrlar asri 🔑 Kodi: 72JVG9 📅 Yili: 2009
+  ID 8330 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2009 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 3: Dinazavrlar asri 🔑 Kodi: 72JVG9 📅 Yili: 2009
+  ID 8331 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2006 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 2: Jazirama issiq 🔑 Kodi: EZPN4Q 📅 Yili: 2006
+  ID 8332 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 2006 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 2: Jazirama issiq 🔑 Kodi: EZPN4Q 📅 Yili: 2006
+  ID 8333 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 6 MY5 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 6: Yovvoyi Bakining sarguzashtlari 🔑 Kodi: ADRBUW 📅 Yili: 2022
+  ID 8334 | Date: 2026-10-09 | Video: True | Doc: Muzlik davri 6 MY5 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Muzlik davri 6: Yovvoyi Bakining sarguzashtlari 🔑 Kodi: ADRBUW 📅 Yili: 2022
+
+========================================
+Madagaskar (50 ta element)
+========================================
+  ID 9522 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 16-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 1-Mavsum, 16-Qism 📅 Yili: 2008
+  ID 9523 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 16-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 1-mavsum, 16-qism 🔑 Qism kodi: S1-CH16 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9524 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 17-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 1-Mavsum, 17-Qism 📅 Yili: 2008
+  ID 9525 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 17-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 1-mavsum, 17-qism 🔑 Qism kodi: S1-CH17 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9526 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 18-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 1-Mavsum, 18-Qism 📅 Yili: 2008
+  ID 9527 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 18-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 1-mavsum, 18-qism 🔑 Qism kodi: S1-CH18 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9528 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 19-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 1-Mavsum, 19-Qism 📅 Yili: 2008
+  ID 9529 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 19-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 1-mavsum, 19-qism 🔑 Qism kodi: S1-CH19 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9530 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 20-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 1-Mavsum, 20-Qism 📅 Yili: 2008
+  ID 9531 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 1-fasl 20-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 1-mavsum, 20-qism 🔑 Qism kodi: S1-CH20 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9532 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 1-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 1-Qism 📅 Yili: 2008
+  ID 9533 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 1-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 1-qism 🔑 Qism kodi: S2-CH1 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9534 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 2-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 2-Qism 📅 Yili: 2008
+  ID 9535 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 2-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 2-qism 🔑 Qism kodi: S2-CH2 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9536 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 3-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 3-Qism 📅 Yili: 2008
+  ID 9537 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 3-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 3-qism 🔑 Qism kodi: S2-CH3 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9538 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 4-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 4-Qism 📅 Yili: 2008
+  ID 9539 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 4-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 4-qism 🔑 Qism kodi: S2-CH4 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9540 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 5-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 5-Qism 📅 Yili: 2008
+  ID 9541 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 5-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 5-qism 🔑 Qism kodi: S2-CH5 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9542 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 6-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 6-Qism 📅 Yili: 2008
+  ID 9543 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 6-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 6-qism 🔑 Qism kodi: S2-CH6 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9544 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 7-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 7-Qism 📅 Yili: 2008
+  ID 9545 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 7-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 7-qism 🔑 Qism kodi: S2-CH7 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9546 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 8-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 8-Qism 📅 Yili: 2008
+  ID 9547 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 8-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 8-qism 🔑 Qism kodi: S2-CH8 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9548 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 9-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 9-Qism 📅 Yili: 2008
+  ID 9549 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 9-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 9-qism 🔑 Qism kodi: S2-CH9 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9550 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 10-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 10-Qism 📅 Yili: 2008
+  ID 9551 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 10-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 10-qism 🔑 Qism kodi: S2-CH10 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9552 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 11-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 11-Qism 📅 Yili: 2008
+  ID 9553 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 11-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 11-qism 🔑 Qism kodi: S2-CH11 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9554 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 12-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 12-Qism 📅 Yili: 2008
+  ID 9555 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 12-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 12-qism 🔑 Qism kodi: S2-CH12 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9556 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 13-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 13-Qism 📅 Yili: 2008
+  ID 9557 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 13-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 13-qism 🔑 Qism kodi: S2-CH13 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9558 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 14-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 14-Qism 📅 Yili: 2008
+  ID 9559 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 14-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 14-qism 🔑 Qism kodi: S2-CH14 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9560 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 15-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 15-Qism 📅 Yili: 2008
+  ID 9561 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 15-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 15-qism 🔑 Qism kodi: S2-CH15 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9562 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 16-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 16-Qism 📅 Yili: 2008
+  ID 9563 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 16-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 16-qism 🔑 Qism kodi: S2-CH16 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 9564 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 17-qism (asilmedia.net).mp4 | Text: 🎬 Madagaskar pingvinlari 🔢 2-Mavsum, 17-Qism 📅 Yili: 2008
+  ID 9565 | Date: 2026-10-09 | Video: True | Doc: Madagaskar pingvinlari 2-fasl 17-qism (asilmedia.net).mp4 | Text: 🍿 Madagaskar pingvinlari 📌 2-mavsum, 17-qism 🔑 Qism kodi: S2-CH17 📺 Serial kodi: s_461 📅 Yili: 2008
+  ID 14502 | Date: 2026-10-11 | Video: True | Doc: Madagaskar 1 720p O'zbek tilida (asilmedia.mp4 | Text: 🍿 Madagaskar 1 🔑 Kodi: 2ZLV4H 📅 Yili: 2005
+  ID 14503 | Date: 2026-10-11 | Video: True | Doc: Madagaskar 1 720p O'zbek tilida (asilmedia.mp4 | Text: 🍿 Madagaskar 1 🔑 Kodi: 2ZLV4H 📅 Yili: 2005
+  ID 14504 | Date: 2026-10-11 | Video: True | Doc: Madagaskar 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Madagaskar 3 🔑 Kodi: LLLYVM 📅 Yili: 2012
+  ID 14505 | Date: 2026-10-11 | Video: True | Doc: Madagaskar 3 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Madagaskar 3 🔑 Kodi: LLLYVM 📅 Yili: 2012
+  ID 14506 | Date: 2026-10-11 | Video: True | Doc: Madagaskar 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Madagaskar 2 🔑 Kodi: ZJ6ZAP 📅 Yili: 2008
+  ID 14507 | Date: 2026-10-11 | Video: True | Doc: Madagaskar 2 720p O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Madagaskar 2 🔑 Kodi: ZJ6ZAP 📅 Yili: 2008
+
+========================================
+Shelbilar oilasi (Peaky Blinders) (42 ta element)
+========================================
+  ID 752 | Date: 2026-09-25 | Video: False | Doc:  | Text: 🎬 Shelbilar oilasi (Peaky Blinders)  1919-yilgi Birmingemda Shelbi oilasi jinoyat olamida kuchayib boradi. Oilaning bosh
+  ID 753 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 1-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 1-mavsum, 1-qism
+  ID 754 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 2-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 1-mavsum, 2-qism
+  ID 755 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 3-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 1-mavsum, 3-qism
+  ID 756 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 4-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 1-mavsum, 4-qism
+  ID 757 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 5-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 1-mavsum, 5-qism
+  ID 758 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 6-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 1-mavsum, 6-qism
+  ID 760 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 7-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 2-mavsum, 1-qism
+  ID 761 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 8-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 2-mavsum, 2-qism
+  ID 762 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 9-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 2-mavsum, 3-qism
+  ID 763 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 10-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 2-mavsum, 4-qism
+  ID 764 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 11-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 2-mavsum, 5-qism
+  ID 765 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 12-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 2-mavsum, 6-qism
+  ID 767 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 13-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 3-mavsum, 1-qism
+  ID 768 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 14-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 3-mavsum, 2-qism
+  ID 769 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 15-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 3-mavsum, 3-qism
+  ID 770 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 16-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 3-mavsum, 4-qism
+  ID 771 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 17-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 3-mavsum, 5-qism
+  ID 772 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 18-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 3-mavsum, 6-qism
+  ID 774 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 19-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 1-qism
+  ID 775 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 20-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 2-qism
+  ID 776 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 21-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 3-qism
+  ID 777 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 23-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 4-qism
+  ID 778 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 24-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 5-qism
+  ID 780 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 19-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 1-qism
+  ID 781 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 20-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 2-qism
+  ID 782 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 21-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 3-qism
+  ID 783 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 22-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 4-qism
+  ID 784 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 23-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 5-qism
+  ID 785 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 24-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 4-mavsum, 6-qism
+  ID 787 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 25-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 5-mavsum, 1-qism
+  ID 788 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 26-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 5-mavsum, 2-qism
+  ID 789 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 27-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 5-mavsum, 3-qism
+  ID 790 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 28-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 5-mavsum, 4-qism
+  ID 791 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 29-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 5-mavsum, 5-qism
+  ID 792 | Date: 2026-09-25 | Video: True | Doc: Shelbilar oilasi 30-qism O'zbek tilida (asilmedia.net).mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 5-mavsum, 6-qism
+  ID 794 | Date: 2026-09-25 | Video: True | Doc: Shelbilar_oilasi_6_fasl_1_qism_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 6-mavsum, 1-qism
+  ID 795 | Date: 2026-09-25 | Video: True | Doc: Shelbilar_oilasi_6_fasl_2_qism_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 6-mavsum, 2-qism
+  ID 796 | Date: 2026-09-25 | Video: True | Doc: Shelbilar_oilasi_6_fasl_3_qism_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 6-mavsum, 3-qism
+  ID 797 | Date: 2026-09-25 | Video: True | Doc: Shelbilar_oilasi_6_fasl_4_qism_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 6-mavsum, 4-qism
+  ID 798 | Date: 2026-09-25 | Video: True | Doc: Shelbilar_oilasi_6_fasl_5_qism_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 6-mavsum, 5-qism
+  ID 799 | Date: 2026-09-25 | Video: True | Doc: Shelbilar_oilasi_6_fasl_6_qism_O'zbek_tilida_asilmedia_net.mp4 | Text: 🍿 Shelbilar oilasi (Peaky Blinders) 📌 6-mavsum, 6-qism
+
+========================================
+Kalmar oyini (23 ta element)
+========================================
+  ID 2090 | Date: 2026-09-29 | Video: False | Doc:  | Text: 🎬 Kalmar o‘yini  Gi-hun va boshqa qarzdor ishtirokchilar katta pul mukofoti uchun sirli o‘yinlarda qatnashadi. O‘yinlar 
+  ID 2091 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E01.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2092 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E02.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2093 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E03.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2094 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E04.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2095 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E05.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2096 | Date: 2026-09-29 | Video: True | Doc: 6.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2097 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E07.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2098 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E08.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2099 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S01E09.WEB-DL.1080p-Kyle.mkv | Text: 🍿 Kalmar o‘yini 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2101 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S02E01.Bread.and.Lottery.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 1-qism 🔑 Qism kodi: S2-CH1 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2102 | Date: 2026-09-29 | Video: True | Doc: Kalmar.oʻyini.2-mavsum.2-qism.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 2-qism 🔑 Qism kodi: S2-CH2 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2103 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S02E03.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 3-qism 🔑 Qism kodi: S2-CH3 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2104 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S02E04.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 4-qism 🔑 Qism kodi: S2-CH4 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2105 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S02E05.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 5-qism 🔑 Qism kodi: S2-CH5 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2106 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S02E06.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 6-qism 🔑 Qism kodi: S2-CH6 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2107 | Date: 2026-09-29 | Video: True | Doc: Squid.Game.S02E07.1080p.WEB-DL.HDCLUBUZ.mkv | Text: 🍿 Kalmar o‘yini 📌 2-mavsum, 7-qism 🔑 Qism kodi: S2-CH7 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2109 | Date: 2026-09-29 | Video: True | Doc: uzmovi.com kalmar 1 mob hd.mp4 | Text: 🍿 Kalmar o‘yini 📌 3-mavsum, 1-qism 🔑 Qism kodi: S3-CH1 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2110 | Date: 2026-09-29 | Video: True | Doc: uzmovi.com kalmar 2 mob hd.mp4 | Text: 🍿 Kalmar o‘yini 📌 3-mavsum, 2-qism 🔑 Qism kodi: S3-CH2 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2111 | Date: 2026-09-29 | Video: True | Doc: uzmovi.com kalmar 3 mob hd.mp4 | Text: 🍿 Kalmar o‘yini 📌 3-mavsum, 3-qism 🔑 Qism kodi: S3-CH3 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2112 | Date: 2026-09-29 | Video: True | Doc: uzmovi.com kalmar 4 mob hd.mp4 | Text: 🍿 Kalmar o‘yini 📌 3-mavsum, 4-qism 🔑 Qism kodi: S3-CH4 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2113 | Date: 2026-09-29 | Video: True | Doc: uzmovi.com kalmar 5 hd.mp4 | Text: 🍿 Kalmar o‘yini 📌 3-mavsum, 5-qism 🔑 Qism kodi: S3-CH5 📺 Serial kodi: s_55 📅 Yili: 2021
+  ID 2114 | Date: 2026-09-29 | Video: True | Doc: uzmovi.com kalmar 6 hd.mp4 | Text: 🍿 Kalmar o‘yini 📌 3-mavsum, 6-qism 🔑 Qism kodi: S3-CH6 📺 Serial kodi: s_55 📅 Yili: 2021
+
+========================================
+Garoyib ishlar (Stranger Things) (50 ta element)
+========================================
+  ID 3424 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 6-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 6-Qism 📅 Yili: 1985
+  ID 3425 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 6-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_105 📅 Yili: 1985
+  ID 3426 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 7-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 7-Qism 📅 Yili: 1985
+  ID 3427 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 7-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_105 📅 Yili: 1985
+  ID 3428 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 8-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 8-Qism 📅 Yili: 1985
+  ID 3429 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 8-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_105 📅 Yili: 1985
+  ID 3430 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 9-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 9-Qism 📅 Yili: 1985
+  ID 3431 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 9-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_105 📅 Yili: 1985
+  ID 3432 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 10-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 10-Qism 📅 Yili: 1985
+  ID 3433 | Date: 2026-10-08 | Video: True | Doc: G'alati narsalar 85 10-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_105 📅 Yili: 1985
+  ID 14508 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 1-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 1-Qism 📅 Yili: 2016
+  ID 14509 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 1-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14510 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 2-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 2-Qism 📅 Yili: 2016
+  ID 14511 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 2-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14512 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 3-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 3-Qism 📅 Yili: 2016
+  ID 14513 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 3-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14514 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 4-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 4-Qism 📅 Yili: 2016
+  ID 14515 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 4-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14516 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 5-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 5-Qism 📅 Yili: 2016
+  ID 14517 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 5-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14518 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 6-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 6-Qism 📅 Yili: 2016
+  ID 14519 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 6-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14520 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 7-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 7-Qism 📅 Yili: 2016
+  ID 14521 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 7-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14522 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 8-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 8-Qism 📅 Yili: 2016
+  ID 14523 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 8-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14524 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 9-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 9-Qism 📅 Yili: 2016
+  ID 14525 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 9-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 14526 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 10-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar 🔢 1-Mavsum, 10-Qism 📅 Yili: 2016
+  ID 14527 | Date: 2026-10-11 | Video: True | Doc: G'alati narsalar 85 10-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_619 📅 Yili: 2016
+  ID 17708 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 1-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 1-Qism 📅 Yili: 1985
+  ID 17709 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 1-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 
+  ID 17710 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 2-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 2-Qism 📅 Yili: 1985
+  ID 17711 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 2-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 
+  ID 17712 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 3-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 3-Qism 📅 Yili: 1985
+  ID 17713 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 3-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 
+  ID 17714 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 4-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 4-Qism 📅 Yili: 1985
+  ID 17715 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 4-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 
+  ID 17716 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 5-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 5-Qism 📅 Yili: 1985
+  ID 17717 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 5-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 
+  ID 17718 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 6-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 6-Qism 📅 Yili: 1985
+  ID 17719 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 6-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 
+  ID 17720 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 7-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 7-Qism 📅 Yili: 1985
+  ID 17721 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 7-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 
+  ID 17722 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 8-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 8-Qism 📅 Yili: 1985
+  ID 17723 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 8-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 
+  ID 17724 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 9-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 9-Qism 📅 Yili: 1985
+  ID 17725 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 9-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 
+  ID 17726 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 10-qism 1080p (asilmedia.net).mp4 | Text: 🎬 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 🔢 1-Mavsum, 10-Qism 📅 Yili: 1985
+  ID 17727 | Date: 2026-10-12 | Video: True | Doc: G'alati narsalar 85 10-qism 1080p (asilmedia.net).mp4 | Text: 🍿 G'alati narsalar: -yil Hodisalar g'aroyib ishlar 85-yil hikoyalari voqealari 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 
+
+========================================
+Sherlok (50 ta element)
+========================================
+  ID 8880 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 4-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 4-Qism 📅 Yili: 2012
+  ID 8881 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 4-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8882 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 5-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 5-Qism 📅 Yili: 2012
+  ID 8883 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 5-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8884 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 6-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 6-Qism 📅 Yili: 2012
+  ID 8885 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 6-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8886 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 7-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 7-Qism 📅 Yili: 2012
+  ID 8887 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 7-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8888 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 8-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 8-Qism 📅 Yili: 2012
+  ID 8889 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 8-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8890 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 9-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 9-Qism 📅 Yili: 2012
+  ID 8891 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 9-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8892 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 10-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 10-Qism 📅 Yili: 2012
+  ID 8893 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 10-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8894 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 11-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 11-Qism 📅 Yili: 2012
+  ID 8895 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 11-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 11-qism 🔑 Qism kodi: S1-CH11 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8896 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 12-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 12-Qism 📅 Yili: 2012
+  ID 8897 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 12-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 12-qism 🔑 Qism kodi: S1-CH12 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8898 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 13-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 13-Qism 📅 Yili: 2012
+  ID 8899 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 13-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 13-qism 🔑 Qism kodi: S1-CH13 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8900 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 14-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 14-Qism 📅 Yili: 2012
+  ID 8901 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 14-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 14-qism 🔑 Qism kodi: S1-CH14 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8902 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 15-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 15-Qism 📅 Yili: 2012
+  ID 8903 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 15-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 15-qism 🔑 Qism kodi: S1-CH15 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8904 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 16-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 16-Qism 📅 Yili: 2012
+  ID 8905 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 16-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 16-qism 🔑 Qism kodi: S1-CH16 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8906 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 17-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 17-Qism 📅 Yili: 2012
+  ID 8907 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 17-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 17-qism 🔑 Qism kodi: S1-CH17 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8908 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 18-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 18-Qism 📅 Yili: 2012
+  ID 8909 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 18-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 18-qism 🔑 Qism kodi: S1-CH18 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8910 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 19-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 19-Qism 📅 Yili: 2012
+  ID 8911 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 19-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 19-qism 🔑 Qism kodi: S1-CH19 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 8912 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 20-qism (asilmedia.net).mp4 | Text: 🎬 Yangi Sherlok Xolms 🔢 1-Mavsum, 20-Qism 📅 Yili: 2012
+  ID 8913 | Date: 2026-10-09 | Video: True | Doc: Yangi Sherlok Xolms 20-qism (asilmedia.net).mp4 | Text: 🍿 Yangi Sherlok Xolms 📌 1-mavsum, 20-qism 🔑 Qism kodi: S1-CH20 📺 Serial kodi: s_446 📅 Yili: 2012
+  ID 22261 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 1-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 1-Qism 📅 Yili: 2025
+  ID 22262 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 1-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22263 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 2-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 2-Qism 📅 Yili: 2025
+  ID 22264 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 2-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22265 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 3-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 3-Qism 📅 Yili: 2025
+  ID 22266 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 3-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22267 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 4-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 4-Qism 📅 Yili: 2025
+  ID 22268 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 4-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22269 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 5-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 5-Qism 📅 Yili: 2025
+  ID 22270 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 5-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22271 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 6-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 6-Qism 📅 Yili: 2025
+  ID 22272 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 6-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22273 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 7-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 7-Qism 📅 Yili: 2025
+  ID 22274 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 7-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_847 📅 Yili: 2025
+  ID 22275 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 8-qism (asilmedia.net).mp4 | Text: 🎬 Sherlok va uning qizi 🔢 1-Mavsum, 8-Qism 📅 Yili: 2025
+  ID 22276 | Date: 2026-10-13 | Video: True | Doc: Sherlok va uning qizi 8-qism (asilmedia.net).mp4 | Text: 🍿 Sherlok va uning qizi 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_847 📅 Yili: 2025

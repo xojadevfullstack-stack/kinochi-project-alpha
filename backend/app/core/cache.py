@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 _memory_cache: dict[str, tuple[Any, float]] = {}
 _redis_disabled = False
 
+try:
+    from app.core.config import settings
+    _redis_url = getattr(settings, "REDIS_URL", "")
+    if "SIZNING_UPSTASH_PAROLINGIZ" in _redis_url or "parol" in _redis_url.lower():
+        _redis_disabled = True
+except Exception:
+    pass
+
 async def get_cache(key: str) -> Optional[Any]:
     """Retrieve data from Redis cache or fallback in-memory cache."""
     global _redis_disabled

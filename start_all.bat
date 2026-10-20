@@ -5,7 +5,7 @@ echo ==============================================
 echo.
 
 echo Starting Backend (FastAPI) on port 8000...
-start "Kinochi Backend" cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
+start "Kinochi Backend" cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app --reload --reload-dir app --port 8000"
 
 echo Starting Bot (Aiogram)...
 start "Kinochi Bot" cmd /k "cd bot && call ..\backend\.venv\Scripts\activate && python main.py"

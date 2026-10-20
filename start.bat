@@ -99,7 +99,7 @@ echo   VEB SAYT / ADMIN PANEL ISHGA TUSHIRILMOQDA...
 echo ======================================================================
 echo.
 echo 1. Backend (FastAPI - Port 8000) alohida oynada ishga tushirilmoqda...
-start "Kinochi Backend (Port 8000)" cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
+start "Kinochi Backend (Port 8000)" cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app --reload --reload-dir app --port 8000"
 
 echo 2. Admin Panel (Next.js - Port 3001) alohida oynada ishga tushirilmoqda...
 start "Kinochi Admin Panel (Port 3001)" cmd /k "cd admin-panel && npm run dev -- -p 3001"
@@ -328,7 +328,7 @@ echo   BARCHA XIZMATLARNI ISHGA TUSHIRISH
 echo ======================================================================
 echo.
 echo 1. Backend (FastAPI - Port 8000)...
-start "Kinochi Backend" cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app --reload --port 8000"
+start "Kinochi Backend" cmd /k "cd backend && call .venv\Scripts\activate && uvicorn app.main:app --reload --reload-dir app --port 8000"
 
 echo 2. Kinochi Telegram Bot...
 start "Kinochi Bot" cmd /k "cd bot && call ..\backend\.venv\Scripts\activate && python main.py"

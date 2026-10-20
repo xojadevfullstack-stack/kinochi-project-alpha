@@ -88,7 +88,7 @@ class MovieRepositoryImpl(IMovieRepository):
         ).where(MovieModel.id == movie_id)
         if publish_status == "published":
             stmt = published_only(stmt, MovieModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.where(MovieModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -109,7 +109,7 @@ class MovieRepositoryImpl(IMovieRepository):
         ).where(or_(*where_conditions))
         if publish_status == "published":
             stmt = published_only(stmt, MovieModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.where(MovieModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         model = result.scalars().first()
@@ -186,7 +186,7 @@ class MovieRepositoryImpl(IMovieRepository):
         ).where(or_(*conditions))
         if publish_status == "published":
             query = published_only(query, MovieModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             query = query.filter(MovieModel.publish_status == publish_status)
         
         count_query = select(func.count()).select_from(query.subquery())
@@ -205,7 +205,7 @@ class MovieRepositoryImpl(IMovieRepository):
         )
         if publish_status == "published":
             query = published_only(query, MovieModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             query = query.filter(MovieModel.publish_status == publish_status)
 
         if category_id:

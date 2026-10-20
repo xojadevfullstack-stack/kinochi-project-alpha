@@ -126,7 +126,8 @@ async def list_series(
     service: SeriesService = Depends(get_series_service)
 ):
     """List series (Public: published)."""
-    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{publish_status}"
+    target_status = None if publish_status == "all" else publish_status
+    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
@@ -137,7 +138,7 @@ async def list_series(
         category_id=category_id,
         page_id=page_id,
         exclude_paged=exclude_paged,
-        publish_status=publish_status
+        publish_status=target_status
     )
     
     # Calculate pages
@@ -167,12 +168,13 @@ async def search_series(
     service: SeriesService = Depends(get_series_service)
 ):
     """Search series by title (Public: published)."""
-    cache_key = f"cache:series:search:{q}:{skip}:{limit}:{publish_status}"
+    target_status = None if publish_status == "all" else publish_status
+    cache_key = f"cache:series:search:{q}:{skip}:{limit}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
 
-    items, total = await service.search_series(title_query=q, skip=skip, limit=limit, publish_status=publish_status)
+    items, total = await service.search_series(title_query=q, skip=skip, limit=limit, publish_status=target_status)
     
     pages = (total + limit - 1) // limit if total > 0 else 0
     page = (skip // limit) + 1 if limit > 0 else 1

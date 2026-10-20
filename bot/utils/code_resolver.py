@@ -119,15 +119,20 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
 
     # ── 4. Noaniq tur (hech qanday aniq prefiks ko'rsatilmagan) ──
 
+    # Tezkor tekshiruv: agar so'rovda probel bo'lsa, uzunligi 10 dan ortiq bo'lsa
+    # yoki odatiy kod belgilariga mos kelmasa, bu aniq qidiruv matni (kod emas).
+    # Keraksiz ketma-ket 3 ta HTTP so'rov (4-5s) yubormay, darhol False qaytaramiz.
+    if " " in cleaned_code or len(cleaned_code) > 10 or not re.match(r'^[a-zA-Z0-9_\-]+$', cleaned_code):
+        return False
+
     # Faqat raqamdan iborat so'rovlar (masalan: "123456", "30", "17"):
-    # Avval film kodi (get_movie_by_code) sifatida tekshiriladi.
-    # Agar film kodi sifatida topilmasa, ID bo'yicha qidirish (kino vs serial noaniqligi oldini olish uchun) rad etiladi.
     if cleaned_code.isdigit():
-        movie = await api_client.get_movie_by_code(cleaned_code)
-        if movie:
-            await send_movie_info(bot, chat_id, movie)
-            return True
-        logger.info(f"Numeric-only query '{cleaned_code}' bo'yicha film topilmadi va ID qidiruvi noaniqlik tufayli rad etildi.")
+        if len(cleaned_code) <= 8:
+            movie = await api_client.get_movie_by_code(cleaned_code)
+            if movie:
+                await send_movie_info(bot, chat_id, movie)
+                return True
+        logger.info(f"Numeric-only query '{cleaned_code}' bo'yicha film topilmadi va ID qidiruvi rad etildi.")
         return False
 
     # 4a. Serial formatidagi kod: s_30, s30
@@ -145,21 +150,23 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
         await send_movie_info(bot, chat_id, movie)
         return True
 
-    # 4c. Qism kodi bo'yicha tekshirish (masalan: S1-CH1, EP001)
-    episode = await api_client.get_episode_by_code(cleaned_code)
-    if episode:
-        success = await send_episode_to_user(bot, chat_id, episode)
-        if not success and episode.get("series_id"):
-            series = await api_client.get_series_by_id(episode["series_id"])
-            if series:
-                await send_series_info(bot, chat_id, series)
-                return True
-        return True
+    # 4c. Qism kodi bo'yicha tekshirish (faqat qism formati bo'lsa: S1-CH1, EP001)
+    if re.match(r'^(?:s\d+|ep\d+|ch\d+)', cleaned_code, re.IGNORECASE) or '-' in cleaned_code:
+        episode = await api_client.get_episode_by_code(cleaned_code)
+        if episode:
+            success = await send_episode_to_user(bot, chat_id, episode)
+            if not success and episode.get("series_id"):
+                series = await api_client.get_series_by_id(episode["series_id"])
+                if series:
+                    await send_series_info(bot, chat_id, series)
+                    return True
+            return True
 
-    # 4d. Serial kodi bo'yicha tekshirish
-    series = await api_client.get_series_by_code(cleaned_code)
-    if series:
-        await send_series_info(bot, chat_id, series)
-        return True
+    # 4d. Serial kodi bo'yicha tekshirish (faqat s_ yoki serial prefiksi bo'lsa)
+    if cleaned_code.lower().startswith(('s_', 'ser')):
+        series = await api_client.get_series_by_code(cleaned_code)
+        if series:
+            await send_series_info(bot, chat_id, series)
+            return True
 
     return False

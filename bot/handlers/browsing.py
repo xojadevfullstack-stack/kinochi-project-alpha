@@ -1,9 +1,9 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from services.api_client import api_client
 from utils.movie_sender import send_movie_to_user
 from utils.episode_sender import send_episode_to_user
-from utils.info_sender import send_series_info, send_season_info
+from utils.info_sender import send_movie_info, send_series_info, send_season_info
 import logging
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,85 @@ async def handle_delete_msg(callback: CallbackQuery):
             await callback.message.delete()
         except Exception as e:
             logger.warning(f"Could not delete message in handle_delete_msg: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+
+@router.callback_query(F.data.startswith("franchise_m_"))
+async def handle_movie_franchise(callback: CallbackQuery):
+    try:
+        code = callback.data.split("_", 2)[2]
+        franchise = await api_client.get_movie_franchise_context(code)
+        if not franchise or not franchise.get("timeline_items"):
+            await callback.answer("Boshqa qismlar mavjud emas", show_alert=True)
+            return
+
+        items = franchise.get("timeline_items", [])
+        buttons = []
+        for it in items:
+            m = it.get("movie")
+            if not m:
+                continue
+            m_code = m.get("code")
+            m_title = m.get("title", "")
+            order = it.get("chronological_order") or 1
+            year = m.get("release_year")
+            is_current = bool(m_code and m_code.upper() == code.upper())
+
+            label = f"#{order}-qism: {m_title}"
+            if year:
+                label += f" ({year})"
+
+            if is_current:
+                label = f"• {label} (Hozirgi)"
+                buttons.append([InlineKeyboardButton(text=label, callback_data=f"noop_curr_{m_code}")])
+            else:
+                buttons.append([InlineKeyboardButton(text=label, callback_data=f"select_m_{m_code}")])
+
+        buttons.append([InlineKeyboardButton(text="Ortga", callback_data=f"select_m_{code}")])
+
+        kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+        try:
+            await callback.message.edit_reply_markup(reply_markup=kb)
+        except Exception as e:
+            logger.warning(f"Failed to edit markup in handle_movie_franchise: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data.startswith("select_m_"))
+async def handle_select_movie(callback: CallbackQuery):
+    try:
+        code = callback.data.split("_", 2)[2]
+        movie = await api_client.get_movie_by_code(code)
+        if not movie:
+            await callback.answer("Kino topilmadi", show_alert=True)
+            return
+
+        await send_movie_info(
+            callback.bot,
+            callback.from_user.id,
+            movie,
+            edit_message_id=callback.message.message_id,
+        )
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data.startswith("noop_curr_"))
+async def handle_noop_current(callback: CallbackQuery):
+    try:
+        await callback.answer("Siz hozir shu qismdasiz", show_alert=False)
     finally:
         try:
             await callback.answer()

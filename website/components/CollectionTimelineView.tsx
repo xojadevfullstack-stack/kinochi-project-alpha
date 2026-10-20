@@ -115,7 +115,7 @@ export default function CollectionTimelineView({
                     Tartib:
                   </span>
                   <span className="font-display-hero text-2xl md:text-3xl font-black text-primary-container group-hover:scale-110 transition-transform">
-                    #{activeOrder}
+                    {activeOrder}
                   </span>
                   <span className="text-[9px] text-text-secondary uppercase tracking-wider hidden md:block">
                     Qism

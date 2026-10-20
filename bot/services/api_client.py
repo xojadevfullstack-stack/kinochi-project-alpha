@@ -44,6 +44,19 @@ class APIClient:
             logger.error(f"Error fetching movie {code}: {e}")
             return None
 
+    async def get_movie_franchise_context(self, code: str) -> Optional[Dict[str, Any]]:
+        clean_code = str(code).strip()
+        try:
+            response = await self.client.get(f"/collections/movie-context/{clean_code}")
+            if response.status_code in (404, 204):
+                return None
+            response.raise_for_status()
+            data = response.json()
+            return data if data else None
+        except httpx.HTTPError as e:
+            logger.error(f"Error fetching franchise context for movie {code}: {e}")
+            return None
+
     async def get_movie_by_id(self, movie_id: int) -> Optional[Dict[str, Any]]:
         try:
             response = await self.client.get(f"/movies/{movie_id}")

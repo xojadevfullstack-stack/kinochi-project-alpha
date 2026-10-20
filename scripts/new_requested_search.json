@@ -1,0 +1,1002 @@
+{
+  "db": {
+    "Cho'qintirgan ota": [],
+    "Labirint yuguruvchisi": [],
+    "Mumiya": [],
+    "O'yinchoqlar tarixi": [],
+    "Arra (Saw)": [],
+    "Qichqiriq (Scream)": [],
+    "La'nat / Astral / Annabel": [
+      {
+        "id": 828,
+        "title": "Karib dengizi qaroqchilari 1: Qora marvarid tavqi la'nati",
+        "original_title": "Pirates of the Caribbean: The Curse of the Black Pearl",
+        "year": 2003,
+        "tmdb_id": 22,
+        "code": "0674af17",
+        "source_type": "superguruh",
+        "source_topic_id": 239,
+        "poster_url": "https://image.tmdb.org/t/p/w500/z8onk7LV9Mmw6zKz4hT6pzzYvlB.jpg",
+        "translations": [
+          [
+            808,
+            "O'zbekcha",
+            27538
+          ]
+        ]
+      }
+    ],
+    "Betmen klassik": [
+      {
+        "id": 827,
+        "title": "Betmen (2022)",
+        "original_title": "The Batman",
+        "year": 2022,
+        "tmdb_id": 414906,
+        "code": "f3b81d1d",
+        "source_type": "superguruh",
+        "source_topic_id": 233,
+        "poster_url": "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg",
+        "translations": [
+          [
+            807,
+            "O'zbekcha",
+            204
+          ]
+        ]
+      },
+      {
+        "id": 824,
+        "title": "Betmen: Muqaddima",
+        "original_title": "Batman Begins",
+        "year": 2005,
+        "tmdb_id": 272,
+        "code": "bd2bab90",
+        "source_type": "superguruh",
+        "source_topic_id": 233,
+        "poster_url": "https://image.tmdb.org/t/p/w500/1P3GslzgCFqPv29GQapNDvLOKUR.jpg",
+        "translations": [
+          [
+            804,
+            "O'zbekcha",
+            201
+          ]
+        ]
+      }
+    ],
+    "Terminator qo'shimcha": [
+      {
+        "id": 844,
+        "title": "Terminator 1",
+        "original_title": "The Terminator",
+        "year": 1984,
+        "tmdb_id": 218,
+        "code": "5d0722ed",
+        "source_type": "superguruh",
+        "source_topic_id": 266,
+        "poster_url": "https://image.tmdb.org/t/p/w500/hzXSE6MZ985AEft7Vf22Y7nrh5G.jpg",
+        "translations": [
+          [
+            824,
+            "O'zbekcha",
+            221
+          ]
+        ]
+      },
+      {
+        "id": 845,
+        "title": "Terminator 2: Qiyomat kuni",
+        "original_title": "Terminator 2: Judgment Day",
+        "year": 1991,
+        "tmdb_id": 280,
+        "code": "bf87b006",
+        "source_type": "superguruh",
+        "source_topic_id": 266,
+        "poster_url": "https://image.tmdb.org/t/p/w500/5M0j0B18abtBI5P2nnQiYJKSu19.jpg",
+        "translations": [
+          [
+            825,
+            "O'zbekcha",
+            222
+          ]
+        ]
+      },
+      {
+        "id": 846,
+        "title": "Terminator 3: Mashinalar isyoni",
+        "original_title": "Terminator 3: Rise of the Machines",
+        "year": 2003,
+        "tmdb_id": 296,
+        "code": "d3f6a968",
+        "source_type": "superguruh",
+        "source_topic_id": 266,
+        "poster_url": "https://image.tmdb.org/t/p/w500/vxiK1c67H8Z0jB7z2eYfNq8v2g6.jpg",
+        "translations": [
+          [
+            826,
+            "O'zbekcha",
+            223
+          ]
+        ]
+      }
+    ],
+    "Jon Uik qo'shimcha": [],
+    "Yura davri parki / olami": [],
+    "O'rgimchak animatsiya": [],
+    "Muzlik davri 6": [],
+    "Shrek maxsus": [
+      {
+        "id": 848,
+        "title": "Shrek 2",
+        "original_title": "Shrek 2",
+        "year": 2004,
+        "tmdb_id": 809,
+        "code": "b31af2a0",
+        "source_type": "superguruh",
+        "source_topic_id": 271,
+        "poster_url": "https://image.tmdb.org/t/p/w500/2yYP0PQjG8zV0TurmRxSSUrTXvw.jpg",
+        "translations": [
+          [
+            828,
+            "O'zbekcha",
+            225
+          ]
+        ]
+      },
+      {
+        "id": 849,
+        "title": "Shrek 3: Uchinchi",
+        "original_title": "Shrek the Third",
+        "year": 2007,
+        "tmdb_id": 810,
+        "code": "a0e855c0",
+        "source_type": "superguruh",
+        "source_topic_id": 271,
+        "poster_url": "https://image.tmdb.org/t/p/w500/n5OcaP01z840M6c0K4bU5eU4yL.jpg",
+        "translations": [
+          [
+            829,
+            "O'zbekcha",
+            226
+          ]
+        ]
+      },
+      {
+        "id": 847,
+        "title": "Shrek 1",
+        "original_title": "Shrek",
+        "year": 2001,
+        "tmdb_id": 808,
+        "code": "a7fd4675",
+        "source_type": "superguruh",
+        "source_topic_id": 271,
+        "poster_url": "https://image.tmdb.org/t/p/w500/dyhaB19AIC4PkYQ2Y7YbpCNIIOx.jpg",
+        "translations": [
+          [
+            827,
+            "O'zbekcha",
+            27541
+          ]
+        ]
+      },
+      {
+        "id": 850,
+        "title": "Shrek 4: Abadiy baxt",
+        "original_title": "Shrek Forever After",
+        "year": 2010,
+        "tmdb_id": 10191,
+        "code": "b4e1afbb",
+        "source_type": "superguruh",
+        "source_topic_id": 271,
+        "poster_url": "https://image.tmdb.org/t/p/w500/bL8n7A6n5n4eL3q5e5i7x7e5y.jpg",
+        "translations": [
+          [
+            830,
+            "O'zbekcha",
+            227
+          ]
+        ]
+      }
+    ]
+  },
+  "tg": {
+    "labirint": [
+      {
+        "id": 8093,
+        "date": "2026-10-09 19:46:49+00:00",
+        "file_name": "Labirint 2007 Hind kinosi 720p (asilmedia.net).mp4",
+        "text": "🍿 Labirint 🔑 Kodi: KNX652 📅 Yili: 2006"
+      },
+      {
+        "id": 8092,
+        "date": "2026-10-09 19:46:44+00:00",
+        "file_name": "Labirint 2007 Hind kinosi 720p (asilmedia.net).mp4",
+        "text": "🍿 Labirint 🔑 Kodi: KNX652 📅 Yili: 2006"
+      },
+      {
+        "id": 8079,
+        "date": "2026-10-09 19:45:18+00:00",
+        "file_name": "Labirint_xavfli_tuzoq_1_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 Labirint xavfli tuzoq 1 🔑 Kodi: RUQG8K 📅 Yili: 2014"
+      },
+      {
+        "id": 8078,
+        "date": "2026-10-09 19:45:14+00:00",
+        "file_name": "Labirint_xavfli_tuzoq_1_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 Labirint xavfli tuzoq 1 🔑 Kodi: RUQG8K 📅 Yili: 2014"
+      },
+      {
+        "id": 8077,
+        "date": "2026-10-09 19:45:06+00:00",
+        "file_name": "Labirint 3 2024 480p (asilmedia.net).mp4",
+        "text": "🍿 Labirint 3 🔑 Kodi: 5EEX6V 📅 Yili: 2024"
+      },
+      {
+        "id": 8076,
+        "date": "2026-10-09 19:45:02+00:00",
+        "file_name": "Labirint 3 2024 480p (asilmedia.net).mp4",
+        "text": "🍿 Labirint 3 🔑 Kodi: 5EEX6V 📅 Yili: 2024"
+      },
+      {
+        "id": 8075,
+        "date": "2026-10-09 19:44:43+00:00",
+        "file_name": "Labirint 2 720p (asilmedia.net).mp4",
+        "text": "🍿 Labirint 2 🔑 Kodi: H3NMQF 📅 Yili: 2022"
+      },
+      {
+        "id": 8074,
+        "date": "2026-10-09 19:44:39+00:00",
+        "file_name": "Labirint 2 720p (asilmedia.net).mp4",
+        "text": "🍿 Labirint 2 🔑 Kodi: H3NMQF 📅 Yili: 2022"
+      }
+    ],
+    "mumiya": [
+      {
+        "id": 8127,
+        "date": "2026-10-09 19:50:23+00:00",
+        "file_name": "Mumiya 3 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 3: Ajdar Imperatori maqbarasi 🔑 Kodi: WMYNKE 📅 Yili: 2008"
+      },
+      {
+        "id": 8126,
+        "date": "2026-10-09 19:50:19+00:00",
+        "file_name": "Mumiya 3 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 3: Ajdar Imperatori maqbarasi 🔑 Kodi: WMYNKE 📅 Yili: 2008"
+      },
+      {
+        "id": 8125,
+        "date": "2026-10-09 19:50:12+00:00",
+        "file_name": "Mumiya 1 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 1 🔑 Kodi: XBL2UE 📅 Yili: 1999"
+      },
+      {
+        "id": 8124,
+        "date": "2026-10-09 19:50:08+00:00",
+        "file_name": "Mumiya 1 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 1 🔑 Kodi: XBL2UE 📅 Yili: 1999"
+      },
+      {
+        "id": 8123,
+        "date": "2026-10-09 19:50:02+00:00",
+        "file_name": "Mumiya 2 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 2: Qaytish 🔑 Kodi: KH6Q4Y 📅 Yili: 2001"
+      },
+      {
+        "id": 8122,
+        "date": "2026-10-09 19:49:58+00:00",
+        "file_name": "Mumiya 2 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 2: Qaytish 🔑 Kodi: KH6Q4Y 📅 Yili: 2001"
+      },
+      {
+        "id": 8121,
+        "date": "2026-10-09 19:49:52+00:00",
+        "file_name": "Mumiya 2017 480p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 🔑 Kodi: ZLJQBM 📅 Yili: 2017"
+      },
+      {
+        "id": 8120,
+        "date": "2026-10-09 19:49:48+00:00",
+        "file_name": "Mumiya 2017 480p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Mumiya 🔑 Kodi: ZLJQBM 📅 Yili: 2017"
+      }
+    ],
+    "o'yinchoqlar": [
+      {
+        "id": 8344,
+        "date": "2026-10-09 20:57:20+00:00",
+        "file_name": "O'yinchoqlar_Tarixi_1_1995_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 1 🔑 Kodi: 22K6U6 📅 Yili: 1995"
+      },
+      {
+        "id": 8343,
+        "date": "2026-10-09 20:57:16+00:00",
+        "file_name": "O'yinchoqlar_Tarixi_1_1995_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 1 🔑 Kodi: 22K6U6 📅 Yili: 1995"
+      },
+      {
+        "id": 8342,
+        "date": "2026-10-09 20:57:10+00:00",
+        "file_name": "O'yinchoqlar_Tarixi_2_1999_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 2 🔑 Kodi: MBXBJ8 📅 Yili: 1999"
+      },
+      {
+        "id": 8341,
+        "date": "2026-10-09 20:57:06+00:00",
+        "file_name": "O'yinchoqlar_Tarixi_2_1999_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 2 🔑 Kodi: MBXBJ8 📅 Yili: 1999"
+      },
+      {
+        "id": 8340,
+        "date": "2026-10-09 20:57:01+00:00",
+        "file_name": "O'yinchoqlar_Tarixi_3_2010_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 3 🔑 Kodi: WA43K8 📅 Yili: 2010"
+      },
+      {
+        "id": 8339,
+        "date": "2026-10-09 20:56:57+00:00",
+        "file_name": "O'yinchoqlar_Tarixi_3_2010_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 3 🔑 Kodi: WA43K8 📅 Yili: 2010"
+      },
+      {
+        "id": 8338,
+        "date": "2026-10-09 20:56:52+00:00",
+        "file_name": "O'yinchoqlar_tarixi_4_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 4 🔑 Kodi: PV9L5S 📅 Yili: 2019"
+      },
+      {
+        "id": 8337,
+        "date": "2026-10-09 20:56:48+00:00",
+        "file_name": "O'yinchoqlar_tarixi_4_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'yinchoqlar tarixi 4 🔑 Kodi: PV9L5S 📅 Yili: 2019"
+      }
+    ],
+    "arra": [
+      {
+        "id": 17931,
+        "date": "2026-10-12 19:04:58+00:00",
+        "file_name": "ARRA-ODAM {12-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam s1 📌 1-mavsum, 11-qism 🔑 Qism kodi: S1-CH11 📺 Serial kodi: s_713"
+      },
+      {
+        "id": 17930,
+        "date": "2026-10-12 19:04:51+00:00",
+        "file_name": "ARRA-ODAM {12-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam s1 🔢 11-Qism"
+      },
+      {
+        "id": 17929,
+        "date": "2026-10-12 19:03:05+00:00",
+        "file_name": "ARRA-ODAM {12-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam s1 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_713"
+      },
+      {
+        "id": 17928,
+        "date": "2026-10-12 19:02:55+00:00",
+        "file_name": "ARRA-ODAM {12-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam s1 🔢 1-Qism"
+      },
+      {
+        "id": 16124,
+        "date": "2026-10-11 10:53:13+00:00",
+        "file_name": "ARRA-ODAM {12-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 12-qism 🔑 Qism kodi: S1-CH12 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16123,
+        "date": "2026-10-11 10:53:09+00:00",
+        "file_name": "ARRA-ODAM {12-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 12-Qism"
+      },
+      {
+        "id": 16122,
+        "date": "2026-10-11 10:52:54+00:00",
+        "file_name": "ARRA-ODAM {11-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 11-qism 🔑 Qism kodi: S1-CH11 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16121,
+        "date": "2026-10-11 10:52:50+00:00",
+        "file_name": "ARRA-ODAM {11-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 11-Qism"
+      },
+      {
+        "id": 16120,
+        "date": "2026-10-11 10:52:36+00:00",
+        "file_name": "ARRA-ODAM {10-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 10-qism 🔑 Qism kodi: S1-CH10 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16119,
+        "date": "2026-10-11 10:52:31+00:00",
+        "file_name": "ARRA-ODAM {10-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 10-Qism"
+      },
+      {
+        "id": 16118,
+        "date": "2026-10-11 10:52:31+00:00",
+        "file_name": "ARRA-ODAM {9-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 9-qism 🔑 Qism kodi: S1-CH9 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16117,
+        "date": "2026-10-11 10:52:27+00:00",
+        "file_name": "ARRA-ODAM {9-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 9-Qism"
+      },
+      {
+        "id": 16116,
+        "date": "2026-10-11 10:52:12+00:00",
+        "file_name": "Arra-odam [17+].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 8-qism 🔑 Qism kodi: S1-CH8 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16115,
+        "date": "2026-10-11 10:52:08+00:00",
+        "file_name": "Arra-odam [17+].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 8-Qism"
+      },
+      {
+        "id": 16114,
+        "date": "2026-10-11 10:51:53+00:00",
+        "file_name": "ARRA-ODAM {7-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 7-qism 🔑 Qism kodi: S1-CH7 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16113,
+        "date": "2026-10-11 10:51:49+00:00",
+        "file_name": "ARRA-ODAM {7-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 7-Qism"
+      },
+      {
+        "id": 16112,
+        "date": "2026-10-11 10:51:34+00:00",
+        "file_name": "ARRA-ODAM {6-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16111,
+        "date": "2026-10-11 10:51:30+00:00",
+        "file_name": "ARRA-ODAM {6-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 6-Qism"
+      },
+      {
+        "id": 16110,
+        "date": "2026-10-11 10:51:29+00:00",
+        "file_name": "ARRA-ODAM {5-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16109,
+        "date": "2026-10-11 10:51:25+00:00",
+        "file_name": "ARRA-ODAM {5-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 5-Qism"
+      },
+      {
+        "id": 16108,
+        "date": "2026-10-11 10:51:10+00:00",
+        "file_name": "ARRA-ODAM {4-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16107,
+        "date": "2026-10-11 10:51:06+00:00",
+        "file_name": "ARRA-ODAM {4-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 4-Qism"
+      },
+      {
+        "id": 16106,
+        "date": "2026-10-11 10:50:51+00:00",
+        "file_name": "ARRA-ODAM {3-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16105,
+        "date": "2026-10-11 10:50:47+00:00",
+        "file_name": "ARRA-ODAM {3-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 3-Qism"
+      },
+      {
+        "id": 16104,
+        "date": "2026-10-11 10:50:46+00:00",
+        "file_name": "ARRA-ODAM {2-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16103,
+        "date": "2026-10-11 10:50:42+00:00",
+        "file_name": "ARRA-ODAM {2-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 2-Qism"
+      },
+      {
+        "id": 16102,
+        "date": "2026-10-11 10:50:27+00:00",
+        "file_name": "ARRA-ODAM {1-qism} [anibla.uz].mp4",
+        "text": "🍿 Arra odam 1-mavsum 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_663"
+      },
+      {
+        "id": 16101,
+        "date": "2026-10-11 10:50:23+00:00",
+        "file_name": "ARRA-ODAM {1-qism} [anibla.uz].mp4",
+        "text": "🎬 Arra odam 1-mavsum 🔢 1-Qism"
+      },
+      {
+        "id": 13143,
+        "date": "2026-10-11 03:16:13+00:00",
+        "file_name": "Arra 3 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Arra 3 🔑 Kodi: GDQDK5 📅 Yili: 2006"
+      },
+      {
+        "id": 13142,
+        "date": "2026-10-11 03:16:09+00:00",
+        "file_name": "Arra 3 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Arra 3 🔑 Kodi: GDQDK5 📅 Yili: 2006"
+      },
+      {
+        "id": 13141,
+        "date": "2026-10-11 03:15:55+00:00",
+        "file_name": "Arra 2 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Arra 2 🔑 Kodi: LRXY9F 📅 Yili: 2005"
+      },
+      {
+        "id": 13140,
+        "date": "2026-10-11 03:15:51+00:00",
+        "file_name": "Arra 2 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Arra 2 🔑 Kodi: LRXY9F 📅 Yili: 2005"
+      },
+      {
+        "id": 11157,
+        "date": "2026-10-10 20:34:37+00:00",
+        "file_name": "Arra Sub Film m.mp4",
+        "text": "🎬 Arra odam arc 🎭 Janr: Dramma ⭐ Reyting: 7.0/10 🇺🇿 Tili: O'zbek tilida  🍿 @kinochi_robot orqali yuklandi."
+      },
+      {
+        "id": 10842,
+        "date": "2026-10-10 16:13:34+00:00",
+        "file_name": "Arra Sub Film m.mp4",
+        "text": "🎬 Arra odam arc 🎭 Janr: Drama ⭐ Reyting: 6.0/10 🇺🇿 Tili: O'zbek tilida  🍿 @kinochi_robot orqali yuklandi."
+      },
+      {
+        "id": 1378,
+        "date": "2026-09-27 14:57:47+00:00",
+        "file_name": "Arra odam Reze hikoyasi [1080p] [Uzb].mp4",
+        "text": "🍿 Arra odam: Reze hikoyasi 🔑 Kodi: HQALPB 📅 Yili: 2025"
+      }
+    ],
+    "qichqiriq": [
+      {
+        "id": 17629,
+        "date": "2026-10-12 17:28:34+00:00",
+        "file_name": "video_282810.mp4",
+        "text": "🍿 Qichqiriq 5 🔑 Kodi: AP52VQ"
+      },
+      {
+        "id": 17628,
+        "date": "2026-10-12 17:28:27+00:00",
+        "file_name": "video_282810.mp4",
+        "text": "🍿 Qichqiriq 5 🔑 Kodi: AP52VQ"
+      },
+      {
+        "id": 8225,
+        "date": "2026-10-09 20:46:09+00:00",
+        "file_name": "Qichqiriq 1 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Qichqiriq 1 🔑 Kodi: GHAJPE 📅 Yili: 1996"
+      },
+      {
+        "id": 8224,
+        "date": "2026-10-09 20:46:05+00:00",
+        "file_name": "Qichqiriq 1 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Qichqiriq 1 🔑 Kodi: GHAJPE 📅 Yili: 1996"
+      }
+    ],
+    "astral": [
+      {
+        "id": 8223,
+        "date": "2026-10-09 20:45:59+00:00",
+        "file_name": "Astral 2 2013 720p (asilmedia.net).mp4",
+        "text": "🍿 Astral 2 🔑 Kodi: JULSJ2 📅 Yili: 2013"
+      },
+      {
+        "id": 8222,
+        "date": "2026-10-09 20:45:55+00:00",
+        "file_name": "Astral 2 2013 720p (asilmedia.net).mp4",
+        "text": "🍿 Astral 2 🔑 Kodi: JULSJ2 📅 Yili: 2013"
+      },
+      {
+        "id": 8221,
+        "date": "2026-10-09 20:45:50+00:00",
+        "file_name": "Astral 1 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Astral 1 🔑 Kodi: RPVF4D 📅 Yili: 2011"
+      },
+      {
+        "id": 8220,
+        "date": "2026-10-09 20:45:46+00:00",
+        "file_name": "Astral 1 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Astral 1 🔑 Kodi: RPVF4D 📅 Yili: 2011"
+      },
+      {
+        "id": 8219,
+        "date": "2026-10-09 20:45:41+00:00",
+        "file_name": "Astral 13-qavat 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Astral. 13-qavat 🔑 Kodi: B44EHV 📅 Yili: 2022"
+      },
+      {
+        "id": 8218,
+        "date": "2026-10-09 20:45:37+00:00",
+        "file_name": "Astral 13-qavat 720p O'zbek tilida (asilmedia.net).mp4",
+        "text": "🍿 Astral. 13-qavat 🔑 Kodi: B44EHV 📅 Yili: 2022"
+      },
+      {
+        "id": 8217,
+        "date": "2026-10-09 20:45:31+00:00",
+        "file_name": "Astral 3 2015 720p (asilmedia.net).mp4",
+        "text": "🍿 Astral 3 🔑 Kodi: YGC9G6 📅 Yili: 2015"
+      },
+      {
+        "id": 8216,
+        "date": "2026-10-09 20:45:27+00:00",
+        "file_name": "Astral 3 2015 720p (asilmedia.net).mp4",
+        "text": "🍿 Astral 3 🔑 Kodi: YGC9G6 📅 Yili: 2015"
+      },
+      {
+        "id": 4409,
+        "date": "2026-10-08 22:53:11+00:00",
+        "file_name": "Astral 6 - Ular allaqachon shu yerda 720p (asilmedia.net).mp4",
+        "text": "🍿 Astral 6: Ular allaqachon shu yerda 🔑 Kodi: 2APKPR 📅 Yili: 2026"
+      },
+      {
+        "id": 4408,
+        "date": "2026-10-08 22:53:07+00:00",
+        "file_name": "Astral 6 - Ular allaqachon shu yerda 720p (asilmedia.net).mp4",
+        "text": "🍿 Astral 6: Ular allaqachon shu yerda 🔑 Kodi: 2APKPR 📅 Yili: 2026"
+      }
+    ],
+    "la'nat": [
+      {
+        "id": 12680,
+        "date": "2026-10-11 01:49:14+00:00",
+        "file_name": "Arvohlar qasri 2025 720p (asilmedia.net).mp4",
+        "text": "🍿 La'nat: Arvohlar Qasri 🔑 Kodi: HUG658 📅 Yili: 2025"
+      },
+      {
+        "id": 12679,
+        "date": "2026-10-11 01:49:10+00:00",
+        "file_name": "Arvohlar qasri 2025 720p (asilmedia.net).mp4",
+        "text": "🍿 La'nat: Arvohlar Qasri 🔑 Kodi: HUG658 📅 Yili: 2025"
+      },
+      {
+        "id": 8151,
+        "date": "2026-10-09 19:54:09+00:00",
+        "file_name": "La'nat 2020 (Treyler).mp4",
+        "text": "🍿 La'nat 🔑 Kodi: FRPUG7 📅 Yili: 2020"
+      },
+      {
+        "id": 8150,
+        "date": "2026-10-09 19:54:05+00:00",
+        "file_name": "La'nat 2020 (Treyler).mp4",
+        "text": "🍿 La'nat 🔑 Kodi: FRPUG7 📅 Yili: 2020"
+      }
+    ],
+    "yura davri": [
+      {
+        "id": 16734,
+        "date": "2026-10-12 14:49:50+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_681 📅"
+      },
+      {
+        "id": 16733,
+        "date": "2026-10-12 14:49:43+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 6-Qism 📅 Yili: 2021"
+      },
+      {
+        "id": 16732,
+        "date": "2026-10-12 14:49:36+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_681 📅"
+      },
+      {
+        "id": 16731,
+        "date": "2026-10-12 14:49:30+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 5-Qism 📅 Yili: 2021"
+      },
+      {
+        "id": 16730,
+        "date": "2026-10-12 14:49:25+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_681 📅"
+      },
+      {
+        "id": 16729,
+        "date": "2026-10-12 14:49:18+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 4-Qism 📅 Yili: 2021"
+      },
+      {
+        "id": 16728,
+        "date": "2026-10-12 14:49:12+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_681 📅"
+      },
+      {
+        "id": 16727,
+        "date": "2026-10-12 14:49:05+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 3-Qism 📅 Yili: 2021"
+      },
+      {
+        "id": 16726,
+        "date": "2026-10-12 14:49:00+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_681 📅"
+      },
+      {
+        "id": 16725,
+        "date": "2026-10-12 14:48:53+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 2-Qism 📅 Yili: 2021"
+      },
+      {
+        "id": 16724,
+        "date": "2026-10-12 14:48:47+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_681 📅"
+      },
+      {
+        "id": 16723,
+        "date": "2026-10-12 14:48:40+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri Netflix multserial 🔢 1-Mavsum, 1-Qism 📅 Yili: 2021"
+      },
+      {
+        "id": 11840,
+        "date": "2026-10-10 23:16:48+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_535 📅 Yili: 2020"
+      },
+      {
+        "id": 11839,
+        "date": "2026-10-10 23:16:42+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 6-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11838,
+        "date": "2026-10-10 23:16:35+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_535 📅 Yili: 2020"
+      },
+      {
+        "id": 11837,
+        "date": "2026-10-10 23:16:31+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 5-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11836,
+        "date": "2026-10-10 23:16:24+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_535 📅 Yili: 2020"
+      },
+      {
+        "id": 11835,
+        "date": "2026-10-10 23:16:19+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 4-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11834,
+        "date": "2026-10-10 23:16:11+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_535 📅 Yili: 2020"
+      },
+      {
+        "id": 11833,
+        "date": "2026-10-10 23:16:07+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 3-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11832,
+        "date": "2026-10-10 23:16:00+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_535 📅 Yili: 2020"
+      },
+      {
+        "id": 11831,
+        "date": "2026-10-10 23:15:56+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 2-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11830,
+        "date": "2026-10-10 23:15:48+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_535 📅 Yili: 2020"
+      },
+      {
+        "id": 11829,
+        "date": "2026-10-10 23:15:44+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 1-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11044,
+        "date": "2026-10-10 19:07:25+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_506 📅 Yili: 2020"
+      },
+      {
+        "id": 11043,
+        "date": "2026-10-10 19:07:21+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 6-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11042,
+        "date": "2026-10-10 19:07:14+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_506 📅 Yili: 2020"
+      },
+      {
+        "id": 11041,
+        "date": "2026-10-10 19:07:09+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 5-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11040,
+        "date": "2026-10-10 19:07:02+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 4-qism 🔑 Qism kodi: S1-CH4 📺 Serial kodi: s_506 📅 Yili: 2020"
+      },
+      {
+        "id": 11039,
+        "date": "2026-10-10 19:06:58+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q04_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 4-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11038,
+        "date": "2026-10-10 19:06:51+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_506 📅 Yili: 2020"
+      },
+      {
+        "id": 11037,
+        "date": "2026-10-10 19:06:47+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q03_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 3-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11036,
+        "date": "2026-10-10 19:06:39+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_506 📅 Yili: 2020"
+      },
+      {
+        "id": 11035,
+        "date": "2026-10-10 19:06:35+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q02_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 2-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 11034,
+        "date": "2026-10-10 19:06:28+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_506 📅 Yili: 2020"
+      },
+      {
+        "id": 11033,
+        "date": "2026-10-10 19:06:24+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q01_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 1-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 8166,
+        "date": "2026-10-09 20:06:50+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 6-qism 🔑 Qism kodi: S1-CH6 📺 Serial kodi: s_423 📅 Yili: 2020"
+      },
+      {
+        "id": 8165,
+        "date": "2026-10-09 20:06:46+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q06_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 6-Qism 📅 Yili: 2020"
+      },
+      {
+        "id": 8164,
+        "date": "2026-10-09 20:06:39+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🍿 Yura davri dunyosi: Bo'r davri lageri 📌 1-mavsum, 5-qism 🔑 Qism kodi: S1-CH5 📺 Serial kodi: s_423 📅 Yili: 2020"
+      },
+      {
+        "id": 8163,
+        "date": "2026-10-09 20:06:35+00:00",
+        "file_name": "Yura_davri_dunyosi_f01q05_AQSH_seriali_O'zbek_tilida_asilmedia_net.m4v",
+        "text": "🎬 Yura davri dunyosi: Bo'r davri lageri 🔢 1-Mavsum, 5-Qism 📅 Yili: 2020"
+      }
+    ],
+    "balerina": [
+      {
+        "id": 2896,
+        "date": "2026-10-08 09:06:44+00:00",
+        "file_name": "Balerina 2025 720p (asilmedia.net).mp4",
+        "text": "🍿 Balerina - Jon Uik olamidan 🔑 Kodi: 7ZG5HU 📅 Yili: 2025"
+      },
+      {
+        "id": 2895,
+        "date": "2026-10-08 09:06:40+00:00",
+        "file_name": "Balerina 2025 720p (asilmedia.net).mp4",
+        "text": "🍿 Balerina - Jon Uik olamidan 🔑 Kodi: 7ZG5HU 📅 Yili: 2025"
+      }
+    ],
+    "kontinental": [
+      {
+        "id": 2902,
+        "date": "2026-10-08 09:07:33+00:00",
+        "file_name": "Kontinental_3_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 Kontinental: Jon Uik dunyosidan 📌 1-mavsum, 3-qism 🔑 Qism kodi: S1-CH3 📺 Serial kodi: s_81 📅 Yili: 2023"
+      },
+      {
+        "id": 2901,
+        "date": "2026-10-08 09:07:29+00:00",
+        "file_name": "Kontinental_3_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🎬 Kontinental: Jon Uik dunyosidan 🔢 1-Mavsum, 3-Qism 📅 Yili: 2023"
+      },
+      {
+        "id": 2900,
+        "date": "2026-10-08 09:07:17+00:00",
+        "file_name": "Kontinental_2_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 Kontinental: Jon Uik dunyosidan 📌 1-mavsum, 2-qism 🔑 Qism kodi: S1-CH2 📺 Serial kodi: s_81 📅 Yili: 2023"
+      },
+      {
+        "id": 2899,
+        "date": "2026-10-08 09:07:13+00:00",
+        "file_name": "Kontinental_2_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🎬 Kontinental: Jon Uik dunyosidan 🔢 1-Mavsum, 2-Qism 📅 Yili: 2023"
+      },
+      {
+        "id": 2898,
+        "date": "2026-10-08 09:07:00+00:00",
+        "file_name": "Kontinental_1_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 Kontinental: Jon Uik dunyosidan 📌 1-mavsum, 1-qism 🔑 Qism kodi: S1-CH1 📺 Serial kodi: s_81 📅 Yili: 2023"
+      },
+      {
+        "id": 2897,
+        "date": "2026-10-08 09:06:56+00:00",
+        "file_name": "Kontinental_1_QISM_720p_AQSH_seriali_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🎬 Kontinental: Jon Uik dunyosidan 🔢 1-Mavsum, 1-Qism 📅 Yili: 2023"
+      }
+    ],
+    "yondosh olam": [
+      {
+        "id": 8029,
+        "date": "2026-10-09 19:31:47+00:00",
+        "file_name": "O'rgimchak_odam_koinotlar_aro_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'rgimchak odam: Yondosh olam 🔑 Kodi: Y5ZYVR 📅 Yili: 2018"
+      },
+      {
+        "id": 8028,
+        "date": "2026-10-09 19:31:43+00:00",
+        "file_name": "O'rgimchak_odam_koinotlar_aro_720p_O'zbek_tilida_asilmedia_net.mp4",
+        "text": "🍿 O'rgimchak odam: Yondosh olam 🔑 Kodi: Y5ZYVR 📅 Yili: 2018"
+      }
+    ],
+    "olamlar to'ri": [
+      {
+        "id": 8043,
+        "date": "2026-10-09 19:33:51+00:00",
+        "file_name": "O'rgimchak_odam_2_olamlar_to'ri_2023_480p_O'zbek_tilida_asilmedia.mp4",
+        "text": "🍿 O'rgimchak odam: Olamlar to'ri 🔑 Kodi: P4PHES 📅 Yili: 2023"
+      },
+      {
+        "id": 8042,
+        "date": "2026-10-09 19:33:46+00:00",
+        "file_name": "O'rgimchak_odam_2_olamlar_to'ri_2023_480p_O'zbek_tilida_asilmedia.mp4",
+        "text": "🍿 O'rgimchak odam: Olamlar to'ri 🔑 Kodi: P4PHES 📅 Yili: 2023"
+      }
+    ]
+  }
+}

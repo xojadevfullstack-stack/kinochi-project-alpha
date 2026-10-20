@@ -140,9 +140,9 @@ export default function SeriesListPage() {
       let url = "";
       if (reset) {
         if (query.length >= 2) {
-          url = `/series/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}`;
+          url = `/series/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}&publish_status=all`;
         } else {
-          url = `/series?skip=0&limit=${PAGE_SIZE}`;
+          url = `/series?skip=0&limit=${PAGE_SIZE}&publish_status=all`;
         }
         const data = await fetchApi(url);
         setSeriesList(data.items || []);
@@ -150,9 +150,9 @@ export default function SeriesListPage() {
       } else {
         const skip = seriesList.length;
         if (query.length >= 2) {
-          url = `/series/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}`;
+          url = `/series/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}&publish_status=all`;
         } else {
-          url = `/series?skip=${skip}&limit=${PAGE_SIZE}`;
+          url = `/series?skip=${skip}&limit=${PAGE_SIZE}&publish_status=all`;
         }
         const data = await fetchApi(url);
         const newItems: Series[] = data.items || [];

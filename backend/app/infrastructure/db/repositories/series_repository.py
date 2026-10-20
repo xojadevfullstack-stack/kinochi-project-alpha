@@ -25,7 +25,7 @@ class SeriesRepository:
         )
         if publish_status == "published":
             stmt = published_only(stmt, SeriesModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.filter(SeriesModel.publish_status == publish_status)
         
         if category_id:
@@ -69,7 +69,7 @@ class SeriesRepository:
         stmt_where = or_(*conditions)
         if publish_status == "published":
             stmt_where = and_(stmt_where, SeriesModel.publish_status == "published")
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt_where = and_(stmt_where, SeriesModel.publish_status == publish_status)
 
         total_stmt = select(func.count(SeriesModel.id)).where(stmt_where)
@@ -95,7 +95,7 @@ class SeriesRepository:
         ).where(SeriesModel.id == series_id)
         if publish_status == "published":
             stmt = published_only(stmt, SeriesModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -251,7 +251,7 @@ class SeriesRepository:
         stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)).where(SeasonModel.id == season_id)
         if publish_status == "published":
             stmt = published_only(stmt, SeasonModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -260,7 +260,7 @@ class SeriesRepository:
         stmt = select(SeasonModel).options(selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)).where(SeasonModel.series_id == series_id).order_by(SeasonModel.season_number)
         if publish_status == "published":
             stmt = published_only(stmt, SeasonModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -295,7 +295,7 @@ class SeriesRepository:
         stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(EpisodeModel.id == episode_id)
         if publish_status == "published":
             stmt = published_only(stmt, EpisodeModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.join(SeasonModel, EpisodeModel.season_id == SeasonModel.id).join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -316,7 +316,7 @@ class SeriesRepository:
         stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(or_(*where_conditions))
         if publish_status == "published":
             stmt = published_only(stmt, EpisodeModel)
-        elif publish_status is not None:
+        elif publish_status is not None and publish_status != "all":
             stmt = stmt.join(SeasonModel, EpisodeModel.season_id == SeasonModel.id).join(SeriesModel, SeasonModel.series_id == SeriesModel.id).where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
         return result.scalars().first()

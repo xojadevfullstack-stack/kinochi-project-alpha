@@ -128,7 +128,7 @@ class AsilmediaBotClient:
                     r_idx, c_idx, b_name = best_btn
                     logger.info(f"Qidiruv natijasidan film tanlanmoqda: '{b_name}'...")
                     await m.click(r_idx, c_idx)
-                    await asyncio.sleep(4.0)
+                    await asyncio.sleep(2.5)
 
                     # Yangilangan film kartasini olamiz
                     async for nm in self.client.iter_messages(bot, limit=4):

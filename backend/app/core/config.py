@@ -103,7 +103,7 @@ class Settings(BaseSettings):
     # ── TMDb Top Seed Ingestor (S2) ──────────────────────────────────
     SEED_MOVIE_TARGET: int = 1000
     SEED_TV_TARGET: int = 500
-    SEED_INCLUDE_SERIES: bool = False
+    SEED_INCLUDE_SERIES: bool = True
     SEED_MIN_VOTE_COUNT: int = 1000
     SEED_MIN_RATING: float = 7.0
     SEED_EXCLUDE_ADULT: bool = True

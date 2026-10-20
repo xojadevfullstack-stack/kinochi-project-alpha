@@ -250,6 +250,21 @@ export default function CollectionsAdminPage() {
       {/* Collections Table */}
       {loading ? (
         <div className="text-center py-16 text-text-secondary">Yuklanmoqda...</div>
+      ) : errorMsg ? (
+        <div className="text-center py-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm mb-4">
+            <span className="material-symbols-outlined text-lg">error</span>
+            <span>{errorMsg}</span>
+          </div>
+          <div>
+            <button
+              onClick={loadCollections}
+              className="px-4 py-2 bg-primary-container/20 text-primary-container hover:bg-primary-container/30 border border-primary-container/40 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              Qayta urinish
+            </button>
+          </div>
+        </div>
       ) : collections.length === 0 ? (
         <div className="text-center py-16 text-text-secondary">To'plamlar mavjud emas</div>
       ) : (

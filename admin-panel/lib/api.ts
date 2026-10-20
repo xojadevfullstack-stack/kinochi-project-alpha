@@ -121,6 +121,9 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
       if (data.detail) {
         if (typeof data.detail === "string") {
           errorMsg = data.detail;
+          if (data.error_message && data.error_message !== data.detail) {
+            errorMsg += ` (${data.error_message})`;
+          }
         } else if (Array.isArray(data.detail)) {
           errorMsg = data.detail.map((err: any) => err.msg || err.message || JSON.stringify(err)).join(", ");
         } else if (typeof data.detail === "object") {

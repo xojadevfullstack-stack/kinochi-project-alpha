@@ -139,9 +139,9 @@ export default function MoviesPage() {
       let url = "";
       if (reset) {
         if (query.length >= 2) {
-          url = `/movies/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}`;
+          url = `/movies/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}&publish_status=all`;
         } else {
-          url = `/movies?skip=0&limit=${PAGE_SIZE}`;
+          url = `/movies?skip=0&limit=${PAGE_SIZE}&publish_status=all`;
         }
         const data = await fetchApi(url);
         setMovies(data.items || []);
@@ -149,9 +149,9 @@ export default function MoviesPage() {
       } else {
         const skip = movies.length;
         if (query.length >= 2) {
-          url = `/movies/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}`;
+          url = `/movies/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}&publish_status=all`;
         } else {
-          url = `/movies?skip=${skip}&limit=${PAGE_SIZE}`;
+          url = `/movies?skip=${skip}&limit=${PAGE_SIZE}&publish_status=all`;
         }
         const data = await fetchApi(url);
         const newItems: Movie[] = data.items || [];

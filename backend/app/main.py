@@ -51,6 +51,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 logging.error(f"Backend keep-alive failed: {e}")
 
     async def init_redis_bg():
+        from app.core.config import settings
+        redis_url = getattr(settings, "REDIS_URL", "")
+        if "SIZNING_UPSTASH_PAROLINGIZ" in redis_url or "parol" in redis_url.lower():
+            logging.info("Redis: Placeholder URL aniqlandi, fon ulanish o'tkazib yuborildi.")
+            return
         from app.core.job_manager import job_manager
         logging.info("Redis'ga ulanmoqda...")
         try:
@@ -60,10 +65,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         except Exception as e:
             logging.error(f"Redis ulanmadi: {e}. Fon vazifalar vaqtincha ishlamaydi.")
 
+    async def db_keep_warm():
+        """Neon PostgreSQL auto-suspend (uyqu) rejimiga ketib qolmasligi uchun har 3.5 daqiqada ping."""
+        from app.infrastructure.db.session import engine
+        from sqlalchemy import text
+        while True:
+            await asyncio.sleep(210)
+            try:
+                async with engine.begin() as conn:
+                    await conn.execute(text("SELECT 1"))
+            except Exception as e:
+                logging.debug(f"DB keep-warm ping: {e}")
+
     logging.info("CHECKPOINT 7: orqa fon vazifalari (keep_alive) ishga tushirilmoqda")
     task = asyncio.create_task(keep_alive())
-    logging.info("CHECKPOINT 8: orqa fon vazifalari (redis) ishga tushirilmoqda")
+    logging.info("CHECKPOINT 8: orqa fon vazifalari (redis, db_warm) ishga tushirilmoqda")
     redis_task = asyncio.create_task(init_redis_bg())
+    db_warm_task = asyncio.create_task(db_keep_warm())
     
     logging.info("CHECKPOINT 8b: DB dan test so'rov yuborilmoqda (engine ping)")
     try:
@@ -80,6 +98,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logging.info("CHECKPOINT 9z: FastAPI lifespan shutdown boshlandi")
     task.cancel()
     redis_task.cancel()
+    db_warm_task.cancel()
 
 
 # ── App factory ──────────────────────────────────────────────────

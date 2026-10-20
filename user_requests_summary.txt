@@ -1,0 +1,1087 @@
+=== CONVERSATION 3d3438cd-5de8-40ae-99a7-07b6ccd96a37 ===
+[0] <USER_REQUEST>
+yangi manba toza manba uchun superguruh ochdim mana id -1003847632555 va manba kanal ochdim yangi toza va bosh -1003762157591 kanallarda bot admin kanallarni ozgartiramiz username larni ham 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T22:22:17+05:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+
+[244] <USER_REQUEST>
+eskin manba kanallardan malumotlari toliq bolgan hamma kino va seriallarni anime vahokazolarni yuklashni iloji bormi
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T22:35:53+05:00.
+</ADDITIONAL_METADATA>
+
+[285] <USER_REQUEST>
+eng birinchi testga taxtlar oyini va uning davomlari ajdar uyi vahokazolarni yukla 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T22:51:30+05:00.
+</ADDITIONAL_METADATA>
+
+[484] <USER_REQUEST>
+yaxshi faqat muammo bor posterlar yoq qoyilmagan 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T23:03:50+05:00.
+</ADDITIONAL_METADATA>
+
+[605] <USER_REQUEST>
+bulardan song navbatda «Qasoskorlar» (Avengers 1-4), «O‘rgimchak odam» (barcha 3 ta davr: Tobi, Endryu, Tom), «Temir odam» (1-3) va «Doktor Strenj». Karib dengizi qaroqchilari (Pirates of the Caribbean 1–5).
+Uzuklar hukmdori va Xobbit (The Lord of the Rings & Hobbit — 6 ta film).
+Jon Uik (John Wick 1–4).
+Avatar (1 va 2-qism).
+Yura davri parki / olami (Jurassic Park & World).
+Betmen trilogiyasi (Kristofer Nolan asari: Muqaddima, Qorong‘i ritsar, Afsonaning qaytishi) + Yangi Betmen (2022).
+Matritsa (The Matrix 1–4) va Terminator (1–3).Qochqin (Prison Break) —
+O‘tkir soyabonlar (Peaky Blinders) — Yoshlar auditoriyasi va statusli kontent ixlosmandlari uchun.
+Qing‘ir ishlar (Breaking Bad) + uning spinoffi Better Call Saul.
+Sherlok (Sherlock BBC — Benedikt Kamberbetch).
+G‘aroyib ishlar (Stranger Things).
+Kalmar o‘yini (Squid Game).
+Hamma o‘liklar maktabi (All of Us Are Dead). Shrek (1–4).
+Kung-fu Panda (1–4).
+Muzlik davri (Ice Age 1–5).
+Madagaskar (1–3 + Pingvinlar).
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T23:12:26+05:00.
+</ADDITIONAL_METADATA>
+
+[692] <USER_REQUEST>
+birin ketin boshla hammasini
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T23:23:05+05:00.
+</ADDITIONAL_METADATA>
+
+[783] <USER_REQUEST>
+mavbatdagilar va songida barchasini xronologiya larini togirlab sozlab chqiladi : O'rgimchak-odam (Spider-Man Universe) — 11 ta film:
+Tobi Maguayr trilogiyasi: O'rgimchak-odam 1, 2, 3
+Endryu Garfild dilogiyasi: Yangi O'rgimchak-odam 1, 2
+Tom Xolland trilogiyasi: Uyga qaytish, Uydan uzoqda, Uyga yo'l yo'q
+Multiverse animatsiyalari: Yondosh olam va Olamlar to'ri
+Karib dengizi qaroqchilari — 5 ta qism (To'liq):
+1: Qora marvarid tavqi la'nati
+2: Murdalar sandig'i
+3: Dunyolar chegarasida
+4: Noma'lum sohillarda
+5: Murdalar ertak aytmaydi
+Jon Uik (John Wick) — 5 ta film:
+Jon Uik 1, 2, 3, 4
+Balerina (Jon Uik olamidan) (va Kontinental seriali)
+Matritsa (The Matrix) — 4 ta qism:
+Matritsa 1, Matritsa 2: Qayta yuklanish, Matritsa 3: Revolyutsiya, Matritsa 4: Qayta tirilish
+Terminator — 6 ta qism:
+Terminator 1, Terminator 2: Qiyomat kuni, Terminator 3: Mashinalar isyoni, Terminator 4: Najotkorning kelishi, Terminator 5: Genezis, Terminator 6: Qorong'u taqdir
+Betmen (Batman) — 7 ta film:
+Klassik: Betmen (1989), Betmenning qaytishi (1992)
+Kristofer Nolan trilogiyasi: Muqaddima, Qora Ritsar, Afsonaning tug'ilishi
+Yangi talqin: Betmen (2022)
+Yura davri (Jurassic Park & World) — 7 ta film:
+Yura davriga sayohat 1, 2
+Yura davri dunyosi 1, 2, 3: Hukmronlik
+Cho'qintirgan ota (The Godfather) — 3 ta qism (To'liq):
+Cho'qintirgan ota 1, 2, 3
+Labirint yuguruvchisi (The Maze Runner) — 3 ta qism (To'liq):
+Labirint 1, Olov iskanjasida, O'limga qarshi
+Mumiya (The Mummy) — 3 ta qism:
+Mumiya 1, 2: Qaytish, 3: Ajdar imperatori maqbarasi
+Animatsion franshizalar:
+Shrek: 1, 2, 3, 4 va bayram maxsus qismlari
+Muzlik davri (Ice Age): 1, 2, 3, 4, 5 va 6-qismlar
+Kung-fu Panda: 1, 2, 3, 4-qismlar
+Madagaskar: 1, 2, 3-qismlar
+O'yinchoqlar tarixi (Toy Story): 1, 2, 3, 4-qismlar
+Qo'rqinchli (Horror) franshizalari:
+La'nat / Astral / Annabel (Conjuring Universe): Annabel, Astral 1, 2, 3, La'nat 3, 4
+Arra (Saw): 1, 2, 3
+Qichqiriq (Scream): 1 va 5-qismlar
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T23:32:13+05:00.
+</ADDITIONAL_METADATA>
+
+[826] <USER_REQUEST>
+toxta  nega franchisalarni har bir qismini alohida topicca tashlamayapsan bot kormaydiku hatolarni barchasini tuzat har bir qism 1 2 3 4 5 6 vahokazo alohida topicda bolishi kerak 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-16T23:36:57+05:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/3d3438cd-5de8-40ae-99a7-07b6ccd96a37/.user_uploaded/media_1792175746727_7248792a.png
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[1040] <USER_REQUEST>
+progres qanday
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T00:06:41+05:00.
+</ADDITIONAL_METADATA>
+
+[1095] <USER_REQUEST>
+Eski manba (PostgreSQL zaxira nusxasi hamda Telegramdagi asosiy saqlash kanallari) to‘liq qayta tahlil qilindi.
+
+Ushbu tahlilda kinofilmlar, seriallar va animelar yagona tizimda — o‘zlarining koinotlari va franshizalari bo‘yicha, ularning aniq qismlari soni hamda sog‘lomlik holati bilan jamlandi:
+
+1. 🐺 Turk Serial va Kino Koinoti
+«Qashqirlar makoni» (Kurtlar Vadisi Universe) — Jami 400+ qism va 5 ta film
+Qashqirlar makoni: Pistirma (Kurtlar Vadisi: Pusu):
+Holati: To‘liq sog‘lom (Telegram manba kanalida 1-qismdan 300-qismgacha 100% video fayllari bor).
+Mavsumlar taqsimoti: 1-mavsum (9 qism), 2-mavsum (32 qism), 3-mavsum (22 qism), 4-mavsum (30 qism), 5-mavsum (35 qism), 6-mavsum (33 qism), 7-mavsum (34 qism), 8-mavsum (34 qism), 9-mavsum (34 qism), 10-mavsum (37 qism).
+Qashqirlar makoni (Asl serial): 1–97 qismlar (Polat Alemdar va Qashqirlar kengashi).
+Badiiy filmlari (To‘liq metrajli):
+Qashqirlar makoni: Gladio (2009) — Sog‘lom (Iskandar Buyuk tarixi, bazada ID 765, video bor).
+Qashqirlar makoni: Iroq (2006) — Sog‘lom (Manbada video bor).
+Qashqirlar makoni: Falastin (2011) — Sog‘lom (Manbada video bor).
+Qashqirlar makoni: Vatan (2017) — Sog‘lom (Manbada video bor).
+Muro (2008) — Sog‘lom (Komedik spin-off, manbada bor).
+2. ⚔️ Jahonning Eng Yirik Serial Koinotlari
+Franshiza / Serial	Fasllar va Qismlar	Sog‘lomlik holati	Tafsiloti
+Westeros Olami (Game of Thrones)	12 ta fasl, 105 ta qism	100% To‘liq sog‘lom	Taxtlar o‘yini (8 fasl, 73/73 qism) + Ajdar uyi (3 fasl, 26/26 qism) + Yetti qirollik ritsari (1 fasl, 6/6 qism).
+Vampirlar Olami (TVD Universe)	10 ta fasl, 199 ta qism	Sog‘lom	Vampirlar kundaligi (8 fasl, 170/170 qism to‘liq) + The Originals (Haqiqiylar) (1-mavsum 20 qism, 2-mavsum 9 qism videolari bor).
+The Boys (Yigitlar) Olami	4 ta fasl, 31 ta qism	100% To‘liq sog‘lom	1-mavsum (8/8), 2-mavsum (8/8), 3-mavsum (8/8), 4-mavsum (7/7). Barchasida video mavjud.
+Breaking Bad Olami	5 ta fasl, 62 ta qism	100% To‘liq sog‘lom	Mashaqqatlar 
+<truncated 3481 bytes>
+mronlik
+Labirint yuguruvchisi (Maze Runner) — 3 ta film (100% to‘liq):
+Labirint 1, 2: Olov iskanjasida, 3: O‘limga qarshi
+Mumiya (The Mummy) — 3 ta film:
+Mumiya 1, 2, 3
+5. 😱 Qo‘rqinchli (Horror) Franshizalari
+La'nat va Astral Koinoti (The Conjuring Universe):
+Annabel 1, Astral 1, 2, 3, La'nat 3, 4 (to‘liq videoli).
+Arra (Saw): Arra 1, 2, 3 (to‘liq videoli).
+Qichqiriq (Scream): Qichqiriq 1 va Qichqiriq 5 (videoli).
+6. 🧸 Animatsiya Franshizalari (Multfilmlar) — Barchasi to‘liq
+Shrek: Shrek 1, 2, 3, 4 + bayram qismlari (5 ta film)
+Muzlik davri (Ice Age): 1, 2, 3, 4, 5, 6-qismlar (6 ta film)
+Kung-fu Panda: 1, 2, 3, 4-qismlar (4 ta film)
+Madagaskar: 1, 2, 3-qismlar + Madagaskarda
+O‘yinchoqlar tarixi (Toy Story): 1, 2, 3, 4-qismlar (4 ta film)
+Qirol Sher (The Lion King): 1, 2, 3 + Mufasa: Qirol Sher
+7. 🎌 Anime Koinotlari va Durdonalari
+A. Yirik Anime Seriallari (Jami 566 ta qism — 100% to‘liq videoli):
+Titanlar hujumi (Attack on Titan): 5 ta fasl, 92 ta qism (Finalgacha to‘liq)
+Jodugarlar jangi (Jujutsu Kaisen): 3 ta fasl, 59 ta qism + Jodugarlar jangi 0 filmi
+One Piece: 5 ta fasl, 261 ta qism (East Blue dan Enies Lobbygacha)
+Naruto: 1 ta fasl, 51 ta qism (Ninja yo‘li to‘liq)
+Bleach: 2 ta fasl, 41 ta qism (Ruhlar jamiyati)
+O‘lim kundaligi (Death Note): 1 ta fasl, 37 ta qism (To‘liq tugallangan)
+Yolg‘izlikda daraja ko‘tarish (Solo Leveling): 2 ta fasl, 25 ta qism
+Arra odam (Chainsaw Man): Reze hikoyasi (2025 filmi)
+B. Makoto Shinkai & Hayao Miyazaki Durdonalari (15 ta to‘liq film):
+Makoto Shinkai: Sening isming (Your Name), Suzume, Nafis so‘zlar bog‘i
+Studio Ghibli: Ruhlar olami (Spirited Away), Yonar qo‘ng‘izlar qabristoni, Kiki, Shamol ko‘tarilmoqda
+Mustaqil durdonalar: Ovoz shakli (A Silent Voice), Sening oshqozon osti bezingni yemoqchiman, Josee: yo‘lbars va baliq, Yozgi tunnel, xayrlashuv eshigi, Aura, Seni doim sevganman. qanchasi bajarilgan
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T00:15:02+05:00.
+</ADDITIONAL_METADATA>
+
+[1120] <USER_REQUEST>
+yetishmayotganlarni joylashni boshla
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T00:17:36+05:00.
+</ADDITIONAL_METADATA>
+
+[1133] <USER_REQUEST>
+ bu jadvalda ham bor bolsa yetishmayotganlari ularni ham joyla  1. 🆕 Oldingi javoblarda aytilmagan, lekin manbada TO‘LIQ bo‘lgan yangi kinokoinotlar:
+Yovuzlik qarorgohi (Resident Evil) — 7 ta film (TO‘LIQ 100%):
+1: Yovuzlik qarorgohi (2002) [ID 205]
+2: Apokalipsis (2004) [ID 206]
+3: Qirg‘in (Extinction, 2007) [ID 435]
+4: O‘limdan keyingi hayot 3D (Afterlife, 2010) [ID 207]
+5: Qasos (Retribution, 2012) [ID 434]
+6: Yakuniy bob (The Final Chapter, 2016) [ID 432]
+7: Rakkun-Sitiga xush kelibsiz (2021) [ID 433]
+Oxirgi manzil (Final Destination) — 6 ta film (TO‘LIQ 100%):
+Oxirgi manzil 1, 2, 3, 4, 5 va 6 (Bloodlines) [ID 469–474] — barcha 6 ta film videolari bilan bor.
+Venom Olami (Tom Hardy) — 3 ta film (TO‘LIQ TRILOGIYA):
+Venom 1 (2018) [ID 476]
+Venom 2: Qirg‘in vaqti keldi (2021) [ID 483]
+Venom 3: So‘nggi raqs (The Last Dance, 2024) [ID 498]
+Divergent — 3 ta film (TO‘LIQ TRILOGIYA):
+Divergent 1 (2014) [ID 422]
+Divergent 2: Isyonchi (Insurgent, 2015) [ID 423]
+Divergent 3: Devor ortida (Allegiant, 2016) [ID 421]
+Avatar Olami (Jeyms Kemeron):
+Avatar 1 (2009) [ID 455]
+Avatar 2: Suv yo‘li (The Way of Water, 2022) [ID 157]
+Hayot-Mamot o‘yinlari (The Hunger Games / Ochlik o‘yinlari) — 4 ta film:
+Hayot-Mamot o‘yinlari 2: Olov iskanjasida (Catching Fire) [ID 400]
+Hayot-Mamot o‘yinlari 3: Qaytuvchi qush (Mockingjay 1) [ID 399]
+Hayot-Mamot o‘yinlari 5: Sayroqi qushlar va ilonlar balladası (2023) [ID 398]
+Qaqshatqich ochlik o‘yinlari (Parodiya) [ID 397]
+Betxoven (Beethoven) — 4 ta film:
+Betxoven 1, 2, 3 va 5 [ID 146, 147, 148, 155]
+2. 🆕 Oldingi javoblarda aytilmagan, lekin manbada bo‘lgan SERIAL KOINOTLARI:
+Marvel Seriallari (MCU TV — Telegramda videolari bor):
+Qalqon Agentlari (Agents of S.H.I.E.L.D.) — 1-mavsum, 20 ta qism to‘liq
+Qo‘rqmas (Daredevil) — 1-mavsum, 13 ta qism to‘liq
+Jessika Jons (Jessica Jones) — 1-mavsum, 13 ta qism to‘liq
+DC Seriallari (DC TV):
+Supermen va Lois (Superman & Lois) — 1-mavsum, 15 ta qism to‘liq
+Jon Uik Se
+<truncated 1976 bytes>
+— 11 ta film (Maguayr 1–3, Garfild 1–2, Xolland 1–3, Animatsiyalar 1–2) + O‘rgimchak-Nuar (8 qism serial)
+DC & Batman — 10 ta film (Nolan trilogiyasi, Klassik Betmen 1–2, Yangi Betmen 2022, Zak Snayder Adolat ligasi, Supermen)
+🎬 Klassik va Jangari Kinokoinotlar:
+Garri Potter va Sehrgarlar olami — 9 ta film (8 ta Garri Potter + Jodu saltanati)
+Forsaj (Fast & Furious) — 11 ta film (Forsaj 1–10 + Hobbs va Shou)
+O‘rta Yer (Xobbit va Uzuklar hukmdori) — 7 film/qism + Qudrat uzuklari seriali (16 qism)
+Jon Uik (John Wick) — 5 ta film (1, 2, 3, 4 + Balerina) + Kontinental seriali
+Karib dengizi qaroqchilari — 5 ta film to‘liq (1–5)
+Transformerlar — 6 ta film (1–5 + Hayvonlar yuksalishi)
+Terminator — 6 ta film (1–6)
+Matritsa (The Matrix) — 4 ta film (1–4)
+Cho‘qintirgan ota (The Godfather) — 3 ta film (1–3)
+Yura davri (Jurassic Park / World) — 7 ta film
+Labirint yuguruvchisi (Maze Runner) — 3 ta film (1–3)
+Mumiya (The Mummy) — 3 ta film (1–3)
+Titanik — 1 va 2-qism
+😱 Qo‘rqinchli (Horror):
+La'nat / Astral / Annabel (Conjuring Universe) — Annabel 1, Astral 1–3, La'nat 3–4
+Arra (Saw) — 1, 2, 3
+Qichqiriq (Scream) — 1 va 5
+🧸 Animatsiyalar:
+Shrek (5 ta film), Muzlik davri (6 ta film), Kung-fu Panda (4 ta film), Madagaskar (4 ta film), O‘yinchoqlar tarixi (4 ta film), Qirol Sher (4 ta film)
+🎌 Anime Olamlari (566 qism serial + 15 ta to‘liq film):
+One Piece (261 qism), Titanlar hujumi (92 qism), Jodugarlar jangi (59 qism + 1 film), Naruto (51 qism + 1 film), Bleach (41 qism), O‘lim kundaligi (37 qism), Yolg‘izlikda daraja ko‘tarish (25 qism), Arra odam (Reze filmi).
+Makoto Shinkai (Sening isming, Suzume, Nafis so‘zlar bog‘i) va Studio Ghibli (Ruhlar olami, Yonar qo‘ng‘izlar qabristoni, Kiki, Shamol ko‘tarilmoqda).
+
+Mana endi butun baza va Telegram saqlash kanallari qamrab olindi — barchasi aynan shulardan iborat!
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T00:18:59+05:00.
+</ADDITIONAL_METADATA>
+
+[1381] <USER_REQUEST>
+ESKI MANBADAGI BARCHA TO'G'RI YUKLANGAN KONTENTLAR KATALOGI
+
+(Barcha bo'sh qobiqlar, chala yozuvlar va axlatlar tozalanib, faqat 100% video fayli va qismlari mavjud bo'lgan kontentlar jamlandi)
+
+1. 🐺 TURK SERIAL VA KINO KOINOTI («QASHQIRLAR MAKONI»)
+Seriallar:
+Qashqirlar makoni: Pistirma (Kurtlar Vadisi: Pusu) — 10 ta mavsum, 300 ta qism (TO'LIQ 100%)
+1-mavsum: 9 ta qism (1–9)
+2-mavsum: 32 ta qism (10–41)
+3-mavsum: 22 ta qism (42–63)
+4-mavsum: 30 ta qism (64–93)
+5-mavsum: 35 ta qism (94–128)
+6-mavsum: 33 ta qism (129–161)
+7-mavsum: 34 ta qism (162–195)
+8-mavsum: 34 ta qism (196–229)
+9-mavsum: 34 ta qism (230–263)
+10-mavsum: 37 ta qism (264–300)
+Qashqirlar makoni (Asl serial) — 1-qismdan 97-qismgacha (Aslan Akbey, Polat Alemdar, Kengash davri)
+Badiiy Filmlar (Kinokoinot):
+Qashqirlar makoni: Gladio (2009) — Iskandar Buyuk tarixi [Kodi: 765 / Gladio]
+Qashqirlar makoni: Iroq (2006) — Boshpana operatsiyasi [ID 611]
+Qashqirlar makoni: Falastin (2011) — Falastin missiyasi [ID 613]
+Qashqirlar makoni: Vatan (2017) — 15-iyul voqealari [ID 612]
+Muro: Nalet Olsun İçimdeki İnsan Sevgisine (2008) — Komedik spin-off
+2. ⚔️ JAHONNING ENG MASHHUR SERIAL KOINOTLARI (BARCHASI TO'LIQ VIDEOLI)
+#	Serial nomi	Fasllar soni	Jami qismlar	Kodi	Holati
+1	Taxtlar oʻyini (Game of Thrones)	8 fasl	73 ta qism	s_18	100% To'liq (73/73)
+2	Ajdar uyi (House of the Dragon)	3 fasl	26 ta qism	s_33	100% To'liq (26/26)
+3	Yetti Qirollik Ritsari (A Knight of the Seven Kingdoms)	1 fasl	6 ta qism	s_35	100% To'liq (6/6)
+4	Vampirlar kundaligi (The Vampire Diaries)	8 fasl	170 ta qism	s_39	100% To'liq (170/170)
+5	The Originals (Haqiqiylar / Asllar)	2 fasl	29 ta qism	s_92	1-mavsum (20) + 2-mavsum (9)
+6	Yigitlar (The Boys)	4 fasl	31 ta qism	s_54	100% To'liq (31/31)
+7	Mashaqqatlar sari (Breaking Bad)	5 fasl	62 ta qism	s_36	100% To'liq (62/62)
+8	Panjara ortida (Prison Break)	5 fasl	88 ta qism	s_51	100% To'liq (88/88)
+9	Shelbilar oilasi (Peaky Blinders)	6 fasl	36 ta qism	s_38	100% To'liq (36/36)
+10	Vikinglar 
+<truncated 8788 bytes>
+di [ID 638]
+La'nat 4: So'nggi marosim [ID 458]
+Arra (Saw): Arra 1, 2, 3 [ID 639, 640]
+Qichqiriq (Scream): Qichqiriq 1 va Qichqiriq 5 [ID 468, 685]
+7. 🧸 ANIMATSIYA VA OILA FRANSHIZALARI (100% VIDEOLI)
+Shrek (5 ta film): Shrek 1, 2, 3, 4 + bayram qismi
+Muzlik davri (Ice Age — 6 ta film): Muzlik davri 1, 2, 3, 4, 5, 6
+Kung-fu Panda (4 ta film): Kung-fu Panda 1, 2, 3, 4
+Madagaskar (4 ta film): Madagaskar 1, 2, 3 + Madagaskarda
+O'yinchoqlar tarixi (Toy Story — 4 ta film): Toy Story 1, 2, 3, 4
+Qirol Sher (The Lion King — 4 ta film): Qirol Sher 1, 2, 3 + Mufasa (2024)
+Pixar & Disney Shedevrlari (Oskar g'oliblari):
+Kokoning siri (Coco, 2017) — IMDb 8.4 [Kodi: NW7GTA]
+Vall-i (WALL-E, 2008) — IMDb 8.4 [Kodi: 4QGLY7]
+Up — Tepaga (2009) — IMDb 8.3 [Kodi: 2F3QHC]
+Ratatuy (Ratatouille, 2007) — IMDb 8.1 [Kodi: KUDBM9]
+8. 🎌 ANIME KOINOTLARI VA SERIALLARI (566 QISM + 15 FILM)
+Yirik Seriallar (Barcha qismlarida 100% video bor):
+Titanlar hujumi (Attack on Titan) — 5 ta fasl, 92 ta qism to'liq
+Jodugarlar jangi (Jujutsu Kaisen) — 3 ta fasl, 59 ta qism + Jodugarlar jangi 0 filmi
+One Piece — 5 ta fasl, 261 ta qism to'liq
+Naruto — 1 ta fasl, 51 ta qism to'liq + Naruto 8: Qonli qamoqxona filmi
+Bleach — 2 ta fasl, 41 ta qism to'liq
+O‘lim kundaligi (Death Note) — 1 ta fasl, 37 ta qism to'liq
+Yolg‘izlikda daraja ko‘tarish (Solo Leveling) — 2 ta fasl, 25 ta qism to'liq
+Arra odam (Chainsaw Man) — Reze hikoyasi (2025 filmi)
+Mualliflik Anime Durdonalari (15 ta to'liq film):
+Makoto Shinkai: Sening isming (Your Name), Suzume, Nafis so‘zlar bog‘i
+Studio Ghibli (Hayao Miyazaki): Ruhlar olami (Spirited Away), Yonar qo‘ng‘izlar qabristoni, Kiki, Shamol ko‘tarilmoqda
+Mustaqil durdonalar: Ovoz shakli (A Silent Voice), Sening oshqozon osti bezingni yemoqchiman, Josee: yo‘lbars va baliq, Yozgi tunnel, xayrlashuv eshigi, Aura, Seni doim sevganman, Akira (1988).  bu royhatdan ham foydalan
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T00:53:16+05:00.
+</ADDITIONAL_METADATA>
+
+[1856] <USER_REQUEST>
+betxoven 4 yuklanmagan hali bro naruto masku bu
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:23:29+05:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/3d3438cd-5de8-40ae-99a7-07b6ccd96a37/.user_uploaded/media_1792185799773_4fc08ee0.png
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[1894] <USER_REQUEST>
+1 fasl 25 qismgacha naruto qolganlarini ochirib tashla
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:25:50+05:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/3d3438cd-5de8-40ae-99a7-07b6ccd96a37/.user_uploaded/media_1792185946608_9af048bc.png
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[1944] <USER_REQUEST>
+bu nima axvol qanaqa qashqirlar makoni ?
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:30:57+05:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/3d3438cd-5de8-40ae-99a7-07b6ccd96a37/.user_uploaded/media_1792185969766_b4b034f6.png
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[1955] <USER_REQUEST>
+2 ta bleach turibti hozir joylanvotganlari togri lekun undan avval joylangani hato adashib togri joylanganini ochirib yuborma
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:32:51+05:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/3d3438cd-5de8-40ae-99a7-07b6ccd96a37/.user_uploaded/media_1792186336137_dba774d7.png
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[1974] <USER_REQUEST>
+nega naruto va vanpis seriallarga tushvoti ozi nega hamma narsa yoki kino yoki serialga tushvoti saralab oz sahifalariga qoymayapsan
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:34:35+05:00.
+
+The user has uploaded 1 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/3d3438cd-5de8-40ae-99a7-07b6ccd96a37/.user_uploaded/media_1792186410766_06f11b8b.png
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[2067] <USER_REQUEST>
+titanik interstellar va va bazi kinolar sigimi yetmaganidan 2 qismga bolib yuklangandi yani 2 bolakka shularni 2 qismi 2 bolagi yuklandimi ?
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:51:03+05:00.
+</ADDITIONAL_METADATA>
+
+[2129] <USER_REQUEST>
+ha shundaay bolaklarga bolinganlarni yuklagindedimku
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T02:57:12+05:00.
+</ADDITIONAL_METADATA>
+
+=== CONVERSATION e7642436-c75a-4c50-97fc-90924b4370cb ===
+[0] <USER_REQUEST>
+ROLE: senior backend engineer. Code comments and user-facing messages in Uzbek (Latin); identifiers in English; script output ASCII-only.
+
+HARD RULES
+- Work ONLY on a new git branch incident-fix-2026-10-17 (do not touch main). Resume protocol: keep FIX_INCIDENT.md with the checklist below; continue from the first unchecked item; one commit per item with the hash ticked; full test suite green before each commit. Never ask me questions; record decisions in the file.
+- NEVER connect to any database, Telegram, Render or any network. NEVER read .env files or print secrets. NEVER run, edit, move or delete anything in scripts/ (the untracked migrate_*/fix_* files are evidence), backups/ or ops/logs/. Do not start the bot, backend or scraper. Tests use mocks/fixtures only.
+- Safe defaults: after your changes a fresh deployment must WRITE NOTHING until the owner turns features on explicitly.
+- No refactors or features outside the list.
+
+CHECKLIST
+1. KILL SWITCH. Wire AUTO_CONTENT_ENABLED (default False) into every media write path: bot/handlers/auto_index.py, scraper upload endpoints in backend/app/api/v1/scraper.py, the seed ingestor enqueue, and any admin bulk-import endpoint. False means no media row, no translation and no episode may be written. Add AUTO_INDEX_DRY_RUN (default True: log the decision only, no backend writes). Tests for False/True/dry-run.
+2. AUTO_INDEX ALLOWLIST. Process only chat ids listed in AUTO_INDEX_ALLOWED_CHAT_IDS (default empty = process nothing) and only messages that carry a topic_id (message_thread_id); no topic = ignore and log. Log every decision (chat, topic, message id, decision, reason).
+3. EXACT LOOKUPS. Replace the by-source logic (backend repositories series_repository.get_series_by_source, movie_repo.get_by_source and their endpoints): topic_id is mandatory, match chat_id AND topic_id exactly, never use .first() or scalar_one_or_none() on an ambiguous result. If a topic maps to zero entities: skip. To more than one entity, or to both a movie and a series: 
+<truncated 1389 bytes>
+n TelegramBadRequest / TelegramForbiddenError for a channel, log a warning with the channel id, do not add it to the required list and do not block the user. Test.
+9. BOT SUPERVISION. run.py: remove return_exceptions=True masking. Supervise run_bot(): on an exception log the traceback and restart it with exponential backoff (limited attempts), then exit non-zero so Render restarts the service. Add bot_alive to /health. Make drop_pending_updates configurable (BOT_DROP_PENDING_UPDATES, default False) and log the pending count at startup. Tests with mocks.
+10. CODE RESOLVER. bot/utils/code_resolver.py: remove numeric-only ID lookup (ambiguous movie vs series). Resolve only prefixed codes (movie code, s_<id>, episode code). Test.
+11. CACHE. backend/app/core/cache.py: the in-memory fallback cache must be cleared together with Redis flushes and on every publish_status or media write; add a small admin-protected endpoint POST /api/v1/admin/cache/flush that clears both. Test.
+12. TOOLING (read-only). Update docs/INCIDENT_2026-10-17/enumerate_sources.py: also output each forum topic's creation date and the message count of OLD storage channel (env OLD_STORAGE_CHANNEL_ID). Secrets only from environment variables; it must never send, forward, edit or delete. Unit test the CSV builder with fakes.
+13. DOCS. docs/INCIDENT_2026-10-17/FIXES.md: for each item before/after code, the config flags and their defaults, and the exact order in which the owner must enable features (nothing is enabled by default).
+
+FINISH: print only the branch name, commit list, test results and anything not done or unverified. Do not merge or push.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T05:14:43+05:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+
+[1115] <USER_REQUEST>
+Hodisa 2026-10-17: sabab va tuzatish prompti
+17 окт. 2026 г. · @xojadevops
+Bitta fikr
+Baza buzilishining sababi bitta emas: uchta xato ustma-ust tushgan, shuning uchun hamma narsa aralashib ketgan.
+• auto_index botga ko'ringan har qanday kanal va guruhdagi videoni indekslaydi, chat yoki topic filtri yo'q.
+• Topicsiz video tasodifiy serialga yopishadi: qidiruv avval serialni izlaydi, topic bo'lmasa o'sha chatdagi birinchi serialni qaytaradi.
+• auto_index admission gate'dan o'tmaydi, gate esa video shu nomga tegishli ekanini tekshirmaydi. O'chirish tugmasi AUTO_CONTENT_ENABLED kodda hech qayerda tekshirilmaydi.
+Gemini yuzlab videoni superguruhga ommaviy nusxalagan paytda bot ishlab turgan. Mexanizm kodda tasdiqlangan, hodisaning aniq tafsiloti esa taxmin (HYPOTHESIS).
+Botning "javob bermasligi" alohida sabablardan: treyler tugmasidagi show_alert xatosi, obuna tekshiruvi (xato bo'lsa hammani bloklaydi), nomlari mos kelmaydigan callbacklar va jim o'ladigan bot jarayoni.
+Asl videolar Telegramda turibdi, baza esa qayta qurish mumkin bo'lgan ikkilamchi nusxa. Asosiy qoida: kod tuzatilmaguncha hech narsani qayta ishga tushirmang.
+Gemini'ga prompt
+Prompt faqat kodni tuzatadi: bazaga, Telegram'ga va scripts/ papkasiga tegmaydi, alohida branch'da ishlaydi va tuzatishdan keyin sukut bo'yicha hech narsa yozilmaydi.
+ROLE: senior backend engineer. Code comments and user-facing messages in Uzbek (Latin); identifiers in English; script output ASCII-only.
+
+HARD RULES
+- Work ONLY on a new git branch incident-fix-2026-10-17 (do not touch main). Resume protocol: keep FIX_INCIDENT.md with the checklist below; continue from the first unchecked item; one commit per item with the hash ticked; full test suite green before each commit. Never ask me questions; record decisions in the file.
+- NEVER connect to any database, Telegram, Render or any network. NEVER read .env files or print secrets. NEVER run, edit, move or delete anything in scripts/ (the untracked migrate_*/fix_* files are evidence), backups/ or ops/lo
+<truncated 4061 bytes>
+r each item before/after code, the config flags and their defaults, and the exact order in which the owner must enable features (nothing is enabled by default).
+
+FINISH: print only the branch name, commit list, test results and anything not done or unverified. Do not merge or push.
+Prompt nima qiladi
+Prompt kodni xavfsiz holatga keltiradi: tuzatishdan keyin tizim egasi yoqmaguncha hech narsa yozilmaydi.
+• 1-2-bandlar: o'chirish tugmasini (AUTO_CONTENT_ENABLED) haqiqatan ulaydi va auto_index ni qulflaydi: faqat ruxsat berilgan chat, faqat topicli xabar. Sukut bo'yicha hech narsa yozilmaydi.
+• 3-5-bandlar: videoni tasodifiy serialga yopishtirishni to'xtatadi: aniq chat va topic bo'yicha qidiruv, mavjud videoni ustiga yozmaslik, kino va serial turini hamda davomiylikni tekshirish.
+• 6-10-bandlar: botning qotishi va jim o'lishini tuzatadi: treyler xatosi, tugma nomlari, obuna tekshiruvi (xato bo'lsa bloklamaydi), bot jarayonini kuzatish, noaniq raqamli ID.
+• 11-band: Redis tozalanganda xotiradagi eski keshni ham tozalaydi.
+• 12-band: Telegram manbalarini o'qiydigan xavfsiz skriptga topic sanalarini qo'shadi, shunda ishonchli va shubhali topiclarni ajratish mumkin.
+• 13-band: o'zgarishlarni va funksiyalarni qaysi tartibda yoqishni FIXES.md ga yozadi.
+Agent bazaga ham, Telegram'ga ham tegmaydi. Tugagach FIXES.md va test natijasini yuborish kerak.
+Keyingi qadamlar
+Prompt'ga javob berishdan oldin uchta kalit almashtirilishi va bitta ro'yxat yuborilishi kerak.
+• Bot tokenini BotFather'da /revoke qiling.
+• Telegram sessiyani almashtiring va eski sessiyani Sozlamalar, Qurilmalar bo'limidan tugating.
+• Neon parolini almashtiring.
+• backups\\ papkasidagi fayllar ro'yxatini yuboring: nomi, hajmi, vaqti.
+Shundan keyin bazani tiklash yo'lini tanlaymiz.
+Holat: Gemini 13 bandni tugatdi (branch incident-fix-2026-10-17, 264 test o'tdi, 8 tasi o'tkazib yuborilgan), hali mustaqil tekshiruvdan o'tmagan.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T18:34:03+05:00.
+</ADDITIONAL_METADATA>
+
+[1122] <USER_REQUEST>
+Agentning bu hisoboti avvalgisi bilan bir xil (o’sha 14 ta commit, 264 o’tdi, 8 o’tkazib yuborilgan). Demak ikkinchi raund prompti hali berilmagan, deploy qilmang. “Chala yoki tekshirilmagan qism yo’q” degani 8 ta o’tkazib yuborilgan test bilan zid.
+
+backups\ ro’yxati nimani ko’rsatadi
+18:19, 0 bayt: muvaffaqiyatsiz urinish, yaroqsiz.
+15:45-15:53, 92-99 KB: lokal Docker mashqining soxta bazasi (11 kino, 4 serial), production emas.
+18:33-19:03, 1.60 MB, to’rttasi aynan bir xil hajmda: bu production, tozalashdan oldingi holat. Bir xil hajm shuni bildiradiki, to’rt urinish orasida baza o’zgarmagan va tozalash bajarilmagan ko’rinadi (taxmin). Eng yangisi kinochi_pre_reset_20261016_190332.dump hodisadan oldingi eng yaqin nuqta bo’lishi mumkin.
+
+Agar tozalash hech qachon bajarilmagan bo’lsa, “yana 1600 ta axlat” yangi qatorlar emas, eski 752 kino va 761 serialning (jami 1513) bog’lanishlari aralashib ketgani bo’lishi mumkin (HYPOTHESIS). Agentning “bazaga yirik kontent kiritilgan” talqini noto’g’ri, chunki hajm o’zgarmagan.
+
+Tasdiqlash uchun ikki narsa yuboring
+backups\counts_before.json mazmuni (611 bayt, faqat qatorlar soni; production o’lchamidami yoki soxtami ko’rinadi).
+Neon “broken-oct17” branch’dagi so’rov natijasi:
+sql
+SELECT (SELECT count(*) FROM movies) m, (SELECT count(*) FROM series) s,
+       (SELECT count(*) FROM episodes) e,
+       (SELECT max(created_at) FROM movies) last_movie,
+       (SELECT max(created_at) FROM series) last_series;
+
+last_movie va last_series 14-16 oktabrga tegishli bo’lib, hodisa kunidan yangisi bo’lmasa, qatorlar yangi yaratilmagan, mavjudlari buzilgan.
+
+Dump yaroqligini lokal tekshirish
+
+Production’ga tegmaydi (repo ildizida):
+
+powershell
+docker run -d --name kinochi_restore_pg -p 5433:5432 -e POSTGRES_PASSWORD=restore_test postgres:17
+docker cp backups\kinochi_pre_reset_20261016_190332.dump kinochi_restore_pg:/tmp/b.dump
+docker exec kinochi_restore_pg createdb -U postgres restored
+docker exec kinochi_restore_pg pg_restore -U postgres -d restored --no-owner /tmp/b.dump
+docker exec kinochi_restore_pg psql -U postgres -d restored -c "SELECT (SELECT count(*) FROM movies) m, (SELECT count(*) FROM series) s, (SELECT count(*) FROM episodes) e, (SELECT count(*) FROM users) u"
+
+Kutilgan natija: taxminan 752 kino, 760 serial, 13 mingdan oshiq qism, 40 foydalanuvchi. Versiya xatosi chiqsa, xatoni yuboring.
+
+Dump yaroqli chiqsa, ikki yo’l bor. A: uni yangi Neon bazaga tiklab, tuzatilgan kod bilan (kill switch o’chiq) xizmatni tez qaytarish. B: keyin toza qurish. Hozir A uchun faqat dump yaroqligi tasdiqlanishi kerak.
+
+Hali bajarilmagan: ikkinchi raund prompti (oldingi xabarimdagi) va uchta kalitni almashtirish (bot tokeni, Telegram sessiya, Neon paroli).
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T18:37:18+05:00.
+</ADDITIONAL_METADATA>
+
+[1173] <USER_REQUEST>
+Agentning xulosasi noto’g’ri, men ham bir joyda adashganman.
+
+Dump hodisadan oldingi holat
+
+Dump 16-oktabr 19:03 da olingan, Gemini’ning tungi migratsiyasi undan keyin bo’lgan. Dump ichida 17-oktabrda yangi qator yo’qligi hech narsani isbotlamaydi. Aksincha, counts_before.json (19:42) da movies, series va episodes nol, users 40 va verified_subscriptions 26. Bu production, va 19:03 dagi 752 kino va 761 serialdan keyin media tozalanganini ko’rsatadi. Oldin “tozalash bajarilmagan ko’rinadi” degandim, bu xato taxmin chiqdi (bir xil hajmli dumplar baza 18:33 dan 19:03 gacha o’zgarmaganini bildirgan).
+
+Eng ehtimolli manzara (HYPOTHESIS): kechqurun media tozalangan, tunda migratsiya skriptlari va auto_index ~1600 yangi qator yaratib aralashtirgan. Demak 1600 qator eskilarining bog’lanishi emas, yangi qatorlar.
+
+Dump esa sog’lom zaxira emas, tozalashdan oldingi eski baza (treyler yo’q 45%, tmdb_id yo’q 51%). Lekin u oxirgi ishlab turgan holat.
+
+Qaror sizniki
+A: dumpni yangi bazaga tiklab, saytni eski ko’rinishida tez qaytarish (kill switch o’chiq), toza qurishni parallel qilish.
+B: bo’sh bazada qolib, tartibli superguruhdan qayta qurish, shu vaqtgacha bot bo’sh.
+
+Bot 03:48 dan beri o’chiq, shuning uchun A ni tavsiya qilaman, eski sifatdagi ma’lumot qaytishini bilgan holda.
+
+Menga yuboring
+Neon konsolida hozirgi (buzuq) bazada, natija UTC da, Toshkent = +5:
+sql
+SELECT (SELECT count(*) FROM movies) m, (SELECT count(*) FROM series) s,
+       (SELECT count(*) FROM episodes) e,
+       (SELECT min(created_at) FROM movies) first_movie, (SELECT max(created_at) FROM movies) last_movie,
+       (SELECT min(created_at) FROM series) first_series, (SELECT max(created_at) FROM series) last_series,
+       (SELECT version_num FROM alembic_version) alembic;
+ops\logs\go_live_20261017_033635.log mazmuni: 03:36 da nima ishga tushgani (unda faqat host chiqadi, sirlar yo’q).
+A yoki B (hujjatdagi izohga ham yozish mumkin).
+
+Yana bitta tekshiruv (faqat o’qiydi): migratsiya skriptlari Tel
+<truncated 69 bytes>
+ing -Path scripts\*.py -Pattern "delete_messages|edit_message|DeleteMessages|EditMessage" | Select-Object Path,LineNumber -First 30
+
+Topilsa, tiklangan bazadagi ba’zi videolar ishlamasligi mumkin.
+
+Agar A bo’lsa (production’ga tegmaydi)
+
+Avval kalitlarni almashtiring: Neon paroli o’zgarsa manzil o’zgaradi, bot tokeni o’zgarsa Render’da BOT_TOKEN yangilanadi.
+
+Neon’da shu loyihada yangi baza yarating (masalan kinochi_restored), uning direct manzilini oling.
+PowerShell, repo ildizida:
+powershell
+$env:RESTORE_URL = "<yangi baza manzili, postgresql://...?sslmode=require>"
+& "C:\Program Files\PostgreSQL\17\bin\pg_restore.exe" --no-owner --no-privileges -d $env:RESTORE_URL backups\kinochi_pre_reset_20261016_190332.dump
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" $env:RESTORE_URL -c "SELECT (SELECT count(*) FROM movies) m, (SELECT count(*) FROM series) s, (SELECT count(*) FROM episodes) e, (SELECT count(*) FROM users) u, (SELECT version_num FROM alembic_version) v"
+
+Kutilgan: 752, 761, 13329, 40. Xato chiqsa, uni yuboring.
+3. v oxirgi migratsiyaga (e8f9a0b1c2d3) teng bo’lmasa, DATABASE_URL ni tiklangan bazaga qaratib backend papkasida alembic upgrade head qiling.
+4. Render’da DATABASE_URL ni yangi bazaga o’zgartiring. Kodni faqat ikkinchi raund tuzatishlaridan keyin deploy qiling, AUTO_CONTENT_ENABLED o’rnatilmasin (sukut False).
+5. Bot orqali /start, katalog va 5 ta kinoni ochib ko’ring. Buzuq baza dalil sifatida qolsin. go_live.ps1 ni ishlatmang, unda tozalash bor.
+
+8 ta o’tkazib yuborilgan test
+
+Sababi qoida (bazaga ulanma), lekin aynan shu testlar noaniq topic, tranzaksiya va noyob indeks xavfini tekshiradi. “Tekshirilmagan qism yo’q” deyilgani noto’g’ri. Docker Desktop’ni ishga tushiring va ikkinchi raund promptini bering, uning 8-bandi shularni lokal bazada yuritadi. Hisobotdagi commit ro’yxati avvalgisi bilan bir xil, demak ikkinchi raund hali berilmagan.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T18:49:52+05:00.
+</ADDITIONAL_METADATA>
+
+[1187] <USER_REQUEST>
+Agentning “100% to’g’ri” xulosasi ortiqcha: ikki joyda o’zi xato qilgan, bitta narsani esa umuman isbotlamagan.
+
+Xatolar
+Tozalash vaqti noto’g’ri. counts_before.json reset’dan oldin (19:42:36) saqlangan, lekin unda media allaqachon nol. Demak media 19:43 da emas, 19:03 dumpdan keyin va 19:42 dan oldin tozalangan. Dump bo’yicha qaror o’zgarmaydi: 190332 va 183326 bir xil hajmda, ikkalasi ham ma’lumotli oxirgi nusxa. 03:36 dagi log sinov (MOCK_REMOTE_URL) edi, production’ga tegmagan.
+Gipoteza hali isbotlanmagan. “Hozirgi bazada 1600 yangi qator” degan xulosa agentning kutilgan natijasi, u Neon’da so’rov bajara olmaydi. Haqiqiy natijani faqat siz berasiz (pastda).
+Telegram o’chirish skani juda tor. delete_messages (ko’plik) aiogram’ning delete_message( va Telethon’ning message.delete() ni ushlamaydi, faqat scripts\ ko’rilgan, scraper\ va bot\ ko’rilmagan. prune_naruto.py esa haqiqatan o’chiradi: qaysi chatdan va nechta, noma’lum.
+Sizdan (agent buni qila olmaydi)
+
+Neon’dagi buzuq bazada:
+
+sql
+SELECT (SELECT count(*) FROM movies) m, (SELECT count(*) FROM series) s,
+       (SELECT count(*) FROM episodes) e, (SELECT count(*) FROM users) u,
+       (SELECT min(created_at) FROM movies) first_movie, (SELECT max(created_at) FROM movies) last_movie,
+       (SELECT min(created_at) FROM series) first_series, (SELECT max(created_at) FROM series) last_series,
+       (SELECT version_num FROM alembic_version) alembic;
+
+first_movie va first_series 16-oktabr 19:03 (Toshkent) dan keyin bo’lsa, gipoteza tasdiqlanadi. Vaqt UTC bo’lishi mumkin, Toshkent +5. users 40 dan ko’p bo’lsa, tiklashda yangi foydalanuvchilarni ko’chirish kerak bo’ladi.
+
+Kengroq skan va prune_naruto.py konteksti (repo ildizida, faqat o’qiydi):
+
+powershell
+Get-ChildItem scripts,scraper,bot,backend\app -Recurse -Include *.py | Select-String -Pattern "delete_message|\.delete\(\)|DeleteMessages|EditMessage|edit_message" | Select-Object Path,LineNumber,Line -First 40
+Get-Content scripts\prune_naruto.py | Select-Object -Skip 59 -First 45
+Qaror
+
+A (dumpdan tiklash) yoki B (bo’sh bazada toza qurish) hali aytilmagan. Bot 03:48 dan beri o’chiq, shuning uchun A tavsiya, qadamlari avvalgi xabarimda.
+
+Ikkinchi raund (agentga, avvalgi xabarimdagi prompt)
+
+Agent “ikkinchi raund promptini kutyapman” deydi, demak hali berilmagan. Avval Docker Desktop’ni ishga tushiring, keyin:
+
+text
+Branch incident-fix-2026-10-17 only. No network, no Telegram, no .env. DB: only a local Docker Postgres on localhost:5433 (print the host first; refuse anything else); if docker info fails mark item 8 NOT-RUN. One commit per item, full suite green, never ask questions.
+1. auto_index dry-run: with AUTO_INDEX_DRY_RUN=True run the full decision (allowlist, topic, read-only by-source lookups for BOTH series and movies, gate pre-checks) and log [AUTO_INDEX][DRY_RUN] chat topic decision reason; never write. It must work with AUTO_CONTENT_ENABLED=False too (log the decision, then stop). Test.
+2. trailer.py: answer the callback exactly once; show the alert only when the trailer is missing; guard a second answer (TelegramBadRequest). Test found/missing.
+3. Ambiguous topics: commit the rejected_items row independently (own session) before raising, and reject a topic present as both movie and series. Test on real Postgres.
+4. Runtime tolerance: relative (default 15 percent, min 5 minutes); unknown video duration = reject (defect duration_unknown). Test.
+5. Add an explicit admin-only replace (replace=true plus a reason) so an admin can swap a broken video; auto_index never replaces. Test.
+6. Cache flush: delete only cache:* keys and clear the in-memory cache; no flushdb. Test.
+7. code_resolver: try movie_by_code first, only then reject digit-only input for ID lookup. Test with a 6-digit code.
+8. Run the 8 skipped tests against the local Docker Postgres and list the results.
+Print only commits and test results.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T18:54:04+05:00.
+</ADDITIONAL_METADATA>
+
+[1726] <USER_REQUEST>
+holat shunaqa limitim tugab qoldi kutganim yaxshimi yoki ozing eplaysanmi Этот ответ не загрузился.
+I have initiated the backend test suite execution using the local virtual environment and am waiting for the results.I have launched the backend test suite and am awaiting execution results.I have initiated backend test suite execution and will proceed once complete.I have initiated the full backend test suite to verify ambiguous topic changes.I have launched the backend test suite to verify the item 17 fixes. I am waiting for the test suite to finish.I have launched the backend test suite to verify the item 18 changes. I am waiting for the tests to finish.I have launched the full backend test suite to verify the item 18 changes. I am waiting for the tests to finish.I have launched the full backend test suite to verify the item 19 cache changes. I am waiting for the tests to finish.I have launched the backend test suite to ensure no regressions before committing item 20. I am waiting for the tests to finish.I have launched pytest with the -rs flag to inspect the exact reasons for the 8 skipped tests. I am waiting for it to finish.I have launched the full backend test suite for the final verification. I am waiting for it to complete.Commits (incident-fix-2026-10-17)
+93874c8feat(kill-switch): wire AUTO_CONTENT_ENABLED and AUTO_INDEX_DRY_RUN into write paths
+463b45dfeat(auto-index): enforce allowed chat IDs and mandatory topic ID with structured decision logging
+4efaf75feat(lookups): enforce mandatory topic_id and exact match rejecting ambiguous lookups
+e66c5bbfeat(media): prevent overwriting existing translations and reject duplicate files cross titles
+bad7f8bfeat(admission-gate): route writes through final_check with type consistency, runtime tolerance, and uniqueness
+8ddf17bfix(bot): fix trailer show_alert TypeError and ensure callback.answer in finally block
+bc0288bfix(bot): unify callback_data names and verify complete handler filter coverage
+a2c2d17fix(bot): fail-open subscrip
+<truncated 8699 bytes>
+nksiyasi, ikkala yo’l uni chaqirsin. Agentga uchinchi raund (kichik, mock bilan):
+text
+Branch incident-fix-2026-10-17. No network, no Telegram, no .env, no DB (mocks only). Never ask questions. One commit, full suite green. In bot/handlers/auto_index.py the live path (~lines 616-641) and the dry-run function (~lines 686-740) decide the topic mapping separately. Extract ONE function decide_topic(chat_id, topic_id) doing read-only by-source lookups for both series and movies and returning (decision, entity, reason): 409 on either, or both 200 = REJECTED_AMBIGUOUS; exactly one 200 = INDEX_SERIES or INDEX_MOVIE; both 404 = SKIP_UNREGISTERED; any other status or exception = SKIP_ERROR (never write). Use it from BOTH paths; dry-run = the same decision, no write. Add a table-driven test (series 200/404/409/500 x movie 200/404/409/500) asserting identical decisions in live and dry-run, and that the live path writes only for INDEX_SERIES or INDEX_MOVIE. Print only the commit hash and test results.
+Hali ochiq (A yo’li uchun)
+Docker testlari, Neon’dagi buzuq bazadagi first_movie so’rovi, uchta kalitni almashtirish.
+hamma qilishini kerak bolgan ishlarni prompt qilib yozib ber sonnet uchun antigravity ichida ishladtaman haromi geminidek yibanmasku haqiqati gapradi
+Добавлено в память
+Бесплатные сообщения снова станут доступны в 23:20.
+[Claude — это ИИ и может ошибаться.](https://support.anthropic.com/en/articles/8525154-claude-is-providing-incorrect-or-misleading-responses-what-s-going-on)
+Ответ Claude завершен
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T19:47:23+05:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from Gemini 3.8 Flash (High) to Claude Sonnet 5.5 (Medium). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+
+[1728] <USER_REQUEST>
+ozing barchasini bajar sen antigravity ichidasanku 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T19:48:09+05:00.
+</ADDITIONAL_METADATA>
+
+[1766] <USER_REQUEST>
+hamma muammolar hal qilinganmi boshidan oxri gacha ?
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T20:36:08+05:00.
+</ADDITIONAL_METADATA>
+
+[1768] <USER_REQUEST>
+shularni qadamma qadam orgat
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T20:36:57+05:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from Claude Sonnet 5.5 (Medium) to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+
+[1770] <USER_REQUEST>
+#	movies_count	series_count	episodes_count	users_count	first_movie	last_movie	first_series	last_series	alembic
+1	194	32	1557	40	2026-10-16 15:22:59.537552	2026-10-16 22:59:00.512362	2026-10-16 17:58:10.907289	2026-10-16 21:38:06.969587	e8f9a0b1c2d3
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T20:39:05+05:00.
+</ADDITIONAL_METADATA>
+
+[1772] <USER_REQUEST>
+re --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNECTION_STRING>" backups\kinochi_pre_reset_20261016_190332.dump
+pg_restore : Имя "pg_restore" не распознано как имя командлета, функции, фа
+йла сценария или выполняемой программы. Проверьте правильность написания им
+ени, а также наличие и правильность пути, после чего повторите попытку.
+строка:1 знак:1
++ pg_restore --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNE ...
++ ~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (pg_restore:String) [], Comm
+   andNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project>
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T21:06:52+05:00.
+</ADDITIONAL_METADATA>
+
+[1783] <USER_REQUEST>
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project>
+
+
+
+
+
+
+                                                                    pg_restore --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNECTION_STRING>" backups\kinochi_pre_reset_20261016_190332.dump
+pg_restore : Имя "pg_restore" не распознано как имя командлета, функции, фа
+йла сценария или выполняемой программы. Проверьте правильность написания им
+ени, а также наличие и правильность пути, после чего повторите попытку.
+строка:1 знак:1
++ pg_restore --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNE ...
++ ~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (pg_restore:String) [], Comm
+   andNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project> re --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNECTION_STRING>" backups\kinochi_pre_reset_20261016_190332.dump
+re : Имя "re" не распознано как имя командлета, функции, файла сценария или
+ выполняемой программы. Проверьте правильность написания имени, а также нал
+ичие и правильность пути, после чего повторите попытку.
+строка:1 знак:1
++ re --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNECTION_ST ...
++ ~~
+    + CategoryInfo          : ObjectNotFound: (re:String) [], CommandNotFo
+   undException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project> pg_restore : Имя "pg_restore" не распознано как имя командлет
+<truncated 1516 bytes>
+ategoryInfo          : ObjectNotFound: (йла:String) [], CommandNotF
+   oundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project> ени, а также наличие и правильность пути, после чего повторите попытку.
+строка:1 знак:4
++ ени, а также наличие и правильность пути, после чего повторите попытк ...
++    ~
+Отсутствует аргумент в списке параметров.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorReco
+   rdException
+    + FullyQualifiedErrorId : MissingArgument
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project> строка:1 знак:1
+строка:1 : Имя "строка:1" не распознано как имя командлета, функции, файла
+сценария или выполняемой программы. Проверьте правильность написания имени,
+ а также наличие и правильность пути, после чего повторите попытку.
+строка:1 знак:1
++ строка:1 знак:1
++ ~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (строка:1:String) [], Comman
+   dNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\Администратор\Desktop\kino bot project\kinochi project> + pg_restore --clean --no-owner --no-privileges -d "<YANGI_BRANCH_CONNE ...
+>> + ~~~~~~~~~~
+>>     + CategoryInfo          : ObjectNotFound: (pg_restore:String) [], Comm
+>>    andNotFoundException
+>>     + FullyQualifiedErrorId : CommandNotFoundException
+>>
+>> PS C:\Users\Администратор\Desktop\kino bot project\kinochi project> ozing bajara qol
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T21:08:50+05:00.
+</ADDITIONAL_METADATA>
+
+[1825] <USER_REQUEST>
+ufff kim sanga tiklashi etti
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T21:35:04+05:00.
+</ADDITIONAL_METADATA>
+
+[1829] <USER_REQUEST>
+bazani ozi zorga tozalagandimku manga toza bazada ideal ishlaydiagn avtopilot va health 90 foizdan kam bolmagan media kerak edi jalab esinga qotagim sani kod yozma ozgartrma muhokama qilamiz
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T21:36:48+05:00.
+</ADDITIONAL_METADATA>
+
+[1831] <USER_REQUEST>
+yana tozalash kerak bazani 0 qilib chunki undagi hamma media aralashib ketti undan avvalgi bazadagidan battar eski bazada bor bolgan franshiza filmlarni barchasini soglomini qayta parse va grab qilish kerak 0 dan yana 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T21:40:42+05:00.
+</ADDITIONAL_METADATA>
+
+[1833] <USER_REQUEST>
+manba kanaldan faqat nomlari olinadi chunki manba kanal aralshib ketga hozr bizda 4 ta manba kanal bor 1 manba super eksi 2 manba private kanal eski va yana huddi shunday 2 ta yangi kanal 2 ta yangi kanallarni ham databazadagi kinolar va media ni ham tozalab birin ketin faqat eski manbada bolgan nomlarni olib ulardan aynan soglom bolganlarini aslmedia uzmovi vahokazo manbalardan qayta yuklanwi vebsaytga ulanishi indekslanishi vahokazolar
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T21:54:28+05:00.
+</ADDITIONAL_METADATA>
+
+[1835] <USER_REQUEST>
+ikkala manba ham bazaga ulangan bekendda bor shunchaki ulardagi aralashib ketgan mediani barchasini ochirish kerak web saytda hato ochilgan kino cartalarni hammasini ochirish kerak song eski manba supegr dagi nomlardan foydalanib uni ichidagi media buzilgan media keremas faqat nom shu nommi aslmedia va boshqa manbalardan qidirib joylab web saytda cartalarni ochib indexlab cartani kodini mediani bir biriga ulash va hammasi sabil va toliq bajarilganiga ishonch hosil qilish
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T22:46:02+05:00.
+</ADDITIONAL_METADATA>
+
+[1843] <USER_REQUEST>
+buzilgan fayllarni nomlarini qora royhatga telegram bot togri kodga boglanga media va web saytdagi telegramda korish linki ham shu bitta natijani berib hatosiz ishlavotganini isbotlash 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T22:48:58+05:00.
+</ADDITIONAL_METADATA>
+
+[1849] <USER_REQUEST>
+toliq rejani ketma ketliklarini korsat
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T22:50:02+05:00.
+</ADDITIONAL_METADATA>
+
+[1879] <USER_REQUEST>
+hamma bosqichlarni bitta ketma ketlik bilan har safar menga murojat qilavermasdan ozing mustaqil bajar faqat muhim narsaga sorashing mumkun
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T22:54:10+05:00.
+</ADDITIONAL_METADATA>
+
+[1915] <USER_REQUEST>
+43 daqiqa otdi nima boldi
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T23:40:06+05:00.
+</ADDITIONAL_METADATA>
+
+[1950] <USER_REQUEST>
+hamma bosqichlarni bitta ketma ketlik bilan har safar menga murojat qilavermasdan ozing mustaqil bajar faqat muhim narsaga sorashing mumkun
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-17T23:42:25+05:00.
+</ADDITIONAL_METADATA>
+
+[2034] <USER_REQUEST>
+toplagan royhatini korsat
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:25:42+05:00.
+</ADDITIONAL_METADATA>
+
+[2050] <USER_REQUEST>
+multfilm animelrchi
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:27:48+05:00.
+</ADDITIONAL_METADATA>
+
+[2053] <USER_REQUEST>
+shularni ozini yukla jarayonni tekshirishga ulgurmi qolishi mumkun 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:43:08+05:00.
+</ADDITIONAL_METADATA>
+
+[2056] <USER_REQUEST>
+anime qidirma jalab
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:43:23+05:00.
+</ADDITIONAL_METADATA>
+
+[2059] <USER_REQUEST>
+1. Katta Franshizalar (67 ta film):
+
+Garri Potter (8 ta qism to'liq):
+
+Garri Potter 1: Falsafiy tosh (2001)
+Garri Potter 2: Maxfiy hujra (2002)
+Garri Potter 3: Azkaban mahbusi (2004)
+Garri Potter 4: Olov kubogi (2005)
+Garri Potter 5: Qaqnus jamiyati (2007)
+Garri Potter 6: Tilsim shahzodasi (2009)
+Garri Potter 7: Ajal tuhfalari 1-qism (2010)
+Garri Potter 8: Ajal tuhfalari 2-qism (2011)
+
+Forsaj / Fast & Furious (11 ta qism):
+
+Forsaj 1 (2001) dan Forsaj 10 (2023) gacha + Hobbs va Shou
+
+O'rgimchak-odam (10 ta qism):
+
+Tobi Maguayr trilogiyasi (1, 2, 3)
+Endryu Garfild (Yangi O'rgimchak odam 1, 2)
+Tom Holland (Uyga qaytish, Uydan uzoqda, Uyga yo'l yo'q)
+Multfilmlar (Yondosh olam, Olamlar to'ri)
+
+Marvel: Qasoskorlar va Qahramonlar (12 ta film):
+
+Qasoskorlar 1, 2 (Altron davri), 3 (Cheksizlik jangi), 4 (Intiho)
+Temir odam 1, 2, 3
+Tor 1, 2 (Zulmat dunyosi), 3 (Ragnaryok), 4 (Sevgi va chaqmoq)
+Kapitan Amerika (Birinchi qasoskor 1, 2, 3)
+
+Karib dengizi qaroqchilari (5 ta qism):
+
+Qora marvarid tavqi la'nati (2003)
+Murdalar sandig'i (2006)
+Dunyolar chegarasida (2007)
+Noma'lum sohillarda (2011)
+Murdalar ertak aytmaydi (2017)
+
+Jon Uik (5 ta film):
+
+Jon Uik 1, 2, 3 (Parabellum), 4 + Balerina (2025)
+
+Betmen va Qorong'i ritsar (7 ta film):
+
+Nolan trilogiyasi (Muqaddima, Qorong'i ritsar, Afsonaning qaytishi)
+Betmen (2022), Betmen (1989), Betmenning qaytishi (1992), Betmen Supermenga qarshi
+
+Uzuklar hukmdori va Xobbit (6 ta film):
+
+Xobbit 1, 2, 3
+Uzuklar hukmdori 1, 2, 3
+
+Matritsa (4 ta qism):
+
+Matritsa 1, 2 (Qayta yuklash), 3 (Inqilob), 4 (Tirilish)
+
+Avatar (2 ta qism):
+
+Avatar 1 (2009), Avatar 2: Suv yo'li (2022)
+2. Alohida Mashhur Durdona Filmlar (89 ta film):
+Interstellar (2014)
+Titanik (1997)
+Gladiator (2000)
+Shoushenkdan qochish (1994)
+Yashil makon (1999)
+Boshlanish (Inception) (2010)
+Leon (1994)
+Odisseya (2026)
+Django ozodlikda (2012)
+Jentlmenlar (2019)
+Chandiqli yuz (1983) va boshqa jahon kinosining eng sara durdonalari. shularni yukla 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:43:43+05:00.
+</ADDITIONAL_METADATA>
+
+[2063] <USER_REQUEST>
+superguruhgachi topic ochib shu topicga saqlanvotimi ?
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:44:38+05:00.
+</ADDITIONAL_METADATA>
+
+[2077] <USER_REQUEST>
+bu tozalanmaganku jalab 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:45:54+05:00.
+</ADDITIONAL_METADATA>
+
+[2078] <USER_REQUEST>
+multfillmlar yoq bu royhatda undan tashqari manba yangi nomli kanal toliq tozalanmagan hamma topicni hamma mediani ochirib tasha faqat general qolsin
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:47:46+05:00.
+
+The user has uploaded 3 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/e7642436-c75a-4c50-97fc-90924b4370cb/.user_uploaded/media_1792266420104_109cb639.png
+- C:/Users/Администратор/.gemini/antigravity/brain/e7642436-c75a-4c50-97fc-90924b4370cb/.user_uploaded/media_1792266427611_5d3237e7.png
+- C:/Users/Администратор/.gemini/antigravity/brain/e7642436-c75a-4c50-97fc-90924b4370cb/.user_uploaded/media_1792266447594_6064e780.png
+You can embed these images in an artifact if you need the USER to review them.
+</ADDITIONAL_METADATA>
+
+[2110] <USER_REQUEST>
+toliq royhatni ber ozim qolda yuklayman san avengers deb hind kinosini yuklabsan
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:54:16+05:00.
+</ADDITIONAL_METADATA>
+
+=== CONVERSATION f4ae850b-8a5d-4c70-a9e8-7c5fbe05eb2c ===
+[0] <USER_REQUEST>
+2 ta hato bor 1 tmdb orqali kino qidirib tanlashni bosganimda suniy intelek apisi ulangan tarjima qilib qolgan malumotlarni avto toldirishi kerak lekin unday bolmayapt 2 rasimda tushunishim boyicha matinlar rus tilida va bazilarida hatolar bolgani uchun saqlab bolmayapti shu 2 hatoni tuzat
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T00:57:38+05:00.
+
+The user has uploaded 2 image(s):
+- C:/Users/Администратор/.gemini/antigravity/brain/f4ae850b-8a5d-4c70-a9e8-7c5fbe05eb2c/.user_uploaded/media_1792266912210_1557588a.png
+- C:/Users/Администратор/.gemini/antigravity/brain/f4ae850b-8a5d-4c70-a9e8-7c5fbe05eb2c/.user_uploaded/media_1792266953620_2c5cafef.png
+You can embed these images in an artifact if you need the USER to review them.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+
+[158] <USER_REQUEST>
+pause
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T01:07:30+05:00.
+</ADDITIONAL_METADATA>
+
+[160] <USER_REQUEST>
+davom et
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-18T01:38:59+05:00.
+</ADDITIONAL_METADATA>
+
+=== CONVERSATION e65180bf-856c-45a1-9ac0-ed967b8aad30 ===
+[0] <USER_REQUEST>
+Bozorim Supermarket — Loyiha To'liq Konteksti va Tarixi (Session State)
+
+Ushbu hujjat yangi chatda agentga loyiha haqida to'liq ma'lumot berish va ishni uzluksiz davom ettirish uchun yaratildi.
+
+1. Asosiy Ma'lumotlar
+Loyiha nomi: Bozorim — Uzbek Supermarket Web App
+Stitch MCP Loyihasi: Uzbek Supermarket UI Design System (ID: 2797694855911764009)
+Texnologik stak: React 18, Vite 6, Tailwind CSS 3, Lucide React, Canvas Confetti
+Papka manzili: C:\Users\Администратор\Desktop\bozorim-supermarket
+Valyuta va til: O'zbek tili (lotin), narxlar so'mda (uz-UZ)
+2. Foydalanuvchi Maxsus Talablari (User Requirements)
+3D Tugmalar (Tactile 3D Buttons):
+.btn-3d-primary, .btn-3d-secondary, .btn-3d-danger, .btn-3d-icon
+Bosilganda pastga tushuvchi chuqurlik (translateY(3px)), qatlamli soya va real bosilish hissi.
+To'liq Animatsiya (Full Animations):
+Suzuvchi 2D mahsulotlar savati (animate-float)
+Mahsulot kartalarida 3D hover-lift va mikromodellar
+Savatga tovar qo'shilganda jonli toast va hisoblagich sakrashi (bounce badge)
+Buyurtma berilganda bayramona salyut / konfetti (canvas-confetti)
+Jonli buyurtma holati radari (pulsatsiyalovchi nuqtalar, progress bar)
+SVG Ikonkalar (Material Symbols muammosi hal qilingan):
+Google Font internetda kechikishi oqibatida ikonka o'rniga matn (bakery_dining, arrow_forward) chiqib qolmasligi uchun barcha 10 ta toifaning original 2D vektor SVG rasmlari (CategoryIcon.jsx) va Lucide SVG ikonkalari (Icon.jsx) o'rnatilgan.
+3. Yaratilgan Sahifalar va Funksionallik (10 ta ekran)
+src/pages/HomePage.jsx — Aksiya banneri, 6 ta ommabop kategoriya, sarxil va chegirmali tovarlar, ishonch belgilari.
+src/pages/CategoriesPage.jsx — 10 ta to'liq kategoriya kartalari, filtrlar (Oziq-ovqat, Nooziq-ovqat, Aksiyalar).
+src/pages/CatalogPage.jsx — Narx oralig'i slayderi, brendlar, faqat aksiya filtri, real-time qidiruv va saralash.
+src/pages/ProductDetailPage.jsx — Katta surat, xususiyatlar jadvali, miqdor hisoblagichi (+/-) va o'xshash tovarlar.
+src/pages/CartPage.jsx — Bepul yetkazib berish progressi (150 000 so'm chegarasi), promo-kod (BOZORIM2026).
+src/pages/CheckoutPage.jsx — Mijoz ma'lumotlari, manzil, yetkazish vaqtlari, to'lov usullari (Payme, Click, Uzum, Naqd).
+src/pages/OrderSuccessPage.jsx — Buyurtma raqami, kurer kartasi (telefon, mashina raqami) va konfetti.
+src/pages/OrdersPage.jsx — Faol va yakunlangan buyurtmalar, statuslar va 1 bosishda qayta buyurtma berish.
+src/pages/FavoritesPage.jsx — Saqlangan tovarlar, "Barchasini savatga qo'shish" 3D tugmasi.
+src/pages/ProfilePage.jsx — Shaxsiy ma'lumotlar, manzillar kitobi va 3D bank kartalari (Uzcard / Humo).
+4. State Management (ShopContext)
+cart: tovarlar, soni, hisob-kitoblar, avtomatik localStoragega sinxronlash.
+favorites: sevimli tovarlar ID-lari, localStorageda saqlanadi.
+orders: faol va eski buyurtmalar, localStorageda saqlanadi.
+user: profil ma'lumotlari va manzillar kitobi.
+activePage: barcha sahifalararo uzluksiz SPA navigatsiya.
+5. Hozirgi Holat va Deploy Fayllari
+Build holati: npm run build muvaffaqiyatli o'tgan (dist/ papkasi tayyor).
+Ishga tushirish: start.bat (Desktop va loyiha ichida)
+Deploy fayllari:
+C:\Users\Администратор\Desktop\DEPLOY_BOZORIM.bat (Surge.sh orqali 5 soniyada bepul HTTPS domeniga chiqarish)
+deploy-vercel.bat (Vercel orqali chiqarish)
+Yangi chatda AI-ga beriladigan birinchi buyruq:
+PROJECT_CONTEXT.md faylini o'qi, Bozorim Supermarket loyihasini shu yerdan davom ettiramiz.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-19T23:44:52+05:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.8 Flash (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+
+[8] <USER_REQUEST>
+shu papkaga keltir barcha fayllarni va saqla
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-19T23:45:42+05:00.
+</ADDITIONAL_METADATA>
+

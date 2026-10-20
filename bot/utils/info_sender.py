@@ -55,13 +55,31 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     
     trailer_url = movie.get("trailer_url")
     
+    # Franshizaning boshqa qismlarini tekshirish
+    franchise = None
+    if code:
+        try:
+            franchise = await api_client.get_movie_franchise_context(code)
+        except Exception:
+            franchise = None
+
     buttons = [
         [InlineKeyboardButton(text="▶ Ko'rish", callback_data=f"watch_m_{code}")],
-        [
-            InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_m_{code}"),
-            InlineKeyboardButton(text="💬 Fikrlar", callback_data=f"reviews_m_{code}")
-        ]
     ]
+
+    if franchise and franchise.get("timeline_items") and len(franchise["timeline_items"]) > 1:
+        total_parts = len(franchise["timeline_items"])
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"Franshizaning boshqa qismlari ({total_parts})",
+                callback_data=f"franchise_m_{code}"
+            )
+        ])
+
+    buttons.append([
+        InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_m_{code}"),
+        InlineKeyboardButton(text="💬 Fikrlar", callback_data=f"reviews_m_{code}")
+    ])
     
     if trailer_url:
         buttons.append([InlineKeyboardButton(text="🎬 Treyler", callback_data=f"trailer_m_{code}")])

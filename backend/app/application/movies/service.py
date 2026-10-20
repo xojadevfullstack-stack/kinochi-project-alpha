@@ -45,7 +45,9 @@ class MovieService:
         is_18_plus: bool = False,
         source_type: str | None = "uzmovi",
         custom_source_name: str | None = None,
-        custom_source_logo: str | None = None
+        custom_source_logo: str | None = None,
+        publish_status: str | None = None,
+        **kwargs
     ) -> Movie:
         if code is None:
             code = await self._generate_unique_code()
@@ -70,7 +72,8 @@ class MovieService:
             is_18_plus=is_18_plus,
             source_type=source_type or "uzmovi",
             custom_source_name=custom_source_name,
-            custom_source_logo=custom_source_logo
+            custom_source_logo=custom_source_logo,
+            publish_status=publish_status or "pending",
         )
         return await self.movie_repo.create(movie, category_ids=category_ids, page_ids=page_ids)
 

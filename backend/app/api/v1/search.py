@@ -68,7 +68,13 @@ async def live_search(
     elif code_query.isdigit():
         series_id_target = int(code_query)
 
-    if code_query:
+    is_potential_code = (
+        " " not in code_query
+        and len(code_query) <= 8
+        and (code_query.isdigit() or code_query.isupper() or code_query.lower().startswith("s_"))
+    )
+
+    if is_potential_code:
         # Check movie code or ID
         movie_code_conditions = [MovieModel.code.ilike(code_query)]
         if code_query.isdigit():
@@ -145,7 +151,13 @@ async def live_search(
         MovieModel.title.ilike(f"%{clean_query}%"),
         MovieModel.original_title.ilike(f"%{clean_query}%"),
     ]
-    if code_query:
+    is_potential_code = (
+        " " not in code_query
+        and len(code_query) <= 8
+        and (code_query.isdigit() or code_query.isupper() or code_query.lower().startswith("s_"))
+    )
+
+    if is_potential_code:
         movie_conditions.append(MovieModel.code.ilike(f"%{code_query}%"))
         if code_query.isdigit():
             movie_conditions.append(MovieModel.id == int(code_query))

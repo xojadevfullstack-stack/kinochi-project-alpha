@@ -99,7 +99,7 @@ async def safe_copy_message_with_retry(
                 parse_mode=parse_mode
             )
         except TelegramRetryAfter as e:
-            wait_seconds = int(e.retry_after) + 2
+            wait_seconds = max(1, int(e.retry_after)) + 1
             logger.warning(
                 f"[FLOOD_CONTROL] Telegram Flood control hit: retry after {wait_seconds}s "
                 f"(attempt {attempt + 1}/{max_retries}) for msg_id={message_id}"
@@ -140,7 +140,7 @@ async def safe_send_message_with_retry(
         try:
             return await bot.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode)
         except TelegramRetryAfter as e:
-            wait_seconds = int(e.retry_after) + 2
+            wait_seconds = max(1, int(e.retry_after)) + 1
             logger.warning(f"[FLOOD_CONTROL] send_message retry after {wait_seconds}s")
             await asyncio.sleep(wait_seconds)
         except Exception:
@@ -159,7 +159,7 @@ async def safe_send_photo_with_retry(
         try:
             return await bot.send_photo(chat_id=chat_id, photo=photo, caption=caption, parse_mode=parse_mode)
         except TelegramRetryAfter as e:
-            wait_seconds = int(e.retry_after) + 2
+            wait_seconds = max(1, int(e.retry_after)) + 1
             logger.warning(f"[FLOOD_CONTROL] send_photo retry after {wait_seconds}s")
             await asyncio.sleep(wait_seconds)
         except Exception:
@@ -390,14 +390,14 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
                 await safe_send_photo_with_retry(bot, storage_channel_id, photo=poster_url, caption=post_caption, parse_mode="Markdown")
             else:
                 await safe_send_message_with_retry(bot, storage_channel_id, text=post_caption, parse_mode="Markdown")
-            await asyncio.sleep(1.0)
+            await asyncio.sleep(0.3)
         except Exception as e:
             logger.warning(f"Could not send series banner to storage: {e}")
     elif is_first_season_ep:
         season_title = season.get('title') or f"{season.get('season_number', 1)}-mavsum"
         try:
             await safe_send_message_with_retry(bot, storage_channel_id, text=f"📺 *{season_title}*", parse_mode="Markdown")
-            await asyncio.sleep(1.0)
+            await asyncio.sleep(0.3)
         except Exception as e:
             logger.warning(f"Could not send season banner to storage: {e}")
 
@@ -530,7 +530,9 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
         # Throttle between consecutive copies to stay within Telegram rate limits (~20 msgs/min)
         if idx < len(messages) - 1:
-            await asyncio.sleep(2.0)
+            copy_delay = getattr(settings, "AUTO_INDEX_COPY_DELAY_SECONDS", 1.0)
+            if copy_delay > 0:
+                await asyncio.sleep(copy_delay)
 
     # Check if season is complete (only if all expected episodes are present)
     expected_count = season.get("episode_count")
@@ -550,7 +552,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
 
 # ── BATCH BUFFER AGGREGATOR & DEBOUNCE ───────────────────────────────────────
-DEBOUNCE_IDLE_SECONDS = 4.0   # Wait 4 seconds of idle time after the last video
+DEBOUNCE_IDLE_SECONDS = getattr(settings, "AUTO_INDEX_DEBOUNCE_SECONDS", 2.0)   # Configurable debounce idle timeout
 MAX_BATCH_WAIT_SECONDS = 25.0 # Max batch collection window before forced processing
 
 @dataclass
@@ -876,7 +878,8 @@ async def enqueue_video_message(message: Message, bot: Bot):
         if batch.timer_task and not batch.timer_task.done():
             batch.timer_task.cancel()
         remaining_max = MAX_BATCH_WAIT_SECONDS - elapsed
-        delay = min(DEBOUNCE_IDLE_SECONDS, remaining_max)
+        debounce_idle = getattr(settings, "AUTO_INDEX_DEBOUNCE_SECONDS", DEBOUNCE_IDLE_SECONDS)
+        delay = min(debounce_idle, remaining_max)
         batch.timer_task = asyncio.create_task(flush_source_batch(source_key, bot, delay=delay))
 
 

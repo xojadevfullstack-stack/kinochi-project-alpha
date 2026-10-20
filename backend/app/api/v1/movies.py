@@ -297,7 +297,8 @@ async def list_movies(
     service: MovieService = Depends(get_movie_service)
 ):
     """List movies, optionally filtered by category and publish_status (Public: published)."""
-    cache_key = f"cache:movies:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{publish_status}"
+    target_status = None if publish_status == "all" else publish_status
+    cache_key = f"cache:movies:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
@@ -308,7 +309,7 @@ async def list_movies(
         category_id=category_id,
         page_id=page_id,
         exclude_paged=exclude_paged,
-        publish_status=publish_status
+        publish_status=target_status
     )
     
     response_data = {"items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in movies], "total": total}
@@ -328,12 +329,13 @@ async def search_movies(
     service: MovieService = Depends(get_movie_service)
 ):
     """Search movies by title (Public: published)."""
-    cache_key = f"cache:movies:search:{q}:{skip}:{limit}:{publish_status}"
+    target_status = None if publish_status == "all" else publish_status
+    cache_key = f"cache:movies:search:{q}:{skip}:{limit}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
 
-    movies, total = await service.search_movies(title_query=q, skip=skip, limit=limit, publish_status=publish_status)
+    movies, total = await service.search_movies(title_query=q, skip=skip, limit=limit, publish_status=target_status)
     response_data = {"items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in movies], "total": total}
     await set_cache(cache_key, response_data, 300)
     

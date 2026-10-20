@@ -202,7 +202,7 @@ class TelegramGrabber:
                 if re.search(r'(\d+[\s\-_]*(?:qism|seriya)|\b\d+\b)', btn_text, re.IGNORECASE):
                     logger.info(f"Qism tugmasi bosilmoqda: '{btn_text}'")
                     await menu_msg.click(r_idx, c_idx)
-                    await asyncio.sleep(4.0)  # Bot videoni yuborishi uchun kutish
+                    await asyncio.sleep(2.5)  # Bot videoni yuborishi uchun kutish
 
                     # Oxirgi kelgan videoni topamiz
                     async for m in self.client.get_chat_history(bot_username, limit=3):
@@ -211,7 +211,7 @@ class TelegramGrabber:
                             break
                     
                     # Telegram chekloviga tushmaslik uchun tanaffus
-                    await asyncio.sleep(3.0)
+                    await asyncio.sleep(1.5)
 
     async def forward_or_copy_video(self, video_msg: types.Message, item: QueueItem, topic_id: int = None):
         """

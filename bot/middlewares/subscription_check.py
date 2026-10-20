@@ -13,6 +13,13 @@ _channels_cache: list = []
 _channels_cache_time: float = 0.0
 _CACHE_TTL = 60  # seconds
 
+# ── In-memory user subscription verified cache (300 soniyalik TTL) ────────
+_user_sub_verified_cache: dict[int, float] = {}
+
+def invalidate_user_sub_cache(user_id: int):
+    """Foydalanuvchi tekshirish tugmasini bosganda keshni yangilash uchun."""
+    _user_sub_verified_cache.pop(user_id, None)
+
 async def _get_channels_cached() -> list:
     """Kanallar ro'yxatini 60 soniyalik TTL bilan keshdan qaytaradi."""
     global _channels_cache, _channels_cache_time
@@ -29,14 +36,20 @@ class SubscriptionMiddleware(BaseMiddleware):
         event: Message | CallbackQuery,
         data: Dict[str, Any]
     ) -> Any:
-
-        user_id = event.from_user.id
-        bot = data['bot']
+        user_id = event.from_user.id if event.from_user else None
+        if not user_id:
+            return await handler(event, data)
 
         channels = await _get_channels_cached()
         if not channels:
             return await handler(event, data)
 
+        now = time.monotonic()
+        # Agar foydalanuvchi oxirgi 5 daqiqada tekshirilgan bo'lsa, qayta Telegram API chaqirmaymiz
+        if user_id in _user_sub_verified_cache and now < _user_sub_verified_cache[user_id]:
+            return await handler(event, data)
+
+        bot = data['bot']
         unsubscribed_channels = []
         for ch in channels:
             chat_identifier = ch.get('channel_username')
@@ -44,7 +57,6 @@ class SubscriptionMiddleware(BaseMiddleware):
                 if not chat_identifier.startswith('@'):
                     chat_identifier = f"@{chat_identifier}"
             else:
-                # channel_id None bo'lsa, skip — KeyError yoki None argument oldini olamiz
                 chat_identifier = ch.get('channel_id')
                 if not chat_identifier:
                     logger.warning(f"Kanal identifikatorsiz topildi, o'tkazib yuborildi: {ch}")
@@ -83,5 +95,6 @@ class SubscriptionMiddleware(BaseMiddleware):
                     await event.answer()
             return
 
+        # Obunasi tasdiqlangan bo'lsa, 5 daqiqa keshda saqlaymiz
+        _user_sub_verified_cache[user_id] = now + 300.0
         return await handler(event, data)
-

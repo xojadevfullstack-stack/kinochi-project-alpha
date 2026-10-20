@@ -394,8 +394,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     print(f"⚠️ Kod #{c} yuklab bo'lmadi yoki o'tkazib yuborildi.")
                 
                 if idx < len(code_list):
-                    print("⏳ 4 soniya tanaffus...")
-                    await asyncio.sleep(4.0)
+                    print("⏳ 2 soniya tanaffus...")
+                    await asyncio.sleep(2.0)
         else:
             qm = QueueManager()
             downloaded_count = 0
@@ -476,8 +476,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
 
                 # Telegram flood limitiga tushmaslik uchun xavfsiz qisqa kutish
                 if idx < len(pending):
-                    print("⏳ 4 soniya tanaffus...")
-                    await asyncio.sleep(4.0)
+                    print("⏳ 2 soniya tanaffus...")
+                    await asyncio.sleep(2.0)
 
     finally:
         await client.disconnect()
@@ -538,7 +538,83 @@ def cmd_retry_failed():
     print(f"\n♻️ {count} ta muvaffaqiyatsiz (failed) element 'kutilmoqda' holatiga qaytarildi.")
     print(f"📊 Yangilangan navbat statistikasi: {qm.stats()}\n")
 
+async def cmd_tmdb_autopilot(
+    limit: int = 10,
+    media_type: str = "all",
+    include_series: bool = True,
+    continuous: bool = True,
+    min_rating: float = None
+):
+    from scraper.tmdb_top_ingestor import TmdbTopIngestor
+    qm = QueueManager()
+    recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
+    if recovered > 0:
+        print(f"♻️ {recovered} ta qolib ketgan (stale in_progress) element 'pending' holatiga qaytarildi.")
+
+    checker = DuplicateChecker()
+    await checker.refresh_cache(force=True)
+    ingestor = TmdbTopIngestor(queue_manager=qm)
+
+    print("\n" + "="*60, flush=True)
+    print("⭐ TMDB TOP AVTONOM AVTOPILOT ISHGA TUSHIRILMOQDA", flush=True)
+    print(f"   Media turi: {media_type.upper()}", flush=True)
+    print(f"   Seriallar qamrovi: {'Ha' if include_series else 'Yo\'q'}", flush=True)
+    print(f"   Rejim: {'Uzluksiz (Avtonom)' if continuous else f'Bitta sikl (Limit: {limit})'}", flush=True)
+    print("="*60 + "\n", flush=True)
+
+    cycle_count = 0
+    while True:
+        cycle_count += 1
+        cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
+        if cb_status.is_paused:
+            print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim pauzaga tushdi!", flush=True)
+            break
+
+        print(f"\n🌟 [TMDB SIKLI #{cycle_count}] Holat tekshirilmoqda...", flush=True)
+        counts = await ingestor.get_candidate_counts()
+        found_cnt = counts.get("found", 0)
+        new_cnt = counts.get("new", 0)
+        queued_cnt = counts.get("queued", 0)
+        print(f"📊 TMDb Nomzodlar holati: Found={found_cnt}, New={new_cnt}, Queued={queued_cnt}")
+
+        # 1. Agar 'found' kam bo'lsa va 'new' kam bo'lsa -> TMDb dan yangi seedlar yig'amiz
+        if found_cnt < 5 and new_cnt < 10:
+            print("📥 [TMDB] Yangi sara kinolar va seriallar TMDb dan yig'ilmoqda...", flush=True)
+            await ingestor.build_seeds(include_series=include_series)
+
+        # 2. Agar 'found' kam bo'lsa, 'new' nomzodlarni Uzmovi, Asilmedia dan qidiramiz
+        if found_cnt < 5:
+            print("🔍 [TMDB] Nomzodlar Uzmovi va Asilmedia saytlaridan qidirilmoqda...", flush=True)
+            await ingestor.search_candidates(limit=20)
+
+        # 3. Topilgan ('found') nomzodlarni navbatga kiritamiz
+        print("📥 [TMDB] Mos kelgan filmlar navbatga (priority=100) qo'yilmoqda...", flush=True)
+        await ingestor.enqueue_candidates(limit=limit, execute=True)
+
+        # 4. Navbatdagi TMDb filmlarini yuklash (download pipeline)
+        pending = qm.get_pending(limit=limit, media_type=None if media_type == "all" else media_type)
+        if pending:
+            print(f"🚀 [TMDB] Navbatdagi {len(pending)} ta sara kontent yuklanmoqda...", flush=True)
+            await cmd_download(limit=len(pending), target="asilmedia", media_type=media_type)
+        else:
+            print("ℹ️ [TMDB] Hozircha yangi mos kelgan nomzod topilmadi.", flush=True)
+
+        if not continuous:
+            print("\n🏁 [TMDB] Bitta sikl yakunlandi!", flush=True)
+            break
+
+        print("⏳ 5 soniya tanaffus (keyingi sikl oldidan)...", flush=True)
+        await asyncio.sleep(5.0)
+
 async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = None, media_type: str = "all", min_rating: float = None):
+    if source == "tmdb":
+        await cmd_tmdb_autopilot(
+            limit=limit or 10,
+            media_type=media_type,
+            continuous=(pages is None),
+            min_rating=min_rating
+        )
+        return
     qm = QueueManager()
     recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
     if recovered > 0:
@@ -659,7 +735,9 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 def main():
     parser = argparse.ArgumentParser(description="Kinochi Avtomatlashtirilgan Parser & Grabber")
     parser.add_argument("--parse", action="store_true", help="Saytdan kinolar ro'yxatini yig'ish")
-    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "all"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar yoki all)")
+    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "all", "tmdb"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar, all yoki tmdb)")
+    parser.add_argument("--tmdb-autopilot", action="store_true", help="TMDB Top bo'yicha to'liq avtonom avtopilot: TMDB -> Qidiruv -> Navbat -> Yuklash")
+    parser.add_argument("--include-series", action="store_true", default=True, help="Seriallarni ham qamrab olish (default: True)")
     parser.add_argument("--pages", type=int, default=None, help="Yig'iladigan sahifalar soni")
     parser.add_argument("--start-page", type=int, default=None, help="Boshlang'ich sahifa (agar berilmasa, state.json dan olinadi)")
     parser.add_argument("--min-rating", type=float, default=None, help="Minimal reyting (default: 6.0)")
@@ -692,6 +770,14 @@ def main():
             asyncio.run(cmd_clean_duplicates())
         elif args.retry_failed:
             cmd_retry_failed()
+        elif args.tmdb_autopilot or (args.autopilot and args.source == "tmdb"):
+            asyncio.run(cmd_tmdb_autopilot(
+                limit=args.limit or 10,
+                media_type=args.media_type,
+                include_series=args.include_series,
+                continuous=(args.pages is None and args.codes is None),
+                min_rating=args.min_rating
+            ))
         elif args.autopilot:
             asyncio.run(cmd_autopilot(args.source, args.pages, args.limit, args.media_type, args.min_rating))
         elif args.parse:

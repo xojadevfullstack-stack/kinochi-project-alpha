@@ -29,6 +29,7 @@ class CollectionItemMovieSummary(BaseModel):
     poster_url: str | None = None
     release_year: int | None = None
     imdb_rating: float | None = None
+    genres: str | None = None
     model_config = {"from_attributes": True}
 
 

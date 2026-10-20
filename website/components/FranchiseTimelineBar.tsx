@@ -126,7 +126,7 @@ export default function FranchiseTimelineBar({
             </div>
             <div className="overflow-hidden">
               <span className="text-[10px] text-text-secondary uppercase tracking-wider block">
-                Oldingi qism (#{context.prev_item.chronological_order})
+                Oldingi qism ({context.prev_item.chronological_order}-qism)
               </span>
               <span className="text-xs font-bold text-white truncate block">
                 {context.prev_item.movie.title}
@@ -159,7 +159,7 @@ export default function FranchiseTimelineBar({
               </div>
               <div className="overflow-hidden">
                 <span className="text-[10px] text-primary-container font-extrabold uppercase tracking-wider block">
-                  Keyingi qism (#{context.next_item.chronological_order})
+                  Keyingi qism ({context.next_item.chronological_order}-qism)
                 </span>
                 <span className="text-xs font-bold text-white truncate block">
                   {context.next_item.movie.title}
@@ -204,7 +204,7 @@ export default function FranchiseTimelineBar({
                         : "bg-black/80 text-white/70 border border-white/20"
                     }`}
                   >
-                    #{item.chronological_order}
+                    {item.chronological_order}-qism
                   </span>
                   <div className="w-16 h-22 rounded-lg bg-surface-container-high overflow-hidden relative mb-1.5 border border-white/10">
                     {item.movie?.poster_url && (

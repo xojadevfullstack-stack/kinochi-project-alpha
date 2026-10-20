@@ -1,0 +1,870 @@
+{
+  "timestamp": "2026-10-17T02:42:20.941245",
+  "movies_summary": {
+    "total_movies": 192,
+    "total_translations": 198,
+    "unlinked_translations": 0,
+    "movies_without_poster": 0,
+    "movies_without_topic": 0,
+    "health_status": "100% SOG'LOM"
+  },
+  "series_summary": {
+    "total_series": 32,
+    "total_seasons": 116,
+    "total_episodes": 1567,
+    "total_translations": 1567,
+    "unlinked_translations": 0,
+    "health_status": "100% SOG'LOM"
+  },
+  "integrity_checks": {},
+  "detailed_series": [
+    {
+      "id": 998,
+      "title": "Yetti Qirollik Ritsari",
+      "tmdb_id": 224372,
+      "release_year": 2025,
+      "imdb_rating": 8.4,
+      "seasons_count": 1,
+      "total_episodes": 6,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 6
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 999,
+      "title": "Ajdar uyi",
+      "tmdb_id": 94997,
+      "release_year": 2022,
+      "imdb_rating": 8.5,
+      "seasons_count": 3,
+      "total_episodes": 26,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 10
+        },
+        {
+          "season_num": 2,
+          "episodes": 8
+        },
+        {
+          "season_num": 3,
+          "episodes": 8
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1000,
+      "title": "Taxtlar oʻyini",
+      "tmdb_id": 1399,
+      "release_year": 2011,
+      "imdb_rating": 9.2,
+      "seasons_count": 8,
+      "total_episodes": 73,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 10
+        },
+        {
+          "season_num": 2,
+          "episodes": 10
+        },
+        {
+          "season_num": 3,
+          "episodes": 10
+        },
+        {
+          "season_num": 4,
+          "episodes": 10
+        },
+        {
+          "season_num": 5,
+          "episodes": 10
+        },
+        {
+          "season_num": 6,
+          "episodes": 10
+        },
+        {
+          "season_num": 7,
+          "episodes": 7
+        },
+        {
+          "season_num": 8,
+          "episodes": 6
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1001,
+      "title": "Oʻtkir soyabonlar",
+      "tmdb_id": 60574,
+      "release_year": 2013,
+      "imdb_rating": 8.8,
+      "seasons_count": 6,
+      "total_episodes": 36,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 6
+        },
+        {
+          "season_num": 2,
+          "episodes": 6
+        },
+        {
+          "season_num": 3,
+          "episodes": 6
+        },
+        {
+          "season_num": 4,
+          "episodes": 6
+        },
+        {
+          "season_num": 5,
+          "episodes": 6
+        },
+        {
+          "season_num": 6,
+          "episodes": 6
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1002,
+      "title": "Kalmar oʻyini",
+      "tmdb_id": 93405,
+      "release_year": 2021,
+      "imdb_rating": 8.0,
+      "seasons_count": 3,
+      "total_episodes": 22,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 9
+        },
+        {
+          "season_num": 2,
+          "episodes": 7
+        },
+        {
+          "season_num": 3,
+          "episodes": 6
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1003,
+      "title": "Gʻaroyib ishlar",
+      "tmdb_id": 66732,
+      "release_year": 2016,
+      "imdb_rating": 8.7,
+      "seasons_count": 1,
+      "total_episodes": 10,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 10
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1004,
+      "title": "Mashaqqatlar sari",
+      "tmdb_id": 1396,
+      "release_year": 2008,
+      "imdb_rating": 9.5,
+      "seasons_count": 5,
+      "total_episodes": 62,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 7
+        },
+        {
+          "season_num": 2,
+          "episodes": 13
+        },
+        {
+          "season_num": 3,
+          "episodes": 13
+        },
+        {
+          "season_num": 4,
+          "episodes": 13
+        },
+        {
+          "season_num": 5,
+          "episodes": 16
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1005,
+      "title": "Yigitlar",
+      "tmdb_id": 76479,
+      "release_year": 2019,
+      "imdb_rating": 8.7,
+      "seasons_count": 4,
+      "total_episodes": 31,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 8
+        },
+        {
+          "season_num": 2,
+          "episodes": 8
+        },
+        {
+          "season_num": 3,
+          "episodes": 8
+        },
+        {
+          "season_num": 4,
+          "episodes": 7
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1006,
+      "title": "Sherlok",
+      "tmdb_id": 19885,
+      "release_year": 2010,
+      "imdb_rating": 9.1,
+      "seasons_count": 4,
+      "total_episodes": 12,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 3
+        },
+        {
+          "season_num": 2,
+          "episodes": 3
+        },
+        {
+          "season_num": 3,
+          "episodes": 3
+        },
+        {
+          "season_num": 4,
+          "episodes": 3
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1007,
+      "title": "Kontinental: Jon Uik dunyosidan",
+      "tmdb_id": 72710,
+      "release_year": 2023,
+      "imdb_rating": 7.3,
+      "seasons_count": 1,
+      "total_episodes": 3,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 3
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1008,
+      "title": "Barchamiz oʻlikmiz",
+      "tmdb_id": 99966,
+      "release_year": 2022,
+      "imdb_rating": 7.5,
+      "seasons_count": 1,
+      "total_episodes": 12,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 12
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1009,
+      "title": "Zulmat",
+      "tmdb_id": 70523,
+      "release_year": 2017,
+      "imdb_rating": 8.7,
+      "seasons_count": 3,
+      "total_episodes": 28,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 10
+        },
+        {
+          "season_num": 2,
+          "episodes": 10
+        },
+        {
+          "season_num": 3,
+          "episodes": 8
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1010,
+      "title": "Jodugar",
+      "tmdb_id": 71912,
+      "release_year": 2019,
+      "imdb_rating": 8.0,
+      "seasons_count": 4,
+      "total_episodes": 31,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 8
+        },
+        {
+          "season_num": 2,
+          "episodes": 8
+        },
+        {
+          "season_num": 3,
+          "episodes": 8
+        },
+        {
+          "season_num": 4,
+          "episodes": 7
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1011,
+      "title": "Vikinglar",
+      "tmdb_id": 44217,
+      "release_year": 2013,
+      "imdb_rating": 8.5,
+      "seasons_count": 6,
+      "total_episodes": 89,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 9
+        },
+        {
+          "season_num": 2,
+          "episodes": 10
+        },
+        {
+          "season_num": 3,
+          "episodes": 10
+        },
+        {
+          "season_num": 4,
+          "episodes": 20
+        },
+        {
+          "season_num": 5,
+          "episodes": 20
+        },
+        {
+          "season_num": 6,
+          "episodes": 20
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1012,
+      "title": "Panjara ortida",
+      "tmdb_id": 2288,
+      "release_year": 2005,
+      "imdb_rating": 8.3,
+      "seasons_count": 5,
+      "total_episodes": 88,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 22
+        },
+        {
+          "season_num": 2,
+          "episodes": 22
+        },
+        {
+          "season_num": 3,
+          "episodes": 13
+        },
+        {
+          "season_num": 4,
+          "episodes": 22
+        },
+        {
+          "season_num": 5,
+          "episodes": 9
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1013,
+      "title": "Yosh boʻri",
+      "tmdb_id": 34524,
+      "release_year": 2011,
+      "imdb_rating": 7.7,
+      "seasons_count": 6,
+      "total_episodes": 99,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 12
+        },
+        {
+          "season_num": 2,
+          "episodes": 12
+        },
+        {
+          "season_num": 3,
+          "episodes": 24
+        },
+        {
+          "season_num": 4,
+          "episodes": 12
+        },
+        {
+          "season_num": 5,
+          "episodes": 19
+        },
+        {
+          "season_num": 6,
+          "episodes": 20
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1014,
+      "title": "Ruxshunos",
+      "tmdb_id": 5920,
+      "release_year": 2008,
+      "imdb_rating": 8.4,
+      "seasons_count": 3,
+      "total_episodes": 66,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 23
+        },
+        {
+          "season_num": 2,
+          "episodes": 20
+        },
+        {
+          "season_num": 2,
+          "episodes": 23
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1015,
+      "title": "Persi Jekson va olimpiyachilar",
+      "tmdb_id": 103540,
+      "release_year": 2023,
+      "imdb_rating": 6.4,
+      "seasons_count": 1,
+      "total_episodes": 8,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 8
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1016,
+      "title": "Jek Richer",
+      "tmdb_id": 108978,
+      "release_year": 2022,
+      "imdb_rating": 8.1,
+      "seasons_count": 1,
+      "total_episodes": 6,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 6
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1017,
+      "title": "Shtamm",
+      "tmdb_id": 47640,
+      "release_year": 2014,
+      "imdb_rating": 8.3,
+      "seasons_count": 1,
+      "total_episodes": 13,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 13
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1018,
+      "title": "Qoʻrqmas (Daredevil)",
+      "tmdb_id": 61889,
+      "release_year": 2015,
+      "imdb_rating": 8.2,
+      "seasons_count": 1,
+      "total_episodes": 9,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 9
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1019,
+      "title": "Jessika Jons",
+      "tmdb_id": 38472,
+      "release_year": 2015,
+      "imdb_rating": 7.5,
+      "seasons_count": 1,
+      "total_episodes": 13,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 13
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1020,
+      "title": "Supermen va Lois",
+      "tmdb_id": 95057,
+      "release_year": 2021,
+      "imdb_rating": 8.1,
+      "seasons_count": 1,
+      "total_episodes": 15,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 15
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1021,
+      "title": "So‘nggi qirollik",
+      "tmdb_id": 63333,
+      "release_year": 2015,
+      "imdb_rating": 8.3,
+      "seasons_count": 8,
+      "total_episodes": 61,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 9
+        },
+        {
+          "season_num": 2,
+          "episodes": 9
+        },
+        {
+          "season_num": 2,
+          "episodes": 1
+        },
+        {
+          "season_num": 3,
+          "episodes": 11
+        },
+        {
+          "season_num": 3,
+          "episodes": 1
+        },
+        {
+          "season_num": 4,
+          "episodes": 11
+        },
+        {
+          "season_num": 5,
+          "episodes": 8
+        },
+        {
+          "season_num": 5,
+          "episodes": 11
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1022,
+      "title": "The Originals (Haqiqiylar)",
+      "tmdb_id": 46896,
+      "release_year": 2013,
+      "imdb_rating": 8.1,
+      "seasons_count": 3,
+      "total_episodes": 30,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 20
+        },
+        {
+          "season_num": 2,
+          "episodes": 9
+        },
+        {
+          "season_num": 2,
+          "episodes": 1
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1023,
+      "title": "Vampirlar kundaligi",
+      "tmdb_id": 18165,
+      "release_year": 2009,
+      "imdb_rating": 8.3,
+      "seasons_count": 14,
+      "total_episodes": 211,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 22
+        },
+        {
+          "season_num": 2,
+          "episodes": 22
+        },
+        {
+          "season_num": 2,
+          "episodes": 17
+        },
+        {
+          "season_num": 2,
+          "episodes": 1
+        },
+        {
+          "season_num": 3,
+          "episodes": 22
+        },
+        {
+          "season_num": 3,
+          "episodes": 11
+        },
+        {
+          "season_num": 4,
+          "episodes": 22
+        },
+        {
+          "season_num": 5,
+          "episodes": 22
+        },
+        {
+          "season_num": 6,
+          "episodes": 22
+        },
+        {
+          "season_num": 6,
+          "episodes": 5
+        },
+        {
+          "season_num": 7,
+          "episodes": 22
+        },
+        {
+          "season_num": 7,
+          "episodes": 4
+        },
+        {
+          "season_num": 8,
+          "episodes": 16
+        },
+        {
+          "season_num": 8,
+          "episodes": 3
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1024,
+      "title": "Jodugarlar jangi",
+      "tmdb_id": 95479,
+      "release_year": 2020,
+      "imdb_rating": 8.6,
+      "seasons_count": 4,
+      "total_episodes": 74,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 24
+        },
+        {
+          "season_num": 2,
+          "episodes": 23
+        },
+        {
+          "season_num": 2,
+          "episodes": 15
+        },
+        {
+          "season_num": 3,
+          "episodes": 12
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1025,
+      "title": "Titanlar hujumi",
+      "tmdb_id": 1429,
+      "release_year": 2013,
+      "imdb_rating": 8.7,
+      "seasons_count": 1,
+      "total_episodes": 59,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 59
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1026,
+      "title": "Qashqirlar makoni: Pistirma",
+      "tmdb_id": 49071,
+      "release_year": 2007,
+      "imdb_rating": 5.9,
+      "seasons_count": 11,
+      "total_episodes": 248,
+      "seasons_breakdown": [
+        {
+          "season_num": 5,
+          "episodes": 28
+        },
+        {
+          "season_num": 6,
+          "episodes": 33
+        },
+        {
+          "season_num": 6,
+          "episodes": 13
+        },
+        {
+          "season_num": 7,
+          "episodes": 34
+        },
+        {
+          "season_num": 7,
+          "episodes": 5
+        },
+        {
+          "season_num": 8,
+          "episodes": 34
+        },
+        {
+          "season_num": 8,
+          "episodes": 10
+        },
+        {
+          "season_num": 9,
+          "episodes": 34
+        },
+        {
+          "season_num": 9,
+          "episodes": 7
+        },
+        {
+          "season_num": 10,
+          "episodes": 37
+        },
+        {
+          "season_num": 10,
+          "episodes": 13
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1027,
+      "title": "Van Pis (One Piece)",
+      "tmdb_id": 37854,
+      "release_year": 1999,
+      "imdb_rating": 8.8,
+      "seasons_count": 1,
+      "total_episodes": 50,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 50
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1028,
+      "title": "Naruto",
+      "tmdb_id": 46260,
+      "release_year": 2002,
+      "imdb_rating": 8.4,
+      "seasons_count": 1,
+      "total_episodes": 25,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 25
+        }
+      ],
+      "has_poster": true
+    },
+    {
+      "id": 1032,
+      "title": "Blich (Bleach)",
+      "tmdb_id": 30984,
+      "release_year": 2004,
+      "imdb_rating": 8.2,
+      "seasons_count": 3,
+      "total_episodes": 51,
+      "seasons_breakdown": [
+        {
+          "season_num": 1,
+          "episodes": 20
+        },
+        {
+          "season_num": 2,
+          "episodes": 21
+        },
+        {
+          "season_num": 2,
+          "episodes": 10
+        }
+      ],
+      "has_poster": true
+    }
+  ]
+}
