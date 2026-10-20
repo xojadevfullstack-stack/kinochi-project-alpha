@@ -42,6 +42,56 @@ def _known_fields():
     return _QUEUE_FIELDS
 
 
+def matches_media_type(item: Any, target_type: Optional[str]) -> bool:
+    if not target_type or target_type == "all":
+        return True
+
+    if isinstance(item, dict):
+        m_type = str(item.get("media_type") or "movie").lower().strip()
+        title_low = str(item.get("title") or "").lower()
+        url_low = str(item.get("url") or "").lower()
+        src = str(item.get("source") or "").lower()
+    else:
+        m_type = str(getattr(item, "media_type", "movie") or "movie").lower().strip()
+        title_low = str(getattr(item, "title", "") or "").lower()
+        url_low = str(getattr(item, "url", "") or "").lower()
+        src = str(getattr(item, "source", "") or "").lower()
+
+    target = target_type.lower().strip()
+    if m_type == target:
+        return True
+
+    is_anime = (
+        m_type == "anime"
+        or src in ("anitoob", "animeelar")
+        or "anime" in title_low
+        or "/anime" in url_low
+    )
+    is_dorama = (
+        m_type == "dorama"
+        or "dorama" in title_low
+        or "/drama" in url_low
+        or (m_type == "series" and any(k in title_low for k in ["korey", "xitoy"]))
+    )
+    is_multfilm = (
+        m_type == "multfilm"
+        or any(w in title_low for w in ["multfilm", "multik", "multserial", "animatsiya"])
+        or any(w in url_low for w in ["multfilm", "multik", "multfilmlari"])
+    )
+
+    if target == "anime":
+        return is_anime
+    elif target == "dorama":
+        return is_dorama
+    elif target == "multfilm":
+        return is_multfilm
+    elif target == "movie":
+        return m_type == "movie" and not (is_anime or is_dorama or is_multfilm)
+    elif target == "series":
+        return m_type == "series" and not (is_anime or is_dorama or is_multfilm)
+    return False
+
+
 class QueueManager:
     """
     JSON-file backed queue.
@@ -138,6 +188,8 @@ class QueueManager:
             self.items[item.id] = item
             self.save()
             return True
+
+    add = add_item
 
     def add_items_batch(self, items: List[QueueItem]) -> int:
         with _FILE_LOCK:
@@ -332,7 +384,7 @@ class QueueManager:
                 item for item in self.items.values()
                 if item.status == "pending"
                 and (not source or item.source == source)
-                and (not media_type or item.media_type == media_type)
+                and matches_media_type(item, media_type)
             ]
             # Yuqori ustuvorlik (priority) birinchi o'rinda olinadi
             pending.sort(key=lambda x: getattr(x, "priority", 0) or 0, reverse=True)
@@ -343,6 +395,7 @@ class QueueManager:
         status: Optional[str] = None,
         source: Optional[str] = None,
         search: Optional[str] = None,
+        media_type: Optional[str] = None,
         skip: int = 0,
         limit: int = 50
     ) -> Tuple[List[QueueItem], int]:
@@ -353,6 +406,8 @@ class QueueManager:
                 filtered = [item for item in filtered if item.status == status]
             if source and source != "all":
                 filtered = [item for item in filtered if item.source == source]
+            if media_type and media_type != "all":
+                filtered = [item for item in filtered if matches_media_type(item, media_type)]
             if search:
                 q = search.lower().strip()
                 filtered = [

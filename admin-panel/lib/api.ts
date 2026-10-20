@@ -122,9 +122,16 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
         if (typeof data.detail === "string") {
           errorMsg = data.detail;
         } else if (Array.isArray(data.detail)) {
-          errorMsg = data.detail.map((err: any) => err.msg || JSON.stringify(err)).join(", ");
-        } else {
-          errorMsg = JSON.stringify(data.detail);
+          errorMsg = data.detail.map((err: any) => err.msg || err.message || JSON.stringify(err)).join(", ");
+        } else if (typeof data.detail === "object") {
+          if (Array.isArray(data.detail.defects)) {
+            const defectMsgs = data.detail.defects.map((d: any) => d.message || d.code).join(", ");
+            errorMsg = data.detail.message ? `${data.detail.message}: ${defectMsgs}` : defectMsgs;
+          } else if (data.detail.message) {
+            errorMsg = data.detail.message;
+          } else {
+            errorMsg = JSON.stringify(data.detail);
+          }
         }
       }
     } catch (e) {

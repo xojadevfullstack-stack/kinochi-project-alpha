@@ -15,6 +15,7 @@ import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
 import BackButton from "@/components/BackButton";
+import SourceBadge from "@/components/SourceBadge";
 
 type Props = {
   params: { code: string };
@@ -156,27 +157,11 @@ export default async function MovieDetailsPage({ params }: Props) {
               </div>
 
               {/* Source Branding Badge */}
-              <div 
-                className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.08] backdrop-blur-md border border-white/15 text-xs font-bold shadow-sm"
-                title="Kontent manbasi"
-              >
-                {movie.source_type === "asilmedia" ? (
-                  <span className="text-amber-400 font-bold flex items-center gap-1">
-                    <span>🎬</span> Asilmedia
-                  </span>
-                ) : movie.source_type === "boshqa" ? (
-                  <span className="text-purple-400 font-bold flex items-center gap-1.5">
-                    {movie.custom_source_logo && (
-                      <img src={movie.custom_source_logo} alt="" className="w-4 h-4 rounded object-cover inline" />
-                    )}
-                    <span>{movie.custom_source_name || "Boshqa"}</span>
-                  </span>
-                ) : (
-                  <span className="text-blue-400 font-bold flex items-center gap-1">
-                    <span>⭐</span> Uzmovi
-                  </span>
-                )}
-              </div>
+              <SourceBadge 
+                sourceType={movie.source_type} 
+                customSourceName={movie.custom_source_name} 
+                customSourceLogo={movie.custom_source_logo} 
+              />
 
               {is18Plus && (
                 <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-red-600/20 backdrop-blur-md border border-red-500/40 text-red-200 text-xs font-black tracking-wide shadow-sm shadow-red-950/40">

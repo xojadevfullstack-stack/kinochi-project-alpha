@@ -54,7 +54,13 @@ class QuarantineManager:
                 return
             try:
                 with open(self.filepath, "r", encoding="utf-8") as f:
-                    self.items = json.load(f)
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        self.items = data
+                    elif isinstance(data, list):
+                        self.items = {str(it.get("id", idx)): it for idx, it in enumerate(data) if isinstance(it, dict)}
+                    else:
+                        self.items = {}
             except Exception as e:
                 logger.warning(f"Quarantine file load error: {e}")
                 self.items = {}

@@ -4,6 +4,7 @@ import logging
 import asyncio
 import os
 import tempfile
+from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 from pydantic import BaseModel
@@ -49,6 +50,19 @@ async def create_series(
 ):
     """Create a new series (Admin only)."""
     create_dict = series_in.model_dump(exclude_unset=True)
+    
+    current_year = datetime.now().year
+    raw_year = create_dict.get("release_year") or create_dict.get("year") or current_year
+    try:
+        clean_year = int(raw_year)
+        if clean_year < 1880 or clean_year > current_year + 5:
+            clean_year = current_year
+    except (ValueError, TypeError):
+        clean_year = current_year
+
+    create_dict["release_year"] = clean_year
+    create_dict.pop("year", None)
+
     if create_dict.get("trailer_url"):
         create_dict["trailer_url"] = await validate_and_normalize_trailer_url(create_dict["trailer_url"])
 
@@ -56,10 +70,9 @@ async def create_series(
     gate_payload = dict(create_dict)
     gate_payload["source"] = gate_payload.get("source") or create_dict.get("source_type") or "admin"
     gate_payload["source_key"] = gate_payload.get("source_key") or f"admin_{int(time.time())}"
-    if not gate_payload.get("manual_verified"):
-        gate_payload["manual_verified"] = True
-    if "year" not in gate_payload and "release_year" in gate_payload:
-        gate_payload["year"] = gate_payload["release_year"]
+    gate_payload["manual_verified"] = True
+    gate_payload["year"] = clean_year
+    gate_payload["release_year"] = clean_year
     if "genres" not in gate_payload and gate_payload.get("category_ids"):
         gate_payload["genres"] = gate_payload["category_ids"]
     is_valid, defects = await pre_check("series", gate_payload, session=db, check_reachability=False)

@@ -182,3 +182,21 @@ async def test_state_machine_record_rejection_and_promote():
     mock_media.publish_status = "pending"
     await promote_to_published(mock_session, mock_media, source="uzmovi", source_key="uz_999")
     assert mock_media.publish_status == "published"
+
+
+@pytest.mark.asyncio
+async def test_pre_check_series_with_release_year_and_category_ids():
+    payload = {
+        "title": "The Mentalist",
+        "release_year": 2008,
+        "poster_url": "https://image.tmdb.org/t/p/w500/test.jpg",
+        "category_ids": [1, 2],
+        "description": "Patrick Jane is an independent consultant for the California Bureau of Investigation.",
+        "source": "uzmovi",
+        "source_key": "uzmovi_series_123",
+        "tmdb_id": 5920,
+    }
+    is_valid, defects = await pre_check("series", payload, check_reachability=False)
+    assert is_valid is True
+    assert defects == []
+

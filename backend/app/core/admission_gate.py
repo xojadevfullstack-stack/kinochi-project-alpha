@@ -126,7 +126,17 @@ async def pre_check(
         year = payload.get("year") if payload.get("year") is not None else payload.get("release_year")
         current_year = datetime.datetime.now().year
         try:
-            year_int = int(year) if year is not None else None
+            if isinstance(year, str):
+                year_clean = year.strip()
+                if len(year_clean) >= 4 and year_clean[:4].isdigit():
+                    year_int = int(year_clean[:4])
+                else:
+                    year_int = int(year_clean)
+            elif year is not None:
+                year_int = int(year)
+            else:
+                year_int = None
+
             if not year_int or year_int < cfg.get("min_year", 1880) or year_int > current_year + 5:
                 defects.append({
                     "field": "year",

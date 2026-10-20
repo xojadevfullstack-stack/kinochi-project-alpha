@@ -113,8 +113,18 @@ def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0) -> List[
             continue
 
         seen_ids.add(item_id_num)
-        is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama)', href + " " + raw_title, re.IGNORECASE))
-        media_type = "series" if is_series else "movie"
+        combined_text = (href + " " + raw_title).lower()
+        is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama)', combined_text))
+        if "anime" in combined_text or "/anime" in href.lower():
+            media_type = "anime"
+        elif "dorama" in combined_text or "/drama" in href.lower() or (is_series and any(w in combined_text for w in ["koreys", "xitoy"])):
+            media_type = "dorama"
+        elif any(w in combined_text for w in ["multfilm", "multik", "multfilmlari", "/multfilm"]):
+            media_type = "multfilm"
+        elif is_series:
+            media_type = "series"
+        else:
+            media_type = "movie"
 
         poster_url = None
         img = b.find("img")
@@ -186,9 +196,18 @@ def _extract_asilmedia_items_from_html(html: str, min_rating: float = 0.0) -> Li
             continue
 
         seen_ids.add(item_id_num)
-
-        is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama|multiserial)', href + " " + raw_title, re.IGNORECASE))
-        media_type = "series" if is_series else "movie"
+        combined_text = (href + " " + raw_title).lower()
+        is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama|multiserial)', combined_text))
+        if "anime" in combined_text or "/anime" in href.lower():
+            media_type = "anime"
+        elif "dorama" in combined_text or "/dorama" in href.lower() or (is_series and any(w in combined_text for w in ["koreys", "xitoy"])):
+            media_type = "dorama"
+        elif any(w in combined_text for w in ["multfilm", "multik", "multfilmlar_multiklar", "/multfilm"]):
+            media_type = "multfilm"
+        elif is_series:
+            media_type = "series"
+        else:
+            media_type = "movie"
 
         poster_url = None
         if img:

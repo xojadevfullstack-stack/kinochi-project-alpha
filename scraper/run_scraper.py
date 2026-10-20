@@ -21,7 +21,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from scraper.queue_manager import QueueManager
+from scraper.queue_manager import QueueManager, matches_media_type
 from scraper.site_parser import (
     parse_uzmovi_page,
     parse_asilmedia_page,
@@ -129,13 +129,23 @@ async def cmd_parse(
                     urls.append(f"https://uzmovi.net/tarjima-kinolarri/page/{page}/" if page > 1 else "https://uzmovi.net/tarjima-kinolarri")
                 if media_type in ("all", "series"):
                     urls.append(f"https://uzmovi.net/serialar/page/{page}/" if page > 1 else "https://uzmovi.net/serialar")
+                if media_type in ("all", "dorama"):
+                    urls.append(f"https://uzmovi.net/drama/page/{page}/" if page > 1 else "https://uzmovi.net/drama")
+                if media_type in ("all", "anime"):
+                    urls.append(f"https://uzmovi.net/anime/page/{page}/" if page > 1 else "https://uzmovi.net/anime")
+                if media_type in ("all", "multfilm"):
+                    urls.append(f"https://uzmovi.net/multfilmlari/page/{page}/" if page > 1 else "https://uzmovi.net/multfilmlari")
             elif source == "asilmedia":
                 if media_type in ("all", "movie"):
                     urls.append(f"https://asilmedia.org/films/tarjima_kinolar/page/{page}/" if page > 1 else "https://asilmedia.org/films/tarjima_kinolar/")
-                if media_type in ("all", "series"):
+                if media_type in ("all", "series", "dorama"):
                     urls.append(f"https://asilmedia.org/films/serial/page/{page}/" if page > 1 else "https://asilmedia.org/films/serial/")
+                if media_type in ("all", "multfilm", "anime"):
+                    urls.append(f"https://asilmedia.org/films/multfilmlar_multiklar/page/{page}/" if page > 1 else "https://asilmedia.org/films/multfilmlar_multiklar/")
     elif source in ("anitoob", "anitoobuz", "animeelar", "anime"):
-        pass
+        if media_type not in ("all", "anime"):
+            print(f"ℹ️ [{source.upper()}] faqat Anime kontentiga ega. '{media_type}' filtri uchun o'tkazib yuborildi.")
+            return
     else:
         print("❌ Noma'lum manba. 'uzmovi', 'asilmedia', 'anitoob' yoki 'animeelar' tanlang.")
         return
@@ -162,6 +172,9 @@ async def cmd_parse(
             continue
         all_items.extend(res)
         print(f"📄 Sahifa {actual_page}: {len(res)} ta mos element yuklandi.")
+
+    if media_type != "all":
+        all_items = [item for item in all_items if matches_media_type(item, media_type)]
 
     # Dublikatlarni parallel tekshirish (1 soniyada yuzlab kinolar tekshiriladi)
     print(f"🔄 {len(all_items)} ta kino/serial bazadagi dublikatlarga parallel tekshirilmoqda...")
@@ -320,10 +333,11 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             pending = qm.get_pending(limit=limit, media_type=m_type)
 
         if not pending:
-            print("ℹ️ Navbatda yuklanadigan yangi kinolar yo'q. Avval --parse orqali ro'yxat yig'ing yoki --codes orqali film kodini kiriting.")
+            m_label = f"'{media_type.upper()}'" if media_type != "all" else "yangi kino/serial"
+            print(f"ℹ️ Navbatda yuklanadigan {m_label}lar yo'q. Avval --parse orqali ro'yxat yig'ing yoki --codes orqali film kodini kiriting.")
             return
 
-        print(f"\n🚀 {len(pending)} ta kino/serialni yuklash boshlanmoqda (Maqsadli bot: @{bot_username})...")
+        print(f"\n🚀 {len(pending)} ta [{media_type.upper()}] elementni yuklash boshlanmoqda (Maqsadli bot: @{bot_username})...")
 
     cb_status = autopilot_engine.health_evaluator.check_circuit_breaker()
     if cb_status.is_paused:
@@ -391,7 +405,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Navbat to'xtatildi!", flush=True)
                     break
 
-                media_label = "SERIAL" if item.media_type == "series" else "KINO"
+                media_label = (item.media_type or "kino").upper()
 
                 # Pre-check duplicate and blacklist in DB
                 dup = await checker.check(
@@ -536,8 +550,20 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
     if min_rating is None:
         min_rating = float(sm.get_state().get("min_rating", 6.0))
 
-    sources_to_run = ["uzmovi", "asilmedia", "anitoob", "animeelar"] if source in ("all", "both") else [source]
-    src_title = "BARCHASI (UZMOVI, ASILMEDIA, ANITOOB & ANIMEELAR)" if len(sources_to_run) > 1 else source.upper()
+    if source in ("all", "both"):
+        if media_type == "dorama":
+            sources_to_run = ["uzmovi", "asilmedia"]
+        elif media_type == "anime":
+            sources_to_run = ["anitoob", "animeelar", "uzmovi"]
+        elif media_type == "multfilm":
+            sources_to_run = ["uzmovi", "asilmedia"]
+        elif media_type in ("movie", "series"):
+            sources_to_run = ["uzmovi", "asilmedia"]
+        else:
+            sources_to_run = ["uzmovi", "asilmedia", "anitoob", "animeelar"]
+    else:
+        sources_to_run = [source]
+    src_title = ", ".join(s.upper() for s in sources_to_run) if len(sources_to_run) > 1 else source.upper()
 
     print(f"\n" + "="*60, flush=True)
     print(f"🚀 TO'LIQ AVTONOM AVTOPILOT ISHGA TUSHIRILMOQDA", flush=True)
@@ -644,7 +670,7 @@ def main():
     parser.add_argument("--clean-duplicates", action="store_true", help="Navbatdagi mavjud bazadagi dublikatlarni tozalash")
     parser.add_argument("--retry-failed", action="store_true", help="Xatolik bergan barcha filmlarni qayta navbatga qo'yish")
     parser.add_argument("--autopilot", action="store_true", help="Bir martalik yoki uzluksiz to'liq avtopilot: Parse + Download")
-    parser.add_argument("--media-type", type=str, default="all", choices=["all", "movie", "series"], help="Media turi (all, movie yoki series)")
+    parser.add_argument("--media-type", type=str, default="all", choices=["all", "movie", "series", "dorama", "anime", "multfilm"], help="Media turi (all, movie, series, dorama, anime yoki multfilm)")
     parser.add_argument("--item-id", type=str, default=None, help="Navbatdagi aniq bitta element ID si (masalan: asilmedia_18509)")
     parser.add_argument("--stats", action="store_true", help="Navbat holatini ko'rish")
 

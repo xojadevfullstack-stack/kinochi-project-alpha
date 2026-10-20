@@ -623,7 +623,7 @@ CANON_FRANCHISES: dict[str, FranchiseBlueprint] = {
                 "year": 2011,
             },
             {
-                "tmdb_id": 87101,
+                "tmdb_id": 82992,
                 "title_en": "Fast & Furious 6",
                 "title_uz": "Forsaj 6",
                 "chronological_order": 5,

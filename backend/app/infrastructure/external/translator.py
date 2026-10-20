@@ -11,10 +11,32 @@ from app.core.cache import get_cache, set_cache
 
 logger = logging.getLogger(__name__)
 
+CYRILLIC_TO_LATIN_MAP = {
+    'А': 'A', 'а': 'a', 'Б': 'B', 'б': 'b', 'В': 'V', 'в': 'v', 'Г': 'G', 'г': 'g',
+    'Д': 'D', 'д': 'd', 'Е': 'E', 'е': 'e', 'Ё': 'Yo', 'ё': 'yo', 'Ж': 'J', 'ж': 'j',
+    'З': 'Z', 'з': 'z', 'И': 'I', 'и': 'i', 'Й': 'Y', 'й': 'y', 'К': 'K', 'к': 'k',
+    'Л': 'L', 'л': 'l', 'М': 'M', 'м': 'm', 'Н': 'N', 'н': 'n', 'О': 'O', 'о': 'o',
+    'П': 'P', 'п': 'p', 'Р': 'R', 'р': 'r', 'С': 'S', 'с': 's', 'Т': 'T', 'т': 't',
+    'У': 'U', 'у': 'u', 'Ф': 'F', 'ф': 'f', 'Х': 'X', 'х': 'x', 'Ц': 'Ts', 'ц': 'ts',
+    'Ч': 'Ch', 'ch': 'ch', 'Ш': 'Sh', 'ш': 'sh', 'Щ': 'Sh', 'щ': 'sh', 'Ъ': '', 'ъ': '',
+    'Ы': 'I', 'ы': 'i', 'Ь': '', 'ь': '', 'Э': 'E', 'э': 'e', 'Ю': 'Yu', 'ю': 'yu',
+    'Я': 'Ya', 'я': 'ya', 'Ў': 'O\'', 'ў': 'o\'', 'Қ': 'Q', 'қ': 'q', 'Ғ': 'G\'', 'ғ': 'g\'',
+    'Ҳ': 'H', 'ҳ': 'h'
+}
+
+
+def cyrillic_to_latin(text: str) -> str:
+    """Russian / Uzbek Cyrillic matnni o'zbek lotin alifbosiga o'giradi."""
+    if not text:
+        return ""
+    return "".join(CYRILLIC_TO_LATIN_MAP.get(c, c) for c in text)
+
+
 GEMINI_MODELS = [
     "gemini-flash-lite-latest",
-    "gemini-flash-latest",
-    "gemini-pro-latest",
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
 ]
 
 
@@ -40,12 +62,6 @@ class TranslatorService:
     ) -> Tuple[str, bool]:
         """
         Translates movie/series title into Uzbek (Latin script).
-        E.g.
-        'Истребитель демонов' -> 'Iblislar qotili'
-        'Бойцовский клуб' -> 'Jangchilar klubi'
-        'Один дома' -> 'Uyda yolg\'iz'
-        'Человек-паук' -> 'O\'rgimchak odam'
-        'Demon Slayer: Kimetsu no Yaiba' -> 'Iblislar qotili'
         """
         clean_title = (title or "").strip()
         clean_orig = (original_title or "").strip()
@@ -83,7 +99,7 @@ class TranslatorService:
             for model in GEMINI_MODELS:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
                 try:
-                    async with httpx.AsyncClient(timeout=10.0) as client:
+                    async with httpx.AsyncClient(timeout=6.0) as client:
                         resp = await client.post(url, json=payload)
                         if resp.status_code == 200:
                             data = resp.json()
@@ -92,35 +108,38 @@ class TranslatorService:
                                 res_text = candidates[0]["content"]["parts"][0].get("text", "").strip()
                                 res_text = res_text.strip('\'"`* .').strip()
                                 if res_text:
+                                    # Kirill qolgan bo'lsa lotinga o'giramiz
+                                    if any('\u0400' <= c <= '\u04FF' for c in res_text):
+                                        res_text = cyrillic_to_latin(res_text)
                                     await set_cache(cache_key, res_text, ttl_seconds=2592000)
                                     return res_text, True
                         else:
-                            logger.warning(f"Gemini {model} title translation returned status {resp.status_code}")
+                            logger.warning(f"Gemini {model} title translation status {resp.status_code}")
                 except Exception as e:
                     logger.warning(f"Gemini {model} title translation error: {e}")
 
-        # 3. Fallback: Google Translate
+        # 3. Fallback: Google Translate (GTX POST)
         try:
-            params = {"q": target_title}
-            gtx_url = (
-                "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=uz&dt=t&q="
-                + httpx.URL("", params=params).params["q"]
-            )
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                resp = await client.get(gtx_url)
+            gtx_url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=uz&dt=t"
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                resp = await client.post(gtx_url, data={"q": target_title})
                 if resp.status_code == 200:
                     data = resp.json()
                     res_parts = [item[0] for item in data[0] if item and item[0]]
                     gtx_text = "".join(res_parts).strip().strip('\'"`* .').strip()
                     if gtx_text:
+                        if any('\u0400' <= c <= '\u04FF' for c in gtx_text):
+                            gtx_text = cyrillic_to_latin(gtx_text)
                         await set_cache(cache_key, gtx_text, ttl_seconds=2592000)
                         return gtx_text, True
         except Exception as e:
             logger.warning(f"Google Translate title fallback error: {e}")
 
-        # 4. If target_title has Cyrillic and translation failed, try clean_orig (English original)
-        if any('\u0400' <= c <= '\u04FF' for c in target_title) and clean_orig:
-            return clean_orig, False
+        # 4. If target_title has Cyrillic, fallback to original English title or transliterate
+        if any('\u0400' <= c <= '\u04FF' for c in target_title):
+            if clean_orig:
+                return clean_orig, False
+            return cyrillic_to_latin(target_title), True
 
         return target_title, False
 
@@ -137,6 +156,9 @@ class TranslatorService:
         cache_key = self._get_cache_key(clean_text)
         cached = await get_cache(cache_key)
         if cached:
+            # Agar keshda tasodifan kirill yozuvli eski matn saqlangan bo'lsa, lotinga o'giramiz
+            if any('\u0400' <= c <= '\u04FF' for c in cached):
+                cached = cyrillic_to_latin(cached)
             return cached, True
 
         # 2. Try Gemini API
@@ -144,6 +166,7 @@ class TranslatorService:
             prompt = (
                 "Quyidagi film/serial tavsifini o'zbek tiliga (lotin alifbosida) ravon, qiziqarli va tabiiy qilib tarjima qil. "
                 "Qahramonlar va aktyorlar ismlarini to'g'ri saqlab qol. "
+                "Faqat lotin alifbosida yoz (kirill harflari mutlaqo bo'lmasin). "
                 "Hech qanday qo'shimcha izoh, tushuntirish yoki kirish so'z yozma, FAQAT tarjima qilingan matnning o'zini qaytar:\n\n"
                 f"{clean_text}"
             )
@@ -155,7 +178,7 @@ class TranslatorService:
             for model in GEMINI_MODELS:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
                 try:
-                    async with httpx.AsyncClient(timeout=12.0) as client:
+                    async with httpx.AsyncClient(timeout=7.0) as client:
                         resp = await client.post(url, json=payload)
                         if resp.status_code == 200:
                             data = resp.json()
@@ -163,7 +186,9 @@ class TranslatorService:
                             if candidates and candidates[0].get("content", {}).get("parts"):
                                 res_text = candidates[0]["content"]["parts"][0].get("text", "").strip()
                                 if res_text:
-                                    # Cache for 30 days (2592000 seconds)
+                                    if any('\u0400' <= c <= '\u04FF' for c in res_text):
+                                        res_text = cyrillic_to_latin(res_text)
+                                    # Cache for 30 days
                                     await set_cache(cache_key, res_text, ttl_seconds=2592000)
                                     return res_text, True
                         else:
@@ -171,26 +196,28 @@ class TranslatorService:
                 except Exception as e:
                     logger.warning(f"Gemini {model} translation error: {e}")
 
-        # 3. Fallback: Google Translate (GTX)
+        # 3. Fallback: Google Translate (GTX POST - handles long text reliably)
         try:
-            params = {"q": clean_text}
-            gtx_url = (
-                "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=uz&dt=t&q="
-                + httpx.URL("", params=params).params["q"]
-            )
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                resp = await client.get(gtx_url)
+            gtx_url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=uz&dt=t"
+            async with httpx.AsyncClient(timeout=7.0) as client:
+                resp = await client.post(gtx_url, data={"q": clean_text})
                 if resp.status_code == 200:
                     data = resp.json()
                     res_parts = [item[0] for item in data[0] if item and item[0]]
                     gtx_text = "".join(res_parts).strip()
                     if gtx_text:
+                        if any('\u0400' <= c <= '\u04FF' for c in gtx_text):
+                            gtx_text = cyrillic_to_latin(gtx_text)
                         await set_cache(cache_key, gtx_text, ttl_seconds=2592000)
                         return gtx_text, True
         except Exception as e:
             logger.warning(f"Google Translate fallback error: {e}")
 
-        # 4. Ultimate Fallback: Return original text unchanged
+        # 4. Ultimate Fallback: Transliterate Cyrillic to Uzbek Latin so Russian never leaks
+        if any('\u0400' <= c <= '\u04FF' for c in clean_text):
+            latin_text = cyrillic_to_latin(clean_text)
+            return latin_text, True
+
         return clean_text, False
 
 

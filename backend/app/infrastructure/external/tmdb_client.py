@@ -12,6 +12,8 @@ import httpx
 from app.core.config import settings
 from app.core.cache import get_cache, set_cache
 
+from app.infrastructure.external.translator import cyrillic_to_latin
+
 logger = logging.getLogger(__name__)
 
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
@@ -350,29 +352,13 @@ class TMDbClient:
             best_video = official or youtube_trailers[0]
             trailer_url = f"https://www.youtube.com/watch?v={best_video['key']}"
 
-        # Director / Creators
-        credits_data = data.get("credits", {})
-        crew = credits_data.get("crew", [])
-        directors = [c.get("name") for c in crew if c.get("job") == "Director" and c.get("name")]
-        if not directors and endpoint_type == "tv":
-            directors = [c.get("name") for c in data.get("created_by", []) if c.get("name")]
-        director_str = ", ".join(directors[:2]) if directors else None
-
-        # Top 5 Cast
-        cast_list = [c.get("name") for c in credits_data.get("cast", [])[:5] if c.get("name")]
-        cast_str = ", ".join(cast_list) if cast_list else None
-
-        # Genres
-        genres_raw = data.get("genres", [])
-        genres_list = [{"id": g.get("id"), "name": g.get("name")} for g in genres_raw]
-        genres_names = ", ".join([g.get("name") for g in genres_raw if g.get("name")])
-
-        # Poster lookup (original / clean en poster to avoid Russian text overlays)
+        # Fetch English data for clean Latin poster, director and cast
+        en_data = None
         poster_path = data.get("poster_path")
         try:
             en_data = await self._request_with_retry(
                 f"{endpoint_type}/{tmdb_id}",
-                params={"language": "en-US"},
+                params={"language": "en-US", "append_to_response": "credits"},
                 timeout=6.0,
             )
             if en_data and en_data.get("poster_path"):
@@ -381,6 +367,34 @@ class TMDbClient:
             logger.debug(f"TMDb toza posterni olishda xatolik: {e}")
 
         poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
+
+        # Director / Creators (prefer English/Latin names so no Russian Cyrillic leaks)
+        en_credits = (en_data or {}).get("credits", {}) if en_data else {}
+        en_crew = en_credits.get("crew", [])
+        directors = [c.get("name") for c in en_crew if c.get("job") == "Director" and c.get("name")]
+        if not directors and endpoint_type == "tv" and en_data:
+            directors = [c.get("name") for c in en_data.get("created_by", []) if c.get("name")]
+
+        # Fallback to Russian response if English crew missing, but transliterate to Latin
+        if not directors:
+            ru_crew = data.get("credits", {}).get("crew", [])
+            directors = [cyrillic_to_latin(c.get("name")) for c in ru_crew if c.get("job") == "Director" and c.get("name")]
+            if not directors and endpoint_type == "tv":
+                directors = [cyrillic_to_latin(c.get("name")) for c in data.get("created_by", []) if c.get("name")]
+
+        director_str = ", ".join(directors[:2]) if directors else None
+
+        # Top 5 Cast (prefer English/Latin names)
+        cast_list = [c.get("name") for c in en_credits.get("cast", [])[:5] if c.get("name")]
+        if not cast_list:
+            ru_cast = data.get("credits", {}).get("cast", [])[:5]
+            cast_list = [cyrillic_to_latin(c.get("name")) for c in ru_cast if c.get("name")]
+        cast_str = ", ".join(cast_list) if cast_list else None
+
+        # Genres
+        genres_raw = data.get("genres", [])
+        genres_list = [{"id": g.get("id"), "name": g.get("name")} for g in genres_raw]
+        genres_names = ", ".join([g.get("name") for g in genres_raw if g.get("name")])
 
         vote_avg = data.get("vote_average")
         tmdb_rating = round(vote_avg, 1) if vote_avg is not None else None

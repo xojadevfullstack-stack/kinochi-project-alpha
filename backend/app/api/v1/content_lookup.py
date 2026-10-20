@@ -86,11 +86,26 @@ async def get_content_details(
     details["title"] = translated_title if translated_title else raw_title
     details["is_title_translated"] = is_title_translated
 
-    # 2. Map genres to Uzbek
+    # 3. Ensure director and cast are Latin
+    from app.infrastructure.external.translator import cyrillic_to_latin
+    if details.get("director") and any('\u0400' <= c <= '\u04FF' for c in details["director"]):
+        details["director"] = cyrillic_to_latin(details["director"])
+    if details.get("cast") and any('\u0400' <= c <= '\u04FF' for c in details["cast"]):
+        details["cast"] = cyrillic_to_latin(details["cast"])
+
+    # 4. Map genres to Uzbek
     uz_genres = map_tmdb_genres(details.get("genres_raw", []))
     details["genres"] = ", ".join(uz_genres) if uz_genres else details.get("genres_str", "")
 
-    # 3. Match category IDs from database
+    # 5. Ensure valid release_year and year
+    import datetime
+    current_year = datetime.datetime.now().year
+    rel_year = details.get("release_year")
+    if not rel_year or not isinstance(rel_year, int) or rel_year < 1880 or rel_year > current_year + 5:
+        details["release_year"] = current_year
+    details["year"] = details["release_year"]
+
+    # 6. Match category IDs from database
     suggested_category_ids: list[int] = []
     if uz_genres:
         try:

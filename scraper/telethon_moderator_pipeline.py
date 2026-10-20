@@ -400,6 +400,29 @@ async def poll_new_messages(
     return []
 
 
+def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
+    page_ids = list(meta.get("page_ids") or [])
+    m_type = str(getattr(item, "media_type", "") or "").lower()
+    cat_ids = meta.get("category_ids") or []
+    genres_val = meta.get("genres") or ""
+    if isinstance(genres_val, list):
+        genres = " ".join(str(g) for g in genres_val).lower()
+    else:
+        genres = str(genres_val).lower()
+    t_low = str(getattr(item, "title", "") or "").lower()
+
+    # Page 1: Anime
+    if (2 in cat_ids or "anime" in genres or m_type == "anime" or "anime" in t_low) and 1 not in page_ids:
+        page_ids.append(1)
+    # Page 5: Doramalar
+    if (m_type == "dorama" or "dorama" in genres or "drama" in genres or "dorama" in t_low or any(k in t_low for k in ["korey", "xitoy"])) and 5 not in page_ids:
+        page_ids.append(5)
+    # Page 8: Multfilm
+    if (22 in cat_ids or m_type == "multfilm" or any(w in genres for w in ["animatsiya", "multfilm", "animation"]) or any(w in t_low for w in ["multfilm", "multik"])) and 8 not in page_ids:
+        page_ids.append(8)
+    return page_ids
+
+
 class TelethonModeratorPipeline:
     def __init__(self, client: TelegramClient, duplicate_checker: DuplicateChecker):
         self.client = client
@@ -569,8 +592,8 @@ class TelethonModeratorPipeline:
 
     async def run_item(self, item: QueueItem, target_bot: str = "asilmediabot", max_episodes: Optional[int] = None) -> bool:
         """Kino yoki Serial turiga qarab mos pipeline siklini ishga tushiradi (qat'iy Timeout bilan)."""
-        # Seriallar ko'p qismli bo'lgani uchun 2 soat (7200s), bitta kinolar uchun 20 daqiqa timeout
-        item_timeout = 7200 if getattr(item, "media_type", "movie") == "series" else 1200
+        # Seriallar va doramalar ko'p qismli bo'lgani uchun 2 soat (7200s), bitta kinolar uchun 20 daqiqa timeout
+        item_timeout = 7200 if getattr(item, "media_type", "movie") in ("series", "dorama") else 1200
         try:
             return await asyncio.wait_for(self._run_item_inner(item, target_bot, max_episodes=max_episodes), timeout=item_timeout)
         except asyncio.TimeoutError:
@@ -607,9 +630,13 @@ class TelethonModeratorPipeline:
         elif getattr(item, "source", None) == "uzmovi":
             effective_bot = "UzmovieTV_Bot"
 
-        if item.media_type == "series":
-            # UzmovieTV_Bot da seriallar (qismlar va fasllar menyusi) mavjud emas.
-            # Barcha seriallar Telegramda @asilmediabot orqali yuklanadi
+        is_multi_part = (
+            item.media_type in ("series", "dorama")
+            or (getattr(item, "episodes_count", 0) or 0) > 1
+            or any(w in (item.title or "").lower() for w in ["serial", "dorama", "fasl", "mavsum", "qismlar", "multserial"])
+        )
+        if is_multi_part:
+            # Seriallar va ko'p qismli doramalar Telegramda @asilmediabot orqali yuklanadi
             return await self.run_single_series(item=item, target_bot="asilmediabot")
         return await self.run_single_movie(item=item, target_bot=effective_bot)
 
@@ -948,7 +975,7 @@ class TelethonModeratorPipeline:
                     director=meta.get("director"),
                     cast=meta.get("cast"),
                     category_ids=meta.get("category_ids"),
-                    page_ids=[1] if (2 in (meta.get("category_ids") or []) or "anime" in (meta.get("genres") or "").lower()) else meta.get("page_ids"),
+                    page_ids=resolve_page_ids(item, meta),
                     source_id=source.id,
                     status="ongoing",
                     is_18_plus=bool(meta.get("is_18_plus", False))
@@ -1773,7 +1800,7 @@ class TelethonModeratorPipeline:
                 f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
                 f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n"
                 f"🇺🇿 <b>Tili:</b> O'zbek tilida\n\n"
-                f"🍿 @kinochi_robot orqali yuklandi."
+                f"🍿 @kinochi_mvp_bot orqali yuklandi."
             )
             topic_video_msg = await self._upload_video_to_chat(
                 video_msg=current_video_msg,
@@ -2451,7 +2478,7 @@ class TelethonModeratorPipeline:
                 f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
                 f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n"
                 f"🇺🇿 <b>Tili:</b> O'zbek tilida\n\n"
-                f"🍿 @kinochi_robot orqali yuklandi."
+                f"🍿 @kinochi_mvp_bot orqali yuklandi."
             )
             topic_video_msg = await self._upload_video_to_chat(
                 video_msg=current_video_msg,
@@ -3202,7 +3229,7 @@ class TelethonModeratorPipeline:
                 trailer_url=meta.get("trailer_url"),
                 category_ids=meta.get("category_ids"),
                 is_18_plus=bool(meta.get("is_18_plus", False)),
-                page_ids=[1] if (2 in (meta.get("category_ids") or []) or "anime" in (meta.get("genres") or "").lower()) else meta.get("page_ids")
+                page_ids=resolve_page_ids(item, meta)
             )
             movie_id = created_movie.id
             movie_code = created_movie.code

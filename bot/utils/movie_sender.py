@@ -40,9 +40,9 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
     if not translations:
         return False
         
-    safe_title = html.escape(movie.get('title', ''))
-    safe_desc = html.escape(movie.get('description', ''))
-    caption = f"🍿 <b>{safe_title}</b>\n\n{safe_desc}"
+    safe_title = html.escape(movie.get('title') or '')
+    safe_desc = html.escape(movie.get('description') or '')
+    caption = f"🍿 <b>{safe_title}</b>\n\n{safe_desc}" if safe_desc else f"🍿 <b>{safe_title}</b>"
         
     # Check if this is an episode or movie by looking at fields
     # episodes have episode_number, movies have code but not episode_number

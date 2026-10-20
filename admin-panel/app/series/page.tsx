@@ -264,7 +264,7 @@ export default function SeriesListPage() {
           trailer_url: details.trailer_url || prev.trailer_url,
           director: details.director || prev.director,
           cast: details.cast || prev.cast,
-          release_year: details.release_year || prev.release_year,
+          release_year: Number(details.release_year) || prev.release_year || new Date().getFullYear(),
           imdb_rating:
             details.tmdb_rating ??
             details.vote_average ??
@@ -309,8 +309,24 @@ export default function SeriesListPage() {
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
+      const currentYear = new Date().getFullYear();
+      const rawYear = form.release_year !== undefined && form.release_year !== null && String(form.release_year).trim() !== "" 
+        ? parseInt(String(form.release_year)) 
+        : currentYear;
+      const cleanYear = (!isNaN(rawYear) && rawYear >= 1880 && rawYear <= currentYear + 5) ? rawYear : currentYear;
+
+      let parsedRating = 0;
+      if (form.imdb_rating !== undefined && form.imdb_rating !== null) {
+        const ratingStr = String(form.imdb_rating).replace(",", ".").trim();
+        const num = parseFloat(ratingStr);
+        parsedRating = isNaN(num) ? 0 : Math.min(10, Math.max(0, Math.round(num * 10) / 10));
+      }
+
       const payload = {
         ...form,
+        year: cleanYear,
+        release_year: cleanYear,
+        imdb_rating: parsedRating,
         source_id: form.source_id === "" ? null : form.source_id,
         source_type: form.source_type || "uzmovi",
         custom_source_name: form.source_type === "boshqa" ? (form.custom_source_name.trim() || null) : null,
@@ -934,7 +950,7 @@ export default function SeriesListPage() {
             <div className="flex flex-wrap gap-3">
               {[
                 { id: "uzmovi", label: "Uzmovi", logo: "https://uzmovi.com/favicon.ico" },
-                { id: "asilmedia", label: "Asilmedia", logo: "https://asilmedia.org/favicon.ico" },
+                { id: "asilmedia", label: "Asilmedia", logo: "https://asilmedia.org/favicon.svg" },
                 { id: "boshqa", label: "Boshqa studiya / Manba" },
               ].map((opt) => (
                 <button

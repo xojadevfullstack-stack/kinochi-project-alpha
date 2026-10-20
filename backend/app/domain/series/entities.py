@@ -2,7 +2,8 @@
 Series domain entities.
 """
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from typing import Any
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from app.domain.categories.entities import Category
 from app.domain.pages.entities import Page
 
@@ -83,6 +84,7 @@ class SeriesBase(BaseModel):
     kinochi_rating: float | None = None
     kinochi_votes_count: int = 0
     release_year: int | None = None
+    year: int | None = None
     director: str | None = None
     cast: str | None = None
     status: str = "ongoing"
@@ -91,6 +93,27 @@ class SeriesBase(BaseModel):
     source_type: str | None = "uzmovi"
     custom_source_name: str | None = None
     custom_source_logo: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_series_input(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            val_year = data.get("release_year") if data.get("release_year") is not None else data.get("year")
+            if val_year is not None and str(val_year).strip():
+                try:
+                    int_year = int(str(val_year).strip())
+                    data["release_year"] = int_year
+                    data["year"] = int_year
+                except (ValueError, TypeError):
+                    pass
+            for r_key in ("imdb_rating", "tmdb_rating", "kinochi_rating"):
+                if data.get(r_key) is not None:
+                    try:
+                        r_val = str(data[r_key]).replace(",", ".").strip()
+                        data[r_key] = float(r_val)
+                    except (ValueError, TypeError):
+                        pass
+        return data
 
 class SeriesCreate(SeriesBase):
     category_ids: list[int] | None = None
@@ -105,6 +128,7 @@ class SeriesUpdate(BaseModel):
     imdb_rating: float | None = Field(None, ge=0, le=10)
     tmdb_id: int | None = None
     release_year: int | None = None
+    year: int | None = None
     director: str | None = None
     cast: str | None = None
     status: str | None = None
@@ -116,6 +140,27 @@ class SeriesUpdate(BaseModel):
     source_type: str | None = None
     custom_source_name: str | None = None
     custom_source_logo: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_series_update(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            val_year = data.get("release_year") if data.get("release_year") is not None else data.get("year")
+            if val_year is not None and str(val_year).strip():
+                try:
+                    int_year = int(str(val_year).strip())
+                    data["release_year"] = int_year
+                    data["year"] = int_year
+                except (ValueError, TypeError):
+                    pass
+            for r_key in ("imdb_rating", "tmdb_rating"):
+                if data.get(r_key) is not None:
+                    try:
+                        r_val = str(data[r_key]).replace(",", ".").strip()
+                        data[r_key] = float(r_val)
+                    except (ValueError, TypeError):
+                        pass
+        return data
 
 from app.domain.series.source_entities import SourceResponse
 

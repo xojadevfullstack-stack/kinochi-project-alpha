@@ -572,7 +572,7 @@ async def enrich_movie_smart(
     if source_poster and ("img_proxy=" in source_poster or "anitoobtv.uz" in source_poster):
         source_poster = None
 
-    detected_type = "series" if (media_type == "series" or any(w in raw_title.lower() for w in ["serial", "dorama", "mavsum"])) else "movie"
+    detected_type = "series" if (media_type in ("series", "dorama") or any(w in raw_title.lower() for w in ["serial", "dorama", "mavsum"])) else "movie"
 
     # Anime nomini lug'atdan tekshirish
     norm_clean = clean_title.lower().strip()
@@ -918,6 +918,20 @@ async def enrich_movie_smart(
     for gname in matched_cat_names:
         if gname in cat_map:
             final_cat_ids.append(cat_map[gname])
+
+    # Media type ga qarab qo'shimcha kategoriyalarni qo'shish
+    raw_lower = (raw_title or "").lower()
+    meta_genres_lower = (metadata.get("genres") or "").lower()
+    if media_type == "anime" or "anime" in raw_lower or "anime" in meta_genres_lower:
+        anime_cat_id = cat_map.get("anime") or 2
+        final_cat_ids.append(anime_cat_id)
+    if media_type == "multfilm" or any(w in raw_lower or w in meta_genres_lower for w in ["animatsiya", "multfilm", "animation"]):
+        anim_cat_id = cat_map.get("animatsiya") or cat_map.get("animation") or 22
+        final_cat_ids.append(anim_cat_id)
+    if media_type == "dorama" or "dorama" in raw_lower or "dorama" in meta_genres_lower:
+        drama_cat_id = cat_map.get("drama") or 3
+        final_cat_ids.append(drama_cat_id)
+
     if is_adult:
         cat_18_id = cat_map.get("18+") or cat_map.get("18-plus") or 33
         if cat_18_id and cat_18_id not in final_cat_ids:

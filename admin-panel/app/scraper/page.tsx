@@ -80,12 +80,14 @@ export default function ScraperPage() {
   const [queueTotalPages, setQueueTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingQueue, setLoadingQueue] = useState(false);
 
   // ── Action / Form States ──────────────────────────────────
   const [parseSource, setParseSource] = useState("uzmovi");
   const [parsePages, setParsePages] = useState(3);
+  const [parseMediaType, setParseMediaType] = useState("all");
   const [downloadTarget, setDownloadTarget] = useState("uzmovi");
   const [downloadLimit, setDownloadLimit] = useState(5);
   const [downloadCodes, setDownloadCodes] = useState("");
@@ -94,7 +96,7 @@ export default function ScraperPage() {
   // ── Autopilot & Checkpoint States ─────────────────────────
   const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia" | "anitoob" | "animeelar">("all");
   const [autopilotMinRating, setAutopilotMinRating] = useState(6.0);
-  const [autopilotMediaType, setAutopilotMediaType] = useState<"all" | "movie" | "series">("all");
+  const [autopilotMediaType, setAutopilotMediaType] = useState<"all" | "movie" | "series" | "dorama" | "anime" | "multfilm">("all");
   const [autopilotLoading, setAutopilotLoading] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState(false);
   const [editUzmoviPage, setEditUzmoviPage] = useState<number | "">("");
@@ -173,6 +175,7 @@ export default function ScraperPage() {
         page_size: "15",
         status: statusFilter,
         source: sourceFilter,
+        media_type: mediaTypeFilter,
       });
       if (searchQuery.trim()) {
         queryParams.append("search", searchQuery.trim());
@@ -341,7 +344,7 @@ export default function ScraperPage() {
       fetchQueue(1);
     }, 350);
     return () => clearTimeout(timer);
-  }, [searchQuery, statusFilter, sourceFilter]);
+  }, [searchQuery, statusFilter, sourceFilter, mediaTypeFilter]);
 
   // Terminal Auto-scroll (Without jumping entire window)
   useEffect(() => {
@@ -422,6 +425,7 @@ export default function ScraperPage() {
         body: JSON.stringify({
           source: parseSource,
           pages: Math.max(1, Number(parsePages) || 1),
+          media_type: parseMediaType,
         }),
       });
       showToast("success", res.message || "Katalog yig'ish boshlandi!");
@@ -1278,6 +1282,9 @@ export default function ScraperPage() {
                         <option value="all" className="bg-zinc-900 text-white">🎞️ Barchasi</option>
                         <option value="movie" className="bg-zinc-900 text-white">🎬 Faqat Kino</option>
                         <option value="series" className="bg-zinc-900 text-white">📺 Faqat Serial</option>
+                        <option value="dorama" className="bg-zinc-900 text-white">🎭 Faqat Dorama</option>
+                        <option value="anime" className="bg-zinc-900 text-white">⛩️ Faqat Anime</option>
+                        <option value="multfilm" className="bg-zinc-900 text-white">🧸 Faqat Multfilm</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-2.5 top-2 text-zinc-400 pointer-events-none text-base">
                         expand_more
@@ -1372,8 +1379,11 @@ export default function ScraperPage() {
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary-container"
                     >
                       <option value="all">Hammasi</option>
-                      <option value="movie">Faqat Kinolar</option>
-                      <option value="series">Faqat Seriallar</option>
+                      <option value="movie">🎬 Faqat Kinolar</option>
+                      <option value="series">📺 Faqat Seriallar</option>
+                      <option value="dorama">🎭 Faqat Doramalar</option>
+                      <option value="anime">⛩️ Faqat Animelar</option>
+                      <option value="multfilm">🧸 Faqat Multfilmlar</option>
                     </select>
                   </div>
                 </div>
@@ -1431,6 +1441,23 @@ export default function ScraperPage() {
                     <option value="asilmedia">Asilmedia (asilmedia.org)</option>
                     <option value="anitoob">AniToob (bot.anitoobtv.uz / anime)</option>
                     <option value="animeelar">Animeelar (@Animeelar_Bot)</option>
+                  </select>
+                </div>
+
+                {/* Media Type */}
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Media Turi</label>
+                  <select
+                    value={parseMediaType}
+                    onChange={(e) => setParseMediaType(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary-container"
+                  >
+                    <option value="all">Hammasi</option>
+                    <option value="movie">🎬 Faqat Kinolar</option>
+                    <option value="series">📺 Faqat Seriallar</option>
+                    <option value="dorama">🎭 Faqat Doramalar</option>
+                    <option value="anime">⛩️ Faqat Animelar</option>
+                    <option value="multfilm">🧸 Faqat Multfilmlar</option>
                   </select>
                 </div>
 
@@ -2142,6 +2169,23 @@ export default function ScraperPage() {
               <option value="animeelar">Animeelar</option>
             </select>
           </div>
+
+          {/* Media Type Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-secondary">Turi:</span>
+            <select
+              value={mediaTypeFilter}
+              onChange={(e) => setMediaTypeFilter(e.target.value)}
+              className="bg-black/40 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none"
+            >
+              <option value="all">Barchasi</option>
+              <option value="movie">Kino</option>
+              <option value="series">Serial</option>
+              <option value="dorama">Dorama</option>
+              <option value="anime">Anime</option>
+              <option value="multfilm">Multfilm</option>
+            </select>
+          </div>
         </div>
 
         {/* Table */}
@@ -2226,12 +2270,26 @@ export default function ScraperPage() {
                           className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                             item.media_type === "series"
                               ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                              : item.media_type === "dorama"
+                              ? "bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30"
+                              : item.media_type === "anime"
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              : item.media_type === "multfilm"
+                              ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
                               : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                           }`}
                         >
-                          {item.media_type === "series" ? "Serial" : "Kino"}
+                          {item.media_type === "series"
+                            ? "Serial"
+                            : item.media_type === "dorama"
+                            ? "Dorama"
+                            : item.media_type === "anime"
+                            ? "Anime"
+                            : item.media_type === "multfilm"
+                            ? "Multfilm"
+                            : "Kino"}
                         </span>
-                        {item.media_type === "series" && item.episodes_count && (
+                        {(item.media_type === "series" || item.media_type === "dorama") && item.episodes_count && (
                           <div className="text-[10px] text-zinc-400 mt-1">
                             {item.downloaded_episodes || 0} / {item.episodes_count} qism
                           </div>
@@ -2504,7 +2562,7 @@ export default function ScraperPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary mb-1">Yili</label>
                   <input
@@ -2518,6 +2576,20 @@ export default function ScraperPage() {
                     }
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">Turi</label>
+                  <select
+                    value={editingItem.media_type || "movie"}
+                    onChange={(e) => setEditingItem({ ...editingItem, media_type: e.target.value })}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="movie">Kino</option>
+                    <option value="series">Serial</option>
+                    <option value="dorama">Dorama</option>
+                    <option value="anime">Anime</option>
+                    <option value="multfilm">Multfilm</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary mb-1">Janrlari</label>

@@ -259,12 +259,17 @@ class ProcessManager:
         source: str = "uzmovi",
         pages: int = 3,
         start_page: Optional[int] = None,
-        min_rating: Optional[float] = None
+        min_rating: Optional[float] = None,
+        media_type: str = "all",
     ) -> Dict[str, Any]:
         if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
             return {"success": False, "message": "Noma'lum manba."}
+        if media_type not in ("all", "movie", "series", "dorama", "anime", "multfilm"):
+            return {"success": False, "message": "Noma'lum media turi."}
         pages = max(1, min(int(pages), 50))
         cmd = [VENV_PYTHON, SCRAPER_SCRIPT, "--parse", "--source", source, "--pages", str(pages)]
+        if media_type and media_type != "all":
+            cmd.extend(["--media-type", media_type])
         if start_page is not None:
             cmd.extend(["--start-page", str(start_page)])
         if min_rating is not None:
@@ -281,7 +286,7 @@ class ProcessManager:
     ) -> Dict[str, Any]:
         if target not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
             return {"success": False, "message": "Noma'lum maqsadli bot."}
-        if media_type not in ("all", "movie", "series"):
+        if media_type not in ("all", "movie", "series", "dorama", "anime", "multfilm"):
             return {"success": False, "message": "Noma'lum media turi."}
         limit = max(1, min(int(limit), 500))
 
@@ -309,6 +314,8 @@ class ProcessManager:
     ) -> Dict[str, Any]:
         if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar", "all"):
             return {"success": False, "message": "Noma'lum manba."}
+        if media_type not in ("all", "movie", "series", "dorama", "anime", "multfilm"):
+            return {"success": False, "message": "Noma'lum media turi."}
 
         try:
             StateManager().update(autopilot_active=True)

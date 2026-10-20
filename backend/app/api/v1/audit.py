@@ -105,7 +105,8 @@ class QuickUpdatePayload(BaseModel):
 
 def get_movie_issue_condition(issue_type: str):
     has_valid_video = MovieModel.translations.any(
-        MovieTranslationModel.telegram_file_id.isnot(None) & (MovieTranslationModel.telegram_file_id != "")
+        (MovieTranslationModel.telegram_file_id.isnot(None) & (MovieTranslationModel.telegram_file_id != ""))
+        | MovieTranslationModel.storage_channel_message_id.isnot(None)
     )
     has_valid_poster = MovieModel.poster_url.isnot(None) & (MovieModel.poster_url != "") & MovieModel.poster_url.ilike("http%")
     has_valid_desc = MovieModel.description.isnot(None) & (MovieModel.description != "") & (func.length(MovieModel.description) >= 30)
@@ -152,7 +153,8 @@ def get_series_issue_condition(issue_type: str):
     has_episodes_without_vid = SeriesModel.seasons.any(
         SeasonModel.episodes.any(
             ~EpisodeModel.translations.any(
-                EpisodeTranslationModel.telegram_file_id.isnot(None) & (EpisodeTranslationModel.telegram_file_id != "")
+                (EpisodeTranslationModel.telegram_file_id.isnot(None) & (EpisodeTranslationModel.telegram_file_id != ""))
+                | EpisodeTranslationModel.storage_channel_message_id.isnot(None)
             )
         )
     )
@@ -199,7 +201,7 @@ def get_series_issue_condition(issue_type: str):
 
 def evaluate_movie_issues(movie: MovieModel) -> tuple[dict[str, bool], list[IssueBadge]]:
     has_video = any(
-        t.telegram_file_id and str(t.telegram_file_id).strip() != ""
+        bool((t.telegram_file_id and str(t.telegram_file_id).strip() != "") or t.storage_channel_message_id is not None)
         for t in (movie.translations or [])
     )
     has_poster = bool(movie.poster_url and movie.poster_url.strip().startswith("http"))
@@ -248,12 +250,15 @@ def evaluate_series_issues(s: SeriesModel) -> tuple[dict[str, bool], list[IssueB
     all_episodes = [ep for sz in seasons for ep in (sz.episodes or [])]
     has_episodes = len(all_episodes) > 0
     
-    # All episodes must have at least one translation with valid telegram_file_id
+    # All episodes must have at least one translation with valid telegram_file_id or storage_channel_message_id
     has_video = (
         has_seasons
         and has_episodes
         and all(
-            any(t.telegram_file_id and str(t.telegram_file_id).strip() != "" for t in (ep.translations or []))
+            any(
+                bool((t.telegram_file_id and str(t.telegram_file_id).strip() != "") or t.storage_channel_message_id is not None)
+                for t in (ep.translations or [])
+            )
             for ep in all_episodes
         )
     )
