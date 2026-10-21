@@ -27,18 +27,54 @@ interface CollectionItem {
   } | null;
 }
 
+import { useAuth } from "../lib/auth/AuthProvider";
+import { fetchApi } from "../lib/api";
+
 interface CollectionTimelineViewProps {
+  collectionId?: number;
   initialItems: CollectionItem[];
   collectionName: string;
   collectionSlug: string;
 }
 
 export default function CollectionTimelineView({
+  collectionId,
   initialItems,
   collectionName,
   collectionSlug,
 }: CollectionTimelineViewProps) {
   const [sortMode, setSortMode] = useState<"chronological" | "release">("chronological");
+  const { user } = useAuth();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subLoading, setSubLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (user?.telegram_id && collectionId) {
+      fetchApi(`/collections/${collectionId}/subscription-status?telegram_user_id=${user.telegram_id}`)
+        .then((res: any) => setIsSubscribed(Boolean(res?.is_subscribed)))
+        .catch(() => {});
+    }
+  }, [user?.telegram_id, collectionId]);
+
+  const handleToggleSub = async () => {
+    if (!collectionId) return;
+    if (!user?.telegram_id) {
+      window.open(`https://t.me/kinochi_mvp_bot?start=col_${collectionId}`, "_blank");
+      return;
+    }
+    setSubLoading(true);
+    try {
+      const res: any = await fetchApi(`/collections/${collectionId}/subscribe`, {
+        method: "POST",
+        body: JSON.stringify({ telegram_user_id: user.telegram_id }),
+      });
+      setIsSubscribed(Boolean(res?.is_subscribed));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubLoading(false);
+    }
+  };
 
   // Sort items according to active mode
   const sortedItems = [...initialItems].sort((a, b) => {
@@ -65,8 +101,27 @@ export default function CollectionTimelineView({
           </div>
         </div>
 
-        {/* Toggle Buttons */}
-        <div className="flex items-center bg-black/60 p-1.5 rounded-xl border border-white/10 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3">
+          {collectionId && (
+            <button
+              onClick={handleToggleSub}
+              disabled={subLoading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer ${
+                isSubscribed
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30"
+                  : "bg-primary-container text-white hover:bg-inverse-primary shadow-primary-container/20"
+              }`}
+              title={isSubscribed ? "Obunani bekor qilish" : "Yangi film chiqsa Telegram orqali xabar olish"}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {isSubscribed ? "notifications_active" : "notification_add"}
+              </span>
+              <span>{isSubscribed ? "Obuna bo'lingan" : "Yangi qismlarga obuna"}</span>
+            </button>
+          )}
+
+          {/* Toggle Buttons */}
+          <div className="flex items-center bg-black/60 p-1.5 rounded-xl border border-white/10 w-full sm:w-auto">
           <button
             onClick={() => setSortMode("chronological")}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -91,13 +146,13 @@ export default function CollectionTimelineView({
             <span>🎞️ Chiqarilgan yili</span>
           </button>
         </div>
+        </div>
       </div>
 
       {/* Timeline Steps Grid / List */}
       <div className="space-y-4">
         {sortedItems.map((item, idx) => {
-          const activeOrder =
-            sortMode === "chronological" ? item.chronological_order : item.release_order;
+          const activeOrder = idx + 1;
           const movie = item.movie;
           const series = item.series;
           const content = movie || series;

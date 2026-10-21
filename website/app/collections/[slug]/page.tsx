@@ -110,6 +110,7 @@ export default async function CollectionDetailPage({ params }: Props) {
       {/* Main Timeline View with Dual Toggle */}
       <div className="max-w-container-max mx-auto px-gutter">
         <CollectionTimelineView
+          collectionId={collection.id}
           initialItems={collection.items || []}
           collectionName={collection.name}
           collectionSlug={collection.slug}

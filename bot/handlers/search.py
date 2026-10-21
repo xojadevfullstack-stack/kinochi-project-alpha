@@ -140,6 +140,58 @@ async def handle_series_subscription(callback: CallbackQuery):
             pass
 
 
+@router.callback_query(F.data.startswith("sub_col_"))
+async def handle_collection_subscription(callback: CallbackQuery):
+    try:
+        parts = callback.data.split("_")
+        col_id = int(parts[2])
+        movie_code = parts[3] if len(parts) > 3 else None
+
+        res = await api_client.toggle_collection_subscription(col_id, callback.from_user.id)
+        is_sub = res.get("is_subscribed", False)
+
+        col = await api_client.get_collection(col_id)
+        col_name = col.get("name", "To'plam") if col else "To'plam"
+
+        if is_sub:
+            await callback.answer(f"🔔 Obuna bo'ldingiz!\n\n'{col_name}'ga yangi film qo'shilsa xabar yuboramiz.", show_alert=True)
+        else:
+            await callback.answer(f"🔕 '{col_name}' obunasi bekor qilindi.", show_alert=True)
+
+        if movie_code:
+            movie = await api_client.get_movie_by_code(movie_code)
+            if movie:
+                from utils.info_sender import send_movie_info
+                await send_movie_info(callback.bot, callback.from_user.id, movie, edit_message_id=callback.message.message_id)
+    except Exception as e:
+        logger.warning(f"Error in handle_collection_subscription: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data.startswith("col_view_"))
+async def handle_collection_view(callback: CallbackQuery):
+    try:
+        col_id = int(callback.data.split("_", 2)[2])
+        col = await api_client.get_collection(col_id)
+        if not col:
+            await callback.answer("To'plam topilmadi", show_alert=True)
+            return
+
+        from utils.info_sender import send_collection_info
+        await send_collection_info(callback.bot, callback.from_user.id, col, edit_message_id=callback.message.message_id)
+    except Exception as e:
+        logger.warning(f"Error in handle_collection_view: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
 # ── Telegram Inline Search Handler ──────────────────────────────────
 from aiogram.types import (
     InlineQuery,
@@ -255,13 +307,17 @@ async def handle_inline_search(inline_query: InlineQuery):
             slug = item.get("code") or item.get("slug") or str(item_id)
             desc = "🌌 Xronologiya to'plami"
             web_link = f"{base_site}/collections/{slug}"
+            deep_link = f"https://t.me/{bot_username}?start=col_{slug}"
             msg_text = (
                 f"🌌 <b>{html.escape(title)}</b> (Franshiza Xronologiyasi)\n\n"
                 f"📚 Kinokoinotning barcha qismlarini to'liq voqealar ketma-ketligi bo'yicha tomosha qiling!\n\n"
                 f"<i>Kinochi platformasida eng sara sifatda tomosha qiling!</i>"
             )
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🌐 Franshizani ko'rish", url=web_link)]
+                [
+                    InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
+                    InlineKeyboardButton(text="🌐 Franshizani ko'rish", url=web_link)
+                ]
             ])
         elif c_type == "series":
             desc = f"📺 Serial • {year or 'N/A'}{rating_str}"

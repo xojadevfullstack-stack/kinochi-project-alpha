@@ -48,11 +48,10 @@ def build_search_results_keyboard(results: list[dict]) -> InlineKeyboardMarkup:
                 callback_data=f"search_series_{series_id}",
             )
         elif item_type == "collection":
-            slug = item.get("code") or item.get("slug")
-            web_url = f"{settings.WEBSITE_URL.rstrip('/')}/collections/{slug}"
+            col_id = item.get("id")
             builder.button(
                 text=f"🌌 {title} (Xronologiya)",
-                url=web_url,
+                callback_data=f"col_view_{col_id}",
             )
 
     builder.adjust(1)
@@ -81,6 +80,7 @@ def get_catalog_categories_inline(pages: list[dict] = None) -> InlineKeyboardMar
     # Asosiy bo'limlar
     builder.button(text="🎬 Kinolar", callback_data="catalog_all_movies")
     builder.button(text="📺 Seriallar", callback_data="catalog_all_series")
+    builder.button(text="📚 Franshizalar & To'plamlar", callback_data="catalog_collections")
     
     # Dinamik sahifalar (Admin panel va saytdan qo'shilgan)
     if pages:

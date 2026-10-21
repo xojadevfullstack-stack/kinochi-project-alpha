@@ -333,6 +333,84 @@ class APIClient:
             logger.warning(f"Error fetching user summary for {telegram_id}: {e}")
             return None
 
+    async def toggle_collection_subscription(self, collection_id: int, telegram_user_id: int) -> Dict[str, Any]:
+        """Subscribes or unsubscribes a user to franchise / collection new item alerts."""
+        try:
+            resp = await self.client.post(
+                f"/collections/{collection_id}/subscribe",
+                json={"telegram_user_id": telegram_user_id}
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.error(f"Error toggling collection subscription: {e}")
+            return {"is_subscribed": False}
+
+    async def check_collection_subscription(self, collection_id: int, telegram_user_id: int) -> bool:
+        """Checks if user is subscribed to franchise / collection updates."""
+        try:
+            resp = await self.client.get(
+                f"/collections/{collection_id}/subscription-status",
+                params={"telegram_user_id": telegram_user_id}
+            )
+            if resp.status_code == 200:
+                return resp.json().get("is_subscribed", False)
+            return False
+        except Exception as e:
+            logger.error(f"Error checking collection subscription: {e}")
+            return False
+
+    async def notify_collection_new_item(
+        self,
+        collection_id: int,
+        movie_id: Optional[int] = None,
+        series_id: Optional[int] = None,
+        custom_message: Optional[str] = None
+    ) -> bool:
+        """Calls backend to broadcast smart notification to all collection subscribers."""
+        try:
+            payload = {
+                "movie_id": movie_id,
+                "series_id": series_id,
+                "custom_message": custom_message
+            }
+            resp = await self.client.post(f"/collections/{collection_id}/notify-new-item", json=payload)
+            return resp.status_code == 200
+        except Exception as e:
+            logger.warning(f"Error calling notify_collection_new_item for collection {collection_id}: {e}")
+            return False
+
+    async def get_collections(
+        self,
+        franchise_only: bool = False,
+        category_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Fetches active collections / franchises."""
+        try:
+            params = {}
+            if franchise_only:
+                params["franchise_only"] = "true"
+            if category_type:
+                params["category_type"] = category_type
+            resp = await self.client.get("/collections", params=params)
+            if resp.status_code == 200:
+                return resp.json()
+            return []
+        except Exception as e:
+            logger.warning(f"Error fetching collections: {e}")
+            return []
+
+    async def get_collection(self, slug_or_id: Union[str, int]) -> Optional[Dict[str, Any]]:
+        """Fetches collection detail with items."""
+        try:
+            resp = await self.client.get(f"/collections/{slug_or_id}")
+            if resp.status_code == 200:
+                return resp.json()
+            return None
+        except Exception as e:
+            logger.warning(f"Error fetching collection {slug_or_id}: {e}")
+            return None
+
     async def submit_report(
         self,
         media_type: str,

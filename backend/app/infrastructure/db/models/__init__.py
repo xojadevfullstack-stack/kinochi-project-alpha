@@ -18,11 +18,12 @@ from app.infrastructure.db.models.achievement import UserAchievementModel
 from app.infrastructure.db.models.review import ReviewModel
 
 from app.infrastructure.db.models.collection import CollectionModel, CollectionItemModel
+from app.infrastructure.db.models.collection_subscription import CollectionSubscriptionModel
 from app.infrastructure.db.models.report import ReportModel
 from app.infrastructure.db.models.blacklist import BlacklistModel
 from app.infrastructure.db.models.series_subscription import SeriesSubscriptionModel
 from app.infrastructure.db.models.rejected_item import RejectedItemModel
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
 
-__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table", "WatchHistoryModel", "UserAchievementModel", "ReviewModel", "CollectionModel", "CollectionItemModel", "ReportModel", "BlacklistModel", "SeriesSubscriptionModel", "RejectedItemModel", "SeedCandidateModel"]
+__all__ = ["CategoryModel", "MovieModel", "movie_category_table", "UserModel", "MandatoryChannelModel", "AdminUserModel", "BroadcastModel", "SeriesModel", "SeasonModel", "EpisodeModel", "series_category_table", "SourceModel", "MovieTranslationModel", "EpisodeTranslationModel", "PageModel", "page_movie_table", "page_series_table", "WatchHistoryModel", "UserAchievementModel", "ReviewModel", "CollectionModel", "CollectionItemModel", "CollectionSubscriptionModel", "ReportModel", "BlacklistModel", "SeriesSubscriptionModel", "RejectedItemModel", "SeedCandidateModel"]
 

@@ -249,6 +249,17 @@ async def process_movie_message(message: Message, bot: Bot, movie: dict):
             return
         resp.raise_for_status()
         await message.reply(f"✅ Kino videosi saqlandi va indekslandi. Kod: `{movie['code']}`", parse_mode="Markdown")
+
+        # Smart Notification for Collection/Franchise subscribers
+        try:
+            franchise = await api_client.get_movie_franchise_context(movie.get("code", ""))
+            if franchise and franchise.get("collection_id"):
+                await api_client.notify_collection_new_item(
+                    collection_id=franchise["collection_id"],
+                    movie_id=movie.get("id")
+                )
+        except Exception as col_notif_err:
+            logger.debug(f"Collection subscriber notification skipped: {col_notif_err}")
     except Exception as e:
         logger.error(f"Error linking video for movie {movie['id']}: {e}")
         try:

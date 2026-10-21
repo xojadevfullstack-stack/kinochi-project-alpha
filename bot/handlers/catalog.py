@@ -51,6 +51,48 @@ async def send_catalog(target: CallbackQuery | Message, state: FSMContext = None
     else:
         await target.answer(text, parse_mode="HTML", reply_markup=markup)
 
+@router.callback_query(F.data == "catalog_collections")
+async def handle_catalog_collections(callback: CallbackQuery):
+    try:
+        collections = await api_client.get_collections()
+        if not collections:
+            await callback.answer("Hozircha faol to'plamlar mavjud emas.", show_alert=True)
+            return
+
+        text = (
+            "📚 <b>Kino To'plamlari va Franshizalar</b>\n\n"
+            "O'zingizga yoqqan kino olamini tanlang, barcha qismlarini xronologik tartibda tomosha qiling va yangi qismlariga obuna bo'ling!"
+        )
+
+        from aiogram.utils.keyboard import InlineKeyboardBuilder
+        builder = InlineKeyboardBuilder()
+        for col in collections:
+            c_name = col.get("name", "To'plam")
+            count = col.get("items_count", 0)
+            is_f = col.get("is_franchise", True)
+            icon = "🎬" if is_f else "📂"
+            count_str = f" ({count} ta)" if count > 0 else ""
+            builder.button(
+                text=f"{icon} {c_name}{count_str}",
+                callback_data=f"col_view_{col.get('id')}"
+            )
+
+        builder.button(text="🔙 Katalogga qaytish", callback_data="menu_catalog")
+        builder.adjust(1)
+
+        try:
+            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=builder.as_markup())
+        except Exception:
+            await callback.message.answer(text, parse_mode="HTML", reply_markup=builder.as_markup())
+    except Exception as e:
+        logger.warning(f"Error in handle_catalog_collections: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
 @router.callback_query(F.data == "menu_catalog")
 async def handle_catalog_btn(callback: CallbackQuery, state: FSMContext = None):
     try:

@@ -71,14 +71,24 @@ async def render_user_profile(user_id: int, first_name: str, username: str = Non
         lines.append("  <i>Hali yutuqlar yo'q. Ko'proq tomosha qiling!</i>")
 
     # Subscriptions
+    col_subs = summary.get("collection_subscriptions", [])
     lines.append("\n🔔 <b>Faol Serial Obunalari:</b>")
     if subscriptions:
-        for sub in subscriptions[:4]:
+        for sub in subscriptions[:3]:
             lines.append(f"  • 📺 {html.escape(sub.get('title', 'Serial'))}")
-        if len(subscriptions) > 4:
-            lines.append(f"  <i>...va yana {len(subscriptions) - 4} ta</i>")
+        if len(subscriptions) > 3:
+            lines.append(f"  <i>...va yana {len(subscriptions) - 3} ta</i>")
     else:
         lines.append("  <i>Hozircha hech qaysi serialga obuna emassiz.</i>")
+
+    lines.append("\n🎬 <b>Franshiza va To'plam Obunalari:</b>")
+    if col_subs:
+        for csub in col_subs[:3]:
+            lines.append(f"  • 📂 {html.escape(csub.get('name', 'To\'plam'))}")
+        if len(col_subs) > 3:
+            lines.append(f"  <i>...va yana {len(col_subs) - 3} ta</i>")
+    else:
+        lines.append("  <i>Hozircha hech qanday franshizaga obuna emassiz.</i>")
 
     # Recent history
     if recent_history:
@@ -90,6 +100,8 @@ async def render_user_profile(user_id: int, first_name: str, username: str = Non
 
     builder = InlineKeyboardBuilder()
     builder.button(text="✨ Didga mos tavsiyalar", callback_data="rec_cat:personalized:0")
+    if subscriptions or summary.get("collection_subscriptions"):
+        builder.button(text="🔔 Obunalarni boshqarish", callback_data="manage_my_subs")
 
     # Website magic login button
     try:
@@ -139,3 +151,79 @@ async def handle_profile_command(message: Message):
         username=message.from_user.username
     )
     await message.answer(text, parse_mode="HTML", reply_markup=markup)
+
+
+
+@router.callback_query(F.data == "manage_my_subs")
+async def handle_manage_my_subs(callback: CallbackQuery):
+    try:
+        summary = await api_client.get_user_summary(callback.from_user.id)
+        if not summary:
+            await callback.answer("Obunalar topilmadi", show_alert=True)
+            return
+
+        series_subs = summary.get("subscriptions", [])
+        col_subs = summary.get("collection_subscriptions", [])
+
+        if not series_subs and not col_subs:
+            await callback.answer("Sizda hozircha hech qanday faol obuna yo'q.", show_alert=True)
+            return
+
+        text = "🔔 <b>Mening Obunalarim</b>\n\nYangi qismlar yoki filmlar chiqqanda bot sizga avtomatik xabar beradi. Obunani o'chirish uchun yonidagi tugmani bosing:\n"
+
+        builder = InlineKeyboardBuilder()
+        for s in series_subs:
+            s_title = s.get("title", "Serial")[:20]
+            builder.button(text=f"📺 {s_title}", callback_data=f"series_info_{s.get('series_id')}")
+            builder.button(text="❌ O'chirish", callback_data=f"prof_unsub_ser_{s.get('series_id')}")
+
+        for c in col_subs:
+            c_name = c.get("name", "To'plam")[:20]
+            builder.button(text=f"📂 {c_name}", callback_data=f"col_view_{c.get('collection_id')}")
+            builder.button(text="❌ O'chirish", callback_data=f"prof_unsub_col_{c.get('collection_id')}")
+
+        builder.button(text="🔙 Profilga qaytish", callback_data="menu_profile")
+        builder.adjust(2, 2, 1)
+
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=builder.as_markup())
+    except Exception as e:
+        logger.warning(f"Error in handle_manage_my_subs: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data.startswith("prof_unsub_col_"))
+async def handle_prof_unsub_col(callback: CallbackQuery):
+    try:
+        col_id = int(callback.data.split("_", 3)[3])
+        await api_client.toggle_collection_subscription(col_id, callback.from_user.id)
+        await callback.answer("🔕 Franshiza obunasi bekor qilindi.", show_alert=True)
+        # Re-render manage subscriptions list
+        await handle_manage_my_subs(callback)
+    except Exception as e:
+        logger.warning(f"Error in handle_prof_unsub_col: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data.startswith("prof_unsub_ser_"))
+async def handle_prof_unsub_ser(callback: CallbackQuery):
+    try:
+        series_id = int(callback.data.split("_", 3)[3])
+        await api_client.toggle_series_subscription(series_id, callback.from_user.id)
+        await callback.answer("🔕 Serial obunasi bekor qilindi.", show_alert=True)
+        # Re-render manage subscriptions list
+        await handle_manage_my_subs(callback)
+    except Exception as e:
+        logger.warning(f"Error in handle_prof_unsub_ser: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass

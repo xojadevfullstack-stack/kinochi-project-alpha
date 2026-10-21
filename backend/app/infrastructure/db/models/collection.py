@@ -20,6 +20,7 @@ class CollectionModel(Base):
     banner_url: Mapped[str | None] = mapped_column(String(1024))
     
     is_franchise: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
+    category_type: Mapped[str] = mapped_column(String(50), default="franchise", server_default="franchise", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
@@ -33,6 +34,12 @@ class CollectionModel(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="CollectionItemModel.chronological_order",
+    )
+    subscriptions: Mapped[list["CollectionSubscriptionModel"]] = relationship(
+        "CollectionSubscriptionModel",
+        back_populates="collection",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
 

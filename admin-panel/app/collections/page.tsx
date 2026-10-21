@@ -12,6 +12,7 @@ type Collection = {
   poster_url?: string | null;
   banner_url?: string | null;
   is_franchise: boolean;
+  category_type?: string;
   is_active: boolean;
   sort_order: number;
   items_count: number;
@@ -52,6 +53,7 @@ export default function CollectionsAdminPage() {
     poster_url: "",
     banner_url: "",
     is_franchise: true,
+    category_type: "franchise",
     is_active: true,
     sort_order: 0,
   });
@@ -66,6 +68,7 @@ export default function CollectionsAdminPage() {
     release_order: 1,
     timeline_event_desc: "",
     is_locked: true,
+    notify_subscribers: false,
   });
 
   useEffect(() => {
@@ -110,6 +113,7 @@ export default function CollectionsAdminPage() {
         poster_url: "",
         banner_url: "",
         is_franchise: true,
+        category_type: "franchise",
         is_active: true,
         sort_order: 0,
       });
@@ -142,6 +146,7 @@ export default function CollectionsAdminPage() {
         release_order: nextOrder,
         timeline_event_desc: "",
         is_locked: true,
+        notify_subscribers: false,
       });
     } catch (e: any) {
       alert("Qismlarni yuklashda xato: " + e.message);
@@ -202,6 +207,7 @@ export default function CollectionsAdminPage() {
           release_order: Number(addItemForm.release_order),
           timeline_event_desc: addItemForm.timeline_event_desc || null,
           is_locked: addItemForm.is_locked,
+          notify_subscribers: addItemForm.notify_subscribers,
         }),
       });
 
@@ -210,6 +216,20 @@ export default function CollectionsAdminPage() {
       loadCollections();
     } catch (e: any) {
       alert("Qo'shishda xato: " + e.message);
+    }
+  };
+
+  const handleManualBroadcast = async (col: Collection) => {
+    const msg = prompt(`"${col.name}" to'plami obunachilariga Smart Notification yuborish.\n\nMaxsus xabar matnini kiriting (yoki bo'sh qoldiring):`);
+    if (msg === null) return;
+    try {
+      const res = await fetchApi(`/collections/${col.id}/notify-new-item`, {
+        method: "POST",
+        body: JSON.stringify({ custom_message: msg || undefined }),
+      });
+      alert(`Xabar muvaffaqiyatli jo'natildi! Qamrov: ${res.notified_count || 0} ta obunachi.`);
+    } catch (e: any) {
+      alert("Xabar yuborishda xato: " + e.message);
     }
   };
 
@@ -235,6 +255,7 @@ export default function CollectionsAdminPage() {
               poster_url: "",
               banner_url: "",
               is_franchise: true,
+              category_type: "franchise",
               is_active: true,
               sort_order: 0,
             });
@@ -314,8 +335,16 @@ export default function CollectionsAdminPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-xs text-white/80">
-                        {col.is_franchise ? "🌌 Franchisa" : "📂 To'plam"}
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-white/90">
+                        {col.category_type === "thematic"
+                          ? "📂 Mavzuli"
+                          : col.category_type === "actor"
+                          ? "👤 Aktyor"
+                          : col.category_type === "genre"
+                          ? "🎭 Janr"
+                          : col.category_type === "country"
+                          ? "🌍 Davlat"
+                          : "🌌 Franshiza"}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -331,6 +360,14 @@ export default function CollectionsAdminPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleManualBroadcast(col)}
+                          className="px-2.5 py-1.5 rounded-lg bg-primary-container/20 hover:bg-primary-container/30 border border-primary-container/30 text-primary-container text-xs font-bold transition-all flex items-center gap-1"
+                          title="Barcha obunachilarga Smart Notification yuborish"
+                        >
+                          <span className="material-symbols-outlined text-sm">notifications_active</span>
+                          <span>Xabar</span>
+                        </button>
                         <button
                           onClick={() => openManageItems(col)}
                           className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1"
@@ -349,6 +386,7 @@ export default function CollectionsAdminPage() {
                               poster_url: col.poster_url || "",
                               banner_url: col.banner_url || "",
                               is_franchise: col.is_franchise,
+                              category_type: col.category_type || "franchise",
                               is_active: col.is_active,
                               sort_order: col.sort_order,
                             });
@@ -403,6 +441,23 @@ export default function CollectionsAdminPage() {
                   placeholder="Masalan: Marvel Kinokoinoti (MCU)"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-white text-sm focus:border-primary-container outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text-secondary mb-1">
+                  To'plam Toifasi (Category Type)
+                </label>
+                <select
+                  value={colForm.category_type}
+                  onChange={(e) => setColForm({ ...colForm, category_type: e.target.value })}
+                  className="w-full bg-surface-container-high border border-white/10 rounded-xl px-3.5 py-2 text-white text-sm focus:border-primary-container outline-none"
+                >
+                  <option value="franchise">🌌 Franshiza (Barcha qismlari xronologiyasi)</option>
+                  <option value="thematic">📂 Mavzuli to'plam (Kosmos, Apokalipsis, Detektiv...)</option>
+                  <option value="actor">👤 Aktyor yoki Rejissyor to'plami</option>
+                  <option value="genre">🎭 Janr & Kayfiyat bo'yicha</option>
+                  <option value="country">🌍 Davlat / Millat (Turk, Hind, Koreys...)</option>
+                </select>
               </div>
 
               <div>
@@ -684,6 +739,25 @@ export default function CollectionsAdminPage() {
                     >
                       <span className="material-symbols-outlined text-base">add</span>
                     </button>
+                  </div>
+
+                  <div className="sm:col-span-12 flex items-center gap-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="notify_subscribers_chk"
+                      checked={addItemForm.notify_subscribers}
+                      onChange={(e) =>
+                        setAddItemForm({ ...addItemForm, notify_subscribers: e.target.checked })
+                      }
+                      className="rounded accent-primary-container cursor-pointer w-4 h-4"
+                    />
+                    <label
+                      htmlFor="notify_subscribers_chk"
+                      className="text-xs text-white/90 font-bold cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>🔔 Barcha obunachilarga darhol Smart Notification yuborish</span>
+                      <span className="text-text-secondary font-normal">(Yangi qism chiqqani haqida botda xabar jo'natiladi)</span>
+                    </label>
                   </div>
                 </form>
               </div>

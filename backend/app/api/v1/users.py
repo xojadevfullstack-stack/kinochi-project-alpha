@@ -12,6 +12,8 @@ from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.achievement import UserAchievementModel
 from app.infrastructure.db.models.series_subscription import SeriesSubscriptionModel
+from app.infrastructure.db.models.collection_subscription import CollectionSubscriptionModel
+from app.infrastructure.db.models.collection import CollectionModel
 from app.core.recommendations import get_user_recommendations
 from app.core.achievements import ACHIEVEMENTS
 from sqlalchemy.orm import selectinload
@@ -295,7 +297,28 @@ async def get_user_summary_by_telegram(
                 "rating": s.series.imdb_rating
             })
 
-    # 4. Recommendations
+    # 4. Collection / Franchise Subscriptions
+    stmt_col_sub = (
+        select(CollectionSubscriptionModel)
+        .where(CollectionSubscriptionModel.telegram_user_id == telegram_id)
+        .options(selectinload(CollectionSubscriptionModel.collection))
+        .order_by(desc(CollectionSubscriptionModel.created_at))
+    )
+    col_sub_records = (await session.execute(stmt_col_sub)).scalars().all()
+    collection_subscriptions = []
+    for cs in col_sub_records:
+        if cs.collection:
+            collection_subscriptions.append({
+                "collection_id": cs.collection.id,
+                "name": cs.collection.name,
+                "slug": cs.collection.slug,
+                "poster_url": cs.collection.poster_url,
+                "banner_url": cs.collection.banner_url,
+                "is_franchise": cs.collection.is_franchise,
+                "category_type": getattr(cs.collection, "category_type", "franchise"),
+            })
+
+    # 5. Recommendations
     try:
         recs = await get_user_recommendations(user.id)
     except Exception as e:
@@ -315,6 +338,7 @@ async def get_user_summary_by_telegram(
         "recent_history": history_items,
         "achievements": achievements,
         "subscriptions": subscriptions,
+        "collection_subscriptions": collection_subscriptions,
         "recommendations": recs[:5]
     }
 

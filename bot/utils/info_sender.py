@@ -69,12 +69,27 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
 
     if franchise and franchise.get("timeline_items") and len(franchise["timeline_items"]) > 1:
         total_parts = len(franchise["timeline_items"])
+        col_id = franchise.get("collection_id")
+        col_name = franchise.get("collection_name", "Franshiza")
         buttons.append([
             InlineKeyboardButton(
-                text=f"Franshizaning boshqa qismlari ({total_parts})",
+                text=f"📚 {col_name} ({total_parts} ta qism)",
                 callback_data=f"franchise_m_{code}"
             )
         ])
+        if col_id:
+            try:
+                is_sub = await api_client.check_collection_subscription(col_id, chat_id)
+            except Exception:
+                is_sub = False
+            sub_icon = "🔕" if is_sub else "🔔"
+            sub_text = "Obunani bekor qilish" if is_sub else f"Obuna: {col_name[:15]}"
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"{sub_icon} {sub_text}",
+                    callback_data=f"sub_col_{col_id}_{code}"
+                )
+            ])
 
     buttons.append([
         InlineKeyboardButton(text="⭐ Baholash", callback_data=f"rate_m_{code}"),
@@ -358,4 +373,116 @@ async def send_season_info(bot: Bot, chat_id: int, season: dict, edit_message_id
         return True
     except TelegramBadRequest as e:
         print(f"Error sending season info: {e}")
+        return False
+
+
+async def send_collection_info(bot: Bot, chat_id: int, collection: dict, edit_message_id: Optional[int] = None) -> bool:
+    """Sends collection / franchise info card with all its timeline parts."""
+    col_id = collection.get("id")
+    name = html.escape(collection.get("name", "To'plam"))
+    desc = html.escape(collection.get("description") or "Kinokoinotning barcha qismlarini to'liq ketma-ketlikda tomosha qiling.")
+    poster_url = collection.get("poster_url") or collection.get("banner_url")
+    items = collection.get("items", [])
+    total = len(items)
+
+    try:
+        is_sub = await api_client.check_collection_subscription(col_id, chat_id)
+    except Exception:
+        is_sub = False
+
+    sub_icon = "🔕" if is_sub else "🔔"
+    sub_text = "Obunani bekor qilish" if is_sub else "Yangi qismlarga obuna bo'lish"
+
+    caption = (
+        f"🌌 <b>{name}</b> (Franshiza Xronologiyasi)\n\n"
+        f"📚 Kinokoinotning barcha qismlarini to'liq voqealar ketma-ketligi bo'yicha tomosha qiling!\n\n"
+        f"📝 <b>Tavsif:</b> {desc}\n\n"
+        f"🔢 Jami qismlar: <b>{total} ta</b>\n"
+        f"<i>Kerakli film ustiga bosib tomosha qilishingiz mumkin:</i>"
+    )
+
+    if len(caption) > 1000:
+        caption = caption[:997] + "..."
+
+    # Sort items by chronological order
+    sorted_items = sorted(items, key=lambda x: x.get("chronological_order") or 0)
+    buttons = []
+    for idx, it in enumerate(sorted_items, 1):
+        m = it.get("movie")
+        s = it.get("series")
+        if m:
+            m_title = m.get("title", "")
+            m_year = f" ({m.get('release_year')})" if m.get("release_year") else ""
+            m_code = m.get("code")
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"#{idx}-qism: {m_title}{m_year}",
+                    callback_data=f"select_m_{m_code}"
+                )
+            ])
+        elif s:
+            s_title = s.get("title", "")
+            s_year = f" ({s.get('release_year')})" if s.get("release_year") else ""
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"#{idx}-qism: {s_title}{s_year}",
+                    callback_data=f"search_series_{s.get('id')}"
+                )
+            ])
+
+    if col_id:
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"{sub_icon} {sub_text}",
+                callback_data=f"sub_col_{col_id}"
+            )
+        ])
+
+    from config import settings
+    base_site = getattr(settings, "WEBSITE_URL", "https://kinochi.uz").rstrip('/')
+    slug = collection.get("slug") or col_id
+    buttons.append([
+        InlineKeyboardButton(text="🌐 Saytda to'liq ko'rish", url=f"{base_site}/collections/{slug}"),
+        InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
+    ])
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+
+    try:
+        if edit_message_id:
+            if poster_url:
+                try:
+                    await bot.edit_message_media(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        media=InputMediaPhoto(media=poster_url, caption=caption, parse_mode="HTML"),
+                        reply_markup=keyboard
+                    )
+                except TelegramBadRequest:
+                    await bot.edit_message_text(
+                        chat_id=chat_id,
+                        message_id=edit_message_id,
+                        text=caption,
+                        parse_mode="HTML",
+                        reply_markup=keyboard
+                    )
+            else:
+                await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=edit_message_id,
+                    text=caption,
+                    parse_mode="HTML",
+                    reply_markup=keyboard
+                )
+        else:
+            if poster_url:
+                try:
+                    await bot.send_photo(chat_id=chat_id, photo=poster_url, caption=caption, parse_mode="HTML", reply_markup=keyboard)
+                except TelegramBadRequest:
+                    await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
+            else:
+                await bot.send_message(chat_id=chat_id, text=caption, parse_mode="HTML", reply_markup=keyboard)
+        return True
+    except TelegramBadRequest as e:
+        print(f"Error sending collection info: {e}")
         return False

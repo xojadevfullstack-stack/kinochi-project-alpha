@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../lib/auth/AuthProvider";
 import TelegramLoginWidget from "./auth/TelegramLoginWidget";
 import LiveSearch from "./LiveSearch";
+import { fetchApi } from "../lib/api";
 
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
@@ -25,6 +26,50 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
   // Synchronize unread notification status
   useEffect(() => {
+    let isCancelled = false;
+
+    const checkFreshUnread = async () => {
+      try {
+        let readIds = new Set<string>();
+        try {
+          const saved = localStorage.getItem("kinochi_read_notification_ids");
+          if (saved) {
+            readIds = new Set(JSON.parse(saved));
+          }
+        } catch {}
+
+        let hasNew = false;
+
+        // 1. Check system broadcasts / announcements
+        try {
+          const bData: any = await fetchApi("/broadcasts/public?limit=5");
+          if (bData && Array.isArray(bData.items) && bData.items.length > 0) {
+            for (const b of bData.items) {
+              if (!readIds.has(`sys-${b.id}`)) {
+                hasNew = true;
+                break;
+              }
+            }
+          }
+        } catch {}
+
+        // 2. If no broadcast unread and user has never marked welcome, show welcome alert
+        if (!hasNew && !readIds.has("sys-welcome")) {
+          hasNew = true;
+        }
+
+        if (!isCancelled) {
+          localStorage.setItem("kinochi_has_unread", hasNew ? "true" : "false");
+          setHasUnread(hasNew);
+        }
+      } catch (e) {
+        if (!isCancelled) {
+          const val = localStorage.getItem("kinochi_has_unread");
+          setHasUnread(val === "true");
+        }
+      }
+    };
+
     const updateUnreadStatus = () => {
       try {
         const val = localStorage.getItem("kinochi_has_unread");
@@ -35,8 +80,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     };
 
     updateUnreadStatus();
+    checkFreshUnread();
+
     window.addEventListener("kinochi_notifications_updated", updateUnreadStatus);
     window.addEventListener("storage", updateUnreadStatus);
+    window.addEventListener("focus", checkFreshUnread);
 
     const handleToggleProfile = () => {
       setProfileDropdownOpen(prev => !prev);
@@ -44,12 +92,17 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     };
     window.addEventListener("kinochi_toggle_profile", handleToggleProfile);
 
+    const interval = setInterval(checkFreshUnread, 60000);
+
     return () => {
+      isCancelled = true;
+      clearInterval(interval);
       window.removeEventListener("kinochi_notifications_updated", updateUnreadStatus);
       window.removeEventListener("storage", updateUnreadStatus);
+      window.removeEventListener("focus", checkFreshUnread);
       window.removeEventListener("kinochi_toggle_profile", handleToggleProfile);
     };
-  }, []);
+  }, [status]);
 
   // Close desktop profile dropdown on outside click (desktop only)
   useEffect(() => {
