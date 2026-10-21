@@ -69,177 +69,170 @@ export default async function FullCatalogPage({
   const selectedCategory = searchParams.category;
 
   return (
-    <div className="min-h-screen pt-24 pb-28 xl:pb-16 px-4 md:px-8 bg-background-obsidian text-text-primary">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-28 xl:pb-16 px-4 md:px-8 bg-background-obsidian text-text-primary">
       <div className="max-w-container-max mx-auto space-y-6">
         
-        {/* Header & Back Nav */}
+        {/* Header & Back Nav with Minimalist Styling */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <BackButton />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-primary-container text-white text-[10px] font-black uppercase">
-                  Markazlashgan
-                </span>
-                <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight">
-                  Kino Katalogi va Bo'limlar
-                </h1>
-              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight">
+                Kino Katalogi va Bo'limlar
+              </h1>
               <p className="text-xs text-text-secondary mt-0.5">
-                Barcha toifalar, janrlar, yillar, kolleksiyalar va aktyorlar saralangan to'liq sahifa
+                Barcha toifalar, janrlar, yillar va to'plamlar
               </p>
             </div>
           </div>
 
-          <div className="w-full md:w-72">
+          {/* Minimalist Search Input */}
+          <div className="w-full md:w-80">
             <LiveSearch placeholder="Katalogdan qidirish..." className="w-full" />
           </div>
         </div>
 
-        {/* 1. ASOSIY BO'LIMLAR TABS */}
+        {/* 1. ASOSIY BO'LIMLAR TABS (Minimalist Dark Glass) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
             <span>Bo'limlar (Toifalar)</span>
-            <Link href="/collections" className="text-primary-container hover:underline lowercase font-semibold">
+            <Link href="/collections" className="text-text-secondary hover:text-white lowercase font-semibold transition-colors">
               Kolleksiyalar &rarr;
             </Link>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
             <Link
               href="/catalog"
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap ${
                 !selectedCategory
-                  ? "bg-primary-container text-white shadow-md shadow-black/40"
-                  : "bg-surface-container hover:bg-surface-container-high text-text-secondary border border-white/5"
+                  ? "bg-white/15 text-white font-bold border border-white/20 shadow-sm"
+                  : "bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border border-white/5 font-medium"
               }`}
             >
               Barcha Kinolar
             </Link>
-            <Link
-              href="/series"
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-container hover:bg-surface-container-high text-text-secondary border border-white/5 transition whitespace-nowrap"
-            >
-              Seriallar
-            </Link>
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/catalog?category=${cat.id}`}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                  selectedCategory === String(cat.id)
-                    ? "bg-primary-container text-white shadow-md shadow-black/40"
-                    : "bg-surface-container hover:bg-surface-container-high text-text-secondary border border-white/5"
-                }`}
-              >
-                {cat.name}
-              </Link>
-            ))}
-            {pages.map((p) => (
-              <Link
-                key={p.id}
-                href={`/p/${p.slug}`}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-container hover:bg-surface-container-high text-text-secondary border border-white/5 transition whitespace-nowrap"
-              >
-                {p.title}
-              </Link>
-            ))}
-            {/* Aktyorlar Bo'lim ichida */}
-            <Link
-              href="/catalog?tab=actors"
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-container hover:bg-surface-container-high text-rating-gold border border-rating-gold/30 transition whitespace-nowrap flex items-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-sm">groups</span>
-              Aktyorlar
-            </Link>
+            {categories.map((cat) => {
+              const active = String(selectedCategory) === String(cat.id);
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/catalog?category=${cat.id}${selectedYear ? `&year=${selectedYear}` : ""}`}
+                  className={`px-3.5 py-2 rounded-xl text-xs transition-all whitespace-nowrap ${
+                    active
+                      ? "bg-white/15 text-white font-bold border border-white/20 shadow-sm"
+                      : "bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border border-white/5 font-medium"
+                  }`}
+                >
+                  {cat.name}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        {/* 2. JANRLAR FILTRI (Bosh sahifadan bu yerga ko'chirilgan) */}
-        <div className="bg-surface-container border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-base text-primary-container">theater_comedy</span>
-              Janrlar bo'yicha saralash
-            </h2>
-            <span className="text-[11px] text-text-secondary">{GENRES.length} ta janr</span>
+        {/* 2. JANRLAR FILTER ROW (Minimalist Vector Icons) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
+            <span>Janrlar bo'yicha saralash</span>
+            <span className="text-[11px] text-text-secondary font-normal lowercase">{GENRES.length} ta janr</span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
             <Link
-              href="/catalog"
-              className="px-3 py-1.5 rounded-lg bg-primary-container text-white text-xs font-bold shadow"
+              href={`/catalog${selectedCategory ? `?category=${selectedCategory}` : ""}${selectedYear ? `&year=${selectedYear}` : ""}`}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap border ${
+                !searchParams.genre
+                  ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
+                  : "bg-white/5 border-white/10 text-text-secondary hover:text-white hover:border-white/20 font-medium"
+              }`}
             >
               Barchasi
             </Link>
-            {GENRES.map((g) => (
-              <Link
-                key={g.id}
-                href={`/catalog?genre=${g.id}`}
-                className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-white/10 text-text-secondary hover:text-white text-xs border border-white/5 transition flex items-center gap-1.5"
-              >
-                <span className="material-symbols-outlined text-sm text-text-secondary">{g.icon}</span>
-                <span>{g.name}</span>
-              </Link>
-            ))}
+            {GENRES.map((g) => {
+              const active = searchParams.genre === g.id;
+              return (
+                <Link
+                  key={g.id}
+                  href={`/catalog?genre=${g.id}${selectedCategory ? `&category=${selectedCategory}` : ""}${selectedYear ? `&year=${selectedYear}` : ""}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border transition-all ${
+                    active
+                      ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
+                      : "bg-white/5 border-white/10 text-text-secondary hover:text-white hover:border-white/20 font-medium"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[15px] opacity-80">{g.icon}</span>
+                  <span>{g.name}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        {/* 3. YILLAR FILTRI (Bosh sahifadan bu yerga ko'chirilgan) */}
-        <div className="bg-surface-container border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-base text-primary-container">calendar_month</span>
-              Yillar bo'yicha saralash
-            </h2>
+        {/* 3. YILLAR FILTER ROW (Minimalist) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
+            <span>Chiqarilgan yili</span>
             {selectedYear && (
-              <Link href="/catalog" className="text-[11px] text-primary-container hover:underline">
-                Yil filtrini tozalash ✕
+              <Link
+                href={`/catalog${selectedCategory ? `?category=${selectedCategory}` : ""}`}
+                className="text-xs text-text-secondary hover:text-white lowercase font-semibold transition-colors"
+              >
+                Filtrni tozalash ({selectedYear} ✕)
               </Link>
             )}
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs hide-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
             <Link
-              href="/catalog"
-              className={`px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap ${
-                !selectedYear ? "bg-primary-container text-white shadow" : "bg-surface-container-high text-text-secondary border border-white/5 hover:text-white"
+              href={`/catalog${selectedCategory ? `?category=${selectedCategory}` : ""}${searchParams.genre ? `&genre=${searchParams.genre}` : ""}`}
+              className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border transition-all ${
+                !selectedYear
+                  ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
+                  : "bg-white/5 border-white/10 text-text-secondary hover:text-white hover:border-white/20 font-medium"
               }`}
             >
               Barcha yillar
             </Link>
-            {YEARS.map((y) => (
-              <Link
-                key={y}
-                href={`/catalog?year=${y}${selectedCategory ? `&category=${selectedCategory}` : ""}`}
-                className={`px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap ${
-                  selectedYear === String(y)
-                    ? "bg-primary-container text-white shadow"
-                    : "bg-surface-container-high text-text-secondary border border-white/5 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {y}
-              </Link>
-            ))}
+            {YEARS.map((y) => {
+              const active = String(selectedYear) === String(y);
+              return (
+                <Link
+                  key={y}
+                  href={`/catalog?year=${y}${selectedCategory ? `&category=${selectedCategory}` : ""}${searchParams.genre ? `&genre=${searchParams.genre}` : ""}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border transition-all ${
+                    active
+                      ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
+                      : "bg-white/5 border-white/10 text-text-secondary hover:text-white hover:border-white/20 font-medium"
+                  }`}
+                >
+                  {y}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
-        {/* 4. KATALOG NATIJALARI (GRID) */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between text-xs text-text-secondary">
-            <span>
-              Topilgan kinolar: <b className="text-white">{total} ta</b>
-            </span>
-            <div className="flex items-center gap-2">
-              <span>Saralash:</span>
-              <span className="font-bold text-white bg-surface-container px-2.5 py-1 rounded-lg border border-white/5">
-                Eng yangilari
+        {/* 4. KATALOG GRID NATIJALARI */}
+        <div className="pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-text-primary font-headline-md flex items-center gap-2">
+              <span className="w-1 h-5 bg-rating-gold rounded-full block" />
+              <span>
+                {selectedCategory
+                  ? categories.find(c => String(c.id) === String(selectedCategory))?.name || "Bo'lim natijalari"
+                  : selectedYear
+                  ? `${selectedYear} yili filmlari`
+                  : "Barcha filmlar va seriallar"}
               </span>
-            </div>
+            </h2>
+            <span className="text-xs text-text-secondary">
+              Topilgan kinolar: <strong className="text-white font-semibold">{total}</strong> ta
+            </span>
           </div>
 
-          <CatalogGrid 
-            initialItems={movies} 
-            total={total} 
-            type="movies" 
-            categoryId={selectedCategory} 
+          <CatalogGrid
+            initialItems={movies}
+            total={total}
+            categoryId={selectedCategory}
+            emptyMessage="Ushbu mezon bo'yicha hozircha filmlar topilmadi."
           />
         </div>
 

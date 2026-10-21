@@ -99,12 +99,9 @@ export default function ProfilePage() {
     <div className="min-h-screen pt-24 pb-28 xl:pb-16 px-4 md:px-8 bg-background-obsidian text-text-primary">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* Top Bar with Back Button & Theme Toggle */}
+        {/* Top Bar with Back Button */}
         <div className="flex items-center justify-between">
           <BackButton />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-          </div>
         </div>
 
         {/* User Card Banner */}

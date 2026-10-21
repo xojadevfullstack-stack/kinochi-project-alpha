@@ -2,23 +2,28 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../lib/auth/AuthProvider";
 import LiveSearch from "./LiveSearch";
-import { fetchApi } from "../lib/api";
 import ThemeToggle from "./ThemeToggle";
+import { fetchApi } from "../lib/api";
 
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { status, user, logout } = useAuth();
+  const { status, user } = useAuth();
+  
+  // Navbar scroll background
   const [isScrolled, setIsScrolled] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
+  
+  // Dynamic Desktop Sidebar state (Opens ONLY when cursor approaches left edge)
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarPinned, setSidebarPinned] = useState(false);
-  const [sectionsExpanded, setSectionsExpanded] = useState(false);
-  const [collectionsExpanded, setCollectionsExpanded] = useState(false);
-  const sidebarHoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isPinned, setIsPinned] = useState(false);
+  const [bolimlarOpen, setBolimlarOpen] = useState(true);
+  const [kolleksiyaOpen, setKolleksiyaOpen] = useState(false);
+  
+  const [hasUnread, setHasUnread] = useState(false);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Synchronize unread notification status
   useEffect(() => {
@@ -79,6 +84,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     window.addEventListener("storage", updateUnreadStatus);
     window.addEventListener("focus", checkFreshUnread);
 
+    const handleToggleProfile = () => {
+      router.push("/profile");
+    };
+    window.addEventListener("kinochi_toggle_profile", handleToggleProfile);
+
     const interval = setInterval(checkFreshUnread, 60000);
 
     return () => {
@@ -87,8 +97,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       window.removeEventListener("kinochi_notifications_updated", updateUnreadStatus);
       window.removeEventListener("storage", updateUnreadStatus);
       window.removeEventListener("focus", checkFreshUnread);
+      window.removeEventListener("kinochi_toggle_profile", handleToggleProfile);
     };
-  }, [status]);
+  }, [status, router]);
 
   // Handle scroll for navbar background
   useEffect(() => {
@@ -99,154 +110,183 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dynamic sidebar on route change
+  // Close dynamic sidebar on route change if not pinned
   useEffect(() => {
-    if (!sidebarPinned) {
+    if (!isPinned) {
       setSidebarOpen(false);
     }
-  }, [pathname, sidebarPinned]);
+  }, [pathname, isPinned]);
 
-  const handleSidebarMouseEnter = () => {
-    if (sidebarHoverTimerRef.current) clearTimeout(sidebarHoverTimerRef.current);
-    setSidebarOpen(true);
-  };
-
-  const handleSidebarMouseLeave = () => {
-    if (!sidebarPinned) {
-      sidebarHoverTimerRef.current = setTimeout(() => {
-        setSidebarOpen(false);
-      }, 300);
+  // Dynamic Sidebar Hover Engine
+  const openSidebarSmoothly = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
     }
-  };
+    setSidebarOpen(true);
+  }, []);
+
+  const closeSidebarSmoothly = useCallback(() => {
+    if (isPinned) return;
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => {
+      setSidebarOpen(false);
+    }, 350); // 350ms grace period
+  }, [isPinned]);
+
+  const closeSidebarImmediate = useCallback(() => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setIsPinned(false);
+    setSidebarOpen(false);
+  }, []);
+
+  const togglePin = useCallback(() => {
+    setIsPinned(prev => {
+      const next = !prev;
+      if (next) setSidebarOpen(true);
+      return next;
+    });
+  }, []);
+
+  // Proximity detection: if cursor approaches within 20px of left edge on desktop, open smoothly
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (typeof window === "undefined" || window.innerWidth < 1280) return;
+      if (e.clientX <= 20) {
+        openSidebarSmoothly();
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, [openSidebarSmoothly]);
 
   return (
     <>
-      {/* ===================== DESKTOP DYNAMIC SIDEBAR ===================== */}
-      {/* Left Hover Trigger Zone: Invisible 16px hover sensor + slim launcher button on desktop */}
-      <div 
-        className="hidden xl:block fixed top-0 left-0 bottom-0 w-4 z-40"
-        onMouseEnter={handleSidebarMouseEnter}
+      {/* ========================================================
+          1. PROXIMITY EDGE SENSOR (Invisible left trigger zone)
+      ======================================================== */}
+      <div
+        onMouseEnter={openSidebarSmoothly}
+        className="hidden xl:block fixed top-0 left-0 bottom-0 w-6 z-40 cursor-pointer pointer-events-auto select-none"
+        aria-hidden="true"
+        title="Sichqonchani yaqinlashtirsangiz saydbar ochiladi"
       />
 
-      {/* Slim Floating Sidebar Trigger Pill (Hover on this opens sidebar immediately) */}
-      <div 
-        className="hidden xl:flex fixed top-24 left-2 z-40 bg-surface-container/90 hover:bg-surface-container-high border border-white/10 hover:border-primary-container text-text-secondary hover:text-white p-2 rounded-xl backdrop-blur-md shadow-2xl transition-all cursor-pointer items-center justify-center group"
-        onMouseEnter={handleSidebarMouseEnter}
-        onClick={() => setSidebarOpen(prev => !prev)}
-        title="Menyuni ochish"
-      >
-        <span className="material-symbols-outlined text-[22px] group-hover:text-primary-container transition-colors">
-          menu_open
-        </span>
-      </div>
-
-      {/* Slide-out Dynamic Sidebar Container */}
+      {/* ========================================================
+          2. MINIMALIST DYNAMIC DESKTOP SIDEBAR
+      ======================================================== */}
       <aside
-        onMouseEnter={handleSidebarMouseEnter}
-        onMouseLeave={handleSidebarMouseLeave}
-        className={`hidden xl:flex fixed top-0 left-0 bottom-0 w-72 z-50 bg-background-obsidian/95 backdrop-blur-2xl border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.85)] flex-col justify-between transition-transform duration-300 ease-out select-none ${
+        onMouseEnter={openSidebarSmoothly}
+        onMouseLeave={closeSidebarSmoothly}
+        className={`hidden xl:flex fixed top-0 left-0 bottom-0 w-72 z-50 bg-[#0c0d10]/98 backdrop-blur-2xl border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.85)] flex-col justify-between select-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex-1 overflow-y-auto hide-scrollbar p-4 space-y-4">
-          
-          {/* Sidebar Top: Logo & Pin Button */}
+        <div className="p-4 space-y-4 overflow-y-auto hide-scrollbar flex-1">
+          {/* Sidebar Top Header & Pin Action */}
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-white font-black text-lg shadow-lg shadow-black/40">
-                <span className="material-symbols-outlined text-xl">play_arrow</span>
-              </div>
-              <div>
-                <span className="text-xl font-black tracking-wider text-white font-headline-md">
-                  Media<span className="text-primary-container">Plus</span>
-                </span>
-                <span className="block text-[9px] uppercase tracking-widest text-text-secondary font-bold -mt-1">
-                  Kinochi Portal
-                </span>
-              </div>
+            <Link href="/" className="flex items-center gap-2 group">
+              <span className="font-heading font-black text-sm tracking-wider text-white">
+                MEDIA<span className="text-primary-container">PLUS</span>
+              </span>
             </Link>
 
-            <button
-              onClick={() => setSidebarPinned(prev => !prev)}
-              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                sidebarPinned ? "bg-primary-container text-white" : "text-text-secondary hover:text-white hover:bg-white/10"
-              }`}
-              title={sidebarPinned ? "Avto-yopilishni yoqish" : "Ekranga mahkamlash"}
-            >
-              <span className="material-symbols-outlined text-base">push_pin</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={togglePin}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  isPinned
+                    ? "bg-white/15 text-white border border-white/20"
+                    : "text-text-secondary hover:text-white hover:bg-white/5"
+                }`}
+                title={isPinned ? "Mahkamlangan (Har doim ochiq)" : "Ekranga mahkamlash"}
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {isPinned ? "keep" : "push_pin"}
+                </span>
+              </button>
+              <button
+                onClick={closeSidebarImmediate}
+                className="w-7 h-7 rounded-lg text-text-secondary hover:text-white flex items-center justify-center hover:bg-white/5 transition-colors"
+                title="Yopish"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
           </div>
 
-          {/* User Profile Info Card in Sidebar */}
+          {/* User Profile Card (Minimalist Dark Glass) */}
           <Link
             href="/profile"
-            className="block p-3 rounded-xl bg-surface-container hover:bg-surface-container-high border border-white/10 transition group"
+            className="block p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all shadow-sm group cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-container to-rating-gold p-0.5">
-                  <div className="w-full h-full bg-background-obsidian rounded-full flex items-center justify-center font-bold text-xs text-white">
-                    {user?.first_name?.charAt(0) || "U"}
-                  </div>
+                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center font-bold text-xs text-white">
+                  {status === "authenticated" && user?.first_name ? user.first_name.charAt(0) : "U"}
                 </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary-container border-2 border-surface-container rounded-full"></span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-text-primary truncate group-hover:text-primary-container transition-colors">
-                  {user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() : "Mening Profilim"}
+                <div className="text-xs font-bold text-white truncate group-hover:text-white transition-colors">
+                  {status === "authenticated" && user ? `${user.first_name} ${user.last_name || ""}` : "Mehmon (Kiring)"}
                 </div>
-                <div className="text-[10px] text-rating-gold font-semibold flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">verified</span>
-                  {status === "authenticated" ? "VIP Obunachi" : "Mehmon (Kirish)"}
+                <div className="text-[10px] text-text-secondary font-medium flex items-center gap-1 mt-0.5">
+                  <span className="material-symbols-outlined text-[12px] text-rating-gold">verified</span>
+                  <span>{status === "authenticated" ? "VIP Foydalanuvchi" : "Standart tarif"}</span>
                 </div>
               </div>
             </div>
 
-            {/* Quick Messages Link */}
             <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-xs text-text-secondary">
-              <span className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm text-primary-container">notifications</span>
-                Habarlar
-              </span>
-              {hasUnread && (
-                <span className="px-1.5 py-0.2 bg-primary-container text-white text-[9px] font-bold rounded-full">
-                  yangi
-                </span>
+              <div className="flex items-center gap-1.5 group-hover:text-text-primary">
+                <span className="material-symbols-outlined text-[15px]">notifications</span>
+                <span>Bildirishnomalar</span>
+              </div>
+              {hasUnread ? (
+                <span className="w-2 h-2 bg-primary-container rounded-full animate-pulse" />
+              ) : (
+                <span className="text-[10px] text-text-secondary">0</span>
               )}
             </div>
           </Link>
 
-          {/* Sidebar Nav Links */}
-          <nav className="space-y-1 text-sm font-semibold">
+          {/* Minimalist Navigation Links (Consistent vector style) */}
+          <nav className="space-y-1 text-xs">
             {/* 1. Bosh Sahifa */}
             <Link
               href="/"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                 pathname === "/"
-                  ? "bg-primary-container/15 text-primary-container border-l-4 border-primary-container font-bold"
-                  : "text-text-secondary hover:text-white hover:bg-white/5"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: pathname === "/" ? "'FILL' 1" : "'FILL' 0" }}>
+              <span
+                className="material-symbols-outlined text-[18px]"
+                style={{ fontVariationSettings: pathname === "/" ? "'FILL' 1" : "'FILL' 0" }}
+              >
                 home
               </span>
               <span>Bosh Sahifa</span>
             </Link>
 
-            {/* 2. To'laqonli KATALOG sahifasi */}
+            {/* 2. Katalog */}
             <Link
               href="/catalog"
-              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition ${
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
                 pathname.startsWith("/catalog")
-                  ? "bg-primary-container/15 text-primary-container border-l-4 border-primary-container font-bold"
-                  : "text-text-secondary hover:text-white hover:bg-white/5"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-xl">grid_view</span>
+                <span className="material-symbols-outlined text-[18px]">grid_view</span>
                 <span>Katalog</span>
               </div>
-              <span className="text-[10px] bg-primary-container/20 text-primary-container px-1.5 py-0.5 rounded font-bold border border-primary-container/30">
+              <span className="text-[9px] bg-white/10 text-text-secondary px-2 py-0.5 rounded border border-white/10 font-semibold">
                 To'liq
               </span>
             </Link>
@@ -254,87 +294,115 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             {/* 3. Obunalar */}
             <Link
               href="/achievements"
-              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition ${
-                pathname.startsWith("/achievements")
-                  ? "bg-primary-container/15 text-primary-container border-l-4 border-primary-container font-bold"
-                  : "text-text-secondary hover:text-white hover:bg-white/5"
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/achievements"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-xl text-rating-gold">loyalty</span>
+                <span className="material-symbols-outlined text-[18px]">loyalty</span>
                 <span>Obunalar</span>
               </div>
-              <span className="text-[10px] bg-white/10 text-rating-gold px-1.5 py-0.5 rounded font-bold">VIP</span>
+              <span className="text-[9px] bg-white/10 text-rating-gold px-1.5 py-0.5 rounded font-bold border border-white/10">
+                VIP
+              </span>
             </Link>
 
-            {/* 4. Bo'limlar (Accordion: Aktyorlar ichida!) */}
-            <div>
+            {/* 4. Bo'limlar (Aktyorlar ichiga kiritilgan) */}
+            <div className="pt-1">
               <button
-                onClick={() => setSectionsExpanded(prev => !prev)}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-text-secondary hover:text-white hover:bg-white/5 transition"
+                onClick={() => setBolimlarOpen(prev => !prev)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-text-secondary hover:bg-white/5 hover:text-white transition-all cursor-pointer font-medium"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-xl">category</span>
+                  <span className="material-symbols-outlined text-[18px]">category</span>
                   <span>Bo'limlar</span>
                 </div>
-                <span className="material-symbols-outlined text-base">
-                  {sectionsExpanded ? "expand_less" : "expand_more"}
+                <span className="material-symbols-outlined text-[16px]">
+                  {bolimlarOpen ? "expand_less" : "expand_more"}
                 </span>
               </button>
 
-              {sectionsExpanded && (
-                <div className="pl-7 pr-2 py-1 space-y-0.5 text-xs text-text-secondary animate-in slide-in-from-top-1">
-                  <Link href="/movies" className="block px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5">
-                    🎬 Tarjima kinolar
+              {bolimlarOpen && (
+                <div className="pl-6 pr-1 py-1 space-y-0.5 text-text-secondary font-medium">
+                  <Link
+                    href="/movies"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">movie</span>
+                    <span>Tarjima kinolar</span>
                   </Link>
-                  <Link href="/series" className="block px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5">
-                    📺 Seriallar
+                  <Link
+                    href="/series"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
+                    <span>Seriallar</span>
                   </Link>
-                  {pages.map(p => (
-                    <Link key={p.id} href={`/p/${p.slug}`} className="block px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5">
-                      ⭐ {p.title}
+                  
+                  {pages.map((p) => (
+                    <Link
+                      key={p.slug}
+                      href={`/p/${p.slug}`}
+                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                    >
+                      <span className="material-symbols-outlined text-[15px] opacity-70">auto_awesome</span>
+                      <span>{p.title}</span>
                     </Link>
                   ))}
-                  {/* Aktyorlar bo'lim ichiga kirdi! */}
+
+                  {/* Aktyorlar bo'lim ichida */}
                   <Link
                     href="/catalog?tab=actors"
-                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-primary-container/10 text-primary-container font-bold border border-primary-container/20"
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
-                    <span className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm">groups</span>
-                      Aktyorlar
+                    <span className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[15px] opacity-70">groups</span>
+                      <span>Aktyorlar</span>
                     </span>
-                    <span className="text-[9px] bg-primary-container/20 text-white px-1 rounded">Bo'limda</span>
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* 5. Kolleksiyalar */}
-            <div>
+            {/* 5. Kolleksiyalar (Xronologiya o'rnida) */}
+            <div className="pt-1">
               <button
-                onClick={() => setCollectionsExpanded(prev => !prev)}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-text-secondary hover:text-white hover:bg-white/5 transition"
+                onClick={() => setKolleksiyaOpen(prev => !prev)}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-text-secondary hover:bg-white/5 hover:text-white transition-all cursor-pointer font-medium"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-xl text-rating-gold">collections_bookmark</span>
+                  <span className="material-symbols-outlined text-[18px]">collections_bookmark</span>
                   <span>Kolleksiyalar</span>
                 </div>
-                <span className="material-symbols-outlined text-base">
-                  {collectionsExpanded ? "expand_less" : "expand_more"}
+                <span className="material-symbols-outlined text-[16px]">
+                  {kolleksiyaOpen ? "expand_less" : "expand_more"}
                 </span>
               </button>
 
-              {collectionsExpanded && (
-                <div className="pl-7 pr-2 py-1 space-y-0.5 text-xs text-text-secondary animate-in slide-in-from-top-1">
-                  <Link href="/collections" className="block px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5">
-                    ✨ Barcha to'plamlar
+              {kolleksiyaOpen && (
+                <div className="pl-6 pr-1 py-1 space-y-0.5 text-text-secondary font-medium">
+                  <Link
+                    href="/collections"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">auto_awesome_motion</span>
+                    <span>Barcha to'plamlar</span>
                   </Link>
-                  <Link href="/collections" className="block px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5">
-                    💥 Marvel & DC Kinolari
+                  <Link
+                    href="/collections?franchise=marvel"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">shield</span>
+                    <span>Marvel & DC</span>
                   </Link>
-                  <Link href="/collections" className="block px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5">
-                    🇺🇿 O'zbekcha Saralanganlar
+                  <Link
+                    href="/collections?category=uzbek"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">flag</span>
+                    <span>O'zbekcha Tarjimalar</span>
                   </Link>
                 </div>
               )}
@@ -343,121 +411,121 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             {/* 6. Premyeralar */}
             <Link
               href="/movies"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-secondary hover:text-white hover:bg-white/5 transition"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/movies"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              }`}
             >
-              <span className="material-symbols-outlined text-xl">theaters</span>
+              <span className="material-symbols-outlined text-[18px]">theaters</span>
               <span>Premyeralar</span>
             </Link>
 
-            {/* 7. Profil sahifasi */}
+            {/* 7. Profilim */}
             <Link
               href="/profile"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${
-                pathname.startsWith("/profile")
-                  ? "bg-primary-container/15 text-primary-container border-l-4 border-primary-container font-bold"
-                  : "text-text-secondary hover:text-white hover:bg-white/5"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/profile"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <span className="material-symbols-outlined text-xl text-sky-400">account_circle</span>
-              <span>Profilim (Sahifa)</span>
+              <span className="material-symbols-outlined text-[18px]">account_circle</span>
+              <span>Profilim</span>
             </Link>
           </nav>
         </div>
 
-        {/* Sidebar Bottom: Theme & Contact */}
-        <div className="p-3 border-t border-white/10 space-y-1 text-xs text-text-secondary">
-          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5">
-            <span className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base">brightness_6</span>
-              Rejim
-            </span>
-            <ThemeToggle />
-          </div>
+        {/* Sidebar Bottom: Bog'lanish / Yordam (No duplicate dark/light toggle!) */}
+        <div className="p-3 border-t border-white/10 text-xs text-text-secondary">
           <a
             href="https://t.me/kinochi_uz_bot"
             target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base">mail</span>
+            <span className="material-symbols-outlined text-[18px]">help_outline</span>
             <span>Bog'lanish / Yordam</span>
           </a>
         </div>
       </aside>
 
-      {/* ===================== TOP HEADER (NAVBAR) ===================== */}
-      <nav 
-        className={`fixed top-0 w-full z-40 transition-all duration-300 ease-out border-b ${
-          isScrolled 
-            ? "bg-background-obsidian/95 backdrop-blur-lg border-white/10 shadow-2xl shadow-black/60 py-2.5" 
-            : "bg-gradient-to-b from-background-obsidian/90 to-transparent border-transparent py-3.5"
+      {/* Subtle overlay when sidebar is open on desktop and NOT pinned */}
+      {sidebarOpen && !isPinned && (
+        <div
+          onClick={closeSidebarImmediate}
+          className="hidden xl:block fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ========================================================
+          3. MAIN TOP NAVBAR (Desktop & Mobile)
+          Clean minimalist header without duplicate hamburger button
+      ======================================================== */}
+      <nav
+        className={`fixed top-0 w-full z-30 transition-all duration-300 ease-out border-b ${
+          isScrolled
+            ? "bg-background-obsidian/95 backdrop-blur-xl border-white/10 shadow-2xl shadow-black/80 py-3"
+            : "bg-gradient-to-b from-background-obsidian/95 via-background-obsidian/75 to-transparent border-transparent py-4"
         }`}
       >
         <div className="max-w-container-max mx-auto px-gutter flex items-center justify-between gap-3 sm:gap-4">
           
-          {/* Left: Logo & Sidebar Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(prev => !prev)}
-              className="hidden xl:flex w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-text-secondary hover:text-white items-center justify-center transition cursor-pointer"
-              title="Kinochi menyusi"
-            >
-              <span className="material-symbols-outlined text-xl">menu</span>
-            </button>
-
-            <Link href="/" className="flex items-center gap-2 group z-40">
-              <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-white group-hover:opacity-90 transition-opacity">
+          {/* Left: Logo Only (No manual hamburger button - Sidebar opens purely dynamically via hover) */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Link href="/" className="flex items-center gap-2 group">
+              <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-white group-hover:opacity-95 transition-opacity">
                 Media<span className="text-primary-container">Plus</span>
               </span>
             </Link>
           </div>
 
-          {/* Center: Wide LiveSearch on Desktop */}
-          <div className="hidden md:flex flex-1 max-w-xl mx-4">
+          {/* Center: Wide LiveSearch Input */}
+          <div className="flex-1 max-w-xl mx-2 hidden sm:block">
             <LiveSearch
               className="w-full"
-              placeholder="Qidiruv: Kino, serial yoki #kod yozing..."
+              placeholder="Qidiruv: film nomi, aktyor, janr yoki #kod..."
             />
           </div>
 
-          {/* Right Header Controls (MOBILE VA DESKTOPDA O'NG BURCHAKDA) */}
-          {/* USER TALABI: Mobileda tartib aniq -> 1. dark/lightmode, 2. notification, 3. profile */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 z-40">
-            
+          {/* Right Corner Controls: Strictly ordered [1. Dark/Light Mode, 2. Notifications, 3. Profile] */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* 1. Dark / Light Mode Toggle */}
             <ThemeToggle />
 
-            {/* 2. Notification Button */}
-            <Link 
+            {/* 2. Notifications Button */}
+            <Link
               href="/notifications"
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary cursor-pointer group active:scale-95"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-white/20 transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary hover:text-white cursor-pointer group active:scale-95"
               aria-label="Bildirishnomalar"
+              title="Bildirishnomalar"
             >
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px] text-text-secondary group-hover:text-primary-container transition-colors">
+              <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
                 notifications
               </span>
               {hasUnread && (
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse"></span>
+                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse shadow-sm shadow-primary-container" />
               )}
             </Link>
 
-            {/* 3. Profile Button (Alohida Profil Sahifasiga olib boradi!) */}
+            {/* 3. Profile Avatar / Button */}
             <Link
               href="/profile"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary cursor-pointer group active:scale-95 overflow-hidden"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-white/20 transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary hover:text-white cursor-pointer group active:scale-95 overflow-hidden"
               aria-label="Mening Profilim"
+              title="Profil sahifasi"
             >
-              {status === "authenticated" ? (
-                <span className="font-bold text-xs sm:text-sm text-text-primary group-hover:text-primary-container">
-                  {user?.first_name?.charAt(0) || "U"}
+              {status === "authenticated" && user?.first_name ? (
+                <span className="font-bold text-xs sm:text-sm text-text-primary">
+                  {user.first_name.charAt(0)}
                 </span>
               ) : (
-                <span className="material-symbols-outlined text-[20px] sm:text-[22px] text-text-secondary group-hover:text-primary-container">
+                <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
                   person
                 </span>
               )}
             </Link>
-
           </div>
         </div>
       </nav>
