@@ -2,7 +2,7 @@ import logging
 import httpx
 
 logger = logging.getLogger(__name__)
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Union
 from config import settings
 
 class APIClient:
