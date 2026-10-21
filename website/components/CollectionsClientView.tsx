@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import ThemedCollectionCard from "@/components/catalog/ThemedCollectionCard";
+import { CURATED_CATALOG_THEMES, CatalogTheme } from "@/lib/catalogThemes";
 
 interface Collection {
   id: number;
@@ -16,6 +16,7 @@ interface Collection {
   is_active: boolean;
   sort_order: number;
   items_count: number;
+  posters?: string[];
 }
 
 interface CollectionsClientViewProps {
@@ -23,55 +24,81 @@ interface CollectionsClientViewProps {
 }
 
 export default function CollectionsClientView({
-  initialCollections,
+  initialCollections = [],
 }: CollectionsClientViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const categories = [
-    { id: "all", label: "Barchasi", icon: "apps" },
-    { id: "franchise", label: "🌌 Franshizalar (Barcha qismlari)", icon: "movie" },
-    { id: "thematic", label: "📂 Mavzuli to'plamlar", icon: "folder_special" },
-    { id: "actor", label: "👤 Aktyor & Rejissyorlar", icon: "person" },
-    { id: "genre", label: "🎭 Janrlar bo'yicha", icon: "theater_comedy" },
-    { id: "country", label: "🌍 Davlatlar bo'yicha", icon: "public" },
+    { id: "all", label: "Barchasi" },
+    { id: "theme", label: "Qiziqarli mavzular" },
+    { id: "franchise", label: "Franshizalar" },
+    { id: "genre", label: "Janrlar bo'yicha" },
   ];
 
-  const filtered = initialCollections.filter((col) => {
+  // Map backend collections into theme card format
+  const mappedApiCollections = initialCollections.map((col) => {
+    const posterList = col.posters && col.posters.length > 0 
+      ? col.posters 
+      : [
+          col.poster_url || col.banner_url || "https://image.tmdb.org/t/p/w500/yF1eOkaYvwiORauRCPWznV9xVvi.jpg",
+          col.banner_url || col.poster_url || "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
+          col.poster_url || "https://image.tmdb.org/t/p/w500/fiVW06jE7z9YnO4trhaMEdclSiC.jpg"
+        ];
+
+    return {
+      id: `col-${col.id}`,
+      title: col.name,
+      count: `${col.items_count || 10} ta kino`,
+      href: `/collections/${col.slug}`,
+      category: (col.is_franchise ? "franchise" : "theme") as "franchise" | "theme",
+      description: col.description || "Ushbu to'plamdagi barcha filmlar va ularning tartibi.",
+      posters: posterList
+    };
+  });
+
+  // Combine curated themes with API collections (avoiding duplicate names)
+  const allThemes: CatalogTheme[] = [
+    ...CURATED_CATALOG_THEMES,
+    ...mappedApiCollections.filter(
+      (apiCol) => !CURATED_CATALOG_THEMES.some((t) => t.title.toLowerCase() === apiCol.title.toLowerCase())
+    )
+  ];
+
+  const filtered = allThemes.filter((item) => {
     // Category filter
-    if (selectedCategory !== "all") {
-      const colCat = col.category_type || (col.is_franchise ? "franchise" : "thematic");
-      if (colCat !== selectedCategory) return false;
+    if (selectedCategory !== "all" && item.category !== selectedCategory) {
+      return false;
     }
 
     // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchName = col.name.toLowerCase().includes(q);
-      const matchDesc = col.description?.toLowerCase().includes(q);
-      return matchName || matchDesc;
+      const matchTitle = item.title.toLowerCase().includes(q);
+      const matchDesc = item.description?.toLowerCase().includes(q);
+      return matchTitle || matchDesc;
     }
 
     return true;
   });
 
   return (
-    <div className="space-y-8">
-      {/* Search and Tabs Filter Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-surface-container-lowest/80 backdrop-blur-xl border border-white/10 p-4 sm:p-5 rounded-2xl shadow-xl">
-        {/* Categories Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+    <div className="space-y-6">
+      {/* Header Description & Search Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white/5 border border-white/10 p-4 sm:p-5 rounded-2xl shadow-xl">
+        {/* Categories Filter Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat.id
-                  ? "bg-primary-container text-white shadow-lg shadow-primary-container/20"
-                  : "bg-white/5 text-text-secondary hover:text-white hover:bg-white/10"
+                  ? "bg-white/15 text-white font-bold border border-white/20 shadow-sm"
+                  : "bg-white/5 text-text-secondary hover:text-white hover:bg-white/10 border border-white/5"
               }`}
             >
-              <span>{cat.label}</span>
+              {cat.label}
             </button>
           ))}
         </div>
@@ -83,17 +110,17 @@ export default function CollectionsClientView({
           </span>
           <input
             type="text"
-            placeholder="To'plamlardan qidirish..."
+            placeholder="To'plam yoki mavzuni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white text-xs outline-none focus:border-primary-container transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white text-xs outline-none focus:border-white/20 transition-colors"
           />
         </div>
       </div>
 
-      {/* Grid of Collections */}
+      {/* Grid of Themed Collections with Fanned 3-Poster Decks (Iconic Asilmedia Layout) */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-surface-container-lowest/40 border border-white/5 rounded-3xl p-8">
+        <div className="text-center py-16 bg-white/5 border border-white/10 rounded-3xl p-8">
           <span className="material-symbols-outlined text-4xl text-text-secondary mb-3">
             folder_off
           </span>
@@ -103,77 +130,16 @@ export default function CollectionsClientView({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filtered.map((col) => (
-            <Link
-              key={col.id}
-              href={`/collections/${col.slug}`}
-              className="group flex flex-col bg-surface-container-lowest/80 hover:bg-surface-container-low/90 border border-white/10 hover:border-primary-container/50 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary-container/10"
-            >
-              {/* Banner / Poster Section */}
-              <div className="relative aspect-[16/9] w-full bg-surface-container overflow-hidden">
-                {col.banner_url || col.poster_url ? (
-                  <Image
-                    src={col.banner_url || col.poster_url || ""}
-                    alt={col.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    unoptimized
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/20">
-                    <span className="material-symbols-outlined text-5xl">auto_awesome_motion</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/40 to-transparent"></div>
-
-                {/* Items Count Badge */}
-                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-white/15 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg">
-                  <span className="material-symbols-outlined text-[14px] text-primary-container">
-                    movie
-                  </span>
-                  <span>{col.items_count} ta qism</span>
-                </div>
-
-                {/* Category Badge */}
-                <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-primary-container/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider shadow-lg">
-                  {col.category_type === "thematic"
-                    ? "Mavzuli"
-                    : col.category_type === "actor"
-                    ? "Aktyor"
-                    : col.category_type === "genre"
-                    ? "Janr"
-                    : col.category_type === "country"
-                    ? "Davlat"
-                    : "Franshiza"}
-                </div>
-              </div>
-
-              {/* Content Body */}
-              <div className="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-white group-hover:text-primary-container transition-colors mb-2 line-clamp-1">
-                    {col.name}
-                  </h3>
-                  <p className="text-text-secondary text-xs line-clamp-2 leading-relaxed">
-                    {col.description || "Ushbu to'plamdagi barcha filmlar va ularning tartibi."}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-bold text-primary-container">
-                  <span className="flex items-center gap-1 group-hover:underline">
-                    <span>Xronologiyani ko'rish</span>
-                    <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">
-                      arrow_forward
-                    </span>
-                  </span>
-                  <span className="text-white/40 text-[11px] font-normal font-mono">
-                    #{col.slug}
-                  </span>
-                </div>
-              </div>
-            </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          {filtered.map((item) => (
+            <ThemedCollectionCard
+              key={item.id}
+              title={item.title}
+              count={item.count}
+              href={item.href}
+              posters={item.posters}
+              description={item.description}
+            />
           ))}
         </div>
       )}

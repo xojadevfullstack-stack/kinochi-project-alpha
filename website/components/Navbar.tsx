@@ -273,50 +273,40 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Bosh Sahifa</span>
             </Link>
 
-            {/* 2. Katalog */}
+            {/* 2. Katalog (Uniform styling - No contrast badge) */}
             <Link
               href="/catalog"
-              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                 pathname.startsWith("/catalog")
                   ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
                   : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[18px]">grid_view</span>
-                <span>Katalog</span>
-              </div>
-              <span className="text-[9px] bg-white/10 text-text-secondary px-2 py-0.5 rounded border border-white/10 font-semibold">
-                To'liq
-              </span>
+              <span className="material-symbols-outlined text-[18px]">grid_view</span>
+              <span>Katalog</span>
             </Link>
 
-            {/* 3. Obunalar */}
+            {/* 3. Obunalar (Followed content / Subscriptions) */}
             <Link
-              href="/achievements"
-              className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/achievements"
+              href="/subscriptions"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/subscriptions"
                   ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
                   : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[18px]">loyalty</span>
-                <span>Obunalar</span>
-              </div>
-              <span className="text-[9px] bg-white/10 text-rating-gold px-1.5 py-0.5 rounded font-bold border border-white/10">
-                VIP
-              </span>
+              <span className="material-symbols-outlined text-[18px]">loyalty</span>
+              <span>Obunalar</span>
             </Link>
 
-            {/* 4. Bo'limlar (Aktyorlar ichiga kiritilgan) */}
+            {/* 4. Bo'limlar (Matching exact screenshot list) */}
             <div className="pt-1">
               <button
                 onClick={() => setBolimlarOpen(prev => !prev)}
                 className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-text-secondary hover:bg-white/5 hover:text-white transition-all cursor-pointer font-medium"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[18px]">category</span>
+                  <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
                   <span>Bo'limlar</span>
                 </div>
                 <span className="material-symbols-outlined text-[16px]">
@@ -334,46 +324,73 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <span>Tarjima kinolar</span>
                   </Link>
                   <Link
-                    href="/series"
+                    href="/catalog?category=hind"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">language</span>
+                    <span>Hind kinolari</span>
+                  </Link>
+                  <Link
+                    href="/catalog?category=turk"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">videocam</span>
+                    <span>Turk kinolari</span>
+                  </Link>
+                  <Link
+                    href="/series?category=turk"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
+                    <span>Turk seriali</span>
+                  </Link>
+                  <Link
+                    href="/series"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">live_tv</span>
                     <span>Seriallar</span>
                   </Link>
-                  
-                  {pages.map((p) => (
-                    <Link
-                      key={p.slug}
-                      href={`/p/${p.slug}`}
-                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                    >
-                      <span className="material-symbols-outlined text-[15px] opacity-70">auto_awesome</span>
-                      <span>{p.title}</span>
-                    </Link>
-                  ))}
-
-                  {/* Aktyorlar bo'lim ichida */}
                   <Link
-                    href="/catalog?tab=actors"
-                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                    href="/catalog?genre=animation"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
-                    <span className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[15px] opacity-70">groups</span>
-                      <span>Aktyorlar</span>
-                    </span>
+                    <span className="material-symbols-outlined text-[15px] opacity-70">smart_toy</span>
+                    <span>Multfilmlar</span>
+                  </Link>
+                  <Link
+                    href="/catalog?category=treyler"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">star</span>
+                    <span>Treylerlar</span>
+                  </Link>
+                  <Link
+                    href="/tv"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
+                    <span>Onlayn TV</span>
+                  </Link>
+                  <Link
+                    href="/movies"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">theaters</span>
+                    <span>Premyeralar</span>
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* 5. Kolleksiyalar (Xronologiya o'rnida) */}
+            {/* 5. Kolleksiyalar (Matching exact screenshot list) */}
             <div className="pt-1">
               <button
                 onClick={() => setKolleksiyaOpen(prev => !prev)}
                 className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-text-secondary hover:bg-white/5 hover:text-white transition-all cursor-pointer font-medium"
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[18px]">collections_bookmark</span>
+                  <span className="material-symbols-outlined text-[18px]">explore</span>
                   <span>Kolleksiyalar</span>
                 </div>
                 <span className="material-symbols-outlined text-[16px]">
@@ -387,28 +404,90 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     href="/collections"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">auto_awesome_motion</span>
-                    <span>Barcha to'plamlar</span>
+                    <span className="material-symbols-outlined text-[15px] opacity-70">format_list_bulleted</span>
+                    <span>Barchasi</span>
                   </Link>
                   <Link
-                    href="/collections?franchise=marvel"
+                    href="/catalog?genre=action"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">shield</span>
-                    <span>Marvel & DC</span>
+                    <span className="material-symbols-outlined text-[15px] opacity-70">swords</span>
+                    <span>Jangari</span>
                   </Link>
                   <Link
-                    href="/collections?category=uzbek"
+                    href="/catalog?genre=comedy"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">sentiment_very_satisfied</span>
+                    <span>Komediya</span>
+                  </Link>
+                  <Link
+                    href="/catalog?genre=horror"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">skull</span>
+                    <span>Qo'rqinchli</span>
+                  </Link>
+                  <Link
+                    href="/catalog?genre=scifi"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">rocket_launch</span>
+                    <span>Fantastika</span>
+                  </Link>
+                  <Link
+                    href="/catalog?genre=drama"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">theater_comedy</span>
+                    <span>Drama</span>
+                  </Link>
+                  <Link
+                    href="/catalog?genre=adventure"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">flag</span>
-                    <span>O'zbekcha Tarjimalar</span>
+                    <span>Sarguzasht</span>
+                  </Link>
+                  <Link
+                    href="/catalog?genre=animation"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">image</span>
+                    <span>Multfilmlar (o'zbek tilida)</span>
+                  </Link>
+                  <Link
+                    href="/series"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
+                    <span>Seriallar (o'zbek tilida)</span>
+                  </Link>
+                  <Link
+                    href="/catalog?category=hind"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">language</span>
+                    <span>Hind kinolari</span>
                   </Link>
                 </div>
               )}
             </div>
 
-            {/* 6. Premyeralar */}
+            {/* 6. Aktyorlar (Uniformly styled like main links - No contrast badge!) */}
+            <Link
+              href="/actors"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/actors"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">groups</span>
+              <span>Aktyorlar</span>
+            </Link>
+
+            {/* 7. Premyeralar */}
             <Link
               href="/movies"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
@@ -421,7 +500,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Premyeralar</span>
             </Link>
 
-            {/* 7. Profilim */}
+            {/* 8. Profilim */}
             <Link
               href="/profile"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${

@@ -5,12 +5,14 @@ import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
 import LiveSearch from "@/components/LiveSearch";
+import ThemedCollectionCard from "@/components/catalog/ThemedCollectionCard";
+import { CURATED_CATALOG_THEMES } from "@/lib/catalogThemes";
 
 export const revalidate = 60; // 60s ISR kesh
 
 export const metadata: Metadata = {
-  title: "Katalog - MediaPlus",
-  description: "Barcha kinolar, seriallar, janrlar, yillar va to'plamlar to'liq katalogi.",
+  title: "Katalog va To'plamlar - MediaPlus",
+  description: "Barcha kinolar, seriallar, janrlar, yillar va qiziqarli mavzuli to'plamlar to'liq katalogi.",
 };
 
 const GENRES = [
@@ -34,7 +36,7 @@ const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016,
 export default async function FullCatalogPage({
   searchParams
 }: {
-  searchParams: { category?: string; year?: string; genre?: string; sort?: string }
+  searchParams: { category?: string; year?: string; genre?: string; sort?: string; search?: string }
 }) {
   let movies: CatalogItem[] = [];
   let total = 0;
@@ -49,6 +51,9 @@ export default async function FullCatalogPage({
     }
     if (searchParams.year) {
       query += `&year=${searchParams.year}`;
+    }
+    if (searchParams.search) {
+      query += `&search=${encodeURIComponent(searchParams.search)}`;
     }
 
     const [moviesData, categoriesData, pagesData] = await Promise.all([
@@ -67,33 +72,73 @@ export default async function FullCatalogPage({
 
   const selectedYear = searchParams.year;
   const selectedCategory = searchParams.category;
+  const selectedGenre = searchParams.genre;
+  const hasFilterActive = Boolean(selectedCategory || selectedYear || selectedGenre || searchParams.search);
 
   return (
     <div className="min-h-screen pt-20 sm:pt-24 pb-28 xl:pb-16 px-4 md:px-8 bg-background-obsidian text-text-primary">
-      <div className="max-w-container-max mx-auto space-y-6">
+      <div className="max-w-container-max mx-auto space-y-8">
         
-        {/* Header & Back Nav with Minimalist Styling */}
+        {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <BackButton />
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight">
-                Kino Katalogi va Bo'limlar
+                Kino Katalogi va Mavzular
               </h1>
               <p className="text-xs text-text-secondary mt-0.5">
-                Barcha toifalar, janrlar, yillar va to'plamlar
+                Bitta mavzu atrofida jamlangan to'plamlar, janrlar va filmlar
               </p>
             </div>
           </div>
 
-          {/* Minimalist Search Input */}
           <div className="w-full md:w-80">
             <LiveSearch placeholder="Katalogdan qidirish..." className="w-full" />
           </div>
         </div>
 
-        {/* 1. ASOSIY BO'LIMLAR TABS (Minimalist Dark Glass) */}
-        <div className="space-y-2">
+        {/* 1. ASILMEDIA USLUBIDAGI QIZIQARLI MAVZULAR VA TO'PLAMLAR (Fanned 3-Poster Deck Grid) */}
+        {!hasFilterActive && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg sm:text-xl font-black text-white font-headline-md flex items-center gap-2">
+                  <span className="w-1.5 h-5 bg-rating-gold rounded-full block" />
+                  <span>Qiziqarli mavzular</span>
+                </h2>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Bitta mavzu atrofida jamlangan kinolar: o'zga sayyoraliklardan tortib qadimgi qahramonlargacha.
+                </p>
+              </div>
+
+              <Link
+                href="/collections"
+                className="text-xs text-text-secondary hover:text-white font-semibold transition-colors flex items-center gap-1"
+              >
+                <span>Barcha to'plamlar</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </Link>
+            </div>
+
+            {/* Asilmedia Fanned 3-Poster Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {CURATED_CATALOG_THEMES.map((theme) => (
+                <ThemedCollectionCard
+                  key={theme.id}
+                  title={theme.title}
+                  count={theme.count}
+                  href={theme.href}
+                  posters={theme.posters}
+                  description={theme.description}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 2. BO'LIMLAR (TOIFALAR) TABS */}
+        <div className="space-y-2 pt-2 border-t border-white/10">
           <div className="flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
             <span>Bo'limlar (Toifalar)</span>
             <Link href="/collections" className="text-text-secondary hover:text-white lowercase font-semibold transition-colors">
@@ -130,7 +175,7 @@ export default async function FullCatalogPage({
           </div>
         </div>
 
-        {/* 2. JANRLAR FILTER ROW (Minimalist Vector Icons) */}
+        {/* 3. JANRLAR FILTER ROW */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
             <span>Janrlar bo'yicha saralash</span>
@@ -140,7 +185,7 @@ export default async function FullCatalogPage({
             <Link
               href={`/catalog${selectedCategory ? `?category=${selectedCategory}` : ""}${selectedYear ? `&year=${selectedYear}` : ""}`}
               className={`px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap border ${
-                !searchParams.genre
+                !selectedGenre
                   ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
                   : "bg-white/5 border-white/10 text-text-secondary hover:text-white hover:border-white/20 font-medium"
               }`}
@@ -148,7 +193,7 @@ export default async function FullCatalogPage({
               Barchasi
             </Link>
             {GENRES.map((g) => {
-              const active = searchParams.genre === g.id;
+              const active = selectedGenre === g.id;
               return (
                 <Link
                   key={g.id}
@@ -167,7 +212,7 @@ export default async function FullCatalogPage({
           </div>
         </div>
 
-        {/* 3. YILLAR FILTER ROW (Minimalist) */}
+        {/* 4. YILLAR FILTER ROW */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-text-secondary uppercase tracking-wider">
             <span>Chiqarilgan yili</span>
@@ -182,7 +227,7 @@ export default async function FullCatalogPage({
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
             <Link
-              href={`/catalog${selectedCategory ? `?category=${selectedCategory}` : ""}${searchParams.genre ? `&genre=${searchParams.genre}` : ""}`}
+              href={`/catalog${selectedCategory ? `?category=${selectedCategory}` : ""}${selectedGenre ? `&genre=${selectedGenre}` : ""}`}
               className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border transition-all ${
                 !selectedYear
                   ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
@@ -196,7 +241,7 @@ export default async function FullCatalogPage({
               return (
                 <Link
                   key={y}
-                  href={`/catalog?year=${y}${selectedCategory ? `&category=${selectedCategory}` : ""}${searchParams.genre ? `&genre=${searchParams.genre}` : ""}`}
+                  href={`/catalog?year=${y}${selectedCategory ? `&category=${selectedCategory}` : ""}${selectedGenre ? `&genre=${selectedGenre}` : ""}`}
                   className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap border transition-all ${
                     active
                       ? "bg-white/15 text-white font-bold border-white/20 shadow-sm"
@@ -210,7 +255,7 @@ export default async function FullCatalogPage({
           </div>
         </div>
 
-        {/* 4. KATALOG GRID NATIJALARI */}
+        {/* 5. KATALOG GRID NATIJALARI */}
         <div className="pt-4 border-t border-white/10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base sm:text-lg font-bold text-text-primary font-headline-md flex items-center gap-2">
@@ -220,6 +265,8 @@ export default async function FullCatalogPage({
                   ? categories.find(c => String(c.id) === String(selectedCategory))?.name || "Bo'lim natijalari"
                   : selectedYear
                   ? `${selectedYear} yili filmlari`
+                  : selectedGenre
+                  ? `${GENRES.find(g => g.id === selectedGenre)?.name || "Tanlangan janr"} filmlari`
                   : "Barcha filmlar va seriallar"}
               </span>
             </h2>

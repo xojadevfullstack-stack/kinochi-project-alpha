@@ -1,7 +1,6 @@
 import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
-import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
@@ -61,9 +60,6 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
               Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.
             </p>
           </div>
-
-          {/* Catalog Type Switcher (Kinolar / Seriallar / Anime / Dorama) */}
-          <CatalogTypeNav currentType="movies" pages={pages} />
 
           {/* Category Filter */}
           <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/movies" />

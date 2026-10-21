@@ -14,7 +14,7 @@ export default function BottomNav() {
   // 5. Profil (/profile)
   const navItems = [
     { label: "Bosh sahifa", href: "/", icon: "home" },
-    { label: "Obunalar", href: "/achievements", icon: "loyalty" },
+    { label: "Obunalar", href: "/subscriptions", icon: "loyalty" },
     { label: "Katalog", href: "/catalog", icon: "grid_view" },
     { label: "Premyera", href: "/movies", icon: "theaters" },
     { label: "Profil", href: "/profile", icon: "account_circle" },

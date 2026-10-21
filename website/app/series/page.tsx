@@ -1,7 +1,6 @@
 import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
 import CategoryFilter from "@/components/CategoryFilter";
-import CatalogTypeNav from "@/components/catalog/CatalogTypeNav";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
@@ -57,9 +56,6 @@ export default async function SeriesListPage({ searchParams }: { searchParams: {
             <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">Seriallar</h1>
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.</p>
           </div>
-
-          {/* Catalog Type Switcher (Kinolar / Seriallar / Anime / Dorama) */}
-          <CatalogTypeNav currentType="series" pages={pages} />
 
           {/* Category Filter */}
           <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/series" />
