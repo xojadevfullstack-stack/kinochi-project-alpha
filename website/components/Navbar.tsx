@@ -117,6 +117,52 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     }
   }, [pathname, isPinned]);
 
+  // Initialize pin state from localStorage on desktop mount
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+        const saved = localStorage.getItem("kinochi_sidebar_pinned");
+        if (saved === "true") {
+          setIsPinned(true);
+          setSidebarOpen(true);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Synchronize document.body.sidebar-pinned class with isPinned state
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isPinned && window.innerWidth >= 1280) {
+      document.body.classList.add("sidebar-pinned");
+      try {
+        localStorage.setItem("kinochi_sidebar_pinned", "true");
+      } catch {}
+    } else {
+      document.body.classList.remove("sidebar-pinned");
+      try {
+        if (!isPinned) {
+          localStorage.removeItem("kinochi_sidebar_pinned");
+        }
+      } catch {}
+    }
+
+    const handleResize = () => {
+      if (window.innerWidth < 1280) {
+        document.body.classList.remove("sidebar-pinned");
+      } else if (isPinned) {
+        document.body.classList.add("sidebar-pinned");
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      document.body.classList.remove("sidebar-pinned");
+    };
+  }, [isPinned]);
+
   // Dynamic Sidebar Hover Engine
   const openSidebarSmoothly = useCallback(() => {
     if (closeTimerRef.current) {
@@ -151,7 +197,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   // Proximity detection: if cursor approaches within 20px of left edge on desktop, open smoothly
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (typeof window === "undefined" || window.innerWidth < 1280) return;
+      if (typeof window === "undefined" || window.innerWidth < 1280 || isPinned) return;
       if (e.clientX <= 20) {
         openSidebarSmoothly();
       }
@@ -161,7 +207,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       window.removeEventListener("mousemove", handleMouseMove);
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
-  }, [openSidebarSmoothly]);
+  }, [openSidebarSmoothly, isPinned]);
 
   return (
     <>
@@ -170,7 +216,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       ======================================================== */}
       <div
         onMouseEnter={openSidebarSmoothly}
-        className="hidden xl:block fixed top-0 left-0 bottom-0 w-6 z-40 cursor-pointer pointer-events-auto select-none"
+        className={`hidden xl:block fixed top-0 left-0 bottom-0 w-6 z-40 cursor-pointer select-none ${
+          isPinned ? "pointer-events-none" : "pointer-events-auto"
+        }`}
         aria-hidden="true"
         title="Sichqonchani yaqinlashtirsangiz saydbar ochiladi"
       />
@@ -181,7 +229,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       <aside
         onMouseEnter={openSidebarSmoothly}
         onMouseLeave={closeSidebarSmoothly}
-        className={`hidden xl:flex fixed top-0 left-0 bottom-0 w-72 z-50 bg-[#0c0d10]/98 backdrop-blur-2xl border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.85)] flex-col justify-between select-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`hidden xl:flex fixed top-0 left-0 bottom-0 w-72 z-50 bg-[#0c0d10]/98 backdrop-blur-2xl border-r border-white/10 ${
+          isPinned ? "shadow-none" : "shadow-[20px_0_50px_rgba(0,0,0,0.85)]"
+        } flex-col justify-between select-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -202,10 +252,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     ? "bg-white/15 text-white border border-white/20"
                     : "text-text-secondary hover:text-white hover:bg-white/5"
                 }`}
-                title={isPinned ? "Mahkamlangan (Har doim ochiq)" : "Ekranga mahkamlash"}
+                title={isPinned ? "Mahkamlangan (Yonma-yon)" : "Ekranga mahkamlash (Yonma-yon)"}
               >
-                <span className="material-symbols-outlined text-[16px]">
-                  {isPinned ? "keep" : "push_pin"}
+                <span
+                  className="material-symbols-outlined text-[16px]"
+                  style={{ fontVariationSettings: isPinned ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  push_pin
                 </span>
               </button>
               <button
@@ -543,7 +596,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           Clean minimalist header without duplicate hamburger button
       ======================================================== */}
       <nav
-        className={`fixed top-0 w-full z-30 transition-all duration-300 ease-out border-b ${
+        className={`site-top-nav fixed top-0 left-0 w-full z-30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
           isScrolled
             ? "bg-background-obsidian/95 backdrop-blur-xl border-white/10 shadow-2xl shadow-black/80 py-3"
             : "bg-gradient-to-b from-background-obsidian/95 via-background-obsidian/75 to-transparent border-transparent py-4"

@@ -37,13 +37,19 @@ from app.infrastructure.db.models.translation import EpisodeTranslationModel
 from sqlalchemy import select, insert
 from telethon.tl.functions.messages import CreateForumTopicRequest, UpdatePinnedMessageRequest
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
-logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+class FlushStreamHandler(logging.StreamHandler):
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
 logger = logging.getLogger("batch_migrator")
+logger.setLevel(logging.INFO)
+_handler = FlushStreamHandler(sys.stdout)
+_handler.setLevel(logging.INFO)
+_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+logger.handlers = [_handler]
+logger.propagate = False
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
 TARGET_SUPERGROUP = int(settings.AUTO_TOPIC_CHAT_ID)  # -1003847632555
 TARGET_STORAGE = int(settings.STORAGE_CHANNEL_ID)    # -1003762157591
@@ -61,7 +67,7 @@ REQUESTED_SERIES = [
         "allowed_seasons": [1, 2],  # User explicitly requested: only up to season 2, do not upload season 3!
         "genres": "Drama, Fantastika, Sarguzasht, Jangari",
         "category_ids": [1, 3, 6, 8],
-        "poster_url": "https://image.tmdb.org/t/p/original/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w500/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg",
         "trailer_url": "https://www.youtube.com/watch?v=DotnJ7tTA34",
         "director": "Ryan J. Condal, George R. R. Martin",
         "cast": "Matt Smith, Emma D'Arcy, Olivia Cooke, Rhys Ifans, Steve Toussaint, Eve Best",
@@ -81,7 +87,7 @@ REQUESTED_SERIES = [
         "allowed_seasons": [1, 2, 3, 4],  # All 31 episodes
         "genres": "Jangari, Fantastika, Ilmiy fantastika, Komediya, Drama",
         "category_ids": [1, 3, 5, 6, 7],
-        "poster_url": "https://image.tmdb.org/t/p/original/in1R2dDc421JxsoRWaIIAqVI2KE.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w500/in1R2dDc421JxsoRWaIIAqVI2KE.jpg",
         "trailer_url": "https://www.youtube.com/watch?v=06rueu_fh30",
         "director": "Eric Kripke",
         "cast": "Karl Urban, Jack Quaid, Antony Starr, Erin Moriarty, Dominique McElligott, Jessie T. Usher",
@@ -101,7 +107,7 @@ REQUESTED_SERIES = [
         "allowed_seasons": [1, 2, 3, 4, 5],  # All 62 episodes
         "genres": "Drama, Kriminal, Triller",
         "category_ids": [3, 4, 9],
-        "poster_url": "https://image.tmdb.org/t/p/original/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w500/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg",
         "trailer_url": "https://www.youtube.com/watch?v=HhesaQXLuRY",
         "director": "Vince Gilligan",
         "cast": "Bryan Cranston, Aaron Paul, Anna Gunn, Dean Norris, Betsy Brandt, RJ Mitte, Bob Odenkirk",
@@ -122,7 +128,7 @@ REQUESTED_SERIES = [
         "allowed_seasons": [1, 2],
         "genres": "Fantastika, Drama, Sirli",
         "category_ids": [3, 6, 10, 14],
-        "poster_url": "https://image.tmdb.org/t/p/original/keJOhJXGiLL54EW6QocbyvQGquA.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w500/keJOhJXGiLL54EW6QocbyvQGquA.jpg",
         "trailer_url": "https://www.youtube.com/watch?v=1b-3uV2Z2zE",
         "director": "Julie Plec",
         "cast": "Joseph Morgan, Daniel Gillies, Claire Holt, Phoebe Tonkin, Charles Michael Davis",
@@ -142,7 +148,7 @@ REQUESTED_SERIES = [
         "allowed_seasons": [1, 2, 3, 4, 5, 6],
         "genres": "Drama, Fantastika, Jangari",
         "category_ids": [1, 3, 6, 14],
-        "poster_url": "https://image.tmdb.org/t/p/original/wjKBTcNy1xihmExqJI8kM2qvavP.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w500/wjKBTcNy1xihmExqJI8kM2qvavP.jpg",
         "trailer_url": "https://www.youtube.com/watch?v=1rCYDbefnmA",
         "director": "Jeff Davis",
         "cast": "Tyler Posey, Dylan O'Brien, Holland Roden, Shelley Hennig, Arden Cho, Linden Ashby",
@@ -163,7 +169,7 @@ REQUESTED_SERIES = [
         "allowed_seasons": [1, 2, 3, 4, 5, 6, 7, 8],
         "genres": "Drama, Fantastika, Romantika",
         "category_ids": [3, 6, 13, 14],
-        "poster_url": "https://image.tmdb.org/t/p/original/gbp4zM0FE0n23X4UFY5EBlacrog.jpg",
+        "poster_url": "https://image.tmdb.org/t/p/w500/gbp4zM0FE0n23X4UFY5EBlacrog.jpg",
         "trailer_url": "https://www.youtube.com/watch?v=BmVmhjjkN4E",
         "director": "Julie Plec, Kevin Williamson",
         "cast": "Paul Wesley, Ian Somerhalder, Nina Dobrev, Kat Graham, Candice King, Zach Roerig",
@@ -175,20 +181,30 @@ REQUESTED_SERIES = [
 ]
 
 async def fetch_poster_bytes(url: str) -> bytes | None:
-    try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as hclient:
-            res = await hclient.get(url)
-            if res.status_code == 200:
-                return res.content
-    except Exception as e:
-        logger.warning(f"Poster yuklab olishda xatolik ({url}): {e}")
+    targets = [url]
+    if "/original/" in url:
+        targets.append(url.replace("/original/", "/w500/"))
+    elif "/w500/" in url:
+        targets.append(url.replace("/w500/", "/original/"))
+        
+    for u in targets:
+        try:
+            async with httpx.AsyncClient(timeout=12, follow_redirects=True) as hclient:
+                res = await hclient.get(u)
+                if res.status_code == 200 and len(res.content) > 1000:
+                    return res.content
+        except Exception:
+            pass
     return None
 
 async def create_or_find_topic(client: TelegramClient, title: str) -> int:
-    async for m in client.iter_messages(TARGET_SUPERGROUP, limit=100):
+    clean_target = title.replace("🎬", "").split("(")[0].strip().lower()
+    async for m in client.iter_messages(TARGET_SUPERGROUP, limit=300):
         if getattr(m, 'action', None) and type(m.action).__name__ == 'MessageActionTopicCreate':
-            if m.action.title.strip() == title.strip():
-                logger.info(f"Mavjud topic topildi: '{title}' (ID: {m.id})")
+            act_title = getattr(m.action, 'title', '').strip()
+            clean_act = act_title.replace("🎬", "").split("(")[0].strip().lower()
+            if clean_act == clean_target or clean_target in clean_act:
+                logger.info(f"Mavjud topic topildi: '{act_title}' (ID: {m.id})")
                 return m.id
 
     peer = await client.get_input_entity(TARGET_SUPERGROUP)
@@ -282,11 +298,24 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
     total_episodes_series = sum(len(eps) for eps in seasons_to_process.values())
     logger.info(f"Ko'chirilishi kerak bo'lgan jami qismlar: {total_episodes_series}")
 
-    # 2. Topic ochish yoki topish
+    # 2. Topic ochish yoki DB dan olish
     topic_title = f"🎬 {title} ({release_year})"
-    topic_id = await create_or_find_topic(client, topic_title)
-    logger.info(f"Topic tayyor! ID: {topic_id}")
-    await asyncio.sleep(1.5)
+    topic_id = None
+    async with async_session_factory() as session:
+        series_res = await session.execute(
+            select(SeriesModel).where(SeriesModel.tmdb_id == tmdb_id)
+        )
+        existing_series = series_res.scalars().first()
+        if existing_series and existing_series.source_id:
+            src_chk = await session.get(SourceModel, existing_series.source_id)
+            if src_chk and src_chk.topic_id:
+                topic_id = src_chk.topic_id
+                logger.info(f"Mavjud topic DB dan olindi: '{title}' (ID: {topic_id})")
+
+    if not topic_id:
+        topic_id = await create_or_find_topic(client, topic_title)
+        logger.info(f"Topic tayyor! ID: {topic_id}")
+    await asyncio.sleep(1.0)
 
     # 3. Database Series va Source tekshirish/yaratish
     current_series_id = None
@@ -412,6 +441,7 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
         logger.info(f"\n>>> {title} -> {s_num}-MAVSUM: {len(eps_list)} ta qism")
 
         current_season_id = None
+        existing_ep_nums = set()
         async with async_session_factory() as session:
             season_res = await session.execute(
                 select(SeasonModel).where(
@@ -438,23 +468,20 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
 
             current_season_id = season_obj.id
 
+            ep_res = await session.execute(
+                select(EpisodeModel.episode_number).where(EpisodeModel.season_id == current_season_id)
+            )
+            existing_ep_nums = set(ep_res.scalars().all())
+
         for ep_num, old_ep_msg_id in eps_list:
             cur_ep_counter += 1
             display_code = f"S{s_num}-CH{ep_num}"
 
             # Check if episode already exists in DB
-            async with async_session_factory() as session:
-                ep_chk = await session.execute(
-                    select(EpisodeModel).where(
-                        EpisodeModel.season_id == current_season_id,
-                        EpisodeModel.episode_number == ep_num
-                    )
-                )
-                existing_ep = ep_chk.scalars().first()
-                if existing_ep:
-                    logger.info(f"[{cur_ep_counter}/{total_episodes_series}] [SKIP] {display_code} allaqachon ko'chirilgan.")
-                    migrated_series_count += 1
-                    continue
+            if ep_num in existing_ep_nums:
+                logger.info(f"[{cur_ep_counter}/{total_episodes_series}] [SKIP] {display_code} allaqachon ko'chirilgan.")
+                migrated_series_count += 1
+                continue
 
             # Fetch media from old chat
             ep_msg = None

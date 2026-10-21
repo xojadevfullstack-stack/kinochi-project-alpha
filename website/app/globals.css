@@ -54,3 +54,23 @@ input:-webkit-autofill:active{
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Desktop Dynamic Sidebar Docking (When pinned, content docks beside sidebar) */
+@media (min-width: 1280px) {
+  main,
+  footer,
+  .site-top-nav {
+    transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  body.sidebar-pinned main,
+  body.sidebar-pinned footer {
+    margin-left: 18rem;
+    width: calc(100% - 18rem);
+  }
+
+  body.sidebar-pinned .site-top-nav {
+    left: 18rem !important;
+    width: calc(100% - 18rem) !important;
+  }
+}
+
