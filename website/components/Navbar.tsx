@@ -341,9 +341,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
             {/* 3. Obunalar (Followed content / Subscriptions) */}
             <Link
-              href="/subscriptions"
+              href="/profile?tab=subscriptions"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/subscriptions"
+                pathname === "/profile"
                   ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
                   : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
