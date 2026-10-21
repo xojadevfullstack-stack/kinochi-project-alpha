@@ -6,18 +6,15 @@ import { usePathname } from "next/navigation";
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // 5 ta asosiy mobil pastki menyu:
+  // 1. Bosh sahifa, 2. Obunalar, 3. Katalog (To'laqonli page!), 4. Premyeralar, 5. Profil (To'laqonli page!)
   const navItems = [
-    { label: "Asosiy", href: "/", icon: "home" },
-    { label: "Katalog", href: "/movies", icon: "movie" },
-    { label: "Qidiruv", href: "/search", icon: "search" },
-    { label: "Tarix", href: "/history", icon: "history" },
+    { label: "Bosh sahifa", href: "/", icon: "home" },
+    { label: "Obunalar", href: "/achievements", icon: "loyalty" },
+    { label: "Katalog", href: "/catalog", icon: "grid_view" },
+    { label: "Premyera", href: "/movies", icon: "theaters" },
+    { label: "Profil", href: "/profile", icon: "person" },
   ];
-
-  const handleProfileClick = () => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("kinochi_toggle_profile"));
-    }
-  };
 
   const handleNav = (href: string) => {
     if (pathname === href && typeof window !== "undefined") {
@@ -30,18 +27,31 @@ export default function BottomNav() {
       className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-background-obsidian/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] pb-[env(safe-area-inset-bottom,0.5rem)]"
       aria-label="Mobil pastki navigatsiya"
     >
-      <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">
+      <div className="max-w-md mx-auto px-2 sm:px-4 py-2 flex items-center justify-around">
         {navItems.map((item) => {
           const isKatalog = item.label === "Katalog";
-          const isActive = isKatalog
-            ? pathname.startsWith("/movies") || pathname.startsWith("/series") || pathname.startsWith("/p/") || pathname.startsWith("/category/") || pathname.startsWith("/catalog")
-            : pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const isProfile = item.label === "Profil";
+          const isPremyera = item.label === "Premyera";
+
+          let isActive = false;
+          if (item.href === "/") {
+            isActive = pathname === "/";
+          } else if (isKatalog) {
+            isActive = pathname.startsWith("/catalog") || pathname.startsWith("/category/") || pathname.startsWith("/p/");
+          } else if (isProfile) {
+            isActive = pathname.startsWith("/profile") || pathname.startsWith("/history");
+          } else if (isPremyera) {
+            isActive = pathname.startsWith("/movies") || pathname.startsWith("/series");
+          } else {
+            isActive = pathname.startsWith(item.href);
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => handleNav(item.href)}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer relative group ${
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative group ${
                 isActive ? "text-primary-container font-bold" : "text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -58,39 +68,10 @@ export default function BottomNav() {
                   <span className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full"></span>
                 )}
               </div>
-              <span className="text-[11px] tracking-tight">{item.label}</span>
+              <span className="text-[10px] sm:text-[11px] tracking-tight">{item.label}</span>
             </Link>
           );
         })}
-
-        {/* Profile Button - Standardized icon matching other 4 tabs */}
-        {(() => {
-          const isProfileActive = pathname === "/achievements";
-          return (
-            <button
-              onClick={handleProfileClick}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer group ${
-                isProfileActive ? "text-primary-container font-bold" : "text-text-secondary hover:text-text-primary"
-              }`}
-              aria-label="Profil"
-            >
-              <div className="relative flex items-center justify-center">
-                <span 
-                  className={`material-symbols-outlined text-[23px] transition-colors ${
-                    isProfileActive ? "text-primary-container" : "text-text-secondary group-hover:text-text-primary"
-                  }`}
-                  style={{ fontVariationSettings: isProfileActive ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  person
-                </span>
-                {isProfileActive && (
-                  <span className="absolute -bottom-1 w-1 h-1 bg-primary-container rounded-full"></span>
-                )}
-              </div>
-              <span className="text-[11px] tracking-tight">Profil</span>
-            </button>
-          );
-        })()}
       </div>
     </nav>
   );
