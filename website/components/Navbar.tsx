@@ -19,7 +19,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   // Dynamic Desktop Sidebar state (Opens ONLY when cursor approaches left edge)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [bolimlarOpen, setBolimlarOpen] = useState(true);
+  const [bolimlarOpen, setBolimlarOpen] = useState(false);
   const [kolleksiyaOpen, setKolleksiyaOpen] = useState(false);
   
   const [hasUnread, setHasUnread] = useState(false);
