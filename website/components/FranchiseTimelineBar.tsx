@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import SubscribeButton from "@/components/SubscribeButton";
 
 interface FranchiseItem {
   id: number;
@@ -91,6 +92,12 @@ export default function FranchiseTimelineBar({
               ⏳ {context.timeline_event_desc}
             </span>
           )}
+          <SubscribeButton
+            targetType="collection"
+            targetId={context.collection_id}
+            title={context.collection_name}
+            className="text-xs text-white px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 font-bold transition-all shrink-0 flex items-center gap-1 shadow-sm"
+          />
           <button
             onClick={() => setShowFullTimeline(!showFullTimeline)}
             className="text-xs text-text-secondary hover:text-white px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors shrink-0 flex items-center gap-1"

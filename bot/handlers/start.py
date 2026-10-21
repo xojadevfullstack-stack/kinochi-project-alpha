@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router, F
 from aiogram.filters import CommandStart, CommandObject, Command
 from aiogram.types import Message
@@ -7,6 +8,8 @@ from utils.info_sender import send_movie_info, send_series_info
 from aiogram.exceptions import TelegramBadRequest
 from config import settings
 from keyboards.inline import get_main_menu_inline
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -27,6 +30,47 @@ async def cmd_start(message: Message, command: CommandObject):
         # Check if it's login
         if raw_code.lower() == "login":
             return await cmd_login(message)
+
+        # Check if it's series subscription from web
+        if raw_code.startswith("sub_series_"):
+            try:
+                series_id = int(raw_code.replace("sub_series_", ""))
+                is_sub = await api_client.check_series_subscription(series_id, message.from_user.id)
+                if not is_sub:
+                    await api_client.toggle_series_subscription(series_id, message.from_user.id)
+                series = await api_client.get_series_by_id(series_id)
+                s_title = series.get("title", "Serial") if series else "Serial"
+                await message.answer(
+                    f"🔔 <b>\"{s_title}\" serialiga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n"
+                    f"Yangi qism chiqishi bilanoq sizga birinchilardan bo'lib poster va video havolasi bilan xabar beramiz.",
+                    parse_mode="HTML"
+                )
+                if series:
+                    await send_series_info(message.bot, message.from_user.id, series)
+                return
+            except Exception as e:
+                logger.warning(f"Error handling start sub_series_: {e}")
+
+        # Check if it's collection / franchise subscription from web
+        if raw_code.startswith("sub_col_"):
+            try:
+                col_id = int(raw_code.replace("sub_col_", ""))
+                is_sub = await api_client.check_collection_subscription(col_id, message.from_user.id)
+                if not is_sub:
+                    await api_client.toggle_collection_subscription(col_id, message.from_user.id)
+                col = await api_client.get_collection(col_id)
+                c_name = col.get("name", "Franshiza") if col else "Franshiza"
+                await message.answer(
+                    f"🔔 <b>\"{c_name}\" franshizasiga muvaffaqiyatli obuna bo'ldingiz!</b>\n\n"
+                    f"Yangi qism yoki film qo'shilishi bilanoq sizga birinchilardan bo'lib xabar beramiz.",
+                    parse_mode="HTML"
+                )
+                from utils.info_sender import send_collection_info
+                if col:
+                    await send_collection_info(message.bot, message.from_user.id, col)
+                return
+            except Exception as e:
+                logger.warning(f"Error handling start sub_col_: {e}")
         
         from utils.code_resolver import resolve_and_send_content
         found = await resolve_and_send_content(message.bot, message.from_user.id, raw_code)

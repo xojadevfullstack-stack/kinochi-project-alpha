@@ -99,17 +99,57 @@ export default function ProfilePage() {
       }
     };
 
-    // 3. Load favorites and followed subscriptions
+    // 3. Load favorites
     try {
       const savedFavs = localStorage.getItem("kinochi_favorites");
       if (savedFavs) {
         setFavorites(JSON.parse(savedFavs));
       }
-      const savedSubs = localStorage.getItem("kinochi_user_subscriptions");
-      if (savedSubs) {
-        setUserSubscriptions(JSON.parse(savedSubs));
-      }
     } catch {}
+
+    // 4. Load real subscriptions from API when authenticated
+    if (status === "authenticated") {
+      fetchApi("/users/me/subscriptions")
+        .then((data: any) => {
+          const list: any[] = [];
+          if (Array.isArray(data?.series)) {
+            data.series.forEach((s: any) => {
+              list.push({
+                id: s.id,
+                title: s.title,
+                poster_url: s.poster_url,
+                slug: `/series/${s.id}`,
+                itemCount: s.release_year ? `${s.release_year}-yil` : "Serial",
+                type: "series"
+              });
+            });
+          }
+          if (Array.isArray(data?.collections)) {
+            data.collections.forEach((c: any) => {
+              list.push({
+                id: c.id,
+                title: c.name,
+                poster_url: c.poster_url,
+                slug: `/collections/${c.slug}`,
+                itemCount: `${c.item_count || 0} ta qism`,
+                type: "franchise"
+              });
+            });
+          }
+          setUserSubscriptions(list);
+        })
+        .catch(() => {
+          try {
+            const savedSubs = localStorage.getItem("kinochi_user_subscriptions");
+            if (savedSubs) setUserSubscriptions(JSON.parse(savedSubs));
+          } catch {}
+        });
+    } else {
+      try {
+        const savedSubs = localStorage.getItem("kinochi_user_subscriptions");
+        if (savedSubs) setUserSubscriptions(JSON.parse(savedSubs));
+      } catch {}
+    }
 
     loadBroadcasts();
   }, [status]);

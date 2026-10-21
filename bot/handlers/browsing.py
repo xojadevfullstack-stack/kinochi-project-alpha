@@ -10,10 +10,13 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
-@router.callback_query(F.data.startswith("watch_m_"))
+@router.callback_query(F.data.startswith("watch_m_") | (F.data.startswith("m_") & ~F.data.startswith("menu_")))
 async def handle_watch_movie(callback: CallbackQuery):
     try:
-        code = callback.data.split("_", 2)[2]
+        if callback.data.startswith("m_"):
+            code = callback.data[2:].strip()
+        else:
+            code = callback.data.split("_", 2)[2].strip()
         movie = await api_client.get_movie_by_code(code)
         if not movie:
             await callback.message.answer("⚠️ Bu kino topilmadi.")
@@ -28,10 +31,13 @@ async def handle_watch_movie(callback: CallbackQuery):
         except Exception:
             pass
 
-@router.callback_query(F.data.startswith("watch_e_"))
+@router.callback_query(F.data.startswith("watch_e_") | F.data.startswith("ep_code_"))
 async def handle_watch_episode(callback: CallbackQuery):
     try:
-        code = callback.data.split("_", 2)[2]
+        if callback.data.startswith("ep_code_"):
+            code = callback.data[8:].strip()
+        else:
+            code = callback.data.split("_", 2)[2].strip()
         episode = await api_client.get_episode_by_code(code)
         if not episode:
             await callback.message.answer("⚠️ Bu qism topilmadi.")

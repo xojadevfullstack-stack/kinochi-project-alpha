@@ -16,7 +16,7 @@ from sqlalchemy import select, func, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db_session, get_current_admin, get_admin_or_bot
+from app.api.deps import get_db_session, get_current_admin, get_admin_or_bot, get_current_user_optional
 from app.api.limiter import limiter
 from app.infrastructure.db.models.collection import CollectionModel, CollectionItemModel
 from app.infrastructure.db.models.collection_subscription import CollectionSubscriptionModel
@@ -142,7 +142,7 @@ class CollectionItemUpdate(BaseModel):
 
 
 class SubscribeCollectionRequest(BaseModel):
-    telegram_user_id: int
+    telegram_user_id: int | None = None
 
 
 class CollectionSubscriptionStatusResponse(BaseModel):
@@ -374,19 +374,28 @@ async def get_movie_franchise_context(
 async def toggle_collection_subscription(
     collection_id: int,
     payload: SubscribeCollectionRequest,
+    current_user: dict | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db_session),
 ):
     """
     Toggle subscription for a user on a franchise / collection.
+    Supports both Telegram bot (via telegram_user_id) and Web users (via Auth token).
     If subscribed -> unregisters. If not -> registers.
     """
     col = await db.get(CollectionModel, collection_id)
     if not col:
         raise HTTPException(status_code=404, detail="To'plam topilmadi")
 
+    tg_id = payload.telegram_user_id
+    if not tg_id and current_user and current_user.get("telegram_id"):
+        tg_id = current_user["telegram_id"]
+
+    if not tg_id:
+        raise HTTPException(status_code=401, detail="Obuna bo'lish uchun Telegram orqali kiring")
+
     stmt = select(CollectionSubscriptionModel).where(
         CollectionSubscriptionModel.collection_id == collection_id,
-        CollectionSubscriptionModel.telegram_user_id == payload.telegram_user_id,
+        CollectionSubscriptionModel.telegram_user_id == tg_id,
     )
     res = await db.execute(stmt)
     existing = res.scalar_one_or_none()
@@ -397,39 +406,51 @@ async def toggle_collection_subscription(
         return CollectionSubscriptionStatusResponse(
             is_subscribed=False,
             collection_id=collection_id,
-            telegram_user_id=payload.telegram_user_id,
+            telegram_user_id=tg_id,
         )
     else:
         new_sub = CollectionSubscriptionModel(
             collection_id=collection_id,
-            telegram_user_id=payload.telegram_user_id,
+            telegram_user_id=tg_id,
         )
         db.add(new_sub)
         await db.commit()
         return CollectionSubscriptionStatusResponse(
             is_subscribed=True,
             collection_id=collection_id,
-            telegram_user_id=payload.telegram_user_id,
+            telegram_user_id=tg_id,
         )
 
 
 @router.get("/{collection_id}/subscription-status", response_model=CollectionSubscriptionStatusResponse)
 async def check_collection_subscription(
     collection_id: int,
-    telegram_user_id: int = Query(...),
+    telegram_user_id: int | None = Query(None),
+    current_user: dict | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Check if telegram user is subscribed to franchise / collection updates."""
+    """Check if user is subscribed to franchise / collection updates (bot or web)."""
+    tg_id = telegram_user_id
+    if not tg_id and current_user and current_user.get("telegram_id"):
+        tg_id = current_user["telegram_id"]
+
+    if not tg_id:
+        return CollectionSubscriptionStatusResponse(
+            is_subscribed=False,
+            collection_id=collection_id,
+            telegram_user_id=0,
+        )
+
     stmt = select(CollectionSubscriptionModel).where(
         CollectionSubscriptionModel.collection_id == collection_id,
-        CollectionSubscriptionModel.telegram_user_id == telegram_user_id,
+        CollectionSubscriptionModel.telegram_user_id == tg_id,
     )
     res = await db.execute(stmt)
     existing = res.scalar_one_or_none()
     return CollectionSubscriptionStatusResponse(
         is_subscribed=bool(existing),
         collection_id=collection_id,
-        telegram_user_id=telegram_user_id,
+        telegram_user_id=tg_id,
     )
 
 
@@ -477,7 +498,10 @@ async def broadcast_new_collection_item_notification(
     prev_item_code = None
     current_order = 1
 
+    poster_url = None
     if movie:
+        if movie.poster_url:
+            poster_url = movie.poster_url
         for idx, it in enumerate(all_items):
             if it.movie_id == movie.id:
                 current_order = it.chronological_order
@@ -495,52 +519,62 @@ async def broadcast_new_collection_item_notification(
         order_str = f"🔢 <b>Xronologiya bo'yicha:</b> {current_order}-qism (jami {total_parts} ta)\n"
 
         text = (
-            f"🔔 <b>{type_label} YANGI FILM!</b>\n\n"
+            f"🔔 <b>{type_label} YANGI QISM!</b>\n\n"
             f"🎬 <b>{m_title}{m_year}</b>\n"
-            f"📂 To'plam: <b>{col_name}</b>\n"
+            f"📂 Franshiza: <b>{col_name}</b>\n"
             f"{order_str}"
             f"{rating_str}{dur_str}\n"
             f"🔑 Film kodi: <code>{movie.code}</code>\n\n"
             f"<i>Tomosha qilish uchun quyidagi tugmani bosing yoki kodni botga yuboring!</i>"
         )
     elif series:
+        if series.poster_url:
+            poster_url = series.poster_url
         s_title = html.escape(series.title)
         text = (
             f"🔔 <b>{type_label} YANGI SERIAL!</b>\n\n"
             f"🎬 <b>{s_title}</b>\n"
-            f"📂 To'plam: <b>{col_name}</b>\n\n"
+            f"📂 Franshiza: <b>{col_name}</b>\n\n"
             f"📺 Serial kodi: <code>s_{series.id}</code>\n\n"
             f"<i>Tomosha qilish uchun quyidagi tugmani bosing!</i>"
         )
     else:
-        msg_body = html.escape(custom_message) if custom_message else "Yangi film yuklandi!"
+        if col.poster_url:
+            poster_url = col.poster_url
+        msg_body = html.escape(custom_message) if custom_message else "Yangi qism yuklandi!"
         text = (
             f"🔔 <b>{col_name}</b> to'plamida yangilanish!\n\n"
             f"{msg_body}\n\n"
             f"<i>Barcha qismlarni ko'rish uchun pastdagi tugmani bosing!</i>"
         )
 
+    if not poster_url and col.poster_url:
+        poster_url = col.poster_url
+
     # Inline keyboard buttons
     inline_kb = []
     if movie:
         inline_kb.append([
-            {"text": "▶️ Tomosha qilish", "callback_data": f"m_{movie.code}"}
+            {"text": f"▶️ Yangi {current_order}-qism qo'shildi", "callback_data": f"watch_m_{movie.code}"}
         ])
         if prev_item_code and prev_item_title:
             short_t = prev_item_title[:18] + ("..." if len(prev_item_title) > 18 else "")
             inline_kb.append([
-                {"text": f"⏮ Oldingi qism: {short_t}", "callback_data": f"m_{prev_item_code}"}
+                {"text": f"⏮ Oldingi qism: {short_t}", "callback_data": f"watch_m_{prev_item_code}"}
             ])
     elif series:
         inline_kb.append([
-            {"text": "▶️ Serialni ochish", "callback_data": f"series_info_{series.id}"}
+            {"text": f"▶️ Yangi serial qo'shildi: {series.title[:22]}", "callback_data": f"search_series_{series.id}"}
         ])
 
     inline_kb.append([
         {"text": f"📚 Barcha qismlar ({total_parts} ta)", "callback_data": f"col_view_{col.id}"}
     ])
 
-    base_site = settings.WEBSITE_URL.rstrip('/') if hasattr(settings, "WEBSITE_URL") else "https://kinochi.uz"
+    base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+    if not base_site or "localhost" in base_site or "127.0.0.1" in base_site:
+        base_site = "https://kinochi-project-alpha.vercel.app"
+
     inline_kb.append([
         {"text": "🌐 Saytda ko'rish", "url": f"{base_site}/collections/{col.slug}"},
         {"text": "🔕 Obunani bekor qilish", "callback_data": f"sub_col_{col.id}"}
@@ -548,21 +582,45 @@ async def broadcast_new_collection_item_notification(
 
     sent_count = 0
     bot_token = settings.BOT_TOKEN
-    async with httpx.AsyncClient(timeout=6.0) as client:
+    send_photo_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    send_message_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+    has_poster = bool(poster_url and str(poster_url).startswith("http"))
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
         for uid in subscribers:
-            try:
-                url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                payload = {
-                    "chat_id": uid,
-                    "text": text,
-                    "parse_mode": "HTML",
-                    "reply_markup": json.dumps({"inline_keyboard": inline_kb})
-                }
-                resp = await client.post(url, json=payload)
-                if resp.status_code == 200 and resp.json().get("ok"):
-                    sent_count += 1
-            except Exception as e:
-                logger.warning(f"Error sending collection update notification to {uid}: {e}")
+            sent_this = False
+            # 1. Try sending Photo with Caption
+            if has_poster:
+                try:
+                    p_resp = await client.post(send_photo_url, json={
+                        "chat_id": uid,
+                        "photo": poster_url,
+                        "caption": text,
+                        "parse_mode": "HTML",
+                        "reply_markup": json.dumps({"inline_keyboard": inline_kb})
+                    })
+                    if p_resp.status_code == 200 and p_resp.json().get("ok"):
+                        sent_count += 1
+                        sent_this = True
+                    else:
+                        logger.debug(f"sendPhoto for {uid} status {p_resp.status_code}: {p_resp.text}")
+                except Exception as p_err:
+                    logger.debug(f"sendPhoto failed for {uid}, falling back to sendMessage: {p_err}")
+
+            # 2. Fallback to sendMessage if photo not available or failed
+            if not sent_this:
+                try:
+                    resp = await client.post(send_message_url, json={
+                        "chat_id": uid,
+                        "text": text,
+                        "parse_mode": "HTML",
+                        "reply_markup": json.dumps({"inline_keyboard": inline_kb})
+                    })
+                    if resp.status_code == 200 and resp.json().get("ok"):
+                        sent_count += 1
+                except Exception as e:
+                    logger.warning(f"Error sending collection update notification to {uid}: {e}")
 
     logger.info(f"Broadcasted collection {collection_id} notification to {sent_count}/{len(subscribers)} subscribers")
     return {

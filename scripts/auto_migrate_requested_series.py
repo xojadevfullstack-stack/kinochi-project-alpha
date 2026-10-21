@@ -442,36 +442,43 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
 
         current_season_id = None
         existing_ep_nums = set()
-        async with async_session_factory() as session:
-            season_res = await session.execute(
-                select(SeasonModel).where(
-                    SeasonModel.series_id == current_series_id,
-                    SeasonModel.season_number == s_num
-                )
-            )
-            season_obj = season_res.scalars().first()
-            if not season_obj:
-                season_obj = SeasonModel(
-                    series_id=current_series_id,
-                    season_number=s_num,
-                    title=f"{s_num}-Mavsum",
-                    status="completed",
-                    poster_url=poster_url,
-                    episode_count=len(eps_list)
-                )
-                session.add(season_obj)
-                await session.flush()
-                await session.commit()
-                logger.info(f"{s_num}-Mavsum DB da yaratildi (ID: {season_obj.id})")
-            else:
-                logger.info(f"{s_num}-Mavsum DB da mavjud (ID: {season_obj.id})")
+        for attempt in range(4):
+            try:
+                async with async_session_factory() as session:
+                    season_res = await session.execute(
+                        select(SeasonModel.id).where(
+                            SeasonModel.series_id == current_series_id,
+                            SeasonModel.season_number == s_num
+                        )
+                    )
+                    sid = season_res.scalar()
+                    if not sid:
+                        season_obj = SeasonModel(
+                            series_id=current_series_id,
+                            season_number=s_num,
+                            title=f"{s_num}-Mavsum",
+                            status="completed",
+                            poster_url=poster_url,
+                            episode_count=len(eps_list)
+                        )
+                        session.add(season_obj)
+                        await session.flush()
+                        await session.commit()
+                        sid = season_obj.id
+                        logger.info(f"{s_num}-Mavsum DB da yaratildi (ID: {sid})")
+                    else:
+                        logger.info(f"{s_num}-Mavsum DB da mavjud (ID: {sid})")
 
-            current_season_id = season_obj.id
+                    current_season_id = sid
 
-            ep_res = await session.execute(
-                select(EpisodeModel.episode_number).where(EpisodeModel.season_id == current_season_id)
-            )
-            existing_ep_nums = set(ep_res.scalars().all())
+                    ep_res = await session.execute(
+                        select(EpisodeModel.episode_number).where(EpisodeModel.season_id == current_season_id)
+                    )
+                    existing_ep_nums = set(ep_res.scalars().all())
+                    break
+            except Exception as e:
+                logger.warning(f"Mavsum {s_num} DB so'rovida xatolik ({e}). Qayta urinish {attempt+1}/4...")
+                await asyncio.sleep(3)
 
         for ep_num, old_ep_msg_id in eps_list:
             cur_ep_counter += 1
@@ -492,6 +499,14 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
                 except FloodWaitError as fwe:
                     logger.warning(f"Flood wait {fwe.seconds}s on fetching message {old_ep_msg_id}")
                     await asyncio.sleep(fwe.seconds + 2)
+                except (ConnectionError, OSError, asyncio.TimeoutError) as ce:
+                    logger.warning(f"Tarmoq uzilishi ({ce}) fetching message {old_ep_msg_id}. 10s kutilmoqda...")
+                    await asyncio.sleep(10)
+                    try:
+                        if not client.is_connected():
+                            await client.connect()
+                    except Exception:
+                        pass
 
             if not ep_msg or not (ep_msg.video or ep_msg.document):
                 logger.warning(f"  [XATO] Msg ID {old_ep_msg_id} da media topilmadi!")
@@ -520,6 +535,14 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
                 except FloodWaitError as fwe:
                     logger.warning(f"Flood wait {fwe.seconds}s on sending to storage")
                     await asyncio.sleep(fwe.seconds + 2)
+                except (ConnectionError, OSError, asyncio.TimeoutError) as ce:
+                    logger.warning(f"Tarmoq uzilishi ({ce}) on sending to storage. 10s kutilmoqda...")
+                    await asyncio.sleep(10)
+                    try:
+                        if not client.is_connected():
+                            await client.connect()
+                    except Exception:
+                        pass
 
             await asyncio.sleep(1.0)
 
@@ -538,6 +561,14 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
                 except FloodWaitError as fwe:
                     logger.warning(f"Flood wait {fwe.seconds}s on sending to topic")
                     await asyncio.sleep(fwe.seconds + 2)
+                except (ConnectionError, OSError, asyncio.TimeoutError) as ce:
+                    logger.warning(f"Tarmoq uzilishi ({ce}) on sending to topic. 10s kutilmoqda...")
+                    await asyncio.sleep(10)
+                    try:
+                        if not client.is_connected():
+                            await client.connect()
+                    except Exception:
+                        pass
 
             await asyncio.sleep(0.8)
 
@@ -553,29 +584,43 @@ async def migrate_single_series(client: TelegramClient, cfg: dict):
                 except FloodWaitError as fwe:
                     logger.warning(f"Flood wait {fwe.seconds}s on sending index confirmation")
                     await asyncio.sleep(fwe.seconds + 2)
+                except (ConnectionError, OSError, asyncio.TimeoutError) as ce:
+                    logger.warning(f"Tarmoq uzilishi ({ce}) on sending index confirmation. 10s kutilmoqda...")
+                    await asyncio.sleep(10)
+                    try:
+                        if not client.is_connected():
+                            await client.connect()
+                    except Exception:
+                        pass
 
             await asyncio.sleep(0.6)
 
             # Save in Database
-            async with async_session_factory() as session:
-                ep_obj = EpisodeModel(
-                    season_id=current_season_id,
-                    episode_number=ep_num,
-                    code=ep_code,
-                    display_code=display_code,
-                    title=f"{ep_num}-qism",
-                    source_message_id=new_st_msg.id
-                )
-                session.add(ep_obj)
-                await session.flush()
+            for db_attempt in range(5):
+                try:
+                    async with async_session_factory() as session:
+                        ep_obj = EpisodeModel(
+                            season_id=current_season_id,
+                            episode_number=ep_num,
+                            code=ep_code,
+                            display_code=display_code,
+                            title=f"{ep_num}-qism",
+                            source_message_id=new_st_msg.id
+                        )
+                        session.add(ep_obj)
+                        await session.flush()
 
-                trans_obj = EpisodeTranslationModel(
-                    episode_id=ep_obj.id,
-                    language="O'zbekcha",
-                    storage_channel_message_id=new_st_msg.id
-                )
-                session.add(trans_obj)
-                await session.commit()
+                        trans_obj = EpisodeTranslationModel(
+                            episode_id=ep_obj.id,
+                            language="O'zbekcha",
+                            storage_channel_message_id=new_st_msg.id
+                        )
+                        session.add(trans_obj)
+                        await session.commit()
+                        break
+                except Exception as dbe:
+                    logger.warning(f"DB saqlashda xatolik ({dbe}). Qayta urinish {db_attempt+1}/5...")
+                    await asyncio.sleep(4)
 
             migrated_series_count += 1
             logger.info(f"[{cur_ep_counter}/{total_episodes_series}] [OK] {display_code} muvaffaqiyatli ko'chirildi (ST Msg ID: {new_st_msg.id})")

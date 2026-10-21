@@ -140,7 +140,8 @@ async def get_my_history(
             }
         items.append(item_data)
         
-    return {"items": items, "total": len(items)} # Accurate total requires a separate count query, simplified for now.
+    return {"items": items, "total": len(items)}
+    # Accurate total requires a separate count query, simplified for now.
 
 @router.get("/me/recommendations")
 async def get_my_recommendations(user: dict = Depends(get_current_user)):
@@ -173,6 +174,72 @@ async def get_my_achievements(
         })
         
     return {"items": items, "total": len(items)}
+
+@router.get("/me/subscriptions")
+async def get_my_subscriptions(
+    user: dict = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Get active series and collection subscriptions for the currently authenticated user."""
+    tg_id = user.get("telegram_id")
+    if not tg_id:
+        return {"series": [], "collections": [], "total": 0}
+
+    # 1. Series Subscriptions
+    stmt_sub = (
+        select(SeriesSubscriptionModel)
+        .where(SeriesSubscriptionModel.telegram_user_id == tg_id)
+        .options(selectinload(SeriesSubscriptionModel.series))
+        .order_by(desc(SeriesSubscriptionModel.created_at))
+    )
+    sub_records = (await session.execute(stmt_sub)).scalars().all()
+    series_list = []
+    for s in sub_records:
+        if s.series:
+            series_list.append({
+                "id": s.series.id,
+                "title": s.series.title,
+                "poster_url": s.series.poster_url,
+                "imdb_rating": s.series.imdb_rating,
+                "release_year": s.series.release_year,
+                "type": "series",
+                "created_at": s.created_at.isoformat() if s.created_at else None
+            })
+
+    # 2. Collection / Franchise Subscriptions
+    stmt_col_sub = (
+        select(CollectionSubscriptionModel)
+        .where(CollectionSubscriptionModel.telegram_user_id == tg_id)
+        .options(
+            selectinload(CollectionSubscriptionModel.collection)
+            .selectinload(CollectionModel.items)
+        )
+        .order_by(desc(CollectionSubscriptionModel.created_at))
+    )
+    col_sub_records = (await session.execute(stmt_col_sub)).scalars().all()
+    collections_list = []
+    for cs in col_sub_records:
+        if cs.collection:
+            collections_list.append({
+                "id": cs.collection.id,
+                "name": cs.collection.name,
+                "slug": cs.collection.slug,
+                "description": cs.collection.description,
+                "poster_url": cs.collection.poster_url,
+                "banner_url": cs.collection.banner_url,
+                "is_franchise": cs.collection.is_franchise,
+                "category_type": getattr(cs.collection, "category_type", "franchise"),
+                "item_count": len(cs.collection.items) if cs.collection.items else 0,
+                "type": "franchise" if cs.collection.is_franchise else "collection",
+                "created_at": cs.created_at.isoformat() if cs.created_at else None
+            })
+
+    return {
+        "series": series_list,
+        "collections": collections_list,
+        "total": len(series_list) + len(collections_list)
+    }
+
 
 @router.get("", response_model=PaginatedUsersResponse)
 async def list_users(

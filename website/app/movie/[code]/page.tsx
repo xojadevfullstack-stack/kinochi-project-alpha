@@ -11,6 +11,7 @@ import FranchiseTimelineBar from "@/components/FranchiseTimelineBar";
 import FranchisePartsSection from "@/components/FranchisePartsSection";
 import AgeVerificationModal from "@/components/AgeVerificationModal";
 import ReportIssueButton from "@/components/ReportIssueButton";
+import SubscribeButton from "@/components/SubscribeButton";
 
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
@@ -246,6 +247,14 @@ export default async function MovieDetailsPage({ params }: Props) {
                 botUsername={botUsername}
                 className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
               />
+                            {franchiseContext && (
+                <SubscribeButton
+                  targetType="collection"
+                  targetId={franchiseContext.collection_id}
+                  title={franchiseContext.collection_name}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                />
+              )}
               <ReportIssueButton
                 mediaType="movie"
                 movieId={movie.id}

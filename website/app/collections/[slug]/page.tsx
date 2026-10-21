@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 import CollectionTimelineView from "@/components/CollectionTimelineView";
 import BackButton from "@/components/BackButton";
+import SubscribeButton from "@/components/SubscribeButton";
 
 type Props = {
   params: { slug: string };
@@ -92,6 +93,13 @@ export default async function CollectionDetailPage({ params }: Props) {
               <span className="text-xs font-bold text-primary-container bg-primary-container/20 px-2.5 py-1 rounded-lg border border-primary-container/30">
                 {collection.items?.length || 0} ta qism
               </span>
+
+              <SubscribeButton
+                targetType="collection"
+                targetId={collection.id}
+                title={collection.name}
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all cursor-pointer shadow-sm"
+              />
             </div>
 
             <h1 className="font-display-hero text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-3">

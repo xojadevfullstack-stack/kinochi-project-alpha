@@ -159,6 +159,16 @@ async def get_current_user(request: Request):
 
     return {"user_id": int(payload.get("sub")), "telegram_id": payload.get("telegram_id")}
 
+async def get_current_user_optional(request: Request) -> dict | None:
+    """
+    Dependency: optional user authentication.
+    Returns user dict if valid token is present, else None.
+    """
+    try:
+        return await get_current_user(request)
+    except HTTPException:
+        return None
+
 from fastapi import Header
 from app.core.config import settings
 import hmac
