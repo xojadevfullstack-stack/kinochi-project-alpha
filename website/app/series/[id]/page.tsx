@@ -16,6 +16,7 @@ import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
 import BackButton from "@/components/BackButton";
 import SourceBadge from "@/components/SourceBadge";
+import SeriesCinemaSection from "@/components/player/SeriesCinemaSection";
 
 type Props = {
   params: { id: string };
@@ -204,18 +205,27 @@ export default async function SeriesDetailsPage({ params }: Props) {
             </p>
             
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
+              {series.seasons && series.seasons.length > 0 && (
+                <a
+                  href="#series-cinema-player"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary hover:bg-inverse-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-xl">play_circle</span>
+                  <span>HOZIR TOMOSHA QILISH</span>
+                </a>
+              )}
               <TelegramWatchButton 
                 url={telegramDeepLink}
                 mediaTitle={series.title}
                 mediaType="series"
                 posterUrl={series.poster_url || ""}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 group font-bold cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-md shadow-black/20 transition-all duration-200 group font-bold cursor-pointer"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                 </svg>
-                <span>TELEGRAM ORQALI TOMOSHA QILISH</span>
+                <span>TELEGRAMDA YUKLASH</span>
               </TelegramWatchButton>
               <ShareButton 
                 title={series.title} 
@@ -242,6 +252,27 @@ export default async function SeriesDetailsPage({ params }: Props) {
         </div>
       </div>
     </section>
+
+      {/* Cinema Player Section */}
+      {series.seasons && series.seasons.length > 0 && (
+        <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5 scroll-mt-20">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-3">
+              <span className="w-1.5 h-8 bg-primary rounded-full block shadow-lg shadow-primary/50"></span>
+              <div>
+                <h2 className="font-headline-md text-xl sm:text-2xl text-text-primary">
+                  Kinoteatr
+                </h2>
+                <p className="text-xs text-text-secondary">
+                  1080p Full HD • O'zbekcha dublyaj • Barcha mavsum va qismlar
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <SeriesCinemaSection series={series} botUsername={botUsername} />
+        </section>
+      )}
 
       {/* Trailer Section */}
       {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (
