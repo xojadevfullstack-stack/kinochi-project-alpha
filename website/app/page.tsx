@@ -382,12 +382,7 @@ export default async function Home() {
 
                   <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-                  {/* Top Badges: Minimalist 1080p and Rating (No loud red block!) */}
-                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1 pointer-events-none">
-                    <span className="px-1.5 py-0.5 bg-black/70 backdrop-blur-md text-white/90 text-[10px] font-bold uppercase rounded border border-white/10 shadow-sm">
-                      1080p
-                    </span>
-                  </div>
+                  {/* Top Rating Badge */}
 
                   <div className="absolute top-2 right-2 z-10 px-2 py-0.5 bg-black/70 backdrop-blur-md rounded text-rating-gold flex items-center gap-1 border border-white/10 pointer-events-none">
                     <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>
