@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 # Mashhur o'zbekcha tarjima qilingan anime nomlari xaritasi (TMDb / Shikimori uchun)
 ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
+    "titanlar hujumi: so'nggi hujum": {"en": "Attack on Titan: The Last Attack", "orig": "Shingeki no Kyojin: The Last Attack", "tmdb_id": 1333100, "type": "movie"},
+    "titanlar hujumi songgi hujum": {"en": "Attack on Titan: The Last Attack", "orig": "Shingeki no Kyojin: The Last Attack", "tmdb_id": 1333100, "type": "movie"},
+    "titanlar hujumi": {"en": "Attack on Titan", "orig": "Shingeki no Kyojin", "ru": "Атака титанов", "type": "tv"},
     "meni oyga olib ket": {"en": "Fly Me to the Moon", "orig": "Tonikaku Kawaii", "ru": "Унеси меня на Луну"},
     "iblislar qotili": {"en": "Demon Slayer: Kimetsu no Yaiba", "orig": "Kimetsu no Yaiba", "ru": "Клинок, рассекающий демонов"},
     "qahramon x": {"en": "To Be Hero X", "orig": "To Be Hero X", "ru": "Быть героем Икс"},
@@ -362,7 +365,8 @@ def score_tmdb_candidate(
     candidate: Dict[str, Any],
     query: str,
     target_year: Optional[int] = None,
-    expected_original_title: Optional[str] = None
+    expected_original_title: Optional[str] = None,
+    media_type: Optional[str] = None
 ) -> float:
     """
     TMDb nomzodini baholaydi (yuqori ball = aniq moslik).
@@ -465,6 +469,16 @@ def score_tmdb_candidate(
     # Reyting bonusi
     vote_avg = candidate.get("vote_average") or 0.0
     score += min(float(vote_avg), 10.0)
+
+    # 4. Janr mosligi (Anime / Animatsiya filtri)
+    cand_genre_ids = candidate.get("genre_ids") or []
+    is_anime_multfilm = (media_type in ("anime", "multfilm")) or any(w in query.lower() for w in ["anime", "multfilm", "animatsiya"])
+    if is_anime_multfilm:
+        if 16 in cand_genre_ids:
+            score += 40.0
+        elif cand_genre_ids:
+            # Agar bu anime bo'lsa va TMDb da animatsiya (16) bo'lmasa (masalan kosmik b-movie), jazo beriladi
+            score -= 80.0
 
     return score
 
@@ -721,7 +735,8 @@ async def enrich_movie_smart(
                         candidate=res,
                         query=query,
                         target_year=target_year,
-                        expected_original_title=expected_orig
+                        expected_original_title=expected_orig,
+                        media_type=media_type
                     )
                     if score > best_score:
                         best_score = score
@@ -745,7 +760,8 @@ async def enrich_movie_smart(
                             candidate=res,
                             query=query,
                             target_year=target_year,
-                            expected_original_title=expected_orig
+                            expected_original_title=expected_orig,
+                            media_type=media_type
                         )
                         if score > best_score:
                             best_score = score
