@@ -16,7 +16,6 @@ import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
 import BackButton from "@/components/BackButton";
 import SourceBadge from "@/components/SourceBadge";
-import SeriesCinemaSection from "@/components/player/SeriesCinemaSection";
 
 type Props = {
   params: { id: string };
@@ -206,15 +205,6 @@ export default async function SeriesDetailsPage({ params }: Props) {
             
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
-              {series.seasons && series.seasons.length > 0 && (
-                <a
-                  href="#series-cinema-player"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary hover:bg-inverse-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-xl">play_circle</span>
-                  <span>HOZIR TOMOSHA QILISH</span>
-                </a>
-              )}
               <TelegramWatchButton 
                 url={telegramDeepLink}
                 mediaTitle={series.title}
@@ -253,26 +243,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
       </div>
     </section>
 
-      {/* Cinema Player Section */}
-      {series.seasons && series.seasons.length > 0 && (
-        <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5 scroll-mt-20">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <div className="flex items-center gap-3">
-              <span className="w-1.5 h-8 bg-primary rounded-full block shadow-lg shadow-primary/50"></span>
-              <div>
-                <h2 className="font-headline-md text-xl sm:text-2xl text-text-primary">
-                  Kinoteatr
-                </h2>
-                <p className="text-xs text-text-secondary">
-                  1080p Full HD • O'zbekcha dublyaj • Barcha mavsum va qismlar
-                </p>
-              </div>
-            </div>
-          </div>
 
-          <SeriesCinemaSection series={series} botUsername={botUsername} />
-        </section>
-      )}
 
       {/* Trailer Section */}
       {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (

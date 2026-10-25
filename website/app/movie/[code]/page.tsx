@@ -18,7 +18,6 @@ import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
 import BackButton from "@/components/BackButton";
 import SourceBadge from "@/components/SourceBadge";
-import CinemaPlayer from "@/components/player/CinemaPlayer";
 
 type Props = {
   params: { code: string };
@@ -227,13 +226,6 @@ export default async function MovieDetailsPage({ params }: Props) {
             
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
-              <a
-                href="#cinema-player"
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary hover:bg-inverse-primary text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-xl">play_circle</span>
-                <span>HOZIR TOMOSHA QILISH</span>
-              </a>
               <TelegramWatchButton 
                 url={telegramDeepLink}
                 mediaTitle={movie.title}
@@ -289,37 +281,7 @@ export default async function MovieDetailsPage({ params }: Props) {
         </section>
       )}
 
-      {/* Cinema Player Section */}
-      <section id="cinema-player" className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5 scroll-mt-20">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="flex items-center gap-3">
-            <span className="w-1.5 h-8 bg-primary rounded-full block shadow-lg shadow-primary/50"></span>
-            <div>
-              <h2 className="font-headline-md text-xl sm:text-2xl text-text-primary">
-                Kinoteatr
-              </h2>
-              <p className="text-xs text-text-secondary">
-                1080p Full HD • O'zbekcha dublyaj • 100% Reklamasiz
-              </p>
-            </div>
-          </div>
-          {movie.translations && movie.translations.length > 0 && (
-            <div className="hidden sm:flex items-center gap-2 text-xs text-text-secondary bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-              <span className="material-symbols-outlined text-sm text-primary">translate</span>
-              <span>{movie.translations.length} ta audio manba</span>
-            </div>
-          )}
-        </div>
 
-        <CinemaPlayer
-          title={movie.title}
-          mediaCode={movie.code}
-          mediaType="movie"
-          posterUrl={movie.poster_url}
-          translations={movie.translations || []}
-          telegramDeepLink={telegramDeepLink}
-        />
-      </section>
 
       {/* Trailer Section */}
       {movie.trailer_url && movie.trailer_url !== "" && movie.trailer_url !== "null" && movie.trailer_url !== "undefined" && (
