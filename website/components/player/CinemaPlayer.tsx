@@ -18,6 +18,7 @@ interface CinemaPlayerProps {
   translations?: TranslationSource[];
   directStreamUrl?: string;
   telegramDeepLink?: string;
+  storageChannelUsername?: string;
   onNextEpisode?: () => void;
   hasNextEpisode?: boolean;
   episodeNumber?: number;
@@ -47,6 +48,7 @@ export default function CinemaPlayer({
   translations = [],
   directStreamUrl,
   telegramDeepLink,
+  storageChannelUsername,
   onNextEpisode,
   hasNextEpisode = false,
   episodeNumber,
@@ -100,6 +102,22 @@ export default function CinemaPlayer({
 
   // Active video source resolution
   const activeTranslation = translations.find((t) => t.language === selectedLanguage) || translations[0];
+
+  const storageChannel =
+    storageChannelUsername ||
+    process.env.NEXT_PUBLIC_STORAGE_CHANNEL_USERNAME ||
+    "mediaplusstorage";
+
+  const tgEmbedUrl = activeTranslation?.storage_channel_message_id
+    ? `https://t.me/${storageChannel}/${activeTranslation.storage_channel_message_id}?embed=1&autoplay=1`
+    : null;
+
+  // Decide player mode: default to 'telegram' when tgEmbedUrl is present (Option 2), otherwise 'cinema'
+  const [playerMode, setPlayerMode] = useState<"cinema" | "telegram">(() => {
+    if (directStreamUrl) return "cinema";
+    if (activeTranslation?.storage_channel_message_id) return "telegram";
+    return "cinema";
+  });
   
   // Stream source URL logic
   const streamSrc =
@@ -432,91 +450,133 @@ export default function CinemaPlayer({
           : "w-full aspect-video rounded-2xl border border-white/10 shadow-2xl shadow-black/80"
       }`}
     >
-      {/* HTML5 Video Element */}
-      <video
-        ref={videoRef}
-        src={streamSrc}
-        poster={posterUrl}
-        preload="metadata"
-        playsInline
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onWaiting={() => setIsLoading(true)}
-        onPlaying={() => {
-          setIsLoading(false);
-          setIsPlaying(true);
-        }}
-        onEnded={handleVideoEnded}
-        onError={() => {
-          setIsLoading(false);
-          setHasError(true);
-        }}
-        onClick={togglePlay}
-        className="w-full h-full object-contain cursor-pointer bg-black"
-      />
-
-      {/* Double-tap Visual Feedback Animation (Mobile) */}
-      {doubleTapFeedback.type && (
-        <div
-          className={`absolute top-0 bottom-0 ${
-            doubleTapFeedback.type === "rewind" ? "left-0" : "right-0"
-          } w-1/3 flex items-center justify-center bg-white/10 backdrop-blur-xs pointer-events-none z-30 animate-pulse`}
-        >
-          <div className="flex flex-col items-center gap-1 text-white">
-            <span className="material-symbols-outlined text-4xl">
-              {doubleTapFeedback.type === "rewind" ? "fast_rewind" : "fast_forward"}
+      {/* If in Telegram Embed Mode */}
+      {playerMode === "telegram" && tgEmbedUrl ? (
+        <div className="w-full h-full relative bg-black flex flex-col">
+          <iframe
+            src={tgEmbedUrl}
+            className="w-full h-full bg-black border-0 rounded-2xl flex-1"
+            allow="autoplay; fullscreen"
+            allowFullScreen
+          />
+          {/* Top Switcher Bar */}
+          <div className="absolute top-2 right-2 z-30 flex items-center gap-2 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs">
+            <span className="text-[11px] text-primary font-bold flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-[#229ED9]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+              <span>Telegram Video</span>
             </span>
-            <span className="text-xs font-bold font-mono">
-              {doubleTapFeedback.type === "rewind" ? "-10s" : "+10s"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Loading Spinner */}
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs pointer-events-none z-20">
-          <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* Error / Fallback Card (If stream not directly available in browser) */}
-      {hasError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-low/95 p-6 text-center z-25">
-          <span className="material-symbols-outlined text-5xl text-primary mb-3">cloud_sync</span>
-          <h4 className="text-lg font-bold text-white mb-2">Toza Oqim Tayyorlanmoqda</h4>
-          <p className="text-text-secondary text-sm max-w-md mb-5 leading-relaxed">
-            Ushbu film hozirda bizning himoyalangan Telegram Storage kanalimizda to'liq sifatda saqlanmoqda. 
-            Tezkor tomosha qilish uchun pastdagi tugmani bosing:
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {telegramDeepLink && (
-              <a
-                href={telegramDeepLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-primary hover:bg-inverse-primary text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg hover:scale-105 active:scale-95"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                </svg>
-                <span>Telegram Botda Ochish</span>
-              </a>
-            )}
             <button
               onClick={() => {
+                setPlayerMode("cinema");
                 setHasError(false);
-                setIsLoading(true);
-                if (videoRef.current) videoRef.current.load();
               }}
-              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+              className="text-[11px] text-text-secondary hover:text-white transition-colors ml-1 underline cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm">refresh</span>
-              <span>Qayta urinish</span>
+              Kinoteatr
             </button>
           </div>
         </div>
-      )}
+      ) : (
+        <>
+          {/* HTML5 Video Element */}
+          <video
+            ref={videoRef}
+            src={streamSrc}
+            poster={posterUrl}
+            preload="metadata"
+            playsInline
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onWaiting={() => setIsLoading(true)}
+            onPlaying={() => {
+              setIsLoading(false);
+              setIsPlaying(true);
+            }}
+            onEnded={handleVideoEnded}
+            onError={() => {
+              setIsLoading(false);
+              setHasError(true);
+            }}
+            onClick={togglePlay}
+            className="w-full h-full object-contain cursor-pointer bg-black"
+          />
+
+          {/* Double-tap Visual Feedback Animation (Mobile) */}
+          {doubleTapFeedback.type && (
+            <div
+              className={`absolute top-0 bottom-0 ${
+                doubleTapFeedback.type === "rewind" ? "left-0" : "right-0"
+              } w-1/3 flex items-center justify-center bg-white/10 backdrop-blur-xs pointer-events-none z-30 animate-pulse`}
+            >
+              <div className="flex flex-col items-center gap-1 text-white">
+                <span className="material-symbols-outlined text-4xl">
+                  {doubleTapFeedback.type === "rewind" ? "fast_rewind" : "fast_forward"}
+                </span>
+                <span className="text-xs font-bold font-mono">
+                  {doubleTapFeedback.type === "rewind" ? "-10s" : "+10s"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Loading Spinner */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs pointer-events-none z-20">
+              <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+
+          {/* Error / Fallback Card (If stream not directly available in browser) */}
+          {hasError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface-container-low/95 p-6 text-center z-25">
+              <span className="material-symbols-outlined text-5xl text-primary mb-3">play_circle</span>
+              <h4 className="text-lg font-bold text-white mb-2">Telegram Pleyerida Ko'rish</h4>
+              <p className="text-text-secondary text-sm max-w-md mb-5 leading-relaxed">
+                Ushbu film rasmiy Telegram omborimizda (@mediaplusstorage) to'liq sifatda saqlanmoqda. 
+                Uni to'g'ridan-to'g'ri Telegram pleyerida ochish uchun pastdagi tugmani bosing:
+              </p>
+              <div className="flex flex-wrap gap-3 justify-center">
+                {tgEmbedUrl && (
+                  <button
+                    onClick={() => {
+                      setHasError(false);
+                      setPlayerMode("telegram");
+                    }}
+                    className="flex items-center gap-2 bg-primary hover:bg-inverse-primary text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-base">play_arrow</span>
+                    <span>Telegram Pleyerini Yoqish</span>
+                  </button>
+                )}
+                {telegramDeepLink && (
+                  <a
+                    href={telegramDeepLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                    </svg>
+                    <span>Telegram Botda Ochish</span>
+                  </a>
+                )}
+                <button
+                  onClick={() => {
+                    setHasError(false);
+                    setIsLoading(true);
+                    if (videoRef.current) videoRef.current.load();
+                  }}
+                  className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">refresh</span>
+                  <span>Qayta urinish</span>
+                </button>
+              </div>
+            </div>
+          )}
 
       {/* Auto-Resume Notification Toast */}
       {showResumeToast && !isPlaying && (
@@ -847,6 +907,8 @@ export default function CinemaPlayer({
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
