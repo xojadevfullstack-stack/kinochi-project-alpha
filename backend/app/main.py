@@ -21,7 +21,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
-from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search, reports, audit, blacklist, series_subscriptions, rejected, admin_cache
+from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search, reports, audit, blacklist, series_subscriptions, rejected, admin_cache, content_requests
 from app.api.limiter import limiter
 from fastapi.staticfiles import StaticFiles
 import os
@@ -89,6 +89,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from sqlalchemy import text
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
+            try:
+                from app.infrastructure.db.session import Base
+                import app.infrastructure.db.models
+                await conn.run_sync(Base.metadata.create_all)
+            except Exception as e:
+                logging.warning(f'Auto-create tables info: {e}')
         logging.info("CHECKPOINT 8c: DB test so'rovi tugadi (ulandi)")
     except Exception as db_err:
         logging.error(f"DB test xatosi: {db_err}")
@@ -193,6 +199,7 @@ app.include_router(blacklist.router, prefix="/api/v1")
 app.include_router(series_subscriptions.router, prefix="/api/v1")
 app.include_router(rejected.router, prefix="/api/v1")
 app.include_router(admin_cache.router, prefix="/api/v1")
+app.include_router(content_requests.router, prefix="/api/v1")
 
 # ── Static Uploads ───────────────────────────────────────────────
 os.makedirs("uploads/reports", exist_ok=True)

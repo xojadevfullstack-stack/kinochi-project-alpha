@@ -83,6 +83,7 @@ class Settings(BaseSettings):
 
     # ── Content Automation ───────────────────────────────────────────
     TMDB_API_KEY: str = ""
+    KINOPOISK_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     AUTO_TOPIC_CHAT_ID: int | None = None
     AUTO_CONTENT_ENABLED: bool = False

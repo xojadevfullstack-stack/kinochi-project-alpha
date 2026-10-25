@@ -441,5 +441,50 @@ class APIClient:
             logger.warning(f"Error submitting report: {e}")
             return False
 
+    async def external_search(self, query: str, media_type: str = "all", limit: int = 10) -> Dict[str, Any]:
+        """Search TMDB/Kinopoisk external catalog via backend API."""
+        try:
+            resp = await self.client.get(
+                "/content-requests/external-search",
+                params={"q": query, "media_type": media_type, "limit": limit}
+            )
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception as e:
+            logger.warning(f"Error calling external search: {e}")
+        return {"query": query, "total": 0, "results": []}
+
+    async def submit_content_request(
+        self,
+        title: str,
+        media_type: str = "movie",
+        tmdb_id: Optional[int] = None,
+        release_year: Optional[int] = None,
+        poster_url: Optional[str] = None,
+        overview: Optional[str] = None,
+        preferred_language: str = "uz",
+        telegram_user_id: Optional[int] = None,
+        user_contact: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Submit a user content request for missing movie/series."""
+        try:
+            payload = {
+                "title": title,
+                "media_type": media_type,
+                "tmdb_id": tmdb_id,
+                "release_year": release_year,
+                "poster_url": poster_url,
+                "overview": overview,
+                "preferred_language": preferred_language,
+                "telegram_user_id": telegram_user_id,
+                "user_contact": user_contact
+            }
+            resp = await self.client.post("/content-requests", json=payload)
+            if resp.status_code in (200, 201):
+                return resp.json()
+        except Exception as e:
+            logger.warning(f"Error submitting content request: {e}")
+        return {"success": False, "message": "Xatolik yuz berdi"}
+
 api_client = APIClient()
 

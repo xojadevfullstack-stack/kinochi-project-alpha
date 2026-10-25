@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 import BackButton from "@/components/BackButton";
+import ExternalSearchSection from "@/components/ExternalSearchSection";
 
 // This page reads query params, so it will be dynamically rendered
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   const specificType = searchParams.type; // "series" or "movie" or undefined
   
   let results: any[] = [];
+  let externalResults: any[] = [];
   const defaultItems: any[] = [];
   let errorMsg: string | null = null;
 
@@ -82,6 +84,18 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         const series = (seriesRes.items || []).map((i: any) => ({ ...i, isSeries: true }));
         
         results = [...movies, ...series];
+      }
+
+      // If internal results are empty, search TMDB & Kinopoisk
+      if (results.length === 0) {
+        try {
+          const extRes = await fetchApi(
+            `/content-requests/external-search?q=${encodeURIComponent(query)}&limit=12`
+          ).catch(() => ({ results: [] }));
+          externalResults = extRes?.results || [];
+        } catch (extErr) {
+          console.error("External TMDB search failed:", extErr);
+        }
       }
     } catch (error: any) {
       errorMsg = error.message;
@@ -152,19 +166,29 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         </div>
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-display-hero font-bold text-white mb-2">
-            {isSearchActive
-              ? (specificType === "series" ? "Seriallar bo'yicha qidiruv natijalari" : 
-                 specificType === "movie" ? "Kinolar bo'yicha qidiruv natijalari" : 
-                 "Qidiruv natijalari")
-              : "Qidiruv va Kashf etish"}
-          </h1>
-          <p className="text-text-secondary text-sm sm:text-base">
-            {isSearchActive
-              ? `"${query}" so'rovi bo'yicha ${results.length} ta natija topildi`
-              : "Sevimli kinolaringiz, seriallaringiz yoki janrlarni oson toping"}
-          </p>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display-hero font-bold text-white mb-2">
+              {isSearchActive
+                ? (specificType === "series" ? "Seriallar bo'yicha qidiruv natijalari" : 
+                   specificType === "movie" ? "Kinolar bo'yicha qidiruv natijalari" : 
+                   "Qidiruv natijalari")
+                : "Qidiruv va Kashf etish"}
+            </h1>
+            <p className="text-text-secondary text-sm sm:text-base">
+              {isSearchActive
+                ? `"${query}" so'rovi bo'yicha ${results.length} ta natija topildi`
+                : "Sevimli kinolaringiz, seriallaringiz yoki janrlarni oson toping"}
+            </p>
+          </div>
+
+          <Link
+            href="/requests"
+            className="self-start sm:self-auto px-4 py-2.5 rounded-2xl bg-rating-gold/15 hover:bg-rating-gold text-rating-gold hover:text-background-obsidian border border-rating-gold/30 text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
+          >
+            <span className="material-symbols-outlined text-[18px]">add_to_queue</span>
+            <span>Kino so&apos;rash / Buyurtma</span>
+          </Link>
         </div>
 
         {/* In-page Search Input */}
@@ -224,20 +248,67 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         ) : isSearchActive ? (
           results.length > 0 ? (
             <div className="mb-12">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-8">
                 {results.map((item, idx) => renderCard(item, idx))}
+              </div>
+
+              {/* Request Banner if user didn't find specific movie */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rating-gold/15 flex items-center justify-center text-rating-gold shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">movie_filter</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Qidirayotgan kinongiz topilmadimi?</h4>
+                    <p className="text-xs text-text-secondary">
+                      TMDB va Kinopoisk orqali topib, uni platformamizga qo&apos;shishni so&apos;rashingiz mumkin.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/requests`}
+                  className="px-4 py-2 bg-rating-gold text-background-obsidian font-bold rounded-xl text-xs hover:brightness-110 transition-all shrink-0 shadow"
+                >
+                  Kino buyurtma qilish 👉
+                </Link>
               </div>
             </div>
           ) : (
             <div className="mb-12">
-              {/* Modern Obsidian Empty State */}
-              <div className="text-center py-16 px-6 bg-white/[0.03] rounded-3xl border border-white/10 max-w-xl mx-auto mb-12">
-                <span className="material-symbols-outlined text-6xl text-text-secondary mb-3 opacity-60">search_off</span>
-                <h3 className="text-xl font-bold text-white mb-2">Hech narsa topilmadi</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">
-                  &ldquo;{query}&rdquo; so&apos;rovi bo&apos;yicha film yoki serial topilmadi. So&apos;zni to&apos;g&apos;ri yozganingizni tekshiring yoki quyidagi sara premyeralarni tomosha qiling.
-                </p>
-              </div>
+              {/* If external TMDB/Kinopoisk results exist, display them prominently! */}
+              {externalResults.length > 0 ? (
+                <div>
+                  <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs sm:text-sm mb-6 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[20px]">info</span>
+                    <span>
+                      &ldquo;{query}&rdquo; filmi bizning bazada yo&apos;q, lekin TMDB / Kinopoisk xalqaro bazasidan topildi! Quyidagi ro&apos;yxatdan o&apos;zingiz kutgan filmni tanlang va <b>&ldquo;Qo&apos;shishni so&apos;rash&rdquo;</b> tugmasini bosing:
+                    </span>
+                  </div>
+
+                  <ExternalSearchSection
+                    query={query}
+                    items={externalResults}
+                    title={`"${query}" bo'yicha xalqaro qidiruv natijalari`}
+                    subtitle="Ushbu kinolar hali bazamizda mavjud emas. Uni qo'shishni so'rashingiz mumkin — adminlarimiz uni birinchi navbatda joylaydi!"
+                  />
+                </div>
+              ) : (
+                /* Modern Obsidian Empty State */
+                <div className="text-center py-16 px-6 bg-white/[0.03] rounded-3xl border border-white/10 max-w-xl mx-auto mb-12">
+                  <span className="material-symbols-outlined text-6xl text-text-secondary mb-3 opacity-60">search_off</span>
+                  <h3 className="text-xl font-bold text-white mb-2">Hech narsa topilmadi</h3>
+                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
+                    &ldquo;{query}&rdquo; so&apos;rovi bo&apos;yicha film topilmadi. Uni adminlarimizga buyurtma qilishingiz mumkin!
+                  </p>
+                  <Link
+                    href="/requests"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-rating-gold text-background-obsidian font-bold rounded-2xl hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">add_to_queue</span>
+                    <span>Kino qo&apos;shishni so&apos;rash</span>
+                  </Link>
+                </div>
+              )}
 
               {/* Suggestions below empty state */}
               {defaultItems.length > 0 && (

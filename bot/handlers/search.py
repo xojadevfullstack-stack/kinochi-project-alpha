@@ -245,9 +245,53 @@ async def handle_inline_search(inline_query: InlineQuery):
 
     results = []
 
-    # 3. Agar hech narsa topilmasa
+    # 3. Agar ichki bazada hech narsa topilmasa, TMDB / Tashqi bazadan qidiramiz
     if not combined_results:
         safe_q = html.escape(query[:40])
+        try:
+            ext_search = await api_client.external_search(query=query, limit=5)
+            ext_results = ext_search.get("results", [])
+        except Exception as e:
+            logger.warning(f"External search error: {e}")
+            ext_results = []
+
+        if ext_results:
+            for ext in ext_results:
+                e_id = ext.get("tmdb_id") or ext.get("kinopoisk_id")
+                e_title = ext.get("title") or "Nomsiz"
+                e_year = ext.get("release_year") or "N/A"
+                e_type = ext.get("media_type") or "movie"
+                e_rating = ext.get("vote_average")
+                r_str = f" ⭐ {e_rating:.1f}" if e_rating else ""
+                req_cnt = ext.get("request_count", 0)
+
+                results.append(
+                    InlineQueryResultArticle(
+                        id=f"ext_{e_id}",
+                        title=f"🎬 [Bazada yo'q] {e_title} ({e_year})",
+                        description=f"TMDB katalogidan • Qo'shishni so'rash ({req_cnt} ta so'rov){r_str}",
+                        thumbnail_url=ext.get("poster_url"),
+                        input_message_content=InputTextMessageContent(
+                            message_text=(
+                                f"🎬 <b>{html.escape(e_title)}</b> ({e_year})\n\n"
+                                f"ℹ️ <i>Ushbu film/serial platformamiz bazasida hali mavjud emas.</i>\n\n"
+                                "Adminlarimiz uni birinchi navbatda joylashi uchun <b>'Qo'shishni so'rash'</b> tugmasini bosing 👇"
+                            ),
+                            parse_mode="HTML"
+                        ),
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(text=f"📥 Qo'shishni so'rash ({req_cnt} ta so'rov)", callback_data=f"req_tmdb:{e_type}:{e_id}")],
+                            [InlineKeyboardButton(text="🌐 Saytda to'liq ko'rish / so'rash", url=f"{base_site}/requests")]
+                        ])
+                    )
+                )
+            try:
+                await inline_query.answer(results, cache_time=15, is_personal=False)
+                return
+            except Exception as e:
+                logger.warning(f"Ext results inline answer error: {e}")
+
+        # Agar TMDB dan ham topilmasa
         results.append(
             InlineQueryResultArticle(
                 id="not_found",
@@ -256,11 +300,12 @@ async def handle_inline_search(inline_query: InlineQuery):
                 input_message_content=InputTextMessageContent(
                     message_text=(
                         f"😔 <b>'{safe_q}'</b> bo'yicha hech qanday film yoki serial topilmadi.\n\n"
-                        f"Boshqa so'z bilan izlab ko'ring yoki @{bot_username} botiga kiring!"
+                        f"Boshqa so'z bilan izlab ko'ring yoki so'rov qoldirish uchun saytimizga o'ting!"
                     ),
                     parse_mode="HTML"
                 ),
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="📥 Kino qo'shishni so'rash", url=f"{base_site}/requests")],
                     [InlineKeyboardButton(text="🔍 Botda qidirish", url=f"https://t.me/{bot_username}")]
                 ])
             )
@@ -358,3 +403,37 @@ async def handle_inline_search(inline_query: InlineQuery):
         logger.error(f"Failed to answer inline query: {e}", exc_info=True)
 
 
+
+
+@router.callback_query(F.data.startswith("req_tmdb:"))
+async def handle_request_tmdb_callback(callback: CallbackQuery):
+    try:
+        parts = callback.data.split(":")
+        m_type = parts[1] if len(parts) > 1 else "movie"
+        tmdb_id = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None
+        
+        user_contact = f"@{callback.from_user.username}" if callback.from_user.username else str(callback.from_user.id)
+        res = await api_client.submit_content_request(
+            title=f"TMDb #{tmdb_id}",
+            media_type=m_type,
+            tmdb_id=tmdb_id,
+            telegram_user_id=callback.from_user.id,
+            user_contact=user_contact
+        )
+        msg = res.get("message") or "✅ So'rovingiz qabul qilindi! Adminlarimiz uni platformaga qo'shishadi."
+        await callback.answer(msg, show_alert=True)
+    except Exception as e:
+        logger.warning(f"Error in handle_request_tmdb_callback: {e}")
+        await callback.answer("⚠️ So'rov qabul qilinmadi.", show_alert=True)
+
+
+@router.message(F.text.in_(["/request", "/sorash", "📥 Kino so'rash", "📥 Buyurtma berish"]))
+async def handle_request_command(message: Message):
+    base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+    await message.answer(
+        "🎬 <b>Kino yoki serial qo'shishni so'rash</b>\n\n"
+        "O'zingiz qidirgan filmni topa olmadingizmi? TMDB va Kinopoisk orqali butun jahon katalogidan topib, uni bizning bazaga yuklashimizni so'rashingiz mumkin!\n\n"
+        f"👉 <b>So'rov yuborish sahifasi:</b>\n{base_site}/requests\n\n"
+        "<i>Eng ko'p so'ralgan filmlar birinchi bo'lib platformamizga yuklanadi!</i>",
+        parse_mode="HTML"
+    )

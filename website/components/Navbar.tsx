@@ -540,6 +540,19 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Aktyorlar</span>
             </Link>
 
+            {/* Kino so'rash / Buyurtma */}
+            <Link
+              href="/requests"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/requests"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">add_to_queue</span>
+              <span>Kino so'rash</span>
+            </Link>
+
             {/* 7. Premyeralar */}
             <Link
               href="/movies"
