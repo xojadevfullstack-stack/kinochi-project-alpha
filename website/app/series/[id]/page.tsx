@@ -390,13 +390,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
                               </TelegramWatchButton>
 
                               <div className="absolute bottom-2.5 right-2.5 z-20">
-                                              <SubscribeButton
-                targetType="series"
-                targetId={series.id}
-                title={series.title}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-              />
-              <ReportIssueButton
+                                <ReportIssueButton
                                   mediaType="series"
                                   seriesId={series.id}
                                   episodeId={episode.id}
