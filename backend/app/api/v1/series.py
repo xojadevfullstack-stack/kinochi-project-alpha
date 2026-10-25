@@ -916,11 +916,16 @@ async def delete_episode_translation(
         raise HTTPException(status_code=404, detail="Translation not found")
 
 
+class OpenTopicRequest(BaseModel):
+    chat_id: int | None = None
+
+
 @router.post("/{series_id}/open-topic")
 @limiter.limit("10/minute")
 async def open_series_topic(
     request: Request,
     series_id: int,
+    payload: OpenTopicRequest | None = None,
     service: SeriesService = Depends(get_series_service),
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin),
@@ -953,11 +958,28 @@ async def open_series_topic(
             "message": "Bu serial uchun Topic allaqachon mavjud.",
         }
 
-    target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+    target_chat_id = None
+    if payload and payload.chat_id:
+        target_chat_id = payload.chat_id
+    elif series.source_id and getattr(series, "source", None) and series.source.chat_id:
+        target_chat_id = series.source.chat_id
+    else:
+        try:
+            source_repo = SourceRepository(db)
+            all_sources = await source_repo.get_all_sources()
+            supergroup_sources = [s for s in all_sources if s.type == "superguruh" and s.chat_id]
+            if supergroup_sources:
+                target_chat_id = supergroup_sources[-1].chat_id
+        except Exception:
+            pass
+
+    if not target_chat_id:
+        target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+
     if not target_chat_id:
         raise HTTPException(
             status_code=400,
-            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi kerak).",
+            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi yoki manba tanlanishi kerak).",
         )
 
     year_str = f" ({series.release_year})" if series.release_year else ""

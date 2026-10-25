@@ -347,7 +347,12 @@ export default function SeriesListPage() {
 
         if (autoOpenTopic && created?.id) {
           try {
-            await fetchApi(`/series/${created.id}/open-topic`, { method: "POST" });
+            const selectedSource = sources.find((src) => src.id === form.source_id);
+            const openBody = selectedSource?.chat_id ? JSON.stringify({ chat_id: selectedSource.chat_id }) : undefined;
+            await fetchApi(`/series/${created.id}/open-topic`, {
+              method: "POST",
+              body: openBody,
+            });
             setSuccessMsg(
               `Serial yaratildi va Telegram forumida alohida Topic ochildi! (ID: s_${created.id})`
             );
@@ -371,8 +376,12 @@ export default function SeriesListPage() {
     setOpeningTopicId(seriesId);
     setErrorMsg(null);
     try {
+      const curSeries = seriesList.find((sr: Series) => sr.id === seriesId);
+      const selectedSource = sources.find((src) => src.id === curSeries?.source_id);
+      const openBody = selectedSource?.chat_id ? JSON.stringify({ chat_id: selectedSource.chat_id }) : undefined;
       const res = await fetchApi(`/series/${seriesId}/open-topic`, {
         method: "POST",
+        body: openBody,
       });
       setSuccessMsg(res.message || "Topic muvaffaqiyatli ochildi!");
       loadSeries();
@@ -1314,10 +1323,27 @@ export default function SeriesListPage() {
 
               {/* Source / Topic Info */}
               {s.source && s.source.topic_id ? (
-                <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg text-xs mb-2 flex items-center gap-1 font-medium w-fit">
-                  <span className="material-symbols-outlined text-[14px]">forum</span>
-                  Topic #{s.source.topic_id} ({s.source.name})
-                </span>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-lg text-xs flex items-center gap-1 font-medium w-fit">
+                    <span className="material-symbols-outlined text-[14px]">forum</span>
+                    Topic #{s.source.topic_id} ({s.source.name})
+                  </span>
+                  {(() => {
+                    const cid = s.source.chat_id ? String(s.source.chat_id).replace("-100", "") : "3847632555";
+                    const link = `https://t.me/c/${cid}/${s.source.topic_id}`;
+                    return (
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-tertiary-fixed hover:text-white transition-colors"
+                        title={link}
+                      >
+                        🔗
+                      </a>
+                    );
+                  })()}
+                </div>
               ) : s.source ? (
                 <span className="text-tertiary-fixed text-xs sm:text-sm mb-2 flex items-center gap-1 font-medium">
                   📦 Manba: {s.source.name}

@@ -183,8 +183,9 @@ class MovieResponse(BaseModel):
 
     @computed_field
     def source_link(self) -> str | None:
-        if self.source_chat_id:
-            chat_id_str = str(self.source_chat_id).replace("-100", "")
+        chat_id = self.source_chat_id or settings.AUTO_TOPIC_CHAT_ID
+        if chat_id:
+            chat_id_str = str(chat_id).replace("-100", "")
             if self.source_topic_id:
                 return f"https://t.me/c/{chat_id_str}/{self.source_topic_id}"
             return f"https://t.me/c/{chat_id_str}"
@@ -813,11 +814,16 @@ async def delete_movie(
     await delete_cache_pattern("cache:movies:*")
 
 
+class OpenTopicRequest(BaseModel):
+    chat_id: int | None = None
+
+
 @router.post("/{movie_id}/open-topic")
 @limiter.limit("10/minute")
 async def open_movie_topic(
     request: Request,
     movie_id: int,
+    payload: OpenTopicRequest | None = None,
     service: MovieService = Depends(get_movie_service),
     admin: dict = Depends(get_current_admin),
 ):
@@ -846,11 +852,29 @@ async def open_movie_topic(
             "message": "Bu kino uchun Topic allaqachon ochilgan.",
         }
 
-    target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+    target_chat_id = None
+    if payload and payload.chat_id:
+        target_chat_id = payload.chat_id
+    elif movie.source_chat_id:
+        target_chat_id = movie.source_chat_id
+    else:
+        try:
+            from app.infrastructure.db.repositories.source_repository import SourceRepository
+            source_repo = SourceRepository(service.repository.session)
+            all_sources = await source_repo.get_all_sources()
+            supergroup_sources = [s for s in all_sources if s.type == "superguruh" and s.chat_id]
+            if supergroup_sources:
+                target_chat_id = supergroup_sources[-1].chat_id
+        except Exception:
+            pass
+
+    if not target_chat_id:
+        target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+
     if not target_chat_id:
         raise HTTPException(
             status_code=400,
-            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi kerak).",
+            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi yoki manba tanlanishi kerak).",
         )
 
     year_str = f" ({movie.release_year})" if movie.release_year else ""

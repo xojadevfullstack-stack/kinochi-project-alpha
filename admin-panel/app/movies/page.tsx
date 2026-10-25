@@ -353,7 +353,12 @@ export default function MoviesPage() {
 
         if (autoOpenTopic && created?.id) {
           try {
-            await fetchApi(`/movies/${created.id}/open-topic`, { method: "POST" });
+            const selectedSource = sources.find((s) => s.id === form.source_id);
+            const openBody = selectedSource?.chat_id ? JSON.stringify({ chat_id: selectedSource.chat_id }) : undefined;
+            await fetchApi(`/movies/${created.id}/open-topic`, {
+              method: "POST",
+              body: openBody,
+            });
             setSuccessMsg(
               `Kino saqlandi va Telegram'da topic ochildi! (Kod: #${created.code})`
             );
@@ -379,7 +384,13 @@ export default function MoviesPage() {
     setOpeningTopicId(movieId);
     setErrorMsg(null);
     try {
-      const res = await fetchApi(`/movies/${movieId}/open-topic`, { method: "POST" });
+      const curMovie = movies.find((m) => m.id === movieId);
+      const selectedSource = sources.find((s) => s.id === curMovie?.source_id);
+      const openBody = selectedSource?.chat_id ? JSON.stringify({ chat_id: selectedSource.chat_id }) : undefined;
+      const res = await fetchApi(`/movies/${movieId}/open-topic`, {
+        method: "POST",
+        body: openBody,
+      });
       setSuccessMsg(res.message || "Topic muvaffaqiyatli ochildi!");
       loadMovies();
     } catch (e: any) {
@@ -1313,17 +1324,20 @@ export default function MoviesPage() {
                           </span>
                           Topic #{m.source_topic_id}
                         </span>
-                        {m.source_link && (
-                          <a
-                            href={m.source_link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-tertiary-fixed hover:text-white transition-colors"
-                            title={m.source_link}
-                          >
-                            🔗
-                          </a>
-                        )}
+                        {(() => {
+                          const topicLink = m.source_link || (m.source_topic_id && m.source_chat_id ? `https://t.me/c/${String(m.source_chat_id).replace("-100", "")}/${m.source_topic_id}` : (m.source_topic_id ? `https://t.me/c/3847632555/${m.source_topic_id}` : null));
+                          return topicLink ? (
+                            <a
+                              href={topicLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-tertiary-fixed hover:text-white transition-colors"
+                              title={topicLink}
+                            >
+                              🔗
+                            </a>
+                          ) : null;
+                        })()}
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
