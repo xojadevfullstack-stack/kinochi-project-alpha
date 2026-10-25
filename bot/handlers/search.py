@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import StateFilter
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, WebAppInfo
 from services.api_client import api_client
 from keyboards.inline import build_search_results_keyboard
 from utils.movie_sender import send_movie_to_user
@@ -36,35 +36,15 @@ async def handle_search_query(message: Message):
     if found:
         return
 
-    # 2. Agar kod topilmasa va matn juda qisqa bo'lsa
-    if len(query) < 2:
-        await message.answer("❌ <b>Qidiruv xatosi:</b> Kengroq natija olish uchun kamida 2 ta harf kiriting!", parse_mode="HTML")
-        return
-
-        
-    # Send unified live search request to backend (movies, series, collections)
-    search_result = await api_client.live_search(query=query, limit=10)
-    combined_results = search_result.get("results", [])
-
-    if not combined_results:
-        # Fallback to individual searches if live search empty
-        movie_result = await api_client.search_movies(query=query, limit=5)
-        series_result = await api_client.search_series(query=query, limit=5)
-        for m in movie_result.get("items", []):
-            m["type"] = "movie"
-            combined_results.append(m)
-        for s in series_result.get("items", []):
-            s["type"] = "series"
-            combined_results.append(s)
-
-    if not combined_results:
-        await message.answer("😔 <b>Afsuski, hech narsa topilmadi...</b>\n\nBalki kino yoki serial nomida xato bordir? Boshqacharoq yozib ko'ring yoki saytimizdagi katalogdan izlang!", parse_mode="HTML")
-        return
-        
+    # 2. Agar kod topilmasa, yagona Inline qidiruv tizimiga yo'naltiramiz
     safe_query = html.escape(query)
-    keyboard = build_search_results_keyboard(combined_results)
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"🔍 '{safe_query}' bo'yicha qidirish", switch_inline_query_current_chat=query)]
+    ])
     await message.answer(
-        f"🎉 <b>Qidiruv natijalari:</b>\n\nSiz izlagan <i>'{safe_query}'</i> bo'yicha eng sara kino va seriallarni topdim! Pastdagi ro'yxatdan o'zingizga kerakligini tanlang 👇",
+        f"🔍 <b>Kinolar qidiruvi Inline rejimga o'tkazildi!</b>\n\n"
+        f"<i>'{safe_query}'</i> bo'yicha kinolar va seriallarni jonli topish uchun pastdagi tugmani bosing 👇",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -316,7 +296,7 @@ async def handle_inline_search(inline_query: InlineQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                    InlineKeyboardButton(text="🌐 Franshizani ko'rish", url=web_link)
+                    InlineKeyboardButton(text="🌐 Franshizani ko'rish", web_app=WebAppInfo(url=web_link) if web_link.startswith("https://") else None, url=web_link if not web_link.startswith("https://") else None),
                 ]
             ])
         elif c_type == "series":
@@ -334,7 +314,7 @@ async def handle_inline_search(inline_query: InlineQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                    InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link)
+                    InlineKeyboardButton(text="🌐 Saytda ko'rish", web_app=WebAppInfo(url=web_link) if web_link.startswith("https://") else None, url=web_link if not web_link.startswith("https://") else None),
                 ]
             ])
         else:
@@ -352,7 +332,7 @@ async def handle_inline_search(inline_query: InlineQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                    InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link)
+                    InlineKeyboardButton(text="🌐 Saytda ko'rish", web_app=WebAppInfo(url=web_link) if web_link.startswith("https://") else None, url=web_link if not web_link.startswith("https://") else None),
                 ]
             ])
 

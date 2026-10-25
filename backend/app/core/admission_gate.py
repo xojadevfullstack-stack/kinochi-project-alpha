@@ -196,9 +196,14 @@ async def pre_check(
                 "message": "Treyler URL http/https bilan boshlanishi kerak"
             })
 
-        # 3. Tashqi ID qoidasi (TMDb / Shikimori)
+        # 3. Tashqi ID qoidasi (TMDb / Shikimori) & Yashil yo'lak (Whitelist)
         manual_verified = bool(payload.get("manual_verified", False))
-        is_national = bool(payload.get("is_national", False)) or source == "milliy"
+        is_whitelisted = bool(
+            payload.get("is_whitelisted", False)
+            or payload.get("bypass_missing_tmdb", False)
+            or payload.get("is_national", False)
+            or source in ("milliy", "uzbekfilm", "arxiv", "telegram_manual")
+        )
         is_anime = (
             bool(payload.get("is_anime", False))
             or source in ("anitoob", "animeelar")
@@ -208,7 +213,7 @@ async def pre_check(
         tmdb_id = payload.get("tmdb_id")
         shikimori_id = payload.get("shikimori_id")
 
-        if not manual_verified:
+        if not manual_verified and not is_whitelisted:
             if is_anime:
                 if not shikimori_id and not tmdb_id:
                     defects.append({
@@ -216,7 +221,7 @@ async def pre_check(
                         "code": "missing_anime_external_id",
                         "message": "Anime uchun Shikimori yoki TMDb ID majburiy"
                     })
-            elif not is_national:
+            else:
                 if not tmdb_id or int(tmdb_id or 0) <= 0:
                     defects.append({
                         "field": "tmdb_id",
@@ -314,19 +319,28 @@ async def pre_check(
                 elif kind == "series":
                     dup_stmt = select(SeriesModel.id).where(SeriesModel.tmdb_id == tmdb_int).limit(1)
                     dup_res = await session.execute(dup_stmt)
-                    if dup_res.scalar_one_or_none():
-                        defects.append({
-                            "field": "tmdb_id",
-                            "code": "duplicate_tmdb_id",
-                            "message": f"TMDb ID {tmdb_int} bilan serial allaqachon mavjud"
-                        })
+                    existing_series_id = dup_res.scalar_one_or_none()
+                    if existing_series_id:
+                        # Smart Season Merge: yangi fasl/qism kelsa mavjud serialga ulanadi (Append)
+                        season_number = payload.get("season_number") or payload.get("season")
+                        allow_append = bool(payload.get("allow_append", True))
+                        if season_number is not None and allow_append:
+                            payload["existing_series_id"] = existing_series_id
+                            payload["append_mode"] = True
+                            logger.info(f"Smart Season Merge: Mavjud serial {existing_series_id} ga yangi fasl ({season_number}) ulanmoqda.")
+                        else:
+                            defects.append({
+                                "field": "tmdb_id",
+                                "code": "duplicate_tmdb_id",
+                                "message": f"TMDb ID {tmdb_int} bilan serial allaqachon mavjud"
+                            })
             except (ValueError, TypeError):
                 pass
 
         # D. Nom + Yil dublikati (agar tmdb_id bo'lmasa yoki qo'shimcha nazorat)
         title_val = payload.get("title")
         year_val = payload.get("year") if payload.get("year") is not None else payload.get("release_year")
-        if title_val and year_val and kind in ("movie", "series"):
+        if not payload.get("append_mode") and title_val and year_val and kind in ("movie", "series"):
             try:
                 y_int = int(year_val)
                 model_cls = MovieModel if kind == "movie" else SeriesModel

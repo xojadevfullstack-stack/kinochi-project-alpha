@@ -10,12 +10,23 @@ class BroadcastService:
         self.broadcast_repo = broadcast_repo
         self.user_repo = user_repo
 
-    async def create_broadcast(self, message_text: str) -> Broadcast:
+    async def create_broadcast(
+        self,
+        message_text: str,
+        media_type: str = "text",
+        media_url: str | None = None,
+        button_text: str | None = None,
+        button_url: str | None = None,
+    ) -> Broadcast:
         # Get total active recipients initially
         _, total_recipients = await self.user_repo.list_users(limit=1, is_banned=False)
         
         broadcast = Broadcast(
             message_text=message_text,
+            media_type=media_type,
+            media_url=media_url,
+            button_text=button_text,
+            button_url=button_url,
             status=BroadcastStatus.DRAFT,
             total_recipients=total_recipients
         )
@@ -37,6 +48,10 @@ class BroadcastService:
             process_broadcast,
             broadcast_id=id,
             message_text=broadcast.message_text,
+            media_type=broadcast.media_type,
+            media_url=broadcast.media_url,
+            button_text=broadcast.button_text,
+            button_url=broadcast.button_url,
         )
 
         # Mark as sending initially

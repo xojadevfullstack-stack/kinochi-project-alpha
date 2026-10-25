@@ -61,7 +61,7 @@ from aiogram.types import WebAppInfo
 
 def get_main_menu_inline(webapp_url: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="🔍 Qidirish (Qanday?)", callback_data="help_search")
+    builder.button(text="🔍 Qidirish", switch_inline_query_current_chat="")
     builder.button(text="📂 Katalog", callback_data="menu_catalog")
     builder.button(text="🎲 Tavsiya", callback_data="menu_random")
     builder.button(text="👤 Profil", callback_data="menu_profile")

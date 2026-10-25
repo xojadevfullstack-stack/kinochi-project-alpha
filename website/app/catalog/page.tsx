@@ -8,7 +8,7 @@ import LiveSearch from "@/components/LiveSearch";
 import ThemedCollectionCard from "@/components/catalog/ThemedCollectionCard";
 import { CURATED_CATALOG_THEMES } from "@/lib/catalogThemes";
 
-export const revalidate = 60; // 60s ISR kesh
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Katalog va To'plamlar - MediaPlus",

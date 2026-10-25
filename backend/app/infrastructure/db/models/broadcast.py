@@ -14,6 +14,11 @@ class BroadcastModel(Base):
         SQLEnum(BroadcastStatus, name="broadcast_status"),
         default=BroadcastStatus.DRAFT
     )
+    media_type: Mapped[str] = mapped_column(String(20), default="text", server_default="text", nullable=False)
+    media_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    button_text: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    button_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
     total_recipients: Mapped[int] = mapped_column(Integer, default=0)
     sent_count: Mapped[int] = mapped_column(Integer, default=0)
     failed_count: Mapped[int] = mapped_column(Integer, default=0)

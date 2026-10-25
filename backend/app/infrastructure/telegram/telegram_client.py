@@ -9,10 +9,11 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 class SendMessageResult:
-    def __init__(self, success: bool, error: Optional[str] = None, is_unreachable: bool = False):
+    def __init__(self, success: bool, error: Optional[str] = None, is_unreachable: bool = False, file_id: Optional[str] = None):
         self.success = success
         self.error = error
         self.is_unreachable = is_unreachable
+        self.file_id = file_id
 
     def __bool__(self) -> bool:
         return self.success
@@ -28,6 +29,28 @@ class TelegramClient:
         self.bot_token = settings.BOT_TOKEN
         self.storage_channel_id = settings.STORAGE_CHANNEL_ID
         self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
+        self._pyrogram_app = None
+        self._pyrogram_lock = asyncio.Lock()
+
+    async def get_pyrogram_client(self):
+        """
+        Returns a persistent singleton Pyrogram Client to prevent
+        expensive MTProto handshakes on every upload and eliminate FloodWait risks.
+        """
+        if not self.bot_token or not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:
+            return None
+        async with self._pyrogram_lock:
+            if self._pyrogram_app is None or not getattr(self._pyrogram_app, "is_connected", False):
+                from pyrogram import Client
+                self._pyrogram_app = Client(
+                    "kinochi_uploader",
+                    api_id=settings.TELEGRAM_API_ID,
+                    api_hash=settings.TELEGRAM_API_HASH,
+                    bot_token=self.bot_token,
+                    in_memory=True
+                )
+                await self._pyrogram_app.start()
+            return self._pyrogram_app
 
     async def send_video_to_storage(
         self,
@@ -39,7 +62,7 @@ class TelegramClient:
     ) -> Tuple[str, int]:
         """
         Vaqtinchalik fayldan Telegram storage kanaliga video yuklaydi.
-        RAM'ni tejash uchun faylni disk'dan o'qib, to'g'ridan-to'g'ri httpx ga uzatadi.
+        RAM'ni tejash uchun faylni disk'dan o'qib, to'g'ridan-to'g'ri Pyrogram singleton orqali uzatadi.
 
         Args:
             tmp_path:    Disk'dagi vaqtinchalik fayl yo'li (/tmp/...)
@@ -53,41 +76,36 @@ class TelegramClient:
         if not settings.TELEGRAM_API_ID or not settings.TELEGRAM_API_HASH:
             raise HTTPException(status_code=500, detail="TELEGRAM_API_ID yoki TELEGRAM_API_HASH topilmadi (.env).")
 
-        from pyrogram import Client, enums
-        
-        app = Client(
-            "kinochi_uploader",
-            api_id=settings.TELEGRAM_API_ID,
-            api_hash=settings.TELEGRAM_API_HASH,
-            bot_token=self.bot_token,
-            in_memory=True
-        )
+        from pyrogram import enums
+
+        app = await self.get_pyrogram_client()
+        if not app:
+            raise HTTPException(status_code=500, detail="Telegram uploader initialization error.")
 
         try:
-            async with app:
-                async def progress(current, total):
-                    if on_progress and total:
-                        pct = int(current / total * 100)
-                        on_progress(pct)
+            async def progress(current, total):
+                if on_progress and total:
+                    pct = int(current / total * 100)
+                    on_progress(pct)
 
-                # Convert storage_channel_id to int if it's numeric, otherwise keep as string (e.g. @channel)
-                chat_id = self.storage_channel_id
-                if isinstance(chat_id, str) and chat_id.lstrip('-').isdigit():
-                    chat_id = int(chat_id)
+            # Convert storage_channel_id to int if it's numeric, otherwise keep as string (e.g. @channel)
+            chat_id = self.storage_channel_id
+            if isinstance(chat_id, str) and chat_id.lstrip('-').isdigit():
+                chat_id = int(chat_id)
 
-                message = await app.send_video(
-                    chat_id=chat_id,
-                    video=tmp_path,
-                    file_name=filename,
-                    caption=caption,
-                    parse_mode=enums.ParseMode.HTML if caption else None,
-                    progress=progress
-                )
+            message = await app.send_video(
+                chat_id=chat_id,
+                video=tmp_path,
+                file_name=filename,
+                caption=caption,
+                parse_mode=enums.ParseMode.HTML if caption else None,
+                progress=progress
+            )
+            
+            if not message or not message.video:
+                raise HTTPException(status_code=500, detail="Telegram video qabul qilmadi (Noma'lum xato).")
                 
-                if not message or not message.video:
-                    raise HTTPException(status_code=500, detail="Telegram video qabul qilmadi (Noma'lum xato).")
-                    
-                return message.video.file_id, message.id
+            return message.video.file_id, message.id
 
         except Exception as e:
             logger.error(f"Telegram upload generic error via Pyrogram: {str(e)}", exc_info=True)
@@ -184,7 +202,7 @@ class TelegramClient:
                 logger.error(f"Telegram get_video generic error: {str(e)}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Kutilmagan xatolik yuz berdi.")
 
-    async def send_message(self, chat_id: int, text: str) -> SendMessageResult:
+    async def send_message(self, chat_id: int, text: str, reply_markup: Optional[dict] = None) -> SendMessageResult:
         if not self.bot_token:
             logger.error("BOT_TOKEN is missing")
             return SendMessageResult(False, error="BOT_TOKEN is missing")
@@ -197,6 +215,8 @@ class TelegramClient:
                 data = {"chat_id": chat_id, "text": text}
                 if parse_mode:
                     data["parse_mode"] = parse_mode
+                if reply_markup:
+                    data["reply_markup"] = reply_markup
 
                 for attempt in range(3):
                     try:
@@ -254,6 +274,190 @@ class TelegramClient:
 
                     except Exception as e:
                         logger.error(f"Generic error sending message to {chat_id}: {str(e)}")
+                        return SendMessageResult(False, error=str(e), is_unreachable=False)
+
+            return SendMessageResult(False, error="Failed after attempts", is_unreachable=False)
+
+
+    async def send_photo_url_or_file(
+        self,
+        chat_id: int | str,
+        photo: str,
+        caption: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+    ) -> SendMessageResult:
+        """
+        Sends photo via URL or Telegram file_id.
+        Returns SendMessageResult with cached file_id on success.
+        """
+        if not self.bot_token:
+            logger.error("BOT_TOKEN is missing")
+            return SendMessageResult(False, error="BOT_TOKEN is missing")
+
+        url = f"{self.base_url}/sendPhoto"
+
+        async with httpx.AsyncClient() as client:
+            for parse_mode in ["HTML", None]:
+                data = {"chat_id": str(chat_id), "photo": photo}
+                if caption:
+                    data["caption"] = caption[:1024]
+                if parse_mode:
+                    data["parse_mode"] = parse_mode
+                if reply_markup:
+                    data["reply_markup"] = reply_markup
+
+                for attempt in range(3):
+                    try:
+                        response = await client.post(url, json=data, timeout=20.0)
+
+                        if response.status_code == 429:
+                            retry_after = 3
+                            try:
+                                retry_after = response.json().get("parameters", {}).get("retry_after", 3)
+                            except Exception:
+                                pass
+                            logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
+                            await asyncio.sleep(retry_after + 1)
+                            continue
+
+                        response.raise_for_status()
+                        result = response.json()
+                        if not result.get("ok"):
+                            desc = result.get("description", "Unknown error")
+                            logger.error(f"Failed to send photo to {chat_id}: {desc}")
+                            is_unreachable = any(k in desc.lower() for k in ["blocked", "deactivated", "not found"])
+                            return SendMessageResult(False, error=desc, is_unreachable=is_unreachable)
+
+                        # Extract Telegram file_id for subsequent recipients
+                        cached_file_id = None
+                        result_data = result.get("result", {})
+                        if "photo" in result_data and isinstance(result_data["photo"], list) and result_data["photo"]:
+                            cached_file_id = result_data["photo"][-1].get("file_id")
+
+                        return SendMessageResult(True, file_id=cached_file_id)
+
+                    except httpx.HTTPStatusError as e:
+                        try:
+                            detail = e.response.json().get("description", e.response.text)
+                        except Exception:
+                            detail = e.response.text
+
+                        if e.response.status_code == 400 and "can't parse entities" in detail.lower() and parse_mode == "HTML":
+                            logger.warning(f"HTML parse error sending photo to {chat_id}. Retrying plain text...")
+                            break
+
+                        if e.response.status_code == 429:
+                            retry_after = 3
+                            try:
+                                retry_after = e.response.json().get("parameters", {}).get("retry_after", 3)
+                            except Exception:
+                                pass
+                            logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
+                            await asyncio.sleep(retry_after + 1)
+                            continue
+
+                        is_unreachable = (
+                            e.response.status_code == 403
+                            or "blocked" in detail.lower()
+                            or "deactivated" in detail.lower()
+                            or "chat not found" in detail.lower()
+                        )
+                        logger.warning(f"HTTP error sending photo to {chat_id} ({e.response.status_code}): {detail}")
+                        return SendMessageResult(False, error=detail, is_unreachable=is_unreachable)
+
+                    except Exception as e:
+                        logger.error(f"Generic error sending photo to {chat_id}: {str(e)}")
+                        return SendMessageResult(False, error=str(e), is_unreachable=False)
+
+            return SendMessageResult(False, error="Failed after attempts", is_unreachable=False)
+
+    async def send_video_url_or_file(
+        self,
+        chat_id: int | str,
+        video: str,
+        caption: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+    ) -> SendMessageResult:
+        """
+        Sends video via URL or Telegram file_id.
+        Returns SendMessageResult with cached file_id on success.
+        """
+        if not self.bot_token:
+            logger.error("BOT_TOKEN is missing")
+            return SendMessageResult(False, error="BOT_TOKEN is missing")
+
+        url = f"{self.base_url}/sendVideo"
+
+        async with httpx.AsyncClient() as client:
+            for parse_mode in ["HTML", None]:
+                data = {"chat_id": str(chat_id), "video": video}
+                if caption:
+                    data["caption"] = caption[:1024]
+                if parse_mode:
+                    data["parse_mode"] = parse_mode
+                if reply_markup:
+                    data["reply_markup"] = reply_markup
+
+                for attempt in range(3):
+                    try:
+                        response = await client.post(url, json=data, timeout=30.0)
+
+                        if response.status_code == 429:
+                            retry_after = 3
+                            try:
+                                retry_after = response.json().get("parameters", {}).get("retry_after", 3)
+                            except Exception:
+                                pass
+                            logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
+                            await asyncio.sleep(retry_after + 1)
+                            continue
+
+                        response.raise_for_status()
+                        result = response.json()
+                        if not result.get("ok"):
+                            desc = result.get("description", "Unknown error")
+                            logger.error(f"Failed to send video to {chat_id}: {desc}")
+                            is_unreachable = any(k in desc.lower() for k in ["blocked", "deactivated", "not found"])
+                            return SendMessageResult(False, error=desc, is_unreachable=is_unreachable)
+
+                        cached_file_id = None
+                        result_data = result.get("result", {})
+                        if "video" in result_data and isinstance(result_data["video"], dict):
+                            cached_file_id = result_data["video"].get("file_id")
+
+                        return SendMessageResult(True, file_id=cached_file_id)
+
+                    except httpx.HTTPStatusError as e:
+                        try:
+                            detail = e.response.json().get("description", e.response.text)
+                        except Exception:
+                            detail = e.response.text
+
+                        if e.response.status_code == 400 and "can't parse entities" in detail.lower() and parse_mode == "HTML":
+                            logger.warning(f"HTML parse error sending video to {chat_id}. Retrying plain text...")
+                            break
+
+                        if e.response.status_code == 429:
+                            retry_after = 3
+                            try:
+                                retry_after = e.response.json().get("parameters", {}).get("retry_after", 3)
+                            except Exception:
+                                pass
+                            logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
+                            await asyncio.sleep(retry_after + 1)
+                            continue
+
+                        is_unreachable = (
+                            e.response.status_code == 403
+                            or "blocked" in detail.lower()
+                            or "deactivated" in detail.lower()
+                            or "chat not found" in detail.lower()
+                        )
+                        logger.warning(f"HTTP error sending video to {chat_id} ({e.response.status_code}): {detail}")
+                        return SendMessageResult(False, error=detail, is_unreachable=is_unreachable)
+
+                    except Exception as e:
+                        logger.error(f"Generic error sending video to {chat_id}: {str(e)}")
                         return SendMessageResult(False, error=str(e), is_unreachable=False)
 
             return SendMessageResult(False, error="Failed after attempts", is_unreachable=False)

@@ -54,12 +54,21 @@ class HealthEvaluator:
     def evaluate_item(self, item: Dict[str, Any]) -> ItemHealthResult:
         """
         Zero-tolerance inspection of a single movie / series / anime item.
+        Supports Whitelist ('Yashil yo'lak') exceptions for national, archive, and admin-approved content.
         """
         defects = []
 
+        is_whitelisted = bool(
+            item.get("is_whitelisted")
+            or item.get("is_national")
+            or item.get("bypass_missing_tmdb")
+            or item.get("source") in ("milliy", "uzbekfilm", "arxiv", "telegram_manual")
+        )
+        bypass_quality = bool(item.get("bypass_quality_check") or item.get("is_archive"))
+
         # 1. TMDB ID & Original Title Check
         tmdb_id = item.get("tmdb_id")
-        if not tmdb_id or int(tmdb_id) <= 0:
+        if not is_whitelisted and (not tmdb_id or int(tmdb_id) <= 0):
             defects.append("missing_tmdb_id")
 
         title = (item.get("title") or "").strip()
@@ -67,7 +76,7 @@ class HealthEvaluator:
             defects.append("missing_title")
 
         original_title = (item.get("original_title") or "").strip()
-        if not original_title:
+        if not is_whitelisted and not original_title:
             defects.append("missing_original_title")
 
         # 2. Metadata (Poster, Genres, Description)
@@ -75,7 +84,7 @@ class HealthEvaluator:
         if not poster_url or not (poster_url.startswith("http://") or poster_url.startswith("https://")):
             defects.append("missing_or_invalid_poster")
         elif "uzmovi.net" in poster_url.lower() or "uzmovi.com" in poster_url.lower():
-            if not tmdb_id or int(tmdb_id) <= 0:
+            if not is_whitelisted and (not tmdb_id or int(tmdb_id) <= 0):
                 defects.append("unverified_watermarked_poster")
 
         genres = item.get("genres")
@@ -88,7 +97,8 @@ class HealthEvaluator:
 
         # 3. Source & Voiceover / Audio mapping
         source = (item.get("source") or "").strip().lower()
-        if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
+        valid_sources = ("uzmovi", "asilmedia", "anitoob", "animeelar", "milliy", "uzbekfilm", "arxiv", "telegram_manual")
+        if not is_whitelisted and source not in valid_sources:
             defects.append("invalid_source")
 
         voiceover = (item.get("voiceover") or item.get("language") or "").strip()
@@ -103,7 +113,7 @@ class HealthEvaluator:
             defects.append("file_exceeds_2gb_limit")
 
         # Check if item has quality info
-        if not qualities and not item.get("quality"):
+        if not bypass_quality and not qualities and not item.get("quality"):
             defects.append("missing_quality_info")
 
         # 5. Series & Anime Specific: Season and Episode check

@@ -5,7 +5,7 @@ import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
 
-export const revalidate = 60; // 60s ISR kesh: Vercel CDN orqali Render trafigini tejaydi
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Kinolar - MediaPlus",

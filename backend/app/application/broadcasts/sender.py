@@ -5,18 +5,31 @@ from app.infrastructure.telegram.telegram_client import telegram_client
 
 logger = logging.getLogger(__name__)
 
-async def process_broadcast(broadcast_id: int, message_text: str):
+async def process_broadcast(
+    broadcast_id: int,
+    message_text: str,
+    media_type: str = "text",
+    media_url: str | None = None,
+    button_text: str | None = None,
+    button_url: str | None = None,
+):
     """
-    Background task to send a broadcast message to all active users.
+    Background task to send a broadcast message (text, photo, or video) to all active users.
     Creates its own DB session — independent of the HTTP request lifecycle.
-    Implements rate limiting (20 msg/sec max, safe pauses).
+    Implements rate limiting (20 msg/sec max, safe pauses) and file_id caching for media.
     """
-    # O'z session'ini yaratadi — HTTP request'dan mustaqil
     from app.infrastructure.db.session import async_session_factory
     from app.infrastructure.db.repositories.broadcast_repo import BroadcastRepositoryImpl
     from app.infrastructure.db.repositories.user_repo import UserRepositoryImpl
 
-    logger.info(f"Starting broadcast {broadcast_id}")
+    logger.info(f"Starting broadcast {broadcast_id} (type={media_type})")
+
+    # Prepare inline button if specified
+    reply_markup = None
+    if button_text and button_url:
+        reply_markup = {
+            "inline_keyboard": [[{"text": button_text, "url": button_url}]]
+        }
 
     async with async_session_factory() as session:
         broadcast_repo = BroadcastRepositoryImpl(session)
@@ -29,6 +42,7 @@ async def process_broadcast(broadcast_id: int, message_text: str):
         sent_count = 0
         failed_count = 0
         total_processed = 0
+        current_media_ref = media_url
 
         try:
             while True:
@@ -39,7 +53,31 @@ async def process_broadcast(broadcast_id: int, message_text: str):
                     break
 
                 for user in users:
-                    res = await telegram_client.send_message(chat_id=user.telegram_id, text=message_text)
+                    if media_type == "photo" and current_media_ref:
+                        res = await telegram_client.send_photo_url_or_file(
+                            chat_id=user.telegram_id,
+                            photo=current_media_ref,
+                            caption=message_text,
+                            reply_markup=reply_markup,
+                        )
+                        # Cache telegram file_id after first upload so Telegram doesn't re-download
+                        if res.success and res.file_id:
+                            current_media_ref = res.file_id
+                    elif media_type == "video" and current_media_ref:
+                        res = await telegram_client.send_video_url_or_file(
+                            chat_id=user.telegram_id,
+                            video=current_media_ref,
+                            caption=message_text,
+                            reply_markup=reply_markup,
+                        )
+                        if res.success and res.file_id:
+                            current_media_ref = res.file_id
+                    else:
+                        res = await telegram_client.send_message(
+                            chat_id=user.telegram_id,
+                            text=message_text,
+                            reply_markup=reply_markup,
+                        )
 
                     if res.success:
                         sent_count += 1
@@ -54,7 +92,7 @@ async def process_broadcast(broadcast_id: int, message_text: str):
 
                     total_processed += 1
 
-                    # Update DB every 20 messages to keep UI somewhat live
+                    # Update DB every 20 messages to keep UI live
                     if total_processed % 20 == 0:
                         await broadcast_repo.increment_counts(broadcast_id, sent=sent_count, failed=failed_count)
                         sent_count = 0
@@ -80,4 +118,3 @@ async def process_broadcast(broadcast_id: int, message_text: str):
         except Exception as e:
             logger.error(f"Error during broadcast {broadcast_id}: {str(e)}", exc_info=True)
             await broadcast_repo.update_status(broadcast_id, BroadcastStatus.FAILED)
-

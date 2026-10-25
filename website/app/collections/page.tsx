@@ -28,7 +28,12 @@ interface Collection {
 export default async function CollectionsPage() {
   let collections: Collection[] = [];
   try {
-    collections = await fetchApi("/collections");
+    const raw = await fetchApi("/collections");
+    if (Array.isArray(raw)) {
+      collections = raw.filter((c: Collection) => c.is_active && c.items_count > 0);
+    } else {
+      collections = [];
+    }
   } catch (err) {
     collections = [];
   }

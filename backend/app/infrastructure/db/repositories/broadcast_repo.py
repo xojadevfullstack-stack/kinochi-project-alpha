@@ -16,6 +16,10 @@ class BroadcastRepositoryImpl(IBroadcastRepository):
         model = BroadcastModel(
             message_text=broadcast.message_text,
             status=broadcast.status,
+            media_type=broadcast.media_type or "text",
+            media_url=broadcast.media_url,
+            button_text=broadcast.button_text,
+            button_url=broadcast.button_url,
             total_recipients=broadcast.total_recipients,
             sent_count=broadcast.sent_count,
             failed_count=broadcast.failed_count
@@ -55,8 +59,6 @@ class BroadcastRepositoryImpl(IBroadcastRepository):
         return None
 
     async def increment_counts(self, id: int, sent: int = 0, failed: int = 0) -> None:
-        # Avoid race conditions via direct SQL updates if possible, 
-        # but for simplicity and since we have one sender task, we can use ORM updates:
         stmt = select(BroadcastModel).where(BroadcastModel.id == id).with_for_update()
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()

@@ -82,7 +82,7 @@ async def cmd_start(message: Message, command: CommandObject):
             "👋 <b>MediaPlus botiga xush kelibsiz!</b>\n\n"
             "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
             "🎥 Kinoni ko'rish uchun menyudan tanlang yoki izlang!\n\n"
-            "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"
+            "🔍 <i>Qidirish uchun '🔍 Qidirish' tugmasini bosing yoki kino kodini yuboring.</i>"
         )
         
         webapp_url = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app/").rstrip("/") + "/"

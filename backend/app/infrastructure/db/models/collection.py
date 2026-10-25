@@ -51,10 +51,10 @@ class CollectionItemModel(Base):
         Integer, ForeignKey("collections.id", ondelete="CASCADE"), index=True, nullable=False
     )
     movie_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("movies.id", ondelete="SET NULL"), index=True, nullable=True
+        Integer, ForeignKey("movies.id", ondelete="CASCADE"), index=True, nullable=True
     )
     series_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("series.id", ondelete="SET NULL"), index=True, nullable=True
+        Integer, ForeignKey("series.id", ondelete="CASCADE"), index=True, nullable=True
     )
 
     # 1-indexed order in story timeline (e.g. Captain America: First Avenger = 1)

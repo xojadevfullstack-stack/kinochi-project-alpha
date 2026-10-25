@@ -1,5 +1,5 @@
 from aiogram import Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, InputMediaPhoto
 from aiogram.exceptions import TelegramBadRequest
 from services.api_client import api_client
 from typing import Optional
@@ -442,7 +442,7 @@ async def send_collection_info(bot: Bot, chat_id: int, collection: dict, edit_me
     base_site = getattr(settings, "WEBSITE_URL", "https://kinochi.uz").rstrip('/')
     slug = collection.get("slug") or col_id
     buttons.append([
-        InlineKeyboardButton(text="🌐 Saytda to'liq ko'rish", url=f"{base_site}/collections/{slug}"),
+        InlineKeyboardButton(text="🌐 Saytda to'liq ko'rish", web_app=WebAppInfo(url=f"{base_site}/collections/{slug}")),
         InlineKeyboardButton(text="❌ Yopish", callback_data="delete_msg")
     ])
 

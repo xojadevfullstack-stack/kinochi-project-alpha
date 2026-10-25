@@ -75,7 +75,7 @@ class CollectionResponse(BaseModel):
     poster_url: str | None = None
     banner_url: str | None = None
     is_franchise: bool
-    category_type: str = "franchise"
+    category_type: str | None = "franchise"
     is_active: bool
     sort_order: int
     items_count: int = 0
@@ -198,7 +198,7 @@ async def list_collections(
                 poster_url=c.poster_url,
                 banner_url=c.banner_url,
                 is_franchise=c.is_franchise,
-                category_type=getattr(c, "category_type", "franchise"),
+                category_type=getattr(c, "category_type", None) or "franchise",
                 is_active=c.is_active,
                 sort_order=c.sort_order,
                 items_count=count,
@@ -256,7 +256,7 @@ async def get_collection(
     items_res = await db.execute(items_query)
     raw_items = items_res.scalars().all()
 
-    # Filter out unpublished items for public view
+    # Filter out unpublished items and orphaned items for public view
     visible_items = []
     for it in raw_items:
         if it.movie:
@@ -265,8 +265,6 @@ async def get_collection(
         elif it.series:
             if getattr(it.series, "publish_status", None) == "published":
                 visible_items.append(it)
-        else:
-            visible_items.append(it)
 
     item_responses = [CollectionItemResponse.model_validate(it) for it in visible_items]
 
@@ -278,7 +276,7 @@ async def get_collection(
         poster_url=col.poster_url,
         banner_url=col.banner_url,
         is_franchise=col.is_franchise,
-        category_type=getattr(col, "category_type", "franchise"),
+        category_type=getattr(col, "category_type", None) or "franchise",
         is_active=col.is_active,
         sort_order=col.sort_order,
         items_count=len(visible_items),

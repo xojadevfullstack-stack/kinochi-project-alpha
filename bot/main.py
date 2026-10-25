@@ -45,11 +45,11 @@ async def run_bot():
     from handlers.browsing import router as browsing_router
     dp.include_router(browsing_router)
     
-    # Apply rate limiting to specific routers
+    # Apply rate limiting globally to messages, callbacks, and inline queries
     throttler = ThrottlingMiddleware()
-    for r in (start_router, search_router, catalog_router, browsing_router):
-        r.message.middleware(throttler)
-        r.callback_query.middleware(throttler)
+    dp.message.middleware(throttler)
+    dp.callback_query.middleware(throttler)
+    dp.inline_query.middleware(throttler)
     
 
     

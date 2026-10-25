@@ -127,7 +127,11 @@ async def live_search(
     )
     col_query = (
         select(CollectionModel)
-        .where(CollectionModel.is_active == True, col_filter)
+        .where(
+            CollectionModel.is_active == True,
+            CollectionModel.items.any(),
+            col_filter,
+        )
         .limit(2)
     )
     col_res = await db.execute(col_query)

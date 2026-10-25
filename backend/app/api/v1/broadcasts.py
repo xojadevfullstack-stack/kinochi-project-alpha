@@ -12,6 +12,10 @@ router = APIRouter(prefix="/broadcasts", tags=["broadcasts"])
 
 class BroadcastCreate(BaseModel):
     message_text: str
+    media_type: str = "text"
+    media_url: str | None = None
+    button_text: str | None = None
+    button_url: str | None = None
 
 class BroadcastTestRequest(BaseModel):
     test_telegram_id: int
@@ -20,6 +24,10 @@ class BroadcastResponse(BaseModel):
     id: int
     message_text: str
     status: BroadcastStatus
+    media_type: str = "text"
+    media_url: str | None = None
+    button_text: str | None = None
+    button_url: str | None = None
     total_recipients: int
     sent_count: int
     failed_count: int
@@ -40,7 +48,13 @@ async def create_broadcast(
     admin: dict = Depends(get_current_admin)
 ):
     """Create a new broadcast in DRAFT status (Admin only)."""
-    return await service.create_broadcast(message_text=data.message_text)
+    return await service.create_broadcast(
+        message_text=data.message_text,
+        media_type=data.media_type,
+        media_url=data.media_url,
+        button_text=data.button_text,
+        button_url=data.button_url,
+    )
 
 
 @router.get("", response_model=PaginatedBroadcastsResponse)
@@ -108,10 +122,35 @@ async def test_broadcast(
     broadcast = await service.get_broadcast(broadcast_id)
     if not broadcast:
         raise HTTPException(status_code=404, detail="Broadcast not found")
-        
-    success = await telegram_client.send_message(chat_id=data.test_telegram_id, text=broadcast.message_text)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to send test message via Telegram API")
+
+    reply_markup = None
+    if broadcast.button_text and broadcast.button_url:
+        reply_markup = {
+            "inline_keyboard": [[{"text": broadcast.button_text, "url": broadcast.button_url}]]
+        }
+
+    if broadcast.media_type == "photo" and broadcast.media_url:
+        res = await telegram_client.send_photo_url_or_file(
+            chat_id=data.test_telegram_id,
+            photo=broadcast.media_url,
+            caption=broadcast.message_text,
+            reply_markup=reply_markup,
+        )
+    elif broadcast.media_type == "video" and broadcast.media_url:
+        res = await telegram_client.send_video_url_or_file(
+            chat_id=data.test_telegram_id,
+            video=broadcast.media_url,
+            caption=broadcast.message_text,
+            reply_markup=reply_markup,
+        )
+    else:
+        res = await telegram_client.send_message(
+            chat_id=data.test_telegram_id,
+            text=broadcast.message_text,
+            reply_markup=reply_markup,
+        )
+
+    if not res.success:
+        raise HTTPException(status_code=500, detail=f"Failed to send test message via Telegram API: {res.error}")
         
     return {"status": "success", "message": "Test message sent"}
-

@@ -2,7 +2,7 @@ import logging
 import html
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from services.api_client import api_client
 from config import settings
@@ -110,7 +110,7 @@ async def render_user_profile(user_id: int, first_name: str, username: str = Non
             base_site = "https://kinochi-project-alpha.vercel.app"
         token = await api_client.generate_login_token(telegram_id=user_id, first_name=first_name, username=username)
         if token:
-            builder.button(text="🌐 Saytdagi Shaxsiy Kabinet", url=f"{base_site}/?auth_token={token}")
+            builder.button(text="🌐 Saytdagi Shaxsiy Kabinet", web_app=WebAppInfo(url=f"{base_site}/?auth_token={token}"))
     except Exception as e:
         logger.warning(f"Error generating web login button in profile: {e}")
 

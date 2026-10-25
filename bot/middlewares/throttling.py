@@ -4,7 +4,7 @@ import time
 from typing import Any, Awaitable, Callable, Dict, List
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineQuery, InlineQueryResultsButton
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,8 @@ class ThrottlingMiddleware(BaseMiddleware):
             user_id = event.from_user.id if event.from_user else None
         elif isinstance(event, CallbackQuery):
             user_id = event.from_user.id if event.from_user else None
+        elif isinstance(event, InlineQuery):
+            user_id = event.from_user.id if event.from_user else None
 
         if not user_id:
             return await handler(event, data)
@@ -103,6 +105,11 @@ class ThrottlingMiddleware(BaseMiddleware):
                         await event.answer(warning_msg)
                     elif isinstance(event, CallbackQuery):
                         await event.answer(warning_msg, show_alert=True)
+                    elif isinstance(event, InlineQuery):
+                        try:
+                            await event.answer([], cache_time=5, is_personal=True, button=InlineQueryResultsButton(text="⏳ Iltimos, biroz kuting...", start_parameter="throttled"))
+                        except Exception:
+                            pass
                     return
                 return await handler(event, data)
 
@@ -118,6 +125,11 @@ class ThrottlingMiddleware(BaseMiddleware):
                 await event.answer(warning_msg)
             elif isinstance(event, CallbackQuery):
                 await event.answer(warning_msg, show_alert=True)
+            elif isinstance(event, InlineQuery):
+                try:
+                    await event.answer([], cache_time=5, is_personal=True, button=InlineQueryResultsButton(text="⏳ Iltimos, biroz kuting...", start_parameter="throttled"))
+                except Exception:
+                    pass
             return
 
         return await handler(event, data)

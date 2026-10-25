@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # Incident fix flags
     AUTO_CONTENT_ENABLED: bool = False
-    AUTO_INDEX_DRY_RUN: bool = True
+    AUTO_INDEX_DRY_RUN: bool = False
     AUTO_INDEX_ALLOWED_CHAT_IDS: list[int] = []
     BOT_DROP_PENDING_UPDATES: bool = False
     MOVIE_RUNTIME_TOLERANCE_MINUTES: int = 30

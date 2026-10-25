@@ -200,3 +200,55 @@ async def test_pre_check_series_with_release_year_and_category_ids():
     assert is_valid is True
     assert defects == []
 
+
+
+@pytest.mark.asyncio
+async def test_pre_check_whitelist_bypass_missing_tmdb():
+    payload = {
+        "title": "Suyunchi",
+        "release_year": 1982,
+        "poster_url": "https://example.com/poster.jpg",
+        "genres": ["Klassika", "Drama"],
+        "description": "Anora buvi va qishloq ahli haqidagi ajoyib o'zbek milliy durdonasi.",
+        "source": "milliy",
+        "source_key": "milliy_suyunchi",
+        "is_national": True,
+        "bypass_missing_tmdb": True,
+    }
+    is_valid, defects = await pre_check("movie", payload, check_reachability=False)
+    assert is_valid is True
+    assert defects == []
+
+
+@pytest.mark.asyncio
+async def test_pre_check_smart_season_merge():
+    mock_session = AsyncMock()
+
+    async def side_effect(stmt):
+        mock_r = MagicMock()
+        stmt_str = str(stmt).lower()
+        if "series" in stmt_str and "tmdb_id" in stmt_str:
+            mock_r.scalar_one_or_none.return_value = 42
+        else:
+            mock_r.scalar_one_or_none.return_value = None
+        return mock_r
+
+    mock_session.execute.side_effect = side_effect
+
+    payload = {
+        "title": "Breaking Bad",
+        "release_year": 2008,
+        "poster_url": "https://image.tmdb.org/t/p/w500/bb.jpg",
+        "genres": ["Drama", "Crime"],
+        "description": "Walter White and Jesse Pinkman chemistry teacher journey.",
+        "source": "asilmedia",
+        "source_key": "bb_season_2",
+        "tmdb_id": 1396,
+        "season_number": 2,
+        "allow_append": True,
+    }
+    is_valid, defects = await pre_check("series", payload, session=mock_session, check_reachability=False)
+    assert is_valid is True
+    assert defects == []
+    assert payload.get("existing_series_id") == 42
+    assert payload.get("append_mode") is True
