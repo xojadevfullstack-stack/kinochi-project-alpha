@@ -23,7 +23,7 @@ interface ExternalItem {
 }
 
 interface ExternalSearchSectionProps {
-  _query?: string;
+  query?: string;
   items: ExternalItem[];
   title?: string;
   subtitle?: string;
@@ -31,7 +31,7 @@ interface ExternalSearchSectionProps {
 }
 
 export default function ExternalSearchSection({
-  _query,
+  query: _query,
   items,
   title = "Jahon kinolari katalogidan topildi (TMDB & Kinopoisk)",
   subtitle = "Ushbu kinolar hali bazamizga yuklanmagan. Istagan kinongizni tanlab, 'Qo'shishni so'rash' tugmasini bosing — adminlarimiz uni birinchi navbatda joylaydi!",
