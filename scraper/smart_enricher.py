@@ -651,6 +651,8 @@ async def enrich_movie_smart(
     # 2. TMDb qidiruv ro'yxatini shakllantirish
     default_tmdb_type = "tv" if metadata["media_type"] == "series" else "movie"
     search_queries = []
+    if original_title and (original_title, default_tmdb_type) not in search_queries:
+        search_queries.append((original_title, default_tmdb_type))
     if matched_anime_dict:
         if matched_anime_dict.get("orig"):
             search_queries.append((matched_anime_dict["orig"], default_tmdb_type))
@@ -789,8 +791,7 @@ async def enrich_movie_smart(
                 tmdb_uz_genres = map_tmdb_genres(details.get("genres_raw", []))
                 if tmdb_uz_genres:
                     metadata["genres"] = ", ".join(tmdb_uz_genres)
-                    for g in tmdb_uz_genres:
-                        matched_cat_names.add(g.strip().lower())
+                    matched_cat_names = set(g.strip().lower() for g in tmdb_uz_genres)
 
                 # Tavsifni o'zbekchaga tarjima qilish (agar TMDb tavsifi mavjud bo'lsa va joriy tavsif bo'sh, qisqa, shablon yoki telegram axlati bo'lsa)
                 raw_overview = details.get("overview") or ""
@@ -881,9 +882,14 @@ async def enrich_movie_smart(
                 logger.debug(f"Shikimori search error '{sq}': {e}")
 
     # Treyler topilmagan bo'lsa, YouTube qidiruv linki
-    if not metadata["trailer_url"] and ai_info and ai_info.get("trailer_query"):
+    if not metadata.get("trailer_url") and ai_info and ai_info.get("trailer_query"):
         import urllib.parse
         q = urllib.parse.quote_plus(ai_info["trailer_query"])
+        metadata["trailer_url"] = f"https://www.youtube.com/results?search_query={q}"
+    if not metadata.get("trailer_url"):
+        import urllib.parse
+        search_term = metadata.get("original_title") or metadata.get("title") or raw_title
+        q = urllib.parse.quote_plus(f"{search_term} official trailer")
         metadata["trailer_url"] = f"https://www.youtube.com/results?search_query={q}"
 
     # 18+ (kattalar uchun) kontentni har tomonlama aniqlash

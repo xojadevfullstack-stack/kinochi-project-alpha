@@ -193,6 +193,11 @@ class SeriesRepository:
             page_ids = getattr(series_data, "page_ids", None)
             data = series_data.model_dump(exclude={"category_ids", "page_ids"}, exclude_unset=True)
         
+        if "year" in data:
+            if not data.get("release_year"):
+                data["release_year"] = data["year"]
+            data.pop("year", None)
+        
         series = SeriesModel(**data)
         
         if category_ids:
@@ -220,6 +225,11 @@ class SeriesRepository:
         category_ids = data.pop("category_ids", None) if isinstance(update_data, dict) else update_data.category_ids
         page_ids = data.pop("page_ids", None) if isinstance(update_data, dict) else update_data.page_ids
         
+        if "year" in data:
+            if not data.get("release_year"):
+                data["release_year"] = data["year"]
+            data.pop("year", None)
+
         for key, value in data.items():
             setattr(series, key, value)
             

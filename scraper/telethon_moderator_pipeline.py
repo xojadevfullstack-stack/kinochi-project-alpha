@@ -412,10 +412,10 @@ def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
     t_low = str(getattr(item, "title", "") or "").lower()
 
     # Page 1: Anime
-    if (2 in cat_ids or "anime" in genres or m_type == "anime" or "anime" in t_low) and 1 not in page_ids:
+    if (m_type == "anime" or "anime" in genres or "anime" in t_low or (2 in cat_ids and ("anime" in genres or "anime" in t_low))) and 1 not in page_ids:
         page_ids.append(1)
     # Page 5: Doramalar
-    if (m_type == "dorama" or "dorama" in genres or "drama" in genres or "dorama" in t_low or any(k in t_low for k in ["korey", "xitoy"])) and 5 not in page_ids:
+    if (m_type == "dorama" or "dorama" in genres or "dorama" in t_low or any(k in t_low for k in ["korey", "xitoy", "dorama"])) and 5 not in page_ids:
         page_ids.append(5)
     # Page 8: Multfilm
     if (22 in cat_ids or m_type == "multfilm" or any(w in genres for w in ["animatsiya", "multfilm", "animation"]) or any(w in t_low for w in ["multfilm", "multik"])) and 8 not in page_ids:
@@ -693,11 +693,14 @@ class TelethonModeratorPipeline:
             # Masalan "Afsungar Merlin" -> "Merlin"
             queries_to_try.append(clean_words[-1])
 
-        num_match = re.search(r'\d+', item.id)
-        if is_uzmovie and getattr(item, "source", None) == "uzmovi" and num_match and len(num_match.group(0)) <= 6:
-            queries_to_try = [num_match.group(0)]
-        elif is_asilmedia and getattr(item, "source", None) == "asilmedia" and num_match and len(num_match.group(0)) <= 6:
-            queries_to_try = [f"/start {num_match.group(0)}"]
+        if is_uzmovie and getattr(item, "source", None) == "uzmovi" and re.match(r'^uzmovi_\d+$', str(item.id).strip()):
+            num_match = re.search(r'\d+', str(item.id).replace('uzmovi_', '').strip())
+            if num_match and len(num_match.group(0)) <= 6:
+                queries_to_try = [num_match.group(0)]
+        elif is_asilmedia and getattr(item, "source", None) == "asilmedia" and re.match(r'^asilmedia_\d+$', str(item.id).strip()):
+            num_match = re.search(r'\d+', str(item.id).replace('asilmedia_', '').strip())
+            if num_match and len(num_match.group(0)) <= 6:
+                queries_to_try = [f"/start {num_match.group(0)}"]
 
         card_msg = None
         season_entries = []
@@ -823,7 +826,7 @@ class TelethonModeratorPipeline:
             year=item.year,
             source_poster=item.poster_url,
             caption=caption,
-            media_type="series"
+            media_type=getattr(item, "media_type", "series")
         )
         title = meta["title"]
         year = meta["release_year"] or item.year
@@ -3138,11 +3141,13 @@ class TelethonModeratorPipeline:
         logger.info("ℹ️ 1-QADAM: Kino ma'lumotlari AI (Gemini) + TMDb orqali shakllantirilmoqda...")
         meta = await enrich_movie_smart(
             raw_title=caption_title or item.title,
-            year=caption_year,
+            year=caption_year or getattr(item, "year", None),
+            original_title=getattr(item, "original_title", None),
             source_poster=item.poster_url,
             source_desc=card_text or None,
             caption=full_context_caption,
-            item_url=item.url
+            item_url=item.url,
+            media_type=getattr(item, "media_type", "movie")
         )
 
         title = meta["title"]
@@ -3483,9 +3488,10 @@ class TelethonModeratorPipeline:
             search_query = str(code).strip()
         elif item:
             if item.source == "asilmedia" and not is_uzmovie:
-                num_match = re.search(r'\d+', item.id)
-                if num_match and len(num_match.group(0)) <= 6:
-                    search_query = num_match.group(0)
+                if re.match(r'^asilmedia_\d+$', str(item.id).strip()):
+                    num_match = re.search(r'\d+', str(item.id).replace('asilmedia_', '').strip())
+                    if num_match and len(num_match.group(0)) <= 6:
+                        search_query = num_match.group(0)
 
             # Agar uzmovi bo'lsa yoki asilmedia kodi bo'lmasa, tozalangan film nomidan foydalanamiz
             if not search_query:
@@ -3653,6 +3659,7 @@ class TelethonModeratorPipeline:
                     logger.info(f"Qidiruv natijasidan film tanlanmoqda: '{b_name}'...")
                     click_id = m.id
                     await m.click(r_idx, c_idx)
+                    await asyncio.sleep(2.0)
                     def has_card(msgs):
                         return any(nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text for q in ["1080", "720", "480"])) for nm in msgs)
                     nm_list = await poll_new_messages(self.client, bot, click_id, timeout=8.0, condition=has_card)
@@ -3660,6 +3667,11 @@ class TelethonModeratorPipeline:
                         if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text for q in ["1080", "720", "480"])):
                             card_msg = nm
                             break
+                    if not card_msg:
+                        async for nm in self.client.iter_messages(bot, limit=4):
+                            if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text for q in ["1080", "720", "480"])):
+                                card_msg = nm
+                                break
                 break
 
             if any(b for row in m.buttons for b in row if any(q in b.text for q in ["1080", "720", "480"])):
@@ -3667,7 +3679,7 @@ class TelethonModeratorPipeline:
                 break
 
         if not card_msg:
-            async for nm in self.client.iter_messages(bot, limit=3):
+            async for nm in self.client.iter_messages(bot, limit=4):
                 if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text for q in ["1080", "720", "480"])):
                     card_msg = nm
                     break
@@ -3680,7 +3692,7 @@ class TelethonModeratorPipeline:
                         self._last_card_msg = m
                         logger.info(f"[@{bot}] Serial kartasi/tugmalari aniqlandi.")
                         return None
-                    has_pending = any("tayyor bo'lganda" in b.text.lower() or "saqlash" in b.text.lower() for row in m.buttons for b in row) or ("yuklanmoqda" in (m.text or "").lower())
+                    has_pending = any("tayyor bo'lganda" in b.text.lower() for row in m.buttons for b in row) or ("yuklanmoqda" in (m.text or "").lower())
                     if has_pending:
                         self._last_unreleased_notice = "Film hali botga yuklanmagan (Tez kunda / 'Tayyor bo'lganda yuboring' holatida)"
                         logger.warning(f"[@{bot}] {self._last_unreleased_notice}")
