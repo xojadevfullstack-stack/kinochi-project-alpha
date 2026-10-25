@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import RequestMovieModal, { RequestTargetItem } from "./RequestMovieModal";
@@ -30,6 +30,12 @@ interface ExternalSearchSectionProps {
   onRefresh?: () => void;
 }
 
+const getItemKey = (it: { tmdb_id?: number | null; kinopoisk_id?: number | null; title: string }) => {
+  if (it.tmdb_id) return `tmdb:${it.tmdb_id}`;
+  if (it.kinopoisk_id) return `kp:${it.kinopoisk_id}`;
+  return `title:${it.title.toLowerCase().trim()}`;
+};
+
 export default function ExternalSearchSection({
   query: _query,
   items,
@@ -37,10 +43,25 @@ export default function ExternalSearchSection({
   subtitle = "Ushbu kinolar hali bazamizga yuklanmagan. Istagan kinongizni tanlab, 'Qo'shishni so'rash' tugmasini bosing — adminlarimiz uni birinchi navbatda joylaydi!",
   onRefresh,
 }: ExternalSearchSectionProps) {
+  const [itemList, setItemList] = useState<ExternalItem[]>(items || []);
   const [selectedItem, setSelectedItem] = useState<RequestTargetItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [requestedKeys, setRequestedKeys] = useState<Set<string>>(new Set());
 
-  if (!items || items.length === 0) return null;
+  useEffect(() => {
+    setItemList(items || []);
+  }, [items]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("kinochi_requested_content_keys");
+      if (saved) {
+        setRequestedKeys(new Set(JSON.parse(saved)));
+      }
+    } catch {}
+  }, []);
+
+  if (!itemList || itemList.length === 0) return null;
 
   const handleOpenRequest = (item: ExternalItem) => {
     setSelectedItem({
@@ -55,6 +76,32 @@ export default function ExternalSearchSection({
       vote_average: item.vote_average,
     });
     setIsModalOpen(true);
+  };
+
+  const handleSuccess = () => {
+    if (selectedItem) {
+      const key = getItemKey(selectedItem);
+      setRequestedKeys((prev) => {
+        const next = new Set(prev).add(key);
+        try {
+          localStorage.setItem("kinochi_requested_content_keys", JSON.stringify(Array.from(next)));
+        } catch {}
+        return next;
+      });
+      setItemList((prev) =>
+        prev.map((it) => {
+          if (getItemKey(it) === key) {
+            return {
+              ...it,
+              request_count: Math.max(1, (it.request_count || 0) + 1),
+              is_requested: true,
+            };
+          }
+          return it;
+        })
+      );
+    }
+    if (onRefresh) onRefresh();
   };
 
   return (
@@ -86,11 +133,15 @@ export default function ExternalSearchSection({
 
       {/* Grid of Results */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-        {items.map((item, idx) => {
-          const key = `ext-${item.tmdb_id || item.kinopoisk_id || idx}`;
+        {itemList.map((item, idx) => {
+          const itemKey = getItemKey(item);
+          const isReq = item.is_requested || requestedKeys.has(itemKey);
+          const currentCount = isReq ? Math.max(1, item.request_count || 1) : (item.request_count || 0);
+          const cardKey = `ext-${item.tmdb_id || item.kinopoisk_id || idx}`;
+
           return (
             <div
-              key={key}
+              key={cardKey}
               className="group relative flex flex-col rounded-2xl overflow-hidden bg-surface-container border border-white/10 hover:border-cyan-500/40 transition-all duration-300 shadow-lg hover:shadow-cyan-500/10"
             >
               {/* Poster Aspect Ratio Container */}
@@ -127,9 +178,9 @@ export default function ExternalSearchSection({
                       <span className="material-symbols-outlined text-[12px]">check</span>
                       <span>Mavjud</span>
                     </span>
-                  ) : item.request_count > 0 ? (
+                  ) : currentCount > 0 ? (
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/90 text-background-obsidian backdrop-blur-sm shadow flex items-center gap-0.5">
-                      <span>🔥 {item.request_count} so&apos;rov</span>
+                      <span>🔥 {currentCount} so&apos;rov</span>
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-black/60 text-text-secondary backdrop-blur-sm border border-white/10">
@@ -166,6 +217,15 @@ export default function ExternalSearchSection({
                     <span className="material-symbols-outlined text-[16px]">play_arrow</span>
                     <span>Tomosha qilish</span>
                   </Link>
+                ) : isReq ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-default"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span>So&apos;rov qoldirildi ({currentCount})</span>
+                  </button>
                 ) : (
                   <button
                     type="button"
@@ -188,7 +248,7 @@ export default function ExternalSearchSection({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         item={selectedItem}
-        onSuccess={onRefresh}
+        onSuccess={handleSuccess}
       />
     </div>
   );

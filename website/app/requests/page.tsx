@@ -1,12 +1,26 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import RequestMovieModal, { RequestTargetItem } from "@/components/RequestMovieModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+
+function getClientVoterId(): string {
+  if (typeof window === "undefined") return "client_web";
+  try {
+    let vid = localStorage.getItem("kinochi_voter_uuid");
+    if (!vid) {
+      vid = "web_" + Math.random().toString(36).substring(2, 12) + "_" + Date.now();
+      localStorage.setItem("kinochi_voter_uuid", vid);
+    }
+    return vid;
+  } catch {
+    return "client_web";
+  }
+}
 
 interface RequestItem {
   id: number;
@@ -53,6 +67,19 @@ export default function RequestsPage() {
   const [selectedTarget, setSelectedTarget] = useState<RequestTargetItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [votedIds, setVotedIds] = useState<Set<number>>(new Set());
+  const [pendingVoteIds, setPendingVoteIds] = useState<Set<number>>(new Set());
+
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load voted IDs from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("kinochi_voted_requests");
+      if (saved) {
+        setVotedIds(new Set(JSON.parse(saved)));
+      }
+    } catch {}
+  }, []);
 
   // Fetch top requested movies
   const fetchTopRequests = useCallback(async () => {
@@ -75,9 +102,8 @@ export default function RequestsPage() {
   }, [fetchTopRequests]);
 
   // Handle TMDB/Kinopoisk search
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const q = searchQuery.trim();
+  const triggerSearch = async (queryText: string) => {
+    const q = queryText.trim();
     if (q.length < 2) return;
 
     setIsSearching(true);
@@ -97,6 +123,24 @@ export default function RequestsPage() {
     }
   };
 
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    triggerSearch(searchQuery);
+  };
+
+  const handleSearchInputChange = (val: string) => {
+    setSearchQuery(val);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (val.trim().length >= 2) {
+      searchDebounceRef.current = setTimeout(() => {
+        triggerSearch(val.trim());
+      }, 350);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
   const handleOpenRequest = (item: ExternalResult | RequestItem) => {
     setSelectedTarget({
       tmdb_id: item.tmdb_id,
@@ -113,7 +157,25 @@ export default function RequestsPage() {
   };
 
   const handleVoteExisting = async (req: RequestItem) => {
-    if (votedIds.has(req.id)) return;
+    if (votedIds.has(req.id) || pendingVoteIds.has(req.id)) return;
+
+    // 1. Immediately lock state synchronously to prevent rapid clicks
+    setPendingVoteIds((prev) => new Set(prev).add(req.id));
+    setVotedIds((prev) => {
+      const next = new Set(prev).add(req.id);
+      try {
+        localStorage.setItem("kinochi_voted_requests", JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+
+    // 2. Optimistic increment
+    setTopRequests((prev) =>
+      prev.map((it) => (it.id === req.id ? { ...it, vote_count: it.vote_count + 1 } : it))
+    );
+
+    const voterId = getClientVoterId();
+
     try {
       const res = await fetch(`${API_URL}/content-requests`, {
         method: "POST",
@@ -125,16 +187,25 @@ export default function RequestsPage() {
           release_year: req.release_year,
           tmdb_id: req.tmdb_id,
           preferred_language: req.preferred_language || "uz",
+          user_contact: voterId,
         }),
       });
       if (res.ok) {
-        setVotedIds((prev) => new Set(prev).add(req.id));
-        setTopRequests((prev) =>
-          prev.map((it) => (it.id === req.id ? { ...it, vote_count: it.vote_count + 1 } : it))
-        );
+        const data = await res.json();
+        if (data.vote_count !== undefined) {
+          setTopRequests((prev) =>
+            prev.map((it) => (it.id === req.id ? { ...it, vote_count: data.vote_count } : it))
+          );
+        }
       }
     } catch (err) {
       console.error("Vote failed:", err);
+    } finally {
+      setPendingVoteIds((prev) => {
+        const next = new Set(prev);
+        next.delete(req.id);
+        return next;
+      });
     }
   };
 
@@ -200,7 +271,7 @@ export default function RequestsPage() {
                 Kinoning o&apos;zbekcha, ruscha yoki inglizcha nomini kiriting:
               </p>
 
-              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
+              <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary text-[22px]">
                     search
@@ -208,8 +279,8 @@ export default function RequestsPage() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Masalan: Inception, Qashqirlar makoni, Game of Thrones..."
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    placeholder="Masalan: Inception, Qashqirlar makoni, Game of Thrones (jonli qidiruv)..."
                     className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/15 rounded-2xl text-text-primary text-sm focus:outline-none focus:border-rating-gold focus:bg-white/10 transition-all placeholder:text-text-secondary/60"
                   />
                 </div>
@@ -371,6 +442,7 @@ export default function RequestsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-12">
                 {topRequests.map((req) => {
                   const hasVoted = votedIds.has(req.id);
+                  const isPending = pendingVoteIds.has(req.id);
                   return (
                     <div
                       key={`req-${req.id}`}
@@ -414,20 +486,22 @@ export default function RequestsPage() {
                         </p>
                       </div>
 
-                      {/* Vote Count & Button */}
+                      {/* Vote Count & Button - Spam and Multi-click Protected */}
                       <button
                         type="button"
                         onClick={() => handleVoteExisting(req)}
-                        disabled={hasVoted}
+                        disabled={hasVoted || isPending}
                         className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl border transition-all shrink-0 ${
                           hasVoted
-                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-                            : "bg-white/5 hover:bg-rating-gold/20 border-white/10 hover:border-rating-gold text-text-primary"
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 cursor-default"
+                            : isPending
+                            ? "bg-white/10 border-white/20 text-rating-gold opacity-75 cursor-wait"
+                            : "bg-white/5 hover:bg-rating-gold/20 border-white/10 hover:border-rating-gold text-text-primary active:scale-95"
                         }`}
-                        title="Ovoz berish"
+                        title={hasVoted ? "Ovoz berilgan" : "Ovoz berish"}
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          {hasVoted ? "thumb_up" : "arrow_upward"}
+                        <span className={`material-symbols-outlined text-[18px] ${isPending ? "animate-spin" : ""}`}>
+                          {isPending ? "sync" : hasVoted ? "thumb_up" : "arrow_upward"}
                         </span>
                         <span className="text-xs font-bold mt-0.5">{req.vote_count}</span>
                       </button>

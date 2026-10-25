@@ -16,6 +16,15 @@ router = Router()
 async def handle_search_query(message: Message):
     query = message.text.strip()
     
+    # 0. Agar xabar inline qidiruvdan ulashilgan xabar bo'lsa yoki bot xabari bo'lsa, e'tiborsiz qoldiramiz
+    if any(keyword in query for keyword in [
+        "platformamiz bazasida hali mavjud emas",
+        "Kinochi platformasida",
+        "Kinolar qidiruvi Inline",
+        "bo'yicha kinolar va seriallarni jonli topish"
+    ]):
+        return
+    
     if query == "🔍 Kino qidirish":
         await message.answer("🍿 <b>Kino olamiga xush kelibsiz!</b>\n\nQidirmoqchi bo'lgan kinongiz nomini yoki maxsus kodini yuboring. Eng sifatli va yangi kinolar faqat bizda!", parse_mode="HTML")
         return
@@ -36,15 +45,91 @@ async def handle_search_query(message: Message):
     if found:
         return
 
-    # 2. Agar kod topilmasa, yagona Inline qidiruv tizimiga yo'naltiramiz
-    safe_query = html.escape(query)
+    # 2. Ichki bazadan tezkor jonli qidiramiz
     from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+    
+    try:
+        live_res = await api_client.live_search(query=query, limit=5)
+        local_results = live_res.get("results", [])
+    except Exception as e:
+        logger.warning(f"Local live search error in bot: {e}")
+        local_results = []
+
+    if local_results:
+        buttons = []
+        for it in local_results:
+            c_type = it.get("type", "movie")
+            title = it.get("title", "Nomsiz")
+            year = it.get("year")
+            y_str = f" ({year})" if year else ""
+            
+            if c_type == "movie":
+                code = it.get("code")
+                buttons.append([InlineKeyboardButton(text=f"🎬 {title}{y_str}", callback_data=f"movie_{code}")])
+            elif c_type == "series":
+                s_id = it.get("id")
+                buttons.append([InlineKeyboardButton(text=f"📺 {title}{y_str}", callback_data=f"search_series_{s_id}")])
+            elif c_type == "collection":
+                slug = it.get("code") or str(it.get("id"))
+                buttons.append([InlineKeyboardButton(text=f"🌌 {title}", url=f"{base_site}/collections/{slug}")])
+
+        buttons.append([InlineKeyboardButton(text="🌐 Saytda to'liq qidirish", url=f"{base_site}/search?q={query}")])
+        keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+        await message.answer(
+            f"🔍 <b>'{html.escape(query)}'</b> bo'yicha bazamizdan topilgan natijalar:\n\n"
+            f"Kerakli film yoki serialni tanlang 👇",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
+    # 3. Ichki bazada yo'q bo'lsa, TMDB va Kinopoisk orqali tashqi qidiramiz
+    try:
+        ext_res = await api_client.external_search(query=query, limit=4)
+        ext_items = ext_res.get("results", [])
+    except Exception as e:
+        logger.warning(f"External search error in bot: {e}")
+        ext_items = []
+
+    if ext_items:
+        buttons = []
+        for it in ext_items:
+            e_id = it.get("tmdb_id") or it.get("kinopoisk_id")
+            e_title = it.get("title", "Nomsiz")
+            e_year = it.get("release_year")
+            e_type = it.get("media_type", "movie")
+            y_str = f" ({e_year})" if e_year else ""
+            cnt = it.get("request_count", 0)
+            cnt_str = f" • {cnt} so'rov" if cnt > 0 else ""
+            
+            # Short safe title for callback data (max 20 chars to fit within 64 byte limit)
+            safe_cb_title = e_title[:20].replace(":", "")
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"📥 {e_title[:22]}{y_str}{cnt_str}",
+                    callback_data=f"req_tmdb:{e_type}:{e_id}:{safe_cb_title}"
+                )
+            ])
+
+        buttons.append([InlineKeyboardButton(text="🌐 Saytda so'rov qoldirish", url=f"{base_site}/requests")])
+        keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+        await message.answer(
+            f"🎬 <b>'{html.escape(query)}'</b> bizning platformamizda hali mavjud emas.\n\n"
+            f"Lekin jahon katalogidan (TMDB) topildi! Uni birinchi navbatda yuklashimizni xohlasangiz, pastdagi <b>'Qo'shishni so'rash'</b> tugmasini bosing 👇",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        return
+
+    # 4. Agar umuman hech qayerdan topilmasa
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f"🔍 '{safe_query}' bo'yicha qidirish", switch_inline_query_current_chat=query)]
+        [InlineKeyboardButton(text="📥 Saytda so'rov qoldirish", url=f"{base_site}/requests")],
+        [InlineKeyboardButton(text="🌐 Bosh sahifaga o'tish", url=base_site)]
     ])
     await message.answer(
-        f"🔍 <b>Kinolar qidiruvi Inline rejimga o'tkazildi!</b>\n\n"
-        f"<i>'{safe_query}'</i> bo'yicha kinolar va seriallarni jonli topish uchun pastdagi tugmani bosing 👇",
+        f"😔 <b>'{html.escape(query)}'</b> bo'yicha hech qanday film yoki serial topilmadi.\n\n"
+        f"Nomini to'g'ri yozganingizni tekshiring yoki saytimiz orqali adminlarga buyurtma qoldiring 👇",
         reply_markup=keyboard,
         parse_mode="HTML"
     )
@@ -280,7 +365,7 @@ async def handle_inline_search(inline_query: InlineQuery):
                             parse_mode="HTML"
                         ),
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                            [InlineKeyboardButton(text=f"📥 Qo'shishni so'rash ({req_cnt} ta so'rov)", callback_data=f"req_tmdb:{e_type}:{e_id}")],
+                            [InlineKeyboardButton(text=f"📥 Qo'shishni so'rash ({req_cnt} ta so'rov)", callback_data=f"req_tmdb:{e_type}:{e_id}:{e_title[:20].replace(':', '')}")],
                             [InlineKeyboardButton(text="🌐 Saytda to'liq ko'rish / so'rash", url=f"{base_site}/requests")]
                         ])
                     )
@@ -341,7 +426,7 @@ async def handle_inline_search(inline_query: InlineQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                    InlineKeyboardButton(text="🌐 Franshizani ko'rish", web_app=WebAppInfo(url=web_link) if web_link.startswith("https://") else None, url=web_link if not web_link.startswith("https://") else None),
+                    InlineKeyboardButton(text="🌐 Franshizani ko'rish", url=web_link),
                 ]
             ])
         elif c_type == "series":
@@ -359,7 +444,7 @@ async def handle_inline_search(inline_query: InlineQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                    InlineKeyboardButton(text="🌐 Saytda ko'rish", web_app=WebAppInfo(url=web_link) if web_link.startswith("https://") else None, url=web_link if not web_link.startswith("https://") else None),
+                    InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link),
                 ]
             ])
         else:
@@ -377,7 +462,7 @@ async def handle_inline_search(inline_query: InlineQuery):
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(text="▶️ Botda ochish", url=deep_link),
-                    InlineKeyboardButton(text="🌐 Saytda ko'rish", web_app=WebAppInfo(url=web_link) if web_link.startswith("https://") else None, url=web_link if not web_link.startswith("https://") else None),
+                    InlineKeyboardButton(text="🌐 Saytda ko'rish", url=web_link),
                 ]
             ])
 
@@ -408,13 +493,14 @@ async def handle_inline_search(inline_query: InlineQuery):
 @router.callback_query(F.data.startswith("req_tmdb:"))
 async def handle_request_tmdb_callback(callback: CallbackQuery):
     try:
-        parts = callback.data.split(":")
+        parts = callback.data.split(":", 3)
         m_type = parts[1] if len(parts) > 1 else "movie"
         tmdb_id = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None
+        title = parts[3] if len(parts) > 3 and parts[3] else None
         
         user_contact = f"@{callback.from_user.username}" if callback.from_user.username else str(callback.from_user.id)
         res = await api_client.submit_content_request(
-            title=f"TMDb #{tmdb_id}",
+            title=title or f"TMDb #{tmdb_id}",
             media_type=m_type,
             tmdb_id=tmdb_id,
             telegram_user_id=callback.from_user.id,
@@ -422,9 +508,31 @@ async def handle_request_tmdb_callback(callback: CallbackQuery):
         )
         msg = res.get("message") or "✅ So'rovingiz qabul qilindi! Adminlarimiz uni platformaga qo'shishadi."
         await callback.answer(msg, show_alert=True)
+
+        # Tugmani 'So'ralgan' holatiga yangilash
+        if callback.message and callback.message.reply_markup:
+            new_rows = []
+            for row in callback.message.reply_markup.inline_keyboard:
+                new_row = []
+                for btn in row:
+                    if btn.callback_data == callback.data:
+                        v_cnt = res.get("vote_count", 1)
+                        new_row.append(InlineKeyboardButton(text=f"✅ So'ralgan ({v_cnt} ta ovoz)", callback_data="voted_already"))
+                    else:
+                        new_row.append(btn)
+                new_rows.append(new_row)
+            try:
+                await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=new_rows))
+            except Exception:
+                pass
     except Exception as e:
         logger.warning(f"Error in handle_request_tmdb_callback: {e}")
         await callback.answer("⚠️ So'rov qabul qilinmadi.", show_alert=True)
+
+
+@router.callback_query(F.data == "voted_already")
+async def handle_already_voted_callback(callback: CallbackQuery):
+    await callback.answer("✅ Siz bu filmga allaqachon ovoz bergansiz!", show_alert=False)
 
 
 @router.message(F.text.in_(["/request", "/sorash", "📥 Kino so'rash", "📥 Buyurtma berish"]))

@@ -314,9 +314,29 @@ async def create_or_vote_content_request(
     Submit a request to add a missing movie or series.
     If the movie is already requested, increments the vote count.
     """
-    clean_title = payload.title.strip()
+    clean_title = (payload.title or "").strip()
+    if payload.tmdb_id and (not clean_title or clean_title.startswith("TMDb #")):
+        try:
+            tmdb_client = TMDbClient()
+            kind = "tv" if payload.media_type == "series" else "movie"
+            details = await tmdb_client.get_details(payload.tmdb_id, kind=kind)
+            if details:
+                clean_title = details.get("title") or clean_title
+                if not payload.original_title:
+                    payload.original_title = details.get("original_title")
+                if not payload.release_year:
+                    payload.release_year = details.get("release_year")
+                if not payload.poster_url:
+                    payload.poster_url = details.get("poster_url")
+                if not payload.overview:
+                    payload.overview = details.get("overview")
+        except Exception as e:
+            logger.warning(f"Error pre-enriching request from tmdb #{payload.tmdb_id}: {e}")
+
     if not clean_title:
-        raise HTTPException(status_code=400, detail="Film yoki serial nomi kiritilishi shart")
+        clean_title = f"TMDb #{payload.tmdb_id}" if payload.tmdb_id else ""
+        if not clean_title:
+            raise HTTPException(status_code=400, detail="Film yoki serial nomi kiritilishi shart")
 
     # Check IP
     ip = request.client.host if request.client else None
@@ -345,30 +365,91 @@ async def create_or_vote_content_request(
         res = await db.execute(stmt)
         existing_request = res.scalar_one_or_none()
 
+    voter_id = str(payload.telegram_user_id or payload.user_contact or ip or "anon")
+
     if existing_request:
+        # Check if this voter already voted to prevent duplicate/rapid spam clicking
+        voter_cache_key = f"cache:voted:content_req:{existing_request.id}:{voter_id}"
+        already_voted = await get_cache(voter_cache_key)
+        if already_voted:
+            return {
+                "success": True,
+                "message": f"Siz bu filmga allaqachon ovoz bergansiz! Jami ovozlar soni: {existing_request.vote_count}.",
+                "request_id": existing_request.id,
+                "vote_count": existing_request.vote_count,
+                "already_voted": True,
+                "is_new": False,
+            }
+
+        # If existing request has placeholder title or missing poster, enrich it now
+        if existing_request.tmdb_id and (existing_request.title.startswith("TMDb #") or not existing_request.poster_url):
+            try:
+                tmdb_client = TMDbClient()
+                kind = "tv" if existing_request.media_type == "series" else "movie"
+                details = await tmdb_client.get_details(existing_request.tmdb_id, kind=kind)
+                if details:
+                    existing_request.title = details.get("title") or existing_request.title
+                    existing_request.original_title = details.get("original_title") or existing_request.original_title
+                    existing_request.release_year = details.get("release_year") or existing_request.release_year
+                    existing_request.poster_url = details.get("poster_url") or existing_request.poster_url
+                    existing_request.overview = details.get("overview") or existing_request.overview
+            except Exception as e:
+                logger.warning(f"Error enriching existing request #{existing_request.id}: {e}")
+
         existing_request.vote_count += 1
         if payload.user_contact and not existing_request.user_contact:
             existing_request.user_contact = payload.user_contact
         if payload.telegram_user_id and not existing_request.telegram_user_id:
             existing_request.telegram_user_id = payload.telegram_user_id
+
         await db.commit()
         await db.refresh(existing_request)
+        # Lock vote for 30 days
+        await set_cache(voter_cache_key, 1, 86400 * 30)
+
         return {
             "success": True,
             "message": f"Bu kontent avval so'ralgan! Ovozlar soni {existing_request.vote_count} taga yetdi.",
             "request_id": existing_request.id,
             "vote_count": existing_request.vote_count,
+            "already_voted": False,
             "is_new": False,
         }
 
+    # Auto-enrich details from TMDb if tmdb_id is present and title is placeholder or missing metadata
+    final_title = clean_title
+    final_orig_title = payload.original_title
+    final_year = payload.release_year
+    final_poster = payload.poster_url
+    final_overview = payload.overview
+
+    if payload.tmdb_id and (final_title.startswith("TMDb #") or not final_poster or not final_year):
+        try:
+            tmdb_client = TMDbClient()
+            kind = "tv" if payload.media_type == "series" else "movie"
+            details = await tmdb_client.get_details(payload.tmdb_id, kind=kind)
+            if details:
+                if final_title.startswith("TMDb #") or not final_title:
+                    final_title = details.get("title") or final_title
+                if not final_orig_title:
+                    final_orig_title = details.get("original_title")
+                if not final_year:
+                    final_year = details.get("release_year")
+                if not final_poster:
+                    final_poster = details.get("poster_url")
+                if not final_overview:
+                    final_overview = details.get("overview")
+        except Exception as e:
+            logger.warning(f"Error enriching new request tmdb #{payload.tmdb_id}: {e}")
+
     # Create new request
     new_request = ContentRequestModel(
-        title=clean_title,
-        original_title=payload.original_title,
+        title=final_title,
+        original_title=final_orig_title,
         media_type=payload.media_type,
-        release_year=payload.release_year,
-        poster_url=payload.poster_url,
-        overview=payload.overview,
+        release_year=final_year,
+        poster_url=final_poster,
+        overview=final_overview,
         tmdb_id=payload.tmdb_id,
         kinopoisk_id=payload.kinopoisk_id,
         preferred_language=payload.preferred_language,
@@ -382,11 +463,16 @@ async def create_or_vote_content_request(
     await db.commit()
     await db.refresh(new_request)
 
+    # Lock voter in cache for 30 days
+    new_voter_cache_key = f"cache:voted:content_req:{new_request.id}:{voter_id}"
+    await set_cache(new_voter_cache_key, 1, 86400 * 30)
+
     return {
         "success": True,
         "message": "So'rovingiz muvaffaqiyatli qabul qilindi! Tez orada platformaga qo'shish choralari ko'riladi.",
         "request_id": new_request.id,
         "vote_count": new_request.vote_count,
+        "already_voted": False,
         "is_new": True,
     }
 
