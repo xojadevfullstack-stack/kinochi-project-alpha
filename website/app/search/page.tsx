@@ -59,33 +59,30 @@ export default async function SearchPage({
   // 2. Initial SSR search if query is in URL
   if (query.trim().length >= 2) {
     try {
-      if (specificType === "series") {
-        const res = await fetchApi(`/series/search?q=${encodeURIComponent(query)}&limit=40`);
-        initialResults = (res.items || []).map((i: any) => ({ ...i, isSeries: true }));
-      } else if (specificType === "movie") {
-        const res = await fetchApi(`/movies/search?q=${encodeURIComponent(query)}&limit=40`);
-        initialResults = (res.items || []).map((i: any) => ({ ...i, isSeries: false }));
-      } else {
-        const [moviesRes, seriesRes] = await Promise.all([
-          fetchApi(`/movies/search?q=${encodeURIComponent(query)}&limit=24`).catch(() => ({ items: [] })),
-          fetchApi(`/series/search?q=${encodeURIComponent(query)}&limit=24`).catch(() => ({ items: [] })),
-        ]);
-        const movies = (moviesRes?.items || []).map((i: any) => ({ ...i, isSeries: false }));
-        const series = (seriesRes?.items || []).map((i: any) => ({ ...i, isSeries: true }));
-        initialResults = [...movies, ...series];
-      }
+      // Search movies, series, and TMDB in parallel so user sees both internal and external options
+      const [moviesRes, seriesRes, extRes] = await Promise.all([
+        specificType === "series"
+          ? Promise.resolve({ items: [] })
+          : fetchApi(`/movies/search?q=${encodeURIComponent(query)}&limit=24`).catch(() => ({ items: [] })),
+        specificType === "movie"
+          ? Promise.resolve({ items: [] })
+          : fetchApi(`/series/search?q=${encodeURIComponent(query)}&limit=24`).catch(() => ({ items: [] })),
+        fetchApi(`/content-requests/external-search?q=${encodeURIComponent(query)}&limit=12`).catch(() => ({ results: [] })),
+      ]);
 
-      // If internal results are empty, search TMDB & Kinopoisk
-      if (initialResults.length === 0) {
-        try {
-          const extRes = await fetchApi(
-            `/content-requests/external-search?q=${encodeURIComponent(query)}&limit=12`
-          ).catch(() => ({ results: [] }));
-          initialExternalResults = extRes?.results || [];
-        } catch (extErr) {
-          console.error("External TMDB search failed:", extErr);
-        }
-      }
+      const movies = (moviesRes?.items || []).map((i: any) => ({ ...i, isSeries: false }));
+      const series = (seriesRes?.items || []).map((i: any) => ({ ...i, isSeries: true }));
+      initialResults = [...movies, ...series];
+
+      const localTmdbIds = new Set(initialResults.map((m: any) => m.tmdb_id).filter(Boolean));
+      const localTitles = new Set(initialResults.map((m: any) => m.title.toLowerCase().trim()));
+
+      initialExternalResults = (extRes?.results || []).filter((ext: any) => {
+        if (ext.in_library) return false;
+        if (ext.tmdb_id && localTmdbIds.has(ext.tmdb_id)) return false;
+        if (localTitles.has(ext.title.toLowerCase().trim())) return false;
+        return true;
+      });
     } catch (error: any) {
       errorMsg = error.message;
     }

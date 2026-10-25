@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import BackButton from "@/components/BackButton";
@@ -46,77 +46,86 @@ export default function SearchClientView({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const performLiveSearch = useCallback(async (searchQuery: string) => {
-    const cleanQ = searchQuery.trim();
-    if (cleanQ.length < 2) {
-      setResults([]);
-      setExternalResults([]);
-      setIsLoading(false);
-      setErrorMsg(null);
-      if (typeof window !== "undefined") {
-        window.history.replaceState(null, "", "/search");
+  const performLiveSearch = useCallback(
+    async (searchQuery: string) => {
+      const cleanQ = searchQuery.trim();
+      if (cleanQ.length < 2) {
+        setResults([]);
+        setExternalResults([]);
+        setIsLoading(false);
+        setErrorMsg(null);
+        if (typeof window !== "undefined") {
+          window.history.replaceState(null, "", "/search");
+        }
+        return;
       }
-      return;
-    }
 
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
 
-    setIsLoading(true);
-    setErrorMsg(null);
+      setIsLoading(true);
+      setErrorMsg(null);
 
-    // Update URL without page reload
-    if (typeof window !== "undefined") {
-      window.history.replaceState(
-        null,
-        "",
-        `/search?q=${encodeURIComponent(cleanQ)}${initialType ? `&type=${initialType}` : ""}`
-      );
-    }
+      // Update URL without page reload
+      if (typeof window !== "undefined") {
+        window.history.replaceState(
+          null,
+          "",
+          `/search?q=${encodeURIComponent(cleanQ)}${initialType ? `&type=${initialType}` : ""}`
+        );
+      }
 
-    try {
-      let combined: any[] = [];
-      if (initialType === "series") {
-        const res = await fetchApi(`/series/search?q=${encodeURIComponent(cleanQ)}&limit=40`);
-        combined = (res?.items || []).map((i: any) => ({ ...i, isSeries: true }));
-      } else if (initialType === "movie") {
-        const res = await fetchApi(`/movies/search?q=${encodeURIComponent(cleanQ)}&limit=40`);
-        combined = (res?.items || []).map((i: any) => ({ ...i, isSeries: false }));
-      } else {
-        const [moviesRes, seriesRes] = await Promise.all([
-          fetchApi(`/movies/search?q=${encodeURIComponent(cleanQ)}&limit=24`).catch(() => ({ items: [] })),
-          fetchApi(`/series/search?q=${encodeURIComponent(cleanQ)}&limit=24`).catch(() => ({ items: [] })),
+      try {
+        // Query local movies, local series, AND external TMDB simultaneously
+        const [moviesRes, seriesRes, extRes] = await Promise.all([
+          initialType === "series"
+            ? Promise.resolve({ items: [] })
+            : fetchApi(
+                initialType === "movie"
+                  ? `/movies/search?q=${encodeURIComponent(cleanQ)}&limit=40`
+                  : `/movies/search?q=${encodeURIComponent(cleanQ)}&limit=24`
+              ).catch(() => ({ items: [] })),
+          initialType === "movie"
+            ? Promise.resolve({ items: [] })
+            : fetchApi(
+                initialType === "series"
+                  ? `/series/search?q=${encodeURIComponent(cleanQ)}&limit=40`
+                  : `/series/search?q=${encodeURIComponent(cleanQ)}&limit=24`
+              ).catch(() => ({ items: [] })),
+          fetchApi(
+            `/content-requests/external-search?q=${encodeURIComponent(cleanQ)}&limit=12`
+          ).catch(() => ({ results: [] })),
         ]);
+
         const movies = (moviesRes?.items || []).map((i: any) => ({ ...i, isSeries: false }));
         const series = (seriesRes?.items || []).map((i: any) => ({ ...i, isSeries: true }));
-        combined = [...movies, ...series];
-      }
+        const combined = [...movies, ...series];
+        setResults(combined);
 
-      setResults(combined);
+        // Filter out TMDB results that are already in our local library
+        const localTmdbIds = new Set(combined.map((m: any) => m.tmdb_id).filter(Boolean));
+        const localTitles = new Set(combined.map((m: any) => m.title.toLowerCase().trim()));
 
-      // If nothing found in internal database, query TMDB & Kinopoisk
-      if (combined.length === 0) {
-        try {
-          const extRes = await fetchApi(
-            `/content-requests/external-search?q=${encodeURIComponent(cleanQ)}&limit=12`
-          ).catch(() => ({ results: [] }));
-          setExternalResults(extRes?.results || []);
-        } catch {
-          setExternalResults([]);
+        const filteredExt = (extRes?.results || []).filter((ext: any) => {
+          if (ext.in_library) return false;
+          if (ext.tmdb_id && localTmdbIds.has(ext.tmdb_id)) return false;
+          if (localTitles.has(ext.title.toLowerCase().trim())) return false;
+          return true;
+        });
+
+        setExternalResults(filteredExt);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          setErrorMsg(err.message || "Qidiruvda xatolik yuz berdi");
         }
-      } else {
-        setExternalResults([]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err: any) {
-      if (err.name !== "AbortError") {
-        setErrorMsg(err.message || "Qidiruvda xatolik yuz berdi");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [initialType]);
+    },
+    [initialType]
+  );
 
   // Handle typing debounce
   const handleInputChange = (val: string) => {
@@ -146,6 +155,7 @@ export default function SearchClientView({
   };
 
   const isSearchActive = query.trim().length >= 2;
+  const totalFound = results.length + externalResults.length;
 
   const renderCard = (item: any, idx: number) => {
     const isSeries = item.isSeries !== undefined ? item.isSeries : initialType === "series";
@@ -228,9 +238,9 @@ export default function SearchClientView({
             </h1>
             <p className="text-text-secondary text-sm sm:text-base">
               {isLoading
-                ? "Qidirilmoqda..."
+                ? "Baza va xalqaro katalogdan qidirilmoqda..."
                 : isSearchActive
-                ? `"${query}" so'rovi bo'yicha ${results.length} ta natija topildi`
+                ? `"${query}" so'rovi bo'yicha ${totalFound} ta natija topildi (Bazamizda: ${results.length}, TMDB: ${externalResults.length})`
                 : "Sevimli kinolaringiz, seriallaringiz yoki janrlarni oson toping"}
             </p>
           </div>
@@ -312,97 +322,77 @@ export default function SearchClientView({
             Xatolik yuz berdi: {errorMsg}
           </div>
         ) : isSearchActive ? (
-          results.length > 0 ? (
-            <div className="mb-12">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-8">
-                {results.map((item, idx) => renderCard(item, idx))}
-              </div>
-
-              {/* Request Banner if user didn't find specific movie */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-rating-gold/15 flex items-center justify-center text-rating-gold shrink-0">
-                    <span className="material-symbols-outlined text-[22px]">movie_filter</span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">
-                      Qidirayotgan kinongiz topilmadimi?
-                    </h4>
-                    <p className="text-xs text-text-secondary">
-                      TMDB va Kinopoisk orqali topib, uni platformamizga qo&apos;shishni so&apos;rashingiz mumkin.
-                    </p>
-                  </div>
+          <div>
+            {/* Section 1: Internal Results (Bazamizdagi kinolar) */}
+            {results.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-4.5 bg-emerald-500 rounded-full"></span>
+                    <span>Bazamizda mavjud natijalar ({results.length})</span>
+                  </h2>
                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-8">
+                  {results.map((item, idx) => renderCard(item, idx))}
+                </div>
+              </div>
+            )}
+
+            {/* Section 2: External TMDB/Kinopoisk Results (Bazada yo'q bo'lgan variantlar) */}
+            {externalResults.length > 0 && (
+              <div className="mb-12">
+                <ExternalSearchSection
+                  query={query}
+                  items={externalResults}
+                  title={
+                    results.length > 0
+                      ? `"${query}" bo'yicha boshqa variantlar (TMDB • Bazada yo'q)`
+                      : `"${query}" bo'yicha xalqaro qidiruv natijalari (TMDB)`
+                  }
+                  subtitle={
+                    results.length > 0
+                      ? "Ushbu filmlar hali platformamizga yuklanmagan. Biror variantini ko'rmoqchi bo'lsangiz, 'Qo'shishni so'rash' tugmasini bosing — adminlarimiz uni yuklaydi!"
+                      : `"${query}" filmi bizning bazada hali mavjud emas, lekin TMDB / Kinopoisk jahon katalogidan topildi. Quyidagilardan tanlab 'Qo'shishni so'rash' tugmasini bosing:`
+                  }
+                />
+              </div>
+            )}
+
+            {/* If neither local nor external results found */}
+            {results.length === 0 && externalResults.length === 0 && !isLoading && (
+              <div className="text-center py-16 px-6 bg-white/[0.03] rounded-3xl border border-white/10 max-w-xl mx-auto mb-12">
+                <span className="material-symbols-outlined text-6xl text-text-secondary mb-3 opacity-60">
+                  search_off
+                </span>
+                <h3 className="text-xl font-bold text-white mb-2">Hech narsa topilmadi</h3>
+                <p className="text-sm text-text-secondary leading-relaxed mb-6">
+                  &ldquo;{query}&rdquo; so&apos;rovi bo&apos;yicha film topilmadi. Uni adminlarimizga buyurtma qilishingiz mumkin!
+                </p>
                 <Link
                   href="/requests"
-                  className="px-4 py-2 bg-rating-gold text-background-obsidian font-bold rounded-xl text-xs hover:brightness-110 transition-all shrink-0 shadow"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-rating-gold text-background-obsidian font-bold rounded-2xl hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg"
                 >
-                  Kino buyurtma qilish 👉
+                  <span className="material-symbols-outlined text-[20px]">add_to_queue</span>
+                  <span>Kino qo&apos;shishni so&apos;rash</span>
                 </Link>
               </div>
-            </div>
-          ) : (
-            <div className="mb-12">
-              {/* If external TMDB/Kinopoisk results exist, display them prominently! */}
-              {externalResults.length > 0 ? (
-                <div>
-                  <div className="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs sm:text-sm mb-6 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[20px]">info</span>
-                    <span>
-                      &ldquo;{query}&rdquo; filmi bizning bazada yo&apos;q, lekin TMDB / Kinopoisk xalqaro bazasidan topildi! Quyidagi ro&apos;yxatdan o&apos;zingiz kutgan filmni tanlang va <b>&ldquo;Qo&apos;shishni so&apos;rash&rdquo;</b> tugmasini bosing:
-                    </span>
-                  </div>
+            )}
 
-                  <ExternalSearchSection
-                    query={query}
-                    items={externalResults}
-                    title={`"${query}" bo'yicha xalqaro qidiruv natijalari`}
-                    subtitle="Ushbu kinolar hali bazamizda mavjud emas. Uni qo'shishni so'rashingiz mumkin — adminlarimiz uni birinchi navbatda joylaydi!"
-                  />
+            {/* Suggestions below empty state */}
+            {results.length === 0 && externalResults.length === 0 && defaultItems.length > 0 && !isLoading && (
+              <div>
+                <div className="mb-5 flex items-center justify-between">
+                  <h2 className="font-headline-md text-xl sm:text-2xl font-bold text-text-primary flex items-center gap-2.5">
+                    <span className="w-1 h-5 bg-rating-gold rounded-full block"></span>
+                    <span>Sizga yoqishi mumkin bo&apos;lgan premyeralar</span>
+                  </h2>
                 </div>
-              ) : isLoading ? (
-                <div className="text-center py-16 px-6 bg-white/[0.02] rounded-3xl border border-white/5 max-w-xl mx-auto mb-12">
-                  <span className="material-symbols-outlined text-4xl text-rating-gold animate-spin mb-3">
-                    sync
-                  </span>
-                  <p className="text-sm text-text-secondary">Baza va jahon katalogidan qidirilmoqda...</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
+                  {defaultItems.slice(0, 12).map((item, idx) => renderCard(item, idx))}
                 </div>
-              ) : (
-                /* Modern Obsidian Empty State */
-                <div className="text-center py-16 px-6 bg-white/[0.03] rounded-3xl border border-white/10 max-w-xl mx-auto mb-12">
-                  <span className="material-symbols-outlined text-6xl text-text-secondary mb-3 opacity-60">
-                    search_off
-                  </span>
-                  <h3 className="text-xl font-bold text-white mb-2">Hech narsa topilmadi</h3>
-                  <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                    &ldquo;{query}&rdquo; so&apos;rovi bo&apos;yicha film topilmadi. Uni adminlarimizga buyurtma qilishingiz mumkin!
-                  </p>
-                  <Link
-                    href="/requests"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-rating-gold text-background-obsidian font-bold rounded-2xl hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">add_to_queue</span>
-                    <span>Kino qo&apos;shishni so&apos;rash</span>
-                  </Link>
-                </div>
-              )}
-
-              {/* Suggestions below empty state */}
-              {defaultItems.length > 0 && !isLoading && (
-                <div>
-                  <div className="mb-5 flex items-center justify-between">
-                    <h2 className="font-headline-md text-xl sm:text-2xl font-bold text-text-primary flex items-center gap-2.5">
-                      <span className="w-1 h-5 bg-rating-gold rounded-full block"></span>
-                      <span>Sizga yoqishi mumkin bo&apos;lgan premyeralar</span>
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
-                    {defaultItems.slice(0, 12).map((item, idx) => renderCard(item, idx))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
+              </div>
+            )}
+          </div>
         ) : (
           /* Default state when user just opened /search */
           <div>
