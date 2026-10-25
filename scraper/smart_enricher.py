@@ -787,25 +787,44 @@ async def enrich_movie_smart(
                 if details.get("cast") and not metadata["cast"]:
                     metadata["cast"] = details["cast"]
 
+                # Sarlavhani xalqaro yoki rasmiy nomga moslashtirish
+                tmdb_orig_title = details.get("original_title")
+                if tmdb_orig_title:
+                    metadata["original_title"] = tmdb_orig_title
+                    try:
+                        canon_t, _ = await translator_service.translate_title_to_uzbek(
+                            title=details.get("title") or clean_title,
+                            original_title=tmdb_orig_title
+                        )
+                        if canon_t and len(canon_t.strip()) > 1:
+                            metadata["title"] = canon_t.strip()
+                    except Exception as t_err:
+                        logger.debug(f"Title translation error: {t_err}")
+
                 # Janrlar
                 tmdb_uz_genres = map_tmdb_genres(details.get("genres_raw", []))
                 if tmdb_uz_genres:
                     metadata["genres"] = ", ".join(tmdb_uz_genres)
                     matched_cat_names = set(g.strip().lower() for g in tmdb_uz_genres)
 
-                # Tavsifni o'zbekchaga tarjima qilish (agar TMDb tavsifi mavjud bo'lsa va joriy tavsif bo'sh, qisqa, shablon yoki telegram axlati bo'lsa)
+                # Tavsifni o'zbekchaga tarjima qilish (agar TMDb tavsifi mavjud bo'lsa)
                 raw_overview = details.get("overview") or ""
                 curr_desc = metadata.get("description") or ""
+                has_corrupted_words = any(w in curr_desc.lower() for w in [
+                    "bilinçaltı", "filmin", "hakkında", "için", "özet", "qazib olish san'ati"
+                ])
                 needs_trans = (
                     not curr_desc
                     or len(curr_desc) < 60
                     or curr_desc.startswith("🍿")
                     or is_telegram_caption_junk(curr_desc)
+                    or has_corrupted_words
+                    or (raw_overview and len(raw_overview) > 50)
                 )
                 if raw_overview and needs_trans:
                     trans_desc, _ = await translator_service.translate_to_uzbek(raw_overview)
                     if trans_desc:
-                        clean_trans = clean_synopsis_text(trans_desc, clean_title, detected_type)
+                        clean_trans = clean_synopsis_text(trans_desc, metadata.get("title") or clean_title, detected_type)
                         if clean_trans and not clean_trans.startswith("🍿"):
                             metadata["description"] = clean_trans
 
