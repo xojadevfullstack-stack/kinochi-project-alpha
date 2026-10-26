@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import {
+  CategoryItem,
+  GenreItem,
+  DEFAULT_GENRES,
+  DEFAULT_YEARS
+} from "@/lib/filterConstants";
 
-export interface CategoryItem {
-  id: number | string;
-  name: string;
-}
-
-export interface GenreItem {
-  id: string;
-  name: string;
-  icon?: string;
-}
+export type { CategoryItem, GenreItem };
+export { DEFAULT_GENRES, DEFAULT_YEARS };
 
 export interface UnifiedFilterBarProps {
   categories: CategoryItem[];
@@ -25,24 +23,6 @@ export interface UnifiedFilterBarProps {
   totalItems?: number;
 }
 
-export const DEFAULT_GENRES: GenreItem[] = [
-  { id: "action", name: "Jangari", icon: "swords" },
-  { id: "comedy", name: "Komediya", icon: "sentiment_very_satisfied" },
-  { id: "scifi", name: "Fantastika", icon: "rocket_launch" },
-  { id: "thriller", name: "Triller", icon: "visibility" },
-  { id: "drama", name: "Drama", icon: "theater_comedy" },
-  { id: "horror", name: "Qo'rqinchli", icon: "skull" },
-  { id: "romance", name: "Melodrama", icon: "favorite" },
-  { id: "detective", name: "Detektiv", icon: "search" },
-  { id: "animation", name: "Multfilm", icon: "animation" },
-  { id: "history", name: "Tarixiy", icon: "history_edu" },
-  { id: "adventure", name: "Sarguzasht", icon: "explore" },
-  { id: "crime", name: "Jinoyat", icon: "local_police" },
-  { id: "military", name: "Harbiy", icon: "shield" }
-];
-
-export const DEFAULT_YEARS: number[] = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2010, 2005, 2000];
-
 export default function UnifiedFilterBar({
   categories = [],
   genres = DEFAULT_GENRES,
@@ -54,7 +34,6 @@ export default function UnifiedFilterBar({
   totalItems
 }: UnifiedFilterBarProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   // Unified panel open state
   const [isOpen, setIsOpen] = useState(Boolean(selectedCategory || selectedGenre || selectedYear));
@@ -71,9 +50,21 @@ export default function UnifiedFilterBar({
   const activeCategoryObj = categories.find((c) => String(c.id) === String(selectedCategory));
   const activeGenreObj = genres.find((g) => g.id === selectedGenre);
 
+  // Helper to obtain current URL search params without triggering Next.js useSearchParams SSR bailout
+  const getCurrentParams = () => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search);
+    }
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set("category", String(selectedCategory));
+    if (selectedGenre) params.set("genre", selectedGenre);
+    if (selectedYear) params.set("year", String(selectedYear));
+    return params;
+  };
+
   // Helper to update query parameters
   const updateFilter = (type: "category" | "genre" | "year", value?: string | number | null) => {
-    const params = new URLSearchParams(searchParams?.toString() || "");
+    const params = getCurrentParams();
     
     if (value !== undefined && value !== null && value !== "") {
       params.set(type, String(value));
@@ -87,7 +78,7 @@ export default function UnifiedFilterBar({
   };
 
   const clearAllFilters = () => {
-    const params = new URLSearchParams(searchParams?.toString() || "");
+    const params = getCurrentParams();
     params.delete("category");
     params.delete("genre");
     params.delete("year");

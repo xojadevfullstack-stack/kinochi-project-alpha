@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -6,7 +7,8 @@ import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
 import LiveSearch from "@/components/LiveSearch";
 import ThemedCollectionCard from "@/components/catalog/ThemedCollectionCard";
-import UnifiedFilterBar, { DEFAULT_GENRES, DEFAULT_YEARS } from "@/components/catalog/UnifiedFilterBar";
+import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
+import { DEFAULT_GENRES, DEFAULT_YEARS } from "@/lib/filterConstants";
 import { CURATED_CATALOG_THEMES } from "@/lib/catalogThemes";
 
 export const dynamic = "force-dynamic";
@@ -43,14 +45,23 @@ export default async function FullCatalogPage({
     }
 
     const [moviesData, categoriesData, pagesData] = await Promise.all([
-      fetchApi(query),
-      fetchApi("/categories"),
-      fetchApi("/pages/")
+      fetchApi(query).catch((e) => {
+        console.error("fetch movies failed:", e);
+        return { items: [], total: 0 };
+      }),
+      fetchApi("/categories").catch((e) => {
+        console.error("fetch categories failed:", e);
+        return [];
+      }),
+      fetchApi("/pages").catch((e) => {
+        console.error("fetch pages failed:", e);
+        return { items: [], total: 0 };
+      })
     ]);
 
     movies = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
     total = moviesData?.total ?? movies.length;
-    categories = categoriesData || [];
+    categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     pages = pagesData?.items || pagesData || [];
   } catch (error) {
     console.error("Failed to load catalog data:", error);
@@ -129,16 +140,18 @@ export default async function FullCatalogPage({
 
         {/* 2. UNIFIED COMPACT FILTRLAR BAR (Combines Toifalar, Janrlar, Yillar into 1 expandable panel) */}
         <section className="space-y-3 pt-2">
-          <UnifiedFilterBar
-            categories={categories}
-            genres={DEFAULT_GENRES}
-            years={DEFAULT_YEARS}
-            selectedCategory={selectedCategory}
-            selectedGenre={selectedGenre}
-            selectedYear={selectedYear}
-            baseUrl="/catalog"
-            totalItems={total}
-          />
+          <Suspense fallback={<div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />}>
+            <UnifiedFilterBar
+              categories={categories}
+              genres={DEFAULT_GENRES}
+              years={DEFAULT_YEARS}
+              selectedCategory={selectedCategory}
+              selectedGenre={selectedGenre}
+              selectedYear={selectedYear}
+              baseUrl="/catalog"
+              totalItems={total}
+            />
+          </Suspense>
         </section>
 
         {/* 3. KATALOG GRID NATIJALARI */}
