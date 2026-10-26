@@ -53,7 +53,7 @@ export default function CatalogGrid({
       let nextTotal = total;
 
       if (type === "movies") {
-        let url = `/movies?skip=${items.length}&limit=${pageSize}&exclude_paged=true`;
+        let url = `/movies?skip=${items.length}&limit=${pageSize}`;
         if (categoryId) url += `&category_id=${categoryId}`;
         if (genre) url += `&genre=${encodeURIComponent(genre)}`;
         if (year) url += `&year=${year}`;
@@ -62,7 +62,7 @@ export default function CatalogGrid({
         newItems = (res?.items || []).map((m: any) => ({ ...m, is_series: false }));
         if (res?.total !== undefined) nextTotal = res.total;
       } else if (type === "series") {
-        let url = `/series?skip=${items.length}&limit=${pageSize}&exclude_paged=true`;
+        let url = `/series?skip=${items.length}&limit=${pageSize}`;
         if (categoryId) url += `&category_id=${categoryId}`;
         const res = await fetchApi(url);
         newItems = (res?.items || []).map((s: any) => ({ ...s, is_series: true }));

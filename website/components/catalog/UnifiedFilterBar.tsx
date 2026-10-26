@@ -100,7 +100,7 @@ function SearchableDropdown({
   );
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={`relative w-full ${isOpen ? "z-50" : "z-10"}`}>
       {/* ── Input Trigger Button ── */}
       <div
         onClick={onToggle}
@@ -166,7 +166,7 @@ function SearchableDropdown({
 
       {/* ── Dropdown Popover (Combobox) ── */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-[#12151d] border border-white/15 rounded-2xl p-2.5 shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-top-1 duration-150 min-w-[220px]">
+        <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-[#12151d] border border-white/20 rounded-2xl p-2.5 shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-2xl animate-in fade-in slide-in-from-top-1 duration-150 min-w-[220px]">
           {/* 1. Quick Search Input at top of dropdown */}
           <div className="relative mb-2">
             <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-[17px] pointer-events-none">
@@ -373,7 +373,7 @@ export default function UnifiedFilterBar({
   }));
 
   return (
-    <div className="w-full space-y-3">
+    <div className={`w-full space-y-3 relative ${openDropdown ? "z-50" : "z-20"}`}>
       {/* ── 1. MAIN FILTRLAR HEADER ROW ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[#111318]/90 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 shadow-lg">
         <div className="flex flex-wrap items-center gap-2">
@@ -489,8 +489,8 @@ export default function UnifiedFilterBar({
 
       {/* ── 2. EXPANDABLE 4-INPUT FILTER PANEL (When "Filtrlar" is toggled open) ── */}
       {isOpen && (
-        <div className="bg-[#101217]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className={`bg-[#101217]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200 relative ${openDropdown ? "z-50" : "z-20"}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 relative">
             {/* Input 1: Bo'limlar (Toifalar) */}
             <SearchableDropdown
               label="Bo'lim (Toifa)"

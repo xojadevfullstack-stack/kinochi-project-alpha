@@ -109,7 +109,7 @@ export default async function SeriesListPage({
         </div>
 
         {/* Unified Compact Filtrlar Bar (Bo'limlar, Turi, Janrlar, Yillar) */}
-        <section className="space-y-3">
+        <section className="relative z-40 space-y-3">
           <Suspense fallback={<div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />}>
             <UnifiedFilterBar
               categories={categories}
@@ -127,7 +127,7 @@ export default async function SeriesListPage({
         </section>
 
         {/* Results Header & Grid */}
-        <div className="pt-2">
+        <div className="relative z-10 pt-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base sm:text-lg font-bold text-text-primary font-headline-md flex items-center gap-2">
               <span className="w-1 h-5 bg-primary-container rounded-full block" />

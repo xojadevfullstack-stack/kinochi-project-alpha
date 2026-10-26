@@ -162,7 +162,7 @@ export default async function FullCatalogPage({
         )}
 
         {/* 2. UNIFIED COMPACT FILTRLAR BAR (Combines Toifalar, Turi, Janrlar, Yillar into 1 expandable panel) */}
-        <section className="space-y-3 pt-2">
+        <section className="relative z-40 space-y-3 pt-2">
           <Suspense fallback={<div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />}>
             <UnifiedFilterBar
               categories={categories}
@@ -180,7 +180,7 @@ export default async function FullCatalogPage({
         </section>
 
         {/* 3. KATALOG GRID NATIJALARI */}
-        <div className="pt-4 border-t border-white/10">
+        <div className="relative z-10 pt-4 border-t border-white/10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base sm:text-lg font-bold text-text-primary font-headline-md flex items-center gap-2">
               <span className="w-1 h-5 bg-primary-container rounded-full block" />
