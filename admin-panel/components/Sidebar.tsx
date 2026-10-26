@@ -54,6 +54,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         { name: "Xronologiyalar", href: "/collections", icon: "auto_awesome_motion" },
         { name: "Kategoriyalar", href: "/categories", icon: "category" },
         { name: "Sahifalar", href: "/pages", icon: "pages" },
+        { name: "Kino So'rovlari", href: "/requests", icon: "add_to_queue" },
       ],
     },
     {

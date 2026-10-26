@@ -21,11 +21,12 @@ class SeriesService:
         return shortuuid.uuid()[:8]
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> Tuple[List[Series], int]:
+    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None, **kwargs) -> Tuple[List[Series], int]:
+        kwargs_clean = {k: v for k, v in kwargs.items() if v is not None}
         if publish_status is not None:
-            series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged, publish_status=publish_status)
+            series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged, publish_status=publish_status, **kwargs_clean)
         else:
-            series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged)
+            series_models, total = await self.repository.get_all_series(skip, limit, category_id, page_id, exclude_paged, **kwargs_clean)
         return [Series.model_validate(s) for s in series_models], total
 
     async def search_series(self, title_query: str, skip: int = 0, limit: int = 100, publish_status: str | None = None) -> Tuple[List[Series], int]:

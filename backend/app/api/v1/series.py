@@ -123,11 +123,14 @@ async def list_series(
     page_id: int | None = None,
     exclude_paged: bool = False,
     publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden')"),
+    search: str | None = Query(None, description="Qidiruv"),
+    year: int | None = Query(None, description="Yil"),
+    genre: str | None = Query(None, description="Janr"),
     service: SeriesService = Depends(get_series_service)
 ):
     """List series (Public: published)."""
     target_status = None if publish_status == "all" else publish_status
-    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}"
+    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}:{search}:{year}:{genre}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
@@ -138,7 +141,10 @@ async def list_series(
         category_id=category_id,
         page_id=page_id,
         exclude_paged=exclude_paged,
-        publish_status=target_status
+        publish_status=target_status,
+        search=search,
+        year=year,
+        genre=genre
     )
     
     # Calculate pages

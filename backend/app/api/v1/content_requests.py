@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, or_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_session
+from app.api.deps import get_db_session, get_current_admin
 from app.api.limiter import limiter
 from app.core.config import settings
 from app.core.cache import get_cache, set_cache
@@ -78,6 +78,8 @@ class ContentRequestResponse(BaseModel):
     vote_count: int
     status: str
     created_at: str
+    admin_notes: str | None = None
+    user_contact: str | None = None
 
     class Config:
         from_attributes = True
@@ -492,9 +494,9 @@ async def list_content_requests(
     Supports sorting by most voted or most recent.
     """
     stmt = select(ContentRequestModel)
-    if status_filter:
+    if status_filter and status_filter != "all":
         stmt = stmt.where(ContentRequestModel.status == status_filter)
-    else:
+    elif not status_filter:
         stmt = stmt.where(ContentRequestModel.status.in_(["pending", "in_review"]))
 
     if sort == "votes":
@@ -504,9 +506,9 @@ async def list_content_requests(
 
     # Total count
     count_stmt = select(func.count(ContentRequestModel.id))
-    if status_filter:
+    if status_filter and status_filter != "all":
         count_stmt = count_stmt.where(ContentRequestModel.status == status_filter)
-    else:
+    elif not status_filter:
         count_stmt = count_stmt.where(ContentRequestModel.status.in_(["pending", "in_review"]))
 
     total_res = await db.execute(count_stmt)
@@ -532,8 +534,72 @@ async def list_content_requests(
             vote_count=item.vote_count,
             status=item.status,
             created_at=item.created_at.isoformat() if item.created_at else "",
+            admin_notes=item.admin_notes,
+            user_contact=item.user_contact,
         )
         for item in items
     ]
 
     return ContentRequestListResponse(total=total, items=formatted_items)
+
+
+class ContentRequestAdminUpdate(BaseModel):
+    status: Literal["pending", "in_review", "completed", "rejected"] | None = None
+    admin_notes: str | None = None
+    linked_content_code: str | None = None
+
+
+@router.patch("/{request_id}")
+async def admin_update_content_request(
+    request_id: int,
+    payload: ContentRequestAdminUpdate,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """Update request status, add admin notes, or bridge to uploaded content (Admin only)."""
+    stmt = select(ContentRequestModel).where(ContentRequestModel.id == request_id)
+    res = await db.execute(stmt)
+    item = res.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="So'rov topilmadi")
+
+    if payload.status:
+        item.status = payload.status
+    if payload.admin_notes is not None:
+        item.admin_notes = payload.admin_notes
+    if payload.linked_content_code:
+        item.status = "completed"
+        bridge_note = f"Yuklandi: {payload.linked_content_code}"
+        if not item.admin_notes:
+            item.admin_notes = bridge_note
+        elif bridge_note not in item.admin_notes:
+            item.admin_notes = f"{item.admin_notes} | {bridge_note}"
+
+    await db.commit()
+    await db.refresh(item)
+    return {
+        "success": True,
+        "message": "So'rov muvaffaqiyatli yangilandi va kontentga ulandi",
+        "item": {
+            "id": item.id,
+            "status": item.status,
+            "admin_notes": item.admin_notes,
+        }
+    }
+
+
+@router.delete("/{request_id}")
+async def admin_delete_content_request(
+    request_id: int,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """Delete a content request (Admin only)."""
+    stmt = select(ContentRequestModel).where(ContentRequestModel.id == request_id)
+    res = await db.execute(stmt)
+    item = res.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="So'rov topilmadi")
+    await db.delete(item)
+    await db.commit()
+    return {"success": True, "message": "So'rov muvaffaqiyatli o'chirildi"}

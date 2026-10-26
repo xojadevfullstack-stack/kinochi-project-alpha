@@ -16,7 +16,19 @@ class SeriesRepository:
         self.session = session
 
     # --- Series ---
-    async def get_all_series(self, skip: int = 0, limit: int = 100, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> Tuple[List[SeriesModel], int]:
+    async def get_all_series(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        category_id: int | None = None,
+        page_id: int | None = None,
+        exclude_paged: bool = False,
+        publish_status: str | None = None,
+        search: str | None = None,
+        year: int | None = None,
+        genre: str | None = None,
+        **kwargs
+    ) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
             selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
             selectinload(SeriesModel.categories),
@@ -34,13 +46,36 @@ class SeriesRepository:
             stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
         elif exclude_paged:
             filters = [~SeriesModel.pages.any()]
-            if not category_id:
+            if not category_id and not search and not genre:
                 filters.extend([
                     ~SeriesModel.categories.any(CategoryModel.id == 2),
                     ~SeriesModel.categories.any(CategoryModel.name.ilike("%anime%")),
                     ~SeriesModel.title.ilike("%anime%")
                 ])
             stmt = stmt.filter(*filters)
+
+        if search:
+            search_pattern = f"%{search.strip()}%"
+            stmt = stmt.filter(
+                or_(
+                    SeriesModel.title.ilike(search_pattern),
+                    SeriesModel.description.ilike(search_pattern),
+                    SeriesModel.custom_source_name.ilike(search_pattern),
+                    SeriesModel.director.ilike(search_pattern),
+                    SeriesModel.cast.ilike(search_pattern),
+                )
+            )
+
+        if year:
+            stmt = stmt.filter(SeriesModel.release_year == year)
+
+        if genre:
+            stmt = stmt.filter(
+                or_(
+                    SeriesModel.categories.any(CategoryModel.slug.ilike(f"%{genre}%")),
+                    SeriesModel.categories.any(CategoryModel.name.ilike(f"%{genre}%")),
+                )
+            )
 
         total_stmt = select(func.count()).select_from(stmt.subquery())
         total = await self.session.scalar(total_stmt)

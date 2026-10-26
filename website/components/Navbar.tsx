@@ -370,28 +370,28 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               {bolimlarOpen && (
                 <div className="pl-6 pr-1 py-1 space-y-0.5 text-text-secondary font-medium">
                   <Link
-                    href="/movies"
+                    href="/movies?category=36"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">movie</span>
                     <span>Tarjima kinolar</span>
                   </Link>
                   <Link
-                    href="/movies?search=hind"
+                    href="/movies?category=37"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">language</span>
                     <span>Hind kinolari</span>
                   </Link>
                   <Link
-                    href="/movies?search=turk"
+                    href="/movies?category=38"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">videocam</span>
                     <span>Turk kinolari</span>
                   </Link>
                   <Link
-                    href="/series?search=turk"
+                    href="/series?category=39"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
@@ -517,7 +517,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <span>Seriallar (o'zbek tilida)</span>
                   </Link>
                   <Link
-                    href="/movies?search=hind"
+                    href="/movies?category=37"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">language</span>

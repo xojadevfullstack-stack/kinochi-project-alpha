@@ -6,7 +6,7 @@ import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
 import LiveSearch from "@/components/LiveSearch";
 import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
-import { DEFAULT_GENRES, DEFAULT_YEARS } from "@/lib/filterConstants";
+import { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES } from "@/lib/filterConstants";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ type Category = {
 export default async function MoviesListPage({
   searchParams
 }: {
-  searchParams: { category?: string; genre?: string; year?: string; search?: string }
+  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string }
 }) {
   let movies: CatalogItem[] = [];
   let total = 0;
@@ -71,8 +71,10 @@ export default async function MoviesListPage({
   const selectedYear = searchParams.year;
   const selectedCategory = searchParams.category;
   const selectedGenre = searchParams.genre;
+  const selectedType = searchParams.type;
 
   const activeCategoryName = categories.find((c) => String(c.id) === String(selectedCategory))?.name;
+  const activeTypeName = DEFAULT_MEDIA_TYPES.find((t) => t.id === selectedType)?.name;
   const activeGenreName = DEFAULT_GENRES.find((g) => g.id === selectedGenre)?.name;
 
   return (
@@ -98,16 +100,18 @@ export default async function MoviesListPage({
           </div>
         </div>
 
-        {/* Unified Compact Filtrlar Bar (Bo'limlar, Janrlar, Yillar) */}
+        {/* Unified Compact Filtrlar Bar (Bo'limlar, Turi, Janrlar, Yillar) */}
         <section className="space-y-3">
           <Suspense fallback={<div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />}>
             <UnifiedFilterBar
               categories={categories}
               genres={DEFAULT_GENRES}
               years={DEFAULT_YEARS}
+              types={DEFAULT_MEDIA_TYPES}
               selectedCategory={selectedCategory}
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
+              selectedType={selectedType}
               baseUrl="/movies"
               totalItems={total}
             />
@@ -118,10 +122,12 @@ export default async function MoviesListPage({
         <div className="pt-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base sm:text-lg font-bold text-text-primary font-headline-md flex items-center gap-2">
-              <span className="w-1 h-5 bg-rating-gold rounded-full block" />
+              <span className="w-1 h-5 bg-primary-container rounded-full block" />
               <span>
                 {activeCategoryName
                   ? `${activeCategoryName} natijalari`
+                  : activeTypeName
+                  ? `${activeTypeName}`
                   : activeGenreName
                   ? `${activeGenreName} janridagi filmlar`
                   : selectedYear
