@@ -29,6 +29,7 @@ from scraper.site_parser import (
     parse_asilmedia_page_async,
     parse_animeelar_page_async,
     parse_anitoob_page_async,
+    parse_kinochilar_page_async,
 )
 from scraper.state_manager import StateManager
 from scraper.duplicate_checker import DuplicateChecker
@@ -122,7 +123,15 @@ async def cmd_parse(
     print(f"\n🔍 [{source.upper()}] saytidan katalog yig'ish boshlanmoqda (Sahifalar: {start_page}..{end_page}, Min reyting: {min_rating}, Turi: {media_type})...")
 
     urls = []
-    if source in ("uzmovi", "asilmedia"):
+    if source in ("uzmovi", "asilmedia", "kinochilar"):
+        for page in range(start_page, end_page + 1):
+            if source == "kinochilar":
+                if media_type in ("all", "movie"):
+                    urls.append(f"https://kinochilar.com/tarjima-kinolar/page/{page}/" if page > 1 else "https://kinochilar.com/tarjima-kinolar/")
+                if media_type in ("all", "series", "dorama"):
+                    urls.append(f"https://kinochilar.com/tarjima-seriallar/page/{page}/" if page > 1 else "https://kinochilar.com/tarjima-seriallar/")
+                if media_type in ("all", "multfilm"):
+                    urls.append(f"https://kinochilar.com/tarjima-multfilmlar/page/{page}/" if page > 1 else "https://kinochilar.com/tarjima-multfilmlar/")
         for page in range(start_page, end_page + 1):
             if source == "uzmovi":
                 if media_type in ("all", "movie"):
@@ -160,6 +169,8 @@ async def cmd_parse(
             tasks = [parse_anitoob_page_async(session, page=p, min_rating=min_rating, media_type=media_type) for p in range(start_page, end_page + 1)]
         elif source in ("animeelar", "anime"):
             tasks = [parse_animeelar_page_async(session, page=p, min_rating=min_rating, media_type=media_type) for p in range(start_page, end_page + 1)]
+        elif source == "kinochilar":
+            tasks = [parse_kinochilar_page_async(session, u, min_rating=min_rating) for u in urls]
         else:
             tasks = [parse_asilmedia_page_async(session, u, min_rating=min_rating) for u in urls]
         pages_results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -735,14 +746,14 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 def main():
     parser = argparse.ArgumentParser(description="Kinochi Avtomatlashtirilgan Parser & Grabber")
     parser.add_argument("--parse", action="store_true", help="Saytdan kinolar ro'yxatini yig'ish")
-    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "all", "tmdb"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar, all yoki tmdb)")
+    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "kinochilar", "all", "tmdb"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar, all yoki tmdb)")
     parser.add_argument("--tmdb-autopilot", action="store_true", help="TMDB Top bo'yicha to'liq avtonom avtopilot: TMDB -> Qidiruv -> Navbat -> Yuklash")
     parser.add_argument("--include-series", action="store_true", default=True, help="Seriallarni ham qamrab olish (default: True)")
     parser.add_argument("--pages", type=int, default=None, help="Yig'iladigan sahifalar soni")
     parser.add_argument("--start-page", type=int, default=None, help="Boshlang'ich sahifa (agar berilmasa, state.json dan olinadi)")
     parser.add_argument("--min-rating", type=float, default=None, help="Minimal reyting (default: 6.0)")
     parser.add_argument("--download", action="store_true", help="Navbatdagi kinolarni Telegram botdan yuklab olish")
-    parser.add_argument("--target", type=str, default="uzmovi", choices=["uzmovi", "asilmedia", "anitoob", "animeelar"], help="Maqsadli bot (uzmovi, asilmedia, anitoob yoki animeelar)")
+    parser.add_argument("--target", type=str, default="uzmovi", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "kinochilar"], help="Maqsadli bot (uzmovi, asilmedia, anitoob yoki animeelar)")
     parser.add_argument("--limit", type=int, default=5, help="Yuklanadigan kinolar soni (default: 5)")
     parser.add_argument("--codes", type=str, default=None, help="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15,20)")
     parser.add_argument("--clean-duplicates", action="store_true", help="Navbatdagi mavjud bazadagi dublikatlarni tozalash")

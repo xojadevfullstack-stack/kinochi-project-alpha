@@ -292,14 +292,17 @@ async def list_movies(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     category_id: int | None = None,
+    genre: str | None = None,
+    year: int | None = None,
+    search: str | None = None,
     page_id: int | None = None,
     exclude_paged: bool = False,
     publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden')"),
     service: MovieService = Depends(get_movie_service)
 ):
-    """List movies, optionally filtered by category and publish_status (Public: published)."""
+    """List movies, optionally filtered by category, genre, year, search and publish_status (Public: published)."""
     target_status = None if publish_status == "all" else publish_status
-    cache_key = f"cache:movies:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}"
+    cache_key = f"cache:movies:list:{skip}:{limit}:{category_id}:{genre}:{year}:{search}:{page_id}:{exclude_paged}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
@@ -308,6 +311,9 @@ async def list_movies(
         skip=skip,
         limit=limit,
         category_id=category_id,
+        genre=genre,
+        year=year,
+        search=search,
         page_id=page_id,
         exclude_paged=exclude_paged,
         publish_status=target_status

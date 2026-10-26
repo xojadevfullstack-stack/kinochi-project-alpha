@@ -129,6 +129,44 @@ export default function CollectionTimelineView({
 
   const handleMouseUp = () => setIsDragging(false);
 
+  // Touch Handlers for Mobile slide & pinch-zoom
+  const touchStartRef = useRef<{ x: number; y: number; dist?: number }>({ x: 0, y: 0 });
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('.interactive-node')) return;
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      touchStartRef.current = {
+        x: e.touches[0].clientX - pan.x,
+        y: e.touches[0].clientY - pan.y
+      };
+    } else if (e.touches.length === 2) {
+      setIsDragging(true);
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStartRef.current.dist = Math.hypot(dx, dy);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    if (e.touches.length === 1) {
+      setPan({
+        x: e.touches[0].clientX - touchStartRef.current.x,
+        y: e.touches[0].clientY - touchStartRef.current.y
+      });
+    } else if (e.touches.length === 2 && touchStartRef.current.dist) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDist = Math.hypot(dx, dy);
+      const factor = newDist / touchStartRef.current.dist;
+      setZoom((prev) => Math.min(Math.max(prev * factor, 0.4), 2.2));
+      touchStartRef.current.dist = newDist;
+    }
+  };
+
+  const handleTouchEnd = () => setIsDragging(false);
+
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -274,9 +312,9 @@ export default function CollectionTimelineView({
           </div>
 
           {/* Interactive Legend & Guide Banner */}
-          <div className="absolute top-4 left-4 z-20 hidden sm:flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 text-xs text-text-secondary pointer-events-none">
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 text-xs text-text-secondary pointer-events-none">
             <span className="material-symbols-outlined text-amber-400 text-sm">touch_app</span>
-            <span>Xaritani sichqoncha bilan suring, kattalashtiring yoki tugunlarni bosing</span>
+            <span>Xaritani barmog'ingiz yoki sichqoncha bilan suring, kattalashtiring yoki tugunlarni bosing</span>
           </div>
 
           {/* Universe Interactive Canvas Area */}
@@ -286,8 +324,12 @@ export default function CollectionTimelineView({
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
             onWheel={handleWheel}
-            className={`w-full h-full cursor-grab ${isDragging ? "cursor-grabbing" : ""} relative overflow-hidden`}
+            className={`w-full h-full cursor-grab ${isDragging ? "cursor-grabbing" : ""} relative overflow-hidden touch-none`}
           >
             {/* Background Grid & Stars */}
             <div 

@@ -30,7 +30,18 @@ class IMovieRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
+    async def list_movies(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        category_id: int | None = None,
+        page_id: int | None = None,
+        exclude_paged: bool = False,
+        publish_status: str | None = None,
+        genre: str | None = None,
+        year: int | None = None,
+        search: str | None = None
+    ) -> tuple[Sequence[Movie], int]:
         """Returns a tuple of (movies, total_count)"""
         pass
 

@@ -61,7 +61,7 @@ async def send_movie_to_user(bot: Bot, chat_id: int, movie: dict) -> bool:
         try:
             await bot.send_message(
                 chat_id=chat_id,
-                text=f"🎬 <b>{safe_title}</b>\n\nQaysi tilda/studiyada ko'rishni xohlaysiz?",
+                text=f"🎬 <b>{safe_title}</b>\n\nQaysi sifat yoki tilda tomosha qilishni xohlaysiz?",
                 reply_markup=kb,
                 parse_mode="HTML"
             )

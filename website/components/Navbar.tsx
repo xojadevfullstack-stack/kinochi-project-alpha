@@ -377,21 +377,21 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <span>Tarjima kinolar</span>
                   </Link>
                   <Link
-                    href="/catalog?category=hind"
+                    href="/movies?search=hind"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">language</span>
                     <span>Hind kinolari</span>
                   </Link>
                   <Link
-                    href="/catalog?category=turk"
+                    href="/movies?search=turk"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">videocam</span>
                     <span>Turk kinolari</span>
                   </Link>
                   <Link
-                    href="/series?category=turk"
+                    href="/series?search=turk"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
@@ -517,7 +517,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <span>Seriallar (o'zbek tilida)</span>
                   </Link>
                   <Link
-                    href="/catalog?category=hind"
+                    href="/movies?search=hind"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >
                     <span className="material-symbols-outlined text-[15px] opacity-70">language</span>

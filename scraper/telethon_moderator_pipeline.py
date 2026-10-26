@@ -354,6 +354,53 @@ def pick_best_series_search_button(
     return None
 
 
+
+def extract_quality_ladder(buttons: Any) -> List[Dict[str, Any]]:
+    """
+    Tugmalardan barcha sifatlarni ajratib oladi va eng yuqori sifatdan pastga qarab tartiblaydi:
+    4K (2160) -> 2K (1440) -> 1080p (1080) -> 720p (720) -> 480p (480) -> 360p (360)
+    """
+    ladder = []
+    if not buttons:
+        return ladder
+
+    for r_idx, row in enumerate(buttons):
+        for c_idx, btn in enumerate(row):
+            txt = (getattr(btn, "text", "") or "").strip().lower()
+            rank = 0
+            label = ""
+            if "4k" in txt or "2160" in txt or "uhd" in txt:
+                rank = 2160
+                label = "4K"
+            elif "2k" in txt or "1440" in txt:
+                rank = 1440
+                label = "2K"
+            elif "1080" in txt or "fhd" in txt:
+                rank = 1080
+                label = "1080p"
+            elif "720" in txt or "hd" in txt:
+                rank = 720
+                label = "720p"
+            elif "480" in txt or "sd" in txt:
+                rank = 480
+                label = "480p"
+            elif "360" in txt:
+                rank = 360
+                label = "360p"
+
+            if rank > 0:
+                ladder.append({
+                    "row": r_idx,
+                    "col": c_idx,
+                    "text": getattr(btn, "text", ""),
+                    "rank": rank,
+                    "label": label,
+                    "btn": btn
+                })
+
+    ladder.sort(key=lambda x: x["rank"], reverse=True)
+    return ladder
+
 async def poll_new_messages(
     client: TelegramClient,
     chat: str,
@@ -428,6 +475,18 @@ class TelethonModeratorPipeline:
         self.client = client
         self.dup_checker = duplicate_checker
         self._last_card_msg: Optional[Message] = None
+        self._last_chosen_quality: Optional[str] = None
+        self._is_premium: Optional[bool] = None
+
+    async def get_max_file_size_mb(self) -> float:
+        if self._is_premium is None:
+            try:
+                me = await self.client.get_me()
+                self._is_premium = bool(getattr(me, "premium", False))
+                logger.info(f"Userbot Telegram Premium holati: {self._is_premium}")
+            except Exception:
+                self._is_premium = False
+        return 3980.0 if self._is_premium else 1980.0
 
     async def _validate_and_pre_check(
         self,
@@ -567,7 +626,7 @@ class TelethonModeratorPipeline:
                         m_pub = re.search(r'(?:t\.me|telegram\.me)/([A-Za-z0-9_]{4,})', b_url)
                         if m_pub:
                             pub_uname = m_pub.group(1)
-                            if pub_uname.lower() not in ("anitoobuz_bot", "animeelar_bot", "asilmediabot", "uzmovietv_bot", "share"):
+                            if pub_uname.lower() not in ("anitoobuz_bot", "animeelar_bot", "asilmediabot", "uzmovietv_bot", "kinochilar_fast_bot", "share"):
                                 try:
                                     await self.client(JoinChannelRequest(pub_uname))
                                     logger.info(f"✅ [@{bot_username}] Homiy kanalga ulandi (@{pub_uname})")
@@ -629,6 +688,8 @@ class TelethonModeratorPipeline:
             effective_bot = "asilmediabot"
         elif getattr(item, "source", None) == "uzmovi":
             effective_bot = "UzmovieTV_Bot"
+        elif getattr(item, "source", None) == "kinochilar":
+            effective_bot = "kinochilar_fast_bot"
 
         is_multi_part = (
             item.media_type in ("series", "dorama")
@@ -646,6 +707,8 @@ class TelethonModeratorPipeline:
             target_bot = "UzmovieTV_Bot"
         elif item and getattr(item, "source", None) == "asilmedia":
             target_bot = "asilmediabot"
+        elif item and getattr(item, "source", None) == "kinochilar":
+            target_bot = "kinochilar_fast_bot"
         elif not target_bot:
             target_bot = TARGET_BOTS.get(getattr(item, "source", None), "asilmediabot")
 
@@ -701,6 +764,16 @@ class TelethonModeratorPipeline:
             num_match = re.search(r'\d+', str(item.id).replace('asilmedia_', '').strip())
             if num_match and len(num_match.group(0)) <= 6:
                 queries_to_try = [f"/start {num_match.group(0)}"]
+        elif "kinochilar" in target_bot.lower():
+            start_hash = (getattr(item, "payload", {}) or {}).get("start_hash")
+            if not start_hash and getattr(item, "url", None):
+                try:
+                    from scraper.kinochilar_parser import fetch_kinochilar_start_hash
+                    start_hash = fetch_kinochilar_start_hash(item.url)
+                except Exception:
+                    pass
+            if start_hash:
+                queries_to_try = [f"/start {start_hash}"]
 
         card_msg = None
         season_entries = []
@@ -1542,6 +1615,8 @@ class TelethonModeratorPipeline:
             target_bot = "asilmediabot"
         elif getattr(item, "source", None) == "uzmovi":
             target_bot = "UzmovieTV_Bot"
+        elif getattr(item, "source", None) == "kinochilar":
+            target_bot = "kinochilar_fast_bot"
 
         logger.info("\n" + "="*55)
         logger.info(f"🎬 MODERATOR SIKLI: '{item.title}' ({item.year or 'Noma\'lum'}) | BOT: @{target_bot}")
@@ -3384,6 +3459,9 @@ class TelethonModeratorPipeline:
             movie_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
             if str(movie_lang).strip().lower() in ("asosiy", "", "none"):
                 movie_lang = "O'zbekcha"
+            q_tag = getattr(self, "_last_chosen_quality", None) or (getattr(item, "payload", {}) or {}).get("quality_tag")
+            if q_tag and q_tag.lower() not in movie_lang.lower():
+                movie_lang = f"{movie_lang} ({q_tag})"
             await service.link_movie_video_from_message(
                 movie_id=movie_id,
                 message_id=storage_msg.id,
@@ -3469,6 +3547,181 @@ class TelethonModeratorPipeline:
             logger.error(f"Topic ochishda xatolik: {e}")
             return None
 
+
+    async def _fetch_video_with_quality_ladder(
+        self,
+        card_msg: Message,
+        bot: str,
+        max_file_size_mb: Optional[float] = None
+    ) -> Tuple[Optional[Message], str]:
+        """
+        Sifatlar kaskadi (Quality Ladder):
+        4K -> 2K -> 1080p -> 720p -> 480p -> 360p
+        Eng yuqori sifatdan boshlab tekshiradi. Agar video hajmi Telegram limitidan
+        (2000 MB non-premium, 4000 MB premium) katta bo'lsa, avtomatik bitta pastki sifatga tushadi.
+        """
+        if max_file_size_mb is None:
+            max_file_size_mb = await self.get_max_file_size_mb()
+
+        ladder = extract_quality_ladder(card_msg.buttons)
+        if not ladder:
+            for r_idx, row in enumerate(card_msg.buttons or []):
+                for c_idx, btn in enumerate(row):
+                    if btn.data:
+                        ladder.append({
+                            "row": r_idx, "col": c_idx, "text": btn.text, "rank": 720, "label": "720p", "btn": btn
+                        })
+                        break
+                if ladder:
+                    break
+
+        if not ladder:
+            logger.warning(f"[@{bot}] Sifat tugmalari topilmadi!")
+            return None, "720p"
+
+        logger.info(f"[@{bot}] Sifatlar kaskadi (yuqoridan pastga): {[q['label'] for q in ladder]}")
+
+        def is_valid_vid(m):
+            if not m or not getattr(m, 'file', None):
+                return False
+            if m.file.name and m.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
+                return True
+            if getattr(m, 'video', None) is not None:
+                return True
+            mime = getattr(getattr(m, 'document', None), 'mime_type', '')
+            return bool(mime and mime.startswith('video/'))
+
+        def has_vid_or_flood(msgs):
+            return any(is_bot_flood_text(vm.text) or is_valid_vid(vm) for vm in msgs)
+
+        for q_idx, q_item in enumerate(ladder):
+            r_idx, c_idx = q_item["row"], q_item["col"]
+            q_label = q_item["label"]
+            logger.info(f"🎯 Sifat tanlanmoqda ({q_idx+1}/{len(ladder)}): '{q_label}' ('{q_item['text']}')...")
+
+            quality_click_id = card_msg.id
+            await asyncio.sleep(2.0)
+            _, q_flood = await self.safe_click(card_msg, r_idx, c_idx)
+            if q_flood > 0:
+                logger.warning(f"⏳ [@{bot}] Sifat bosishda flood: {q_flood}s kutilmoqda...")
+                await asyncio.sleep(q_flood)
+                await self.safe_click(card_msg, r_idx, c_idx)
+
+            video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_vid_or_flood)
+            v_flood = get_flood_wait_seconds(video_replies)
+            if v_flood > 0:
+                logger.warning(f"⏳ [@{bot}] Video kutishda flood: {v_flood}s kutilmoqda...")
+                await asyncio.sleep(v_flood)
+                await self.safe_click(card_msg, r_idx, c_idx)
+                video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_vid_or_flood)
+
+            valid_vm = None
+            for vm in video_replies:
+                if is_valid_vid(vm):
+                    valid_vm = vm
+                    break
+
+            if not valid_vm:
+                async for chk_m in self.client.iter_messages(bot, limit=4):
+                    if chk_m.id > quality_click_id and is_valid_vid(chk_m):
+                        valid_vm = chk_m
+                        break
+
+            if valid_vm:
+                size_mb = round((valid_vm.file.size or 0) / (1024 * 1024), 1)
+                logger.info(f"🎬 Video keldi: {valid_vm.file.name or 'video.mp4'} ({size_mb} MB) [Sifat: {q_label}]")
+                if size_mb <= max_file_size_mb:
+                    logger.info(f"✅ Sifat qabul qilindi: {q_label} ({size_mb} MB <= {max_file_size_mb} MB limit)")
+                    return valid_vm, q_label
+                else:
+                    logger.warning(
+                        f"⚠️ Video '{q_label}' hajmi ({size_mb} MB) limitdan ({max_file_size_mb} MB) katta! "
+                        f"Kaskad bo'yicha pastki sifatga o'tilmoqda..."
+                    )
+                    print(f"  ⚠️ Video '{q_label}' ({size_mb} MB) {int(max_file_size_mb)}MB limitdan katta! Pastroq sifat sinab ko'rilmoqda...", flush=True)
+                    try:
+                        refreshed = await self.client.get_messages(bot, ids=card_msg.id)
+                        if refreshed and refreshed.buttons:
+                            card_msg = refreshed
+                    except Exception:
+                        pass
+                    continue
+
+        logger.warning(f"[@{bot}] Telegram limitiga sig'adigan sifat topilmadi!")
+        return None, "720p"
+
+    async def _fetch_kinochilar_video(
+        self,
+        item: Optional[QueueItem] = None,
+        query: str = "",
+        year: Optional[int] = None,
+        max_file_size_mb: Optional[float] = None
+    ) -> Optional[Message]:
+        """
+        kinochilar.com / @kinochilar_fast_bot orqali kino olish.
+        Saytdan olingan start_hash orqali to'g'ridan-to'g'ri /start <hash> yuboradi.
+        """
+        bot = "kinochilar_fast_bot"
+        start_hash = None
+        if item:
+            start_hash = (item.payload or {}).get("start_hash")
+            if not start_hash and getattr(item, "url", None):
+                try:
+                    from scraper.kinochilar_parser import fetch_kinochilar_start_hash
+                    start_hash = fetch_kinochilar_start_hash(item.url)
+                except Exception as e:
+                    logger.warning(f"Kinochilar start_hash olishda xatolik: {e}")
+
+        if start_hash:
+            msg_to_send = f"/start {start_hash}"
+        else:
+            clean_q = query.split('/')[0].split('|')[0].strip()
+            clean_q = re.sub(r'\(.*?\)', '', clean_q).strip()
+            clean_q = clean_movie_title(clean_q)
+            msg_to_send = clean_q
+
+        logger.info(f"[@{bot}] ga so'rov yuborilmoqda: '{msg_to_send}'...")
+        sent = await self.client.send_message(bot, msg_to_send)
+
+        recent_msgs = await poll_new_messages(
+            self.client,
+            bot,
+            sent.id,
+            timeout=8.0,
+            condition=lambda msgs: any(m.buttons or m.file for m in msgs)
+        )
+
+        # Homiy kanallar talabi tekshiruvi
+        for m in recent_msgs:
+            if m.buttons and any("obuna" in b.text.lower() or "kanal" in b.text.lower() for row in m.buttons for b in row):
+                await self.handle_sponsor_lock(bot, m)
+                recent_msgs = await poll_new_messages(self.client, bot, sent.id, timeout=8.0)
+                break
+
+        card_msg = None
+        for m in recent_msgs:
+            if m.buttons and extract_quality_ladder(m.buttons):
+                card_msg = m
+                break
+            elif m.file and m.file.name and m.file.name.endswith(('.mp4', '.mkv', '.avi')):
+                self._last_chosen_quality = "720p"
+                return m
+
+        if not card_msg:
+            async for nm in self.client.iter_messages(bot, limit=4):
+                if nm.id > sent.id and nm.buttons and extract_quality_ladder(nm.buttons):
+                    card_msg = nm
+                    break
+
+        if not card_msg:
+            logger.warning(f"[@{bot}] Sifat tugmalari topilmadi: '{msg_to_send}'")
+            return None
+
+        self._last_card_msg = card_msg
+        vm, q_name = await self._fetch_video_with_quality_ladder(card_msg, bot, max_file_size_mb=max_file_size_mb)
+        self._last_chosen_quality = q_name
+        return vm
+
     async def _fetch_video(
         self,
         item: Optional[QueueItem] = None,
@@ -3481,7 +3734,10 @@ class TelethonModeratorPipeline:
             actual_bot = "asilmediabot"
         elif item and getattr(item, "source", None) == "uzmovi":
             actual_bot = "UzmovieTV_Bot"
+        elif item and getattr(item, "source", None) == "kinochilar":
+            actual_bot = "kinochilar_fast_bot"
         is_uzmovie = "uzmovie" in actual_bot.lower()
+        is_kinochilar = "kinochilar" in actual_bot.lower()
 
         search_query = ""
         if code:
@@ -3505,6 +3761,8 @@ class TelethonModeratorPipeline:
             logger.warning("Botga yuborish uchun so'rov topilmadi!")
             return None
 
+        if is_kinochilar:
+            return await self._fetch_kinochilar_video(item=item, query=search_query, year=item.year if item else None)
         if not is_uzmovie:
             return await self._fetch_asilmedia_video(query=search_query, year=item.year if item else None)
 
@@ -3702,84 +3960,10 @@ class TelethonModeratorPipeline:
 
         self._last_card_msg = card_msg
 
-        # 3. Sifat tugmasini tanlash va bosish
-        quality_btns = {}
-        for r_idx, row in enumerate(card_msg.buttons):
-            for c_idx, btn in enumerate(row):
-                t = btn.text
-                if "720" in t:
-                    quality_btns["720p"] = (r_idx, c_idx, t)
-                elif "1080" in t:
-                    quality_btns["1080p"] = (r_idx, c_idx, t)
-                elif "480" in t:
-                    quality_btns["480p"] = (r_idx, c_idx, t)
-
-        logger.info(f"Mavjud sifatlar: {list(quality_btns.keys())}")
-        chosen = quality_btns.get("720p") or quality_btns.get("1080p") or quality_btns.get("480p")
-        if not chosen:
-            for r_idx, row in enumerate(card_msg.buttons):
-                for c_idx, btn in enumerate(row):
-                    if btn.data:
-                        chosen = (r_idx, c_idx, btn.text)
-                        break
-                if chosen:
-                    break
-
-        if not chosen:
-            logger.warning("Boshqa sifat tugmasi topilmadi!")
-            return None
-
-        r_idx, c_idx, q_name = chosen
-        logger.info(f"Sifat tugmasi bosilmoqda: '{q_name}'...")
-        quality_click_id = card_msg.id
-        await asyncio.sleep(2.0)
-        _, q_flood = await self.safe_click(card_msg, r_idx, c_idx)
-        if q_flood > 0:
-            logger.warning(f"⏳ [@{bot}] Sifat bosishda flood cheklovi: {q_flood} soniya kutilmoqda...")
-            await asyncio.sleep(q_flood)
-            await self.safe_click(card_msg, r_idx, c_idx)
-
-        # 4. Video kelishini tezkor kutamiz
-        logger.info("Video xabari kelishi kutilmoqda...")
-        def is_valid_vid(m):
-            if not m.file:
-                return False
-            if m.file.name and m.file.name.lower().endswith(('.mp4', '.mkv', '.avi', '.mov')):
-                return True
-            if getattr(m, 'video', None) is not None:
-                return True
-            mime = getattr(getattr(m, 'document', None), 'mime_type', '')
-            return bool(mime and mime.startswith('video/'))
-
-        def has_asil_video(msgs):
-            return any(is_bot_flood_text(vm.text) or is_valid_vid(vm) for vm in msgs)
-
-        video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_asil_video)
-        v_flood = get_flood_wait_seconds(video_replies)
-        if v_flood > 0:
-            logger.warning(f"⏳ [@{bot}] Video kutishda flood: {v_flood}s kutilmoqda...")
-            await asyncio.sleep(v_flood)
-            await self.safe_click(card_msg, r_idx, c_idx)
-            video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_asil_video)
-
-        for vm in video_replies:
-            if is_valid_vid(vm):
-                v_name = vm.file.name or f"video_{vm.id}.mp4"
-                size_mb = round(vm.file.size / (1024 * 1024), 1)
-                logger.info(f"🎬 Video keldi: {v_name} ({size_mb} MB) [Msg ID: {vm.id}]")
-                if size_mb > max_file_size_mb and "480p" in quality_btns and chosen[2] != quality_btns["480p"][2]:
-                    logger.warning(f"⚠️ Video hajmi ({size_mb}MB) 2GB dan katta! 480p tanlanmoqda...")
-                    f_r, f_c, f_name = quality_btns["480p"]
-                    f_click_id = vm.id
-                    await asyncio.sleep(2.0)
-                    await self.safe_click(card_msg, f_r, f_c)
-                    f_replies = await poll_new_messages(self.client, bot, f_click_id, timeout=15.0, interval=0.4, condition=has_asil_video)
-                    for f_vm in f_replies:
-                        if f_vm.file and f_vm.id != vm.id:
-                            return f_vm
-                return vm
-
-        return None
+        # 3. Sifatlar kaskadi (Quality Ladder): 4K -> 1080p -> 720p -> 480p
+        vm, q_name = await self._fetch_video_with_quality_ladder(card_msg, bot, max_file_size_mb=max_file_size_mb)
+        self._last_chosen_quality = q_name
+        return vm
 
     async def _upload_video_to_chat(
         self,

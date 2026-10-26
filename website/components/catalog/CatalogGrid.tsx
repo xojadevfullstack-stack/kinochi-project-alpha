@@ -12,6 +12,9 @@ export type CatalogGridProps = {
   pageSlug?: string;
   pageId?: number;
   categoryId?: string;
+  genre?: string;
+  year?: string;
+  search?: string;
   pageSize?: number;
   emptyMessage?: string;
 };
@@ -23,6 +26,9 @@ export default function CatalogGrid({
   pageSlug = "",
   pageId,
   categoryId,
+  genre,
+  year,
+  search,
   pageSize = 36,
   emptyMessage = "Hozircha ma'lumotlar mavjud emas."
 }: CatalogGridProps) {
@@ -49,6 +55,9 @@ export default function CatalogGrid({
       if (type === "movies") {
         let url = `/movies?skip=${items.length}&limit=${pageSize}&exclude_paged=true`;
         if (categoryId) url += `&category_id=${categoryId}`;
+        if (genre) url += `&genre=${encodeURIComponent(genre)}`;
+        if (year) url += `&year=${year}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
         const res = await fetchApi(url);
         newItems = (res?.items || []).map((m: any) => ({ ...m, is_series: false }));
         if (res?.total !== undefined) nextTotal = res.total;

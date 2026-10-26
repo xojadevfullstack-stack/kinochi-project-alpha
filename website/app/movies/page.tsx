@@ -1,15 +1,16 @@
 import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
-import CategoryFilter from "@/components/CategoryFilter";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
+import LiveSearch from "@/components/LiveSearch";
+import UnifiedFilterBar, { DEFAULT_GENRES, DEFAULT_YEARS } from "@/components/catalog/UnifiedFilterBar";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Kinolar - MediaPlus",
-  description: "Eng so'nggi va qiziqarli kinolarni tomosha qiling.",
+  description: "Eng so'nggi va sara kinolarni tomosha qiling va saralang.",
 };
 
 type Category = {
@@ -17,7 +18,11 @@ type Category = {
   name: string;
 };
 
-export default async function MoviesListPage({ searchParams }: { searchParams: { category?: string } }) {
+export default async function MoviesListPage({
+  searchParams
+}: {
+  searchParams: { category?: string; genre?: string; year?: string; search?: string }
+}) {
   let movies: CatalogItem[] = [];
   let total = 0;
   let categories: Category[] = [];
@@ -25,9 +30,20 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
   const pageSize = 36;
   
   try {
-    const query = searchParams.category 
-      ? `/movies?limit=${pageSize}&category_id=${searchParams.category}&exclude_paged=true` 
-      : `/movies?limit=${pageSize}&exclude_paged=true`;
+    let query = `/movies?limit=${pageSize}&exclude_paged=true`;
+    if (searchParams.category) {
+      query += `&category_id=${searchParams.category}`;
+    }
+    if (searchParams.genre) {
+      query += `&genre=${encodeURIComponent(searchParams.genre)}`;
+    }
+    if (searchParams.year) {
+      query += `&year=${searchParams.year}`;
+    }
+    if (searchParams.search) {
+      query += `&search=${encodeURIComponent(searchParams.search)}`;
+    }
+
     const [moviesData, categoriesData, pagesData] = await Promise.all([
       fetchApi(query),
       fetchApi("/categories"),
@@ -41,39 +57,85 @@ export default async function MoviesListPage({ searchParams }: { searchParams: {
     console.error("Failed to fetch movies, categories or pages:", error);
   }
 
-  return (
-    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian">
-      <div className="max-w-container-max mx-auto">
-        
-        {/* Smart Back Navigation */}
-        <div className="mb-4 sm:mb-6">
-          <BackButton fallbackUrl="/" />
-        </div>
+  const selectedYear = searchParams.year;
+  const selectedCategory = searchParams.category;
+  const selectedGenre = searchParams.genre;
 
-        {/* Header & Categories */}
-        <div className="mb-stack-lg">
-          <div className="mb-stack-md text-center md:text-left">
-            <h1 className="font-display-hero text-display-hero-mobile md:text-[56px] font-black text-text-primary mb-2 tracking-tighter">
-              Kinolar
-            </h1>
-            <p className="text-text-secondary font-body-lg text-body-lg">
-              Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.
-            </p>
+  const activeCategoryName = categories.find((c) => String(c.id) === String(selectedCategory))?.name;
+  const activeGenreName = DEFAULT_GENRES.find((g) => g.id === selectedGenre)?.name;
+
+  return (
+    <div className="min-h-screen pt-24 sm:pt-28 pb-28 xl:pb-16 px-4 md:px-8 bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian text-text-primary">
+      <div className="max-w-container-max mx-auto space-y-6">
+        
+        {/* Smart Back Navigation & Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <BackButton fallbackUrl="/" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-text-primary font-headline-md tracking-tight">
+                Kinolar
+              </h1>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.
+              </p>
+            </div>
           </div>
 
-          {/* Category Filter */}
-          <CategoryFilter categories={categories} currentCategory={searchParams.category} baseUrl="/movies" />
+          <div className="w-full md:w-80">
+            <LiveSearch placeholder="Kinolardan qidirish..." className="w-full" />
+          </div>
         </div>
 
-        <CatalogGrid 
-          key={`movies-${searchParams.category || 'all'}`}
-          initialItems={movies}
-          total={total}
-          type="movies"
-          categoryId={searchParams.category}
-          pageSize={pageSize}
-          emptyMessage="Hozircha kinolar mavjud emas."
-        />
+        {/* Unified Compact Filtrlar Bar (Bo'limlar, Janrlar, Yillar) */}
+        <section className="space-y-3">
+          <UnifiedFilterBar
+            categories={categories}
+            genres={DEFAULT_GENRES}
+            years={DEFAULT_YEARS}
+            selectedCategory={selectedCategory}
+            selectedGenre={selectedGenre}
+            selectedYear={selectedYear}
+            baseUrl="/movies"
+            totalItems={total}
+          />
+        </section>
+
+        {/* Results Header & Grid */}
+        <div className="pt-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-text-primary font-headline-md flex items-center gap-2">
+              <span className="w-1 h-5 bg-rating-gold rounded-full block" />
+              <span>
+                {activeCategoryName
+                  ? `${activeCategoryName} natijalari`
+                  : activeGenreName
+                  ? `${activeGenreName} janridagi filmlar`
+                  : selectedYear
+                  ? `${selectedYear} yili filmlari`
+                  : searchParams.search
+                  ? `"${searchParams.search}" bo'yicha qidiruv`
+                  : "Barcha kinolar"}
+              </span>
+            </h2>
+            <span className="text-xs text-text-secondary">
+              Topilgan kinolar: <strong className="text-white font-semibold">{total}</strong> ta
+            </span>
+          </div>
+
+          <CatalogGrid 
+            key={`movies-${selectedCategory || 'all'}-${selectedGenre || 'all'}-${selectedYear || 'all'}-${searchParams.search || ''}`}
+            initialItems={movies}
+            total={total}
+            type="movies"
+            categoryId={selectedCategory}
+            genre={selectedGenre}
+            year={selectedYear}
+            search={searchParams.search}
+            pageSize={pageSize}
+            emptyMessage="Ushbu mezon bo'yicha hozircha kinolar topilmadi."
+          />
+        </div>
         
       </div>
     </div>

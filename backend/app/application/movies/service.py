@@ -100,10 +100,28 @@ class MovieService:
             return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit, publish_status=publish_status)
         return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
-        if publish_status is not None:
-            return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged, publish_status=publish_status)
-        return await self.movie_repo.list_movies(skip=skip, limit=limit, category_id=category_id, page_id=page_id, exclude_paged=exclude_paged)
+    async def list_movies(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        category_id: int | None = None,
+        page_id: int | None = None,
+        exclude_paged: bool = False,
+        publish_status: str | None = None,
+        **kwargs
+    ) -> tuple[Sequence[Movie], int]:
+        call_kwargs = {
+            "skip": skip,
+            "limit": limit,
+            "category_id": category_id,
+            "page_id": page_id,
+            "exclude_paged": exclude_paged,
+            "publish_status": publish_status
+        }
+        for k in ("genre", "year", "search"):
+            if k in kwargs and kwargs[k] is not None:
+                call_kwargs[k] = kwargs[k]
+        return await self.movie_repo.list_movies(**call_kwargs)
 
     async def update_movie(
         self,

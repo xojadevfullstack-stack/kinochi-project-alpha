@@ -298,4 +298,10 @@ async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: s
 
 from .animeelar_parser import parse_animeelar_page, parse_animeelar_page_async
 from .anitoob_parser import parse_anitoob_page, parse_anitoob_page_async
+from .kinochilar_parser import (
+    parse_kinochilar_page,
+    parse_kinochilar_page_async,
+    fetch_kinochilar_start_hash,
+    fetch_kinochilar_start_hash_async,
+)
 

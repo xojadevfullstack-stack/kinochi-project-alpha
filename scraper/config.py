@@ -63,5 +63,6 @@ TARGET_BOTS = {
     "asilmedia": "asilmediabot",
     "animeelar": "Animeelar_Bot",
     "anitoob": "ANITOOBUZ_BOT",
+    "kinochilar": "kinochilar_fast_bot",
 }
 

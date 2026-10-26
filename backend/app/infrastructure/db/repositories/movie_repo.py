@@ -197,7 +197,18 @@ class MovieRepositoryImpl(IMovieRepository):
         
         return [self._to_domain(m) for m in models], total or 0
 
-    async def list_movies(self, skip: int = 0, limit: int = 20, category_id: int | None = None, page_id: int | None = None, exclude_paged: bool = False, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
+    async def list_movies(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        category_id: int | None = None,
+        page_id: int | None = None,
+        exclude_paged: bool = False,
+        publish_status: str | None = None,
+        genre: str | None = None,
+        year: int | None = None,
+        search: str | None = None
+    ) -> tuple[Sequence[Movie], int]:
         query = select(MovieModel).options(
             selectinload(MovieModel.categories),
             selectinload(MovieModel.translations),
@@ -210,10 +221,33 @@ class MovieRepositoryImpl(IMovieRepository):
 
         if category_id:
             query = query.filter(MovieModel.categories.any(id=category_id))
-        
+
+        if genre:
+            clean_g = genre.strip()
+            query = query.filter(
+                or_(
+                    MovieModel.genres.ilike(f"%{clean_g}%"),
+                    MovieModel.categories.any(CategoryModel.name.ilike(f"%{clean_g}%")),
+                    MovieModel.categories.any(CategoryModel.slug.ilike(f"%{clean_g}%"))
+                )
+            )
+
+        if year:
+            query = query.filter(MovieModel.release_year == year)
+
+        if search:
+            clean_s = search.strip()
+            query = query.filter(
+                or_(
+                    MovieModel.title.ilike(f"%{clean_s}%"),
+                    MovieModel.original_title.ilike(f"%{clean_s}%"),
+                    MovieModel.genres.ilike(f"%{clean_s}%")
+                )
+            )
+
         if page_id:
             query = query.filter(MovieModel.pages.any(id=page_id))
-        elif exclude_paged:
+        elif exclude_paged and not category_id and not genre and not search:
             query = query.filter(
                 ~MovieModel.pages.any(),
                 ~MovieModel.categories.any(CategoryModel.id == 2),

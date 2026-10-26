@@ -1222,6 +1222,7 @@ async def check_sequence_gaps(
             SeasonModel.id.label("season_id"),
             SeasonModel.season_number.label("season_number"),
             func.count(EpisodeModel.id).label("total_episodes"),
+            func.min(EpisodeModel.episode_number).label("min_episode_number"),
             func.max(EpisodeModel.episode_number).label("max_episode_number"),
         )
         .join(SeasonModel, SeasonModel.series_id == SeriesModel.id)
@@ -1229,7 +1230,16 @@ async def check_sequence_gaps(
         .group_by(SeriesModel.id, SeriesModel.title, SeasonModel.id, SeasonModel.season_number)
         .having(
             func.count(EpisodeModel.id) >= 2,
-            func.max(EpisodeModel.episode_number) > func.count(EpisodeModel.id)
+            or_(
+                and_(
+                    func.min(EpisodeModel.episode_number) == 1,
+                    func.max(EpisodeModel.episode_number) > func.count(EpisodeModel.id),
+                ),
+                and_(
+                    func.min(EpisodeModel.episode_number) > 1,
+                    (func.max(EpisodeModel.episode_number) - func.min(EpisodeModel.episode_number) + 1) > func.count(EpisodeModel.id),
+                ),
+            )
         )
         .order_by(SeriesModel.id.desc())
         .limit(200)
@@ -1256,21 +1266,23 @@ async def check_sequence_gaps(
     gaps = []
     for row in gap_seasons:
         ep_numbers = season_ep_map.get(row.season_id, set())
+        min_num = min(ep_numbers) if ep_numbers else 1
         max_num = row.max_episode_number or 0
-        if max_num > len(ep_numbers):
-            missing = sorted(list(set(range(1, max_num + 1)) - ep_numbers))
-            if missing:
-                gaps.append({
-                    "series_id": row.series_id,
-                    "series_title": row.series_title,
-                    "season_id": row.season_id,
-                    "season_number": row.season_number,
-                    "total_episodes": row.total_episodes,
-                    "max_episode_number": max_num,
-                    "missing_count": len(missing),
-                    "missing_episodes": missing[:20],
-                    "gap_summary": f"1 dan {max_num} gacha bo'lgan ketma-ketlikda {len(missing)} ta qism yetishmayapti",
-                })
+        start_num = 1 if (row.season_number == 1 or min_num == 1) else min_num
+        expected_range = set(range(start_num, max_num + 1))
+        missing = sorted(list(expected_range - ep_numbers))
+        if missing:
+            gaps.append({
+                "series_id": row.series_id,
+                "series_title": row.series_title,
+                "season_id": row.season_id,
+                "season_number": row.season_number,
+                "total_episodes": row.total_episodes,
+                "max_episode_number": max_num,
+                "missing_count": len(missing),
+                "missing_episodes": missing[:20],
+                "gap_summary": f"{start_num} dan {max_num} gacha bo'lgan ketma-ketlikda {len(missing)} ta qism yetishmayapti",
+            })
 
     return {"total_gaps": len(gaps), "items": gaps}
 

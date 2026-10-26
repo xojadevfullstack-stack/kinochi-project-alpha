@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -13,6 +14,12 @@ export interface ThemedCollectionCardProps {
   badge?: string | null;
 }
 
+const FALLBACK_POSTERS = [
+  "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+  "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
+  "https://image.tmdb.org/t/p/w500/yF1eOkaYvwiORauRCPWznV9xVvi.jpg"
+];
+
 export default function ThemedCollectionCard({
   title,
   count,
@@ -21,10 +28,9 @@ export default function ThemedCollectionCard({
   description,
   badge
 }: ThemedCollectionCardProps) {
-  // Ensure we have 3 poster items for the fan deck (fallback gracefully if fewer provided)
-  const p1 = posters[0] || "https://image.tmdb.org/t/p/w500/yF1eOkaYvwiORauRCPWznV9xVvi.jpg";
-  const p2 = posters[1] || posters[0] || "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg";
-  const p3 = posters[2] || posters[0] || "https://image.tmdb.org/t/p/w500/fiVW06jE7z9YnO4trhaMEdclSiC.jpg";
+  const [src1, setSrc1] = useState(posters[0] || FALLBACK_POSTERS[0]);
+  const [src2, setSrc2] = useState(posters[1] || posters[0] || FALLBACK_POSTERS[1]);
+  const [src3, setSrc3] = useState(posters[2] || posters[0] || FALLBACK_POSTERS[2]);
 
   const displayCount = typeof count === "number" ? `${count} ta kino` : count;
 
@@ -39,10 +45,11 @@ export default function ThemedCollectionCard({
         {/* Left Angled Poster */}
         <div className="absolute w-24 sm:w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-white/10 transform -rotate-12 -translate-x-8 sm:-translate-x-10 scale-90 opacity-75 group-hover:-rotate-[16deg] group-hover:-translate-x-12 sm:group-hover:-translate-x-14 transition-all duration-300 bg-surface-container">
           <Image
-            src={p1}
+            src={src1}
             alt=""
             fill
             unoptimized
+            onError={() => setSrc1(FALLBACK_POSTERS[0])}
             className="object-cover"
           />
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
@@ -51,10 +58,11 @@ export default function ThemedCollectionCard({
         {/* Right Angled Poster */}
         <div className="absolute w-24 sm:w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-white/10 transform rotate-12 translate-x-8 sm:translate-x-10 scale-90 opacity-75 group-hover:rotate-[16deg] group-hover:translate-x-12 sm:group-hover:translate-x-14 transition-all duration-300 bg-surface-container">
           <Image
-            src={p3}
+            src={src3}
             alt=""
             fill
             unoptimized
+            onError={() => setSrc3(FALLBACK_POSTERS[2])}
             className="object-cover"
           />
           <div className="absolute inset-0 bg-black/30 pointer-events-none" />
@@ -63,10 +71,11 @@ export default function ThemedCollectionCard({
         {/* Center Dominant Poster */}
         <div className="relative z-10 w-28 sm:w-32 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 transform scale-100 group-hover:scale-105 transition-transform duration-300 bg-surface-container-high">
           <Image
-            src={p2}
+            src={src2}
             alt={title}
             fill
             unoptimized
+            onError={() => setSrc2(FALLBACK_POSTERS[1])}
             className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />

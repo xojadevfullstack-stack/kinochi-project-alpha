@@ -84,6 +84,25 @@ export default async function SeriesDetailsPage({ params }: Props) {
   const telegramDeepLink = `https://t.me/${botUsername}?start=s_${series.id}`;
   const is18Plus = isAdultContent(series);
 
+  // Sifat matnli yorlig'i (Quality badge)
+  const qualityList = (series.seasons || [])
+    .flatMap((s: any) => s.episodes || [])
+    .flatMap((e: any) => e.translations || [])
+    .map((t: any) => (t.language || '').trim())
+    .filter(Boolean);
+
+  let qualityBadgeText = 'Full HD';
+  const joinedQualities = qualityList.join(' ').toLowerCase();
+  if (joinedQualities.includes('4k') || joinedQualities.includes('2160')) {
+    qualityBadgeText = '4K Ultra HD';
+  } else if (joinedQualities.includes('1080') || joinedQualities.includes('fhd')) {
+    qualityBadgeText = '1080p FHD';
+  } else if (joinedQualities.includes('720') || joinedQualities.includes('hd')) {
+    qualityBadgeText = '720p HD';
+  } else if (joinedQualities.includes('480')) {
+    qualityBadgeText = '480p SD';
+  }
+
   return (
     <>
       <AgeVerificationModal is18Plus={is18Plus} />
@@ -168,6 +187,15 @@ export default async function SeriesDetailsPage({ params }: Props) {
               <div className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-white/[0.08] backdrop-blur-md border border-white/15 text-white text-[11px] font-bold tracking-wider uppercase shadow-sm">
                 <span className="material-symbols-outlined text-[14px] text-white/60">live_tv</span>
                 <span>SERIAL</span>
+              </div>
+
+              {/* Quality Text Badge */}
+              <div 
+                className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-emerald-500/15 backdrop-blur-md border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide shadow-sm"
+                title="Mavjud tasvir sifati"
+              >
+                <span className="material-symbols-outlined text-[14px] text-emerald-400">hd</span>
+                <span>{qualityBadgeText}</span>
               </div>
 
               {/* Source Branding Badge */}

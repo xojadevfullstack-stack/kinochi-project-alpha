@@ -19,7 +19,7 @@ export default function SourceBadge({
 }: SourceBadgeProps) {
   const [imgError, setImgError] = useState(false);
 
-  if (!sourceType || !["asilmedia", "uzmovi", "boshqa"].includes(sourceType)) {
+  if (!sourceType || !["asilmedia", "uzmovi", "kinochilar", "boshqa"].includes(sourceType)) {
     return null;
   }
 
@@ -54,6 +54,18 @@ export default function SourceBadge({
             />
           )}
           <span>Uzmovi</span>
+        </span>
+      ) : sourceType === "kinochilar" ? (
+        <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+          {!imgError && (
+            <img
+              src="https://kinochilar.com/favicon.ico"
+              alt=""
+              className={iconClass}
+              onError={() => setImgError(true)}
+            />
+          )}
+          <span>Kinochilar</span>
         </span>
       ) : sourceType === "boshqa" ? (
         <span className="text-purple-300 font-bold flex items-center gap-1.5">
