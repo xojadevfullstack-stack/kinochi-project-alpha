@@ -23,7 +23,7 @@ type Category = {
 export default async function SeriesListPage({
   searchParams
 }: {
-  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string }
+  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string; page_id?: string }
 }) {
   let seriesList: CatalogItem[] = [];
   let total = 0;
@@ -32,12 +32,20 @@ export default async function SeriesListPage({
   const pageSize = 36;
   
   try {
-    let query = `/series?limit=${pageSize}&exclude_paged=true`;
-    if (searchParams.category) {
+    let query = `/series?limit=${pageSize}`;
+    if (searchParams.page_id) {
+      query += `&page_id=${searchParams.page_id}`;
+    }
+    if (searchParams.type === "dorama") {
+      query += `&category_id=40`;
+    } else if (searchParams.category) {
       query += `&category_id=${searchParams.category}`;
     }
+
     if (searchParams.genre) {
       query += `&genre=${encodeURIComponent(searchParams.genre)}`;
+    } else if (searchParams.type === "anime") {
+      query += `&genre=anime`;
     }
     if (searchParams.year) {
       query += `&year=${searchParams.year}`;

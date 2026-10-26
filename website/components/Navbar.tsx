@@ -405,6 +405,20 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     <span>Seriallar</span>
                   </Link>
                   <Link
+                    href="/series?category=40"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">theater_comedy</span>
+                    <span>Doramalar</span>
+                  </Link>
+                  <Link
+                    href="/movies?category=2"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
+                  >
+                    <span className="material-symbols-outlined text-[15px] opacity-70">auto_awesome</span>
+                    <span>Anime</span>
+                  </Link>
+                  <Link
                     href="/catalog?genre=animation"
                     className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
                   >

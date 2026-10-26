@@ -23,7 +23,7 @@ type Category = {
 export default async function MoviesListPage({
   searchParams
 }: {
-  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string }
+  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string; page_id?: string }
 }) {
   let movies: CatalogItem[] = [];
   let total = 0;
@@ -32,12 +32,26 @@ export default async function MoviesListPage({
   const pageSize = 36;
   
   try {
-    let query = `/movies?limit=${pageSize}&exclude_paged=true`;
+    let query = `/movies?limit=${pageSize}`;
+    if (searchParams.page_id) {
+      query += `&page_id=${searchParams.page_id}`;
+    }
     if (searchParams.category) {
       query += `&category_id=${searchParams.category}`;
+    } else if (searchParams.type === "anime") {
+      query += `&category_id=2`;
+    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
+      query += `&category_id=22`;
     }
+
     if (searchParams.genre) {
       query += `&genre=${encodeURIComponent(searchParams.genre)}`;
+    } else {
+      if (searchParams.type === "anime" && searchParams.category) {
+        query += `&genre=anime`;
+      } else if ((searchParams.type === "cartoon" || searchParams.type === "animation") && searchParams.category) {
+        query += `&genre=animatsiya`;
+      }
     }
     if (searchParams.year) {
       query += `&year=${searchParams.year}`;

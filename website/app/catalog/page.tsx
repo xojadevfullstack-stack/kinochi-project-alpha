@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default async function FullCatalogPage({
   searchParams
 }: {
-  searchParams: { category?: string; year?: string; genre?: string; sort?: string; search?: string; type?: string }
+  searchParams: { category?: string; year?: string; genre?: string; sort?: string; search?: string; type?: string; page_id?: string }
 }) {
   let movies: CatalogItem[] = [];
   let total = 0;
@@ -32,18 +32,30 @@ export default async function FullCatalogPage({
   try {
     const isSeriesSearch = searchParams.type === "series" || searchParams.type === "dorama";
     const endpoint = isSeriesSearch ? "/series" : "/movies";
-    let query = `${endpoint}?limit=${pageSize}&exclude_paged=true`;
+    let query = `${endpoint}?limit=${pageSize}`;
 
     if (searchParams.type === "dorama") {
       query += `&category_id=40`;
     } else if (searchParams.category) {
       query += `&category_id=${searchParams.category}`;
+    } else if (searchParams.type === "anime") {
+      query += `&category_id=2`;
+    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
+      query += `&category_id=22`;
     }
 
-    if (searchParams.type === "animation") {
-      query += `&genre=animation`;
-    } else if (searchParams.genre) {
+    if (searchParams.page_id) {
+      query += `&page_id=${searchParams.page_id}`;
+    }
+
+    if (searchParams.genre) {
       query += `&genre=${encodeURIComponent(searchParams.genre)}`;
+    } else {
+      if (searchParams.type === "anime" && searchParams.category) {
+        query += `&genre=anime`;
+      } else if ((searchParams.type === "cartoon" || searchParams.type === "animation") && searchParams.category) {
+        query += `&genre=animatsiya`;
+      }
     }
 
     if (searchParams.year) {

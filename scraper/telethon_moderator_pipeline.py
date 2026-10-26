@@ -467,6 +467,22 @@ def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
     # Page 8: Multfilm
     if (22 in cat_ids or m_type == "multfilm" or any(w in genres for w in ["animatsiya", "multfilm", "animation"]) or any(w in t_low for w in ["multfilm", "multik"])) and 8 not in page_ids:
         page_ids.append(8)
+    # Page 12: Turk seriallari
+    if (m_type == "series" or "serial" in t_low) and any(w in t_low or w in genres for w in ["turk", "turkiya"]) and 12 not in page_ids:
+        page_ids.append(12)
+    # Page 11: Turk kinolari
+    if m_type != "series" and any(w in t_low or w in genres for w in ["turk", "turkiya"]) and 11 not in page_ids:
+        page_ids.append(11)
+    # Page 10: Hind kinolari
+    if any(w in t_low or w in genres for w in ["hind", "hindiston", "bollywood"]) and 10 not in page_ids:
+        page_ids.append(10)
+    # Page 13: Seriallar
+    if (m_type == "series" or "serial" in t_low) and 13 not in page_ids:
+        page_ids.append(13)
+    # Page 9: Tarjima kinolar
+    if m_type not in ["series", "anime", "multfilm"] and 9 not in page_ids:
+        page_ids.append(9)
+
     return page_ids
 
 
