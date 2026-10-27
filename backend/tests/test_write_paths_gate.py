@@ -2,31 +2,35 @@
 Tests for Write Paths through Admission Gate (B3).
 Ensures API endpoints and ingestion paths enforce the gate and reject invalid data.
 """
-import pytest
 import subprocess
 import sys
-from unittest.mock import AsyncMock, patch, MagicMock
+import os
+from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 from app.main import app
-from app.api.deps import get_current_admin, get_admin_or_bot, get_db_session
-from app.infrastructure.db.models.movie import MovieModel
-from app.infrastructure.db.models.series import SeriesModel
+from app.api.deps import get_current_admin, get_db_session
 
 
 def test_scripts_enforce_bypass_flag():
     """clean_dirty_db_records.py va fix_anime_everything_db.py bypass flagsiz to'xtashini tekshirish."""
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    env = {**os.environ, "PYTHONPATH": f"{repo_root}{os.pathsep}{os.environ.get('PYTHONPATH', '')}"}
     res1 = subprocess.run(
-        [sys.executable, "scripts/clean_dirty_db_records.py"],
+        [sys.executable, os.path.join(repo_root, "scripts", "clean_dirty_db_records.py")],
         capture_output=True,
-        text=True
+        text=True,
+        cwd=repo_root,
+        env=env
     )
     assert res1.returncode == 1
     assert "Admission Gate" in res1.stdout
 
     res2 = subprocess.run(
-        [sys.executable, "scripts/fix_anime_everything_db.py"],
+        [sys.executable, os.path.join(repo_root, "scripts", "fix_anime_everything_db.py")],
         capture_output=True,
-        text=True
+        text=True,
+        cwd=repo_root,
+        env=env
     )
     assert res2.returncode == 1
     assert "Admission Gate" in res2.stdout

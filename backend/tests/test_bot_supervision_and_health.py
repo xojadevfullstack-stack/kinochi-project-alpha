@@ -1,6 +1,4 @@
 import pytest
-import asyncio
-import sys
 import os
 from unittest.mock import AsyncMock, patch, MagicMock
 from httpx import ASGITransport, AsyncClient
@@ -74,7 +72,9 @@ async def test_supervised_run_bot_clean_exit():
 
 def test_run_py_no_return_exceptions_masking():
     """run.py dagi main() funksiyasida return_exceptions=True masking bo'lmasligi kerak."""
-    with open("run.py", "r", encoding="utf-8") as f:
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    run_py_path = os.path.join(repo_root, "run.py") if os.path.exists(os.path.join(repo_root, "run.py")) else "run.py"
+    with open(run_py_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     assert "return_exceptions=True" not in content, (
@@ -86,7 +86,6 @@ def test_run_py_no_return_exceptions_masking():
 async def test_bot_startup_logs_pending_and_respects_drop_pending_updates():
     """bot/main.py da kutilayotgan yangilanishlar soni log qilinishi va BOT_DROP_PENDING_UPDATES ga rioya qilinishi tekshiriladi."""
     from bot import main as bot_main
-    from bot.config import settings
 
     mock_bot = MagicMock()
     mock_webhook_info = MagicMock()

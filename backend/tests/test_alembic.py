@@ -10,6 +10,21 @@ from alembic import command
 from tests.conftest import verify_safe_test_db, LOCAL_PG_TEST_URL
 
 
+def get_test_pg_port() -> int:
+    return int(os.environ.get("TEST_DB_PORT", "5433"))
+
+
+async def get_test_pg_connection():
+    verify_safe_test_db(LOCAL_PG_TEST_URL)
+    return await asyncpg.connect(
+        user="postgres",
+        password="postgres",
+        host="127.0.0.1",
+        port=get_test_pg_port(),
+        database="kinochi_v2_test"
+    )
+
+
 def get_alembic_config() -> Config:
     backend_dir = Path(__file__).resolve().parent.parent
     ini_path = backend_dir / "alembic.ini"
@@ -80,7 +95,7 @@ async def test_prod_like_migration_preserves_data():
     cfg = get_alembic_config()
 
     # 1. Sxemani tozalash va branchpoint f1a2b3c4d5e6 gacha ko'tarish
-    conn = await asyncpg.connect(user="postgres", password="postgres", host="127.0.0.1", port=5433, database="kinochi_v2_test")
+    conn = await get_test_pg_connection()
     try:
         await conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
     finally:
@@ -89,7 +104,7 @@ async def test_prod_like_migration_preserves_data():
     await asyncio.to_thread(run_alembic_in_test_db, command.upgrade, cfg, "f1a2b3c4d5e6")
 
     # 2. Namuna qatorlar kiritish
-    conn = await asyncpg.connect(user="postgres", password="postgres", host="127.0.0.1", port=5433, database="kinochi_v2_test")
+    conn = await get_test_pg_connection()
     try:
         await conn.execute("INSERT INTO categories (name, slug) VALUES ('Test Category', 'test-cat-c02') ON CONFLICT DO NOTHING;")
         cat_id = await conn.fetchval("SELECT id FROM categories WHERE slug='test-cat-c02';")
@@ -121,7 +136,7 @@ async def test_prod_like_migration_preserves_data():
     await asyncio.to_thread(run_alembic_in_test_db, command.upgrade, cfg, "head")
 
     # 4. Kiritilgan ma'lumotlar saqlanib qolganini tekshirish
-    conn = await asyncpg.connect(user="postgres", password="postgres", host="127.0.0.1", port=5433, database="kinochi_v2_test")
+    conn = await get_test_pg_connection()
     try:
         m_row = await conn.fetchrow("SELECT title, publish_status FROM movies WHERE code='c02_mov1';")
         assert m_row is not None
@@ -140,7 +155,7 @@ async def test_merge_schema_equivalence():
     """
     verify_safe_test_db(LOCAL_PG_TEST_URL)
 
-    conn = await asyncpg.connect(user="postgres", password="postgres", host="127.0.0.1", port=5433, database="kinochi_v2_test")
+    conn = await get_test_pg_connection()
     try:
         rows = await conn.fetch("""
             SELECT table_name FROM information_schema.tables
@@ -173,7 +188,7 @@ async def test_merge_downgrade_and_reupgrade():
     # Upgrade back to head
     await asyncio.to_thread(run_alembic_in_test_db, command.upgrade, cfg, "head")
 
-    conn = await asyncpg.connect(user="postgres", password="postgres", host="127.0.0.1", port=5433, database="kinochi_v2_test")
+    conn = await get_test_pg_connection()
     try:
         val = await conn.fetchval("SELECT version_num FROM alembic_version;")
         assert val == "f1322da82a96"

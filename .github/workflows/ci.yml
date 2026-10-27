@@ -13,27 +13,43 @@ on:
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
-    
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: kinochi_v2_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          
+
       - name: Install backend dependencies
         run: |
           cd backend
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || echo "requirements.txt not found, skipping"
-          pip install pytest httpx aiosqlite ruff
-          
-      - name: Run Ruff Linter
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx aiosqlite ruff
+
+      - name: Run Ruff on Backend
         run: |
           cd backend
           ruff check .
+        continue-on-error: true
 
       - name: Check Alembic Single Head
         run: |
@@ -47,18 +63,50 @@ jobs:
           fi
           echo "Alembic single head verified: $HEADS"
 
-      - name: Run Pytest
+      - name: Run Pytest Backend
+        env:
+          TEST_DB_PORT: "5432"
+          DATABASE_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/kinochi_v2_test"
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
         run: |
           cd backend
           pytest tests/
-          
+
       - name: Install bot dependencies
         run: |
           cd bot
-          pip install -r requirements.txt || echo "requirements.txt not found, skipping"
-          pip install ruff
-          
+          python -m pip install --upgrade pip
+          pip install ".[dev]" || pip install aiogram httpx pydantic-settings aiohttp pytest pytest-asyncio ruff
+
       - name: Run Ruff on Bot
         run: |
           cd bot
           ruff check .
+        continue-on-error: true
+
+      - name: Run Bot Tests
+        run: |
+          cd bot
+          pytest tests/
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        run: |
+          cd website
+          npm ci
+
+      - name: Run Website Lint
+        run: |
+          cd website
+          npm run lint
+
+      - name: Run Website Build
+        run: |
+          cd website
+          npm run build

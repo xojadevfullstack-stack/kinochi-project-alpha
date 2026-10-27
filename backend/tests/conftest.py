@@ -34,9 +34,9 @@ Settings.model_config["env_file"] = None
 def verify_safe_test_db(url_str: str) -> bool:
     """
     Xavfsizlik nazorati:
-    Real Postgres testlari FAQAT localhost / 127.0.0.1, 5433-port va 'kinochi_v2_test'
-    bazasida bajarilishi shart. Aks holda darhol RuntimeError otiladi va barcha
-    operatsiyalar bekor qilinadi.
+    Real Postgres testlari FAQAT localhost / 127.0.0.1, ruxsat etilgan port (default 5433,
+    yoki CI uchun TEST_DB_PORT) va 'kinochi_v2_test' bazasida bajarilishi shart.
+    Aks holda darhol RuntimeError otiladi va barcha operatsiyalar bekor qilinadi.
     """
     if not url_str:
         raise RuntimeError("DATABASE_URL ko'rsatilmagan!")
@@ -49,8 +49,9 @@ def verify_safe_test_db(url_str: str) -> bool:
 
     if host not in ("localhost", "127.0.0.1", "::1"):
         raise RuntimeError(f"XAVF: Ruxsat berilmagan DB host: '{host}'. Faqat localhost/127.0.0.1 ga ruxsat!")
-    if port != 5433:
-        raise RuntimeError(f"XAVF: Ruxsat berilmagan DB port: '{port}'. Faqat 5433-portga ruxsat!")
+    allowed_port = int(os.environ.get("TEST_DB_PORT", "5433"))
+    if port != allowed_port:
+        raise RuntimeError(f"XAVF: Ruxsat berilmagan DB port: '{port}'. Faqat {allowed_port}-portga ruxsat!")
     if db_name != "kinochi_v2_test":
         raise RuntimeError(f"XAVF: Ruxsat berilmagan DB nomi: '{db_name}'. Faqat 'kinochi_v2_test' ga ruxsat!")
     return True
@@ -120,7 +121,7 @@ def client():
 
 LOCAL_PG_TEST_URL = os.environ.get(
     "LOCAL_PG_TEST_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5433/kinochi_v2_test"
+    f"postgresql+asyncpg://postgres:postgres@localhost:{os.environ.get('TEST_DB_PORT', '5433')}/kinochi_v2_test"
 )
 
 
