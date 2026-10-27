@@ -1,22 +1,23 @@
 """
-Tests for publish_status authentication on movie and series endpoints:
-1. Detail endpoints:
-   - GET /api/v1/movies/{id}
-   - GET /api/v1/series/{id}
-2. List & search endpoints:
-   - GET /api/v1/movies
-   - GET /api/v1/movies/search
-   - GET /api/v1/series
-   - GET /api/v1/series/search
+Parametrized tests for publish_status authentication across 6 endpoints:
+1. GET /api/v1/movies/{id}
+2. GET /api/v1/series/{id}
+3. GET /api/v1/movies
+4. GET /api/v1/movies/search?q=test
+5. GET /api/v1/series
+6. GET /api/v1/series/search?q=test
 
-Verifies:
-- Unauthenticated ?publish_status=all|pending|hidden -> 403 Forbidden
-- Unauthenticated default (no param) -> 200 OK (only published content)
-- Non-admin user token with non-published status -> 403 Forbidden
-- Admin token with ?publish_status=all|pending -> 200 OK
+Test categories:
+(a) Unauthenticated with non-published status (all, pending, hidden, foo) -> 401 Unauthorized
+(b) Invalid / expired token with all -> 401 Unauthorized
+(c) Normal user token with all or pending -> 403 Forbidden
+(d) Admin token with all -> 200 OK (includes unpublished content, total=2)
+(e) Admin token with pending -> 200 OK (only pending content, total=1)
+(f) Unauthenticated default or published -> 200 OK (only published content, total=1)
+(g) Cache isolation test -> Admin 'all' cache does not leak to public default
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from httpx import AsyncClient, ASGITransport
 from datetime import datetime
 
@@ -107,257 +108,252 @@ def mock_admin_db():
     return mock_db
 
 
-@pytest.mark.asyncio
-async def test_movie_detail_publish_status_auth(
-    published_movie,
-    pending_movie,
-    admin_token,
-    user_token,
-    mock_admin_db,
-):
-    mock_movie_service = AsyncMock()
+@pytest.fixture(autouse=True)
+def setup_services(published_movie, pending_movie, published_series, pending_series, mock_admin_db):
+    # Mock Movie Service
+    mock_m_service = AsyncMock()
 
     async def fake_get_movie(movie_id: int, publish_status: str | None = None):
         if movie_id == 1:
-            if publish_status is None or publish_status == "published":
-                return published_movie
-            return None
+            return published_movie if publish_status in (None, "published") else None
         elif movie_id == 2:
-            if publish_status is None or publish_status == "pending":
-                return pending_movie
-            return None
+            return pending_movie if publish_status in (None, "pending") else None
         return None
 
-    mock_movie_service.get_movie.side_effect = fake_get_movie
+    async def fake_list_movies(**kwargs):
+        ps = kwargs.get("publish_status")
+        if ps == "published":
+            return ([published_movie], 1)
+        elif ps == "pending":
+            return ([pending_movie], 1)
+        elif ps is None:
+            return ([published_movie, pending_movie], 2)
+        return ([], 0)
 
-    app.dependency_overrides[get_movie_service] = lambda: mock_movie_service
-    app.dependency_overrides[get_db_session] = lambda: mock_admin_db
+    async def fake_search_movies(**kwargs):
+        ps = kwargs.get("publish_status")
+        if ps == "published":
+            return ([published_movie], 1)
+        elif ps == "pending":
+            return ([pending_movie], 1)
+        elif ps is None:
+            return ([published_movie, pending_movie], 2)
+        return ([], 0)
 
-    try:
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            # 1. Unauthenticated default -> 200 for published movie
-            res = await ac.get("/api/v1/movies/1")
-            assert res.status_code == 200
-            assert res.json()["id"] == 1
-            assert res.json()["publish_status"] == "published"
+    mock_m_service.get_movie.side_effect = fake_get_movie
+    mock_m_service.list_movies.side_effect = fake_list_movies
+    mock_m_service.search_movies.side_effect = fake_search_movies
 
-            # 2. Unauthenticated default -> 404 for pending movie (hidden from public)
-            res = await ac.get("/api/v1/movies/2")
-            assert res.status_code == 404
-
-            # 3. Unauthenticated ?publish_status=published -> 200 for published movie
-            res = await ac.get("/api/v1/movies/1?publish_status=published")
-            assert res.status_code == 200
-
-            # 4. Unauthenticated non-published statuses -> 403 Forbidden
-            for st in ("all", "pending", "hidden"):
-                res = await ac.get(f"/api/v1/movies/1?publish_status={st}")
-                assert res.status_code == 403, f"Expected 403 for publish_status={st}"
-
-            # 5. Non-admin user token with ?publish_status=all -> 403 Forbidden
-            res = await ac.get(
-                "/api/v1/movies/2?publish_status=all",
-                headers={"Authorization": f"Bearer {user_token}"}
-            )
-            assert res.status_code == 403
-
-            # 6. Admin token with ?publish_status=all -> 200 OK (access to pending movie)
-            res = await ac.get(
-                "/api/v1/movies/2?publish_status=all",
-                headers={"Authorization": f"Bearer {admin_token}"}
-            )
-            assert res.status_code == 200
-            assert res.json()["id"] == 2
-            assert res.json()["publish_status"] == "pending"
-
-            # 7. Admin token with ?publish_status=pending -> 200 OK
-            res = await ac.get(
-                "/api/v1/movies/2?publish_status=pending",
-                headers={"Authorization": f"Bearer {admin_token}"}
-            )
-            assert res.status_code == 200
-            assert res.json()["id"] == 2
-    finally:
-        app.dependency_overrides.pop(get_movie_service, None)
-        app.dependency_overrides.pop(get_db_session, None)
-
-
-@pytest.mark.asyncio
-async def test_series_detail_publish_status_auth(
-    published_series,
-    pending_series,
-    admin_token,
-    user_token,
-    mock_admin_db,
-):
-    mock_series_service = AsyncMock()
+    # Mock Series Service
+    mock_s_service = AsyncMock()
 
     async def fake_get_series(series_id: int, publish_status: str | None = None):
         if series_id == 1:
-            if publish_status is None or publish_status == "published":
-                return published_series
-            return None
+            return published_series if publish_status in (None, "published") else None
         elif series_id == 2:
-            if publish_status is None or publish_status == "pending":
-                return pending_series
-            return None
+            return pending_series if publish_status in (None, "pending") else None
         return None
 
-    mock_series_service.get_series_by_id.side_effect = fake_get_series
+    async def fake_get_all_series(**kwargs):
+        ps = kwargs.get("publish_status")
+        if ps == "published":
+            return ([published_series], 1)
+        elif ps == "pending":
+            return ([pending_series], 1)
+        elif ps is None:
+            return ([published_series, pending_series], 2)
+        return ([], 0)
 
-    app.dependency_overrides[get_series_service] = lambda: mock_series_service
+    async def fake_search_series(**kwargs):
+        ps = kwargs.get("publish_status")
+        if ps == "published":
+            return ([published_series], 1)
+        elif ps == "pending":
+            return ([pending_series], 1)
+        elif ps is None:
+            return ([published_series, pending_series], 2)
+        return ([], 0)
+
+    mock_s_service.get_series_by_id.side_effect = fake_get_series
+    mock_s_service.get_all_series.side_effect = fake_get_all_series
+    mock_s_service.search_series.side_effect = fake_search_series
+
+    app.dependency_overrides[get_movie_service] = lambda: mock_m_service
+    app.dependency_overrides[get_series_service] = lambda: mock_s_service
     app.dependency_overrides[get_db_session] = lambda: mock_admin_db
 
-    try:
+    yield
+
+    app.dependency_overrides.pop(get_movie_service, None)
+    app.dependency_overrides.pop(get_series_service, None)
+    app.dependency_overrides.pop(get_db_session, None)
+
+
+ALL_ENDPOINTS = [
+    "/api/v1/movies/1",
+    "/api/v1/series/1",
+    "/api/v1/movies",
+    "/api/v1/movies/search?q=test",
+    "/api/v1/series",
+    "/api/v1/series/search?q=test",
+]
+
+
+# (a) Unauthenticated with non-published status -> 401 Unauthorized
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ALL_ENDPOINTS)
+@pytest.mark.parametrize("status_val", ["all", "pending", "hidden", "foo"])
+async def test_unauthenticated_non_published_returns_401(endpoint, status_val):
+    sep = "&" if "?" in endpoint else "?"
+    url = f"{endpoint}{sep}publish_status={status_val}"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url)
+        assert res.status_code == 401
+        assert "Autentifikatsiya talab qilinadi" in res.json().get("detail", "")
+
+
+# (b) Invalid / expired token with all -> 401 Unauthorized
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ALL_ENDPOINTS)
+async def test_invalid_token_returns_401(endpoint):
+    sep = "&" if "?" in endpoint else "?"
+    url = f"{endpoint}{sep}publish_status=all"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url, headers={"Authorization": "Bearer invalid_expired_jwt_token"})
+        assert res.status_code == 401
+
+
+# (c) Normal user token with non-published status -> 403 Forbidden
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ALL_ENDPOINTS)
+@pytest.mark.parametrize("status_val", ["all", "pending"])
+async def test_normal_user_token_returns_403(endpoint, status_val, user_token):
+    sep = "&" if "?" in endpoint else "?"
+    url = f"{endpoint}{sep}publish_status={status_val}"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url, headers={"Authorization": f"Bearer {user_token}"})
+        assert res.status_code == 403
+        assert "admin" in res.json().get("detail", "").lower()
+
+
+# (d) Admin token with publish_status=all -> 200 OK (unpublished content included)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ALL_ENDPOINTS)
+async def test_admin_token_with_all_returns_200(endpoint, admin_token):
+    # For detail endpoints, check access to pending item (id=2)
+    test_url = endpoint.replace("/1", "/2") if "/1" in endpoint else endpoint
+    sep = "&" if "?" in test_url else "?"
+    url = f"{test_url}{sep}publish_status=all"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert res.status_code == 200
+        data = res.json()
+        if "items" in data:
+            assert data["total"] == 2
+            assert len(data["items"]) == 2
+        else:
+            assert data["id"] == 2
+            assert data["publish_status"] == "pending"
+
+
+# (e) Admin token with publish_status=pending -> 200 OK (only pending content)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ALL_ENDPOINTS)
+async def test_admin_token_with_pending_returns_200(endpoint, admin_token):
+    test_url = endpoint.replace("/1", "/2") if "/1" in endpoint else endpoint
+    sep = "&" if "?" in test_url else "?"
+    url = f"{test_url}{sep}publish_status=pending"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url, headers={"Authorization": f"Bearer {admin_token}"})
+        assert res.status_code == 200
+        data = res.json()
+        if "items" in data:
+            assert data["total"] == 1
+            assert data["items"][0]["publish_status"] == "pending"
+        else:
+            assert data["id"] == 2
+            assert data["publish_status"] == "pending"
+
+
+# (f) Unauthenticated default or published -> 200 OK (only published content)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ALL_ENDPOINTS)
+@pytest.mark.parametrize("query_param", ["", "publish_status=published"])
+async def test_public_default_and_published_returns_200(endpoint, query_param):
+    sep = "&" if "?" in endpoint else "?"
+    url = f"{endpoint}{sep}{query_param}" if query_param else endpoint
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url)
+        assert res.status_code == 200
+        data = res.json()
+        if "items" in data:
+            assert data["total"] == 1
+            assert data["items"][0]["publish_status"] == "published"
+        else:
+            assert data["id"] == 1
+            assert data["publish_status"] == "published"
+
+
+# (f2) Unauthenticated default for pending item -> 404 Not Found (hidden from public)
+@pytest.mark.asyncio
+@pytest.mark.parametrize("detail_endpoint", ["/api/v1/movies/2", "/api/v1/series/2"])
+@pytest.mark.parametrize("query_param", ["", "?publish_status=published"])
+async def test_public_pending_item_hidden_returns_404(detail_endpoint, query_param):
+    url = f"{detail_endpoint}{query_param}"
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        res = await ac.get(url)
+        assert res.status_code == 404
+
+
+# (g) Cache isolation test: Admin 'all' query must NOT leak unpublished items to public
+@pytest.mark.asyncio
+@pytest.mark.parametrize("media_type", ["movies", "series"])
+async def test_cache_isolation_admin_all_does_not_leak_to_public(media_type, admin_token):
+    cache_store = {}
+
+    async def fake_get_cache(key):
+        return cache_store.get(key)
+
+    async def fake_set_cache(key, val, ttl=300):
+        cache_store[key] = val
+
+    module_name = f"app.api.v1.{media_type}"
+    with patch(f"{module_name}.get_cache", side_effect=fake_get_cache), \
+         patch(f"{module_name}.set_cache", side_effect=fake_set_cache):
+
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            # 1. Unauthenticated default -> 200 for published series
-            res = await ac.get("/api/v1/series/1")
-            assert res.status_code == 200
-            assert res.json()["id"] == 1
-            assert res.json()["publish_status"] == "published"
-
-            # 2. Unauthenticated default -> 404 for pending series (hidden from public)
-            res = await ac.get("/api/v1/series/2")
-            assert res.status_code == 404
-
-            # 3. Unauthenticated ?publish_status=published -> 200 for published series
-            res = await ac.get("/api/v1/series/1?publish_status=published")
-            assert res.status_code == 200
-
-            # 4. Unauthenticated non-published statuses -> 403 Forbidden
-            for st in ("all", "pending", "hidden"):
-                res = await ac.get(f"/api/v1/series/1?publish_status={st}")
-                assert res.status_code == 403, f"Expected 403 for publish_status={st}"
-
-            # 5. Non-admin user token with ?publish_status=all -> 403 Forbidden
-            res = await ac.get(
-                "/api/v1/series/2?publish_status=all",
-                headers={"Authorization": f"Bearer {user_token}"}
-            )
-            assert res.status_code == 403
-
-            # 6. Admin token with ?publish_status=all -> 200 OK (access to pending series)
-            res = await ac.get(
-                "/api/v1/series/2?publish_status=all",
+            # 1. Admin requests all -> populates cache with target_status=None
+            admin_res = await ac.get(
+                f"/api/v1/{media_type}?publish_status=all",
                 headers={"Authorization": f"Bearer {admin_token}"}
             )
-            assert res.status_code == 200
-            assert res.json()["id"] == 2
-            assert res.json()["publish_status"] == "pending"
+            assert admin_res.status_code == 200
+            assert admin_res.json()["total"] == 2
+            assert len(admin_res.json()["items"]) == 2
 
-            # 7. Admin token with ?publish_status=pending -> 200 OK
-            res = await ac.get(
-                "/api/v1/series/2?publish_status=pending",
-                headers={"Authorization": f"Bearer {admin_token}"}
-            )
-            assert res.status_code == 200
-            assert res.json()["id"] == 2
-    finally:
-        app.dependency_overrides.pop(get_series_service, None)
-        app.dependency_overrides.pop(get_db_session, None)
+            # Verify admin cache key contains :None
+            admin_cache_keys = [k for k in cache_store.keys() if ":None" in k]
+            assert len(admin_cache_keys) > 0, f"Expected cache key containing ':None', got {list(cache_store.keys())}"
 
+            # 2. Public unauthenticated user requests default (no params)
+            public_res = await ac.get(f"/api/v1/{media_type}")
+            assert public_res.status_code == 200
+            public_data = public_res.json()
 
-@pytest.mark.asyncio
-async def test_movies_list_and_search_publish_status_auth(
-    published_movie,
-    pending_movie,
-    admin_token,
-    user_token,
-    mock_admin_db,
-):
-    mock_movie_service = AsyncMock()
-    mock_movie_service.list_movies.return_value = ([published_movie], 1)
-    mock_movie_service.search_movies.return_value = ([published_movie], 1)
+            # Must contain ONLY published items (total=1)
+            assert public_data["total"] == 1
+            assert len(public_data["items"]) == 1
+            assert public_data["items"][0]["publish_status"] == "published"
 
-    app.dependency_overrides[get_movie_service] = lambda: mock_movie_service
-    app.dependency_overrides[get_db_session] = lambda: mock_admin_db
-
-    try:
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            for endpoint in ("/api/v1/movies", "/api/v1/movies/search?q=test"):
-                sep = "&" if "?" in endpoint else "?"
-
-                # 1. Unauthenticated default -> 200
-                res = await ac.get(endpoint)
-                assert res.status_code == 200
-
-                # 2. Unauthenticated ?publish_status=published -> 200
-                res = await ac.get(f"{endpoint}{sep}publish_status=published")
-                assert res.status_code == 200
-
-                # 3. Unauthenticated all/pending/hidden -> 403 Forbidden
-                for st in ("all", "pending", "hidden"):
-                    res = await ac.get(f"{endpoint}{sep}publish_status={st}")
-                    assert res.status_code == 403, f"{endpoint} expected 403 for {st}"
-
-                # 4. User token with publish_status=all -> 403 Forbidden
-                res = await ac.get(
-                    f"{endpoint}{sep}publish_status=all",
-                    headers={"Authorization": f"Bearer {user_token}"}
-                )
-                assert res.status_code == 403
-
-                # 5. Admin token with publish_status=all -> 200 OK
-                res = await ac.get(
-                    f"{endpoint}{sep}publish_status=all",
-                    headers={"Authorization": f"Bearer {admin_token}"}
-                )
-                assert res.status_code == 200
-    finally:
-        app.dependency_overrides.pop(get_movie_service, None)
-        app.dependency_overrides.pop(get_db_session, None)
-
-
-@pytest.mark.asyncio
-async def test_series_list_and_search_publish_status_auth(
-    published_series,
-    pending_series,
-    admin_token,
-    user_token,
-    mock_admin_db,
-):
-    mock_series_service = AsyncMock()
-    mock_series_service.get_all_series.return_value = ([published_series], 1)
-    mock_series_service.search_series.return_value = ([published_series], 1)
-
-    app.dependency_overrides[get_series_service] = lambda: mock_series_service
-    app.dependency_overrides[get_db_session] = lambda: mock_admin_db
-
-    try:
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            for endpoint in ("/api/v1/series", "/api/v1/series/search?q=test"):
-                sep = "&" if "?" in endpoint else "?"
-
-                # 1. Unauthenticated default -> 200
-                res = await ac.get(endpoint)
-                assert res.status_code == 200
-
-                # 2. Unauthenticated ?publish_status=published -> 200
-                res = await ac.get(f"{endpoint}{sep}publish_status=published")
-                assert res.status_code == 200
-
-                # 3. Unauthenticated all/pending/hidden -> 403 Forbidden
-                for st in ("all", "pending", "hidden"):
-                    res = await ac.get(f"{endpoint}{sep}publish_status={st}")
-                    assert res.status_code == 403, f"{endpoint} expected 403 for {st}"
-
-                # 4. User token with publish_status=all -> 403 Forbidden
-                res = await ac.get(
-                    f"{endpoint}{sep}publish_status=all",
-                    headers={"Authorization": f"Bearer {user_token}"}
-                )
-                assert res.status_code == 403
-
-                # 5. Admin token with publish_status=all -> 200 OK
-                res = await ac.get(
-                    f"{endpoint}{sep}publish_status=all",
-                    headers={"Authorization": f"Bearer {admin_token}"}
-                )
-                assert res.status_code == 200
-    finally:
-        app.dependency_overrides.pop(get_series_service, None)
-        app.dependency_overrides.pop(get_db_session, None)
+            # Verify public cache key contains :published and is isolated from admin key
+            public_cache_keys = [k for k in cache_store.keys() if ":published" in k]
+            assert len(public_cache_keys) > 0, f"Expected cache key containing ':published', got {list(cache_store.keys())}"
+            assert admin_cache_keys[0] != public_cache_keys[0]

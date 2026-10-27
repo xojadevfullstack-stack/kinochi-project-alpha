@@ -196,16 +196,21 @@ async def resolve_publish_status(
     """
     Dependency: resolve publish_status query parameter.
     - Default/published: public access (no admin check).
-    - Other values ('all', 'pending', 'hidden'): requires admin auth via get_current_admin.
+    - Other values ('all', 'pending', 'hidden', unknown): requires admin auth via get_current_admin.
+    - If unauthenticated or token expired/invalid: passes through 401 Unauthorized.
+    - If authenticated but not admin: raises 403 Forbidden.
     - Returns None if publish_status == 'all', otherwise the effective publish_status string.
     """
     effective_status = publish_status or "published"
     if effective_status != "published":
         try:
             await get_current_admin(request, session)
-        except HTTPException:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Nashr qilinmagan kontentni ko'rish uchun faqat adminlarga ruxsat berilgan",
-            )
+        except HTTPException as e:
+            if e.status_code == status.HTTP_403_FORBIDDEN:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Nashr qilinmagan kontentni ko'rish uchun faqat adminlarga ruxsat berilgan",
+                    headers=e.headers,
+                )
+            raise e
     return None if effective_status == "all" else effective_status
