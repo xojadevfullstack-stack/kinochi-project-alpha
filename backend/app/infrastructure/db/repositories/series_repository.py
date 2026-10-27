@@ -1,8 +1,9 @@
 import logging
+import re
 from typing import List, Tuple
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, noload
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.models.category import CategoryModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel
@@ -30,9 +31,9 @@ class SeriesRepository:
         **kwargs
     ) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
-            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
+            noload(SeriesModel.seasons),
+            noload(SeriesModel.pages),
             selectinload(SeriesModel.categories),
-            selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         )
         if publish_status == "published":
@@ -113,9 +114,9 @@ class SeriesRepository:
         total = await self.session.scalar(total_stmt)
         
         stmt = select(SeriesModel).options(
-            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
+            noload(SeriesModel.seasons),
+            noload(SeriesModel.pages),
             selectinload(SeriesModel.categories),
-            selectinload(SeriesModel.pages),
             selectinload(SeriesModel.source)
         ).where(stmt_where).order_by(SeriesModel.id.desc()).offset(skip).limit(limit)
         

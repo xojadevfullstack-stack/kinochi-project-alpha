@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot, get_db_session, resolve_publish_status
 from app.application.series.series_service import SeriesService
 from app.domain.series.entities import (
-    Series, SeriesCreate, SeriesUpdate, PaginatedSeriesResponse,
+    Series, SeriesCreate, SeriesUpdate,
+    PaginatedSeriesSummaryResponse,
     Season, SeasonCreate, SeasonUpdate,
     Episode, EpisodeCreate, EpisodeUpdate
 )
@@ -113,7 +114,7 @@ async def bulk_import_series(
     return {"success": True, "count": len(payload.items)}
 
 
-@router.get("", response_model=PaginatedSeriesResponse)
+@router.get("", response_model=PaginatedSeriesSummaryResponse)
 @limiter.limit("100/minute")
 async def list_series(
     request: Request,
@@ -163,7 +164,7 @@ async def list_series(
     return response_data
 
 
-@router.get("/search", response_model=PaginatedSeriesResponse)
+@router.get("/search", response_model=PaginatedSeriesSummaryResponse)
 @limiter.limit("60/minute")
 async def search_series(
     request: Request,

@@ -177,7 +177,28 @@ class Series(SeriesBase):
     
     model_config = ConfigDict(from_attributes=True)
 
+class SeriesSummary(SeriesBase):
+    """Ro'yxat va qidiruv uchun yengil serial modeli (seasons/episodes yuklanmaydi)."""
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    categories: list[Category] = Field(default_factory=list)
+    pages: list['Page'] = Field(default_factory=list)
+    source_id: int | None = None
+    source: SourceResponse | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # Pagination responses
+class PaginatedSeriesSummaryResponse(BaseModel):
+    items: list[SeriesSummary]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
 class PaginatedSeriesResponse(BaseModel):
     items: list[Series]
     total: int
