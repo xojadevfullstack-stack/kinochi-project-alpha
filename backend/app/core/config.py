@@ -21,6 +21,8 @@ class Settings(BaseSettings):
 
     # ── Database (async PostgreSQL) ──────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://kinochi:kinochi_secret@localhost:5432/kinochi"
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
