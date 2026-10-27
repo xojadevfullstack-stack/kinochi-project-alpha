@@ -10,159 +10,120 @@ export interface CatalogTheme {
 
 export const CURATED_CATALOG_THEMES: CatalogTheme[] = [
   {
-    id: "superheroes",
-    title: "Superqahramonlar haqida kinolar",
-    count: "121 ta kino",
-    href: "/catalog?genre=action",
-    category: "theme",
-    description: "Marvel, DC va barcha qahramonlar to'plami.",
-    posters: [
-      "https://image.tmdb.org/t/p/w500/yF1eOkaYvwiORauRCPWznV9xVvi.jpg",
-      "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
-      "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg"
-    ]
-  },
-  {
-    id: "netflix-series",
-    title: "Netflix seriallari va kinolari",
-    count: "38 ta kino",
-    href: "/series",
-    category: "theme",
-    description: "Jahon trendidagi eng sara Netflix loyihalari.",
-    posters: [
-      "https://image.tmdb.org/t/p/w500/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg",
-      "https://image.tmdb.org/t/p/w500/7vjaCdMw15FEbXyLQTVa04URsPm.jpg",
-      "https://image.tmdb.org/t/p/w500/reKs8y4m54gq4zP1gJ8a2BsmHlU.jpg"
-    ]
-  },
-  {
-    id: "wizards",
-    title: "Sehrgarlar haqida kinolar",
-    count: "41 ta kino",
-    href: "/collections/garri-potter",
+    id: "harry-potter",
+    title: "Sehrgarlar va Garri Potter olami",
+    count: "8 ta kino",
+    href: "/collections/harry-potter",
     category: "franchise",
-    description: "Xogvarts sehrgarlari va sehrli afsungarlar olami.",
+    description: "Xogvarts sehrgarlari, Nyut Skamander va sehrli afsungarlar olami.",
     posters: [
       "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
-      "https://image.tmdb.org/t/p/w500/sdEOH0992YZ0QSxgXNIGLq1ToUi.jpg",
-      "https://image.tmdb.org/t/p/w500/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg"
+      "https://image.tmdb.org/t/p/w500/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg",
+      "https://image.tmdb.org/t/p/w500/h6NYfVUyM6CDURtZSnBpz647Ldd.jpg"
     ]
   },
   {
-    id: "vampires",
-    title: "Vampirlar haqida kinolar",
-    count: "39 ta kino",
-    href: "/catalog?genre=horror",
-    category: "theme",
-    description: "Qonxo'rlar va tunda yashovchilar sarguzashtlari.",
+    id: "qashqirlar-makoni",
+    title: "Qashqirlar makoni (Kurtlar Vadisi)",
+    count: "5 ta film va serial",
+    href: "/collections/qashqirlar-makoni",
+    category: "franchise",
+    description: "Polat Alemdar, mafiya olami, Iroq, Falastin va Vatan janglari xronologiyasi.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg",
-      "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-      "https://image.tmdb.org/t/p/w500/5aMm9k5jO9YhYw65fM7U4m2G5g.jpg"
+      "https://media.themoviedb.org/t/p/w440_and_h660_face/zPv5KaNEVqZLpbH6sEAvld9nMVr.jpg",
+      "https://m.media-amazon.com/images/M/MV5BZjE1MzlhY2ItY2FhYy00NjFjLTk1ZDMtOWNkZTU4YTk4N2E1XkEyXkFqcGc@._V1_QL75_UY562_CR11,0,380,562_.jpg",
+      "https://image.tmdb.org/t/p/w500/wDWkjobSJm8I5r2ctSPtneUjHxT.jpg"
     ]
   },
   {
-    id: "dragons",
-    title: "Ajdarlar haqida kinolar",
-    count: "21 ta kino",
-    href: "/catalog?genre=scifi",
-    category: "theme",
-    description: "Afsonaviy olov purkovchi bahaybat maxluqlar.",
+    id: "taxtlar-oyini",
+    title: "Ajdarlar va Taxtlar olami (Vesteros)",
+    count: "2 ta serial",
+    href: "/collections/taxtlar-oyini",
+    category: "franchise",
+    description: "Temir Taxt uchun qonli kurash, Targarirlar sulolasi va Oq yuruvchilar.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/1XDDXPXGiI8id7MrUxK36ke7gkX.jpg",
-      "https://image.tmdb.org/t/p/w500/ygGmAO60t8GyqUo9xYeYxSZAR3b.jpg",
-      "https://image.tmdb.org/t/p/w500/xT98tLqatZPQApyRml42QTC5j5.jpg"
+      "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+      "https://image.tmdb.org/t/p/original/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg",
+      "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg"
     ]
   },
   {
-    id: "werewolves",
-    title: "Odam-bo'rilar haqida kinolar",
-    count: "14 ta kino",
-    href: "/catalog?genre=horror",
+    id: "vampirlar-va-borilar",
+    title: "Vampirlar va Bo'rilar olami",
+    count: "3 ta serial",
+    href: "/collections/vampirlar-va-borilar",
     category: "theme",
-    description: "To'lin oy tunda sodir bo'ladigan qo'rqinchli o'zgarishlar.",
+    description: "Mistik Folls, Mayklsonlar xonadoni va bo'rilar to'dasi to'qnashuvi.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/3Gkb6jm6962ADUP99ZGJ9H90Ghn.jpg",
-      "https://image.tmdb.org/t/p/w500/6v7F3rM6B3aK6g7M2jV4sR9pL1n.jpg",
-      "https://image.tmdb.org/t/p/w500/bQLA5i60Uj64GjWbI753bM754jX.jpg"
+      "https://image.tmdb.org/t/p/w500/gbp4zM0FE0n23X4UFY5EBlacrog.jpg",
+      "https://image.tmdb.org/t/p/w500/keJOhJXGiLL54EW6QocbyvQGquA.jpg",
+      "https://image.tmdb.org/t/p/w500/wjKBTcNy1xihmExqJI8kM2qvavP.jpg"
     ]
   },
   {
-    id: "zombies",
-    title: "Zombi haqida kinolar",
-    count: "37 ta kino",
-    href: "/catalog?genre=horror",
+    id: "christopher-nolan",
+    title: "Kristofer Nolan ilmiy-fantastikasi",
+    count: "2 ta kino",
+    href: "/collections/christopher-nolan",
     category: "theme",
-    description: "Apokalipsis va tirik murdalar o'rtasidagi omon qolish jangi.",
+    description: "Inception va Interstellar — ong osti labirinti va galaktikalararo vaqt sayohati.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/vVpEOvdxVBP25VZa69DTcBa56IT.jpg",
-      "https://image.tmdb.org/t/p/w500/haMw5q5X4Nqj9L2k26ZgE9E8G2j.jpg",
-      "https://image.tmdb.org/t/p/w500/n7PVu0hSz2sAsVekSSio1kWmrss.jpg"
+      "https://image.tmdb.org/t/p/w500/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg",
+      "https://image.tmdb.org/t/p/w500/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg",
+      "https://image.tmdb.org/t/p/w500/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg"
     ]
   },
   {
-    id: "gladiators",
-    title: "Gladiatorlar va Qadimgi Rim haqida",
-    count: "20 ta kino",
-    href: "/catalog?genre=history",
+    id: "superheroes",
+    title: "Superqahramonlar va Qasoskorlar",
+    count: "2 ta loyiha",
+    href: "/collections/superheroes",
     category: "theme",
-    description: "Qadimgi imperiyalar jangi, kolizey va jasur qahramonlar.",
+    description: "Qasoskorlar 4 Intiho va Yigitlar (The Boys) — superqahramonlar to'qnashuvi.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg",
-      "https://image.tmdb.org/t/p/w500/spW44FpI3jU2sB10R8l0bS0hDqX.jpg",
-      "https://image.tmdb.org/t/p/w500/aA21tU0g5wWb7oM7d4B6zP7bZ4s.jpg"
+      "https://image.tmdb.org/t/p/w500/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg",
+      "https://image.tmdb.org/t/p/original/in1R2dDc421JxsoRWaIIAqVI2KE.jpg",
+      "https://image.tmdb.org/t/p/w500/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg"
     ]
   },
   {
-    id: "mafia",
-    title: "Mafiya va gangsterlar haqida kinolar",
-    count: "62 ta kino",
-    href: "/catalog?genre=crime",
+    id: "gladiatorlar",
+    title: "Gladiatorlar va Qadimgi Rim",
+    count: "1 ta kino",
+    href: "/collections/gladiatorlar",
     category: "theme",
-    description: "Kriminal olam, yashirin jinoiy to'dalar va oilaviy qoidalar.",
+    description: "Kolizey janglari, Rim imperatori xiyonati va Maksimusning shonli qasosi.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
-      "https://image.tmdb.org/t/p/w500/hek3koDUyRQk7FIhPXsa6mT2Zc3.jpg",
-      "https://image.tmdb.org/t/p/w500/whNwkEQYWLFJA8ij00Ke24TN9Y7.jpg"
+      "https://image.tmdb.org/t/p/w500/aDb548BOkFfI4nFm0kx8A3Ezh7H.jpg",
+      "https://image.tmdb.org/t/p/w500/aDb548BOkFfI4nFm0kx8A3Ezh7H.jpg",
+      "https://image.tmdb.org/t/p/w500/aDb548BOkFfI4nFm0kx8A3Ezh7H.jpg"
     ]
   },
   {
-    id: "video-games",
-    title: "Kompyuter o'yinlari asosidagi kinolar",
-    count: "38 ta kino",
-    href: "/catalog?genre=adventure",
+    id: "kriminal-drama",
+    title: "Kriminal drama: Mashaqqatlar sari",
+    count: "1 ta serial",
+    href: "/collections/kriminal-drama",
     category: "theme",
-    description: "Sonik, Mario, Mortal Kombat va eng mashhur geymer filmlari.",
+    description: "Xayzenbergning metamfetamin imperiyasi — barcha davrlarning eng buyuk seriali.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/a26cQPRBh3xFuKoKf0Ki87GQUhO.jpg",
-      "https://image.tmdb.org/t/p/w500/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg",
-      "https://image.tmdb.org/t/p/w500/9yBVqNruk6KkrxwtqURnSTj5x6v.jpg"
+      "https://image.tmdb.org/t/p/w500/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg",
+      "https://image.tmdb.org/t/p/w500/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg",
+      "https://image.tmdb.org/t/p/w500/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg"
     ]
   },
   {
-    id: "monsters",
-    title: "Ulkan maxluqlar haqida kinolar",
-    count: "20 ta kino",
-    href: "/catalog?genre=scifi",
+    id: "fantastika-va-animatsiya",
+    title: "Epik Fantastika va Animatsiya",
+    count: "3 ta kino",
+    href: "/collections/fantastika-va-animatsiya",
     category: "theme",
-    description: "Godzilladan tortib King Konggacha bahaybat maxluqlar to'qnashuvi.",
+    description: "Avatar, Titanlar hujumi va Shrek 2 — dunyo e'tirofidagi eng sara durdonalar.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/tMefBSflR6PGQLv7WvFPpKLZkyk.jpg",
-      "https://image.tmdb.org/t/p/w500/phmj17e3fT4x5gB82iF1l6uWb8N.jpg",
-      "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg"
-    ]
-  },
-  {
-    id: "prison",
-    title: "Qamoqxona va qochish haqida kinolar",
-    count: "42 ta kino",
-    href: "/catalog?genre=crime",
-    category: "theme",
-    description: "Shoushenkdan qochish, Boika va qattiq tartibli qamoqxonalar.",
-    posters: [
-      "https://image.tmdb.org/t/p/w500/lyQBXzOQSuE59IsHyhrp0qIiPAz.jpg",
-      "https://image.tmdb.org/t/p/w500/bQLA5i60Uj64GjWbI753bM754jX.jpg",
-      "https://image.tmdb.org/t/p/w500/6v7F3rM6B3aK6g7M2jV4sR9pL1n.jpg"
+      "https://image.tmdb.org/t/p/w500/wgwldDDlTDDMrluOMkpSA8lyKjv.jpg",
+      "https://image.tmdb.org/t/p/w500/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg",
+      "https://image.tmdb.org/t/p/w500/2yYP0PQjG8zVqturh1BAqu2Tixl.jpg"
     ]
   }
 ];

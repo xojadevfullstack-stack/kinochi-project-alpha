@@ -79,6 +79,7 @@ class CollectionResponse(BaseModel):
     is_active: bool
     sort_order: int
     items_count: int = 0
+    posters: list[str] = []
     model_config = {"from_attributes": True}
 
 
@@ -182,13 +183,37 @@ async def list_collections(
     result = await db.execute(query)
     collections = result.scalars().all()
 
-    # Calculate item counts
+    # Calculate item counts and preview posters
     resp = []
     for c in collections:
         count_res = await db.execute(
             select(func.count(CollectionItemModel.id)).where(CollectionItemModel.collection_id == c.id)
         )
         count = count_res.scalar_one() or 0
+
+        # Fetch up to 3 item posters for fanned deck display
+        items_res = await db.execute(
+            select(CollectionItemModel)
+            .where(CollectionItemModel.collection_id == c.id)
+            .options(
+                selectinload(CollectionItemModel.movie),
+                selectinload(CollectionItemModel.series),
+            )
+            .order_by(CollectionItemModel.chronological_order.asc())
+            .limit(3)
+        )
+        posters = []
+        for it in items_res.scalars().all():
+            p = (it.movie.poster_url if it.movie else None) or (it.series.poster_url if it.series else None)
+            if p and p not in posters:
+                posters.append(p)
+        while len(posters) < 3:
+            fallback = c.poster_url or c.banner_url
+            if fallback:
+                posters.append(fallback)
+            else:
+                break
+
         resp.append(
             CollectionResponse(
                 id=c.id,
@@ -202,6 +227,7 @@ async def list_collections(
                 is_active=c.is_active,
                 sort_order=c.sort_order,
                 items_count=count,
+                posters=posters,
             )
         )
 

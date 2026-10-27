@@ -66,7 +66,7 @@ export default function SeasonsListPage() {
 
   const loadData = async () => {
     try {
-      const seriesData = await fetchApi(`/series/${seriesId}`);
+      const seriesData = await fetchApi(`/series/${seriesId}?publish_status=all`);
       setSeries(seriesData);
 
       const seasonsData = await fetchApi(`/series/${seriesId}/seasons`);

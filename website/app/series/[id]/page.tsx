@@ -375,30 +375,23 @@ export default async function SeriesDetailsPage({ params }: Props) {
                                   <span className="text-xl font-bold text-white group-hover:text-primary-container transition-colors">
                                     {episode.episode_number}
                                   </span>
-                                  {episode.duration && (
-                                    <span className="text-[10px] bg-black/40 px-2 py-1 rounded text-text-secondary font-mono">
-                                      {episode.duration} min
+                                  <div className="flex items-center gap-1.5">
+                                    {episode.duration && (
+                                      <span className="text-[10px] bg-black/40 px-2 py-1 rounded text-text-secondary font-mono">
+                                        {episode.duration} min
+                                      </span>
+                                    )}
+                                    <span className="material-symbols-outlined text-white/40 group-hover:text-primary-container group-hover:scale-110 transition-all text-[22px]">
+                                      play_circle
                                     </span>
-                                  )}
+                                  </div>
                                 </div>
-                                <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10 pr-9">
+                                <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10">
                                   {episode.title && episode.title !== `${episode.episode_number}-qism` 
                                     ? episode.title 
                                     : `${episode.episode_number}-qism`}
                                 </span>
                               </TelegramWatchButton>
-
-                              <div className="absolute bottom-2.5 right-2.5 z-20">
-                                <ReportIssueButton
-                                  mediaType="series"
-                                  seriesId={series.id}
-                                  episodeId={episode.id}
-                                  mediaTitle={series.title}
-                                  seasonNumber={season.season_number}
-                                  episodeNumber={episode.episode_number}
-                                  variant="icon"
-                                />
-                              </div>
                             </div>
                           )
                         })

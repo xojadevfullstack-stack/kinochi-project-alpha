@@ -303,10 +303,12 @@ async def get_series_by_code(
 async def get_series(
     request: Request,
     series_id: int,
+    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden', 'all')"),
     service: SeriesService = Depends(get_series_service)
 ):
-    """Get series by ID (Public: published)."""
-    series = await service.get_series_by_id(series_id, publish_status="published")
+    """Get series by ID (Public: published, Admin: all)."""
+    target_status = None if publish_status == "all" else publish_status
+    series = await service.get_series_by_id(series_id, publish_status=target_status)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series

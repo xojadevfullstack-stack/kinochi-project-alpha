@@ -8,13 +8,18 @@ router = Router()
 @router.callback_query(F.data.startswith("tr_"))
 async def process_translation_selection(callback: CallbackQuery):
     try:
-        # data format: tr_M_{item_id}_{translation_id} or tr_E_{item_id}_{translation_id}
-        parts = callback.data.split("_")
-        if len(parts) != 4:
+        # data format: tr_M_{item_code}_{translation_id} or tr_E_{item_code}_{translation_id}
+        parts = callback.data.split("_", 2)
+        if len(parts) < 3:
             await callback.answer("Noma'lum xatolik.")
             return
             
-        _, item_type, item_code, tr_id_str = parts
+        item_type = parts[1]
+        rest = parts[2]
+        if "_" not in rest:
+            await callback.answer("Noma'lum xatolik.")
+            return
+        item_code, tr_id_str = rest.rsplit("_", 1)
         
         try:
             tr_id = int(tr_id_str)

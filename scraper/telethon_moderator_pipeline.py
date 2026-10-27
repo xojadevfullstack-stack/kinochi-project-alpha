@@ -1498,6 +1498,8 @@ class TelethonModeratorPipeline:
                             "telegram_file_id": ep_bot_file_id,
                             "storage_channel_message_id": storage_msg.id,
                             "language": "O'zbekcha",
+                            "season_number": s_num,
+                            "episode_number": ep_num,
                             "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
                         }
                         f_ok, f_defects = final_check("episode", fin_payload, fin_payload)
@@ -2288,7 +2290,9 @@ class TelethonModeratorPipeline:
                 is_valid, defects = final_check("episode", {
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
-                    "language": ep_lang
+                    "language": ep_lang,
+                    "season_number": s_num,
+                    "episode_number": ep_num
                 })
                 if is_valid:
                     s_obj = await session.get(SeriesModel, series_id)
@@ -2995,7 +2999,9 @@ class TelethonModeratorPipeline:
                 is_valid, defects = final_check("episode", {
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
-                    "language": ep_lang
+                    "language": ep_lang,
+                    "season_number": 1,
+                    "episode_number": current_ep
                 })
                 if is_valid:
                     s_obj = await session.get(SeriesModel, series_id)

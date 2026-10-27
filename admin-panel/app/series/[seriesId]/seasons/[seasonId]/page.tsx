@@ -67,7 +67,7 @@ export default function EpisodesListPage() {
   const loadData = async () => {
     try {
       const [seriesData, seasonData, episodesData] = await Promise.all([
-        fetchApi(`/series/${seriesId}`),
+        fetchApi(`/series/${seriesId}?publish_status=all`),
         fetchApi(`/series/seasons/${seasonId}`),
         fetchApi(`/series/seasons/${seasonId}/episodes`)
       ]);

@@ -349,6 +349,29 @@ class SeriesRepository:
 
     async def get_episode_by_code(self, code: str, publish_status: str | None = None) -> EpisodeModel | None:
         clean_code = str(code).strip()
+# 0. Compound kodni tekshirish (masalan: s_1007_s1_ep1, s1007_1_1)
+        compound_match = re.match(r"^s_?(\d+)[_\-]s?(\d+)[_\-](?:ch|e|ep|qism)?(\d+)$", clean_code, re.IGNORECASE)
+        if compound_match:
+            c_ser_id = int(compound_match.group(1))
+            c_seas_num = int(compound_match.group(2))
+            c_ep_num = int(compound_match.group(3))
+            stmt_comp = (
+                select(EpisodeModel)
+                .join(SeasonModel, EpisodeModel.season_id == SeasonModel.id)
+                .join(SeriesModel, SeasonModel.series_id == SeriesModel.id)
+                .options(selectinload(EpisodeModel.translations))
+                .where(
+                    SeriesModel.id == c_ser_id,
+                    SeasonModel.season_number == c_seas_num,
+                    EpisodeModel.episode_number == c_ep_num
+                )
+            )
+            if publish_status == "published":
+                stmt_comp = stmt_comp.where(SeriesModel.publish_status == "published")
+            res_comp = await self.session.execute(stmt_comp)
+            found = res_comp.scalars().first()
+            if found:
+                return found
         norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
         db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
         
@@ -387,6 +410,27 @@ class SeriesRepository:
         )
         result = await self.session.execute(stmt)
         episode = result.scalars().first()
+
+        # Agar compound kod bo'lsa (masalan: s_1007_s1_ep1, s1007_1_1, s1007-ch2)
+        if not episode:
+            compound_match = re.match(r"^s_?(\d+)[_\-]s?(\d+)[_\-](?:ch|e|ep|qism)?(\d+)$", clean_code, re.IGNORECASE)
+            if compound_match:
+                c_ser_id = int(compound_match.group(1))
+                c_seas_num = int(compound_match.group(2))
+                c_ep_num = int(compound_match.group(3))
+                stmt_comp = (
+                    select(EpisodeModel)
+                    .join(SeasonModel, EpisodeModel.season_id == SeasonModel.id)
+                    .join(SeriesModel, SeasonModel.series_id == SeriesModel.id)
+                    .options(selectinload(EpisodeModel.translations))
+                    .where(
+                        SeriesModel.id == c_ser_id,
+                        SeasonModel.season_number == c_seas_num,
+                        EpisodeModel.episode_number == c_ep_num
+                    )
+                )
+                res_comp = await self.session.execute(stmt_comp)
+                episode = res_comp.scalars().first()
 
         # Agar unikal kod bo'yicha topilmasa, display_code bo'yicha qidiramiz
         if not episode:

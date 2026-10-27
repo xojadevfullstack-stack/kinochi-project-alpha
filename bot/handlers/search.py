@@ -527,12 +527,26 @@ async def handle_request_tmdb_callback(callback: CallbackQuery):
                 pass
     except Exception as e:
         logger.warning(f"Error in handle_request_tmdb_callback: {e}")
-        await callback.answer("⚠️ So'rov qabul qilinmadi.", show_alert=True)
+        try:
+            await callback.answer("⚠️ So'rov qabul qilinmadi.", show_alert=True)
+        except Exception:
+            pass
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 
 @router.callback_query(F.data == "voted_already")
 async def handle_already_voted_callback(callback: CallbackQuery):
-    await callback.answer("✅ Siz bu filmga allaqachon ovoz bergansiz!", show_alert=False)
+    try:
+        await callback.answer("✅ Siz bu filmga allaqachon ovoz bergansiz!", show_alert=False)
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
 
 
 @router.message(F.text.in_(["/request", "/sorash", "📥 Kino so'rash", "📥 Buyurtma berish"]))

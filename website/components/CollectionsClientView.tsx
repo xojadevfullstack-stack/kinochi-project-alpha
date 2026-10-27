@@ -33,31 +33,36 @@ export default function CollectionsClientView({
     { id: "all", label: "Barchasi" },
     { id: "theme", label: "Qiziqarli mavzular" },
     { id: "franchise", label: "Franshizalar" },
-    { id: "genre", label: "Janrlar bo'yicha" },
   ];
 
   // Map backend collections into theme card format (strictly real collections with items_count > 0)
-  const allThemes: CatalogTheme[] = (initialCollections || [])
-    .filter((col) => col.is_active !== false && (col.items_count === undefined || col.items_count > 0))
-    .map((col) => {
-      const posterList = col.posters && col.posters.length > 0 
-        ? col.posters 
-        : [
-            col.poster_url || col.banner_url || "https://image.tmdb.org/t/p/w500/yF1eOkaYvwiORauRCPWznV9xVvi.jpg",
-            col.banner_url || col.poster_url || "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
-            col.poster_url || "https://image.tmdb.org/t/p/w500/fiVW06jE7z9YnO4trhaMEdclSiC.jpg"
-          ];
+  const baseCollections = (initialCollections && initialCollections.length > 0)
+    ? initialCollections.filter((col) => col.is_active !== false && (col.items_count === undefined || col.items_count > 0))
+    : [];
 
-      return {
-        id: `col-${col.id}`,
-        title: col.name,
-        count: `${col.items_count || 0} ta kino`,
-        href: `/collections/${col.slug}`,
-        category: (col.is_franchise ? "franchise" : "theme") as "franchise" | "theme",
-        description: col.description || "Ushbu to'plamdagi barcha filmlar va ularning tartibi.",
-        posters: posterList
-      };
-    });
+  const allThemes: CatalogTheme[] = baseCollections.length > 0
+    ? baseCollections.map((col) => {
+        const fallbackPoster = col.poster_url || col.banner_url || "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg";
+        const posterList = col.posters && col.posters.length > 0 ? [...col.posters] : [fallbackPoster];
+        while (posterList.length < 3) {
+          posterList.push(fallbackPoster);
+        }
+
+        const countText = col.items_count
+          ? `${col.items_count} ta qism`
+          : "Sara to'plam";
+
+        return {
+          id: `col-${col.id}`,
+          title: col.name,
+          count: countText,
+          href: `/collections/${col.slug}`,
+          category: (col.category_type || (col.is_franchise ? "franchise" : "theme")) as any,
+          description: col.description || "Ushbu to'plamdagi barcha filmlar va ularning tartibi.",
+          posters: posterList.slice(0, 3)
+        };
+      })
+    : CURATED_CATALOG_THEMES;
 
   const filtered = allThemes.filter((item) => {
     // Category filter

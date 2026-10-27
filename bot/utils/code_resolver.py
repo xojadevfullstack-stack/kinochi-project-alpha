@@ -46,8 +46,14 @@ def clean_and_extract_code(text: str) -> Tuple[str, Optional[str]]:
         if m_title:
             return m_title.group(1).strip(), "movie_title"
 
-    # Boshidagi # yoki № belgilarini olib tashlash
+    # Boshidagi # yoki № yoki start buyrug'i belgilarini olib tashlash
     raw = re.sub(r"^[#№]+", "", raw).strip()
+    raw = re.sub(r"^/start\s*", "", raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r"^start=\s*", "", raw, flags=re.IGNORECASE).strip()
+
+    # 1a. Compound qism kodi: s_1007_s1_ep1, s1007_1_1, s1007-ch2
+    if re.match(r"^s_?(\d+)[_\-]s?(\d+)[_\-](?:ch|e|ep|qism)?(\d+)$", raw, re.IGNORECASE):
+        return raw, "episode"
 
     # 1. movie_, m_ yoki kino_ prefikslari (masalan, movie_PT3BQB, m_PT3BQB)
     if re.match(r"^(?:m_|movie_|kino_)", raw, re.IGNORECASE):
@@ -189,7 +195,7 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
         return False
 
     # ── 4. Noaniq tur (hech qanday aniq prefiks ko'rsatilmagan) ──
-    if " " in cleaned_code or len(cleaned_code) > 10 or not re.match(r"^[a-zA-Z0-9_\-]+$", cleaned_code):
+    if " " in cleaned_code or len(cleaned_code) > 64 or not re.match(r"^[a-zA-Z0-9_\-]+$", cleaned_code):
         return False
 
     # Faqat raqamdan iborat so'rovlar:
@@ -217,23 +223,26 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
         await send_movie_info(bot, chat_id, movie)
         return True
 
-    # 4c. Qism kodi bo'yicha tekshirish
-    if re.match(r"^(?:s\d+|ep\d+|ch\d+)", cleaned_code, re.IGNORECASE) or "-" in cleaned_code:
-        episode = await api_client.get_episode_by_code(cleaned_code)
-        if episode:
-            success = await send_episode_to_user(bot, chat_id, episode)
-            if not success and episode.get("series_id"):
-                series = await api_client.get_series_by_id(episode["series_id"])
-                if series:
-                    await send_series_info(bot, chat_id, series)
-                    return True
-            return True
+    # 4c. Qism kodi bo'yicha qidiruv (har qanday unikal 8-belgili qism kodi, masalan gb3SGSCj, yoki S1-CH1, ep_1)
+    episode = await api_client.get_episode_by_code(cleaned_code)
+    if episode:
+        success = await send_episode_to_user(bot, chat_id, episode)
+        if not success and episode.get("series_id"):
+            series = await api_client.get_series_by_id(episode["series_id"])
+            if series:
+                await send_series_info(bot, chat_id, series)
+                return True
+        return True
 
     # 4d. Serial kodi bo'yicha tekshirish
-    if cleaned_code.lower().startswith(("s_", "ser")):
-        series = await api_client.get_series_by_code(cleaned_code)
-        if series:
-            await send_series_info(bot, chat_id, series)
-            return True
+    series = await api_client.get_series_by_code(cleaned_code)
+    if series:
+        await send_series_info(bot, chat_id, series)
+        return True
+
+    # 4e. To'plam / franshiza slugi bo'yicha tekshirish
+    col = await api_client.get_collection(cleaned_code)
+    if col:
+        return await send_collection_info(bot, chat_id, col)
 
     return False

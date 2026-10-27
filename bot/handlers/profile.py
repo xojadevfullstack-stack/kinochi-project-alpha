@@ -174,13 +174,15 @@ async def handle_manage_my_subs(callback: CallbackQuery):
         builder = InlineKeyboardBuilder()
         for s in series_subs:
             s_title = s.get("title", "Serial")[:20]
-            builder.button(text=f"📺 {s_title}", callback_data=f"series_info_{s.get('series_id')}")
-            builder.button(text="❌ O'chirish", callback_data=f"prof_unsub_ser_{s.get('series_id')}")
+            s_id = s.get("series_id")
+            builder.button(text=f"📺 {s_title}", callback_data=f"series_info:{s_id}")
+            builder.button(text="❌ O'chirish", callback_data=f"prof_unsub_ser_{s_id}")
 
         for c in col_subs:
             c_name = c.get("name", "To'plam")[:20]
-            builder.button(text=f"📂 {c_name}", callback_data=f"col_view_{c.get('collection_id')}")
-            builder.button(text="❌ O'chirish", callback_data=f"prof_unsub_col_{c.get('collection_id')}")
+            col_id = c.get("collection_id")
+            builder.button(text=f"📂 {c_name}", callback_data=f"col_view_{col_id}")
+            builder.button(text="❌ O'chirish", callback_data=f"prof_unsub_col_{col_id}")
 
         builder.button(text="🔙 Profilga qaytish", callback_data="menu_profile")
         builder.adjust(2, 2, 1)

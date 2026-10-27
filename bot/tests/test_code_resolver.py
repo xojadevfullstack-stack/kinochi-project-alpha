@@ -148,3 +148,53 @@ async def test_episode_code_is_resolved():
         assert result is True
         mock_ep_code.assert_called_with("S1-CH1")
         mock_send_ep.assert_called_once_with(bot, chat_id, fake_ep)
+
+
+@pytest.mark.asyncio
+async def test_random_alphanumeric_episode_code_is_resolved():
+    """8-belgili tasodifiy qism kodi (gb3SGSCj, ASVdEqPi) get_episode_by_code orqali muvaffaqiyatli topiladi."""
+    bot = AsyncMock()
+    chat_id = 123456789
+    fake_ep = {"id": 14946, "code": "gb3SGSCj", "display_code": "S1-CH1"}
+
+    with patch("services.api_client.api_client.get_movie_by_code", new_callable=AsyncMock, return_value=None), \
+         patch("services.api_client.api_client.get_episode_by_code", new_callable=AsyncMock, return_value=fake_ep) as mock_ep_code, \
+         patch("utils.code_resolver.send_episode_to_user", new_callable=AsyncMock, return_value=True) as mock_send_ep:
+
+        result = await resolve_and_send_content(bot, chat_id, "gb3SGSCj")
+        assert result is True
+        mock_ep_code.assert_called_with("gb3SGSCj")
+        mock_send_ep.assert_called_once_with(bot, chat_id, fake_ep)
+
+
+@pytest.mark.asyncio
+async def test_compound_episode_code_is_resolved():
+    """Compound formatdagi qism kodi (s_1007_s1_ep1) to'g'ri ajratiladi va qidiriladi."""
+    bot = AsyncMock()
+    chat_id = 123456789
+    fake_ep = {"id": 14930, "code": "ASVdEqPi"}
+
+    with patch("services.api_client.api_client.get_episode_by_code", new_callable=AsyncMock, return_value=fake_ep) as mock_ep, \
+         patch("utils.code_resolver.send_episode_to_user", new_callable=AsyncMock, return_value=True):
+
+        result = await resolve_and_send_content(bot, chat_id, "s_1007_s1_ep1")
+        assert result is True
+        mock_ep.assert_called_with("s_1007_s1_ep1")
+
+
+@pytest.mark.asyncio
+async def test_collection_slug_is_resolved():
+    """10 belgidan uzun to'plam slugi (masalan harry-potter) rad etilmasdan get_collection orqali topiladi."""
+    bot = AsyncMock()
+    chat_id = 123456789
+    fake_col = {"id": 1, "slug": "harry-potter", "name": "Garri Potter"}
+
+    with patch("services.api_client.api_client.get_movie_by_code", new_callable=AsyncMock, return_value=None), \
+         patch("services.api_client.api_client.get_episode_by_code", new_callable=AsyncMock, return_value=None), \
+         patch("services.api_client.api_client.get_series_by_code", new_callable=AsyncMock, return_value=None), \
+         patch("services.api_client.api_client.get_collection", new_callable=AsyncMock, return_value=fake_col) as mock_col, \
+         patch("utils.code_resolver.send_collection_info", new_callable=AsyncMock, return_value=True):
+
+        result = await resolve_and_send_content(bot, chat_id, "harry-potter")
+        assert result is True
+        mock_col.assert_called_with("harry-potter")
