@@ -1,12 +1,19 @@
 """
-Tests for publish_status authentication on movie and series detail endpoints.
+Tests for publish_status authentication on movie and series endpoints:
+1. Detail endpoints:
+   - GET /api/v1/movies/{id}
+   - GET /api/v1/series/{id}
+2. List & search endpoints:
+   - GET /api/v1/movies
+   - GET /api/v1/movies/search
+   - GET /api/v1/series
+   - GET /api/v1/series/search
+
 Verifies:
-1. Unauthenticated ?publish_status=all -> 403 Forbidden (movies and series)
-2. Unauthenticated ?publish_status=pending -> 403 Forbidden (movies and series)
-3. Unauthenticated default -> 200 for published content, 404 for unpublished content
-4. Non-admin user token with ?publish_status=all -> 403 Forbidden
-5. Admin token with ?publish_status=all -> 200 OK (unpublished content accessible)
-6. Admin token with ?publish_status=pending -> 200 OK (pending content accessible)
+- Unauthenticated ?publish_status=all|pending|hidden -> 403 Forbidden
+- Unauthenticated default (no param) -> 200 OK (only published content)
+- Non-admin user token with non-published status -> 403 Forbidden
+- Admin token with ?publish_status=all|pending -> 200 OK
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -101,7 +108,7 @@ def mock_admin_db():
 
 
 @pytest.mark.asyncio
-async def test_movie_publish_status_auth(
+async def test_movie_detail_publish_status_auth(
     published_movie,
     pending_movie,
     admin_token,
@@ -143,22 +150,19 @@ async def test_movie_publish_status_auth(
             res = await ac.get("/api/v1/movies/1?publish_status=published")
             assert res.status_code == 200
 
-            # 4. Unauthenticated ?publish_status=all -> 403 Forbidden
-            res = await ac.get("/api/v1/movies/1?publish_status=all")
-            assert res.status_code == 403
+            # 4. Unauthenticated non-published statuses -> 403 Forbidden
+            for st in ("all", "pending", "hidden"):
+                res = await ac.get(f"/api/v1/movies/1?publish_status={st}")
+                assert res.status_code == 403, f"Expected 403 for publish_status={st}"
 
-            # 5. Unauthenticated ?publish_status=pending -> 403 Forbidden
-            res = await ac.get("/api/v1/movies/2?publish_status=pending")
-            assert res.status_code == 403
-
-            # 6. Non-admin user token with ?publish_status=all -> 403 Forbidden
+            # 5. Non-admin user token with ?publish_status=all -> 403 Forbidden
             res = await ac.get(
                 "/api/v1/movies/2?publish_status=all",
                 headers={"Authorization": f"Bearer {user_token}"}
             )
             assert res.status_code == 403
 
-            # 7. Admin token with ?publish_status=all -> 200 OK (access to pending movie)
+            # 6. Admin token with ?publish_status=all -> 200 OK (access to pending movie)
             res = await ac.get(
                 "/api/v1/movies/2?publish_status=all",
                 headers={"Authorization": f"Bearer {admin_token}"}
@@ -167,7 +171,7 @@ async def test_movie_publish_status_auth(
             assert res.json()["id"] == 2
             assert res.json()["publish_status"] == "pending"
 
-            # 8. Admin token with ?publish_status=pending -> 200 OK
+            # 7. Admin token with ?publish_status=pending -> 200 OK
             res = await ac.get(
                 "/api/v1/movies/2?publish_status=pending",
                 headers={"Authorization": f"Bearer {admin_token}"}
@@ -180,7 +184,7 @@ async def test_movie_publish_status_auth(
 
 
 @pytest.mark.asyncio
-async def test_series_publish_status_auth(
+async def test_series_detail_publish_status_auth(
     published_series,
     pending_series,
     admin_token,
@@ -222,22 +226,19 @@ async def test_series_publish_status_auth(
             res = await ac.get("/api/v1/series/1?publish_status=published")
             assert res.status_code == 200
 
-            # 4. Unauthenticated ?publish_status=all -> 403 Forbidden
-            res = await ac.get("/api/v1/series/1?publish_status=all")
-            assert res.status_code == 403
+            # 4. Unauthenticated non-published statuses -> 403 Forbidden
+            for st in ("all", "pending", "hidden"):
+                res = await ac.get(f"/api/v1/series/1?publish_status={st}")
+                assert res.status_code == 403, f"Expected 403 for publish_status={st}"
 
-            # 5. Unauthenticated ?publish_status=pending -> 403 Forbidden
-            res = await ac.get("/api/v1/series/2?publish_status=pending")
-            assert res.status_code == 403
-
-            # 6. Non-admin user token with ?publish_status=all -> 403 Forbidden
+            # 5. Non-admin user token with ?publish_status=all -> 403 Forbidden
             res = await ac.get(
                 "/api/v1/series/2?publish_status=all",
                 headers={"Authorization": f"Bearer {user_token}"}
             )
             assert res.status_code == 403
 
-            # 7. Admin token with ?publish_status=all -> 200 OK (access to pending series)
+            # 6. Admin token with ?publish_status=all -> 200 OK (access to pending series)
             res = await ac.get(
                 "/api/v1/series/2?publish_status=all",
                 headers={"Authorization": f"Bearer {admin_token}"}
@@ -246,13 +247,117 @@ async def test_series_publish_status_auth(
             assert res.json()["id"] == 2
             assert res.json()["publish_status"] == "pending"
 
-            # 8. Admin token with ?publish_status=pending -> 200 OK
+            # 7. Admin token with ?publish_status=pending -> 200 OK
             res = await ac.get(
                 "/api/v1/series/2?publish_status=pending",
                 headers={"Authorization": f"Bearer {admin_token}"}
             )
             assert res.status_code == 200
             assert res.json()["id"] == 2
+    finally:
+        app.dependency_overrides.pop(get_series_service, None)
+        app.dependency_overrides.pop(get_db_session, None)
+
+
+@pytest.mark.asyncio
+async def test_movies_list_and_search_publish_status_auth(
+    published_movie,
+    pending_movie,
+    admin_token,
+    user_token,
+    mock_admin_db,
+):
+    mock_movie_service = AsyncMock()
+    mock_movie_service.list_movies.return_value = ([published_movie], 1)
+    mock_movie_service.search_movies.return_value = ([published_movie], 1)
+
+    app.dependency_overrides[get_movie_service] = lambda: mock_movie_service
+    app.dependency_overrides[get_db_session] = lambda: mock_admin_db
+
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            for endpoint in ("/api/v1/movies", "/api/v1/movies/search?q=test"):
+                sep = "&" if "?" in endpoint else "?"
+
+                # 1. Unauthenticated default -> 200
+                res = await ac.get(endpoint)
+                assert res.status_code == 200
+
+                # 2. Unauthenticated ?publish_status=published -> 200
+                res = await ac.get(f"{endpoint}{sep}publish_status=published")
+                assert res.status_code == 200
+
+                # 3. Unauthenticated all/pending/hidden -> 403 Forbidden
+                for st in ("all", "pending", "hidden"):
+                    res = await ac.get(f"{endpoint}{sep}publish_status={st}")
+                    assert res.status_code == 403, f"{endpoint} expected 403 for {st}"
+
+                # 4. User token with publish_status=all -> 403 Forbidden
+                res = await ac.get(
+                    f"{endpoint}{sep}publish_status=all",
+                    headers={"Authorization": f"Bearer {user_token}"}
+                )
+                assert res.status_code == 403
+
+                # 5. Admin token with publish_status=all -> 200 OK
+                res = await ac.get(
+                    f"{endpoint}{sep}publish_status=all",
+                    headers={"Authorization": f"Bearer {admin_token}"}
+                )
+                assert res.status_code == 200
+    finally:
+        app.dependency_overrides.pop(get_movie_service, None)
+        app.dependency_overrides.pop(get_db_session, None)
+
+
+@pytest.mark.asyncio
+async def test_series_list_and_search_publish_status_auth(
+    published_series,
+    pending_series,
+    admin_token,
+    user_token,
+    mock_admin_db,
+):
+    mock_series_service = AsyncMock()
+    mock_series_service.get_all_series.return_value = ([published_series], 1)
+    mock_series_service.search_series.return_value = ([published_series], 1)
+
+    app.dependency_overrides[get_series_service] = lambda: mock_series_service
+    app.dependency_overrides[get_db_session] = lambda: mock_admin_db
+
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            for endpoint in ("/api/v1/series", "/api/v1/series/search?q=test"):
+                sep = "&" if "?" in endpoint else "?"
+
+                # 1. Unauthenticated default -> 200
+                res = await ac.get(endpoint)
+                assert res.status_code == 200
+
+                # 2. Unauthenticated ?publish_status=published -> 200
+                res = await ac.get(f"{endpoint}{sep}publish_status=published")
+                assert res.status_code == 200
+
+                # 3. Unauthenticated all/pending/hidden -> 403 Forbidden
+                for st in ("all", "pending", "hidden"):
+                    res = await ac.get(f"{endpoint}{sep}publish_status={st}")
+                    assert res.status_code == 403, f"{endpoint} expected 403 for {st}"
+
+                # 4. User token with publish_status=all -> 403 Forbidden
+                res = await ac.get(
+                    f"{endpoint}{sep}publish_status=all",
+                    headers={"Authorization": f"Bearer {user_token}"}
+                )
+                assert res.status_code == 403
+
+                # 5. Admin token with publish_status=all -> 200 OK
+                res = await ac.get(
+                    f"{endpoint}{sep}publish_status=all",
+                    headers={"Authorization": f"Bearer {admin_token}"}
+                )
+                assert res.status_code == 200
     finally:
         app.dependency_overrides.pop(get_series_service, None)
         app.dependency_overrides.pop(get_db_session, None)

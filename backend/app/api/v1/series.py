@@ -122,14 +122,14 @@ async def list_series(
     category_id: int | None = None,
     page_id: int | None = None,
     exclude_paged: bool = False,
-    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden')"),
+    publish_status: str | None = Depends(resolve_publish_status),
     search: str | None = Query(None, description="Qidiruv"),
     year: int | None = Query(None, description="Yil"),
     genre: str | None = Query(None, description="Janr"),
     service: SeriesService = Depends(get_series_service)
 ):
     """List series (Public: published)."""
-    target_status = None if publish_status == "all" else publish_status
+    target_status = publish_status
     cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}:{search}:{year}:{genre}"
     cached = await get_cache(cache_key)
     if cached:
@@ -170,11 +170,11 @@ async def search_series(
     q: str = Query(..., min_length=2),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    publish_status: str | None = Query("published", description="Nashr holati"),
+    publish_status: str | None = Depends(resolve_publish_status),
     service: SeriesService = Depends(get_series_service)
 ):
     """Search series by title (Public: published)."""
-    target_status = None if publish_status == "all" else publish_status
+    target_status = publish_status
     cache_key = f"cache:series:search:{q}:{skip}:{limit}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:

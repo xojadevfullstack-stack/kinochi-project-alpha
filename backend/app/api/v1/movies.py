@@ -297,11 +297,11 @@ async def list_movies(
     search: str | None = None,
     page_id: int | None = None,
     exclude_paged: bool = False,
-    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden')"),
+    publish_status: str | None = Depends(resolve_publish_status),
     service: MovieService = Depends(get_movie_service)
 ):
     """List movies, optionally filtered by category, genre, year, search and publish_status (Public: published)."""
-    target_status = None if publish_status == "all" else publish_status
+    target_status = publish_status
     cache_key = f"cache:movies:list:{skip}:{limit}:{category_id}:{genre}:{year}:{search}:{page_id}:{exclude_paged}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
@@ -332,11 +332,11 @@ async def search_movies(
     q: str = Query(..., min_length=2, description="Qidiruv matni"),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    publish_status: str | None = Query("published", description="Nashr holati"),
+    publish_status: str | None = Depends(resolve_publish_status),
     service: MovieService = Depends(get_movie_service)
 ):
     """Search movies by title (Public: published)."""
-    target_status = None if publish_status == "all" else publish_status
+    target_status = publish_status
     cache_key = f"cache:movies:search:{q}:{skip}:{limit}:{target_status}"
     cached = await get_cache(cache_key)
     if cached:
