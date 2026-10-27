@@ -6,7 +6,7 @@ Create Date: 2026-10-25 08:50:00.000000
 """
 from typing import Sequence, Union
 from alembic import op
-import sqlalchemy as sa
+import sqlalchemy as sa  # noqa: F401
 
 
 revision: str = 'e013ec7302'
@@ -37,13 +37,13 @@ def upgrade() -> None:
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS ix_content_requests_title ON content_requests(title);
-        CREATE INDEX IF NOT EXISTS ix_content_requests_tmdb_id ON content_requests(tmdb_id);
-        CREATE INDEX IF NOT EXISTS ix_content_requests_kinopoisk_id ON content_requests(kinopoisk_id);
-        CREATE INDEX IF NOT EXISTS ix_content_requests_telegram_user_id ON content_requests(telegram_user_id);
-        CREATE INDEX IF NOT EXISTS ix_content_requests_status ON content_requests(status);
-        CREATE INDEX IF NOT EXISTS ix_content_requests_tmdb_media ON content_requests(tmdb_id, media_type);
     """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_content_requests_title ON content_requests(title);")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_content_requests_tmdb_id ON content_requests(tmdb_id);")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_content_requests_kinopoisk_id ON content_requests(kinopoisk_id);")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_content_requests_telegram_user_id ON content_requests(telegram_user_id);")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_content_requests_status ON content_requests(status);")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_content_requests_tmdb_media ON content_requests(tmdb_id, media_type);")
 
 
 def downgrade() -> None:

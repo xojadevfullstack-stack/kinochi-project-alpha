@@ -8,6 +8,7 @@ execute migrations.
 
 import asyncio
 import os
+import re
 import sys
 from logging.config import fileConfig
 
@@ -26,7 +27,6 @@ from app.infrastructure.db import models  # noqa: F401
 config = context.config
 
 # Override sqlalchemy.url with runtime settings
-import re
 runtime_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL
 runtime_url = re.sub(r"\s+", "", str(runtime_url))
 if "-pooler." in runtime_url:
@@ -73,11 +73,15 @@ def do_run_migrations(connection: AsyncConnection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using an async engine."""
+    connect_args = {}
+    if "asyncpg" in runtime_url:
+        connect_args["statement_cache_size"] = 0
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args={"statement_cache_size": 0},
+        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

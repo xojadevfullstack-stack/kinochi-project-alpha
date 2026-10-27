@@ -34,7 +34,19 @@ jobs:
         run: |
           cd backend
           ruff check .
-          
+
+      - name: Check Alembic Single Head
+        run: |
+          cd backend
+          HEADS=$(alembic heads)
+          COUNT=$(echo "$HEADS" | grep -c "(head)")
+          if [ "$COUNT" -ne 1 ]; then
+            echo "Error: Alembic must have exactly 1 head, found $COUNT"
+            echo "$HEADS"
+            exit 1
+          fi
+          echo "Alembic single head verified: $HEADS"
+
       - name: Run Pytest
         run: |
           cd backend

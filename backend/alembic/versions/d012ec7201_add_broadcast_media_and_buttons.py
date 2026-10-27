@@ -6,7 +6,7 @@ Create Date: 2026-10-25 05:40:00.000000
 """
 from typing import Sequence, Union
 from alembic import op
-import sqlalchemy as sa
+import sqlalchemy as sa  # noqa: F401
 
 
 revision: str = 'd012ec7201'
@@ -30,9 +30,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute("""
-        ALTER TABLE broadcasts DROP COLUMN IF EXISTS button_url;
-        ALTER TABLE broadcasts DROP COLUMN IF EXISTS button_text;
-        ALTER TABLE broadcasts DROP COLUMN IF EXISTS media_url;
-        ALTER TABLE broadcasts DROP COLUMN IF EXISTS media_type;
-    """)
+    op.execute("ALTER TABLE broadcasts DROP COLUMN IF EXISTS button_url;")
+    op.execute("ALTER TABLE broadcasts DROP COLUMN IF EXISTS button_text;")
+    op.execute("ALTER TABLE broadcasts DROP COLUMN IF EXISTS media_url;")
+    op.execute("ALTER TABLE broadcasts DROP COLUMN IF EXISTS media_type;")
