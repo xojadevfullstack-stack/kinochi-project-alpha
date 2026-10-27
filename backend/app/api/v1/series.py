@@ -1,6 +1,5 @@
 """API v1 — Series endpoints."""
 import html
-import inspect
 import logging
 import asyncio
 import os
@@ -11,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, U
 from pydantic import BaseModel
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot, get_db_session
+from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot, get_db_session, resolve_publish_status
 from app.application.series.series_service import SeriesService
 from app.domain.series.entities import (
     Series, SeriesCreate, SeriesUpdate, PaginatedSeriesResponse,
@@ -304,32 +303,11 @@ async def get_series_by_code(
 async def get_series(
     request: Request,
     series_id: int,
-    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden', 'all')"),
+    publish_status: str | None = Depends(resolve_publish_status),
     service: SeriesService = Depends(get_series_service),
-    db: AsyncSession = Depends(get_db_session),
 ):
     """Get series by ID (Public: published, Admin: all/pending/hidden)."""
-    effective_status = publish_status or "published"
-    if effective_status != "published":
-        try:
-            override = request.app.dependency_overrides.get(get_current_admin)
-            if override:
-                try:
-                    res = override()
-                except TypeError:
-                    res = override(request, db)
-                if inspect.isawaitable(res):
-                    await res
-            else:
-                await get_current_admin(request, db)
-        except HTTPException:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Nashr qilinmagan kontentni ko'rish uchun faqat adminlarga ruxsat berilgan",
-            )
-
-    target_status = None if effective_status == "all" else effective_status
-    series = await service.get_series_by_id(series_id, publish_status=target_status)
+    series = await service.get_series_by_id(series_id, publish_status=publish_status)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series

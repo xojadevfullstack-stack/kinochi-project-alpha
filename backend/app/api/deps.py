@@ -6,7 +6,7 @@ handlers via Depends().
 """
 from typing import AsyncGenerator
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -186,3 +186,26 @@ async def get_admin_or_bot(
         
     return await get_current_admin(request, session)
 
+
+
+async def resolve_publish_status(
+    request: Request,
+    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden', 'all')"),
+    session: AsyncSession = Depends(get_db_session),
+) -> str | None:
+    """
+    Dependency: resolve publish_status query parameter.
+    - Default/published: public access (no admin check).
+    - Other values ('all', 'pending', 'hidden'): requires admin auth via get_current_admin.
+    - Returns None if publish_status == 'all', otherwise the effective publish_status string.
+    """
+    effective_status = publish_status or "published"
+    if effective_status != "published":
+        try:
+            await get_current_admin(request, session)
+        except HTTPException:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Nashr qilinmagan kontentni ko'rish uchun faqat adminlarga ruxsat berilgan",
+            )
+    return None if effective_status == "all" else effective_status
