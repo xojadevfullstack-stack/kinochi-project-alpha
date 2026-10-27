@@ -1,6 +1,7 @@
 """API v1 — Movies endpoints.  Phase 1: CRUD + search."""
 from typing import Any, Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
+import inspect
 import logging
 import asyncio
 import os
@@ -457,10 +458,32 @@ async def get_movie_by_source(
 async def get_movie(
     request: Request,
     movie_id: int,
-    service: MovieService = Depends(get_movie_service)
+    publish_status: str | None = Query("published", description="Nashr holati ('published', 'pending', 'hidden', 'all')"),
+    service: MovieService = Depends(get_movie_service),
+    db: AsyncSession = Depends(get_db_session),
 ):
-    """Get movie by ID (Public: published only)."""
-    movie = await service.get_movie(movie_id, publish_status="published")
+    """Get movie by ID (Public: published, Admin: all/pending/hidden)."""
+    effective_status = publish_status or "published"
+    if effective_status != "published":
+        try:
+            override = request.app.dependency_overrides.get(get_current_admin)
+            if override:
+                try:
+                    res = override()
+                except TypeError:
+                    res = override(request, db)
+                if inspect.isawaitable(res):
+                    await res
+            else:
+                await get_current_admin(request, db)
+        except HTTPException:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Nashr qilinmagan kontentni ko'rish uchun faqat adminlarga ruxsat berilgan",
+            )
+
+    target_status = None if effective_status == "all" else effective_status
+    movie = await service.get_movie(movie_id, publish_status=target_status)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
     return movie
