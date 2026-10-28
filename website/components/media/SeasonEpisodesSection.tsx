@@ -10,6 +10,7 @@ export type Episode = {
   title: string | null;
   duration: number | null;
   code: string;
+  display_code?: string | null;
 };
 
 export type Season = {
