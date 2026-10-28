@@ -41,3 +41,55 @@ export const DEFAULT_MEDIA_TYPES: MediaTypeItem[] = [
 ];
 
 export const DEFAULT_YEARS: number[] = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2010, 2005, 2000];
+
+export interface CountryItem {
+  id: string;
+  name: string;
+}
+
+export const DEFAULT_COUNTRIES: CountryItem[] = [
+  { id: "uz", name: "O'zbekiston" },
+  { id: "us", name: "AQSH" },
+  { id: "tr", name: "Turkiya" },
+  { id: "kr", name: "Janubiy Koreya" },
+  { id: "ru", name: "Rossiya" },
+  { id: "in", name: "Hindiston" },
+  { id: "gb", name: "Buyuk Britaniya" },
+  { id: "fr", name: "Fransiya" },
+];
+
+export interface SortOptionItem {
+  id: string;
+  name: string;
+}
+
+export const DEFAULT_SORT_OPTIONS: SortOptionItem[] = [
+  { id: "all", name: "Barchasi" },
+  { id: "imdb", name: "IMDb" },
+  { id: "kinopoisk", name: "Kinopoisk" },
+  { id: "itv", name: "iTV (MediaPlus)" },
+];
+
+export interface AudioItem {
+  id: string;
+  name: string;
+}
+
+export const DEFAULT_AUDIOTRACKS: AudioItem[] = [
+  { id: "uz", name: "O'zbekcha" },
+  { id: "ru", name: "Ruscha" },
+  { id: "en", name: "Inglizcha" },
+  { id: "orig", name: "Asl tili" },
+];
+
+export interface SubtitleItem {
+  id: string;
+  name: string;
+}
+
+export const DEFAULT_SUBTITLES: SubtitleItem[] = [
+  { id: "uz", name: "O'zbekcha" },
+  { id: "ru", name: "Ruscha" },
+  { id: "en", name: "Inglizcha" },
+  { id: "none", name: "Mavjud emas" },
+];

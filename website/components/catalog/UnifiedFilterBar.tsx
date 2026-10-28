@@ -15,7 +15,7 @@ export type { CategoryItem, GenreItem, MediaTypeItem };
 export { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES };
 
 export interface UnifiedFilterBarProps {
-  categories: CategoryItem[];
+  categories?: CategoryItem[];
   genres?: GenreItem[];
   years?: number[];
   types?: MediaTypeItem[];
@@ -23,22 +23,19 @@ export interface UnifiedFilterBarProps {
   selectedGenre?: string;
   selectedYear?: string;
   selectedType?: string;
+  selectedSort?: string;
   baseUrl?: string;
   totalItems?: number;
 }
 
-interface SelectOption {
+interface DropdownOption {
   id: string;
   name: string;
-  icon?: string;
 }
 
-interface SearchableDropdownProps {
+interface FilterDropdownProps {
   label: string;
-  icon: string;
-  placeholder: string;
-  searchPlaceholder: string;
-  options: SelectOption[];
+  options: DropdownOption[];
   selectedValue?: string | null;
   isOpen: boolean;
   onToggle: () => void;
@@ -46,23 +43,18 @@ interface SearchableDropdownProps {
   onSelect: (value: string | null) => void;
 }
 
-function SearchableDropdown({
+function FilterDropdown({
   label,
-  icon,
-  placeholder,
-  searchPlaceholder,
   options,
   selectedValue,
   isOpen,
   onToggle,
   onClose,
   onSelect,
-}: SearchableDropdownProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+}: FilterDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close dropdown on click outside
+  // Click outside listener
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -81,189 +73,94 @@ function SearchableDropdown({
     };
   }, [isOpen, onClose]);
 
-  // Autofocus input when dropdown opens
-  useEffect(() => {
-    if (isOpen) {
-      setSearchQuery("");
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
   const activeOption = options.find((opt) => opt.id === selectedValue);
-
-  // Filter options based on typed query
-  const filteredOptions = options.filter((opt) =>
-    opt.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-  );
+  const displayText = activeOption ? activeOption.name : label;
 
   return (
-    <div ref={containerRef} className={`relative w-full ${isOpen ? "z-50" : "z-10"}`}>
-      {/* ── Input Trigger Button ── */}
-      <div
+    <div ref={containerRef} className="relative flex-1 min-w-[120px] sm:min-w-[140px]">
+      {/* ── Dropdown Trigger Box (iTV style) ── */}
+      <button
+        type="button"
         onClick={onToggle}
-        className={`w-full bg-[#141720] hover:bg-[#1a1e2a] border transition-all duration-200 rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between cursor-pointer select-none group ${
+        className={`w-full bg-[#13151b] hover:bg-[#191b24] border rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between gap-1.5 transition-all select-none cursor-pointer group ${
           isOpen
-            ? "border-primary-container shadow-md shadow-primary-container/10 ring-1 ring-primary-container/40"
+            ? "border-white/30 text-white ring-1 ring-white/20 shadow-lg"
             : selectedValue
-            ? "border-primary-container/50 bg-primary-container/5"
-            : "border-white/10 hover:border-white/20"
+            ? "border-primary-container text-white bg-primary-container/10 font-bold"
+            : "border-white/10 text-text-secondary hover:text-white"
         }`}
       >
-        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-          <span
-            className={`material-symbols-outlined text-[19px] shrink-0 transition-colors ${
-              selectedValue || isOpen
-                ? "text-primary-container"
-                : "text-zinc-400 group-hover:text-zinc-200"
-            }`}
-          >
-            {activeOption?.icon || icon}
-          </span>
-          <div className="min-w-0 flex flex-col">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 leading-tight truncate">
-              {label}
-            </span>
-            <span
-              className={`text-xs sm:text-sm font-semibold truncate leading-snug ${
-                selectedValue
-                  ? "text-white font-bold"
-                  : "text-zinc-400 font-normal"
-              }`}
-            >
-              {activeOption ? activeOption.name : placeholder}
-            </span>
-          </div>
-        </div>
+        <span className="text-xs sm:text-[13px] truncate">
+          {displayText}
+        </span>
+        <span
+          className={`material-symbols-outlined text-[18px] opacity-70 transition-transform duration-200 shrink-0 ${
+            isOpen ? "rotate-180 text-white" : ""
+          }`}
+        >
+          expand_more
+        </span>
+      </button>
 
-        <div className="flex items-center gap-1 shrink-0 ml-1">
-          {/* Quick Clear Button (✕) if value is selected */}
-          {selectedValue && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(null);
-              }}
-              className="w-5 h-5 rounded-full hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition text-xs"
-              title="Tozalash"
-            >
-              ✕
-            </button>
-          )}
-
-          <span
-            className={`material-symbols-outlined text-[18px] text-zinc-400 transition-transform duration-200 ${
-              isOpen ? "rotate-180 text-primary-container" : ""
-            }`}
-          >
-            expand_more
-          </span>
-        </div>
-      </div>
-
-      {/* ── Dropdown Popover (Combobox) ── */}
+      {/* ── Popover Option List ── */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-[#12151d] border border-white/20 rounded-2xl p-2.5 shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-2xl animate-in fade-in slide-in-from-top-1 duration-150 min-w-[220px]">
-          {/* 1. Quick Search Input at top of dropdown */}
-          <div className="relative mb-2">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-[17px] pointer-events-none">
-              search
-            </span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition"
-            />
-            {searchQuery && (
+        <div className="absolute left-0 top-full mt-1.5 z-30 min-w-full sm:min-w-[190px] max-h-64 overflow-y-auto hide-scrollbar bg-[#161822] border border-white/15 rounded-xl p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in duration-150">
+          {/* Reset / Barchasi item */}
+          <button
+            type="button"
+            onClick={() => {
+              onSelect(null);
+              onClose();
+            }}
+            className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
+              !selectedValue
+                ? "bg-primary-container text-white font-bold"
+                : "text-zinc-300 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <span>Barchasi</span>
+            {!selectedValue && (
+              <span className="material-symbols-outlined text-[15px]">check</span>
+            )}
+          </button>
+
+          {/* Options */}
+          {options.map((opt) => {
+            const isSelected = selectedValue === opt.id;
+            return (
               <button
+                key={opt.id}
                 type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs p-0.5"
+                onClick={() => {
+                  onSelect(opt.id);
+                  onClose();
+                }}
+                className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
+                  isSelected
+                    ? "bg-primary-container text-white font-bold"
+                    : "text-zinc-300 hover:bg-white/10 hover:text-white"
+                }`}
               >
-                ✕
+                <span className="truncate">{opt.name}</span>
+                {isSelected && (
+                  <span className="material-symbols-outlined text-[15px] shrink-0">
+                    check
+                  </span>
+                )}
               </button>
-            )}
-          </div>
-
-          {/* 2. Scrollable / Touch-friendly List of Options */}
-          <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-0.5 pr-1">
-            {/* "Barchasi" (Reset) option */}
-            <button
-              type="button"
-              onClick={() => {
-                onSelect(null);
-                onClose();
-              }}
-              className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
-                !selectedValue
-                  ? "bg-primary-container text-white font-bold shadow-sm"
-                  : "text-zinc-300 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px] opacity-75">
-                  apps
-                </span>
-                <span>{placeholder}</span>
-              </div>
-              {!selectedValue && (
-                <span className="material-symbols-outlined text-[16px]">
-                  check
-                </span>
-              )}
-            </button>
-
-            {/* Filtered options list */}
-            {filteredOptions.map((opt) => {
-              const isSelected = selectedValue === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    onSelect(opt.id);
-                    onClose();
-                  }}
-                  className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
-                    isSelected
-                      ? "bg-primary-container text-white font-bold shadow-sm"
-                      : "text-zinc-300 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    {opt.icon && (
-                      <span className="material-symbols-outlined text-[16px] opacity-75 shrink-0">
-                        {opt.icon}
-                      </span>
-                    )}
-                    <span className="truncate">{opt.name}</span>
-                  </div>
-                  {isSelected && (
-                    <span className="material-symbols-outlined text-[16px] shrink-0">
-                      check
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-
-            {filteredOptions.length === 0 && (
-              <div className="text-center py-4 text-xs text-zinc-500">
-                Mos variant topilmadi
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
+const SORT_OPTIONS: DropdownOption[] = [
+  { id: "all", name: "Barchasi" },
+  { id: "rating", name: "Reyting bo'yicha saralash" },
+  { id: "latest", name: "Eng yangilari" },
+];
 
 export default function UnifiedFilterBar({
   categories = [],
@@ -274,37 +171,17 @@ export default function UnifiedFilterBar({
   selectedGenre,
   selectedYear,
   selectedType,
+  selectedSort,
   baseUrl = "/catalog",
   totalItems,
 }: UnifiedFilterBarProps) {
   const router = useRouter();
 
-  // Unified panel open state
-  const [isOpen, setIsOpen] = useState(
-    Boolean(selectedCategory || selectedGenre || selectedYear || selectedType)
-  );
-
-  // Track which dropdown is currently open (only one at a time)
+  // Active open dropdown tracker
   const [openDropdown, setOpenDropdown] = useState<
-    "category" | "type" | "genre" | "year" | null
+    "genre" | "category" | "type" | "year" | "sort" | null
   >(null);
 
-  // Calculate active filter count
-  const activeCount = [
-    selectedCategory,
-    selectedType,
-    selectedGenre,
-    selectedYear,
-  ].filter(Boolean).length;
-
-  // Find active labels for display badges
-  const activeCategoryObj = categories.find(
-    (c) => String(c.id) === String(selectedCategory)
-  );
-  const activeTypeObj = types.find((t) => t.id === selectedType);
-  const activeGenreObj = genres.find((g) => g.id === selectedGenre);
-
-  // Helper to obtain current URL search params without triggering SSR bailout
   const getCurrentParams = () => {
     if (typeof window !== "undefined") {
       return new URLSearchParams(window.location.search);
@@ -314,257 +191,157 @@ export default function UnifiedFilterBar({
     if (selectedType) params.set("type", selectedType);
     if (selectedGenre) params.set("genre", selectedGenre);
     if (selectedYear) params.set("year", String(selectedYear));
+    if (selectedSort) params.set("sort", selectedSort);
     return params;
   };
 
-  // Helper to update query parameters
-  const updateFilter = (
-    type: "category" | "type" | "genre" | "year",
-    value?: string | number | null
-  ) => {
+  const updateFilter = (key: string, value?: string | number | null) => {
     const params = getCurrentParams();
-
-    if (value !== undefined && value !== null && value !== "") {
-      params.set(type, String(value));
+    if (value !== undefined && value !== null && value !== "" && value !== "all") {
+      params.set(key, String(value));
     } else {
-      params.delete(type);
+      params.delete(key);
     }
-
-    const queryString = params.toString();
-    const targetUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
-    router.push(targetUrl);
-  };
-
-  const clearAllFilters = () => {
-    const params = getCurrentParams();
-    params.delete("category");
-    params.delete("type");
-    params.delete("genre");
-    params.delete("year");
-    params.delete("search");
     const queryString = params.toString();
     router.push(queryString ? `${baseUrl}?${queryString}` : baseUrl);
   };
 
-  // Convert categories to SelectOption format
-  const categoryOptions: SelectOption[] = categories.map((c) => ({
+  const clearAllFilters = () => {
+    setOpenDropdown(null);
+    router.push(baseUrl);
+  };
+
+  // Convert real categories from DB
+  const categoryOptions: DropdownOption[] = categories.map((c) => ({
     id: String(c.id),
     name: c.name,
   }));
 
-  // Convert types to SelectOption format
-  const typeOptions: SelectOption[] = types.map((t) => ({
-    id: t.id,
-    name: t.name,
-    icon: t.icon,
-  }));
-
-  // Convert genres to SelectOption format
-  const genreOptions: SelectOption[] = genres.map((g) => ({
+  const genreOptions: DropdownOption[] = genres.map((g) => ({
     id: g.id,
     name: g.name,
-    icon: g.icon,
   }));
 
-  // Convert years to SelectOption format
-  const yearOptions: SelectOption[] = years.map((y) => ({
+  const typeOptions: DropdownOption[] = types.map((t) => ({
+    id: t.id,
+    name: t.name,
+  }));
+
+  const yearOptions: DropdownOption[] = years.map((y) => ({
     id: String(y),
     name: String(y),
   }));
 
+  const hasAnyActiveFilter = Boolean(
+    selectedGenre ||
+    selectedCategory ||
+    selectedType ||
+    selectedYear ||
+    selectedSort
+  );
+
   return (
-    <div className={`w-full space-y-3 relative ${openDropdown ? "z-50" : "z-20"}`}>
-      {/* ── 1. MAIN FILTRLAR HEADER ROW ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#111318]/90 backdrop-blur-md border border-white/10 rounded-2xl p-3 sm:p-4 shadow-lg">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* THE MASTER FILTRLAR TOGGLE BUTTON */}
+    <div className="w-full space-y-3 relative z-20">
+      {/* ── ROW 1: iTV 5-DROPDOWN HORIZONTAL BAR (Only real parameters) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-2.5">
+        {/* 1. Janr */}
+        <FilterDropdown
+          label="Janr"
+          options={genreOptions}
+          selectedValue={selectedGenre}
+          isOpen={openDropdown === "genre"}
+          onToggle={() =>
+            setOpenDropdown((cur) => (cur === "genre" ? null : "genre"))
+          }
+          onClose={() =>
+            setOpenDropdown((cur) => (cur === "genre" ? null : cur))
+          }
+          onSelect={(val) => updateFilter("genre", val)}
+        />
+
+        {/* 2. Bo'lim */}
+        <FilterDropdown
+          label="Bo'lim"
+          options={categoryOptions}
+          selectedValue={selectedCategory}
+          isOpen={openDropdown === "category"}
+          onToggle={() =>
+            setOpenDropdown((cur) => (cur === "category" ? null : "category"))
+          }
+          onClose={() =>
+            setOpenDropdown((cur) => (cur === "category" ? null : cur))
+          }
+          onSelect={(val) => updateFilter("category", val)}
+        />
+
+        {/* 3. Turi */}
+        <FilterDropdown
+          label="Turi"
+          options={typeOptions}
+          selectedValue={selectedType}
+          isOpen={openDropdown === "type"}
+          onToggle={() =>
+            setOpenDropdown((cur) => (cur === "type" ? null : "type"))
+          }
+          onClose={() =>
+            setOpenDropdown((cur) => (cur === "type" ? null : cur))
+          }
+          onSelect={(val) => updateFilter("type", val)}
+        />
+
+        {/* 4. Yil */}
+        <FilterDropdown
+          label="Yil"
+          options={yearOptions}
+          selectedValue={selectedYear}
+          isOpen={openDropdown === "year"}
+          onToggle={() =>
+            setOpenDropdown((cur) => (cur === "year" ? null : "year"))
+          }
+          onClose={() =>
+            setOpenDropdown((cur) => (cur === "year" ? null : cur))
+          }
+          onSelect={(val) => updateFilter("year", val)}
+        />
+
+        {/* 5. Reyting bo'yicha saralash */}
+        <FilterDropdown
+          label="Reyting bo'yicha saralash"
+          options={SORT_OPTIONS}
+          selectedValue={selectedSort}
+          isOpen={openDropdown === "sort"}
+          onToggle={() =>
+            setOpenDropdown((cur) => (cur === "sort" ? null : "sort"))
+          }
+          onClose={() =>
+            setOpenDropdown((cur) => (cur === "sort" ? null : cur))
+          }
+          onSelect={(val) => updateFilter("sort", val)}
+        />
+      </div>
+
+      {/* ── ROW 2: ACTIONS (Clear filters & Results counter) ── */}
+      <div className="flex items-center justify-between gap-3 pt-0.5 min-h-[28px]">
+        {hasAnyActiveFilter ? (
           <button
             type="button"
-            onClick={() => setIsOpen((prev) => !prev)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer shadow-md select-none ${
-              isOpen || activeCount > 0
-                ? "bg-primary-container text-white border border-primary-container/40 shadow-primary-container/20 scale-[1.02]"
-                : "bg-white/10 hover:bg-white/15 text-white border border-white/10"
-            }`}
+            onClick={clearAllFilters}
+            className="text-xs text-text-secondary hover:text-red-400 flex items-center gap-1 transition-colors select-none cursor-pointer py-1"
           >
-            <span className="material-symbols-outlined text-[19px]">tune</span>
-            <span>Filtrlar</span>
-            {activeCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-white text-black font-extrabold text-[11px] flex items-center justify-center shadow">
-                {activeCount}
-              </span>
-            )}
-            <span
-              className={`material-symbols-outlined text-[18px] opacity-70 transition-transform duration-200 ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            >
-              expand_more
-            </span>
+            <span className="text-[13px]">✕</span>
+            <span>Filtrlarni tozalash</span>
           </button>
+        ) : (
+          <div />
+        )}
 
-          {/* ACTIVE FILTER BADGE CHIPS (Removable tags) */}
-          {activeCategoryObj && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-xs font-semibold text-white animate-fade-in">
-              <span className="text-zinc-400">Bo'lim:</span>
-              <span className="text-red-400 font-bold">
-                {activeCategoryObj.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => updateFilter("category", null)}
-                className="hover:text-red-400 transition ml-1"
-                title="Tozalash"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {activeTypeObj && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-xs font-semibold text-white animate-fade-in">
-              <span className="text-zinc-400">Turi:</span>
-              <span className="text-red-400 font-bold">{activeTypeObj.name}</span>
-              <button
-                type="button"
-                onClick={() => updateFilter("type", null)}
-                className="hover:text-red-400 transition ml-1"
-                title="Tozalash"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {activeGenreObj && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-xs font-semibold text-white animate-fade-in">
-              <span className="text-zinc-400">Janr:</span>
-              <span className="text-red-400 font-bold">
-                {activeGenreObj.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => updateFilter("genre", null)}
-                className="hover:text-red-400 transition ml-1"
-                title="Tozalash"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {selectedYear && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-xs font-semibold text-white animate-fade-in">
-              <span className="text-zinc-400">Yil:</span>
-              <span className="text-red-400 font-bold">{selectedYear}</span>
-              <button
-                type="button"
-                onClick={() => updateFilter("year", null)}
-                className="hover:text-red-400 transition ml-1"
-                title="Tozalash"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {activeCount > 0 && (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="text-xs text-text-secondary hover:text-red-400 underline decoration-dotted transition px-2 py-1 cursor-pointer"
-            >
-              Barchasini tozalash
-            </button>
-          )}
-        </div>
-
-        {/* Counter of matching results */}
+        {/* Topilgan kinolar soni */}
         {typeof totalItems === "number" && (
           <div className="text-xs text-zinc-400 font-medium">
             Topilgan: <span className="font-bold text-white">{totalItems} ta</span>
           </div>
         )}
       </div>
-
-      {/* ── 2. EXPANDABLE 4-INPUT FILTER PANEL (When "Filtrlar" is toggled open) ── */}
-      {isOpen && (
-        <div className={`bg-[#101217]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200 relative ${openDropdown ? "z-50" : "z-20"}`}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 relative">
-            {/* Input 1: Bo'limlar (Toifalar) */}
-            <SearchableDropdown
-              label="Bo'lim (Toifa)"
-              icon="category"
-              placeholder="Barcha bo'limlar"
-              searchPlaceholder="Bo'lim qidirish..."
-              options={categoryOptions}
-              selectedValue={selectedCategory}
-              isOpen={openDropdown === "category"}
-              onToggle={() =>
-                setOpenDropdown((cur) => (cur === "category" ? null : "category"))
-              }
-              onClose={() =>
-                setOpenDropdown((cur) => (cur === "category" ? null : cur))
-              }
-              onSelect={(val) => updateFilter("category", val)}
-            />
-
-            {/* Input 2: Turi (Format) */}
-            <SearchableDropdown
-              label="Turi (Format)"
-              icon="video_library"
-              placeholder="Barcha turlar"
-              searchPlaceholder="Tur qidirish..."
-              options={typeOptions}
-              selectedValue={selectedType}
-              isOpen={openDropdown === "type"}
-              onToggle={() =>
-                setOpenDropdown((cur) => (cur === "type" ? null : "type"))
-              }
-              onClose={() =>
-                setOpenDropdown((cur) => (cur === "type" ? null : cur))
-              }
-              onSelect={(val) => updateFilter("type", val)}
-            />
-
-            {/* Input 3: Janrlar */}
-            <SearchableDropdown
-              label="Janr"
-              icon="theater_comedy"
-              placeholder="Barcha janrlar"
-              searchPlaceholder="Janr qidirish... (masalan, Jangari)"
-              options={genreOptions}
-              selectedValue={selectedGenre}
-              isOpen={openDropdown === "genre"}
-              onToggle={() =>
-                setOpenDropdown((cur) => (cur === "genre" ? null : "genre"))
-              }
-              onClose={() =>
-                setOpenDropdown((cur) => (cur === "genre" ? null : cur))
-              }
-              onSelect={(val) => updateFilter("genre", val)}
-            />
-
-            {/* Input 4: Chiqarilgan yili */}
-            <SearchableDropdown
-              label="Chiqarilgan yili"
-              icon="calendar_month"
-              placeholder="Barcha yillar"
-              searchPlaceholder="Yil qidirish... (masalan, 2024)"
-              options={yearOptions}
-              selectedValue={selectedYear}
-              isOpen={openDropdown === "year"}
-              onToggle={() =>
-                setOpenDropdown((cur) => (cur === "year" ? null : "year"))
-              }
-              onClose={() =>
-                setOpenDropdown((cur) => (cur === "year" ? null : cur))
-              }
-              onSelect={(val) => updateFilter("year", val)}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

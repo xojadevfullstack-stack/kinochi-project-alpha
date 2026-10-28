@@ -10,6 +10,9 @@ export interface HistoryItem {
     title: string;
     poster_url: string | null;
     code: string;
+    release_year?: number | null;
+    imdb_rating?: number | null;
+    genres?: string | null;
   };
   episode?: {
     id: number;
@@ -20,6 +23,9 @@ export interface HistoryItem {
     series_id: number;
     series_title: string;
     series_poster: string | null;
+    release_year?: number | null;
+    imdb_rating?: number | null;
+    genres?: string | null;
   };
 }
 

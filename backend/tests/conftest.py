@@ -73,8 +73,11 @@ def mock_env_vars():
 
     yield
 
-    os.environ.clear()
-    os.environ.update(original_env)
+    for k in ["APP_ENV", "DATABASE_URL", "REDIS_URL", "SECRET_KEY", "BOT_TOKEN", "STORAGE_CHANNEL_ID", "BOT_API_SECRET", "AUTO_CONTENT_ENABLED"]:
+        if k in original_env:
+            os.environ[k] = original_env[k]
+        else:
+            os.environ.pop(k, None)
 
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker  # noqa: E402

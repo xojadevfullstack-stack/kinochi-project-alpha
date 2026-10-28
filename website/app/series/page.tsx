@@ -109,7 +109,7 @@ export default async function SeriesListPage({
         </div>
 
         {/* Unified Compact Filtrlar Bar (Bo'limlar, Turi, Janrlar, Yillar) */}
-        <section className="relative z-40 space-y-3">
+        <section className="relative z-20 space-y-3">
           <Suspense fallback={<div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />}>
             <UnifiedFilterBar
               categories={categories}

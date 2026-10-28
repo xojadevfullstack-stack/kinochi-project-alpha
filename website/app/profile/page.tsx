@@ -723,7 +723,7 @@ export default function ProfilePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen pt-24 text-center text-text-secondary">
-        <span className="material-symbols-outlined animate-spin text-2xl text-rating-gold">sync</span>
+        <span className="material-symbols-outlined animate-spin text-2xl text-primary">sync</span>
       </div>
     }>
       <ProfileContent />

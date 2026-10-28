@@ -31,6 +31,17 @@ Interfeys ko'zni toliqtirmaydigan, kontentni (posterlar va kadrlarni) yorqin ajr
 
 ---
 
+## 1.1. QAT'IY RANGLAR GIGIYENASI VA STANDART QONUNI (Anti-Patterns)
+
+> [!CAUTION]
+> **SARIQ / OLTIN RANG ANTI-PATTERNI VA TAQIQLANGAN XATOLAR:**
+> 1. **Sariq / Oltin (`rating-gold`, `#F5C518`, `#F59E0B`, `amber-*`, `yellow-*`) FAQAT VA FAQAT IMDb va Kinopoisk reyting yulduzlari va baholari (`⭐ 8.6`) uchun ruxsat etilgan!**
+> 2. **Tugmalar (CTA), faol mavsum/qism tanlovlari (active tabs), kartochka hoverlari, kartochka sarlavhalari ("Kalmar O'yini" va b.), pleyer piktogrammalari (`play_circle`), hoshiyalar (borderlar) uchun SARIQ RANG ISHLATISH QAT'IYAN MAN ETILADI!**
+> 3. **Barcha asosiy harakatlar (CTA), faol mavsum/qism tablari (`[ 1-Mavsum ]`), kartochka hoverlari (`hover:border-primary/50`, `group-hover:text-primary`), pleyer ikonkalari va bo'lim indikatorlari FAQAT Primary Red (`#E50914` / `primary` / `primary-container`) bo'lishi shart!**
+> 4. **Matnlar:** Asosiy sarlavhalar va matnlar doimo oq (`#FFFFFF`) bo'ladi. Hover qilinganda kinematik qizil tusiga (`group-hover:text-primary`) o'tishi mumkin, lekin HECH QACHON sariq bo'lmaydi.
+
+---
+
 ## 2. Asosiy UI Komponentlari Anatomiyasi
 
 ### 2.1. Sticky Glass Header (iTV & Netflix)

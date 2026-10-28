@@ -1,6 +1,7 @@
+import CastCrewSection from "@/components/media/CastCrewSection";
+import SeasonEpisodesSection from "@/components/media/SeasonEpisodesSection";
 import { fetchApi } from "@/lib/api";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
 import ReviewsSection from "@/components/reviews/ReviewsSection";
@@ -13,7 +14,7 @@ import SubscribeButton from "@/components/SubscribeButton";
 
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
-import AdultHeroBackground from "@/components/AdultHeroBackground";
+import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
 import BackButton from "@/components/BackButton";
 import SourceBadge from "@/components/SourceBadge";
 
@@ -45,7 +46,12 @@ type Season = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
-    const series = await fetchApi(`/series/${params.id}`);
+    let series;
+    try {
+      series = await fetchApi(`/series/${params.id}`);
+    } catch {
+      series = await fetchApi(`/series/code/${params.id}`);
+    }
     
     return {
       title: `${series.title} - Kinochi`,
@@ -76,10 +82,19 @@ export default async function SeriesDetailsPage({ params }: Props) {
   try {
     series = await fetchApi(`/series/${params.id}`);
   } catch (error) {
-    notFound();
+    try {
+      series = await fetchApi(`/series/code/${params.id}`);
+    } catch {
+      notFound();
+    }
   }
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+  let creditsData: any = null;
+  try {
+    creditsData = await fetchApi(`/series/${series.id}/credits`);
+  } catch {}
+
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
   // Fallback direct link to bot
   const telegramDeepLink = `https://t.me/${botUsername}?start=s_${series.id}`;
   const is18Plus = isAdultContent(series);
@@ -106,25 +121,16 @@ export default async function SeriesDetailsPage({ params }: Props) {
   return (
     <>
       <AgeVerificationModal is18Plus={is18Plus} />
-      <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-20 sm:pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden">
-        {/* Background Blur & Gradient Overlays */}
-        <div className="absolute inset-0 bg-background-obsidian pointer-events-none">
-           {series.poster_url ? (
-            <AdultHeroBackground
-              src={series.poster_url}
-              alt={series.title}
-              is18Plus={is18Plus}
-              isDetailPage={true}
-            />
-           ) : (
-            <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
-           )}
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block pointer-events-none"></div>
-        
-        {/* Content Container */}
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
+      <section className="relative w-full">
+        {/* Background Ambient Trailer & Poster Overlay with Cinema Mode */}
+        <HeroTrailerBackdrop
+          posterUrl={series.poster_url}
+          trailerUrl={series.trailer_url}
+          title={series.title}
+          is18Plus={is18Plus}
+        >
+          {/* Content Container */}
+          <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
           {/* Smart Back Navigation */}
           <div className="flex items-center">
             <BackButton fallbackUrl="/series" />
@@ -236,8 +242,13 @@ export default async function SeriesDetailsPage({ params }: Props) {
               <TelegramWatchButton 
                 url={telegramDeepLink}
                 mediaTitle={series.title}
+                mediaId={series.id}
+                seriesId={series.id}
                 mediaType="series"
                 posterUrl={series.poster_url || ""}
+                releaseYear={series.release_year}
+                imdbRating={series.imdb_rating || series.tmdb_rating}
+                genres={series.categories?.[0]?.name || "Serial"}
                 className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 group font-bold cursor-pointer"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -245,6 +256,13 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 </svg>
                 <span>TELEGRAM ORQALI TOMOSHA QILISH</span>
               </TelegramWatchButton>
+              {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (
+                <TrailerModal
+                  trailerUrl={series.trailer_url}
+                  posterUrl={series.poster_url || ""}
+                  variant="button"
+                />
+              )}
               <ShareButton 
                 title={series.title} 
                 text={`${series.title} serialini bepul tomosha qiling.`}
@@ -269,141 +287,23 @@ export default async function SeriesDetailsPage({ params }: Props) {
           </div>
         </div>
       </div>
+        </HeroTrailerBackdrop>
     </section>
 
 
 
-      {/* Trailer Section */}
-      {series.trailer_url && series.trailer_url !== "" && series.trailer_url !== "null" && series.trailer_url !== "undefined" && (
-        <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
-          <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
-            <span className="w-1.5 h-8 bg-rating-gold rounded-full block"></span>
-            Treyler
-          </h2>
-          <TrailerModal trailerUrl={series.trailer_url} posterUrl={series.poster_url || ""} />
-        </section>
-      )}
+
 
       {/* Seasons & Episodes Section */}
-      <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
-        <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md flex items-center gap-3">
-          <span className="w-1.5 h-8 bg-rating-gold rounded-full block"></span>
-          Fasllar va Qismlar
-        </h2>
-        
-        {!series.seasons || series.seasons.length === 0 ? (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center text-text-secondary flex flex-col items-center justify-center">
-             <span className="material-symbols-outlined text-4xl mb-4 opacity-50">hourglass_empty</span>
-             <p className="font-body-lg">Hozircha qismlar yuklanmagan.</p>
-          </div>
-        ) : (
-          <div className="space-y-12">
-            {series.seasons
-              .sort((a: Season, b: Season) => a.season_number - b.season_number)
-              .map((season: Season) => (
-              <div key={season.id} className="bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm rounded-2xl overflow-hidden border border-white/5 shadow-2xl relative">
-                <div className="flex flex-col md:flex-row gap-8 p-6 md:p-8">
-                  {/* Season Poster */}
-                  <div className="w-full md:w-56 aspect-[2/3] relative flex-shrink-0 bg-surface-container-low rounded-xl overflow-hidden shadow-xl border border-white/10 group cursor-pointer">
-                    {season.poster_url ? (
-                      <Image 
-                        src={season.poster_url} 
-                        alt={`${season.season_number}-fasl`}
-                        fill
-                        unoptimized
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : series.poster_url ? (
-                      <Image 
-                        src={series.poster_url} 
-                        alt="Fasl"
-                        fill
-                        unoptimized
-                        className="object-cover opacity-40 grayscale blur-[2px]"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-text-secondary text-sm">
-                        Rasm yo'q
-                      </div>
-                    )}
-                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 font-bold">
-                       {season.season_number}-Fasl
-                    </div>
-                  </div>
-                  
-                  {/* Season Content & Episodes */}
-                  <div className="flex-grow flex flex-col">
-                    <div className="mb-6">
-                      <h3 className="text-3xl font-display-hero text-text-primary mb-2">
-                        {season.title || `${season.season_number}-Fasl`}
-                      </h3>
-                      {season.episode_count && (
-                        <p className="text-text-secondary font-label-caps text-xs tracking-widest uppercase mb-4">
-                          Mavsumda jami: <span className="text-white font-bold">{season.episode_count} ta qism</span>
-                        </p>
-                      )}
-                      {season.description && (
-                        <p className="text-on-secondary-container leading-relaxed text-sm md:text-base">
-                          {season.description}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Episodes Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-auto">
-                      {!season.episodes || season.episodes.length === 0 ? (
-                        <div className="col-span-full text-text-secondary text-sm py-4 italic">
-                          Bu faslga qismlar qo'shilmagan.
-                        </div>
-                      ) : (
-                        season.episodes
-                          .sort((a, b) => a.episode_number - b.episode_number)
-                          .map((episode) => {
-                          const episodeLink = `https://t.me/${botUsername}?start=${episode.code}`;
-                          return (
-                            <div key={episode.id} className="relative group/ep">
-                              <TelegramWatchButton 
-                                url={episodeLink}
-                                mediaTitle={`${series.title} (${episode.episode_number}-qism)`}
-                                mediaCode={episode.code}
-                                mediaType="episode"
-                                posterUrl={season.poster_url || series.poster_url || ""}
-                                className="w-full group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary-container/50 rounded-xl p-4 transition-all duration-300 flex flex-col relative overflow-hidden text-left cursor-pointer"
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-primary-container/0 to-primary-container/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <div className="flex justify-between items-start mb-2 relative z-10">
-                                  <span className="text-xl font-bold text-white group-hover:text-primary-container transition-colors">
-                                    {episode.episode_number}
-                                  </span>
-                                  <div className="flex items-center gap-1.5">
-                                    {episode.duration && (
-                                      <span className="text-[10px] bg-black/40 px-2 py-1 rounded text-text-secondary font-mono">
-                                        {episode.duration} min
-                                      </span>
-                                    )}
-                                    <span className="material-symbols-outlined text-white/40 group-hover:text-primary-container group-hover:scale-110 transition-all text-[22px]">
-                                      play_circle
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="text-sm text-text-secondary group-hover:text-white transition-colors truncate relative z-10">
-                                  {episode.title && episode.title !== `${episode.episode_number}-qism` 
-                                    ? episode.title 
-                                    : `${episode.episode_number}-qism`}
-                                </span>
-                              </TelegramWatchButton>
-                            </div>
-                          )
-                        })
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <SeasonEpisodesSection seasons={series.seasons} series={series} botUsername={botUsername} />
+
+      {/* Suratga olish guruhi (TMDb) */}
+      <CastCrewSection
+        mediaIdOrCode={series.id}
+        mediaType="series"
+        initialCredits={creditsData?.items}
+        initialDetails={creditsData?.details}
+      />
 
       {/* Reviews & Comments Section */}
       <ReviewsSection

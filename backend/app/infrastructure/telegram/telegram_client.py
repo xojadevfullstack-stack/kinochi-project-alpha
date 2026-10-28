@@ -314,8 +314,8 @@ class TelegramClient:
                             retry_after = 3
                             try:
                                 retry_after = response.json().get("parameters", {}).get("retry_after", 3)
-                            except Exception:
-                                pass
+                            except Exception as err:
+                                logger.debug("Could not parse retry_after from 429 response: %s", err)
                             logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
                             await asyncio.sleep(retry_after + 1)
                             continue
@@ -350,8 +350,8 @@ class TelegramClient:
                             retry_after = 3
                             try:
                                 retry_after = e.response.json().get("parameters", {}).get("retry_after", 3)
-                            except Exception:
-                                pass
+                            except Exception as err:
+                                logger.debug("Could not parse retry_after from 429 error response: %s", err)
                             logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
                             await asyncio.sleep(retry_after + 1)
                             continue
@@ -406,8 +406,8 @@ class TelegramClient:
                             retry_after = 3
                             try:
                                 retry_after = response.json().get("parameters", {}).get("retry_after", 3)
-                            except Exception:
-                                pass
+                            except Exception as err:
+                                logger.debug("Could not parse retry_after from 429 response: %s", err)
                             logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
                             await asyncio.sleep(retry_after + 1)
                             continue
@@ -441,8 +441,8 @@ class TelegramClient:
                             retry_after = 3
                             try:
                                 retry_after = e.response.json().get("parameters", {}).get("retry_after", 3)
-                            except Exception:
-                                pass
+                            except Exception as err:
+                                logger.debug("Could not parse retry_after from 429 error response: %s", err)
                             logger.warning(f"Telegram flood wait {retry_after}s for chat {chat_id}")
                             await asyncio.sleep(retry_after + 1)
                             continue

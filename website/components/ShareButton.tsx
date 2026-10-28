@@ -47,7 +47,7 @@ export default function ShareButton({ title, text: _text, url = "", code, botUse
   const handleShare = async () => {
     const fullWebUrl = getFullWebUrl();
     const itemCode = getItemCode(fullWebUrl);
-    const botUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+    const botUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
     const botLink = itemCode ? `https://t.me/${botUser}?start=${itemCode}` : `https://t.me/${botUser}`;
 
     // 1. Copy URL to clipboard immediately

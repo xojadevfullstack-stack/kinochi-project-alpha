@@ -1,6 +1,7 @@
+import CastCrewSection from "@/components/media/CastCrewSection";
 import { fetchApi } from "@/lib/api";
 import { notFound } from "next/navigation";
-import Image from "next/image";
+
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
 import ReviewsSection from "@/components/reviews/ReviewsSection";
@@ -15,7 +16,7 @@ import SubscribeButton from "@/components/SubscribeButton";
 
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
-import AdultHeroBackground from "@/components/AdultHeroBackground";
+import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
 import BackButton from "@/components/BackButton";
 import SourceBadge from "@/components/SourceBadge";
 
@@ -58,8 +59,12 @@ export default async function MovieDetailsPage({ params }: Props) {
   let franchiseContext = null;
   try {
     movie = await fetchApi(`/movies/code/${params.code}`);
-  } catch (error) {
-    notFound();
+  } catch {
+    try {
+      movie = await fetchApi(`/movies/${params.code}`);
+    } catch {
+      notFound();
+    }
   }
 
   try {
@@ -68,7 +73,12 @@ export default async function MovieDetailsPage({ params }: Props) {
     // Optional
   }
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+  let creditsData: any = null;
+  try {
+    creditsData = await fetchApi(`/movies/${movie.code || movie.id}/credits`);
+  } catch {}
+
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
   const telegramDeepLink = `https://t.me/${botUsername}?start=${movie.code}`;
   const is18Plus = isAdultContent(movie);
 
@@ -92,25 +102,16 @@ export default async function MovieDetailsPage({ params }: Props) {
   return (
     <>
       <AgeVerificationModal is18Plus={is18Plus} />
-      <section className="relative w-full min-h-[100svh] md:min-h-[800px] flex items-center pt-20 sm:pt-24 md:pt-32 pb-12 md:pb-16 overflow-hidden">
-        {/* Background Blur & Gradient Overlays */}
-        <div className="absolute inset-0 bg-background-obsidian pointer-events-none">
-           {movie.poster_url ? (
-            <AdultHeroBackground
-              src={movie.poster_url}
-              alt={movie.title}
-              is18Plus={is18Plus}
-              isDetailPage={true}
-            />
-           ) : (
-            <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian"></div>
-           )}
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.85] to-transparent pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.55] to-transparent hidden md:block pointer-events-none"></div>
-        
-        {/* Content Container */}
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
+      <section className="relative w-full">
+        {/* Background Ambient Trailer & Poster Overlay with Cinema Mode */}
+        <HeroTrailerBackdrop
+          posterUrl={movie.poster_url}
+          trailerUrl={movie.trailer_url}
+          title={movie.title}
+          is18Plus={is18Plus}
+        >
+          {/* Content Container */}
+          <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
           {/* Smart Back Navigation */}
           <div className="flex items-center">
             <BackButton fallbackUrl="/movies" />
@@ -256,8 +257,12 @@ export default async function MovieDetailsPage({ params }: Props) {
                 url={telegramDeepLink}
                 mediaTitle={movie.title}
                 mediaCode={movie.code}
+                mediaId={movie.id}
                 mediaType="movie"
                 posterUrl={movie.poster_url || ""}
+                releaseYear={movie.release_year}
+                imdbRating={movie.imdb_rating || movie.tmdb_rating}
+                genres={movie.genres?.split(",")?.[0]?.trim() || "Kino"}
                 className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 group font-bold cursor-pointer"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -265,6 +270,13 @@ export default async function MovieDetailsPage({ params }: Props) {
                 </svg>
                 <span>TELEGRAM ORQALI TOMOSHA QILISH</span>
               </TelegramWatchButton>
+              {movie.trailer_url && movie.trailer_url !== "" && movie.trailer_url !== "null" && movie.trailer_url !== "undefined" && (
+                <TrailerModal
+                  trailerUrl={movie.trailer_url}
+                  posterUrl={movie.poster_url || ""}
+                  variant="button"
+                />
+              )}
               <ShareButton 
                 title={movie.title} 
                 text={`${movie.title} filmini bepul tomosha qiling.`}
@@ -291,6 +303,7 @@ export default async function MovieDetailsPage({ params }: Props) {
           </div>
         </div>
       </div>
+        </HeroTrailerBackdrop>
     </section>
 
       {/* Franchise Chronology Timeline Bar */}
@@ -309,13 +322,15 @@ export default async function MovieDetailsPage({ params }: Props) {
 
 
 
-      {/* Trailer Section */}
-      {movie.trailer_url && movie.trailer_url !== "" && movie.trailer_url !== "null" && movie.trailer_url !== "undefined" && (
-        <section className="max-w-container-max mx-auto px-gutter py-stack-lg border-t border-white/5">
-          <h2 className="font-headline-md text-headline-md text-text-primary mb-stack-md">Treyler</h2>
-          <TrailerModal trailerUrl={movie.trailer_url} posterUrl={movie.poster_url || ""} />
-        </section>
-      )}
+
+
+      {/* Suratga olish guruhi (TMDb) */}
+      <CastCrewSection
+        mediaIdOrCode={movie.code || movie.id}
+        mediaType="movie"
+        initialCredits={creditsData?.items}
+        initialDetails={creditsData?.details}
+      />
 
       {/* Reviews & Comments Section */}
       <ReviewsSection

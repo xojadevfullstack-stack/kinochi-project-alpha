@@ -129,14 +129,14 @@ export default function RequestMovieModal({
             </p>
             <button
               onClick={onClose}
-              className="px-6 py-2.5 bg-rating-gold text-background-obsidian font-bold rounded-xl hover:brightness-110 transition-all shadow-lg text-sm"
+              className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-inverse-primary transition-all shadow-lg text-sm"
             >
               Tushundim, rahmat!
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center gap-2 mb-4 text-rating-gold text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 mb-4 text-primary text-xs font-bold uppercase tracking-wider">
               <span className="material-symbols-outlined text-[18px]">add_to_queue</span>
               <span>Kino / Serial qo&apos;shishni so&apos;rash</span>
             </div>
@@ -210,7 +210,7 @@ export default function RequestMovieModal({
                     onClick={() => setPreferredLang(opt.id)}
                     className={`p-2.5 rounded-xl border text-left transition-all ${
                       preferredLang === opt.id
-                        ? "bg-rating-gold/15 border-rating-gold text-white shadow-sm"
+                        ? "bg-primary/20 border-primary text-white shadow-sm"
                         : "bg-white/5 border-white/10 text-text-secondary hover:bg-white/10"
                     }`}
                   >
@@ -234,7 +234,7 @@ export default function RequestMovieModal({
                 value={userContact}
                 onChange={(e) => setUserContact(e.target.value)}
                 placeholder="@username yoki +998 90 123 45 67"
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary text-sm focus:outline-none focus:border-rating-gold/50 transition-colors"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary text-sm focus:outline-none focus:border-primary/50 transition-colors"
               />
             </div>
 
@@ -251,11 +251,11 @@ export default function RequestMovieModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-rating-gold text-background-obsidian font-bold hover:brightness-110 active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-primary text-white font-bold hover:bg-inverse-primary active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-background-obsidian border-t-transparent rounded-full animate-spin"></span>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                     <span>Yuborilmoqda...</span>
                   </>
                 ) : (

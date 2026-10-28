@@ -136,7 +136,14 @@ class SeriesRepository:
         elif publish_status is not None and publish_status != "all":
             stmt = stmt.where(SeriesModel.publish_status == publish_status)
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        model = result.scalar_one_or_none()
+        if not model:
+            # Fallback: check if series_id was passed as an episode ID
+            stmt_ep = select(SeasonModel.series_id).join(EpisodeModel, EpisodeModel.season_id == SeasonModel.id).where(EpisodeModel.id == series_id)
+            parent_id = (await self.session.execute(stmt_ep)).scalar_one_or_none()
+            if parent_id is not None:
+                return await self.get_series_by_id(parent_id, publish_status=publish_status)
+        return model
 
     async def get_series_by_code(self, code: str, publish_status: str | None = None) -> SeriesModel | None:
         clean_code = str(code).strip()
@@ -153,7 +160,16 @@ class SeriesRepository:
             series_id = int(clean_code[7:])
             
         if series_id is not None:
-            return await self.get_series_by_id(series_id, publish_status=publish_status)
+            found = await self.get_series_by_id(series_id, publish_status=publish_status)
+            if found:
+                return found
+
+        # Fallback: check if clean_code matches an Episode code
+        stmt_ep = select(SeasonModel.series_id).join(EpisodeModel, EpisodeModel.season_id == SeasonModel.id).where(EpisodeModel.code == clean_code)
+        ep_series_id = (await self.session.execute(stmt_ep)).scalar_one_or_none()
+        if ep_series_id is not None:
+            return await self.get_series_by_id(ep_series_id, publish_status=publish_status)
+
         return None
 
 

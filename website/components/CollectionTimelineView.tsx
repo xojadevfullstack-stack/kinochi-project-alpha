@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "../lib/auth/AuthProvider";
 import { fetchApi } from "../lib/api";
+import { openTelegramUrl } from "@/lib/telegram";
 
 interface CollectionItem {
   id: number;
@@ -69,7 +70,8 @@ export default function CollectionTimelineView({
   const handleToggleSub = async () => {
     if (!collectionId) return;
     if (!user?.telegram_id) {
-      window.open(`https://t.me/kinochi_mvp_bot?start=col_${collectionId}`, "_blank");
+      const botUser = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+      openTelegramUrl(`https://t.me/${botUser}?start=col_${collectionId}`);
       return;
     }
     setSubLoading(true);
@@ -244,7 +246,7 @@ export default function CollectionTimelineView({
               onClick={() => setViewMode("map")}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "map"
-                  ? "bg-gradient-to-r from-amber-500 to-primary-container text-white shadow-md shadow-amber-500/20"
+                  ? "bg-primary-container text-white shadow-md shadow-primary-container/20"
                   : "text-text-secondary hover:text-white"
               }`}
               title="Dinamik Voqealar Xaritasi (Canvas/Universe Explorer)"
@@ -313,7 +315,7 @@ export default function CollectionTimelineView({
 
           {/* Interactive Legend & Guide Banner */}
           <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 text-xs text-text-secondary pointer-events-none">
-            <span className="material-symbols-outlined text-amber-400 text-sm">touch_app</span>
+            <span className="material-symbols-outlined text-primary-container text-sm">touch_app</span>
             <span>Xaritani barmog'ingiz yoki sichqoncha bilan suring, kattalashtiring yoki tugunlarni bosing</span>
           </div>
 
@@ -421,7 +423,7 @@ export default function CollectionTimelineView({
                     {/* Node Core Card */}
                     <div className={`relative w-44 rounded-2xl p-2.5 transition-all duration-300 transform group-hover:-translate-y-2 group-hover:scale-105 shadow-2xl border ${
                       isSelected 
-                        ? "bg-surface-container-high border-amber-400 ring-4 ring-amber-400/20" 
+                        ? "bg-surface-container-high border-primary-container ring-4 ring-primary-container/20" 
                         : "bg-[#111928]/90 border-white/15 hover:border-primary-container/60"
                     }`}>
                       {/* Step Number Badge */}
@@ -444,7 +446,7 @@ export default function CollectionTimelineView({
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                        <span className="absolute bottom-1 right-1.5 text-[10px] font-mono font-bold text-amber-300 bg-black/70 px-1.5 py-0.5 rounded">
+                        <span className="absolute bottom-1 right-1.5 text-[10px] font-mono font-bold text-white bg-black/70 px-1.5 py-0.5 rounded">
                           {nodeYear}
                         </span>
                       </div>
@@ -455,7 +457,7 @@ export default function CollectionTimelineView({
                       </h4>
 
                       {item.timeline_event_desc ? (
-                        <p className="text-[10px] text-amber-300/90 truncate mt-0.5">
+                        <p className="text-[10px] text-text-secondary truncate mt-0.5">
                           {item.timeline_event_desc}
                         </p>
                       ) : (
@@ -497,7 +499,7 @@ export default function CollectionTimelineView({
               </h3>
 
               {selectedItem.timeline_event_desc && (
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs my-2 font-medium">
+                <div className="p-2.5 rounded-xl bg-primary-container/10 border border-primary-container/20 text-white text-xs my-2 font-medium">
                   ⏳ <strong>Koinot voqeasi:</strong> {selectedItem.timeline_event_desc}
                 </div>
               )}
@@ -576,7 +578,7 @@ export default function CollectionTimelineView({
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                   <div>
                     {sortMode === "chronological" && item.timeline_event_desc && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-xs mb-2.5">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary-container/15 border border-primary-container/30 text-white font-semibold text-xs mb-2.5">
                         <span className="material-symbols-outlined text-[14px]">history</span>
                         <span>{item.timeline_event_desc}</span>
                       </div>

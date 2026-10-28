@@ -20,8 +20,8 @@ export type CatalogGridProps = {
 };
 
 export default function CatalogGrid({
-  initialItems,
-  total: initialTotal,
+  initialItems = [],
+  total: initialTotal = 0,
   type = "movies",
   pageSlug = "",
   pageId,
@@ -32,17 +32,17 @@ export default function CatalogGrid({
   pageSize = 36,
   emptyMessage = "Hozircha ma'lumotlar mavjud emas."
 }: CatalogGridProps) {
-  const [items, setItems] = useState<CatalogItem[]>(initialItems);
-  const [total, setTotal] = useState(initialTotal);
+  const [items, setItems] = useState<CatalogItem[]>(initialItems || []);
+  const [total, setTotal] = useState(initialTotal || 0);
   const [loading, setLoading] = useState(false);
 
   // Sync state if initialItems or total changes from parent SSR
   useEffect(() => {
-    setItems(initialItems);
-    setTotal(initialTotal);
+    setItems(initialItems || []);
+    setTotal(initialTotal || 0);
   }, [initialItems, initialTotal]);
 
-  const hasMore = items.length < total;
+  const hasMore = (items?.length || 0) < (total || 0);
 
   const loadMore = async () => {
     if (loading || !hasMore) return;
@@ -102,7 +102,7 @@ export default function CatalogGrid({
 
   return (
     <div className="flex flex-col">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
         {items.map((item, idx) => (
           <MovieCard 
             key={`${item.is_series ? 's' : 'm'}-${item.id || item.code}-${idx}`} 

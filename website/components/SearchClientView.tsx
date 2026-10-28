@@ -247,7 +247,7 @@ export default function SearchClientView({
 
           <Link
             href="/requests"
-            className="self-start sm:self-auto px-4 py-2.5 rounded-2xl bg-rating-gold/15 hover:bg-rating-gold text-rating-gold hover:text-background-obsidian border border-rating-gold/30 text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
+            className="self-start sm:self-auto px-4 py-2.5 rounded-2xl bg-primary/15 hover:bg-primary text-primary hover:text-white border border-primary/30 text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
           >
             <span className="material-symbols-outlined text-[18px]">add_to_queue</span>
             <span>Kino so&apos;rash / Buyurtma</span>
@@ -256,9 +256,9 @@ export default function SearchClientView({
 
         {/* Live Debounced Search Input */}
         <div className="mb-6 max-w-2xl">
-          <div className="flex items-center bg-white/5 hover:bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-rating-gold/60 focus-within:bg-white/10 transition-all shadow-inner relative">
+          <div className="flex items-center bg-white/5 hover:bg-white/10 rounded-full px-5 py-3 border border-white/10 focus-within:border-primary/60 focus-within:bg-white/10 transition-all shadow-inner relative">
             {isLoading ? (
-              <span className="material-symbols-outlined text-rating-gold mr-3 text-[22px] animate-spin">
+              <span className="material-symbols-outlined text-primary mr-3 text-[22px] animate-spin">
                 sync
               </span>
             ) : (
@@ -370,7 +370,7 @@ export default function SearchClientView({
                 </p>
                 <Link
                   href="/requests"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-rating-gold text-background-obsidian font-bold rounded-2xl hover:brightness-110 active:scale-95 transition-all text-sm shadow-lg"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-2xl hover:bg-inverse-primary active:scale-95 transition-all text-sm shadow-lg"
                 >
                   <span className="material-symbols-outlined text-[20px]">add_to_queue</span>
                   <span>Kino qo&apos;shishni so&apos;rash</span>
@@ -383,7 +383,7 @@ export default function SearchClientView({
               <div>
                 <div className="mb-5 flex items-center justify-between">
                   <h2 className="font-headline-md text-xl sm:text-2xl font-bold text-text-primary flex items-center gap-2.5">
-                    <span className="w-1 h-5 bg-rating-gold rounded-full block"></span>
+                    <span className="w-1 h-5 bg-primary rounded-full block"></span>
                     <span>Sizga yoqishi mumkin bo&apos;lgan premyeralar</span>
                   </h2>
                 </div>
@@ -399,7 +399,7 @@ export default function SearchClientView({
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="font-headline-md text-xl sm:text-2xl font-bold text-text-primary flex items-center gap-2.5">
-                  <span className="w-1 h-5 sm:h-6 bg-rating-gold rounded-full block"></span>
+                  <span className="w-1 h-5 sm:h-6 bg-primary rounded-full block"></span>
                   <span>Tavsiya etilayotgan premyeralar</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-text-secondary mt-1">

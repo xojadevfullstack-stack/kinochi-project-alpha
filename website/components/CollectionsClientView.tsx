@@ -31,8 +31,9 @@ export default function CollectionsClientView({
 
   const categories = [
     { id: "all", label: "Barchasi" },
-    { id: "theme", label: "Qiziqarli mavzular" },
+    { id: "theme", label: "Mavzular" },
     { id: "franchise", label: "Franshizalar" },
+    { id: "chronology", label: "Xronologiyalar" },
   ];
 
   // Map backend collections into theme card format (strictly real collections with items_count > 0)

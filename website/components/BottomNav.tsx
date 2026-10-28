@@ -1,51 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [searchTab, setSearchTab] = useState<string>("");
-
-  useEffect(() => {
-    const updateTab = () => {
-      if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        setSearchTab(params.get("tab") || "");
-      }
-    };
-    updateTab();
-    window.addEventListener("popstate", updateTab);
-    return () => window.removeEventListener("popstate", updateTab);
-  }, [pathname]);
 
   // Exactly 5 clean tabs:
   // 1. Bosh sahifa
-  // 2. Obunalar (/profile?tab=subscriptions)
+  // 2. Obunalar (/subscriptions)
   // 3. Katalog (/catalog)
-  // 4. Premyera (/movies)
+  // 4. Premyera (/premieres)
   // 5. Profil (/profile)
   const navItems = [
     { label: "Bosh sahifa", href: "/", icon: "home" },
-    { label: "Obunalar", href: "/profile?tab=subscriptions", icon: "loyalty" },
+    { label: "Obunalar", href: "/subscriptions", icon: "loyalty" },
     { label: "Katalog", href: "/catalog", icon: "grid_view" },
-    { label: "Premyera", href: "/movies", icon: "theaters" },
+    { label: "Premyera", href: "/premieres", icon: "theaters" },
     { label: "Profil", href: "/profile", icon: "account_circle" },
   ];
 
   const handleNav = (href: string) => {
-    if (href.includes("tab=subscriptions")) {
-      setSearchTab("subscriptions");
-    } else if (href === "/profile") {
-      setSearchTab("");
-    }
-    if (pathname === href.split("?")[0] && typeof window !== "undefined") {
+    if (pathname === href && typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
-
-  const isSubTab = searchTab === "subscriptions";
 
   return (
     <nav
@@ -57,11 +36,7 @@ export default function BottomNav() {
           const isActive =
             item.href === "/"
               ? pathname === "/"
-              : item.href.includes("tab=subscriptions")
-                ? pathname === "/profile" && isSubTab
-                : item.href === "/profile"
-                  ? pathname === "/profile" && !isSubTab
-                  : pathname.startsWith(item.href);
+              : pathname.startsWith(item.href);
 
           return (
             <Link

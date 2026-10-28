@@ -16,11 +16,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
   // Navbar scroll background
   const [isScrolled, setIsScrolled] = useState(false);
   
+  // Mobile animated expanding search bar state
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  
   // Dynamic Desktop Sidebar state (Opens ONLY when cursor approaches left edge)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [bolimlarOpen, setBolimlarOpen] = useState(false);
-  const [kolleksiyaOpen, setKolleksiyaOpen] = useState(false);
+  const isInitializedRef = useRef(false);
   
   const [hasUnread, setHasUnread] = useState(false);
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -110,12 +112,24 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dynamic sidebar on route change if not pinned
+  // Close dynamic sidebar and mobile search on route change
   useEffect(() => {
     if (!isPinned) {
       setSidebarOpen(false);
     }
+    setIsMobileSearchOpen(false);
   }, [pathname, isPinned]);
+
+  // Handle Escape key to dismiss mobile search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobileSearchOpen) {
+        setIsMobileSearchOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileSearchOpen]);
 
   // Initialize pin state from localStorage on desktop mount
   useEffect(() => {
@@ -125,14 +139,17 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
         if (saved === "true") {
           setIsPinned(true);
           setSidebarOpen(true);
+          document.body.classList.add("sidebar-pinned");
         }
       }
-    } catch {}
+    } catch {} finally {
+      isInitializedRef.current = true;
+    }
   }, []);
 
   // Synchronize document.body.sidebar-pinned class with isPinned state
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !isInitializedRef.current) return;
 
     if (isPinned && window.innerWidth >= 1280) {
       document.body.classList.add("sidebar-pinned");
@@ -229,10 +246,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       <aside
         onMouseEnter={openSidebarSmoothly}
         onMouseLeave={closeSidebarSmoothly}
-        className={`hidden xl:flex fixed top-0 left-0 bottom-0 w-72 z-50 bg-[#0c0d10]/98 backdrop-blur-2xl border-r border-white/10 ${
+        className={`flex fixed top-0 left-0 bottom-0 w-72 z-[60] bg-[#0c0d10]/98 backdrop-blur-2xl border-r border-white/10 ${
           isPinned ? "shadow-none" : "shadow-[20px_0_50px_rgba(0,0,0,0.85)]"
         } flex-col justify-between select-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          (sidebarOpen || isPinned) ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="p-4 space-y-4 overflow-y-auto hide-scrollbar flex-1">
@@ -306,7 +323,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             </div>
           </Link>
 
-          {/* Minimalist Navigation Links (Consistent vector style) */}
+          {/* Minimalist & Clean Navigation Links */}
           <nav className="space-y-1 text-xs">
             {/* 1. Bosh Sahifa */}
             <Link
@@ -326,7 +343,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Bosh Sahifa</span>
             </Link>
 
-            {/* 2. Katalog (Uniform styling - No contrast badge) */}
+            {/* 2. Katalog */}
             <Link
               href="/catalog"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
@@ -339,209 +356,46 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Katalog</span>
             </Link>
 
-            {/* 3. Obunalar (Followed content / Subscriptions) */}
+            {/* 3. Seriallar */}
             <Link
-              href="/profile?tab=subscriptions"
+              href="/series"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/profile"
+                pathname.startsWith("/series")
                   ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
                   : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]">loyalty</span>
-              <span>Obunalar</span>
+              <span className="material-symbols-outlined text-[18px]">live_tv</span>
+              <span>Seriallar</span>
             </Link>
 
-            {/* 4. Bo'limlar (Matching exact screenshot list) */}
-            <div className="pt-1">
-              <button
-                onClick={() => setBolimlarOpen(prev => !prev)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-text-secondary hover:bg-white/5 hover:text-white transition-all cursor-pointer font-medium"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
-                  <span>Bo'limlar</span>
-                </div>
-                <span className="material-symbols-outlined text-[16px]">
-                  {bolimlarOpen ? "expand_less" : "expand_more"}
-                </span>
-              </button>
+            {/* 4. Franshizalar & To'plamlar */}
+            <Link
+              href="/collections"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname.startsWith("/collections")
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">explore</span>
+              <span>Franshizalar & To'plamlar</span>
+            </Link>
 
-              {bolimlarOpen && (
-                <div className="pl-6 pr-1 py-1 space-y-0.5 text-text-secondary font-medium">
-                  <Link
-                    href="/movies?category=36"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">movie</span>
-                    <span>Tarjima kinolar</span>
-                  </Link>
-                  <Link
-                    href="/movies?category=37"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">language</span>
-                    <span>Hind kinolari</span>
-                  </Link>
-                  <Link
-                    href="/movies?category=38"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">videocam</span>
-                    <span>Turk kinolari</span>
-                  </Link>
-                  <Link
-                    href="/series?category=39"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
-                    <span>Turk seriali</span>
-                  </Link>
-                  <Link
-                    href="/series"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">live_tv</span>
-                    <span>Seriallar</span>
-                  </Link>
-                  <Link
-                    href="/series?category=40"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">theater_comedy</span>
-                    <span>Doramalar</span>
-                  </Link>
-                  <Link
-                    href="/movies?category=2"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">auto_awesome</span>
-                    <span>Anime</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=animation"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">smart_toy</span>
-                    <span>Multfilmlar</span>
-                  </Link>
-                  <Link
-                    href="/catalog?category=treyler"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">star</span>
-                    <span>Treylerlar</span>
-                  </Link>
-                  <Link
-                    href="/tv"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
-                    <span>Onlayn TV</span>
-                  </Link>
-                  <Link
-                    href="/movies"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">theaters</span>
-                    <span>Premyeralar</span>
-                  </Link>
-                </div>
-              )}
-            </div>
+            {/* 5. Premyeralar */}
+            <Link
+              href="/premieres"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname === "/premieres"
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">theaters</span>
+              <span>Premyeralar</span>
+            </Link>
 
-            {/* 5. Kolleksiyalar (Matching exact screenshot list) */}
-            <div className="pt-1">
-              <button
-                onClick={() => setKolleksiyaOpen(prev => !prev)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-text-secondary hover:bg-white/5 hover:text-white transition-all cursor-pointer font-medium"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[18px]">explore</span>
-                  <span>Kolleksiyalar</span>
-                </div>
-                <span className="material-symbols-outlined text-[16px]">
-                  {kolleksiyaOpen ? "expand_less" : "expand_more"}
-                </span>
-              </button>
-
-              {kolleksiyaOpen && (
-                <div className="pl-6 pr-1 py-1 space-y-0.5 text-text-secondary font-medium">
-                  <Link
-                    href="/collections"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">format_list_bulleted</span>
-                    <span>Barchasi</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=action"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">swords</span>
-                    <span>Jangari</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=comedy"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">sentiment_very_satisfied</span>
-                    <span>Komediya</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=horror"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">skull</span>
-                    <span>Qo'rqinchli</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=scifi"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">rocket_launch</span>
-                    <span>Fantastika</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=drama"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">theater_comedy</span>
-                    <span>Drama</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=adventure"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">flag</span>
-                    <span>Sarguzasht</span>
-                  </Link>
-                  <Link
-                    href="/catalog?genre=animation"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">image</span>
-                    <span>Multfilmlar (o'zbek tilida)</span>
-                  </Link>
-                  <Link
-                    href="/series"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">tv</span>
-                    <span>Seriallar (o'zbek tilida)</span>
-                  </Link>
-                  <Link
-                    href="/movies?category=37"
-                    className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition text-xs"
-                  >
-                    <span className="material-symbols-outlined text-[15px] opacity-70">language</span>
-                    <span>Hind kinolari</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* 6. Aktyorlar (Uniformly styled like main links - No contrast badge!) */}
+            {/* 6. Aktyorlar */}
             <Link
               href="/actors"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
@@ -554,7 +408,20 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Aktyorlar</span>
             </Link>
 
-            {/* Kino so'rash / Buyurtma */}
+            {/* 7. Obunalar */}
+            <Link
+              href="/subscriptions"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                pathname.startsWith("/subscriptions")
+                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
+                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">loyalty</span>
+              <span>Obunalar</span>
+            </Link>
+
+            {/* 8. Kino buyurtma qilish */}
             <Link
               href="/requests"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
@@ -564,41 +431,14 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">add_to_queue</span>
-              <span>Kino so'rash</span>
-            </Link>
-
-            {/* 7. Premyeralar */}
-            <Link
-              href="/movies"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/movies"
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">theaters</span>
-              <span>Premyeralar</span>
-            </Link>
-
-            {/* 8. Profilim */}
-            <Link
-              href="/profile"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/profile"
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">account_circle</span>
-              <span>Profilim</span>
-            </Link>
-          </nav>
+              <span>Kino buyurtma qilish</span>
+            </Link>          </nav>
         </div>
 
         {/* Sidebar Bottom: Bog'lanish / Yordam (No duplicate dark/light toggle!) */}
         <div className="p-3 border-t border-white/10 text-xs text-text-secondary">
           <a
-            href="https://t.me/kinochi_uz_bot"
+            href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot"}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-all cursor-pointer"
@@ -613,7 +453,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       {sidebarOpen && !isPinned && (
         <div
           onClick={closeSidebarImmediate}
-          className="hidden xl:block fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] transition-opacity duration-300 cursor-pointer"
           aria-hidden="true"
         />
       )}
@@ -623,16 +463,39 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           Clean minimalist header without duplicate hamburger button
       ======================================================== */}
       <nav
-        className={`site-top-nav fixed top-0 left-0 w-full z-30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
+        className={`site-top-nav fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
           isScrolled
-            ? "bg-background-obsidian/95 backdrop-blur-xl border-white/10 shadow-2xl shadow-black/80 py-3"
-            : "bg-gradient-to-b from-background-obsidian/95 via-background-obsidian/75 to-transparent border-transparent py-4"
+            ? "bg-black/60 backdrop-blur-xl border-white/10 shadow-2xl shadow-black/80 py-3"
+            : "bg-black/20 backdrop-blur-md border-white/5 py-4"
         }`}
       >
-        <div className="max-w-container-max mx-auto px-gutter flex items-center justify-between gap-3 sm:gap-4">
+        <div className="max-w-container-max mx-auto px-gutter flex items-center justify-between gap-3 sm:gap-4 relative">
           
-          {/* Left: Logo Only (No manual hamburger button - Sidebar opens purely dynamically via hover) */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Left: Hamburger Menu Button + Logo (Animates smoothly out on mobile when search opens) */}
+          <div
+            className={`flex items-center gap-2 sm:gap-3 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isMobileSearchOpen
+                ? "opacity-0 -translate-x-4 pointer-events-none scale-95 sm:opacity-100 sm:translate-x-0 sm:pointer-events-auto sm:scale-100"
+                : "opacity-100 translate-x-0 scale-100"
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (sidebarOpen) {
+                  closeSidebarImmediate();
+                } else {
+                  openSidebarSmoothly();
+                }
+              }}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 flex items-center justify-center text-text-secondary hover:text-white transition-all cursor-pointer"
+              title="Menyu"
+              aria-label="Menyuni ochish"
+            >
+              <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
+                {sidebarOpen ? "close" : "menu"}
+              </span>
+            </button>
             <Link href="/" className="flex items-center gap-2 group">
               <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-white group-hover:opacity-95 transition-opacity">
                 Media<span className="text-primary-container">Plus</span>
@@ -640,7 +503,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             </Link>
           </div>
 
-          {/* Center: Wide LiveSearch Input */}
+          {/* Center: Wide LiveSearch Input (Desktop) */}
           <div className="flex-1 max-w-xl mx-2 hidden sm:block">
             <LiveSearch
               className="w-full"
@@ -648,8 +511,27 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             />
           </div>
 
-          {/* Right Corner Controls: Strictly ordered [1. Dark/Light Mode, 2. Notifications, 3. Profile] */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Right Corner Controls: [Search (Mobile only), 1. Theme, 2. Notifications, 3. Profile] */}
+          <div
+            className={`flex items-center gap-2 sm:gap-3 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isMobileSearchOpen
+                ? "opacity-0 translate-x-4 pointer-events-none scale-95 sm:opacity-100 sm:translate-x-0 sm:pointer-events-auto sm:scale-100"
+                : "opacity-100 translate-x-0 scale-100"
+            }`}
+          >
+            {/* Mobile Search Button (Tap to expand search bar & animate logo out) */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(true)}
+              className="sm:hidden w-9 h-9 rounded-full border border-white/10 hover:border-white/20 transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary hover:text-white cursor-pointer active:scale-95"
+              aria-label="Qidiruv"
+              title="Qidiruvni ochish"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                search
+              </span>
+            </button>
+
             {/* 1. Dark / Light Mode Toggle */}
             <ThemeToggle />
 
@@ -686,8 +568,54 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               )}
             </Link>
           </div>
+
+          {/* ========================================================
+              Mobile Expanding Search Bar Layer
+              Animates in to replace the Logo and action controls
+          ======================================================== */}
+          <div
+            className={`sm:hidden absolute inset-0 px-gutter flex items-center gap-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-20 ${
+              isMobileSearchOpen
+                ? "opacity-100 translate-x-0 pointer-events-auto"
+                : "opacity-0 translate-x-4 pointer-events-none"
+            }`}
+          >
+            {/* Back button to dismiss search and restore Logo */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(false)}
+              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 flex items-center justify-center text-text-secondary hover:text-white transition-all shrink-0 cursor-pointer active:scale-95"
+              aria-label="Qidiruvni yopish"
+              title="Qidiruvni yopish"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                arrow_back
+              </span>
+            </button>
+
+            {/* Full-width LiveSearch input in mobile bar mode */}
+            <div className="flex-1 min-w-0">
+              <LiveSearch
+                autoFocus={isMobileSearchOpen}
+                isMobileBar={true}
+                className="w-full"
+                placeholder="Film, serial, aktyor yoki #kod..."
+                onClose={() => setIsMobileSearchOpen(false)}
+                onNavigate={() => setIsMobileSearchOpen(false)}
+              />
+            </div>
+          </div>
         </div>
       </nav>
+
+      {/* Mobile search backdrop overlay (Dismisses search when tapping outside) */}
+      {isMobileSearchOpen && (
+        <div
+          onClick={() => setIsMobileSearchOpen(false)}
+          className="sm:hidden fixed inset-0 top-[56px] z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 }

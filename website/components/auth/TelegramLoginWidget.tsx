@@ -5,7 +5,7 @@ import { useAuth } from "../../lib/auth/AuthProvider";
 
 export default function TelegramLoginWidget() {
   const { environment, status, resetAuthStatus } = useAuth();
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
 
   if (environment !== "browser") {
     return null; // Do not show in WebApp

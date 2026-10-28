@@ -452,6 +452,29 @@ async def get_movie_by_source(
     return MovieResponse.model_validate(movie_models[0])
 
 
+@router.get("/{movie_id_or_code}/credits")
+@limiter.limit("120/minute")
+async def get_movie_credits(
+    request: Request,
+    movie_id_or_code: str,
+    movie_service: MovieService = Depends(get_movie_service),
+):
+    """Get cast & crew credits for a movie (from TMDb, cached)."""
+    clean_identifier = str(movie_id_or_code).strip()
+    movie = None
+    if clean_identifier.isdigit():
+        movie = await movie_service.get_movie_by_id(int(clean_identifier), publish_status="published")
+    if not movie:
+        movie = await movie_service.get_movie_by_code(clean_identifier, publish_status="published")
+
+    if not movie or not movie.tmdb_id:
+        return {"items": [], "details": None}
+
+    from app.infrastructure.external.tmdb_client import tmdb_client
+    res = await tmdb_client.get_credits_and_details(movie.tmdb_id, kind="movie")
+    return res
+
+
 @router.get("/{movie_id}", response_model=MovieResponse)
 @limiter.limit("120/minute")
 async def get_movie(
@@ -872,8 +895,8 @@ async def open_movie_topic(
             supergroup_sources = [s for s in all_sources if s.type == "superguruh" and s.chat_id]
             if supergroup_sources:
                 target_chat_id = supergroup_sources[-1].chat_id
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Superguruh manbalarini olishda xatolik yuz berdi: %s", e)
 
     if not target_chat_id:
         target_chat_id = settings.AUTO_TOPIC_CHAT_ID

@@ -299,16 +299,44 @@ async def get_series_by_code(
         raise HTTPException(status_code=404, detail="Series not found")
     return series
 
-@router.get("/{series_id}", response_model=Series)
+@router.get("/{series_id_or_code}/credits")
+@limiter.limit("120/minute")
+async def get_series_credits(
+    request: Request,
+    series_id_or_code: str,
+    service: SeriesService = Depends(get_series_service),
+):
+    """Get cast & crew credits for a series (from TMDb, cached)."""
+    clean_identifier = str(series_id_or_code).strip()
+    series = None
+    if clean_identifier.isdigit():
+        series = await service.get_series_by_id(int(clean_identifier), publish_status="published")
+    if not series:
+        series = await service.get_series_by_code(clean_identifier, publish_status="published")
+
+    if not series or not series.tmdb_id:
+        return {"items": [], "details": None}
+
+    from app.infrastructure.external.tmdb_client import tmdb_client
+    res = await tmdb_client.get_credits_and_details(series.tmdb_id, kind="tv")
+    return res
+
+
+@router.get("/{series_id_or_code}", response_model=Series)
 @limiter.limit("120/minute")
 async def get_series(
     request: Request,
-    series_id: int,
+    series_id_or_code: str,
     publish_status: str | None = Depends(resolve_publish_status),
     service: SeriesService = Depends(get_series_service),
 ):
-    """Get series by ID (Public: published, Admin: all/pending/hidden)."""
-    series = await service.get_series_by_id(series_id, publish_status=publish_status)
+    """Get series by ID or code (Public: published, Admin: all/pending/hidden)."""
+    clean_identifier = str(series_id_or_code).strip()
+    series = None
+    if clean_identifier.isdigit():
+        series = await service.get_series_by_id(int(clean_identifier), publish_status=publish_status)
+    if not series:
+        series = await service.get_series_by_code(clean_identifier, publish_status=publish_status)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
     return series
@@ -978,8 +1006,8 @@ async def open_series_topic(
             supergroup_sources = [s for s in all_sources if s.type == "superguruh" and s.chat_id]
             if supergroup_sources:
                 target_chat_id = supergroup_sources[-1].chat_id
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Superguruh manbalarini olishda xatolik yuz berdi: %s", e)
 
     if not target_chat_id:
         target_chat_id = settings.AUTO_TOPIC_CHAT_ID

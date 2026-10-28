@@ -198,3 +198,29 @@ async def test_collection_slug_is_resolved():
         result = await resolve_and_send_content(bot, chat_id, "harry-potter")
         assert result is True
         mock_col.assert_called_with("harry-potter")
+
+
+@pytest.mark.asyncio
+async def test_numeric_episode_code_is_resolved():
+    """8-raqamli sof sonli qism kodi (masalan: Taxtlar o'yini 1-qismi '28831337') get_episode_by_code orqali muvaffaqiyatli topiladi."""
+    bot = AsyncMock()
+    chat_id = 123456789
+    fake_ep = {"id": 14052, "code": "28831337", "display_code": "S1-CH1", "series_id": 998}
+
+    with patch("services.api_client.api_client.get_movie_by_code", new_callable=AsyncMock, return_value=None), \
+         patch("services.api_client.api_client.get_episode_by_code", new_callable=AsyncMock, return_value=fake_ep) as mock_ep_code, \
+         patch("utils.code_resolver.send_episode_to_user", new_callable=AsyncMock, return_value=True) as mock_send_ep:
+
+        # 1. Sof raqamli qism kodi: 28831337 (saytdan kelgan link)
+        result = await resolve_and_send_content(bot, chat_id, "28831337")
+        assert result is True
+        mock_ep_code.assert_called_with("28831337")
+        mock_send_ep.assert_called_once_with(bot, chat_id, fake_ep)
+
+        # 2. Prefiksli qism kodi: ep_28831337
+        mock_ep_code.reset_mock()
+        mock_send_ep.reset_mock()
+        result_prefixed = await resolve_and_send_content(bot, chat_id, "ep_28831337")
+        assert result_prefixed is True
+        mock_ep_code.assert_called_with("28831337")
+        mock_send_ep.assert_called_once_with(bot, chat_id, fake_ep)

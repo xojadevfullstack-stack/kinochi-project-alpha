@@ -124,19 +124,26 @@ async def get_my_history(
                 "id": record.movie.id,
                 "title": record.movie.title,
                 "poster_url": record.movie.poster_url,
-                "code": record.movie.code
+                "code": record.movie.code,
+                "release_year": record.movie.release_year,
+                "imdb_rating": record.movie.imdb_rating,
+                "genres": record.movie.genres
             }
         elif record.episode:
             item_data["type"] = "episode"
+            s_obj = record.episode.season.series if (record.episode.season and record.episode.season.series) else None
             item_data["episode"] = {
                 "id": record.episode.id,
                 "display_code": record.episode.display_code,
                 "code": record.episode.code,
-                "season_number": record.episode.season.season_number,
+                "season_number": record.episode.season.season_number if record.episode.season else 1,
                 "episode_number": record.episode.episode_number,
-                "series_id": record.episode.season.series.id,
-                "series_title": record.episode.season.series.title,
-                "series_poster": record.episode.season.series.poster_url
+                "series_id": s_obj.id if s_obj else None,
+                "series_title": s_obj.title if s_obj else "Serial",
+                "series_poster": s_obj.poster_url if s_obj else None,
+                "release_year": s_obj.release_year if s_obj else None,
+                "imdb_rating": s_obj.imdb_rating if s_obj else None,
+                "genres": (s_obj.categories[0].name if (s_obj and s_obj.categories) else "Serial") if s_obj else "Serial"
             }
         items.append(item_data)
         

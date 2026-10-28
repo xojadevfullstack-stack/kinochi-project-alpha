@@ -3,12 +3,13 @@ export interface CatalogTheme {
   title: string;
   count: number | string;
   href: string;
-  category: "theme" | "franchise" | "genre" | "country";
+  category: "theme" | "franchise" | "chronology" | "genre" | "country";
   description?: string;
   posters: string[];
 }
 
 export const CURATED_CATALOG_THEMES: CatalogTheme[] = [
+  // ── 1. Franshizalar (Franchises) ──────────────────────────
   {
     id: "harry-potter",
     title: "Sehrgarlar va Garri Potter olami",
@@ -28,7 +29,7 @@ export const CURATED_CATALOG_THEMES: CatalogTheme[] = [
     count: "5 ta film va serial",
     href: "/collections/qashqirlar-makoni",
     category: "franchise",
-    description: "Polat Alemdar, mafiya olami, Iroq, Falastin va Vatan janglari xronologiyasi.",
+    description: "Polat Alemdar, mafiya olami, Iroq, Falastin va Vatan janglari.",
     posters: [
       "https://media.themoviedb.org/t/p/w440_and_h660_face/zPv5KaNEVqZLpbH6sEAvld9nMVr.jpg",
       "https://m.media-amazon.com/images/M/MV5BZjE1MzlhY2ItY2FhYy00NjFjLTk1ZDMtOWNkZTU4YTk4N2E1XkEyXkFqcGc@._V1_QL75_UY562_CR11,0,380,562_.jpg",
@@ -48,19 +49,49 @@ export const CURATED_CATALOG_THEMES: CatalogTheme[] = [
       "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg"
     ]
   },
+
+  // ── 2. Xronologiyalar (Chronologies & Timelines) ──────────
   {
-    id: "vampirlar-va-borilar",
-    title: "Vampirlar va Bo'rilar olami",
-    count: "3 ta serial",
-    href: "/collections/vampirlar-va-borilar",
-    category: "theme",
-    description: "Mistik Folls, Mayklsonlar xonadoni va bo'rilar to'dasi to'qnashuvi.",
+    id: "harry-potter-chronology",
+    title: "Garri Potter: Voqealar Xronologiyasi",
+    count: "8 ta film",
+    href: "/collections/harry-potter",
+    category: "chronology",
+    description: "Hikmatlar toshidan boshlab Ajal tuhfasi 2-qismgacha bo'lgan rasmiy vaqt ketma-ketligi.",
     posters: [
-      "https://image.tmdb.org/t/p/w500/gbp4zM0FE0n23X4UFY5EBlacrog.jpg",
-      "https://image.tmdb.org/t/p/w500/keJOhJXGiLL54EW6QocbyvQGquA.jpg",
-      "https://image.tmdb.org/t/p/w500/wjKBTcNy1xihmExqJI8kM2qvavP.jpg"
+      "https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
+      "https://image.tmdb.org/t/p/w500/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg",
+      "https://image.tmdb.org/t/p/w500/h6NYfVUyM6CDURtZSnBpz647Ldd.jpg"
     ]
   },
+  {
+    id: "qashqirlar-makoni-chronology",
+    title: "Qashqirlar Makoni: Tarixiy Xronologiya",
+    count: "5 ta qism",
+    href: "/collections/qashqirlar-makoni",
+    category: "chronology",
+    description: "Kurtlar Vadisi Pusu, Iroq, Teror, Falastin va Vatan voqealarining to'liq xronologiyasi.",
+    posters: [
+      "https://media.themoviedb.org/t/p/w440_and_h660_face/zPv5KaNEVqZLpbH6sEAvld9nMVr.jpg",
+      "https://m.media-amazon.com/images/M/MV5BZjE1MzlhY2ItY2FhYy00NjFjLTk1ZDMtOWNkZTU4YTk4N2E1XkEyXkFqcGc@._V1_QL75_UY562_CR11,0,380,562_.jpg",
+      "https://image.tmdb.org/t/p/w500/wDWkjobSJm8I5r2ctSPtneUjHxT.jpg"
+    ]
+  },
+  {
+    id: "superheroes-chronology",
+    title: "Marvel Kinoolami: Voqealar Tartibi",
+    count: "Timeline tartibi",
+    href: "/collections/superheroes",
+    category: "chronology",
+    description: "Birinchi Qasoskordan boshlab Intihogacha bo'lgan xronologik film ketma-ketligi.",
+    posters: [
+      "https://image.tmdb.org/t/p/w500/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg",
+      "https://image.tmdb.org/t/p/original/in1R2dDc421JxsoRWaIIAqVI2KE.jpg",
+      "https://image.tmdb.org/t/p/w500/bR8ISy1O9XQxqiy0fQFw2BX72RQ.jpg"
+    ]
+  },
+
+  // ── 3. Mavzular (Themes) ──────────────────────────────────
   {
     id: "christopher-nolan",
     title: "Kristofer Nolan ilmiy-fantastikasi",
@@ -72,6 +103,19 @@ export const CURATED_CATALOG_THEMES: CatalogTheme[] = [
       "https://image.tmdb.org/t/p/w500/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg",
       "https://image.tmdb.org/t/p/w500/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg",
       "https://image.tmdb.org/t/p/w500/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg"
+    ]
+  },
+  {
+    id: "vampirlar-va-borilar",
+    title: "Vampirlar va Bo'rilar olami",
+    count: "3 ta serial",
+    href: "/collections/vampirlar-va-borilar",
+    category: "theme",
+    description: "Mistik Folls, Mayklsonlar xonadoni va bo'rilar to'dasi to'qnashuvi.",
+    posters: [
+      "https://image.tmdb.org/t/p/w500/gbp4zM0FE0n23X4UFY5EBlacrog.jpg",
+      "https://image.tmdb.org/t/p/w500/keJOhJXGiLL54EW6QocbyvQGquA.jpg",
+      "https://image.tmdb.org/t/p/w500/wjKBTcNy1xihmExqJI8kM2qvavP.jpg"
     ]
   },
   {

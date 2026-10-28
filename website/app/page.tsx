@@ -2,7 +2,9 @@ import { fetchApi } from "@/lib/api";
 import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
 import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
-import RandomRecommendationWidget from "@/components/recommendations/RandomRecommendationWidget";
+import ContinueWatchingSection from "@/components/home/ContinueWatchingSection";
+import MediaMarqueeSection from "@/components/home/MediaMarqueeSection";
+import MovieCard from "@/components/catalog/MovieCard";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
@@ -67,10 +69,10 @@ const MovieRow = ({
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="max-w-container-max mx-auto mb-14 sm:mb-16">
-      <div className="px-gutter mb-stack-md flex items-center justify-between">
+    <section className="max-w-container-max mx-auto px-gutter mb-14 sm:mb-16">
+      <div className="mb-stack-md flex items-center justify-between">
         <h2 className="font-headline-md text-headline-md text-text-primary flex items-center gap-2">
-          <span className="w-1 h-6 bg-rating-gold rounded-full block" />
+          <span className="w-1 h-6 bg-primary rounded-full block" />
           <span>{title}</span>
         </h2>
         <Link
@@ -83,67 +85,20 @@ const MovieRow = ({
           </span>
         </Link>
       </div>
-      <div className="flex gap-4 overflow-x-auto snap-x hide-scrollbar px-gutter pb-6 pt-2">
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-6 pt-2">
         {items.map((item) => {
           const itemIsSeries = isDynamicPage ? !!item.is_series : isSeries;
-          const itemIs18Plus = isAdultContent(item);
+          const normalizedItem = {
+            ...item,
+            is_series: itemIsSeries,
+          };
           return (
-            <Link
-              href={itemIsSeries ? `/series/${item.id}` : `/movie/${item.code}`}
-              key={itemIsSeries ? `s-${item.id}` : `m-${item.code}`}
-              className="w-[150px] sm:w-[190px] md:w-[230px] shrink-0 snap-start group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
+            <div
+              key={itemIsSeries ? `s-${item.id}` : `m-${item.code || item.id}`}
+              className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 snap-start"
             >
-              {item.poster_url ? (
-                <AdultPoster
-                  src={item.poster_url}
-                  alt={item.title}
-                  is18Plus={itemIs18Plus}
-                  fill
-                  sizes="(max-width: 768px) 150px, 230px"
-                  imageClassName="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-surface-container-high text-gray-500">
-                  <span className="material-symbols-outlined text-4xl mb-2 opacity-30">movie</span>
-                </div>
-              )}
-
-              <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-              {/* Rating badge */}
-              <div className="absolute top-2 right-2 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-rating-gold flex items-center gap-1 border border-white/10 pointer-events-none">
-                <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  star
-                </span>
-                <span className="font-label-caps text-xs font-bold">
-                  {item.imdb_rating || item.tmdb_rating || "N/A"}
-                </span>
-              </div>
-
-              {/* 18+ badge */}
-              {itemIs18Plus && (
-                <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-red-600/90 backdrop-blur-md rounded text-white text-[10px] font-black uppercase tracking-wider border border-red-500/40 flex items-center gap-1 shadow-sm shadow-black/50 pointer-events-none">
-                  <span className="text-[11px]">🔞</span>
-                  <span>18+</span>
-                </div>
-              )}
-
-              <div className="absolute bottom-0 left-0 w-full p-3 sm:p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform z-10 pointer-events-none">
-                <div className="flex gap-1 mb-1">
-                  <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-                    {itemIsSeries ? item.categories?.[0]?.name || "Serial" : item.genres?.split(",")[0] || "Kino"}
-                  </span>
-                  {item.release_year && (
-                    <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-                      {item.release_year}
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-body-lg text-xs sm:text-sm text-text-primary font-bold line-clamp-2 drop-shadow-md">
-                  {item.title}
-                </h3>
-              </div>
-            </Link>
+              <MovieCard item={normalizedItem} />
+            </div>
           );
         })}
       </div>
@@ -152,7 +107,7 @@ const MovieRow = ({
 };
 
 export default async function Home() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_uz_bot";
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
   let latestMovies: Movie[] = [];
   let latestSeries: Series[] = [];
   let pagesData: any[] = [];
@@ -308,9 +263,9 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Right: Floating Poster Image with 18+ blur protection */}
-            <div className="hidden md:block w-1/3 lg:w-[420px] shrink-0 relative perspective-1000">
-              <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/5 transform rotate-y-[-8deg] rotate-x-[4deg] hover:rotate-y-0 hover:rotate-x-0 transition-transform duration-700 ease-out group relative bg-surface-container-high">
+            {/* Poster Image with 18+ blur protection (Compact on mobile, 3D on desktop) */}
+            <div className="w-36 xs:w-40 sm:w-52 md:w-1/3 lg:w-[400px] shrink-0 relative perspective-1000 mx-auto md:mx-0 order-first md:order-last mb-2 md:mb-0">
+              <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 sm:border-4 border-white/10 md:border-white/5 md:transform md:rotate-y-[-8deg] md:rotate-x-[4deg] md:hover:rotate-y-0 md:hover:rotate-x-0 transition-transform duration-700 ease-out group relative bg-surface-container-high">
                 {heroItem.poster_url ? (
                   <AdultPoster
                     src={heroItem.poster_url}
@@ -338,16 +293,17 @@ export default async function Home() {
       ======================================================== */}
       {unifiedRecentItems.length > 0 && (
         <section className="max-w-container-max mx-auto px-gutter mb-12 sm:mb-16 mt-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-headline-md text-lg sm:text-xl md:text-2xl text-text-primary flex items-center gap-2 font-bold">
-              <span className="w-1 h-6 bg-rating-gold rounded-full block" />
-              <span>Eng so'nggi premyeralar va yangiliklar</span>
+          <div className="flex items-center justify-between mb-4 gap-2">
+            <h2 className="font-headline-md text-base sm:text-xl md:text-2xl text-text-primary flex items-center gap-2 font-bold whitespace-nowrap">
+              <span className="w-1 h-5 sm:h-6 bg-primary rounded-full block shrink-0" />
+              <span>Premyeralar va yangiliklar</span>
             </h2>
             <Link
               href="/catalog"
-              className="text-text-secondary hover:text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1 group"
+              className="text-text-secondary hover:text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1 group shrink-0"
             >
-              <span>Barchasi (Katalogda)</span>
+              <span className="hidden sm:inline">Barchasi (Katalogda)</span>
+              <span className="sm:hidden">Barchasi</span>
               <span className="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">
                 arrow_forward
               </span>
@@ -356,75 +312,26 @@ export default async function Home() {
 
           {/* Ixcham Scroll Slayder */}
           <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-4 pt-1">
-            {unifiedRecentItems.map((item) => {
-              const itemIsSeries = !!item.is_series;
-              const itemIs18Plus = isAdultContent(item);
-              return (
-                <Link
-                  href={itemIsSeries ? `/series/${item.id}` : `/movie/${item.code}`}
-                  key={itemIsSeries ? `rec-s-${item.id}` : `rec-m-${item.code}`}
-                  className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 snap-start group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-md ring-1 ring-white/10 hover:ring-white/25"
-                >
-                  {item.poster_url ? (
-                    <AdultPoster
-                      src={item.poster_url}
-                      alt={item.title}
-                      is18Plus={itemIs18Plus}
-                      fill
-                      sizes="(max-width: 640px) 140px, (max-width: 768px) 170px, 200px"
-                      imageClassName="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-surface-container-high text-gray-500">
-                      <span className="material-symbols-outlined text-3xl opacity-30">movie</span>
-                    </div>
-                  )}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-                  {/* Top Rating Badge */}
-
-                  <div className="absolute top-2 right-2 z-10 px-2 py-0.5 bg-black/70 backdrop-blur-md rounded text-rating-gold flex items-center gap-1 border border-white/10 pointer-events-none">
-                    <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      star
-                    </span>
-                    <span className="text-xs font-bold">
-                      {item.imdb_rating || item.tmdb_rating || "8.5"}
-                    </span>
-                  </div>
-
-                  {/* Bottom Info */}
-                  <div className="absolute bottom-0 left-0 w-full p-2.5 sm:p-3 z-10 pointer-events-none">
-                    <div className="flex items-center gap-1 mb-1 text-[10px] text-text-secondary">
-                      <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded uppercase font-bold tracking-wider">
-                        {itemIsSeries ? "Serial" : (item.genres?.split(",")[0] || "Kino")}
-                      </span>
-                      {item.release_year && (
-                        <span className="px-1.5 py-0.5 bg-white/10 backdrop-blur-sm rounded font-bold">
-                          {item.release_year}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-1">
-                      {item.title}
-                    </h3>
-                  </div>
-                </Link>
-              );
-            })}
+            {unifiedRecentItems.map((item) => (
+              <div
+                key={item.is_series ? `rec-s-${item.id}` : `rec-m-${item.code || item.id}`}
+                className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 snap-start"
+              >
+                <MovieCard item={item} />
+              </div>
+            ))}
           </div>
         </section>
       )}
 
       {/* Personalized Recommendations (Only visible if authenticated) */}
+      <ContinueWatchingSection />
+
       <RecommendationsSection />
 
-      {/* Interactive Random Recommendation Generator */}
-      <RandomRecommendationWidget
-        movies={latestMovies}
-        series={latestSeries}
-        pages={pagesData}
-      />
+      {/* iTV Style Multi-Row Animated Marquee Section */}
+      <MediaMarqueeSection items={allRecentItems} />
+
 
       {/* Horizontal Scrolling Rows for Bo'limlar */}
       <div className="space-y-margin-desktop py-4 relative z-20 bg-background-obsidian">

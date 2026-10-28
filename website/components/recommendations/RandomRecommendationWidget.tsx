@@ -141,7 +141,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
           <div>
             <h2 className="font-headline-md text-xl sm:text-2xl md:text-3xl text-text-primary flex items-center gap-2.5 font-bold tracking-tight">
-              <span className="w-1 h-6 bg-rating-gold rounded-full block"></span>
+              <span className="w-1 h-6 bg-primary rounded-full block"></span>
               Tasodifiy Tavsiya
             </h2>
             <p className="text-text-secondary text-xs sm:text-sm mt-1">

@@ -472,4 +472,331 @@ class TMDbClient:
         return result
 
 
+    async def get_credits_and_details(
+        self,
+        tmdb_id: int,
+        kind: str = "movie",
+    ) -> dict[str, Any]:
+        """
+        TMDb orqali Suratga olish guruhi (Aktyorlar, Rejissyor, Muallif, Produserlar)
+        hamda film/serialning qo'shimcha parametrlarini (Asl nomi, Davlati, Studiya, Holati)
+        bitta birlashtirilgan paketda keshlab qaytaradi.
+        """
+        if not self.api_key or not tmdb_id:
+            return {"items": [], "details": None}
+
+        endpoint_type = "tv" if kind in ("tv", "series") else "movie"
+        cache_key = f"tmdb:credits_and_details:{endpoint_type}:{tmdb_id}"
+        cached = await get_cache(cache_key)
+        if cached is not None:
+            return cached
+
+        # Parallel fetch details and credits with ru-RU (fallback en-US)
+        details_task = self._request_with_retry(
+            f"{endpoint_type}/{tmdb_id}",
+            params={"language": "ru-RU"},
+        )
+        credits_task = self._request_with_retry(
+            f"{endpoint_type}/{tmdb_id}/credits",
+            params={"language": "ru-RU"},
+        )
+        details_raw, credits_raw = await asyncio.gather(details_task, credits_task)
+
+        if not details_raw:
+            details_raw = await self._request_with_retry(
+                f"{endpoint_type}/{tmdb_id}",
+                params={"language": "en-US"},
+            )
+        if not credits_raw:
+            credits_raw = await self._request_with_retry(
+                f"{endpoint_type}/{tmdb_id}/credits",
+                params={"language": "en-US"},
+            )
+
+        details_raw = details_raw or {}
+        credits_raw = credits_raw or {}
+
+        items: list[dict[str, Any]] = []
+        seen_ids: set[int] = set()
+
+        # 1. Creators (for TV)
+        for creator in details_raw.get("created_by", []):
+            cid = creator.get("id")
+            if not cid or cid in seen_ids:
+                continue
+            seen_ids.add(cid)
+            name = creator.get("name") or creator.get("original_name") or "Muallif"
+            profile_path = creator.get("profile_path")
+            photo_url = f"{TMDB_IMAGE_BASE}{profile_path}" if profile_path else None
+            items.append({
+                "id": cid,
+                "name": name,
+                "role": "Rejissyor / Muallif",
+                "character": "Creator",
+                "photo_url": photo_url,
+                "order": 0,
+            })
+
+        # 2. Key Crew mapping
+        job_map = {
+            "Director": "Rejissyor",
+            "Screenplay": "Ssenariy muallifi",
+            "Writer": "Ssenariy muallifi",
+            "Story": "Ssenariy muallifi",
+            "Producer": "Produser",
+            "Executive Producer": "Bosh produser",
+            "Director of Photography": "Operator",
+            "Original Music Composer": "Bastakor",
+            "Music": "Bastakor",
+        }
+        crew_raw = credits_raw.get("crew", [])
+        key_crew_items: list[dict[str, Any]] = []
+        for member in crew_raw:
+            job = member.get("job")
+            if job not in job_map:
+                continue
+            pid = member.get("id")
+            if not pid or pid in seen_ids:
+                continue
+            seen_ids.add(pid)
+            name = member.get("name") or member.get("original_name") or "Ijodkor"
+            profile_path = member.get("profile_path")
+            photo_url = f"{TMDB_IMAGE_BASE}{profile_path}" if profile_path else None
+
+            key_crew_items.append({
+                "id": pid,
+                "name": name,
+                "role": job_map[job],
+                "character": job,
+                "photo_url": photo_url,
+                "order": 1,
+            })
+            if len(key_crew_items) >= 8:
+                break
+
+        # 3. Actors (Cast)
+        cast_raw = credits_raw.get("cast", [])
+        cast_items: list[dict[str, Any]] = []
+        for member in cast_raw[:16]:
+            pid = member.get("id")
+            if not pid or pid in seen_ids:
+                continue
+            seen_ids.add(pid)
+            name = member.get("name") or member.get("original_name") or "Aktyor"
+            profile_path = member.get("profile_path")
+            photo_url = f"{TMDB_IMAGE_BASE}{profile_path}" if profile_path else None
+            character = member.get("character")
+
+            cast_items.append({
+                "id": pid,
+                "name": name,
+                "role": "Aktyor",
+                "character": character,
+                "photo_url": photo_url,
+                "order": 2,
+            })
+
+        # Combine: Creators & Key Directors first, then top actors, then remaining key crew
+        items = items + key_crew_items[:3] + cast_items + key_crew_items[3:]
+
+        # 4. Details dictionary
+        country_map = {
+            "United States of America": "AQSH",
+            "United States": "AQSH",
+            "United Kingdom": "Buyuk Britaniya",
+            "Russia": "Rossiya",
+            "France": "Fransiya",
+            "Germany": "Germaniya",
+            "Japan": "Yaponiya",
+            "South Korea": "Janubiy Koreya",
+            "Turkey": "Turkiya",
+            "India": "Hindiston",
+            "Uzbekistan": "O'zbekiston",
+            "Canada": "Kanada",
+            "Spain": "Ispaniya",
+            "Italy": "Italiya",
+            "China": "Xitoy",
+        }
+        status_map = {
+            "Ended": "Tugallangan",
+            "Returning Series": "Davom etmoqda",
+            "Released": "Premyera qilingan",
+            "In Production": "Suratga olinmoqda",
+            "Post Production": "Tayyorlanmoqda",
+        }
+
+        raw_countries = [c.get("name") for c in details_raw.get("production_countries", []) if c.get("name")]
+        countries = [country_map.get(c, c) for c in raw_countries[:4]]
+
+        companies = [c.get("name") for c in details_raw.get("production_companies", [])[:4] if c.get("name")]
+
+        raw_status = details_raw.get("status")
+        status = status_map.get(raw_status, raw_status) if raw_status else None
+
+        orig_title = details_raw.get("original_title") or details_raw.get("original_name")
+        release_date = details_raw.get("release_date") or details_raw.get("first_air_date")
+
+        runtime = None
+        if endpoint_type == "movie" and details_raw.get("runtime"):
+            runtime = f"{details_raw.get('runtime')} daqiqa"
+        elif endpoint_type == "tv" and details_raw.get("number_of_episodes"):
+            ep_time = details_raw.get("episode_run_time")
+            if ep_time and len(ep_time) > 0:
+                runtime = f"{details_raw.get('number_of_episodes')} qism (~{ep_time[0]} daqiqa)"
+            else:
+                runtime = f"{details_raw.get('number_of_episodes')} qism"
+
+        budget = None
+        if details_raw.get("budget", 0) > 0:
+            budget = f"${details_raw['budget']:,}"
+
+        revenue = None
+        if details_raw.get("revenue", 0) > 0:
+            revenue = f"${details_raw['revenue']:,}"
+
+        details_dict = {
+            "original_title": orig_title,
+            "countries": countries,
+            "companies": companies,
+            "release_date": release_date,
+            "status": status,
+            "runtime": runtime,
+            "budget": budget,
+            "revenue": revenue,
+            "tagline": details_raw.get("tagline"),
+        }
+
+        result = {"items": items, "details": details_dict}
+        await set_cache(cache_key, result, ttl_seconds=86400)
+        return result
+
+    async def get_credits(
+        self,
+        tmdb_id: int,
+        kind: str = "movie",
+    ) -> list[dict[str, Any]]:
+        res = await self.get_credits_and_details(tmdb_id, kind=kind)
+        return res.get("items", [])
+
+    async def get_person_filmography(
+        self,
+        person_id: int,
+    ) -> list[dict[str, Any]]:
+        """
+        Aktyor yoki ijodkorning TMDb dagi filmlari ro'yxatini (filmografiyasini) keshlab qaytaradi.
+        """
+        if not self.api_key or not person_id:
+            return []
+
+        cache_key = f"tmdb:person_filmography:{person_id}"
+        cached = await get_cache(cache_key)
+        if cached is not None:
+            return cached
+
+        data = await self._request_with_retry(
+            f"person/{person_id}/movie_credits",
+            params={"language": "ru-RU"},
+        )
+        if not data:
+            data = await self._request_with_retry(
+                f"person/{person_id}/movie_credits",
+                params={"language": "en-US"},
+            )
+
+        if not data:
+            await set_cache(cache_key, [], ttl_seconds=86400)
+            return []
+
+        cast_list = data.get("cast", [])
+        crew_list = data.get("crew", [])
+
+        key_jobs = {"Director", "Producer", "Screenplay", "Writer", "Director of Photography", "Original Music Composer"}
+        priority_crew = [c for c in crew_list if c.get("job") in key_jobs]
+
+        combined = []
+        seen = set()
+        for m in cast_list:
+            mid = m.get("id")
+            if mid and mid not in seen:
+                seen.add(mid)
+                combined.append(m)
+        for m in priority_crew:
+            mid = m.get("id")
+            if mid and mid not in seen:
+                seen.add(mid)
+                combined.append(m)
+
+        if not combined:
+            combined = cast_list or crew_list
+
+        combined.sort(key=lambda x: (x.get("vote_count") or 0) + (x.get("popularity") or 0), reverse=True)
+
+        items: list[dict[str, Any]] = []
+        seen_ids: set[int] = set()
+        for m in combined[:25]:
+            mid = m.get("id")
+            if not mid or mid in seen_ids:
+                continue
+            seen_ids.add(mid)
+            title = m.get("title") or m.get("original_title") or "Nomsiz film"
+            rel_date = m.get("release_date") or ""
+            year = int(rel_date[:4]) if len(rel_date) >= 4 and rel_date[:4].isdigit() else None
+            poster_path = m.get("poster_path")
+            poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
+            role_desc = m.get("character") or m.get("job")
+
+            items.append({
+                "tmdb_id": mid,
+                "title": title,
+                "original_title": m.get("original_title"),
+                "release_year": year,
+                "release_date": rel_date,
+                "poster_url": poster_url,
+                "character": role_desc,
+                "vote_average": round(m.get("vote_average", 0), 1) if m.get("vote_average") else None,
+            })
+
+        await set_cache(cache_key, items, ttl_seconds=86400)
+        return items
+
+    async def get_person_details(
+        self,
+        person_id: int,
+    ) -> dict[str, Any] | None:
+        """Aktyor haqida to'liq ma'lumot (TMDb)."""
+        if not self.api_key or not person_id:
+            return None
+
+        cache_key = f"tmdb:person_details:{person_id}"
+        cached = await get_cache(cache_key)
+        if cached is not None:
+            return cached
+
+        data = await self._request_with_retry(
+            f"person/{person_id}",
+            params={"language": "ru-RU"},
+        )
+        if not data:
+            data = await self._request_with_retry(
+                f"person/{person_id}",
+                params={"language": "en-US"},
+            )
+
+        if not data:
+            return None
+
+        profile_path = data.get("profile_path")
+        res = {
+            "id": data.get("id"),
+            "name": data.get("name"),
+            "biography": data.get("biography"),
+            "birthday": data.get("birthday"),
+            "place_of_birth": data.get("place_of_birth"),
+            "photo_url": f"{TMDB_IMAGE_BASE}{profile_path}" if profile_path else None,
+            "known_for_department": data.get("known_for_department"),
+        }
+        await set_cache(cache_key, res, ttl_seconds=86400)
+        return res
+
+
 tmdb_client = TMDbClient()

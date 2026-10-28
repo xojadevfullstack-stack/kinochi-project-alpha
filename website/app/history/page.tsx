@@ -51,7 +51,7 @@ export default function HistoryPage() {
           <BackButton fallbackUrl="/" />
         </div>
         <div className="text-center bg-white/[0.04] backdrop-blur-xl p-8 rounded-3xl border border-white/10 max-w-md w-full shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-5 text-rating-gold">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-5 text-primary">
             <span className="material-symbols-outlined text-3xl">history</span>
           </div>
           <h1 className="text-2xl font-display-hero font-bold text-white mb-2">Ko&apos;rish tarixi</h1>
@@ -84,7 +84,7 @@ export default function HistoryPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-display-hero font-extrabold text-white tracking-tight flex items-center gap-3">
-              <span className="material-symbols-outlined text-3xl sm:text-4xl text-rating-gold">history</span>
+              <span className="material-symbols-outlined text-3xl sm:text-4xl text-primary">history</span>
               Ko&apos;rish tarixi
             </h1>
             <p className="text-text-secondary text-xs sm:text-sm mt-1">

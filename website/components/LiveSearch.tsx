@@ -41,6 +41,9 @@ interface LiveSearchProps {
   inputClassName?: string;
   onNavigate?: () => void;
   isMobileDrawer?: boolean;
+  isMobileBar?: boolean;
+  autoFocus?: boolean;
+  onClose?: () => void;
 }
 
 function SearchPoster({ item }: { item: SearchResultItem }) {
@@ -110,6 +113,9 @@ export default function LiveSearch({
   inputClassName = "",
   onNavigate,
   isMobileDrawer = false,
+  isMobileBar = false,
+  autoFocus = false,
+  onClose,
 }: LiveSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -126,6 +132,13 @@ export default function LiveSearch({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto focus input when autoFocus prop is enabled
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
@@ -214,6 +227,7 @@ export default function LiveSearch({
     setIsOpen(false);
     setQuery("");
     onNavigate?.();
+    onClose?.();
 
     if (item.type === "movie") {
       router.push(`/movie/${item.code}`);
@@ -272,6 +286,7 @@ export default function LiveSearch({
     if (cleanQ) {
       setIsOpen(false);
       onNavigate?.();
+      onClose?.();
       router.push(`/search?q=${encodeURIComponent(cleanQ)}`);
     }
   };
@@ -303,6 +318,7 @@ export default function LiveSearch({
     if (e.key === "Escape") {
       setIsOpen(false);
       setIsKeyboardNavigating(false);
+      onClose?.();
     }
   };
 
@@ -358,9 +374,13 @@ export default function LiveSearch({
       {/* Live Dropdown Results Popover */}
       {isOpen && (
         <div
-          className={`absolute left-0 right-0 mt-2 bg-background-obsidian/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden z-50 transition-all ${
-            isMobileDrawer ? "max-h-[60vh] w-full" : "min-w-[340px] sm:min-w-[480px] max-h-[520px]"
-          } flex flex-col`}
+          className={`bg-background-obsidian/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden transition-all flex flex-col ${
+            isMobileBar
+              ? "fixed left-2 right-2 top-16 max-h-[72vh] z-[70]"
+              : isMobileDrawer
+              ? "absolute left-0 right-0 mt-2 max-h-[60vh] w-full z-50"
+              : "absolute left-0 right-0 mt-2 min-w-[340px] sm:min-w-[480px] max-h-[520px] z-50"
+          }`}
         >
           {hasAnyResults ? (
             <div className="overflow-y-auto divide-y divide-white/5 p-1.5">
@@ -561,7 +581,7 @@ export default function LiveSearch({
                     setIsOpen(false);
                     onNavigate?.();
                   }}
-                  className="w-full py-1.5 px-3 text-center text-xs font-medium text-text-secondary hover:text-rating-gold transition-colors flex items-center justify-center gap-1"
+                  className="w-full py-1.5 px-3 text-center text-xs font-medium text-text-secondary hover:text-primary transition-colors flex items-center justify-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[14px]">format_list_bulleted</span>
                   <span>Barcha buyurtmalar ro&apos;yxati</span>

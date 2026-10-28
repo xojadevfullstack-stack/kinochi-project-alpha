@@ -220,7 +220,7 @@ export default function RequestsPage() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-rating-gold uppercase tracking-wider">
+            <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-primary uppercase tracking-wider">
               <span className="material-symbols-outlined text-[18px]">movie_edit</span>
               <span>Foydalanuvchilar Buyurtmalari</span>
             </div>
@@ -238,7 +238,7 @@ export default function RequestsPage() {
               onClick={() => setActiveTab("search")}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "search"
-                  ? "bg-rating-gold text-background-obsidian shadow-lg"
+                  ? "bg-primary text-white shadow-lg shadow-primary/25"
                   : "text-text-secondary hover:text-white"
               }`}
             >
@@ -249,7 +249,7 @@ export default function RequestsPage() {
               onClick={() => setActiveTab("leaderboard")}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "leaderboard"
-                  ? "bg-rating-gold text-background-obsidian shadow-lg"
+                  ? "bg-primary text-white shadow-lg shadow-primary/25"
                   : "text-text-secondary hover:text-white"
               }`}
             >
@@ -281,17 +281,17 @@ export default function RequestsPage() {
                     value={searchQuery}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
                     placeholder="Masalan: Inception, Qashqirlar makoni, Game of Thrones (jonli qidiruv)..."
-                    className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/15 rounded-2xl text-text-primary text-sm focus:outline-none focus:border-rating-gold focus:bg-white/10 transition-all placeholder:text-text-secondary/60"
+                    className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/15 rounded-2xl text-text-primary text-sm focus:outline-none focus:border-primary focus:bg-white/10 transition-all placeholder:text-text-secondary/60"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isSearching || searchQuery.trim().length < 2}
-                  className="px-6 py-3.5 bg-rating-gold text-background-obsidian font-bold rounded-2xl hover:brightness-110 active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                  className="px-6 py-3.5 bg-primary text-white font-bold rounded-2xl hover:bg-inverse-primary active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
                 >
                   {isSearching ? (
                     <>
-                      <span className="w-4 h-4 border-2 border-background-obsidian border-t-transparent rounded-full animate-spin"></span>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                       <span>Qidirilmoqda...</span>
                     </>
                   ) : (
@@ -394,7 +394,7 @@ export default function RequestsPage() {
                           <button
                             type="button"
                             onClick={() => handleOpenRequest(item)}
-                            className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-rating-gold hover:text-background-obsidian text-text-primary border border-white/10 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                            className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-primary hover:text-white text-text-primary border border-white/10 hover:border-primary text-xs font-bold transition-all flex items-center justify-center gap-1"
                           >
                             <span className="material-symbols-outlined text-[16px]">add_circle</span>
                             <span>So&apos;rash</span>
@@ -407,7 +407,7 @@ export default function RequestsPage() {
               </div>
             ) : isSearching ? (
               <div className="text-center py-16">
-                <span className="w-8 h-8 border-3 border-rating-gold border-t-transparent rounded-full animate-spin inline-block mb-3"></span>
+                <span className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin inline-block mb-3"></span>
                 <p className="text-sm text-text-secondary">TMDB va Kinopoisk bazalari tekshirilmoqda...</p>
               </div>
             ) : null}
@@ -419,7 +419,7 @@ export default function RequestsPage() {
           <div>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                <span className="w-1.5 h-5 bg-rating-gold rounded-full"></span>
+                <span className="w-1.5 h-5 bg-primary rounded-full"></span>
                 <span>Eng ko&apos;p kutilayotgan kinolar</span>
               </h3>
               <span className="text-xs text-text-secondary">Ovozlar bo&apos;yicha saralangan</span>
@@ -427,7 +427,7 @@ export default function RequestsPage() {
 
             {loadingRequests ? (
               <div className="text-center py-16 text-text-secondary">
-                <span className="w-7 h-7 border-2 border-rating-gold border-t-transparent rounded-full animate-spin inline-block mb-2"></span>
+                <span className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block mb-2"></span>
                 <p className="text-xs">So&apos;rovlar ro&apos;yxati yuklanmoqda...</p>
               </div>
             ) : topRequests.length === 0 ? (
@@ -495,8 +495,8 @@ export default function RequestsPage() {
                           hasVoted
                             ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 cursor-default"
                             : isPending
-                            ? "bg-white/10 border-white/20 text-rating-gold opacity-75 cursor-wait"
-                            : "bg-white/5 hover:bg-rating-gold/20 border-white/10 hover:border-rating-gold text-text-primary active:scale-95"
+                            ? "bg-white/10 border-white/20 text-primary opacity-75 cursor-wait"
+                            : "bg-white/5 hover:bg-primary/20 border-white/10 hover:border-primary text-text-primary active:scale-95"
                         }`}
                         title={hasVoted ? "Ovoz berilgan" : "Ovoz berish"}
                       >

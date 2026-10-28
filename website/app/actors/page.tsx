@@ -1,112 +1,174 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import BackButton from "@/components/BackButton";
+import { fetchApi } from "@/lib/api";
 
 interface Actor {
   id: number;
   name: string;
   original_name?: string;
-  photo_url: string;
-  role: string;
-  movies_count: number;
-  popular_movie: string;
+  photo_url?: string | null;
+  role?: string;
 }
 
-const POPULAR_ACTORS: Actor[] = [
-  {
-    id: 1,
-    name: "Jeyson Steytem",
-    original_name: "Jason Statham",
-    photo_url: "https://image.tmdb.org/t/p/w500/whNwkEQYWLFJA8ij00Ke24TN9Y7.jpg",
-    role: "Jangari, Triller",
-    movies_count: 28,
-    popular_movie: "Forsaj, Tashuvchi, Mexanik"
-  },
-  {
-    id: 2,
-    name: "Tom Kruz",
-    original_name: "Tom Cruise",
-    photo_url: "https://image.tmdb.org/t/p/w500/8qB95557xV9qN955.jpg",
-    role: "Jangari, Sarguzasht",
-    movies_count: 32,
-    popular_movie: "Uddalab bo'lmas topshiriq, Top Gun"
-  },
-  {
-    id: 3,
-    name: "Leonardo Di Kaprio",
-    original_name: "Leonardo DiCaprio",
-    photo_url: "https://image.tmdb.org/t/p/w500/wo2hxAzE6n2xnwv5QOZZ1Q3KyUX.jpg",
-    role: "Drama, Triller",
-    movies_count: 24,
-    popular_movie: "Titanik, Muqaddima (Inception)"
-  },
-  {
-    id: 4,
-    name: "Kianu Rivz",
-    original_name: "Keanu Reeves",
-    photo_url: "https://image.tmdb.org/t/p/w500/4D0PpNI0km5GR7u1imWmxME4Pq5.jpg",
-    role: "Fantastika, Jangari",
-    movies_count: 26,
-    popular_movie: "Jon Uik, Matritsa"
-  },
-  {
-    id: 5,
-    name: "Jonni Depp",
-    original_name: "Johnny Depp",
-    photo_url: "https://image.tmdb.org/t/p/w500/ilPB9e5q1y2U31n2U3.jpg",
-    role: "Sarguzasht, Fantastika",
-    movies_count: 30,
-    popular_movie: "Karib dengizi qaroqchilari"
-  },
-  {
-    id: 6,
-    name: "Jeki Chan",
-    original_name: "Jackie Chan",
-    photo_url: "https://image.tmdb.org/t/p/w500/nrazenTDne2n1x8Z5U3yM89uCj1.jpg",
-    role: "Komediya, Jangari",
-    movies_count: 45,
-    popular_movie: "Tig'iz vaqt, Politsiya hikoyasi"
-  },
-  {
-    id: 7,
-    name: "Killian Merfi",
-    original_name: "Cillian Murphy",
-    photo_url: "https://image.tmdb.org/t/p/w500/360R4cgh67xnm1Vw1r3.jpg",
-    role: "Drama, Tarixiy",
-    movies_count: 18,
-    popular_movie: "Oppengeymer, O'tkir soyabonlar"
-  },
-  {
-    id: 8,
-    name: "Kristian Beyl",
-    original_name: "Christian Bale",
-    photo_url: "https://image.tmdb.org/t/p/w500/b7fTC9WFuvq0vM5o32.jpg",
-    role: "Drama, Triller",
-    movies_count: 22,
-    popular_movie: "Qora Ritsar, Ford Ferrari-ga qarshi"
-  }
-];
+interface FilmographyItem {
+  tmdb_id: number;
+  title: string;
+  original_title?: string;
+  release_year?: number | null;
+  poster_url?: string | null;
+  character?: string;
+  is_available: boolean;
+  local_movie?: {
+    id: number;
+    code: string;
+    title: string;
+    is_series: boolean;
+  } | null;
+}
+
+function ActorCard({
+  actor,
+  onOpenFilmography,
+}: {
+  actor: Actor;
+  onOpenFilmography: (actor: Actor) => void;
+}) {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenFilmography(actor)}
+      className="bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] border border-white/10 hover:border-primary/50 active:border-primary rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center text-center transition-all duration-200 active:scale-95 group shadow-sm hover:shadow-md cursor-pointer select-none"
+    >
+      {/* Actor Photo */}
+      <div className="w-16 h-16 xs:w-18 xs:h-18 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden relative mb-2 sm:mb-2.5 border-2 border-white/10 group-hover:border-primary/60 group-active:border-primary transition-all bg-[#1e1f26] shadow-md shrink-0 flex items-center justify-center">
+        {actor.photo_url && !imgError ? (
+          <Image
+            src={actor.photo_url}
+            alt={actor.name}
+            fill
+            sizes="(max-width: 640px) 72px, 96px"
+            className="object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/30">
+            <span className="material-symbols-outlined text-2xl sm:text-3xl">person</span>
+          </div>
+        )}
+      </div>
+
+      <h3 className="font-bold text-xs sm:text-sm text-white group-hover:text-primary transition-colors leading-tight line-clamp-1 w-full">
+        {actor.name}
+      </h3>
+      {actor.original_name && (
+        <span className="text-[10px] sm:text-[11px] text-text-secondary truncate w-full mt-0.5">
+          {actor.original_name}
+        </span>
+      )}
+
+      {actor.role && (
+        <div className="text-[9px] sm:text-[10px] text-text-secondary bg-white/5 px-2 py-0.5 rounded-full border border-white/5 mt-1.5 truncate max-w-full">
+          {actor.role}
+        </div>
+      )}
+    </button>
+  );
+}
 
 export default function ActorsPage() {
+  const [actors, setActors] = useState<Actor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filtered = POPULAR_ACTORS.filter((actor) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      actor.name.toLowerCase().includes(q) ||
-      actor.original_name?.toLowerCase().includes(q) ||
-      actor.popular_movie.toLowerCase().includes(q)
-    );
-  });
+  // Modal / Filmography state
+  const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
+  const [filmography, setFilmography] = useState<FilmographyItem[]>([]);
+  const [loadingFilms, setLoadingFilms] = useState(false);
+  const [requestedIds, setRequestedIds] = useState<Record<number, boolean>>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Debounced fetch of actors (loads 40+ curated stars or dynamic TMDb search results)
+  useEffect(() => {
+    let isCancelled = false;
+    const trimmed = searchQuery.trim();
+
+    const timer = setTimeout(async () => {
+      try {
+        const endpoint = trimmed
+          ? `/actors?search=${encodeURIComponent(trimmed)}`
+          : "/actors";
+        const data = await fetchApi(endpoint);
+        if (!isCancelled && Array.isArray(data)) {
+          setActors(data);
+        }
+      } catch (err) {
+        // Fallback gracefully
+      } finally {
+        if (!isCancelled) setLoading(false);
+      }
+    }, trimmed ? 350 : 0);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  const openActorFilmography = async (actor: Actor) => {
+    setSelectedActor(actor);
+    setLoadingFilms(true);
+    setFilmography([]);
+    try {
+      const res = await fetchApi(`/actors/${actor.id}/movies`);
+      if (res?.movies) {
+        setFilmography(res.movies);
+      }
+    } catch (err) {
+      // Fallback
+    } finally {
+      setLoadingFilms(false);
+    }
+  };
+
+  const handleOrderMovie = async (movie: FilmographyItem) => {
+    try {
+      await fetchApi("/content-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          title: movie.title,
+          original_title: movie.original_title,
+          tmdb_id: movie.tmdb_id,
+          media_type: "movie",
+          release_year: movie.release_year,
+          poster_url: movie.poster_url,
+        }),
+      });
+      setRequestedIds((prev) => ({ ...prev, [movie.tmdb_id]: true }));
+      setToastMessage(`"${movie.title}" buyurtmasi qabul qilindi!`);
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (err) {
+      setToastMessage("Buyurtma yuborishda xatolik yuz berdi");
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
 
   return (
     <div className="min-h-screen pt-20 sm:pt-24 pb-28 xl:pb-16 px-4 md:px-8 bg-background-obsidian text-text-primary">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-black font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
+          <span className="material-symbols-outlined text-xl">check_circle</span>
+          <span className="text-xs sm:text-sm">{toastMessage}</span>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto space-y-6">
-        
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -117,7 +179,7 @@ export default function ActorsPage() {
                 <span>Aktyorlar va Ijodkorlar</span>
               </h1>
               <p className="text-xs text-text-secondary mt-0.5">
-                Mashhur kino yulduzlari va ularning filmlari to'plami
+                Mashhur kino yulduzlari va ularning TMDb filmlari to&apos;plami ({actors.length} ta ijodkor)
               </p>
             </div>
           </div>
@@ -137,45 +199,155 @@ export default function ActorsPage() {
           </div>
         </div>
 
-        {/* Actors Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {filtered.map((actor) => (
-            <Link
-              key={actor.id}
-              href={`/catalog?search=${encodeURIComponent(actor.original_name || actor.name)}`}
-              className="bg-white/5 border border-white/10 hover:border-white/20 rounded-2xl p-4 flex flex-col items-center text-center transition-all duration-300 hover:scale-[1.03] group shadow-md"
-            >
-              {/* Actor Photo */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden relative mb-3 border-2 border-white/10 group-hover:border-white/30 transition-all bg-white/10 shadow-lg">
-                <div className="w-full h-full flex items-center justify-center bg-white/10 text-white/40">
-                  <span className="material-symbols-outlined text-4xl">person</span>
+        {/* Actors Grid: Compact 3-col on mobile, 4 on sm, 5 on md, 6 on lg */}
+        {loading ? (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
+              <div key={i} className="h-36 sm:h-44 rounded-xl sm:rounded-2xl bg-white/5 animate-pulse" />
+            ))}
+          </div>
+        ) : actors.length === 0 ? (
+          <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-3xl">
+            <span className="material-symbols-outlined text-4xl text-text-secondary mb-2 opacity-40">person_search</span>
+            <p className="text-sm text-text-secondary">Aktyor topilmadi. Boshqa ism bilan qidirib ko&apos;ring.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
+            {actors.map((actor) => (
+              <ActorCard
+                key={actor.id}
+                actor={actor}
+                onOpenFilmography={openActorFilmography}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Filmography Modal */}
+      {selectedActor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-[#181920] border border-white/15 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden relative shrink-0 border border-white/20 bg-white/5">
+                  {selectedActor.photo_url ? (
+                    <Image
+                      src={selectedActor.photo_url}
+                      alt={selectedActor.name}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-2xl text-white/40 flex items-center justify-center h-full">person</span>
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white">
+                    {selectedActor.name} &mdash; Filmografiya
+                  </h2>
+                  <p className="text-xs text-text-secondary">
+                    {selectedActor.original_name} ishtirokidagi filmlar ro&apos;yxati
+                  </p>
                 </div>
               </div>
 
-              <h3 className="font-bold text-sm text-white group-hover:text-white transition-colors mb-0.5 line-clamp-1">
-                {actor.name}
-              </h3>
-              {actor.original_name && (
-                <span className="text-[11px] text-text-secondary font-mono mb-1.5 block">
-                  {actor.original_name}
-                </span>
+              <button
+                onClick={() => setSelectedActor(null)}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+                aria-label="Yopish"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+              {loadingFilms ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+                  ))}
+                </div>
+              ) : filmography.length === 0 ? (
+                <div className="text-center py-12 text-text-secondary text-sm">
+                  Ushbu aktyor ishtirokidagi filmlar topilmadi.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {filmography.map((movie) => {
+                    const isRequested = Boolean(requestedIds[movie.tmdb_id]);
+
+                    return (
+                      <div
+                        key={movie.tmdb_id}
+                        className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 transition-all"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 bg-white/10">
+                            {movie.poster_url ? (
+                              <Image
+                                src={movie.poster_url}
+                                alt={movie.title}
+                                fill
+                                sizes="40px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white/30 text-[10px]">
+                                Rasm
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-semibold text-white truncate">
+                              {movie.title}
+                            </h4>
+                            <p className="text-[11px] text-text-secondary truncate">
+                              {movie.release_year ? `${movie.release_year} y.` : ""} {movie.character ? `• ${movie.character}` : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Action buttons based on availability */}
+                        <div className="shrink-0 flex items-center gap-2">
+                          {movie.is_available && movie.local_movie ? (
+                            <Link
+                              href={movie.local_movie.is_series ? `/series/${movie.local_movie.id}` : `/movie/${movie.local_movie.code}`}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black border border-emerald-500/40 text-xs font-bold transition-all flex items-center gap-1.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">play_circle</span>
+                              <span>Tomosha qilish</span>
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOrderMovie(movie)}
+                              disabled={isRequested}
+                              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
+                                isRequested
+                                  ? "bg-white/10 border-white/20 text-white/60 cursor-default"
+                                  : "bg-white/5 hover:bg-primary/20 text-primary border-primary/30 hover:border-primary"
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                {isRequested ? "check" : "add_task"}
+                              </span>
+                              <span>{isRequested ? "Buyurtma berildi" : "Buyurtma berish"}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-
-              <div className="text-[10px] text-text-secondary bg-white/5 px-2 py-0.5 rounded-full border border-white/5 mb-2">
-                {actor.role}
-              </div>
-
-              <div className="mt-auto pt-2 border-t border-white/5 w-full flex items-center justify-between text-[11px] text-text-secondary">
-                <span>{actor.movies_count} ta film</span>
-                <span className="text-rating-gold font-semibold flex items-center gap-0.5">
-                  Filmlar &rarr;
-                </span>
-              </div>
-            </Link>
-          ))}
+            </div>
+          </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 }

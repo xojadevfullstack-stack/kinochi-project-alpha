@@ -18,6 +18,7 @@ export type CatalogItem = {
   genres?: string | null;
   release_year?: number | null;
   poster_url?: string | null;
+  trailer_url?: string | null;
   is_series?: boolean;
   is_18_plus?: boolean;
   created_at?: string;

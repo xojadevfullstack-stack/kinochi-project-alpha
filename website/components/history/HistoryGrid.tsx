@@ -51,13 +51,13 @@ export default function HistoryGrid({
         id: item.movie.id,
         title: item.movie.title,
         original_title: null,
-        imdb_rating: null,
+        imdb_rating: item.movie.imdb_rating || null,
         tmdb_rating: null,
-        release_year: null,
+        release_year: item.movie.release_year || null,
         poster_url: item.movie.poster_url,
         code: item.movie.code,
         is_series: false,
-        genres: null
+        genres: item.movie.genres || null
       };
     } else if (item.type === "episode" && item.episode) {
       catalogItem = {
@@ -65,13 +65,13 @@ export default function HistoryGrid({
         id: item.episode.series_id,
         title: `${item.episode.series_title} - ${item.episode.display_code}`,
         original_title: null,
-        imdb_rating: null,
+        imdb_rating: item.episode.imdb_rating || null,
         tmdb_rating: null,
-        release_year: null,
+        release_year: item.episode.release_year || null,
         poster_url: item.episode.series_poster,
         code: item.episode.code,
         is_series: true,
-        genres: null
+        genres: item.episode.genres || null
       };
     } else {
       // Fallback in case of missing data
@@ -83,7 +83,7 @@ export default function HistoryGrid({
   });
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+    <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-4 md:gap-6">
       {mappedItems.map(({ historyItem, catalogItem }, index) => (
         <MovieCard 
           key={`${historyItem.id}-${index}`} 

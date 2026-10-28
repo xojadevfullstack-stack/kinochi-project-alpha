@@ -8,8 +8,13 @@ interface TelegramWatchButtonProps {
   url: string;
   mediaTitle?: string;
   mediaCode?: string | number;
+  mediaId?: string | number;
+  seriesId?: string | number;
   mediaType?: "movie" | "series" | "episode";
   posterUrl?: string;
+  releaseYear?: number | null;
+  imdbRating?: number | null;
+  genres?: string | null;
   className?: string;
   children: React.ReactNode;
   title?: string;
@@ -20,8 +25,13 @@ export default function TelegramWatchButton({
   url,
   mediaTitle,
   mediaCode,
+  mediaId,
+  seriesId,
   mediaType = "movie",
   posterUrl,
+  releaseYear,
+  imdbRating,
+  genres,
   className,
   children,
   title,
@@ -75,6 +85,39 @@ export default function TelegramWatchButton({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Persist continue watching state in local storage
+    if (typeof window !== "undefined") {
+      try {
+        const rawCode = mediaCode && !String(mediaCode).startsWith("http") ? String(mediaCode) : undefined;
+        const cleanSeriesId = seriesId || (mediaType === "series" ? mediaId : undefined);
+        const cleanMovieId = mediaType === "movie" ? (mediaId || rawCode) : undefined;
+        const resolvedId = cleanSeriesId || cleanMovieId || mediaId || rawCode;
+
+        if (resolvedId) {
+          const item = {
+            id: resolvedId,
+            code: rawCode,
+            title: mediaTitle || "Noma'lum film",
+            poster_url: posterUrl || null,
+            is_series: mediaType === "series" || mediaType === "episode",
+            release_year: releaseYear || null,
+            imdb_rating: imdbRating || null,
+            genres: genres || (mediaType === "series" || mediaType === "episode" ? "Serial" : "Kino"),
+            last_watched_at: new Date().toISOString(),
+            type: mediaType || "movie",
+          };
+          const raw = localStorage.getItem("mediaplus_continue_watching");
+          let list = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(list)) list = [];
+          list = [item, ...list.filter((x: any) => String(x.id) !== String(item.id))].slice(0, 10);
+          localStorage.setItem("mediaplus_continue_watching", JSON.stringify(list));
+          window.dispatchEvent(new Event("mediaplus_continue_watching_updated"));
+        }
+      } catch (err) {
+        console.error("Failed to save continue watching state:", err);
+      }
+    }
 
     // Trigger haptic feedback
     triggerTelegramHaptic("medium");

@@ -34,22 +34,22 @@ export default function RecommendationsSection() {
   }
 
   return (
-    <section className="max-w-container-max mx-auto mb-16 mt-8 relative z-20 bg-background-obsidian">
-      <div className="px-gutter mb-stack-md flex items-center justify-between">
+    <section className="max-w-container-max mx-auto px-gutter mb-16 mt-8 relative z-20 bg-background-obsidian">
+      <div className="mb-stack-md flex items-center justify-between">
         <h2 className="font-headline-md text-headline-md text-text-primary flex items-center gap-2">
-          <span className="w-1 h-6 bg-rating-gold rounded-full block"></span>
+          <span className="w-1 h-6 bg-primary rounded-full block"></span>
           Siz uchun maxsus
         </h2>
       </div>
       
       {loading ? (
-        <div className="flex gap-4 overflow-x-auto px-gutter pb-8 pt-4">
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-8 pt-4">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="w-[160px] md:w-[240px] shrink-0 aspect-[2/3] rounded-xl bg-surface-container animate-pulse"></div>
+            <div key={i} className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 aspect-[2/3] rounded-xl bg-surface-container animate-pulse"></div>
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto snap-x hide-scrollbar px-gutter pb-8 pt-4">
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-8 pt-4">
           {items.map((item, index) => {
             const isSeries = item.type === "series";
             const catalogItem = {

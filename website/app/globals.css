@@ -74,3 +74,49 @@ input:-webkit-autofill:active{
   }
 }
 
+
+/* iTV Style Infinite Smooth Marquee */
+@keyframes marquee-left {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marquee-right {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 125s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marquee-right 138s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-left-fast {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 115s linear infinite;
+  will-change: transform;
+}
+
+.marquee-pause:hover .animate-marquee-left,
+.marquee-pause:hover .animate-marquee-right,
+.marquee-pause:hover .animate-marquee-left-fast {
+  animation-play-state: paused;
+}

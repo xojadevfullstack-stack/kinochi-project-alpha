@@ -230,9 +230,9 @@ export default function ExternalSearchSection({
                   <button
                     type="button"
                     onClick={() => handleOpenRequest(item)}
-                    className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-rating-gold hover:text-background-obsidian text-text-primary border border-white/10 hover:border-rating-gold text-xs font-bold transition-all flex items-center justify-center gap-1.5 group/btn"
+                    className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-primary hover:text-white text-text-primary border border-white/10 hover:border-primary text-xs font-bold transition-all flex items-center justify-center gap-1.5 group/btn"
                   >
-                    <span className="material-symbols-outlined text-[16px] text-rating-gold group-hover/btn:text-background-obsidian">
+                    <span className="material-symbols-outlined text-[16px] text-primary group-hover/btn:text-white">
                       add_circle
                     </span>
                     <span>Qo&apos;shishni so&apos;rash</span>
