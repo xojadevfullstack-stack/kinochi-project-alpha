@@ -70,19 +70,20 @@ Catalog enhancements, home page UX upgrade (iTV design patterns, continue watchi
       1. Removed `&playlist=${youtubeId}` which was forcing YouTube to render playlist overlay arrows (`|<` and `>|`).
       2. Set fixed desktop iframe dimensions (`1280x720` for cards, `1920x1080` for hero) with CSS transforms. Inside the iframe, YouTube measures `window.innerWidth >= 1280px` (desktop resolution), which completely disables YouTube's mobile small-mode and mobile touch overlay (`.ytp-touch-mode`), permanently eliminating the center `||` pause button and arrows across both desktop and mobile emulation.
     - Verified `test_youtube_clean_and_hero_gap.py` and `test_card_trailer_hover.py` (5 passed), Next.js lint (0 errors).
+  - F1-S45: Merged `v2-f1-catalog-and-ux` into `main` (fast-forward) and pushed `6b27bbc..248e6b3` to `origin/main`. Included the 7 previously unpushed F0 commits (asyncpg pooler config, series query optimization, Telegram throttle, alembic merge head). Fixed Vercel build type error (`Episode.display_code`, `248e6b3`). Pre-merge probe on the live backend (`kinochi-project-alpha-9g6j.onrender.com`): `/content-requests` returns 4 rows and `/broadcasts/public` returns 200, so no prod migration is required. No writes were made to the prod database.
 
 ## In progress (slice, branch)
-- Slice: F1-S44 complete.
-- Branch: `main`
+- Slice: PAUSED at F1-S45 (deploy verification not finished).
+- Branch: `main` (clean, equals `origin/main` at `248e6b3`).
 
 ## Blocked
-- None.
+- Render redeploy of the new backend is UNVERIFIED (watcher stopped at the user's request). Last known: live `/actors` returned 404 before the deploy (old backend).
 
 ## Next step (one task)
-- Ready for user review on mobile/desktop.
+- Resume: probe `https://kinochi-project-alpha-9g6j.onrender.com/api/v1/actors` until it returns 200, then check `/movies`, `/series`, `/categories`, `/broadcasts/public`, `/content-requests`. If any returns 500, read the Render logs for `asyncpg` / `statement_cache` errors (F0 pooler changes are first-time prod).
 
 ## Open questions for the user
-- None.
+- Vercel env var `NEXT_PUBLIC_API_URL` (Production and Preview): is it `https://kinochi-project-alpha-9g6j.onrender.com/api/v1`? Not verified. The Preview catalog showed `0 ta`, and host `kinochi-project-alpha.onrender.com` returns 503.
 
 ## Last `make check` result
 - Pytest UI suite: 26 passed (9 test files), 0 failures.

@@ -36,6 +36,12 @@
 - **Fix:** Added an explicit hamburger menu button (`menu` / `close`) to `Navbar.tsx`, made `<aside>` responsive (`flex`) across all viewports with backdrop overlay, purged corrupted `website/.next` cache, and added server-side credits pre-fetching to `[id]/page.tsx` and `[code]/page.tsx` for instant SSR. Verified with `test_fix_sidebar_and_hydration_bugs.py`.
 - **Rule:** Never rely purely on invisible hover edge triggers for critical navigation; always provide an explicit, clickable hamburger toggle. When Next.js dev server accumulates missing chunk errors, purge `.next` and restart cleanly.
 
+## Failure 007: Vercel Build Type Error & Empty Preview (API URL mismatch)
+- **Mistake:** (1) `SeasonEpisodesSection.tsx` read `episode.display_code`, but the `Episode` type had no such field. Local `next lint` and the dev server do not type-check, so the error only surfaced in the Vercel `next build`. (2) The Vercel Preview showed `0 ta` content: probe results show `kinochi-project-alpha.onrender.com` returns 503, while `kinochi-project-alpha-9g6j.onrender.com` returns 200 with 18 movies and 11 series.
+- **Impact:** Vercel build failed once; the Preview catalog rendered empty.
+- **Fix:** Added optional `display_code?: string | null` to `Episode` (`248e6b3`). Run `tsc --noEmit -p website/tsconfig.json` before every push. The Vercel env var `NEXT_PUBLIC_API_URL` was NOT verified (HYPOTHESIS: Preview env points to the dead host).
+- **Rule:** Run a type check (`tsc --noEmit`) in addition to lint before pushing frontend changes. `next build` fails with EPERM while `next dev` is running, so rely on `tsc` locally.
+
 ## Frozen Baseline Failures (F0 -> F1 Transition)
 1. `test_fix_f013_swallowed_exceptions.py::test_no_swallowed_exceptions_in_critical_modules`:
    - **Root Cause:** Regex AST scan detected 6 bare `except ...: pass` blocks in `movies.py:875`, `series.py:981`, and `telegram_client.py:317, 353, 409, 444`.
