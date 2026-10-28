@@ -1,4 +1,18 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+const PROD_API_URL = "https://kinochi-project-alpha-9g6j.onrender.com/api/v1";
+const DEV_API_URL = "http://127.0.0.1:8000/api/v1";
+
+function resolveApiUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (raw) {
+    return raw.replace(
+      "https://kinochi-project-alpha.onrender.com",
+      "https://kinochi-project-alpha-9g6j.onrender.com"
+    );
+  }
+  return process.env.NODE_ENV === "production" ? PROD_API_URL : DEV_API_URL;
+}
+
+export const API_URL = resolveApiUrl();
 import { getToken, clearToken } from "./auth/tokenStorage";
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {

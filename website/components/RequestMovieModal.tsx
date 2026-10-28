@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+import { API_URL } from "@/lib/api";
 
 export interface RequestTargetItem {
   tmdb_id?: number | null;

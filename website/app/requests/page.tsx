@@ -6,7 +6,7 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import RequestMovieModal, { RequestTargetItem } from "@/components/RequestMovieModal";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+import { API_URL } from "@/lib/api";
 
 function getClientVoterId(): string {
   if (typeof window === "undefined") return "client_web";
