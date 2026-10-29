@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_db_session
 from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.models.ingest_item import IngestItemModel, validate_status_transition
+from app.application.ingest_service import IngestService
 from app.core.cache import delete_cache_pattern
 from app.core.config import settings
 
@@ -757,3 +759,186 @@ async def resume_circuit_breaker(admin=Depends(require_scraper)):
     return {"success": True, "message": "Circuit Breaker qayta ishga tushirildi. Avtopilot faol."}
 
 
+# ??????????????????????????????????????????????????????????????????????????????
+#  STAGE 7: INGEST ITEMS ADMIN API (PostgreSQL ingest_items)
+# ??????????????????????????????????????????????????????????????????????????????
+
+class RejectIngestItemRequest(BaseModel):
+    reason: Optional[str] = Field("rejected_by_admin", max_length=500)
+
+
+def _serialize_ingest_item(row: IngestItemModel) -> Dict[str, Any]:
+    return {
+        "id": row.id,
+        "item_key": f"{row.source}_{row.source_id}",
+        "source": row.source,
+        "source_id": row.source_id,
+        "media_type": row.media_type,
+        "title": row.title,
+        "original_title": row.original_title,
+        "year": row.year,
+        "url": row.url,
+        "poster_url": row.poster_url,
+        "tmdb_id": row.tmdb_id,
+        "payload": row.payload or {},
+        "status": row.status,
+        "reason": row.reason,
+        "attempts": row.attempts,
+        "priority": row.priority,
+        "locked_at": row.locked_at.isoformat() if row.locked_at else None,
+        "locked_by": row.locked_by,
+        "topic_chat_id": row.topic_chat_id,
+        "topic_id": row.topic_id,
+        "storage_message_id": row.storage_message_id,
+        "media_id": row.media_id,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@router.get("/ingest-items/counts")
+async def get_ingest_item_counts(
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(get_current_admin),
+):
+    """Dashboard counter: ingest_items grouped by source and status."""
+    rows = (
+        await db.execute(
+            select(
+                IngestItemModel.source,
+                IngestItemModel.status,
+                func.count(IngestItemModel.id),
+            ).group_by(IngestItemModel.source, IngestItemModel.status)
+        )
+    ).all()
+
+    by_source: Dict[str, Dict[str, int]] = {}
+    by_status: Dict[str, int] = {}
+    total = 0
+
+    for src, st, cnt in rows:
+        cnt_int = int(cnt or 0)
+        total += cnt_int
+        by_status[st] = by_status.get(st, 0) + cnt_int
+        if src not in by_source:
+            by_source[src] = {}
+        by_source[src][st] = by_source[src].get(st, 0) + cnt_int
+
+    return {
+        "total": total,
+        "by_status": by_status,
+        "by_source": by_source,
+    }
+
+
+@router.get("/ingest-items")
+async def list_ingest_items(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    status: Optional[str] = Query("all"),
+    source: Optional[str] = Query("all"),
+    media_type: Optional[str] = Query("all"),
+    search: Optional[str] = Query(None, max_length=200),
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(get_current_admin),
+):
+    """PostgreSQL ingest_items ro'yxatini status, source, media_type bo'yicha filtrlash."""
+    if status and status != "all" and status not in STATUSES:
+        raise HTTPException(status_code=400, detail="Noto'g'ri status filtri")
+    if source and source != "all" and source not in SOURCES:
+        raise HTTPException(status_code=400, detail="Noto'g'ri manba filtri")
+    if media_type and media_type != "all" and media_type not in MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail="Noto'g'ri media_type filtri")
+
+    stmt = select(IngestItemModel)
+    count_stmt = select(func.count(IngestItemModel.id))
+
+    if status and status != "all":
+        norm_status = "queued" if status == "pending" else ("published" if status == "completed" else status)
+        stmt = stmt.where(IngestItemModel.status == norm_status)
+        count_stmt = count_stmt.where(IngestItemModel.status == norm_status)
+    if source and source != "all":
+        stmt = stmt.where(IngestItemModel.source == source)
+        count_stmt = count_stmt.where(IngestItemModel.source == source)
+    if media_type and media_type != "all":
+        stmt = stmt.where(IngestItemModel.media_type == media_type)
+        count_stmt = count_stmt.where(IngestItemModel.media_type == media_type)
+    if search and search.strip():
+        q = f"%{search.strip()}%"
+        cond = (
+            IngestItemModel.title.ilike(q)
+            | IngestItemModel.source_id.ilike(q)
+            | IngestItemModel.reason.ilike(q)
+        )
+        stmt = stmt.where(cond)
+        count_stmt = count_stmt.where(cond)
+
+    total_count = int((await db.execute(count_stmt)).scalar() or 0)
+    skip = (page - 1) * page_size
+    rows = (
+        await db.execute(
+            stmt.order_by(IngestItemModel.id.desc()).offset(skip).limit(page_size)
+        )
+    ).scalars().all()
+
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    return {
+        "items": [_serialize_ingest_item(r) for r in rows],
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
+
+
+@router.post("/ingest-items/{item_id}/retry")
+async def retry_ingest_item(
+    item_id: int,
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(get_current_admin),
+):
+    """needs_review yoki failed holatidagi ingest_item ni qayta queued holatiga o'tkazish."""
+    row = await db.get(IngestItemModel, item_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Ingest item topilmadi")
+    if row.status not in ("needs_review", "failed"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Faqat needs_review yoki failed statusdagi elementni retry qilish mumkin (hozirgi: {row.status})",
+        )
+    try:
+        updated = await IngestService.set_status(
+            db,
+            item_id=item_id,
+            new_status="queued",
+            reason=None,
+        )
+        await db.commit()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"success": True, "item": _serialize_ingest_item(updated)}
+
+
+@router.post("/ingest-items/{item_id}/reject")
+async def reject_ingest_item(
+    item_id: int,
+    req: Optional[RejectIngestItemRequest] = Body(default=None),
+    db: AsyncSession = Depends(get_db_session),
+    admin=Depends(get_current_admin),
+):
+    """Ingest item ni rejected holatiga o'tkazish (+ reason)."""
+    row = await db.get(IngestItemModel, item_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Ingest item topilmadi")
+    reason = (req.reason if req and req.reason else "rejected_by_admin")
+    try:
+        updated = await IngestService.set_status(
+            db,
+            item_id=item_id,
+            new_status="rejected",
+            reason=reason,
+        )
+        await db.commit()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"success": True, "item": _serialize_ingest_item(updated)}
