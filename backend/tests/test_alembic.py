@@ -53,7 +53,8 @@ def test_single_head():
     script = ScriptDirectory.from_config(cfg)
     heads = script.get_heads()
     assert len(heads) == 1, f"Kutilgan 1 ta head, ammo topildi: {heads}"
-    assert heads[0] == "f1322da82a96", f"Bosh revision kutilgan 'f1322da82a96', topildi: {heads[0]}"
+    expected_head = script.get_current_head()
+    assert heads[0] == expected_head, f"Bosh revision kutilgan '{expected_head}', topildi: {heads[0]}"
 
 
 def test_merge_revision_is_empty_schema_change():
@@ -191,7 +192,8 @@ async def test_merge_downgrade_and_reupgrade():
     conn = await get_test_pg_connection()
     try:
         val = await conn.fetchval("SELECT version_num FROM alembic_version;")
-        assert val == "f1322da82a96"
+        expected_head = ScriptDirectory.from_config(cfg).get_current_head()
+        assert val == expected_head
     finally:
         await conn.close()
 

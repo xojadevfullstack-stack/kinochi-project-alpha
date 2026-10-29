@@ -4,6 +4,7 @@ from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.api.deps import get_admin_or_bot, get_series_service, get_db_session
 from app.domain.series.entities import Episode
+from tests.conftest import configure_mock_session
 
 
 @pytest.mark.asyncio
@@ -27,15 +28,18 @@ async def test_link_episode_video_success():
     app.dependency_overrides[get_series_service] = lambda: mock_service
 
     mock_db = AsyncMock()
+    configure_mock_session(mock_db, scalar=None, rows=[])
     # Mock ep_model, season_model, series_model
     mock_ep_model = MagicMock()
     mock_ep_model.id = 14049
     mock_ep_model.season_id = 1237
+    mock_ep_model.episode_number = 12
     mock_ep_model.title = "12-qism"
 
     mock_season_model = MagicMock()
     mock_season_model.id = 1237
     mock_season_model.series_id = 997
+    mock_season_model.season_number = 2
 
     mock_series_model = MagicMock()
     mock_series_model.id = 997
@@ -61,7 +65,8 @@ async def test_link_episode_video_success():
             resp = await ac.post("/api/v1/series/episodes/14049/link-video", json={
                 "message_id": 99999,
                 "language": "O'zbekcha",
-                "telegram_file_id": "BAACAgIAAxkBAAE12345"
+                "telegram_file_id": "BAACAgIAAxkBAAE12345",
+                "duration": 2400
             })
             assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
             data = resp.json()

@@ -37,6 +37,7 @@ def test_final_check_type_consistency_movie_one_video_per_language():
     media_other_lang = {
         "telegram_file_id": "file_new_123",
         "storage_channel_message_id": 200,
+        "duration": 3600,
         "language": "Ruscha",
         "existing_translations": [
             {
@@ -69,6 +70,7 @@ def test_final_check_type_consistency_series_requires_season_and_episode():
     media_valid = {
         "telegram_file_id": "file_ep_123",
         "storage_channel_message_id": 300,
+        "duration": 2400,
         "language": "O'zbekcha",
         "season_number": 1,
         "episode_number": 4
@@ -151,7 +153,7 @@ def test_final_check_unknown_duration_rejected():
     is_valid, defects = final_check("movie", media_none)
     assert is_valid is False
     codes = [d["code"] for d in defects]
-    assert "duration_unknown" in codes
+    assert "duration_missing" in codes
 
     # 2. duration: 0
     media_zero = {
@@ -163,7 +165,7 @@ def test_final_check_unknown_duration_rejected():
     is_valid2, defects2 = final_check("movie", media_zero)
     assert is_valid2 is False
     codes2 = [d["code"] for d in defects2]
-    assert "duration_unknown" in codes2
+    assert "duration_missing" in codes2
 
 
 def test_final_check_one_file_cannot_belong_to_two_titles():

@@ -16,6 +16,10 @@ async def test_s9_build_seeds_filters_adult_and_low_votes_and_rating(setup_test_
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+    async with session_factory() as session:
+        await session.execute(text("DELETE FROM seed_candidates"))
+        await session.commit()
+
     ingestor = TmdbTopIngestor()
 
     mock_top_rated = {
@@ -33,11 +37,12 @@ async def test_s9_build_seeds_filters_adult_and_low_votes_and_rating(setup_test_
     }
     mock_popular = {"page": 1, "results": []}
 
-    with patch("scraper.tmdb_top_ingestor.async_session_factory", return_value=session_factory()):
+    with patch("scraper.tmdb_top_ingestor.async_session_factory", session_factory):
         with patch.object(tmdb_client, "list_top_rated", AsyncMock(return_value=mock_top_rated)):
             with patch.object(tmdb_client, "list_popular", AsyncMock(return_value=mock_popular)):
-                # Run build_seeds with target 1
-                with patch("scraper.tmdb_top_ingestor.SEED_MOVIE_TARGET", 1):
+                # Run build_seeds with target 1 (movies only)
+                with patch("scraper.tmdb_top_ingestor.SEED_MOVIE_TARGET", 1), \
+                     patch("scraper.tmdb_top_ingestor.SEED_INCLUDE_SERIES", False):
                     stats = await ingestor.build_seeds()
                     assert stats["added"] == 1
                     assert stats["skipped_filter"] == 3
@@ -52,12 +57,12 @@ async def test_s9_build_seeds_filters_adult_and_low_votes_and_rating(setup_test_
 
 
 @pytest.mark.asyncio
-async def test_s9_already_in_db_blacklist_or_rejected_skipped(setup_test_db, engine, tmp_path):
+async def test_s9_already_in_db_blacklist_or_rejected_skipped(setup_test_db, engine):
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+    qm = QueueManager(session_factory=session_factory)
+    await qm.clear_all_async()
     ingestor = TmdbTopIngestor(queue_manager=qm)
 
     async with session_factory() as session:
@@ -76,7 +81,7 @@ async def test_s9_already_in_db_blacklist_or_rejected_skipped(setup_test_db, eng
         session.add_all([cand_db, cand_bl, cand_rej])
         await session.commit()
 
-    with patch("scraper.tmdb_top_ingestor.async_session_factory", return_value=session_factory()):
+    with patch("scraper.tmdb_top_ingestor.async_session_factory", session_factory):
         with patch("scraper.tmdb_top_ingestor.search_sites", AsyncMock(return_value=[])):
             stats = await ingestor.search_candidates(limit=10)
             assert stats["skipped"] == 3
@@ -92,12 +97,12 @@ async def test_s9_already_in_db_blacklist_or_rejected_skipped(setup_test_db, eng
 
 
 @pytest.mark.asyncio
-async def test_s9_none_found_transitions_to_not_found(setup_test_db, engine, tmp_path):
+async def test_s9_none_found_transitions_to_not_found(setup_test_db, engine):
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+    qm = QueueManager(session_factory=session_factory)
+    await qm.clear_all_async()
     ingestor = TmdbTopIngestor(queue_manager=qm)
 
     async with session_factory() as session:
@@ -107,12 +112,13 @@ async def test_s9_none_found_transitions_to_not_found(setup_test_db, engine, tmp
             tmdb_id=301,
             title_en="Ultra Rare Film",
             status="new",
+            attempts=0,
         )
         session.add(cand)
         await session.commit()
 
     # search_sites returns nothing
-    with patch("scraper.tmdb_top_ingestor.async_session_factory", return_value=session_factory()):
+    with patch("scraper.tmdb_top_ingestor.async_session_factory", session_factory):
         with patch("scraper.tmdb_top_ingestor.search_sites", AsyncMock(return_value=[])):
             stats = await ingestor.search_candidates(limit=10)
             assert stats["not_found"] == 1
@@ -140,16 +146,16 @@ async def test_s9_remake_with_same_title_fails_year_check():
 
 
 @pytest.mark.asyncio
-async def test_s9_rerunning_enqueue_creates_no_duplicate_queue_items(setup_test_db, engine, tmp_path):
+async def test_s9_rerunning_enqueue_creates_no_duplicate_queue_items(setup_test_db, engine):
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+    qm = QueueManager(session_factory=session_factory)
+    await qm.clear_all_async()
     ingestor = TmdbTopIngestor(queue_manager=qm)
 
     async with session_factory() as session:
-        await session.execute(text("DELETE FROM seed_candidates WHERE tmdb_id = 401"))
+        await session.execute(text("DELETE FROM seed_candidates"))
         cand = SeedCandidateModel(
             kind="movie",
             tmdb_id=401,
@@ -168,7 +174,7 @@ async def test_s9_rerunning_enqueue_creates_no_duplicate_queue_items(setup_test_
         "release_year": 2020,
     }
 
-    with patch("scraper.tmdb_top_ingestor.async_session_factory", return_value=session_factory()):
+    with patch("scraper.tmdb_top_ingestor.async_session_factory", session_factory):
         with patch.object(tmdb_client, "get_details", AsyncMock(return_value=mock_details)):
             # 1st run
             res1 = await ingestor.enqueue_candidates(limit=10, execute=True)
@@ -180,19 +186,22 @@ async def test_s9_rerunning_enqueue_creates_no_duplicate_queue_items(setup_test_
             # Item was already queued, so enqueued count is 0
             assert res2["enqueued"] == 0
             assert len(qm.items) == 1
+    await qm.clear_all_async()
 
 
 @pytest.mark.asyncio
-async def test_s9_ingestor_never_writes_to_movies_or_series(setup_test_db, engine, tmp_path):
+async def test_s9_ingestor_never_writes_to_movies_or_series(setup_test_db, engine):
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+    qm = QueueManager(session_factory=session_factory)
+    await qm.clear_all_async()
     ingestor = TmdbTopIngestor(queue_manager=qm)
 
     # Initial counts
     async with session_factory() as session:
+        await session.execute(text("DELETE FROM seed_candidates"))
+        await session.commit()
         m_initial = (await session.execute(select(func.count(MovieModel.id)))).scalar()
         s_initial = (await session.execute(select(func.count(SeriesModel.id)))).scalar()
 
@@ -213,12 +222,13 @@ async def test_s9_ingestor_never_writes_to_movies_or_series(setup_test_db, engin
         "release_year": 2020,
     }
 
-    with patch("scraper.tmdb_top_ingestor.async_session_factory", return_value=session_factory()):
+    with patch("scraper.tmdb_top_ingestor.async_session_factory", session_factory):
         with patch.object(tmdb_client, "list_top_rated", AsyncMock(return_value=mock_top)):
             with patch.object(tmdb_client, "list_popular", AsyncMock(return_value={"page": 1, "results": []})):
                 with patch.object(tmdb_client, "get_details", AsyncMock(return_value=mock_details)):
                     with patch("scraper.tmdb_top_ingestor.search_sites", AsyncMock(return_value=mock_search)):
-                        with patch("scraper.tmdb_top_ingestor.SEED_MOVIE_TARGET", 1):
+                        with patch("scraper.tmdb_top_ingestor.SEED_MOVIE_TARGET", 1), \
+                             patch("scraper.tmdb_top_ingestor.SEED_INCLUDE_SERIES", False):
                             await ingestor.build_seeds()
                             await ingestor.search_candidates(limit=1)
                             await ingestor.enqueue_candidates(limit=1, execute=True)
@@ -229,3 +239,4 @@ async def test_s9_ingestor_never_writes_to_movies_or_series(setup_test_db, engin
         s_final = (await session.execute(select(func.count(SeriesModel.id)))).scalar()
         assert m_final == m_initial
         assert s_final == s_initial
+    await qm.clear_all_async()

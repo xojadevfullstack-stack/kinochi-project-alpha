@@ -54,13 +54,13 @@ def test_evaluate_candidate_match_part_number_sequel():
     assert "Qism raqami mos kelmadi" in reason or "Yil mos kelmadi" in reason
 
 
-def test_queue_manager_priority_ordering(tmp_path):
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+def test_queue_manager_priority_ordering(setup_test_db):
+    qm = QueueManager()
+    qm.clear_all()
 
-    item_low = QueueItem(id="low_1", source="uzmovi", title="Oddiy film", priority=0)
-    item_high = QueueItem(id="high_1", source="uzmovi", title="TMDb Top Film", priority=100)
-    item_mid = QueueItem(id="mid_1", source="uzmovi", title="O'rtacha film", priority=50)
+    item_low = QueueItem(id="uzmovi_low_1", source="uzmovi", source_id="low_1", title="Oddiy film", priority=0, status="queued")
+    item_high = QueueItem(id="uzmovi_high_1", source="uzmovi", source_id="high_1", title="TMDb Top Film", priority=100, status="queued")
+    item_mid = QueueItem(id="uzmovi_mid_1", source="uzmovi", source_id="mid_1", title="O'rtacha film", priority=50, status="queued")
 
     qm.add_item(item_low)
     qm.add_item(item_high)
@@ -68,22 +68,24 @@ def test_queue_manager_priority_ordering(tmp_path):
 
     pending = qm.get_pending(limit=10)
     assert len(pending) == 3
-    assert pending[0].id == "high_1"
+    assert pending[0].id == "uzmovi_high_1"
     assert pending[0].priority == 100
-    assert pending[1].id == "mid_1"
-    assert pending[2].id == "low_1"
+    assert pending[1].id == "uzmovi_mid_1"
+    assert pending[2].id == "uzmovi_low_1"
+    qm.clear_all()
 
 
 @pytest.mark.asyncio
-async def test_search_candidates_ambiguous_writes_to_rejected_items(setup_test_db, engine, tmp_path):
+async def test_search_candidates_ambiguous_writes_to_rejected_items(setup_test_db, engine):
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+    qm = QueueManager(session_factory=session_factory)
+    await qm.clear_all_async()
     ingestor = TmdbTopIngestor(queue_manager=qm)
 
     async with session_factory() as session:
+        await session.execute(text("DELETE FROM seed_candidates"))
         cand = SeedCandidateModel(
             kind="movie",
             tmdb_id=999991,
@@ -98,8 +100,8 @@ async def test_search_candidates_ambiguous_writes_to_rejected_items(setup_test_d
 
     # Mock search_sites returning 2 distinct passing candidates -> ambiguous!
     mock_results = [
-        {"source": "uzmovi", "title": "Conflicting Film 2023", "year": 2023, "url": "https://uzmovi.net/100-conflicting.html", "source_code": "100"},
-        {"source": "uzmovi", "title": "Conflicting Film (Dublyaj) 2023", "year": 2023, "url": "https://uzmovi.net/200-conflicting.html", "source_code": "200"},
+        {"source": "uzmovi", "title": "Conflicting Film", "year": 2023, "url": "https://uzmovi.net/conflicting-a.html", "source_code": "100"},
+        {"source": "uzmovi", "title": "Conflicting Film (Dublyaj)", "year": 2023, "url": "https://uzmovi.net/conflicting-b.html", "source_code": "200"},
     ]
 
     with patch("scraper.tmdb_top_ingestor.async_session_factory", return_value=session_factory()):
@@ -119,12 +121,12 @@ async def test_search_candidates_ambiguous_writes_to_rejected_items(setup_test_d
 
 
 @pytest.mark.asyncio
-async def test_enqueue_dry_run_vs_execute(setup_test_db, engine, tmp_path):
+async def test_enqueue_dry_run_vs_execute(setup_test_db, engine):
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    q_file = str(tmp_path / "test_queue.json")
-    qm = QueueManager(filepath=q_file)
+    qm = QueueManager(session_factory=session_factory)
+    await qm.clear_all_async()
     ingestor = TmdbTopIngestor(queue_manager=qm)
 
     async with session_factory() as session:
@@ -177,3 +179,4 @@ async def test_enqueue_dry_run_vs_execute(setup_test_db, engine, tmp_path):
         assert m_res.scalar_one_or_none() is None
         s_res = await session.execute(select(SeriesModel).where(SeriesModel.tmdb_id == 888881))
         assert s_res.scalar_one_or_none() is None
+    await qm.clear_all_async()

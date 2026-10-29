@@ -150,7 +150,7 @@ def test_final_check_valid_and_invalid():
     codes = [d["code"] for d in defects2]
     assert "missing_telegram_file_id" in codes
     assert "missing_storage_channel_message_id" in codes
-    assert "invalid_duration" in codes
+    assert "duration_missing" in codes
     assert "invalid_language" in codes
     assert "file_exceeds_telegram_limit" in codes
 
@@ -199,7 +199,6 @@ async def test_pre_check_series_with_release_year_and_category_ids():
     is_valid, defects = await pre_check("series", payload, check_reachability=False)
     assert is_valid is True
     assert defects == []
-
 
 
 @pytest.mark.asyncio

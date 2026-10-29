@@ -28,7 +28,7 @@ def _parse_int_list(val) -> list[int]:
             try:
                 out.append(int(x))
             except (ValueError, TypeError):
-                pass
+                logger.warning("invalid chat id in config: %r", x)
         return out
     return []
 

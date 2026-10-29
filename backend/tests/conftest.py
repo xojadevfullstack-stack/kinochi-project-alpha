@@ -2,6 +2,7 @@ import os
 import sys
 import asyncio
 from urllib.parse import urlparse
+from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -80,19 +81,65 @@ def mock_env_vars():
             os.environ.pop(k, None)
 
 
+from sqlalchemy.pool import StaticPool  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker  # noqa: E402
+import app.infrastructure.db.session as db_session_module  # noqa: E402
 from app.infrastructure.db.session import Base  # noqa: E402
 from app.infrastructure.db.models import *  # noqa: F403, E402
+from app.infrastructure.db.models.ingest_item import IngestItemModel  # noqa: F401, E402
+
+
+def make_mock_db_result(scalar=None, scalars_list=None, rows=None, first=None) -> MagicMock:
+    """
+    AsyncMock session.execute natijasida .all(), .scalar_one_or_none(),
+    .scalars().all(), .first() SINXRON bo'lishini ta'minlovchi umumiy yordamchi.
+    """
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = scalar
+    result.scalar.return_value = scalar
+    result.all.return_value = list(rows) if rows is not None else []
+    result.first.return_value = first
+    scalars_mock = MagicMock()
+    scalars_mock.all.return_value = list(scalars_list) if scalars_list is not None else []
+    scalars_mock.first.return_value = first
+    result.scalars.return_value = scalars_mock
+    return result
+
+
+def configure_mock_session(session: AsyncMock, **kwargs) -> MagicMock:
+    """session.execute = AsyncMock(return_value=result) ni sinxron MagicMock result bilan sozlaydi."""
+    result = make_mock_db_result(**kwargs)
+    session.execute = AsyncMock(return_value=result)
+    return result
 
 
 @pytest.fixture(scope="session")
-def engine():
-    _engine = create_async_engine(os.environ["DATABASE_URL"], echo=False)
+def engine(tmp_path_factory):
+    url = os.environ["DATABASE_URL"]
+    if "sqlite" in url and ":memory:" in url:
+        db_file = tmp_path_factory.mktemp("test_db") / "test_shared.sqlite3"
+        file_url = f"sqlite+aiosqlite:///{db_file.as_posix()}"
+        _engine = create_async_engine(
+            file_url,
+            echo=False,
+            connect_args={"check_same_thread": False, "timeout": 30},
+        )
+    else:
+        _engine = create_async_engine(url, echo=False)
     yield _engine
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db(engine):
+    test_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    db_session_module.engine = engine
+    db_session_module.async_session_factory = test_session_factory
+    try:
+        from scraper.queue_manager import QueueManager
+        QueueManager._default_session_factory = test_session_factory
+    except Exception:
+        pass
+
     async def init_db():
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

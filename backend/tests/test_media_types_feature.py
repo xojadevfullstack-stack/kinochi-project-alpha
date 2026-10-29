@@ -41,14 +41,15 @@ def test_matches_media_type():
     assert matches_media_type({"title": "Oddiy Serial", "media_type": "series"}, "multfilm") is False
 
 
-def test_queue_manager_filtering(tmp_path):
-    qm = QueueManager(filepath=str(tmp_path / "queue.json"))
-    
-    item1 = QueueItem(id="1", source="uzmovi", title="Qasoskorlar", media_type="movie", url="http://1", status="pending")
-    item2 = QueueItem(id="2", source="uzmovi", title="Qish ertagi (Koreya serial)", media_type="dorama", url="http://2", status="pending")
-    item3 = QueueItem(id="3", source="anitoob", title="Bleach", media_type="anime", url="http://3", status="pending")
-    item4 = QueueItem(id="4", source="uzmovi", title="Shrek", media_type="multfilm", url="http://4", status="pending")
-    item5 = QueueItem(id="5", source="uzmovi", title="Taxtlar o'yini", media_type="series", url="http://5", status="pending")
+def test_queue_manager_filtering(setup_test_db):
+    qm = QueueManager()
+    qm.clear_all()
+
+    item1 = QueueItem(id="uzmovi_1", source="uzmovi", source_id="1", title="Qasoskorlar", media_type="movie", url="http://1", status="queued")
+    item2 = QueueItem(id="uzmovi_2", source="uzmovi", source_id="2", title="Qish ertagi (Koreya serial)", media_type="dorama", url="http://2", status="queued")
+    item3 = QueueItem(id="anitoob_3", source="anitoob", source_id="3", title="Bleach", media_type="anime", url="http://3", status="queued")
+    item4 = QueueItem(id="uzmovi_4", source="uzmovi", source_id="4", title="Shrek", media_type="multfilm", url="http://4", status="queued")
+    item5 = QueueItem(id="uzmovi_5", source="uzmovi", source_id="5", title="Taxtlar o'yini", media_type="series", url="http://5", status="queued")
 
     for it in [item1, item2, item3, item4, item5]:
         qm.add(it)
@@ -56,19 +57,19 @@ def test_queue_manager_filtering(tmp_path):
     # get_pending with media_type
     doramas = qm.get_pending(limit=10, media_type="dorama")
     assert len(doramas) == 1
-    assert doramas[0].id == "2"
+    assert doramas[0].id == "uzmovi_2"
 
     animes = qm.get_pending(limit=10, media_type="anime")
     assert len(animes) == 1
-    assert animes[0].id == "3"
+    assert animes[0].id == "anitoob_3"
 
     cartoons = qm.get_pending(limit=10, media_type="multfilm")
     assert len(cartoons) == 1
-    assert cartoons[0].id == "4"
+    assert cartoons[0].id == "uzmovi_4"
 
     movies = qm.get_pending(limit=10, media_type="movie")
     assert len(movies) == 1
-    assert movies[0].id == "1"
+    assert movies[0].id == "uzmovi_1"
 
     all_items = qm.get_pending(limit=10, media_type="all")
     assert len(all_items) == 5
@@ -76,7 +77,8 @@ def test_queue_manager_filtering(tmp_path):
     # get_filtered with media_type
     filtered_dorama, total_d = qm.get_filtered(media_type="dorama")
     assert total_d == 1
-    assert filtered_dorama[0].id == "2"
+    assert filtered_dorama[0].id == "uzmovi_2"
+    qm.clear_all()
 
 
 def test_resolve_page_ids():
@@ -119,10 +121,10 @@ def test_process_manager_validation():
     assert res["success"] is False
     assert "Noma'lum media turi" in res["message"]
 
-    res_p = pm.start_parse(source="uzmovi", media_type="unknown")
-    assert res_p["success"] is False
-    assert "Noma'lum media turi" in res_p["message"]
+    res2 = pm.start_autopilot(source="uzmovi", media_type="invalid_type")
+    assert res2["success"] is False
+    assert "Noma'lum media turi" in res2["message"]
 
-    res_a = pm.start_autopilot(source="all", media_type="bad_type")
-    assert res_a["success"] is False
-    assert "Noma'lum media turi" in res_a["message"]
+    res3 = pm.start_parse(source="uzmovi", media_type="invalid_type")
+    assert res3["success"] is False
+    assert "Noma'lum media turi" in res3["message"]

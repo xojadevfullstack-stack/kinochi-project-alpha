@@ -27,6 +27,7 @@ from app.domain.movies.entities import Movie
 from app.domain.series.entities import Series
 from app.infrastructure.db.models.admin_user import AdminUserModel
 from app.infrastructure.security.jwt_handler import create_access_token
+from tests.conftest import configure_mock_session
 
 
 @pytest.fixture
@@ -102,9 +103,7 @@ def mock_admin_db():
         role="admin",
         is_active=True,
     )
-    mock_res = MagicMock()
-    mock_res.scalar_one_or_none.return_value = admin_model
-    mock_db.execute.return_value = mock_res
+    configure_mock_session(mock_db, scalar=admin_model)
     return mock_db
 
 
@@ -141,6 +140,7 @@ def setup_services(published_movie, pending_movie, published_series, pending_ser
         return ([], 0)
 
     mock_m_service.get_movie.side_effect = fake_get_movie
+    mock_m_service.get_movie_by_code = AsyncMock(return_value=None)
     mock_m_service.list_movies.side_effect = fake_list_movies
     mock_m_service.search_movies.side_effect = fake_search_movies
 
@@ -175,6 +175,7 @@ def setup_services(published_movie, pending_movie, published_series, pending_ser
         return ([], 0)
 
     mock_s_service.get_series_by_id.side_effect = fake_get_series
+    mock_s_service.get_series_by_code = AsyncMock(return_value=None)
     mock_s_service.get_all_series.side_effect = fake_get_all_series
     mock_s_service.search_series.side_effect = fake_search_series
 

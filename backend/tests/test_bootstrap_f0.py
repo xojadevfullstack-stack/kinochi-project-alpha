@@ -9,7 +9,7 @@ def test_autopilot_class_defaults_frozen():
     """
     F0 / C0.1 talabi: Autopilot default qiymatlari klass darajasida qat'iy tekshiriladi:
     - Backend: AUTO_CONTENT_ENABLED=False, AUTO_INDEX_DRY_RUN=True, AUTO_INDEX_ALLOWED_CHAT_IDS=[]
-    - Bot: AUTO_CONTENT_ENABLED=False, AUTO_INDEX_DRY_RUN=False, AUTO_INDEX_ALLOWED_CHAT_IDS=[]
+    - Bot: AUTO_CONTENT_ENABLED=False, AUTO_INDEX_DRY_RUN=True, AUTO_INDEX_ALLOWED_CHAT_IDS=[]
     """
     # Backend klass defaultlari
     assert BackendSettings.model_fields["AUTO_CONTENT_ENABLED"].default is False
@@ -18,7 +18,7 @@ def test_autopilot_class_defaults_frozen():
 
     # Bot klass defaultlari
     assert BotSettings.model_fields["AUTO_CONTENT_ENABLED"].default is False
-    assert BotSettings.model_fields["AUTO_INDEX_DRY_RUN"].default is False
+    assert BotSettings.model_fields["AUTO_INDEX_DRY_RUN"].default is True
     assert BotSettings.model_fields["AUTO_INDEX_ALLOWED_CHAT_IDS"].default == []
 
 

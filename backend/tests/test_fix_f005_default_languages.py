@@ -49,6 +49,7 @@ def test_f005_default_languages_are_not_asosiy():
     is_valid, defects = final_check("movie", {
         "telegram_file_id": "file_123",
         "storage_channel_message_id": 999,
+        "duration": 3600,
         "language": link_movie_req.language
     })
     assert is_valid, f"final_check rejected default language: {defects}"

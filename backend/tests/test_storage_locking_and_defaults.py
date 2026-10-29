@@ -8,29 +8,30 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from scraper.queue_manager import QueueManager
+from scraper.queue_manager import QueueManager, QueueItem
 from scraper.state_manager import StateManager, DEFAULT_STATE
 from scraper.autopilot_v2.quarantine_manager import QuarantineManager
 
 
-def test_queue_manager_creates_empty_list_and_lock(tmp_path):
-    queue_file = str(tmp_path / "test_queue.json")
-    assert not os.path.exists(queue_file)
-
-    qm = QueueManager(filepath=queue_file)
-    assert os.path.exists(queue_file)
+def test_queue_manager_creates_empty_list_and_lock(setup_test_db):
+    qm = QueueManager()
+    qm.clear_all()
     assert qm.items == {}
 
-    with open(queue_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    assert data == []
-    assert qm._interprocess_lock is not None
+    added = qm.add_item(QueueItem(id="uzmovi_9001", source="uzmovi", title="Test Ingest Item", status="queued"))
+    assert added is True
+    assert "uzmovi_9001" in qm.items
+    assert qm.items["uzmovi_9001"].status == "queued"
 
-    # Jarayonlararo qulflash ishlashini tekshiramiz:
-    with qm._interprocess_lock:
-        competing_lock = FileLock(qm.lock_path, timeout=0.1)
-        with pytest.raises(Timeout):
-            competing_lock.acquire(timeout=0.1)
+    # Dublikat qo'shilganda ON CONFLICT DO NOTHING ishlashini tekshiramiz:
+    dup = qm.add_item(QueueItem(id="uzmovi_9001", source="uzmovi", title="Test Ingest Item 2", status="queued"))
+    assert dup is False
+    qm.clear_all()
+
+
+@pytest.mark.skip(reason="FOR UPDATE SKIP LOCKED SQLite test bazasida qatorlarni qulflamaydi (faqat PostgreSQL'da ishlaydi)")
+def test_queue_manager_concurrent_claim_skip_locked():
+    pass
 
 
 def test_state_manager_creates_default_state_and_lock(tmp_path):
@@ -68,7 +69,6 @@ def test_quarantine_manager_creates_empty_dict_and_lock(tmp_path):
         data = json.load(f)
     assert data == {}
     assert qm._lock is not None
-
     with qm._lock:
         competing_lock = FileLock(qm.lock_path, timeout=0.1)
         with pytest.raises(Timeout):

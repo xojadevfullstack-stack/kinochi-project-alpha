@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 from app.main import app
 from app.api.deps import get_current_admin, get_db_session
+from tests.conftest import configure_mock_session
 
 
 def test_scripts_enforce_bypass_flag():
@@ -44,7 +45,7 @@ def test_create_movie_gate_validation():
         return {"id": 1, "username": "admin", "role": "admin"}
 
     mock_db = AsyncMock()
-    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    configure_mock_session(mock_db, scalar=None, rows=[])
 
     app.dependency_overrides[get_current_admin] = mock_admin
     app.dependency_overrides[get_db_session] = lambda: mock_db
@@ -76,7 +77,7 @@ def test_create_series_gate_validation():
         return {"id": 1, "username": "admin", "role": "admin"}
 
     mock_db = AsyncMock()
-    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    configure_mock_session(mock_db, scalar=None, rows=[])
 
     app.dependency_overrides[get_current_admin] = mock_admin
     app.dependency_overrides[get_db_session] = lambda: mock_db

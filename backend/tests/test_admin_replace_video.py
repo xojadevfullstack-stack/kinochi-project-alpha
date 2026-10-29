@@ -12,6 +12,7 @@ from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.translation import MovieTranslationModel, EpisodeTranslationModel
 from app.api.deps import get_db_session, get_admin_or_bot
+from tests.conftest import configure_mock_session
 
 
 @pytest.mark.asyncio
@@ -106,6 +107,7 @@ async def test_series_repo_allow_replace_updates_episode_translation():
 async def test_link_movie_video_endpoint_admin_replace_success():
     """Admin replace=true va reason berganda video muvaffaqiyatli almashtiriladi."""
     mock_session = AsyncMock(spec=AsyncSession)
+    configure_mock_session(mock_session, scalar=None, rows=[])
     app.dependency_overrides[get_db_session] = lambda: mock_session
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "admin"}
 
@@ -134,6 +136,7 @@ async def test_link_movie_video_endpoint_admin_replace_success():
                     "message_id": 555,
                     "language": "O'zbekcha",
                     "telegram_file_id": "file_new_555",
+                    "duration": 8880,
                     "replace": True,
                     "reason": "Sifatliroq 1080p variant yuklandi"
                 })
@@ -150,6 +153,7 @@ async def test_link_movie_video_endpoint_admin_replace_success():
 async def test_link_movie_video_endpoint_replace_missing_reason_rejected():
     """Admin replace=true qilib lekin sabab (reason) bermasa 400 Bad Request qaytariladi."""
     mock_session = AsyncMock(spec=AsyncSession)
+    configure_mock_session(mock_session, scalar=None, rows=[])
     app.dependency_overrides[get_db_session] = lambda: mock_session
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "admin"}
 
@@ -179,6 +183,7 @@ async def test_link_movie_video_endpoint_replace_missing_reason_rejected():
 async def test_link_movie_video_endpoint_non_admin_cannot_replace():
     """Bot yoki admin bo'lmagan foydalanuvchi replace=true so'rasa 403 Forbidden beriladi."""
     mock_session = AsyncMock(spec=AsyncSession)
+    configure_mock_session(mock_session, scalar=None, rows=[])
     app.dependency_overrides[get_db_session] = lambda: mock_session
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "bot"}
 
@@ -208,6 +213,7 @@ async def test_link_movie_video_endpoint_non_admin_cannot_replace():
 async def test_link_episode_video_endpoint_admin_replace_success():
     """Admin serial qismini replace=true va reason bilan almashtirishi mumkin."""
     mock_session = AsyncMock(spec=AsyncSession)
+    configure_mock_session(mock_session, scalar=None, rows=[])
     app.dependency_overrides[get_db_session] = lambda: mock_session
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "admin"}
 
@@ -248,6 +254,7 @@ async def test_link_episode_video_endpoint_admin_replace_success():
                     "message_id": 666,
                     "language": "O'zbekcha",
                     "telegram_file_id": "file_ep_666",
+                    "duration": 2400,
                     "replace": True,
                     "reason": "Qism to'liq ovozli dublyajga almashtirildi"
                 })
@@ -264,6 +271,7 @@ async def test_link_episode_video_endpoint_admin_replace_success():
 async def test_link_episode_video_endpoint_non_admin_cannot_replace():
     """Bot serial qismini replace=true bilan almashtira olmaydi (403 Forbidden)."""
     mock_session = AsyncMock(spec=AsyncSession)
+    configure_mock_session(mock_session, scalar=None, rows=[])
     app.dependency_overrides[get_db_session] = lambda: mock_session
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "bot"}
 

@@ -8,8 +8,11 @@ from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.infrastructure.db.repositories.movie_repo import MovieRepositoryImpl
 from app.infrastructure.db.repositories.series_repository import SeriesRepository
+from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.translation import MovieTranslationModel, EpisodeTranslationModel
 from app.api.deps import get_db_session, get_admin_or_bot
+from tests.conftest import configure_mock_session
 
 
 @pytest.mark.asyncio
@@ -138,18 +141,22 @@ async def test_link_movie_video_endpoint_returns_409_on_overwrite():
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "admin"}
 
     try:
-        with patch("app.application.movies.service.MovieService.link_movie_video_from_message", side_effect=ValueError("Mavjud kino tarjimasini almashtirish taqiqlangan (No overwrite)")):
-            # record_rejection mock uchun
-            res_rej = MagicMock()
-            res_rej.scalar_one_or_none.return_value = None
-            mock_session.execute.return_value = res_rej
+        mock_movie = MagicMock(spec=MovieModel)
+        mock_movie.id = 1
+        mock_movie.title = "Test Movie"
+        mock_movie.runtime = None
+        mock_movie.translations = []
+        mock_session.get.return_value = mock_movie
+        configure_mock_session(mock_session, scalar=None, rows=[])
 
+        with patch("app.application.movies.service.MovieService.link_movie_video_from_message", side_effect=ValueError("Mavjud kino tarjimasini almashtirish taqiqlangan (No overwrite)")):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 resp = await client.post("/api/v1/movies/1/link-video", json={
                     "message_id": 999,
                     "language": "O'zbekcha",
-                    "telegram_file_id": "file_123"
+                    "telegram_file_id": "file_123",
+                    "duration": 3600
                 })
                 assert resp.status_code == status.HTTP_409_CONFLICT
                 data = resp.json()
@@ -168,17 +175,29 @@ async def test_link_episode_video_endpoint_returns_409_on_overwrite():
     app.dependency_overrides[get_admin_or_bot] = lambda: {"role": "admin"}
 
     try:
-        with patch("app.application.series.series_service.SeriesService.link_episode_video_from_message", side_effect=ValueError("Mavjud qism videosini almashtirish taqiqlangan (No overwrite)")):
-            res_rej = MagicMock()
-            res_rej.scalar_one_or_none.return_value = None
-            mock_session.execute.return_value = res_rej
+        mock_ep = MagicMock(spec=EpisodeModel)
+        mock_ep.id = 1
+        mock_ep.season_id = 1
+        mock_ep.episode_number = 1
+        mock_ep.title = "1-qism"
+        mock_season = MagicMock(spec=SeasonModel)
+        mock_season.id = 1
+        mock_season.series_id = 1
+        mock_season.season_number = 1
+        mock_series = MagicMock(spec=SeriesModel)
+        mock_series.id = 1
+        mock_series.publish_status = "published"
+        mock_session.get.side_effect = lambda model, id_: mock_ep if model == EpisodeModel else (mock_season if model == SeasonModel else mock_series)
+        configure_mock_session(mock_session, scalar=None, rows=[])
 
+        with patch("app.application.series.series_service.SeriesService.link_episode_video_from_message", side_effect=ValueError("Mavjud qism videosini almashtirish taqiqlangan (No overwrite)")):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 resp = await client.post("/api/v1/series/episodes/1/link-video", json={
                     "message_id": 999,
                     "language": "O'zbekcha",
-                    "telegram_file_id": "file_123"
+                    "telegram_file_id": "file_123",
+                    "duration": 2400
                 })
                 assert resp.status_code == status.HTTP_409_CONFLICT
                 data = resp.json()
