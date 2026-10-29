@@ -17,15 +17,16 @@ class Settings(BaseSettings):
 
     # Incident fix flags
     AUTO_CONTENT_ENABLED: bool = False
-    AUTO_INDEX_DRY_RUN: bool = False
+    AUTO_INDEX_DRY_RUN: bool = True
     AUTO_INDEX_ALLOWED_CHAT_IDS: list[int] = []
+    SCRAPER_ACCOUNT_IDS: list[int] = []
     BOT_DROP_PENDING_UPDATES: bool = False
     MOVIE_RUNTIME_TOLERANCE_MINUTES: int = 30
     MOVIE_RUNTIME_TOLERANCE_PERCENT: int = 15
     AUTO_INDEX_DEBOUNCE_SECONDS: float = 2.0
     AUTO_INDEX_COPY_DELAY_SECONDS: float = 1.0
 
-    @field_validator("AUTO_INDEX_ALLOWED_CHAT_IDS", mode="before")
+    @field_validator("AUTO_INDEX_ALLOWED_CHAT_IDS", "SCRAPER_ACCOUNT_IDS", mode="before")
     @classmethod
     def validate_allowed_chat_ids(cls, v):
         if isinstance(v, str):

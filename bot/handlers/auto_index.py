@@ -9,11 +9,78 @@ import httpx
 from aiogram import Router, F, Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 from aiogram.types import Message
+import os
 from config import settings
 from services.api_client import api_client
 
 router = Router()
 logger = logging.getLogger(__name__)
+
+
+def _parse_int_list(val) -> list[int]:
+    if not val:
+        return []
+    if isinstance(val, str):
+        return [int(x.strip()) for x in val.split(",") if x.strip().lstrip("-").isdigit()]
+    if isinstance(val, (list, tuple, set)):
+        out = []
+        for x in val:
+            try:
+                out.append(int(x))
+            except (ValueError, TypeError):
+                pass
+        return out
+    return []
+
+
+def get_scraper_account_ids(settings_obj=None) -> set[int]:
+    """Return configured userbot/scraper account IDs that auto_index must ignore (M4)."""
+    cfg = settings_obj or settings
+    ids = set(_parse_int_list(getattr(cfg, "SCRAPER_ACCOUNT_IDS", None)))
+    env_ids = _parse_int_list(os.environ.get("SCRAPER_ACCOUNT_IDS", ""))
+    ids.update(env_ids)
+    return ids
+
+
+def verify_auto_index_scraper_guard(settings_obj=None) -> None:
+    """
+    M4 Guard: If AUTO_TOPIC_CHAT_ID is in AUTO_INDEX_ALLOWED_CHAT_IDS,
+    SCRAPER_ACCOUNT_IDS must be configured and non-empty so scraper/userbot
+    messages are never re-indexed by auto_index.
+    """
+    cfg = settings_obj or settings
+    allowed_chats = set(_parse_int_list(getattr(cfg, "AUTO_INDEX_ALLOWED_CHAT_IDS", None)))
+    auto_topic_raw = getattr(cfg, "AUTO_TOPIC_CHAT_ID", None) or os.environ.get("AUTO_TOPIC_CHAT_ID")
+    if auto_topic_raw is not None and str(auto_topic_raw).strip():
+        try:
+            auto_topic_id = int(str(auto_topic_raw).strip())
+        except ValueError:
+            auto_topic_id = None
+        if auto_topic_id is not None and auto_topic_id in allowed_chats:
+            scraper_ids = get_scraper_account_ids(cfg)
+            if not scraper_ids:
+                raise RuntimeError(
+                    "AUTO_TOPIC_CHAT_ID is inside AUTO_INDEX_ALLOWED_CHAT_IDS, "
+                    "but SCRAPER_ACCOUNT_IDS is empty! Configure SCRAPER_ACCOUNT_IDS "
+                    "to prevent auto_index from re-indexing scraper uploads (M4)."
+                )
+
+
+def is_scraper_account_message(message: Message, settings_obj=None) -> bool:
+    """Check if the message was sent by a scraper/userbot account."""
+    scraper_ids = get_scraper_account_ids(settings_obj)
+    if not scraper_ids:
+        return False
+    from_user = getattr(message, "from_user", None)
+    if from_user and getattr(from_user, "id", None) in scraper_ids:
+        return True
+    sender_chat = getattr(message, "sender_chat", None)
+    if sender_chat and getattr(sender_chat, "id", None) in scraper_ids:
+        return True
+    return False
+
+
+verify_auto_index_scraper_guard()
 
 # Source-based locks to ensure strict sequential processing per channel/topic
 source_locks: dict[str, asyncio.Lock] = {}
@@ -723,6 +790,15 @@ async def evaluate_dry_run_decision(message: Message, bot: Bot | None = None) ->
     chat_str = str(chat_id)
     topic_str = str(topic_id) if topic_id is not None else "None"
 
+    verify_auto_index_scraper_guard()
+
+    # 0. M4 Guard: Ignore messages from scraper/userbot accounts
+    if is_scraper_account_message(message):
+        decision = "IGNORED"
+        reason = "scraper_account"
+        logger.info(f"[AUTO_INDEX][DRY_RUN] {chat_str} {topic_str} {decision} {reason}")
+        return decision, reason
+
     # 1. Allowlist check
     allowed_chats = getattr(settings, "AUTO_INDEX_ALLOWED_CHAT_IDS", []) or []
     if isinstance(allowed_chats, str):
@@ -829,6 +905,16 @@ async def evaluate_dry_run_decision(message: Message, bot: Bot | None = None) ->
 async def enqueue_video_message(message: Message, bot: Bot):
     chat_id = message.chat.id
     topic_id = message.message_thread_id
+
+    verify_auto_index_scraper_guard()
+
+    # 0. M4 GUARD: Scraper / userbot account xabarlarini IGNORE qilish
+    if is_scraper_account_message(message):
+        logger.info(
+            f"[AUTO_INDEX DECISION] chat={chat_id} topic={topic_id} msg_id={message.message_id} "
+            f"decision=IGNORED reason=scraper_account"
+        )
+        return
 
     # 1. DRY-RUN TEKSHIRUVI: Agar AUTO_INDEX_DRY_RUN True bo'lsa (default True):
     # To'liq qarorlar zanjirini (decision pipeline) bajaramiz, log qilamiz va hech narsa yozmaymiz!
