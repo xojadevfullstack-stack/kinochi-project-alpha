@@ -12,6 +12,9 @@ if BACKEND_DIR not in sys.path:
 from app.core.admission_gate import (
     REQUIRED_FIELDS,
     normalize_title,
+    make_source_key,
+    is_blacklist_url_match,
+    check_file_belongs_to_multiple_titles,
     check_url_reachable,
     pre_check,
     final_check,
@@ -24,6 +27,9 @@ from app.core.admission_gate import (
 __all__ = [
     "REQUIRED_FIELDS",
     "normalize_title",
+    "make_source_key",
+    "is_blacklist_url_match",
+    "check_file_belongs_to_multiple_titles",
     "check_url_reachable",
     "pre_check",
     "final_check",

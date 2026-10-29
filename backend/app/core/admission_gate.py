@@ -29,8 +29,127 @@ from app.infrastructure.db.models.rejected_item import RejectedItemModel
 from app.infrastructure.db.models.blacklist import BlacklistModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
+from app.infrastructure.db.models.translation import MovieTranslationModel, EpisodeTranslationModel
 
 logger = logging.getLogger(__name__)
+
+
+def make_source_key(source: str, source_id: Any) -> str:
+    """
+    5b: source_key bitta qoida: ingest_items.source + source_id.
+    pre_check va final_check bir xil kalit ishlatsin.
+    """
+    src = (source or "").strip().lower()
+    sid = str(source_id or "").strip()
+    if sid.startswith(f"{src}:"):
+        sid = sid[len(src) + 1:].strip()
+    if sid.startswith(f"{src}_"):
+        sid = sid[len(src) + 1:].strip()
+    if src and sid:
+        return f"{src}:{sid}"
+    return sid or src
+
+
+def is_blacklist_url_match(blacklist_url: Optional[str], source: str, source_key: str) -> bool:
+    """
+    5c: Blacklist ILIKE %key% o'rniga chegarali moslik:
+    - URL ichida '/{raw_id}-' yoki '/{raw_id}.' yoki '={raw_id}' chegarasi
+    - Yoki source:source_id / source_id to'liq tengligi.
+    Masalan, '15' kaliti '71550-test.html' ga MOS KELMAYDI, ammo '15-test.html' ga mos keladi.
+    """
+    if not blacklist_url:
+        return False
+    b_url = str(blacklist_url).strip().lower()
+    if not b_url:
+        return False
+
+    src = (source or "").strip().lower()
+    s_key = (source_key or "").strip().lower()
+    raw_id = s_key
+    if src and raw_id.startswith(f"{src}:"):
+        raw_id = raw_id[len(src) + 1:].strip()
+    elif src and raw_id.startswith(f"{src}_"):
+        raw_id = raw_id[len(src) + 1:].strip()
+
+    if not raw_id:
+        return False
+
+    if b_url in (s_key, raw_id, f"{src}:{raw_id}", f"{src}_{raw_id}"):
+        return True
+
+    esc = re.escape(raw_id)
+    # URL boundary: '/15-slug.html' or 'start=15' or exact segment '/15/'
+    pattern = rf"(?:^|/|=){esc}(?:-|\.html|/|$|\?|\&)"
+    return bool(re.search(pattern, b_url))
+
+
+async def check_file_belongs_to_multiple_titles(
+    session: AsyncSession,
+    telegram_file_id: Optional[str] = None,
+    storage_channel_message_id: Optional[int] = None,
+    exclude_movie_id: Optional[int] = None,
+    exclude_episode_id: Optional[int] = None,
+) -> Optional[Dict[str, str]]:
+    """
+    5d: telegram_file_id / storage_channel_message_id boshqa media'da borligini DB'dan tekshiradi.
+    """
+    if session is None:
+        return None
+
+    fid = str(telegram_file_id).strip() if telegram_file_id else None
+    mid = None
+    if storage_channel_message_id is not None:
+        try:
+            mid_val = int(storage_channel_message_id)
+            if mid_val > 0:
+                mid = mid_val
+        except (ValueError, TypeError):
+            pass
+
+    if not fid and not mid:
+        return None
+
+    # 1. MovieTranslationModel tekshiruvi
+    m_conds = []
+    if fid:
+        m_conds.append(MovieTranslationModel.telegram_file_id == fid)
+    if mid:
+        m_conds.append(MovieTranslationModel.storage_channel_message_id == mid)
+
+    if m_conds:
+        m_stmt = select(MovieTranslationModel.movie_id).where(or_(*m_conds))
+        if exclude_movie_id is not None:
+            m_stmt = m_stmt.where(MovieTranslationModel.movie_id != int(exclude_movie_id))
+        m_res = await session.execute(m_stmt.limit(1))
+        other_movie_id = m_res.scalar_one_or_none()
+        if other_movie_id is not None:
+            return {
+                "field": "telegram_file_id",
+                "code": "file_belongs_to_multiple_titles",
+                "message": f"Ushbu video fayl boshqa kinoga (movie_id={other_movie_id}) biriktirilgan",
+            }
+
+    # 2. EpisodeTranslationModel tekshiruvi
+    e_conds = []
+    if fid:
+        e_conds.append(EpisodeTranslationModel.telegram_file_id == fid)
+    if mid:
+        e_conds.append(EpisodeTranslationModel.storage_channel_message_id == mid)
+
+    if e_conds:
+        e_stmt = select(EpisodeTranslationModel.episode_id).where(or_(*e_conds))
+        if exclude_episode_id is not None:
+            e_stmt = e_stmt.where(EpisodeTranslationModel.episode_id != int(exclude_episode_id))
+        e_res = await session.execute(e_stmt.limit(1))
+        other_ep_id = e_res.scalar_one_or_none()
+        if other_ep_id is not None:
+            return {
+                "field": "telegram_file_id",
+                "code": "file_belongs_to_multiple_titles",
+                "message": f"Ushbu video fayl boshqa qismga (episode_id={other_ep_id}) biriktirilgan",
+            }
+
+    return None
 
 # Telegram bot orqali yuklashning maksimal xavfsiz chegarasi (2000 MB)
 MAX_FILE_SIZE_BYTES = 2000 * 1024 * 1024
@@ -103,7 +222,8 @@ async def pre_check(
 
     # 1. Manba (Source) tekshiruvi
     source = (payload.get("source") or "").strip().lower()
-    source_key = str(payload.get("source_key") or payload.get("source_id") or "").strip()
+    raw_key = str(payload.get("source_key") or payload.get("source_id") or "").strip()
+    source_key = make_source_key(source, raw_key) if (source and raw_key) else raw_key
     if not source:
         defects.append({
             "field": "source",
@@ -263,26 +383,49 @@ async def pre_check(
 
     # 5. DB dublikatlari va Qora ro'yxat tekshiruvlari (agar session berilgan bo'lsa)
     if session is not None:
-        # A. Qora ro'yxat (Blacklist)
+        # A. Qora ro'yxat (Blacklist) — 5c: ILIKE %key% emas, chegarali moslik (`/{key}-` URL ichida yoki source+source_id tengligi)
         if source and source_key:
-            bl_stmt = select(BlacklistModel.id).where(
-                or_(
-                    BlacklistModel.url.ilike(f"%{source_key}%"),
-                    BlacklistModel.title == payload.get("title")
-                )
-            ).limit(1)
-            bl_res = await session.execute(bl_stmt)
-            if bl_res.scalar_one_or_none():
-                defects.append({
-                    "field": "source_key",
-                    "code": "blacklisted_source",
-                    "message": "Ushbu kontent yoki manba qora ro'yxatga kiritilgan"
-                })
+            raw_id = source_key[len(source) + 1:].strip() if source_key.startswith(f"{source}:") else source_key
+            bl_conds = []
+            if payload.get("title"):
+                bl_conds.append(BlacklistModel.title == payload.get("title"))
+            if raw_id:
+                bl_conds.extend([
+                    BlacklistModel.url == source_key,
+                    BlacklistModel.url == raw_id,
+                    BlacklistModel.url == f"{source}:{raw_id}",
+                    BlacklistModel.url == f"{source}_{raw_id}",
+                    BlacklistModel.url.ilike(f"%/{raw_id}-%"),
+                    BlacklistModel.url.ilike(f"%/{raw_id}.html%"),
+                    BlacklistModel.url.ilike(f"{raw_id}-%"),
+                    BlacklistModel.url.ilike(f"%={raw_id}"),
+                ])
+            if bl_conds:
+                bl_stmt = select(BlacklistModel.id, BlacklistModel.title, BlacklistModel.url).where(or_(*bl_conds))
+                bl_res = await session.execute(bl_stmt)
+                bl_rows = bl_res.all()
+                matched_bl = False
+                for _, bl_t, bl_u in bl_rows:
+                    if payload.get("title") and bl_t and bl_t == payload.get("title"):
+                        matched_bl = True
+                        break
+                    if is_blacklist_url_match(bl_u, source, source_key):
+                        matched_bl = True
+                        break
+                if matched_bl:
+                    defects.append({
+                        "field": "source_key",
+                        "code": "blacklisted_source",
+                        "message": "Ushbu kontent yoki manba qora ro'yxatga kiritilgan"
+                    })
 
             # B. Rejected items da blacklisted holati
             rej_stmt = select(RejectedItemModel.id).where(
                 RejectedItemModel.source == source,
-                RejectedItemModel.source_key == source_key,
+                or_(
+                    RejectedItemModel.source_key == source_key,
+                    RejectedItemModel.source_key == raw_id,
+                ),
                 RejectedItemModel.status == "blacklisted"
             ).limit(1)
             rej_res = await session.execute(rej_stmt)
@@ -412,37 +555,45 @@ def final_check(
             "message": "Saqlash kanali xabar ID butun son bo'lishi kerak"
         })
 
-    # 3. Video davomiyligi (agar duration kaliti berilgan bo'lsa, None yoki 0 bo'lsa duration_unknown, manfiy bo'lsa invalid_duration)
-    has_duration_key = ("duration" in payload) or (isinstance(media, dict) and "duration" in media) or (hasattr(media, "duration"))
+    # 3. Video davomiyligi (5a: movie/episode uchun duration MAJBURIY; kalit yo'q yoki <=0 -> fail "duration_missing")
     duration = get_val("duration")
-    if has_duration_key:
+    if kind in ("movie", "episode"):
         if duration is None:
             defects.append({
                 "field": "duration",
-                "code": "duration_unknown",
-                "message": "Video davomiyligi noma'lum (None)"
+                "code": "duration_missing",
+                "message": "Video davomiyligi ko'rsatilmagan yoki noma'lum (duration_missing)"
             })
         else:
             try:
                 dur_int = int(duration)
-                if dur_int < 0:
+                if dur_int <= 0:
                     defects.append({
                         "field": "duration",
-                        "code": "invalid_duration",
-                        "message": "Video davomiyligi 0 dan katta bo'lishi kerak"
-                    })
-                elif dur_int == 0:
-                    defects.append({
-                        "field": "duration",
-                        "code": "duration_unknown",
-                        "message": "Video davomiyligi 0 bo'lishi mumkin emas"
+                        "code": "duration_missing",
+                        "message": "Video davomiyligi 0 dan katta bo'lishi shart (duration_missing)"
                     })
             except (ValueError, TypeError):
                 defects.append({
                     "field": "duration",
-                    "code": "duration_unknown",
+                    "code": "duration_missing",
                     "message": "Video davomiyligi butun son (soniya) formatida bo'lishi kerak"
                 })
+    elif duration is not None:
+        try:
+            dur_int = int(duration)
+            if dur_int <= 0:
+                defects.append({
+                    "field": "duration",
+                    "code": "duration_missing",
+                    "message": "Video davomiyligi 0 dan katta bo'lishi shart"
+                })
+        except (ValueError, TypeError):
+            defects.append({
+                "field": "duration",
+                "code": "duration_missing",
+                "message": "Video davomiyligi butun son (soniya) formatida bo'lishi kerak"
+            })
 
     # 4. Til tekshiruvi ("Asosiy" yoki bo'sh placeholder bo'lmasligi kerak)
     lang = str(get_val("language") or get_val("voiceover") or "").strip()

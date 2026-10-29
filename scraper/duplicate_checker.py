@@ -193,27 +193,31 @@ def extract_title_variants(raw_title: str) -> List[str]:
 
 def extract_part_number(title: Optional[str]) -> Optional[int]:
     """
-    Filmlardagi qism raqamini aniqlaydi (masalan: 'Karib dengizi 2', 'Forsaj 5', 'Terminator 3', '2-qism', 'Part 2', 'II', 'Ikkinchi qism').
+    5e: Filmlardagi qism raqamini aniqlaydi — FAQAT aniq sequel belgilari bilan:
+    - "2-qism", "part 2", "2-film", "film 2", "chast 2"
+    - Rim raqamlari ("II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
+    - So'z bilan yozilgan tartib raqami + qism/film ("ikkinchi qism", "uchinchi film")
+    "13-hudud", "7 hayot" kabi oddiy raqamli nomlar sequel EMAS (None qaytaradi).
     """
     if not title:
         return None
     t = str(title).lower().strip()
 
-    # 0. So'z bilan yozilgan qism/tartib raqamlari
+    # 0. So'z bilan yozilgan qism/tartib raqamlari (faqat qism/fasl/part/chast/film bilan)
     word_ordinals = {
         'birinchi': 1, 'ikkinchi': 2, 'uchinchi': 3, 'to\'rtinchi': 4, 'tortinchi': 4,
         'beshinchi': 5, 'oltinchi': 6, 'yettinchi': 7, 'sakkizinchi': 8, 'to\'qqizinchi': 9, 'toqqizinchi': 9,
         'o\'ninchi': 10, 'oninchi': 10
     }
     for w, num in word_ordinals.items():
-        if re.search(rf'\b{w}\s*(?:qism|fasl|part|chast)?\b', t):
+        if re.search(rf'\b{w}\s*(?:qism|fasl|part|chast|film|kino)\b', t):
             return num
 
-    # 1. '2-qism', '3 qism', 'qism 4', 'part 2', 'chast 3'
-    m_part = re.search(r'\b(?:qism|part|chast)\s*[-_]?\s*(\d+)\b', t)
+    # 1. '2-qism', '3 qism', 'qism 4', 'part 2', 'chast 3', '2-film', 'film 2'
+    m_part = re.search(r'\b(?:qism|part|chast|film)\s*[-_]?\s*(\d+)\b', t)
     if m_part:
         return int(m_part.group(1))
-    m_part2 = re.search(r'\b(\d+)\s*[-_]?\s*(?:qism|part|chast)\b', t)
+    m_part2 = re.search(r'\b(\d+)\s*[-_]?\s*(?:qism|part|chast|film)\b', t)
     if m_part2:
         return int(m_part2.group(1))
 
@@ -223,15 +227,9 @@ def extract_part_number(title: Optional[str]) -> Optional[int]:
         if re.search(rf'(?:\b|\s|_|-){rom}(?:\b|\s|_|-|$|[^\w])', t):
             return val
     # 'I' rim raqami faqat aniq qism kontekstida
-    if re.search(r'\b(?:part|qism|chast)\s*[-_]?\s*i\b', t) or re.search(r'\b1-qism\b', t):
+    if re.search(r'\b(?:part|qism|chast|film)\s*[-_]?\s*i\b', t) or re.search(r'\b1-(?:qism|film)\b', t):
         return 1
 
-    # 3. Yakka raqam: masalan 'Karib dengizi qaroqchilari 2', 'Shrek 4', 'Forsaj 9'
-    m_num = re.search(r'\b([1-9]|1[0-5])\b', t)
-    if m_num:
-        val = int(m_num.group(1))
-        if not re.search(r'\b(?:3d|4k|1080p|720p|480p)\b', t):
-            return val
     return None
 
 
@@ -469,12 +467,29 @@ class DuplicateChecker:
                         match_type="blacklist",
                         reason=f"Qora ro'yxatda (Sabab: {b.get('reason') or 'Taqiqlangan'})"
                     )
-            if b_url and url and b_url.strip().lower() in url.strip().lower():
-                return DuplicateCheckResult(
-                    is_duplicate=True,
-                    match_type="blacklist",
-                    reason=f"Qora ro'yxatda (URL taqiqlangan)"
-                )
+            if b_url and url:
+                b_u_clean = b_url.strip().lower()
+                u_clean = url.strip().lower()
+                if b_u_clean == u_clean:
+                    return DuplicateCheckResult(
+                        is_duplicate=True,
+                        match_type="blacklist",
+                        reason="Qora ro'yxatda (URL taqiqlangan)"
+                    )
+                if b_u_clean.isdigit() or re.match(r'^[a-z0-9_]+:\d+$', b_u_clean):
+                    raw_bid = b_u_clean.split(":")[-1]
+                    if re.search(rf'(?:^|/|=){re.escape(raw_bid)}(?:-|\.html|/|$|\?|\&)', u_clean):
+                        return DuplicateCheckResult(
+                            is_duplicate=True,
+                            match_type="blacklist",
+                            reason="Qora ro'yxatda (URL ID taqiqlangan)"
+                        )
+                elif len(b_u_clean) > 6 and b_u_clean in u_clean:
+                    return DuplicateCheckResult(
+                        is_duplicate=True,
+                        match_type="blacklist",
+                        reason="Qora ro'yxatda (URL taqiqlangan)"
+                    )
 
         # ── 0. TMDb ID bo'yicha tekshirish (100% aniq moslik) ──
         if tmdb_id:
@@ -579,7 +594,19 @@ class DuplicateChecker:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series:
-                        if not year or not db_year or abs(year - db_year) > 1:
+                        if not year or not db_year:
+                            # 5e: Year yo'q bo'lsa fuzzy match o'tkazib yuborilmasin: yil'siz token-overlap bo'lsa needs_review ("possible_duplicate")
+                            return DuplicateCheckResult(
+                                is_duplicate=False,
+                                match_type="possible_duplicate",
+                                matched_id=item["id"],
+                                matched_title=item["title"],
+                                matched_year=db_year,
+                                matched_type=item["type"],
+                                matched_code=item.get("code"),
+                                reason="possible_duplicate",
+                            )
+                        if abs(year - db_year) > 1:
                             continue
                     return self._make_result(
                         item=item,
@@ -627,7 +654,18 @@ class DuplicateChecker:
                     db_year = item.get("release_year")
                     is_series = (item.get("type") == "series" or media_type == "series")
                     if not is_series:
-                        if not year or not db_year or abs(year - db_year) > 1:
+                        if not year or not db_year:
+                            return DuplicateCheckResult(
+                                is_duplicate=False,
+                                match_type="possible_duplicate",
+                                matched_id=item["id"],
+                                matched_title=item["title"],
+                                matched_year=db_year,
+                                matched_type=item["type"],
+                                matched_code=item.get("code"),
+                                reason="possible_duplicate",
+                            )
+                        if abs(year - db_year) > 1:
                             continue
                     return self._make_result(
                         item=item,
@@ -637,6 +675,69 @@ class DuplicateChecker:
                     )
 
         return DuplicateCheckResult(is_duplicate=False)
+
+    def record_added(
+        self,
+        item_id: int,
+        title: str,
+        original_title: Optional[str] = None,
+        year: Optional[int] = None,
+        media_type: str = "movie",
+        code: Optional[str] = None,
+        tmdb_id: Optional[int] = None,
+        url: Optional[str] = None,
+        episode_count: int = 1,
+        translation_count: int = 1,
+    ) -> None:
+        """
+        5f: Batch ichida yangi yozilgan item darhol xotiradagi dedup keshiga qo'shiladi
+        (cache TTL tugashini kutmasdan).
+        """
+        m_type = "series" if media_type in ("series", "dorama") else "movie"
+        slug = to_slug(title)
+        stem_slug = to_stem_slug(title)
+        v_slugs = set()
+        for v in extract_title_variants(title):
+            s1 = to_slug(v)
+            if s1:
+                v_slugs.add(s1)
+            s2 = to_stem_slug(v)
+            if s2:
+                v_slugs.add(s2)
+
+        entry: Dict[str, Any] = {
+            "id": item_id,
+            "title": title,
+            "original_title": original_title,
+            "release_year": year,
+            "code": code,
+            "tmdb_id": tmdb_id,
+            "url": url,
+            "type": m_type,
+            "is_incomplete": False,
+            "slug": slug,
+            "stem_slug": stem_slug,
+            "variants_slugs": list(v_slugs),
+            "episode_count": episode_count,
+            "translation_count": translation_count,
+        }
+        if original_title:
+            entry["orig_slug"] = to_slug(original_title)
+
+        if m_type == "series":
+            self._series.append(entry)
+            if slug:
+                self._series_slug_map[slug] = entry
+            if stem_slug and stem_slug not in self._series_slug_map:
+                self._series_slug_map[stem_slug] = entry
+        else:
+            self._movies.append(entry)
+            if slug:
+                self._movie_slug_map[slug] = entry
+            if stem_slug and stem_slug not in self._movie_slug_map:
+                self._movie_slug_map[stem_slug] = entry
+        if self._last_cache_time == 0.0:
+            self._last_cache_time = time.time()
 
     async def check_series_episode_exists(
         self,
