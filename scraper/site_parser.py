@@ -137,6 +137,7 @@ def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0) -> List[
         items.append(QueueItem(
             id=f"uzmovi_{item_id_num}",
             source="uzmovi",
+            source_id=item_id_num,
             title=cleaned["title"],
             original_title=None,
             year=cleaned["year"],
@@ -225,6 +226,7 @@ def _extract_asilmedia_items_from_html(html: str, min_rating: float = 0.0) -> Li
         items.append(QueueItem(
             id=f"asilmedia_{item_id_num}",
             source="asilmedia",
+            source_id=item_id_num,
             title=cleaned["title"],
             original_title=None,
             year=cleaned["year"],

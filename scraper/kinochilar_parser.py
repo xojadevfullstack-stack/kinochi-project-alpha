@@ -145,6 +145,7 @@ def _extract_kinochilar_items_from_html(html: str, min_rating: float = 0.0) -> L
         items.append(QueueItem(
             id=f"kinochilar_{item_id_num}",
             source="kinochilar",
+            source_id=item_id_num,
             title=cleaned["title"],
             original_title=None,
             year=cleaned["year"],

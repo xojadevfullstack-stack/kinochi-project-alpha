@@ -221,27 +221,33 @@ async def cmd_parse(
     rejected_detected = 0
     for item, dup_res in zip(all_items, dup_results):
         if isinstance(dup_res, Exception):
+            item.status = "queued"
             continue
         item_src = str(item.source).lower()
-        item_key = str(getattr(item, "id", "")).replace(f"{item_src}_", "")
+        item_key = str(getattr(item, "source_id", None) or str(getattr(item, "id", "")).replace(f"{item_src}_", ""))
         if (item_src, item.id) in blocked_rejected_keys or (item_src, item_key) in blocked_rejected_keys:
             item.status = "rejected"
-            item.error_message = "Rad etilgan yoki qora ro'yxatga kiritilgan (rejected_items)"
+            item.reason = "Rad etilgan yoki qora ro'yxatga kiritilgan (rejected_items)"
+            item.error_message = item.reason
             rejected_detected += 1
         elif dup_res.match_type == "blacklist":
             item.status = "blacklisted"
-            item.error_message = f"Qora ro'yxatda: {dup_res.reason}"
+            item.reason = f"Qora ro'yxatda: {dup_res.reason}"
+            item.error_message = item.reason
             blacklisted_detected += 1
         elif dup_res.is_duplicate:
             item.status = "already_exists"
-            item.error_message = f"Bazada mavjud: {dup_res.reason} (ID: {dup_res.matched_id})"
+            item.reason = f"Bazada mavjud: {dup_res.reason} (ID: {dup_res.matched_id})"
+            item.error_message = item.reason
             duplicates_detected += 1
+        else:
+            item.status = "queued"
 
-    total_added = qm.add_items_batch(all_items)
+    total_added = await qm.add_items_batch_async(all_items)
     next_page = sm.advance_page(source, max_pages, from_page=start_page)
     print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}, Qora ro'yxatda: {blacklisted_detected}, Rad etilganlar: {rejected_detected}")
     print(f"📑 [STATE] {source.upper()} keyingi sahifa: {next_page}")
-    print(f"📊 Navbat holati: {qm.stats()}\n")
+    print(f"📊 Navbat holati: {await qm.stats_async()}\n")
 
 def parse_codes_arg(codes_str: str) -> list:
     res = []

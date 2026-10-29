@@ -781,8 +781,11 @@ class TelethonModeratorPipeline:
                     start_hash = fetch_kinochilar_start_hash(item.url)
                 except Exception:
                     pass
-            if start_hash:
-                queries_to_try = [f"/start {start_hash}"]
+            if not start_hash:
+                logger.warning(f"[@{target_bot}] Kinochilar start_hash topilmadi ({item.id}) -> needs_review")
+                QueueManager().update_status(item.id, "needs_review", error_message="missing_start_hash")
+                return False
+            queries_to_try = [f"/start {start_hash}"]
 
         card_msg = None
         season_entries = []
@@ -3687,13 +3690,16 @@ class TelethonModeratorPipeline:
                 except Exception as e:
                     logger.warning(f"Kinochilar start_hash olishda xatolik: {e}")
 
-        if start_hash:
-            msg_to_send = f"/start {start_hash}"
-        else:
-            clean_q = query.split('/')[0].split('|')[0].strip()
-            clean_q = re.sub(r'\(.*?\)', '', clean_q).strip()
-            clean_q = clean_movie_title(clean_q)
-            msg_to_send = clean_q
+        if not start_hash:
+            logger.warning(f"[@{bot}] Kinochilar start_hash topilmadi ({getattr(item, 'id', query)}) -> needs_review")
+            if item:
+                item.status = "needs_review"
+                item.reason = "missing_start_hash"
+                item.error_message = "missing_start_hash"
+                QueueManager().update_status(item.id, "needs_review", error_message="missing_start_hash")
+            return None, None, None
+
+        msg_to_send = f"/start {start_hash}"
 
         logger.info(f"[@{bot}] ga so'rov yuborilmoqda: '{msg_to_send}'...")
         sent = await self.client.send_message(bot, msg_to_send)

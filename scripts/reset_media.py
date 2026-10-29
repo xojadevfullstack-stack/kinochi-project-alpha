@@ -12,7 +12,7 @@ Xavfsizlik qoidalari (3 ta Guard):
 Vazifasi:
 - seed_candidates jadvalidagi 'queued', 'ingested', 'skipped' holatidagi yozuvlarni 'new' ga qaytaradi
   (lekin 'not_found' saqlab qolinadi, qayta qidiruv spamining oldini olish uchun).
-- scraper_queue.json, state.json va quarantine_items.json fayllarini tozalaydi.
+- state.json va quarantine_items.json fayllarini hamda ingest_items navbatini tozalaydi.
 - Hech qanday DROP/TRUNCATE/DELETE FROM buyruqlarisiz xavfsiz UPDATE orqali ishlaydi.
 """
 
@@ -48,11 +48,11 @@ from sqlalchemy.engine import make_url
 from app.core.config import settings
 from app.infrastructure.db.session import async_session_factory
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
+from app.infrastructure.db.models.ingest_item import IngestItemModel
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-QUEUE_FILE = os.path.join(ROOT_DIR, "scraper", "scraper_queue.json")
 STATE_FILE = os.path.join(ROOT_DIR, "scraper", "state.json")
 QUARANTINE_FILE = os.path.join(ROOT_DIR, "scraper", "autopilot_v2", "quarantine_items.json")
 
@@ -95,16 +95,17 @@ async def reset_media(
     print("=" * 65)
 
     # 1. Fayllardagi elementlarni tekshirish
-    q_count = inspect_file_items(QUEUE_FILE)
     s_count = inspect_file_items(STATE_FILE)
     quar_count = inspect_file_items(QUARANTINE_FILE)
 
-    print(f"📄 Navbat fayli (scraper_queue.json)         : {q_count} ta element")
     print(f"📄 Parser holati (state.json)               : {s_count} ta manba holati")
     print(f"📄 Karantin qutisi (quarantine_items.json)   : {quar_count} ta element")
 
-    # 2. seed_candidates jadvalini tekshirish
+    # 2. seed_candidates va ingest_items jadvalini tekshirish
     async with async_session_factory() as session:
+        q_count_res = await session.execute(select(func.count(IngestItemModel.id)))
+        q_count = q_count_res.scalar() or 0
+        print(f"🗄️ Navbat jadvali (ingest_items)             : {q_count} ta element")
         count_q = await session.execute(
             select(func.count(SeedCandidateModel.id)).where(
                 SeedCandidateModel.status.in_(["queued", "ingested", "skipped"])
@@ -156,13 +157,6 @@ async def reset_media(
     print("\n⚠️ [DIQQAT] Barcha himoyalar tasdiqlandi. Haqiqiy tozalash boshlanmoqda...")
 
     # A) JSON fayllarni xavfsiz tozalash
-    try:
-        with open(QUEUE_FILE, "w", encoding="utf-8") as f:
-            json.dump([], f, ensure_ascii=False, indent=2)
-        print("✅ scraper_queue.json bo'shatildi ([])")
-    except Exception as e:
-        logger.error(f"scraper_queue.json ni tozalashda xatolik: {e}")
-
     try:
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f, ensure_ascii=False, indent=2)
