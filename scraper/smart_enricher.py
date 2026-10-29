@@ -784,6 +784,7 @@ async def enrich_movie_smart(
                 if details.get("adult"):
                     matched_tmdb["adult"] = True
                 metadata["tmdb_id"] = tmdb_id
+                metadata["tmdb_content_type"] = tmdb_type
                 # TMDb posteri faqat mavjud bo'lsa olinadi, lekin source_poster bor bo'lsa uni yo'qotmaymiz
                 if details.get("poster_url"):
                     metadata["poster_url"] = details["poster_url"]

@@ -355,8 +355,6 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
         target_source = target_source_map[target]
         m_type = None if media_type == "all" else media_type
         pending = qm.get_pending(limit=limit, source=target_source, media_type=m_type)
-        if not pending:
-            pending = qm.get_pending(limit=limit, media_type=m_type)
 
         if not pending:
             m_label = f"'{media_type.upper()}'" if media_type != "all" else "yangi kino/serial"
@@ -415,7 +413,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     print(f"✅ Kod #{c} muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi.")
                     for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"animeelar_{c}", f"anitoob_{c}"]:
                         if qid in qm.items:
-                            qm.update_status(qid, "completed")
+                            qm.update_status(qid, "published")
                 else:
                     print(f"⚠️ Kod #{c} yuklab bo'lmadi yoki o'tkazib yuborildi.")
                 
@@ -480,13 +478,13 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                         break
 
                 if success:
-                    qm.update_status(item.id, "completed")
+                    qm.update_status(item.id, "published")
                     downloaded_count += 1
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
                     qm.load()
                     fresh = qm.items.get(item.id)
-                    if fresh and fresh.status in ("already_exists", "needs_review"):
+                    if fresh and fresh.status in ("already_exists", "needs_review", "rejected", "blacklisted"):
                         print(f"⏭️ {item.title}: {fresh.error_message or fresh.status}")
                     elif not (fresh and fresh.status == "failed"):
                         err_msg = fresh.error_message if (fresh and fresh.error_message) else "Video olinmadi yoki xatolik"

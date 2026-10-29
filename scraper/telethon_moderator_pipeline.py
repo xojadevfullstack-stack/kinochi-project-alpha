@@ -223,11 +223,99 @@ def matches_episode(m: Any, ep_num: int, total_eps: int = 12) -> bool:
     return False
 
 
+def extract_message_duration(m: Any) -> Optional[int]:
+    """Video xabardan haqiqiy davomiylikni (sekundlarda) ajratib oladi. Fake 1 YO'Q."""
+    if not m:
+        return None
+    if getattr(m, "file", None) is not None:
+        dur = getattr(m.file, "duration", None)
+        if dur is not None and int(dur) > 0:
+            return int(dur)
+    if getattr(m, "video", None) is not None:
+        dur = getattr(m.video, "duration", None)
+        if dur is not None and int(dur) > 0:
+            return int(dur)
+    doc = getattr(m, "document", None) or getattr(getattr(m, "media", None), "document", None)
+    if doc and getattr(doc, "attributes", None):
+        for attr in doc.attributes:
+            dur = getattr(attr, "duration", None)
+            if dur is not None and int(dur) > 0:
+                return int(dur)
+    dur = getattr(m, "duration", None)
+    if dur is not None and int(dur) > 0:
+        return int(dur)
+    return None
+
+
+def extract_episode_number_from_text(text: Optional[str]) -> Optional[int]:
+    if not text:
+        return None
+    t = str(text).lower()
+    for pat in (
+        r"\b(\d+)\s*[-_]?\s*qism\b",
+        r"\b(\d+)\s*[-_]?\s*seriya\b",
+        r"\bs\d+\s*e0*(\d+)\b",
+        r"\bf\d+\s*q0*(\d+)\b",
+        r"\bep0*(\d+)\b",
+        r"\bq0*(\d+)\b",
+    ):
+        m = re.search(pat, t)
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def extract_season_number_from_text(text: Optional[str]) -> Optional[int]:
+    if not text:
+        return None
+    t = str(text).lower()
+    for pat in (
+        r"\b(\d+)\s*[-_]?\s*(?:fasl|mavsum|sezon|season)\b",
+        r"\b(?:fasl|mavsum|sezon|season)\s*(\d+)\b",
+        r"\bs0*(\d+)\s*e\d+\b",
+        r"\bf0*(\d+)\s*q\d+\b",
+    ):
+        m = re.search(pat, t)
+        if m:
+            return int(m.group(1))
+    return None
+
+
+def verify_season_episode_consistency(
+    btn_season: int,
+    btn_ep: int,
+    filename: Optional[str] = None,
+    caption: Optional[str] = None,
+) -> Tuple[bool, Optional[str]]:
+    """
+    4d: Fasl/qism raqami donor tugma matni + fayl nomi + caption'dan tekshiriladi,
+    ziddiyat bo'lsa (False, reason) qaytaradi (-> needs_review).
+    """
+    fn_ep = extract_episode_number_from_text(filename)
+    cap_ep = extract_episode_number_from_text(caption)
+    fn_season = extract_season_number_from_text(filename)
+    cap_season = extract_season_number_from_text(caption)
+
+    if fn_ep is not None and fn_ep != btn_ep:
+        return False, f"episode_number_conflict:btn={btn_ep},file={fn_ep}"
+    if cap_ep is not None and cap_ep != btn_ep:
+        return False, f"episode_number_conflict:btn={btn_ep},caption={cap_ep}"
+    if fn_ep is not None and cap_ep is not None and fn_ep != cap_ep:
+        return False, f"episode_number_conflict:file={fn_ep},caption={cap_ep}"
+
+    if fn_season is not None and fn_season != btn_season:
+        return False, f"season_number_conflict:btn={btn_season},file={fn_season}"
+    if cap_season is not None and cap_season != btn_season:
+        return False, f"season_number_conflict:btn={btn_season},caption={cap_season}"
+    return True, None
+
+
 def matches_series_video(
     m: Any,
     series_title: str,
     ep_num: int,
-    total_eps: int = 12
+    total_eps: int = 12,
+    item: Optional[Any] = None,
 ) -> bool:
     """
     Video xabar haqiqatan ham ushbu serial va berilgan qism raqamiga tegishli ekanligini
@@ -235,6 +323,7 @@ def matches_series_video(
     1. Video yoki hujjat-video bo'lishi shart.
     2. Qism raqami (ep_num) mos kelishi shart.
     3. Serial nomi (yoki asosiy kalit so'zlari) fayl nomi yoki xabar matnida mavjud bo'lishi shart.
+       Agar nom mos kelmasa (4f), rad emas -> needs_review (reason bilan).
     """
     if not is_video_message(m):
         return False
@@ -264,10 +353,23 @@ def matches_series_video(
         if kw_norm in combined_norm:
             return True
 
+    reason_msg = f"series_video_title_mismatch: expected='{series_title}' file='{fn}'"
     logger.warning(
-        f"⚠️ Xabar (ID: {getattr(m, 'id', None)}) serial sarlavhasiga mos kelmadi! "
+        f"⚠️ Xabar (ID: {getattr(m, 'id', None)}) serial sarlavhasiga mos kelmadi -> needs_review! "
         f"Kutilgan sarlavha: '{series_title}' (kalitlar: {keywords}), Fayl nomi: '{fn}'"
     )
+    try:
+        setattr(m, "_title_mismatch_reason", reason_msg)
+    except Exception:
+        pass
+    if item is not None and getattr(item, "id", None):
+        item.status = "needs_review"
+        item.reason = reason_msg
+        item.error_message = reason_msg
+        try:
+            QueueManager().update_status(item.id, "needs_review", error_message=reason_msg)
+        except Exception:
+            pass
     return False
 
 
@@ -508,8 +610,9 @@ class TelethonModeratorPipeline:
         """
         Bazada media yaratishdan oldin majburiy maydonlar va admission gate pre_check tekshiruvi.
         """
-        source_name = getattr(item, "source", None) or "telethon"
-        source_key = getattr(item, "code", None) or getattr(item, "url", None) or title
+        source_name = str(getattr(item, "source", None) or "telethon").lower()
+        raw_sid = getattr(item, "source_id", None) or getattr(item, "code", None) or str(getattr(item, "id", "")).replace(f"{source_name}_", "") or getattr(item, "url", None) or title
+        source_key = f"{source_name}:{raw_sid}" if raw_sid and not str(raw_sid).startswith(f"{source_name}:") else str(raw_sid)
         genres = meta.get("genres")
         if isinstance(genres, str):
             genres_list = [g.strip() for g in genres.split(",") if g.strip()]
@@ -753,27 +856,28 @@ class TelethonModeratorPipeline:
             )
             existing_series_id = dup_check.matched_id
 
-        # 2. Botdan serial kartasi va qismlar menyusini topish
-        is_uzmovie = "uzmovie" in target_bot.lower()
-        is_asilmedia = "asilmedia" in target_bot.lower()
+        # 2. Botdan serial kartasi va qismlar menyusini topish (M3: cross-source fallback YO'Q, faqat aniq kod/hash)
+        is_uzmovie = "uzmovie" in target_bot.lower() or getattr(item, "source", None) == "uzmovi"
+        is_asilmedia = "asilmedia" in target_bot.lower() or getattr(item, "source", None) == "asilmedia"
+        is_kinochilar = "kinochilar" in target_bot.lower() or getattr(item, "source", None) == "kinochilar"
 
-        queries_to_try = [clean_query]
-        if item.original_title and item.original_title.lower() != clean_query.lower():
-            queries_to_try.append(item.original_title)
-        clean_words = [w for w in clean_query.split() if len(w) >= 3]
-        if len(clean_words) >= 2 and clean_words[-1] not in queries_to_try:
-            # Masalan "Afsungar Merlin" -> "Merlin"
-            queries_to_try.append(clean_words[-1])
+        exact_code = ""
+        payload_code = (getattr(item, "payload", None) or {}).get("bot_code") or (getattr(item, "payload", None) or {}).get("code")
+        if payload_code and str(payload_code).strip().isdigit():
+            exact_code = str(payload_code).strip()
+        elif getattr(item, "source_id", None) and str(item.source_id).strip().isdigit():
+            exact_code = str(item.source_id).strip()
+        else:
+            id_str = str(getattr(item, "id", "")).strip()
+            for pref in ("uzmovi_", "asilmedia_", "kinochilar_"):
+                if id_str.startswith(pref):
+                    rem = id_str[len(pref):].strip()
+                    if rem.isdigit():
+                        exact_code = rem
+                    break
 
-        if is_uzmovie and getattr(item, "source", None) == "uzmovi" and re.match(r'^uzmovi_\d+$', str(item.id).strip()):
-            num_match = re.search(r'\d+', str(item.id).replace('uzmovi_', '').strip())
-            if num_match and len(num_match.group(0)) <= 6:
-                queries_to_try = [num_match.group(0)]
-        elif is_asilmedia and getattr(item, "source", None) == "asilmedia" and re.match(r'^asilmedia_\d+$', str(item.id).strip()):
-            num_match = re.search(r'\d+', str(item.id).replace('asilmedia_', '').strip())
-            if num_match and len(num_match.group(0)) <= 6:
-                queries_to_try = [f"/start {num_match.group(0)}"]
-        elif "kinochilar" in target_bot.lower():
+        queries_to_try = []
+        if is_kinochilar:
             start_hash = (getattr(item, "payload", {}) or {}).get("start_hash")
             if not start_hash and getattr(item, "url", None):
                 try:
@@ -786,6 +890,30 @@ class TelethonModeratorPipeline:
                 QueueManager().update_status(item.id, "needs_review", error_message="missing_start_hash")
                 return False
             queries_to_try = [f"/start {start_hash}"]
+        elif is_uzmovie:
+            # M3: Uzmovi uchun nom bo'yicha inline qidiruv taqiqlanadi: faqat aniq kod!
+            if not exact_code or not exact_code.isdigit():
+                logger.warning(f"[@{target_bot}] Uzmovi serial uchun aniq kod yo'q ({item.id}) -> needs_review ('no_exact_code')")
+                item.status = "needs_review"
+                item.reason = "no_exact_code"
+                item.error_message = "no_exact_code"
+                QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
+                return False
+            queries_to_try = [exact_code]
+        elif is_asilmedia:
+            if not exact_code or not exact_code.isdigit():
+                logger.warning(f"[@{target_bot}] Asilmedia serial uchun aniq kod yo'q ({item.id}) -> needs_review ('no_exact_code')")
+                item.status = "needs_review"
+                item.reason = "no_exact_code"
+                item.error_message = "no_exact_code"
+                QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
+                return False
+            queries_to_try = [f"/start {exact_code}"]
+        else:
+            if not exact_code:
+                QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
+                return False
+            queries_to_try = [exact_code]
 
         card_msg = None
         season_entries = []
@@ -834,9 +962,9 @@ class TelethonModeratorPipeline:
 
                 # Agar bot serial emas, to'g'ridan-to'g'ri film kartasini qaytargan bo'lsa (1080p, 720p, 480p):
                 if m.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in m.buttons for b in row):
-                    logger.info(f"ℹ️ '{item.title}' botda serial emas, film sifatida joylashtirilgan. Kino sikliga yo'naltirilmoqda...")
-                    item.media_type = "movie"
-                    return await self.run_single_movie(item=item, target_bot=target_bot)
+                    logger.warning(f"⚠️ [M6 ZIDDIYAT]: '{item.title}' serial sifatida keldi, ammo donor bot bitta film (sifat tugmalari) qaytardi -> needs_review")
+                    QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:item=series,donor=movie")
+                    return False
 
                 # Fasllar (1-fasl, 2-fasl) yoki qismlar tugmalarini aniqlash
                 for row_idx, row in enumerate(m.buttons or []):
@@ -860,9 +988,9 @@ class TelethonModeratorPipeline:
         if not card_msg or not card_msg.buttons:
             async for nm in self.client.iter_messages(target_bot, limit=4):
                 if nm.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in nm.buttons for b in row):
-                    logger.info(f"ℹ️ '{item.title}' botda film sifatida topildi. Kino sikliga yo'naltirilmoqda...")
-                    item.media_type = "movie"
-                    return await self.run_single_movie(item=item, target_bot=target_bot)
+                    logger.warning(f"⚠️ [M6 ZIDDIYAT]: '{item.title}' serial sifatida keldi, ammo donor bot film qaytardi -> needs_review")
+                    QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:item=series,donor=movie")
+                    return False
                 if nm.buttons and any(b for row in nm.buttons for b in row if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()):
                     card_msg = nm
                     for row_idx, row in enumerate(nm.buttons):
@@ -877,9 +1005,9 @@ class TelethonModeratorPipeline:
             # Tekshiramiz: balki botda serial emas, to'g'ridan-to'g'ri kino sifati tugmalari (1080p, 720p, 480p) chiqqandir?
             for m_chk in recent_msgs:
                 if m_chk.buttons and any(any(q in b.text for q in ["1080", "720", "480"]) for row in m_chk.buttons for b in row):
-                    logger.info(f"ℹ️ '{item.title}' botda serial emas, film sifatida joylashtirilgan. Kino sikliga yo'naltirilmoqda...")
-                    item.media_type = "movie"
-                    return await self.run_single_movie(item=item, target_bot=target_bot)
+                    logger.warning(f"⚠️ [M6 ZIDDIYAT]: '{item.title}' serial sifatida keldi, ammo donor bot film qaytardi -> needs_review")
+                    QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:item=series,donor=movie")
+                    return False
 
             for m in recent_msgs:
                 if m.buttons and any("tayyor bo'lganda" in b.text.lower() for row in m.buttons for b in row):
@@ -887,12 +1015,6 @@ class TelethonModeratorPipeline:
                     logger.warning(f"[@{target_bot}] {err_msg}")
                     QueueManager().update_status(item.id, "failed", error_message=err_msg)
                     return False
-            if is_uzmovie:
-                logger.info(
-                    f"⚠️ [@{target_bot}] dan '{item.title}' bo'yicha serial tugmalari olinmadi. "
-                    f"Zaxira sifatida @asilmediabot orqali qidirilmoqda..."
-                )
-                return await self.run_single_series(item=item, target_bot="asilmediabot")
 
             logger.warning(f"[@{target_bot}] Serial qismlari yoki fasllari tugmalari topilmadi!")
             QueueManager().update_status(item.id, "failed", error_message=f"[@{target_bot}] Serial tugmalari topilmadi")
@@ -913,11 +1035,18 @@ class TelethonModeratorPipeline:
             caption=caption,
             media_type=getattr(item, "media_type", "series")
         )
+
+        # M6: Tur ziddiyatini tekshirish (donor serial tugmalari berdi, TMDb esa movie qaytardi)
+        if meta.get("tmdb_content_type") == "movie":
+            logger.warning(f"⚠️ [M6 ZIDDIYAT]: Donor serial tugmalarini berdi, ammo TMDb 'movie' qaytardi ('{item.title}') -> needs_review")
+            QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:donor=series,tmdb=movie")
+            return False
+
         title = meta["title"]
         year = meta["release_year"] or item.year
         year_str = f" ({year})" if year else ""
 
-        # 4. Bazada serial va Forum Topic yaratish / tekshirish
+        # 4. Bazada mavjud serialni tekshirish va pre_check (yangi serial DB ga S1:E1 final_check dan o'tmaguncha YOZILMAYDI - M1/M2)
         series_id = existing_series_id
 
         # Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
@@ -927,8 +1056,12 @@ class TelethonModeratorPipeline:
                 year=year,
                 original_title=meta.get("original_title"),
                 media_type="series",
-                tmdb_id=meta.get("tmdb_id")
+                tmdb_id=meta.get("tmdb_id"),
+                url=getattr(item, "url", None)
             )
+            if sec_dup.match_type == "possible_duplicate":
+                QueueManager().update_status(item.id, "needs_review", error_message=sec_dup.reason or "possible_duplicate")
+                return False
             if (sec_dup.is_duplicate or sec_dup.is_incomplete) and sec_dup.matched_id:
                 logger.info(
                     f"ℹ️ Serial (boyitilgandan so'ng) bazada topildi: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). "
@@ -963,6 +1096,10 @@ class TelethonModeratorPipeline:
 
         thread_id = None
         target_chat = AUTO_TOPIC_CHAT_ID
+        target_chat_int = int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and str(target_chat).lstrip('-').isdigit())) else 0
+        src_name = str(getattr(item, "source", "scraper") or "scraper").lower()
+        src_id = str(getattr(item, "source_id", None) or str(getattr(item, "id", "")).replace(f"{src_name}_", ""))
+        unified_source_key = f"{src_name}:{src_id}"
 
         async with async_session_factory() as session:
             series_repo = SeriesRepository(session)
@@ -987,7 +1124,7 @@ class TelethonModeratorPipeline:
                             src = SourceModel(
                                 name=title,
                                 type="superguruh",
-                                chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
+                                chat_id=target_chat_int,
                                 topic_id=int(thread_id)
                             )
                             session.add(src)
@@ -997,16 +1134,15 @@ class TelethonModeratorPipeline:
 
                 if db_series and meta.get("is_18_plus") and not db_series.is_18_plus:
                     db_series.is_18_plus = True
-                    cat_18 = next((c for c in db_series.categories if c.name == "18+" or c.slug == "18-plus"), None)
-                    if not cat_18:
-                        c18_res = await session.execute(select(CategoryModel).where(CategoryModel.id == 33))
-                        c18_model = c18_res.scalar_one_or_none()
-                        if c18_model and c18_model not in db_series.categories:
-                            db_series.categories.append(c18_model)
                     await session.commit()
                     logger.info(f"🔞 Mavjud serial 18+ sifatida belgilandi: '{title}' (ID: {series_id})")
+            else:
+                # M1/M2: Yangi serial uchun faqat pre_check qilamiz, DB ga yozmaymiz!
+                if not season_entries or season_entries[0][0] != 1:
+                    logger.warning(f"🛑 [M2]: Yangi serial '{title}' da 1-mavsum topilmadi -> rejected ('missing_s1_e1')")
+                    QueueManager().update_status(item.id, "rejected", error_message="missing_s1_e1")
+                    return False
 
-            if not series_id:
                 pre_ok = await self._validate_and_pre_check(
                     session=session,
                     kind="series",
@@ -1017,75 +1153,7 @@ class TelethonModeratorPipeline:
                 if not pre_ok:
                     return False
 
-                topic_name = f"🎬 {title} (Serial){year_str}"
-                logger.info(f"ℹ️ Forum Topic ochilmoqda: '{topic_name}'...")
-                thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
-                if not thread_id:
-                    logger.error("Serial uchun Topic ochib bo'lmadi!")
-                    return False
-                logger.info(f"✅ Topic ochildi! Thread ID: {thread_id}")
-
-                # Banner xabarini Topic ichiga yuborish
-                rating_str = f"⭐ <b>IMDb:</b> {meta['imdb_rating']}/10\n" if meta.get("imdb_rating") else ""
-                director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
-                cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
-                trailer_str = f"🍿 <b>Treyler:</b> <a href=\"{meta['trailer_url']}\">YouTube</a>\n" if meta.get("trailer_url") else ""
-
-                welcome_text = (
-                    f"🎬 <b>{html.escape(title)}</b> (Serial){year_str}\n"
-                    f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Serial')}\n"
-                    f"{rating_str}{director_str}{cast_str}{trailer_str}"
-                    f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
-                    f"⬇️ <i>Serial qismlari shu yerga yuklanmoqda...</i>"
-                )
-
-                if meta.get("poster_url"):
-                    try:
-                        await self.client.send_file(
-                            target_chat,
-                            file=meta["poster_url"],
-                            caption=welcome_text,
-                            reply_to=thread_id,
-                            parse_mode="html"
-                        )
-                    except Exception:
-                        await self.client.send_message(target_chat, message=welcome_text, reply_to=thread_id, parse_mode="html")
-                else:
-                    await self.client.send_message(target_chat, message=welcome_text, reply_to=thread_id, parse_mode="html")
-
-                # Source yaratish
-                source = SourceModel(
-                    name=title,
-                    type="superguruh",
-                    chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
-                    topic_id=int(thread_id) if thread_id else None
-                )
-                session.add(source)
-                await session.flush()
-
-                # Series yaratish
-                series_data = SeriesCreate(
-                    title=title,
-                    description=meta.get("description"),
-                    poster_url=meta.get("poster_url"),
-                    trailer_url=meta.get("trailer_url"),
-                    imdb_rating=meta.get("imdb_rating"),
-                    tmdb_id=meta.get("tmdb_id"),
-                    release_year=year,
-                    director=meta.get("director"),
-                    cast=meta.get("cast"),
-                    category_ids=meta.get("category_ids"),
-                    page_ids=resolve_page_ids(item, meta),
-                    source_id=source.id,
-                    status="ongoing",
-                    is_18_plus=bool(meta.get("is_18_plus", False))
-                )
-                created_series = await series_service.create_series(series_data)
-                series_id = created_series.id
-                await session.commit()
-                logger.info(f"✅ Serial bazada muvaffaqiyatli yaratildi (Series ID: {series_id}, 18+: {series_data.is_18_plus})")
-
-        # 5. Har bir mavsum va qismlarni ketma-ket yuklash
+        # 5. Har bir mavsum va qismlarni ketma-ket yuklash (M2: S1:E1 o'tmasa serial rad etiladi)
         uploaded_count = 0
         storage_chat = STORAGE_CHANNEL_ID
 
@@ -1094,23 +1162,15 @@ class TelethonModeratorPipeline:
             logger.info(f"📺 MAVSUM {s_num}: '{s_b_name}'")
             logger.info(f"==========================================")
 
-            # Bazada Mavsumni olish yoki yaratish
+            # Agar serial allaqachon bazada bo'lsa, mavjud mavsumni tekshiramiz (yangi mavsum faqat qism final_check dan o'tgach yaratiladi)
             season_id = None
-            async with async_session_factory() as session:
-                series_repo = SeriesRepository(session)
-                series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
-                all_seasons = await series_repo.get_seasons_by_series(series_id)
-                matched_season = next((s for s in all_seasons if s.season_number == s_num), None)
-                if not matched_season:
-                    created_season = await series_service.create_season(SeasonCreate(
-                        series_id=series_id,
-                        season_number=s_num,
-                        title=f"{s_num}-Mavsum"
-                    ))
-                    season_id = created_season.id
-                else:
-                    season_id = matched_season.id
-                await session.commit()
+            if series_id is not None:
+                async with async_session_factory() as session:
+                    series_repo = SeriesRepository(session)
+                    all_seasons = await series_repo.get_seasons_by_series(series_id)
+                    matched_season = next((s for s in all_seasons if s.season_number == s_num), None)
+                    if matched_season:
+                        season_id = matched_season.id
 
             # Agar mavsum tugmalari mavjud bo'lsa
             if len(season_entries) > 1 or s_r_idx is not None:
@@ -1224,20 +1284,30 @@ class TelethonModeratorPipeline:
 
             if not episodes_map:
                 logger.warning(f"⚠️ {s_num}-mavsum uchun raqamlangan qism tugmalari topilmadi.")
+                if series_id is None and s_num == 1:
+                    QueueManager().update_status(item.id, "rejected", error_message="missing_s1_e1")
+                    return False
                 continue
+
+            # M2: S1:E1 bo'lmasa yangi serialni 2-qismdan boshlab yozish taqiqlanadi!
+            if series_id is None and s_num == 1 and 1 not in episodes_map:
+                logger.warning(f"🛑 [M2]: Yangi serial '{title}' da 1-qism (S1:E1) topilmadi -> rejected ('missing_s1_e1')")
+                QueueManager().update_status(item.id, "rejected", error_message="missing_s1_e1")
+                return False
 
             logger.info(f"🎬 {s_num}-mavsumda {len(episodes_map)} ta qism topildi: {sorted(list(episodes_map.keys()))}")
             print(f"  🎬 [{s_num}-mavsum] Jami {len(episodes_map)} ta qism topildi. Yuklash boshlanmoqda...", flush=True)
 
             # Bazada mavjud qismlarni aniqlash
             existing_eps = set()
-            async with async_session_factory() as session:
-                series_repo = SeriesRepository(session)
-                s_model = await series_repo.get_season_by_id(season_id)
-                if s_model and s_model.episodes:
-                    for ep in s_model.episodes:
-                        if ep.translations:
-                            existing_eps.add(ep.episode_number)
+            if season_id is not None:
+                async with async_session_factory() as session:
+                    series_repo = SeriesRepository(session)
+                    s_model = await series_repo.get_season_by_id(season_id)
+                    if s_model and s_model.episodes:
+                        for ep in s_model.episodes:
+                            if ep.translations:
+                                existing_eps.add(ep.episode_number)
 
             total_eps_in_season = len(episodes_map)
 
@@ -1304,6 +1374,9 @@ class TelethonModeratorPipeline:
 
                 if target_r_idx is None:
                     logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism tugmasi menyuda topilmadi, o'tkazib yuborildi.")
+                    if series_id is None and s_num == 1 and ep_num == 1:
+                        QueueManager().update_status(item.id, "rejected", error_message="s1_e1_button_not_found")
+                        return False
                     continue
 
                 logger.info(f"\n--- 📺 {s_num}-Mavsum, {ep_num}-qism yuklanmoqda ({btn_name}) [{uploaded_count + 1}/{total_eps_in_season}] ---")
@@ -1344,7 +1417,7 @@ class TelethonModeratorPipeline:
                                 for nm in msgs:
                                     if is_bot_flood_text(nm.text):
                                         return True
-                                    if matches_series_video(nm, title, ep_num, total_eps_in_season):
+                                    if matches_series_video(nm, title, ep_num, total_eps_in_season, item=item):
                                         return True
                                     if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
                                         return True
@@ -1367,7 +1440,7 @@ class TelethonModeratorPipeline:
                             continue
 
                         for nm in ep_reply_msgs:
-                            if matches_series_video(nm, title, ep_num, total_eps_in_season):
+                            if matches_series_video(nm, title, ep_num, total_eps_in_season, item=item):
                                 ep_video_msg = nm
                                 break
                             if nm.buttons and any(b for row in nm.buttons for b in row if any(q in b.text.lower() for q in ["720", "1080", "480"])):
@@ -1398,7 +1471,7 @@ class TelethonModeratorPipeline:
 
                                 def has_final_video(msgs):
                                     return any(
-                                        is_bot_flood_text(vm.text) or matches_series_video(vm, title, ep_num, total_eps_in_season)
+                                        is_bot_flood_text(vm.text) or matches_series_video(vm, title, ep_num, total_eps_in_season, item=item)
                                         for vm in msgs
                                     )
 
@@ -1409,7 +1482,7 @@ class TelethonModeratorPipeline:
                                     await asyncio.sleep(v_flood)
 
                                 for vm in v_list:
-                                    if matches_series_video(vm, title, ep_num, total_eps_in_season):
+                                    if matches_series_video(vm, title, ep_num, total_eps_in_season, item=item):
                                         ep_video_msg = vm
                                         break
 
@@ -1417,7 +1490,7 @@ class TelethonModeratorPipeline:
                             async for fallback_m in self.client.iter_messages(target_bot, limit=6):
                                 if fallback_m.id <= click_id:
                                     break
-                                if matches_series_video(fallback_m, title, ep_num, total_eps_in_season):
+                                if matches_series_video(fallback_m, title, ep_num, total_eps_in_season, item=item):
                                     ep_video_msg = fallback_m
                                     logger.info(f"ℹ️ Zaxiradagi xabarlardan {ep_num}-qism videosi topildi (Msg ID: {ep_video_msg.id})")
                                     break
@@ -1425,139 +1498,347 @@ class TelethonModeratorPipeline:
                         if ep_video_msg:
                             break
 
+                        # 4f: Agar matches_series_video nom mos kelmagani sababli needs_review qo'ygan bo'lsa
+                        if getattr(item, "status", None) == "needs_review":
+                            QueueManager().update_status(item.id, "needs_review", error_message=getattr(item, "reason", "series_video_title_mismatch"))
+                            return False
+
                         logger.warning(f"⚠️ {s_num}-Mavsum, {ep_num}-qism ({ep_attempt + 1}/3) urinishda olinmadi, 2.5 soniyadan so'ng qayta uriniladi...")
                         await asyncio.sleep(2.5)
                         card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
 
                     if not ep_video_msg:
                         logger.warning(f"❌ {s_num}-Mavsum, {ep_num}-qism videosi botdan qabul qilinmadi!")
+                        if getattr(item, "status", None) == "needs_review":
+                            QueueManager().update_status(item.id, "needs_review", error_message=getattr(item, "reason", "series_video_title_mismatch"))
+                            return False
+                        if series_id is None and s_num == 1 and ep_num == 1:
+                            QueueManager().update_status(item.id, "rejected", error_message="s1_e1_video_not_received")
+                            return False
                         continue
 
-                    # Topic ichiga yuklash
-                    ep_caption = (
-                        f"🎬 <b>{html.escape(title)}</b>\n"
-                        f"🔢 <b>{s_num}-Mavsum, {ep_num}-Qism</b>"
+                    # 4d: Fasl/qism raqami donor tugma matni + fayl nomi + caption'dan, ziddiyat bo'lsa needs_review
+                    v_fname = getattr(getattr(ep_video_msg, "file", None), "name", None) or ""
+                    v_cap = getattr(ep_video_msg, "text", None) or getattr(ep_video_msg, "message", None) or ""
+                    cons_ok, cons_reason = verify_season_episode_consistency(
+                        btn_season=s_num,
+                        btn_episode=ep_num,
+                        filename=v_fname,
+                        caption=v_cap,
                     )
-                    topic_msg = await self._upload_video_to_chat(
-                        video_msg=ep_video_msg,
-                        target_chat=target_chat,
-                        reply_to=thread_id,
-                        caption=ep_caption
-                    )
-                    if not topic_msg:
-                        logger.error(f"❌ {ep_num}-qism Topicga yuklanmadi!")
-                        continue
+                    if not cons_ok:
+                        logger.warning(f"⚠️ [4d ZIDDIYAT]: {cons_reason} -> needs_review")
+                        QueueManager().update_status(item.id, "needs_review", error_message=cons_reason)
+                        return False
 
-                    # Storage kanalga nusxalash
+                    # 1. Avval Storage kanalga yuklash (M1/M2)
                     storage_caption = (
                         f"🎬 <b>{html.escape(title)}</b>\n"
                         f"🔢 <b>{s_num}-Mavsum, {ep_num}-Qism</b>\n"
                         + (f"📅 <b>Yili:</b> {year}\n" if year else "")
                     )
                     storage_msg = await self._upload_video_to_chat(
-                        video_msg=topic_msg,
+                        video_msg=ep_video_msg,
                         target_chat=storage_chat,
                         reply_to=None,
                         caption=storage_caption
                     )
                     if not storage_msg:
-                        logger.error(f"❌ {ep_num}-qism Storage kanalga nusxalanmadi!")
+                        logger.error(f"❌ {ep_num}-qism Storage kanalga yuklanmadi!")
+                        if series_id is None and s_num == 1 and ep_num == 1:
+                            QueueManager().update_status(item.id, "failed", error_message="s1_e1_storage_upload_failed")
+                            return False
                         continue
 
-                    # Bazada Episode yaratish va bog'lash
-                    async with async_session_factory() as session:
-                        series_repo = SeriesRepository(session)
-                        series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+                    ep_bot_file_id = None
+                    try:
+                        from telethon.utils import pack_bot_file_id
+                        if storage_msg and storage_msg.media:
+                            ep_bot_file_id = pack_bot_file_id(storage_msg.media)
+                    except Exception:
+                        pass
+                    if not ep_bot_file_id and getattr(storage_msg, "id", None):
+                        ep_bot_file_id = getattr(storage_msg, "file_id", None) or f"tg_ep_{storage_msg.id}"
 
-                        ep_entity = await series_service.create_episode(EpisodeCreate(
-                            season_id=season_id,
-                            episode_number=ep_num,
-                            title=f"{ep_num}-qism"
-                        ))
-                        ep_id = ep_entity.id
-
-                        ep_bot_file_id = None
-                        try:
-                            from telethon.utils import pack_bot_file_id
-                            if storage_msg and storage_msg.media:
-                                ep_bot_file_id = pack_bot_file_id(storage_msg.media)
-                        except Exception:
-                            pass
-
-                        await series_repo.add_episode_translation(
-                            episode_id=ep_id,
-                            language="O'zbekcha",
-                            telegram_file_id=ep_bot_file_id,
-                            storage_channel_message_id=storage_msg.id
-                        )
-                        fin_payload = {
-                            "telegram_file_id": ep_bot_file_id,
-                            "storage_channel_message_id": storage_msg.id,
-                            "language": "O'zbekcha",
-                            "season_number": s_num,
-                            "episode_number": ep_num,
-                            "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
-                        }
-                        f_ok, f_defects = final_check("episode", fin_payload, fin_payload)
-                        if f_ok:
-                            cur_series = await session.get(SeriesModel, series_id)
-                            if cur_series and cur_series.publish_status == "pending":
-                                await promote_to_published(
-                                    session,
-                                    cur_series,
-                                    source=getattr(item, 'source', 'telethon'),
-                                    source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
-                                )
-                        else:
+                    ep_duration = extract_message_duration(storage_msg) or extract_message_duration(ep_video_msg)
+                    ep_size = (
+                        getattr(getattr(storage_msg, "file", None), "size", None)
+                        or getattr(getattr(ep_video_msg, "file", None), "size", None)
+                    )
+                    fin_payload = {
+                        "telegram_file_id": ep_bot_file_id,
+                        "storage_channel_message_id": getattr(storage_msg, "id", None),
+                        "language": "O'zbekcha",
+                        "season_number": s_num,
+                        "episode_number": ep_num,
+                        "duration": ep_duration,
+                        "file_size": ep_size,
+                    }
+                    f_ok, f_defects = final_check("episode", fin_payload, fin_payload)
+                    if not f_ok:
+                        logger.warning(f"🛑 Episode S{s_num}:E{ep_num} final_check rad etildi: {f_defects}")
+                        async with async_session_factory() as session:
                             await record_rejection(
                                 session=session,
                                 media_type="episode",
-                                source=getattr(item, 'source', 'telethon'),
-                                source_key=f"ep_{series_id}_{s_num}_{ep_num}",
+                                source=src_name,
+                                source_key=f"{unified_source_key}:S{s_num}E{ep_num}",
                                 title=f"{title} (S{s_num}:E{ep_num})",
                                 payload=fin_payload,
-                                defects=f_defects
+                                defects=f_defects,
                             )
-                        await session.commit()
+                            await session.commit()
+                        if series_id is None and s_num == 1 and ep_num == 1:
+                            d_codes = ",".join(d.get("code", "unknown") for d in f_defects)
+                            QueueManager().update_status(item.id, "rejected", error_message=f"s1_e1_final_check_failed:{d_codes}")
+                            return False
+                        continue
 
-                        # Obunachilarga yangi qism xabarnomasi
-                        try:
-                            from app.api.v1.series_subscriptions import broadcast_new_episode_notification
-                            await broadcast_new_episode_notification(
-                                db=session,
-                                series_id=series_id,
-                                season_number=s_num,
-                                episode_number=ep_num,
-                                display_code=ep_entity.display_code
+                    # 2. Topic ochish (agar yangi serial bo'lsa, S1:E1 final_check dan o'tgandan KEYIN!) va Topicga yuborish
+                    created_new_topic_now = False
+                    if not thread_id:
+                        topic_name = f"🎬 {title} (Serial){year_str}"
+                        logger.info(f"ℹ️ Forum Topic ochilmoqda: '{topic_name}'...")
+                        thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
+                        if not thread_id:
+                            logger.error("Serial uchun Topic ochib bo'lmadi!")
+                            if series_id is None and s_num == 1 and ep_num == 1:
+                                QueueManager().update_status(item.id, "failed", error_message="topic_creation_failed")
+                                return False
+                            continue
+                        created_new_topic_now = True
+                        QueueManager().update_status(
+                            item.id,
+                            "in_progress",
+                            topic_chat_id=target_chat_int,
+                            topic_id=int(thread_id),
+                            storage_message_id=int(storage_msg.id),
+                        )
+
+                        rating_str = f"⭐ <b>IMDb:</b> {meta['imdb_rating']}/10\n" if meta.get("imdb_rating") else ""
+                        director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
+                        cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
+                        trailer_str = f"🍿 <b>Treyler:</b> <a href=\"{meta['trailer_url']}\">YouTube</a>\n" if meta.get("trailer_url") else ""
+                        welcome_text = (
+                            f"🎬 <b>{html.escape(title)}</b> (Serial){year_str}\n"
+                            f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Serial')}\n"
+                            f"{rating_str}{director_str}{cast_str}{trailer_str}"
+                            f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta.get('description') or '')}</i>\n\n"
+                            f"⬇️ <i>Serial qismlari shu yerga yuklanmoqda...</i>"
+                        )
+                        if meta.get("poster_url"):
+                            try:
+                                await self.client.send_file(
+                                    target_chat,
+                                    file=meta["poster_url"],
+                                    caption=welcome_text,
+                                    reply_to=thread_id,
+                                    parse_mode="html"
+                                )
+                            except Exception:
+                                await self.client.send_message(target_chat, message=welcome_text, reply_to=thread_id, parse_mode="html")
+                        else:
+                            await self.client.send_message(target_chat, message=welcome_text, reply_to=thread_id, parse_mode="html")
+
+                    ep_caption = (
+                        f"🎬 <b>{html.escape(title)}</b>\n"
+                        f"🔢 <b>{s_num}-Mavsum, {ep_num}-Qism</b>"
+                    )
+                    topic_msg = await self._upload_video_to_chat(
+                        video_msg=storage_msg,
+                        target_chat=target_chat,
+                        reply_to=thread_id,
+                        caption=ep_caption
+                    )
+                    if not topic_msg:
+                        logger.error(f"❌ {ep_num}-qism Topicga yuklanmadi!")
+                        if series_id is None and s_num == 1 and ep_num == 1:
+                            if created_new_topic_now:
+                                await self._delete_topic_safe(target_chat, thread_id)
+                            QueueManager().update_status(item.id, "failed", error_message=f"topic_video_upload_failed (topic_id={thread_id})")
+                            return False
+                        continue
+
+                    # 3. M1/M2 Atomik DB tranzaksiya:
+                    # S1:E1 bo'lsa va series_id None bo'lsa -> Source + Series(published) + Season(1) + Episode(1) + Translation bitta tranzaksiyada!
+                    # Keyingi qismlar -> o'z tranzaksiyasida (avval (season_id, ep_num) mavjudligi tekshiriladi - 4d)
+                    ep_entity = None
+                    try:
+                        async with async_session_factory() as session:
+                            from app.core.admission_gate import check_file_belongs_to_multiple_titles
+                            multi_defect = await check_file_belongs_to_multiple_titles(
+                                session=session,
+                                telegram_file_id=ep_bot_file_id,
+                                storage_channel_message_id=storage_msg.id,
                             )
-                        except Exception as sub_err:
-                            logger.warning(f"Error broadcasting episode notification: {sub_err}")
+                            if multi_defect:
+                                await record_rejection(
+                                    session=session,
+                                    media_type="episode",
+                                    source=src_name,
+                                    source_key=f"{unified_source_key}:S{s_num}E{ep_num}",
+                                    title=f"{title} (S{s_num}:E{ep_num})",
+                                    payload=fin_payload,
+                                    defects=[multi_defect],
+                                )
+                                await session.commit()
+                                if series_id is None and s_num == 1 and ep_num == 1:
+                                    if created_new_topic_now:
+                                        await self._delete_topic_safe(target_chat, thread_id)
+                                    QueueManager().update_status(item.id, "rejected", error_message="file_belongs_to_multiple_titles")
+                                    return False
+                                continue
+
+                            series_repo = SeriesRepository(session)
+                            series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
+
+                            if series_id is None:
+                                source = SourceModel(
+                                    name=title,
+                                    type="superguruh",
+                                    chat_id=target_chat_int,
+                                    topic_id=int(thread_id) if thread_id else None
+                                )
+                                session.add(source)
+                                await session.flush()
+
+                                series_data = SeriesCreate(
+                                    title=title,
+                                    description=meta.get("description"),
+                                    poster_url=meta.get("poster_url"),
+                                    trailer_url=meta.get("trailer_url"),
+                                    imdb_rating=meta.get("imdb_rating"),
+                                    tmdb_id=meta.get("tmdb_id"),
+                                    release_year=year,
+                                    director=meta.get("director"),
+                                    cast=meta.get("cast"),
+                                    category_ids=meta.get("category_ids"),
+                                    page_ids=resolve_page_ids(item, meta),
+                                    source_id=source.id,
+                                    status="ongoing",
+                                    publish_status="published",
+                                    is_18_plus=bool(meta.get("is_18_plus", False))
+                                )
+                                created_series = await series_service.create_series(series_data)
+                                series_id = created_series.id
+
+                                created_season = await series_service.create_season(SeasonCreate(
+                                    series_id=series_id,
+                                    season_number=s_num,
+                                    title=f"{s_num}-Mavsum"
+                                ))
+                                season_id = created_season.id
+                            elif season_id is None:
+                                all_seasons = await series_repo.get_seasons_by_series(series_id)
+                                matched_season = next((s for s in all_seasons if s.season_number == s_num), None)
+                                if not matched_season:
+                                    created_season = await series_service.create_season(SeasonCreate(
+                                        series_id=series_id,
+                                        season_number=s_num,
+                                        title=f"{s_num}-Mavsum"
+                                    ))
+                                    season_id = created_season.id
+                                else:
+                                    season_id = matched_season.id
+
+                            # 4d: Qism DB'ga yozilishidan oldin (season_id, episode_number) mavjudligi tekshirilsin
+                            from sqlalchemy import select as sa_select
+                            dup_ep_stmt = sa_select(EpisodeModel.id).where(
+                                EpisodeModel.season_id == season_id,
+                                EpisodeModel.episode_number == ep_num
+                            ).limit(1)
+                            dup_ep_res = await session.execute(dup_ep_stmt)
+                            if dup_ep_res.scalar_one_or_none():
+                                logger.info(f"⏭ DB tekshiruv: Season ID={season_id}, Ep={ep_num} allaqachon mavjud. O'tkazib yuborildi.")
+                                existing_eps.add(ep_num)
+                                continue
+
+                            ep_entity = await series_service.create_episode(EpisodeCreate(
+                                season_id=season_id,
+                                episode_number=ep_num,
+                                title=f"{ep_num}-qism",
+                                duration=max(1, int(ep_duration // 60)) if ep_duration and ep_duration >= 60 else ep_duration
+                            ))
+                            ep_id = ep_entity.id
+
+                            await series_repo.add_episode_translation(
+                                episode_id=ep_id,
+                                language="O'zbekcha",
+                                telegram_file_id=ep_bot_file_id,
+                                storage_channel_message_id=storage_msg.id
+                            )
+                            cur_series = await session.get(SeriesModel, series_id)
+                            if cur_series:
+                                await promote_to_published(
+                                    session,
+                                    cur_series,
+                                    source=src_name,
+                                    source_key=unified_source_key
+                                )
+                            await session.commit()
+
+                            # Obunachilarga yangi qism xabarnomasi
+                            try:
+                                from app.api.v1.series_subscriptions import broadcast_new_episode_notification
+                                await broadcast_new_episode_notification(
+                                    db=session,
+                                    series_id=series_id,
+                                    season_number=s_num,
+                                    episode_number=ep_num,
+                                    display_code=ep_entity.display_code
+                                )
+                            except Exception as sub_err:
+                                logger.warning(f"Error broadcasting episode notification: {sub_err}")
+                    except Exception as db_ep_err:
+                        logger.error(f"❌ S{s_num}:E{ep_num} atomik DB tranzaksiyada xatolik: {db_ep_err}")
+                        if series_id is None and s_num == 1 and ep_num == 1:
+                            if created_new_topic_now:
+                                await self._delete_topic_safe(target_chat, thread_id)
+                            QueueManager().update_status(item.id, "failed", error_message=f"db_transaction_failed:{db_ep_err}")
+                            return False
+                        continue
 
                     try:
                         await delete_cache_pattern("cache:series:*")
                     except Exception:
                         pass
 
+                    if uploaded_count == 0 and hasattr(self.dup_checker, "record_added"):
+                        try:
+                            self.dup_checker.record_added(
+                                item_id=series_id,
+                                title=title,
+                                original_title=meta.get("original_title"),
+                                year=year,
+                                media_type="series",
+                                tmdb_id=meta.get("tmdb_id"),
+                                url=getattr(item, "url", None),
+                            )
+                        except Exception:
+                            pass
+
                     uploaded_count += 1
+                    existing_eps.add(ep_num)
                     logger.info(f"✅ {s_num}-Mavsum, {ep_num}-qism to'liq yuklandi va bazaga bog'landi! (Storage Msg: {storage_msg.id})")
                     print(f"  ✅ [{s_num}-mavsum] {ep_num}-qism saqlandi va ulandi ({uploaded_count}/{total_eps_in_season})", flush=True)
 
                     # Topic ichiga tasdiqlash xabari
-                    confirm_text = (
-                        f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi.\n"
-                        f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
-                        f"📺 Serial kodi: <code>s_{series_id}</code>"
-                    )
-                    try:
-                        reply_target = topic_msg.id if topic_msg else thread_id
-                        await self.client.send_message(
-                            target_chat,
-                            message=confirm_text,
-                            reply_to=reply_target,
-                            parse_mode="html"
+                    if ep_entity:
+                        confirm_text = (
+                            f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi.\n"
+                            f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                            f"📺 Serial kodi: <code>s_{series_id}</code>"
                         )
-                    except Exception as conf_err:
-                        logger.warning(f"Tasdiqlash xabari yuborilmadi: {conf_err}")
+                        try:
+                            reply_target = topic_msg.id if topic_msg else thread_id
+                            await self.client.send_message(
+                                target_chat,
+                                message=confirm_text,
+                                reply_to=reply_target,
+                                parse_mode="html"
+                            )
+                        except Exception as conf_err:
+                            logger.warning(f"Tasdiqlash xabari yuborilmadi: {conf_err}")
 
                     # Navbat statusini yangilash
                     try:
@@ -1565,7 +1846,11 @@ class TelethonModeratorPipeline:
                             item.id,
                             "in_progress",
                             downloaded_episodes=uploaded_count,
-                            episodes_count=total_eps_in_season
+                            episodes_count=total_eps_in_season,
+                            topic_chat_id=target_chat_int,
+                            topic_id=int(thread_id) if thread_id else None,
+                            storage_message_id=int(storage_msg.id),
+                            media_id=int(series_id) if series_id else None,
                         )
                     except Exception:
                         pass
@@ -1605,19 +1890,16 @@ class TelethonModeratorPipeline:
                 except Exception:
                     pass
 
-        if uploaded_count == 0 and not existing_series_id and series_id:
-            logger.warning(f"⚠️ Serialga birorta ham qism yuklanmadi. Baza toza saqlanishi uchun Serial (ID: {series_id}) o'chirilmoqda...")
-            try:
-                from sqlalchemy import text
-                async with async_session_factory() as cleanup_session:
-                    await cleanup_session.execute(text("DELETE FROM series_category WHERE series_id = :sid"), {"sid": series_id})
-                    await cleanup_session.execute(text("DELETE FROM page_series WHERE series_id = :sid"), {"sid": series_id})
-                    await cleanup_session.execute(text("DELETE FROM seasons WHERE series_id = :sid"), {"sid": series_id})
-                    await cleanup_session.execute(text("DELETE FROM series WHERE id = :sid"), {"sid": series_id})
-                    await cleanup_session.commit()
-                logger.info(f"🧹 Chala qolgan serial (ID: {series_id}) tozalandi.")
-            except Exception as se_err:
-                logger.warning(f"Chala serialni tozalashda xatolik: {se_err}")
+        if uploaded_count > 0:
+            QueueManager().update_status(
+                item.id,
+                "published",
+                topic_chat_id=target_chat_int,
+                topic_id=int(thread_id) if thread_id else None,
+                media_id=int(series_id) if series_id else None,
+            )
+        elif series_id is not None and existing_series_id is not None:
+            QueueManager().update_status(item.id, "already_exists", error_message="Barcha qismlar allaqachon mavjud")
 
         logger.info(f"\n🎉 Serial yakunlandi: {title} | {uploaded_count} ta yangi qism yuklandi.")
         print(f"  🎉 Serial yakunlandi: {title} | {uploaded_count} ta yangi qism yuklandi.", flush=True)
@@ -1671,16 +1953,19 @@ class TelethonModeratorPipeline:
         print(f"  🔍 '{item.title}' bo'yicha @{target_bot} botidan video qidirilmoqda...", flush=True)
         video_msg = await self._fetch_video(item=item, target_bot=target_bot)
         if not video_msg:
-            # Agar bot serial tugmalarini qaytargan bo'lsa, avtomatik serial deb hisoblab serial siklini bajaramiz
+            if getattr(item, "status", None) == "needs_review":
+                return False
+
+            # M6: Agar item movie sifatida kelgan bo'lsa, ammo donor bot serial tugmalarini qaytargan bo'lsa -> needs_review
             if self._last_card_msg and self._last_card_msg.buttons:
                 has_eps = any(
                     b for row in self._last_card_msg.buttons for b in row
                     if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()
                 )
                 if has_eps:
-                    logger.info(f"ℹ️ '{item.title}' aslida serial ekanligi aniqlandi! Serial sikliga yo'naltirilmoqda...")
-                    item.media_type = "series"
-                    return await self.run_single_series(item=item, target_bot=target_bot)
+                    logger.warning(f"⚠️ [M6 ZIDDIYAT]: '{item.title}' kino sifatida keldi, ammo donor botda serial tugmalari bor -> needs_review")
+                    QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:item=movie,donor=series")
+                    return False
 
             if getattr(self, "_last_unreleased_notice", None):
                 msg = self._last_unreleased_notice
@@ -1973,7 +2258,7 @@ class TelethonModeratorPipeline:
                     "telegram_file_id": bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
                     "language": "O'zbekcha",
-                    "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
+                    "duration": extract_message_duration(storage_msg) or extract_message_duration(current_video_msg)
                 }
                 f_ok, f_defects = final_check("movie", fin_payload, fin_payload)
                 if f_ok:
@@ -2000,7 +2285,7 @@ class TelethonModeratorPipeline:
             except Exception:
                 pass
 
-            QueueManager().update_status(item.id, "completed")
+            QueueManager().update_status(item.id, "published")
             print(f"✅ [ANIMEELAR] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
 
             # Topic ichiga tasdiqlash xabari
@@ -2287,8 +2572,9 @@ class TelethonModeratorPipeline:
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
                     "language": ep_lang,
-                    "season_number": s_num,
-                    "episode_number": ep_num
+                    "season_number": 1,
+                    "episode_number": current_ep,
+                    "duration": extract_message_duration(storage_msg) or extract_message_duration(v_msg),
                 })
                 if is_valid:
                     s_obj = await session.get(SeriesModel, series_id)
@@ -2348,7 +2634,7 @@ class TelethonModeratorPipeline:
 
             QueueManager().update_status(
                 item.id,
-                "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
+                "published" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
                 downloaded_episodes=downloaded_in_session,
                 episodes_count=total_ep_count
             )
@@ -2361,7 +2647,7 @@ class TelethonModeratorPipeline:
         except Exception:
             pass
 
-        final_status = "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
+        final_status = "published" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
         QueueManager().update_status(
             item.id,
             final_status,
@@ -2653,7 +2939,7 @@ class TelethonModeratorPipeline:
                     "telegram_file_id": bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
                     "language": "O'zbekcha",
-                    "duration": getattr(getattr(storage_msg, 'file', None), 'duration', 1) or 1
+                    "duration": extract_message_duration(storage_msg) or extract_message_duration(current_video_msg)
                 }
                 f_ok, f_defects = final_check("movie", fin_payload, fin_payload)
                 if f_ok:
@@ -2680,7 +2966,7 @@ class TelethonModeratorPipeline:
             except Exception:
                 pass
 
-            QueueManager().update_status(item.id, "completed")
+            QueueManager().update_status(item.id, "published")
             print(f"✅ [ANITOOB] Film muvaffaqiyatli saqlandi va websaytga ulandi! (ID: {movie_id})", flush=True)
 
             # Topic ichiga tasdiqlash xabari
@@ -2997,7 +3283,8 @@ class TelethonModeratorPipeline:
                     "storage_channel_message_id": storage_msg.id,
                     "language": ep_lang,
                     "season_number": 1,
-                    "episode_number": current_ep
+                    "episode_number": current_ep,
+                    "duration": extract_message_duration(storage_msg) or extract_message_duration(v_msg),
                 })
                 if is_valid:
                     s_obj = await session.get(SeriesModel, series_id)
@@ -3057,7 +3344,7 @@ class TelethonModeratorPipeline:
 
             QueueManager().update_status(
                 item.id,
-                "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
+                "published" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress",
                 downloaded_episodes=downloaded_in_session,
                 episodes_count=total_ep_count
             )
@@ -3070,7 +3357,7 @@ class TelethonModeratorPipeline:
         except Exception:
             pass
 
-        final_status = "completed" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
+        final_status = "published" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
         QueueManager().update_status(
             item.id,
             final_status,
@@ -3215,8 +3502,12 @@ class TelethonModeratorPipeline:
             title=caption_title or item.title,
             year=caption_year,
             original_title=item.original_title,
-            media_type=item.media_type
+            media_type=item.media_type,
+            url=getattr(item, "url", None)
         )
+        if dup_check.match_type == "possible_duplicate":
+            QueueManager().update_status(item.id, "needs_review", error_message=dup_check.reason or "possible_duplicate")
+            return False
         if dup_check.is_duplicate:
             logger.warning(
                 f"⚠️ [DUBLIKAT] '{caption_title}' bazada mavjud: "
@@ -3243,6 +3534,13 @@ class TelethonModeratorPipeline:
             media_type=getattr(item, "media_type", "movie")
         )
 
+        # M6: Tur (movie/series/anime) regex'dan emas: TMDb natijasi + donor tarkibi bo'yicha. Ziddiyat bo'lsa needs_review.
+        tmdb_ctype = meta.get("tmdb_content_type")
+        if tmdb_ctype == "tv":
+            logger.warning(f"⚠️ [M6 ZIDDIYAT]: Donor bitta film berdi, ammo TMDb 'tv' (serial) qaytardi ('{item.title}') -> needs_review")
+            QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:donor=movie,tmdb=tv")
+            return False
+
         title = meta["title"]
         year = meta["release_year"]
         year_str = f" ({year})" if year else ""
@@ -3253,8 +3551,12 @@ class TelethonModeratorPipeline:
             year=year,
             original_title=meta.get("original_title"),
             media_type="movie",
-            tmdb_id=meta.get("tmdb_id")
+            tmdb_id=meta.get("tmdb_id"),
+            url=getattr(item, "url", None)
         )
+        if sec_dup.match_type == "possible_duplicate":
+            QueueManager().update_status(item.id, "needs_review", error_message=sec_dup.reason or "possible_duplicate")
+            return False
         if sec_dup.is_duplicate:
             logger.warning(
                 f"⚠️ [DUBLIKAT (boyitishdan so'ng)] '{title}' bazada mavjud: "
@@ -3268,7 +3570,6 @@ class TelethonModeratorPipeline:
             return False
 
         # ── Sifat nazorati (Quality Guard & Autopilot 2.0) ──
-        # Agar sarlavha "Kino", "Film" kabi noaniq bo'lsa, bazaga va kanalga xato kirmasligi uchun to'xtatiladi
         GENERIC_WORDS = {"kino", "film", "serial", "tarjima kino", "premyera", "yangi kino", "noma'lum", "movie"}
         if (title.strip().lower() in GENERIC_WORDS or len(title.strip()) < 3) and item.status != "manually_verified":
             logger.warning(
@@ -3281,13 +3582,13 @@ class TelethonModeratorPipeline:
             )
             return False
 
-        if item.status != "manually_verified":
-            v_size = 0
-            if hasattr(video_msg, "file") and video_msg.file:
-                v_size = getattr(video_msg.file, "size", 0) or 0
-            elif hasattr(video_msg, "video") and video_msg.video:
-                v_size = getattr(video_msg.video, "size", 0) or 0
+        v_size = 0
+        if hasattr(video_msg, "file") and video_msg.file:
+            v_size = getattr(video_msg.file, "size", 0) or 0
+        elif hasattr(video_msg, "video") and video_msg.video:
+            v_size = getattr(video_msg.video, "size", 0) or 0
 
+        if item.status != "manually_verified":
             movie_eval = {
                 "id": item.id,
                 "title": title,
@@ -3308,8 +3609,8 @@ class TelethonModeratorPipeline:
                 QueueManager().update_status(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
                 return False
 
-        # ── 2. PostgreSQL bazasida kino yaratish ──
-        logger.info(f"ℹ️ 2-QADAM: Websayt bazasiga yangi kino qo'shilmoqda: '{title}'...")
+        # ── 2. Admission Gate pre_check (DB ga yozuv yozilmaydi!) ──
+        logger.info(f"ℹ️ 2-QADAM: Admission Gate pre_check: '{title}'...")
         async with async_session_factory() as session:
             pre_ok = await self._validate_and_pre_check(
                 session=session,
@@ -3321,44 +3622,104 @@ class TelethonModeratorPipeline:
             if not pre_ok:
                 return False
 
-            repo = MovieRepositoryImpl(session)
-            service = MovieService(repo)
-            created_movie = await service.create_movie(
-                title=title,
-                original_title=meta.get("original_title"),
-                description=meta.get("description"),
-                imdb_rating=meta.get("imdb_rating"),
-                tmdb_rating=meta.get("tmdb_rating"),
-                tmdb_id=meta.get("tmdb_id"),
-                genres=meta.get("genres"),
-                cast=meta.get("cast"),
-                director=meta.get("director"),
-                release_year=year,
-                runtime=meta.get("runtime"),
-                poster_url=meta.get("poster_url"),
-                trailer_url=meta.get("trailer_url"),
-                category_ids=meta.get("category_ids"),
-                is_18_plus=bool(meta.get("is_18_plus", False)),
-                page_ids=resolve_page_ids(item, meta)
-            )
-            movie_id = created_movie.id
-            movie_code = created_movie.code
-            await session.commit()
-            logger.info(f"✅ Websayt bazasida yaratildi! ID: {movie_id} | Unikal Kod: #{movie_code}")
+        # ── 3. Private Storage kanalga yuklash va final_check ──
+        logger.info(f"ℹ️ 3-QADAM: Video Private Storage kanalga yuklanmoqda...")
+        storage_chat = STORAGE_CHANNEL_ID
+        storage_caption = (
+            f"🍿 <b>{html.escape(title)}</b>\n"
+            + (f"📅 <b>Yili:</b> {year}\n" if year else "")
+        )
+        storage_msg = await self._upload_video_to_chat(
+            video_msg=video_msg,
+            target_chat=storage_chat,
+            reply_to=None,
+            caption=storage_caption
+        )
+        if not storage_msg:
+            logger.error("❌ Videoni Storage kanalga yuklab bo'lmadi!")
+            QueueManager().update_status(item.id, "failed", error_message="storage_upload_failed")
+            return False
 
-        # ── 3. 'manba' superguruhida Topic ochish ──
+        bot_file_id = None
+        try:
+            from telethon.utils import pack_bot_file_id
+            if storage_msg and storage_msg.media:
+                bot_file_id = pack_bot_file_id(storage_msg.media)
+        except Exception as e:
+            logger.warning(f"Could not pack bot file id: {e}")
+        if not bot_file_id and getattr(storage_msg, "id", None):
+            bot_file_id = getattr(storage_msg, "file_id", None) or f"tg_file_{storage_msg.id}"
+
+        movie_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
+        if str(movie_lang).strip().lower() in ("asosiy", "", "none"):
+            movie_lang = "O'zbekcha"
+        q_tag = getattr(self, "_last_chosen_quality", None) or (getattr(item, "payload", {}) or {}).get("quality_tag")
+        if q_tag and q_tag.lower() not in movie_lang.lower():
+            movie_lang = f"{movie_lang} ({q_tag})"
+
+        actual_duration = extract_message_duration(storage_msg) or extract_message_duration(video_msg)
+        actual_size = (
+            getattr(getattr(storage_msg, "file", None), "size", None)
+            or getattr(getattr(storage_msg, "video", None), "size", None)
+            or v_size
+        )
+        fin_payload = {
+            "telegram_file_id": bot_file_id,
+            "storage_channel_message_id": getattr(storage_msg, "id", None),
+            "language": movie_lang,
+            "duration": actual_duration,
+            "file_size": actual_size,
+        }
+        fin_meta = {
+            "runtime": meta.get("runtime"),
+            "duration": actual_duration,
+            "file_size": actual_size,
+        }
+        src_name = str(getattr(item, "source", "scraper") or "scraper").lower()
+        src_id = str(getattr(item, "source_id", None) or str(getattr(item, "id", "")).replace(f"{src_name}_", ""))
+        unified_source_key = f"{src_name}:{src_id}"
+
+        is_valid, defects = final_check("movie", fin_payload, fin_meta)
+        if not is_valid:
+            logger.warning(f"🛑 Admission Gate final_check rad etildi ('{title}'): {defects}")
+            async with async_session_factory() as session:
+                await record_rejection(
+                    session=session,
+                    media_type="movie",
+                    source=src_name,
+                    source_key=unified_source_key,
+                    title=title,
+                    payload=fin_payload,
+                    defects=defects,
+                    media_id=None,
+                )
+                await session.commit()
+            defect_names = ",".join(d.get("defect", "unknown") for d in defects)
+            QueueManager().update_status(item.id, "rejected", error_message=f"final_check_failed:{defect_names}")
+            return False
+
+        # ── 4. 'manba' superguruhida Forum Topic ochish va poster/video yuborish ──
         target_chat = AUTO_TOPIC_CHAT_ID
         is_adult = bool(meta.get("is_18_plus", False))
         topic_icon = "🔞" if is_adult else "🎬"
         topic_name = f"{topic_icon} {title}{year_str}"
-        logger.info(f"ℹ️ 3-QADAM: Guruhda Forum Topic ochilmoqda: '{topic_name}'...")
+        logger.info(f"ℹ️ 4-QADAM: Guruhda Forum Topic ochilmoqda: '{topic_name}'...")
         thread_id = await self._create_topic(chat_id=target_chat, title=topic_name)
         if not thread_id:
             logger.error("Topic ochib bo'lmadi!")
+            QueueManager().update_status(item.id, "failed", error_message="topic_creation_failed")
             return False
         logger.info(f"✅ Topic muvaffaqiyatli ochildi! Thread ID: {thread_id}")
 
-        # Kirish bannerini Topicga yuborish
+        target_chat_int = int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and str(target_chat).lstrip('-').isdigit())) else 0
+        QueueManager().update_status(
+            item.id,
+            "in_progress",
+            topic_chat_id=target_chat_int,
+            topic_id=int(thread_id),
+            storage_message_id=int(storage_msg.id),
+        )
+
         rating_str = f"⭐ <b>IMDb:</b> {meta['imdb_rating']}/10\n" if meta.get("imdb_rating") else ""
         director_str = f"🎬 <b>Rejissyor:</b> {html.escape(meta['director'])}\n" if meta.get("director") else ""
         cast_str = f"👥 <b>Aktyorlar:</b> {html.escape(meta['cast'][:120])}...\n" if meta.get("cast") else ""
@@ -3367,10 +3728,9 @@ class TelethonModeratorPipeline:
 
         welcome_text = (
             f"{adult_prefix}🎬 <b>{html.escape(title)}</b>{year_str}\n"
-            f"🔑 <b>Film kodi:</b> <code>{movie_code}</code>\n"
             f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or 'Tarjima kino')}\n"
             f"{rating_str}{director_str}{cast_str}{trailer_str}"
-            f"\n📝 <b>Tavsif:</b>\n<i>{html.escape(meta['description'][:400])}...</i>\n\n"
+            f"\n📝 <b>Tavsif:</b>\n<i>{html.escape((meta.get('description') or '')[:400])}...</i>\n\n"
             f"⬇️ <i>Kino videosi shu yerga yuklanmoqda...</i>"
         )
         try:
@@ -3405,119 +3765,119 @@ class TelethonModeratorPipeline:
         except Exception as e:
             logger.warning(f"Kirish postini yuborishda xatolik: {e}")
 
-        # Bazada movie manbasini (source_chat_id, source_topic_id) bog'lash
-        async with async_session_factory() as session:
-            repo = MovieRepositoryImpl(session)
-            service = MovieService(repo)
-            await service.update_movie(
-                movie_id=movie_id,
-                source_chat_id=int(target_chat) if (isinstance(target_chat, int) or (isinstance(target_chat, str) and target_chat.lstrip('-').isdigit())) else 0,
-                source_topic_id=thread_id
-            )
-            await session.commit()
-            logger.info(f"✅ Kino bazada ochilgan Topic (Thread ID: {thread_id}) ga bog'landi.")
-
-        # ── 4. Videoni Topic ichiga ko'chirish / yuklash ──
-        logger.info(f"ℹ️ 4-QADAM: Video Topic (ID: {thread_id}) ga ko'chirilmoqda...")
-        clean_caption = f"🍿 <b>{title}</b>{year_str}\n🔑 <b>Kod:</b> <code>{movie_code}</code>"
-
+        clean_caption = f"🍿 <b>{title}</b>{year_str}"
         topic_video_msg = await self._upload_video_to_chat(
-            video_msg=video_msg,
+            video_msg=storage_msg,
             target_chat=target_chat,
             reply_to=thread_id,
             caption=clean_caption
         )
         if not topic_video_msg:
             logger.error("Videoni Topic ichiga yuklab bo'lmadi!")
-            # Bo'sh qolgan filmni bazadan xavfsiz tozalash
-            try:
-                from sqlalchemy import text
-                async with async_session_factory() as cleanup_session:
-                    await cleanup_session.execute(text("DELETE FROM movie_category WHERE movie_id = :mid"), {"mid": movie_id})
-                    await cleanup_session.execute(text("DELETE FROM page_movie WHERE movie_id = :mid"), {"mid": movie_id})
-                    await cleanup_session.execute(text("DELETE FROM movies WHERE id = :mid"), {"mid": movie_id})
-                    await cleanup_session.commit()
-                logger.info(f"🧹 Chala qolgan film (ID: {movie_id}) bazadan muvaffaqiyatli tozalandi.")
-            except Exception as cl_err:
-                logger.warning(f"Chala filmni tozalashda xatolik: {cl_err}")
+            await self._delete_topic_safe(target_chat, thread_id)
+            QueueManager().update_status(item.id, "failed", error_message=f"topic_video_upload_failed (topic_id={thread_id})")
             return False
-        logger.info(f"✅ Video Topic ichiga muvaffaqiyatli joylashtirildi! (Message ID: {topic_video_msg.id})")
 
-        # ── 5. Private Storage kanalga ko'chirish va Websaytga ulash ──
-        logger.info(f"ℹ️ 5-QADAM: Video Private Storage kanalga saqlanmoqda va Websaytga ulanmoqda...")
-        storage_chat = STORAGE_CHANNEL_ID
-        storage_caption = (
-            f"🍿 <b>{html.escape(title)}</b>\n"
-            f"🔑 <b>Kodi:</b> <code>{movie_code}</code>\n"
-            + (f"📅 <b>Yili:</b> {year}\n" if year else "")
-        )
-
-        storage_msg = await self._upload_video_to_chat(
-            video_msg=topic_video_msg,
-            target_chat=storage_chat,
-            reply_to=None,
-            caption=storage_caption
-        )
-        if not storage_msg:
-            logger.warning("Storage kanalga ko'chirishda xatolik yuz berdi, lekin video Topicda bor. Topic videosi bog'lanadi.")
-            storage_msg = topic_video_msg
-
-        # Video faylni websayt bazasiga ulash
-        bot_file_id = None
+        # ── 5. M1: Atomik DB tranzaksiya (Movie + MovieTranslation + publish_status='published') ──
+        logger.info(f"ℹ️ 5-QADAM: Atomik tranzaksiyada kino va tarjima bazaga yozilmoqda: '{title}'...")
         try:
-            from telethon.utils import pack_bot_file_id
-            if storage_msg and storage_msg.media:
-                bot_file_id = pack_bot_file_id(storage_msg.media)
-        except Exception as e:
-            logger.warning(f"Could not pack bot file id: {e}")
+            async with async_session_factory() as session:
+                from app.core.admission_gate import check_file_belongs_to_multiple_titles
+                multi_defect = await check_file_belongs_to_multiple_titles(
+                    session=session,
+                    telegram_file_id=bot_file_id,
+                    storage_channel_message_id=storage_msg.id,
+                )
+                if multi_defect:
+                    await record_rejection(
+                        session=session,
+                        media_type="movie",
+                        source=src_name,
+                        source_key=unified_source_key,
+                        title=title,
+                        payload=fin_payload,
+                        defects=[multi_defect],
+                    )
+                    await session.commit()
+                    await self._delete_topic_safe(target_chat, thread_id)
+                    QueueManager().update_status(item.id, "rejected", error_message="file_belongs_to_multiple_titles")
+                    return False
 
-        async with async_session_factory() as session:
-            repo = MovieRepositoryImpl(session)
-            service = MovieService(repo)
-            movie_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
-            if str(movie_lang).strip().lower() in ("asosiy", "", "none"):
-                movie_lang = "O'zbekcha"
-            q_tag = getattr(self, "_last_chosen_quality", None) or (getattr(item, "payload", {}) or {}).get("quality_tag")
-            if q_tag and q_tag.lower() not in movie_lang.lower():
-                movie_lang = f"{movie_lang} ({q_tag})"
-            await service.link_movie_video_from_message(
-                movie_id=movie_id,
-                message_id=storage_msg.id,
-                language=movie_lang,
-                telegram_file_id=bot_file_id
-            )
-            # Admission Gate final_check va nashr qilish
-            from scraper.admission_gate import final_check, promote_to_published, record_rejection
-            is_valid, defects = final_check("movie", {
-                "telegram_file_id": bot_file_id,
-                "storage_channel_message_id": storage_msg.id,
-                "language": movie_lang
-            })
-            if is_valid:
+                repo = MovieRepositoryImpl(session)
+                service = MovieService(repo)
+                created_movie = await service.create_movie(
+                    title=title,
+                    original_title=meta.get("original_title"),
+                    description=meta.get("description"),
+                    imdb_rating=meta.get("imdb_rating"),
+                    tmdb_rating=meta.get("tmdb_rating"),
+                    tmdb_id=meta.get("tmdb_id"),
+                    genres=meta.get("genres"),
+                    cast=meta.get("cast"),
+                    director=meta.get("director"),
+                    release_year=year,
+                    runtime=meta.get("runtime"),
+                    poster_url=meta.get("poster_url"),
+                    trailer_url=meta.get("trailer_url"),
+                    category_ids=meta.get("category_ids"),
+                    is_18_plus=is_adult,
+                    page_ids=resolve_page_ids(item, meta),
+                    source_chat_id=target_chat_int,
+                    source_topic_id=int(thread_id),
+                    source_type=src_name,
+                    publish_status="published",
+                )
+                movie_id = created_movie.id
+                movie_code = created_movie.code
+                await service.link_movie_video_from_message(
+                    movie_id=movie_id,
+                    message_id=storage_msg.id,
+                    language=movie_lang,
+                    telegram_file_id=bot_file_id
+                )
                 m_obj = await session.get(MovieModel, movie_id)
                 if m_obj:
                     await promote_to_published(
                         session, m_obj,
-                        source=getattr(item, "source", "scraper"),
-                        source_key=str(getattr(item, "source_id", movie_id))
+                        source=src_name,
+                        source_key=unified_source_key
                     )
-            else:
-                await record_rejection(
-                    session=session,
-                    media_type="movie",
-                    source=getattr(item, "source", "scraper"),
-                    source_key=str(getattr(item, "source_id", movie_id)),
+                await session.commit()
+                logger.info(f"🎉 WEBSAYTDA VIDEO TO'LIQ FAOLLASHTIRILDI! ID: {movie_id} | Kod: #{movie_code}")
+        except Exception as db_err:
+            logger.error(f"❌ Atomik DB tranzaksiyada xatolik: {db_err}")
+            await self._delete_topic_safe(target_chat, thread_id)
+            QueueManager().update_status(
+                item.id,
+                "failed",
+                error_message=f"db_transaction_failed:{db_err} (topic_id={thread_id})"
+            )
+            return False
+
+        # Dedup keshga darhol qo'shish (5f)
+        try:
+            if hasattr(self.dup_checker, "record_added"):
+                self.dup_checker.record_added(
+                    item_id=movie_id,
                     title=title,
-                    payload={
-                        "telegram_file_id": bot_file_id,
-                        "storage_channel_message_id": storage_msg.id,
-                        "language": movie_lang
-                    },
-                    defects=defects,
-                    media_id=movie_id
+                    original_title=meta.get("original_title"),
+                    year=year,
+                    media_type="movie",
+                    code=movie_code,
+                    tmdb_id=meta.get("tmdb_id"),
+                    url=getattr(item, "url", None),
                 )
-            await session.commit()
-            logger.info(f"🎉 WEBSAYTDA VIDEO TO'LIQ FAOLLASHTIRILDI! Onlayn tomosha qilishga tayyor! (Kod: #{movie_code})")
+        except Exception:
+            pass
+
+        QueueManager().update_status(
+            item.id,
+            "published",
+            topic_chat_id=target_chat_int,
+            topic_id=int(thread_id),
+            storage_message_id=int(storage_msg.id),
+            media_id=int(movie_id),
+        )
 
         # Keshni tozalash
         try:
@@ -3543,6 +3903,19 @@ class TelethonModeratorPipeline:
             pass
 
         return True
+
+    async def _delete_topic_safe(self, chat_id: Any, topic_id: Optional[int]) -> bool:
+        if not chat_id or not topic_id:
+            return False
+        try:
+            from telethon.tl.functions.channels import DeleteTopicHistoryRequest
+            peer = await self.client.get_input_entity(chat_id)
+            await self.client(DeleteTopicHistoryRequest(channel=peer, top_msg_id=int(topic_id)))
+            logger.info(f"🧹 Yaratilgan Topic (ID: {topic_id}) muvaffaqiyatli o'chirildi.")
+            return True
+        except Exception as e:
+            logger.warning(f"Topic (ID: {topic_id}) o'chirishda xatolik: {e}")
+            return False
 
     async def _create_topic(self, chat_id: int, title: str) -> Optional[int]:
         try:
@@ -3757,124 +4130,81 @@ class TelethonModeratorPipeline:
             actual_bot = "UzmovieTV_Bot"
         elif item and getattr(item, "source", None) == "kinochilar":
             actual_bot = "kinochilar_fast_bot"
-        is_uzmovie = "uzmovie" in actual_bot.lower()
-        is_kinochilar = "kinochilar" in actual_bot.lower()
+        is_uzmovie = "uzmovie" in actual_bot.lower() or (item and getattr(item, "source", None) == "uzmovi")
+        is_kinochilar = "kinochilar" in actual_bot.lower() or (item and getattr(item, "source", None) == "kinochilar")
 
         search_query = ""
-        if code:
-            search_query = str(code).strip()
-        elif item:
-            if item.source == "asilmedia" and not is_uzmovie:
-                if re.match(r'^asilmedia_\d+$', str(item.id).strip()):
-                    num_match = re.search(r'\d+', str(item.id).replace('asilmedia_', '').strip())
-                    if num_match and len(num_match.group(0)) <= 6:
-                        search_query = num_match.group(0)
-
-            # Agar uzmovi bo'lsa yoki asilmedia kodi bo'lmasa, tozalangan film nomidan foydalanamiz
-            if not search_query:
-                clean_name = item.title.split('/')[0].split('|')[0].strip()
-                clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
-                clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
-                clean_name = clean_movie_title(clean_name)
-                search_query = clean_name
-
-        if not search_query:
-            logger.warning("Botga yuborish uchun so'rov topilmadi!")
-            return None
+        exact_code = str(code).strip() if code else ""
+        if not exact_code and item:
+            payload_code = (getattr(item, "payload", None) or {}).get("bot_code") or (getattr(item, "payload", None) or {}).get("code")
+            if payload_code and str(payload_code).strip().isdigit():
+                exact_code = str(payload_code).strip()
+            elif getattr(item, "source_id", None) and str(item.source_id).strip().isdigit():
+                exact_code = str(item.source_id).strip()
+            else:
+                id_str = str(getattr(item, "id", "")).strip()
+                for pref in ("uzmovi_", "asilmedia_", "kinochilar_"):
+                    if id_str.startswith(pref):
+                        rem = id_str[len(pref):].strip()
+                        if rem.isdigit():
+                            exact_code = rem
+                        break
 
         if is_kinochilar:
-            return await self._fetch_kinochilar_video(item=item, query=search_query, year=item.year if item else None)
-        if not is_uzmovie:
-            return await self._fetch_asilmedia_video(query=search_query, year=item.year if item else None)
+            return await self._fetch_kinochilar_video(item=item, query=exact_code or (item.title if item else ""), year=item.year if item else None)
 
-        # UzmovieTV_Bot orqali video olish (avval raqamli kod yoki Telegram Inline Query orqali)
-        uz_code = code if (code and str(code).strip().isdigit()) else None
-        uz_video = await self._fetch_uzmovie_video(query=search_query, code=uz_code)
-        if uz_video:
-            return uz_video
-
-        # Agar UzmovieTV_Bot da topilmasa, film nomi bo'yicha zaxira tarzida Asilmediada sinab ko'rish
-        if item and item.title:
-            clean_name = item.title.split('/')[0].split('|')[0].strip()
-            clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
-            clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
-            clean_name = clean_movie_title(clean_name)
-            if clean_name:
-                logger.info(f"UzmovieTV_Bot dan olinmadi. Zaxira tarzida @asilmediabot dan '{clean_name}' qidirilmoqda...")
-                vid = await self._fetch_asilmedia_video(query=clean_name, year=item.year)
-                if vid:
-                    if item:
-                        item.source = "asilmedia"
-                    return vid
+        if is_uzmovie:
+            # M3: Uzmovi uchun nom bo'yicha inline qidiruv taqiqlanadi: faqat aniq kod!
+            # Agar kod bo'lmasa yoki site ID >6 xonali bo'lib aniq bot kodi bo'lmasa -> needs_review ("no_exact_code")
+            if not exact_code or not exact_code.isdigit():
+                logger.warning(f"[@UzmovieTV_Bot] Aniq kod topilmadi ({getattr(item, 'id', None)}) -> needs_review ('no_exact_code')")
+                if item:
+                    item.status = "needs_review"
+                    item.reason = "no_exact_code"
+                    item.error_message = "no_exact_code"
+                    QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
                 return None
+            return await self._fetch_uzmovie_video(query=exact_code, code=exact_code, item=item)
 
-        return None
+        # Asilmedia (faqat asilmedia source uchun)
+        if not exact_code:
+            logger.warning(f"[@asilmediabot] Aniq kod topilmadi ({getattr(item, 'id', None)}) -> needs_review ('no_exact_code')")
+            if item:
+                item.status = "needs_review"
+                item.reason = "no_exact_code"
+                item.error_message = "no_exact_code"
+                QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
+            return None
+        return await self._fetch_asilmedia_video(query=exact_code, year=item.year if item else None)
 
     async def _fetch_uzmovie_video(
         self,
         query: str,
-        code: Optional[str] = None
+        code: Optional[str] = None,
+        item: Optional[QueueItem] = None,
     ) -> Optional[Message]:
         bot = "UzmovieTV_Bot"
 
-        # 1. Agar to'g'ridan-to'g'ri raqamli bot kodi mavjud bo'lsa
-        if code and str(code).strip().isdigit():
-            clean_code = str(code).strip()
-            logger.info(f"[@{bot}] botiga kod yuborilmoqda: '{clean_code}'...")
-            sent = await self.client.send_message(bot, clean_code)
-            def has_uzmovie_reply(msgs):
-                return any(m.file or "topilmadi" in (m.text or "").lower() for m in msgs)
-            recent = await poll_new_messages(self.client, bot, sent.id, timeout=6.0, condition=has_uzmovie_reply)
-            for m in recent:
-                if m.file:
-                    logger.info(f"✅ [@{bot}] dan video muvaffaqiyatli qabul qilindi (Kod #{clean_code})!")
-                    return m
-
-        # 2. Film nomi bo'yicha Telegram INLINE QUERY orqali qidirish
-        clean_name = query.split('/')[0].split('|')[0].strip()
-        clean_name = re.sub(r'\(.*?\)', '', clean_name).strip()
-        clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
-        clean_name = clean_movie_title(clean_name)
-        if not clean_name:
+        # M3: Faqat aniq raqamli kod. Inline qidiruv taqiqlanadi!
+        clean_code = str(code or query or "").strip()
+        if not clean_code or not clean_code.isdigit():
+            logger.warning(f"[@{bot}] Uzmovi uchun aniq raqamli kod yo'q ('{clean_code}') -> needs_review ('no_exact_code')")
+            if item:
+                item.status = "needs_review"
+                item.reason = "no_exact_code"
+                item.error_message = "no_exact_code"
+                QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
             return None
 
-        logger.info(f"[@{bot}] Inline qidiruv orqali qidirilmoqda: '{clean_name}'...")
-        try:
-            results = await self.client.inline_query(bot, clean_name)
-            if results:
-                best_res = results[0]
-                for res in results:
-                    r_title = (getattr(res, 'title', '') or '').lower()
-                    if clean_name.lower() in r_title or r_title in clean_name.lower():
-                        best_res = res
-                        break
-
-                logger.info(f"[@{bot}] Inline natija tanlandi: '{best_res.title}'. Yuborilmoqda...")
-                sent_inline = await best_res.click(bot)
-                if sent_inline and sent_inline.file:
-                    logger.info(f"✅ [@{bot}] dan inline video qabul qilindi! ({sent_inline.file.name or 'fayl'})")
-                    return sent_inline
-                click_id = sent_inline.id if sent_inline else 0
-
-                def has_uzmovie_video(msgs):
-                    return any(m.file for m in msgs)
-
-                v_list = await poll_new_messages(
-                    self.client,
-                    bot,
-                    click_id,
-                    timeout=14.0,
-                    interval=0.4,
-                    condition=has_uzmovie_video
-                )
-                for vm in v_list:
-                    if vm.file:
-                        logger.info(f"✅ [@{bot}] dan inline video qabul qilindi! ({vm.file.name or 'fayl'})")
-                        return vm
-            else:
-                logger.info(f"[@{bot}] Inline qidiruvda '{clean_name}' topilmadi.")
-        except Exception as e:
-            logger.warning(f"[@{bot}] Inline qidiruvda xatolik: {e}")
+        logger.info(f"[@{bot}] botiga aniq kod yuborilmoqda: '{clean_code}'...")
+        sent = await self.client.send_message(bot, clean_code)
+        def has_uzmovie_reply(msgs):
+            return any(m.file or "topilmadi" in (m.text or "").lower() for m in msgs)
+        recent = await poll_new_messages(self.client, bot, sent.id, timeout=6.0, condition=has_uzmovie_reply)
+        for m in recent:
+            if m.file:
+                logger.info(f"✅ [@{bot}] dan video muvaffaqiyatli qabul qilindi (Kod #{clean_code})!")
+                return m
 
         return None
 
