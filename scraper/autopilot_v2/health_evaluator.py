@@ -97,7 +97,7 @@ class HealthEvaluator:
 
         # 3. Source & Voiceover / Audio mapping
         source = (item.get("source") or "").strip().lower()
-        valid_sources = ("uzmovi", "asilmedia", "anitoob", "animeelar", "milliy", "uzbekfilm", "arxiv", "telegram_manual")
+        valid_sources = ("uzmovi", "asilmedia", "kinochilar", "anitoob", "animeelar", "milliy", "uzbekfilm", "arxiv", "telegram_manual")
         if not is_whitelisted and source not in valid_sources:
             defects.append("invalid_source")
 

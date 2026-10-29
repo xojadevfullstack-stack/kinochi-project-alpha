@@ -262,7 +262,7 @@ class ProcessManager:
         min_rating: Optional[float] = None,
         media_type: str = "all",
     ) -> Dict[str, Any]:
-        if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
+        if source not in ("uzmovi", "asilmedia", "kinochilar", "anitoob", "animeelar"):
             return {"success": False, "message": "Noma'lum manba."}
         if media_type not in ("all", "movie", "series", "dorama", "anime", "multfilm"):
             return {"success": False, "message": "Noma'lum media turi."}
@@ -284,7 +284,7 @@ class ProcessManager:
         media_type: str = "all",
         item_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        if target not in ("uzmovi", "asilmedia", "anitoob", "animeelar"):
+        if target not in ("uzmovi", "asilmedia", "kinochilar", "anitoob", "animeelar"):
             return {"success": False, "message": "Noma'lum maqsadli bot."}
         if media_type not in ("all", "movie", "series", "dorama", "anime", "multfilm"):
             return {"success": False, "message": "Noma'lum media turi."}
@@ -312,7 +312,7 @@ class ProcessManager:
         media_type: str = "all",
         min_rating: Optional[float] = None
     ) -> Dict[str, Any]:
-        if source not in ("uzmovi", "asilmedia", "anitoob", "animeelar", "all"):
+        if source not in ("uzmovi", "asilmedia", "kinochilar", "anitoob", "animeelar", "all"):
             return {"success": False, "message": "Noma'lum manba."}
         if media_type not in ("all", "movie", "series", "dorama", "anime", "multfilm"):
             return {"success": False, "message": "Noma'lum media turi."}

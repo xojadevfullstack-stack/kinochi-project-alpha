@@ -330,14 +330,23 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
         print(f"\n🚀 {len(code_list)} ta film kodi bo'yicha yuklash boshlanmoqda (Maqsadli bot: @{bot_username}, Kodlar: {', '.join(code_list)})...")
     else:
         qm = QueueManager()
-        if target in ("anitoob", "anitoobuz"):
-            target_source = "anitoob"
-        elif target in ("animeelar", "anime"):
-            target_source = "animeelar"
-        elif "asil" in target.lower():
-            target_source = "asilmedia"
-        else:
-            target_source = "uzmovi"
+        target_source_map = {
+            "uzmovi": "uzmovi",
+            "UzmovieTV_Bot": "uzmovi",
+            "asilmedia": "asilmedia",
+            "asilmediabot": "asilmedia",
+            "kinochilar": "kinochilar",
+            "kinochilar_fast_bot": "kinochilar",
+            "anitoob": "anitoob",
+            "anitoobuz": "anitoob",
+            "ANITOOBUZ_BOT": "anitoob",
+            "animeelar": "animeelar",
+            "anime": "animeelar",
+            "Animeelar_Bot": "animeelar",
+        }
+        if target not in target_source_map:
+            raise ValueError(f"Noma'lum maqsadli manba/bot: '{target}'")
+        target_source = target_source_map[target]
         m_type = None if media_type == "all" else media_type
         pending = qm.get_pending(limit=limit, source=target_source, media_type=m_type)
         if not pending:
@@ -639,15 +648,15 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 
     if source in ("all", "both"):
         if media_type == "dorama":
-            sources_to_run = ["uzmovi", "asilmedia"]
+            sources_to_run = ["uzmovi", "asilmedia", "kinochilar"]
         elif media_type == "anime":
-            sources_to_run = ["anitoob", "animeelar", "uzmovi"]
+            sources_to_run = ["anitoob", "animeelar", "uzmovi", "kinochilar"]
         elif media_type == "multfilm":
-            sources_to_run = ["uzmovi", "asilmedia"]
+            sources_to_run = ["uzmovi", "asilmedia", "kinochilar"]
         elif media_type in ("movie", "series"):
-            sources_to_run = ["uzmovi", "asilmedia"]
+            sources_to_run = ["uzmovi", "asilmedia", "kinochilar"]
         else:
-            sources_to_run = ["uzmovi", "asilmedia", "anitoob", "animeelar"]
+            sources_to_run = ["uzmovi", "asilmedia", "kinochilar", "anitoob", "animeelar"]
     else:
         sources_to_run = [source]
     src_title = ", ".join(s.upper() for s in sources_to_run) if len(sources_to_run) > 1 else source.upper()
@@ -675,7 +684,18 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             if cb_status.is_paused:
                 print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
                 return
-            target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
+            target_bot_map = {
+                "uzmovi": "uzmovi",
+                "asilmedia": "asilmedia",
+                "kinochilar": "kinochilar",
+                "anitoob": "anitoob",
+                "anitoobuz": "anitoob",
+                "animeelar": "animeelar",
+                "anime": "animeelar",
+            }
+            if s not in target_bot_map:
+                raise ValueError(f"Noma'lum manba: '{s}'")
+            target_bot = target_bot_map[s]
             await cmd_parse(source=s, max_pages=pages, media_type=media_type, min_rating=min_rating)
             await cmd_download(limit=limit, target=target_bot, media_type=media_type)
         print("\n🏁 Avtopilot sikli yakunlandi!", flush=True)
@@ -687,7 +707,18 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
         if cb_status.is_paused:
             print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
             return
-        target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
+        target_bot_map = {
+            "uzmovi": "uzmovi",
+            "asilmedia": "asilmedia",
+            "kinochilar": "kinochilar",
+            "anitoob": "anitoob",
+            "anitoobuz": "anitoob",
+            "animeelar": "animeelar",
+            "anime": "animeelar",
+        }
+        if s not in target_bot_map:
+            raise ValueError(f"Noma'lum manba: '{s}'")
+        target_bot = target_bot_map[s]
         old_pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
         if old_pending:
             print(f"📋 [{s.upper()}] Oldingi navbatda kutilayotgan {len(old_pending)} ta film yuklanmoqda...", flush=True)
@@ -728,7 +759,18 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             )
 
             # Yangi saralangan pending filmlarni yuklaymiz
-            target_bot = "anitoob" if s in ("anitoob", "anitoobuz") else ("animeelar" if s in ("animeelar", "anime") else ("asilmedia" if "asil" in s.lower() else "uzmovi"))
+            target_bot_map = {
+                "uzmovi": "uzmovi",
+                "asilmedia": "asilmedia",
+                "kinochilar": "kinochilar",
+                "anitoob": "anitoob",
+                "anitoobuz": "anitoob",
+                "animeelar": "animeelar",
+                "anime": "animeelar",
+            }
+            if s not in target_bot_map:
+                raise ValueError(f"Noma'lum manba: '{s}'")
+            target_bot = target_bot_map[s]
             pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
             if pending:
                 print(f"🚀 [{s.upper()}] {len(pending)} ta yangi saralangan film Telegram orqali yuklanmoqda...", flush=True)

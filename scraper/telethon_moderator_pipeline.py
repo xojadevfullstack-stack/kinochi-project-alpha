@@ -76,22 +76,16 @@ from scraper.admission_gate import (
 
 logger = logging.getLogger(__name__)
 
-FALLBACK_USERBOT_SESSION = (
-    "1ApWapzMBuyF503SKFe7YvecikokTfoWvtlnlzunbRRik8mht2VtaJve7uOtwuKwQBdXkvZ_0cOn-SBVZ2jHcHJuRhdcGiVBnP_Yg0_dEVOJT6jjvVhbwepZFPTn4HkwyVqG2Z7h-HFpXRYo4HboCGLR0QCYVx8KrKVQYTK44Sxiai6atXQ7klb6tKg_Nq8S2u3x23V82J3SVM6bROoGvltvZKMZ2n9suDPUSWtg9612fCtTqsH6ohVEq-jeWUt099pWYWCBnn_yTlWiZWdhflktlGP4nD4PL52JdQDz1zUilq1B9KFsLq8DQW3jbfYzbpAzz6175F_Ve3xuD2-wsBd8--H08Is0="
-)
-FALLBACK_API_ID = 32571063
-FALLBACK_API_HASH = "fe3038cd47d8c37788a5f4bdeef00138"
-
-
 def create_telethon_client(session_path: str = None) -> TelegramClient:
     """
-    Telethon mijozini yaratadi:
-    1. Environment variable (TELEGRAM_STRING_SESSION) orqali (Docker va Cloud serverlar uchun).
-    2. Mavjud va to'g'ri .session fayl orqali.
-    3. Zaxira sessiya orqali (fayl bo'lmaganda yoki buzilganda ham uzluksiz ishlash uchun).
+    Telethon mijozini yaratadi (faqat env yoki .session fayldan; maxfiy fallback yo'q).
     """
-    api_id = int(TELEGRAM_API_ID) if TELEGRAM_API_ID else FALLBACK_API_ID
-    api_hash = str(TELEGRAM_API_HASH).strip() if (TELEGRAM_API_HASH and str(TELEGRAM_API_HASH).strip()) else FALLBACK_API_HASH
+    raw_api_id = os.environ.get("TELEGRAM_API_ID") or TELEGRAM_API_ID
+    raw_api_hash = (os.environ.get("TELEGRAM_API_HASH") or TELEGRAM_API_HASH or "").strip()
+    if not raw_api_id or not int(raw_api_id) or not raw_api_hash:
+        raise ValueError("TELEGRAM_API_ID va TELEGRAM_API_HASH environment variable'lari sozlanmagan!")
+    api_id = int(raw_api_id)
+    api_hash = str(raw_api_hash)
 
     raw_str_session = (
         os.environ.get("TELEGRAM_STRING_SESSION")
@@ -129,8 +123,7 @@ def create_telethon_client(session_path: str = None) -> TelegramClient:
         except Exception as e:
             logger.warning(f"Session faylidan o'qishda xatolik: {e}")
 
-    logger.info("Zaxira Telegram StringSession orqali ulanmoqda...")
-    return TelegramClient(StringSession(FALLBACK_USERBOT_SESSION), api_id, api_hash)
+    raise RuntimeError("TELEGRAM_STRING_SESSION yoki yaroqli .session fayli topilmadi!")
 
 
 def is_bot_flood_text(text: Optional[str]) -> bool:

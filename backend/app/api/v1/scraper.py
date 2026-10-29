@@ -87,9 +87,21 @@ def require_scraper(admin=Depends(get_current_admin)):
 
 router = APIRouter(prefix="/scraper", tags=["scraper"])
 
-SOURCES = ("uzmovi", "asilmedia", "anitoob", "animeelar", "all")
+SOURCES = ("uzmovi", "asilmedia", "kinochilar", "anitoob", "animeelar", "all")
 MEDIA_TYPES = ("all", "movie", "series", "dorama", "anime", "multfilm")
-STATUSES = ("pending", "in_progress", "completed", "failed", "already_exists", "needs_review")
+STATUSES = (
+    "discovered",
+    "queued",
+    "pending",
+    "in_progress",
+    "needs_review",
+    "rejected",
+    "blacklisted",
+    "already_exists",
+    "failed",
+    "published",
+    "completed",
+)
 
 
 class ParseRequest(BaseModel):
