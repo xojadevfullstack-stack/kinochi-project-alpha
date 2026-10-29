@@ -22,6 +22,7 @@ from sqlalchemy import pool
 from app.core.config import settings
 from app.infrastructure.db.session import Base
 from app.infrastructure.db import models  # noqa: F401
+from app.infrastructure.db.models.ingest_item import IngestItemModel  # noqa: F401
 
 # Alembic Config object
 config = context.config

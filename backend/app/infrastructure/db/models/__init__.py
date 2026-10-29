@@ -25,6 +25,7 @@ from app.infrastructure.db.models.series_subscription import SeriesSubscriptionM
 from app.infrastructure.db.models.rejected_item import RejectedItemModel
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
 from app.infrastructure.db.models.content_request import ContentRequestModel
+from app.infrastructure.db.models.ingest_item import IngestItemModel
 
 __all__ = [
     "CategoryModel",
@@ -56,4 +57,5 @@ __all__ = [
     "RejectedItemModel",
     "SeedCandidateModel",
     "ContentRequestModel",
+    "IngestItemModel",
 ]
