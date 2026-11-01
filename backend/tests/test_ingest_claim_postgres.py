@@ -1,60 +1,92 @@
 """
 Postgres'da FOR UPDATE SKIP LOCKED claim_next parallel xavfsizligi testi.
-TEST_POSTGRES_URL env'i berilmasa skip qilinadi. Faqat localhost ga ruxsat.
+TEST_POSTGRES_URL env'i berilmasa yoki localhost + 'test' db nomi bo'lmasa skip qilinadi.
+Vaqtinchalik alohida sxema (ingest_claim_<hex>) ichida yaratiladi va o'chiriladi;
+public.ingest_items ga hech qachon tegmaydi.
 """
 import asyncio
 import os
+import uuid
 from urllib.parse import urlparse
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.application.ingest_service import IngestService
 from app.infrastructure.db.models.ingest_item import IngestItemModel
 
-TEST_POSTGRES_URL = os.environ.get("TEST_POSTGRES_URL")
-
-pytestmark = pytest.mark.skipif(
-    not TEST_POSTGRES_URL,
-    reason="TEST_POSTGRES_URL berilmagan: Postgres claim testi o'tkazib yuborildi",
-)
-
 N_ITEMS = 20
 N_WORKERS = 8
 
 
-def _assert_localhost_only(url: str) -> None:
-    clean = url.replace("postgresql+asyncpg://", "http://").replace("postgres://", "http://")
-    host = urlparse(clean).hostname
+def _get_safe_test_postgres_url() -> str:
+    url = os.environ.get("TEST_POSTGRES_URL", "").strip()
+    if not url:
+        pytest.skip("TEST_POSTGRES_URL berilmagan: Postgres claim testi o'tkazib yuborildi")
+
+    clean = url.replace("postgresql+asyncpg://", "http://").replace("postgres://", "http://").replace("postgresql://", "http://")
+    parsed = urlparse(clean)
+    host = (parsed.hostname or "").lower()
+    db_name = (parsed.path or "").lstrip("/").split("?")[0]
+
     if host not in ("localhost", "127.0.0.1", "::1"):
-        raise RuntimeError(f"XAVF: faqat localhost ga ruxsat, berilgan host: {host!r}")
+        pytest.skip(f"TEST_POSTGRES_URL host localhost emas ({host!r}): test o'tkazib yuborildi")
+
+    if "test" not in db_name.lower():
+        pytest.skip(f"TEST_POSTGRES_URL baza nomida 'test' yo'q ({db_name!r}): test o'tkazib yuborildi")
+
+    return url
+
+
+def test_claim_postgres_guard_skips_unsafe_urls(monkeypatch):
+    monkeypatch.delenv("TEST_POSTGRES_URL", raising=False)
+    with pytest.raises(pytest.skip.Exception, match="TEST_POSTGRES_URL berilmagan"):
+        _get_safe_test_postgres_url()
+
+    monkeypatch.setenv("TEST_POSTGRES_URL", "postgresql+asyncpg://u:p@ep-neon.aws.neon.tech/kinochi_test")
+    with pytest.raises(pytest.skip.Exception, match="localhost emas"):
+        _get_safe_test_postgres_url()
+
+    monkeypatch.setenv("TEST_POSTGRES_URL", "postgresql+asyncpg://u:p@localhost:5432/kinochi_prod")
+    with pytest.raises(pytest.skip.Exception, match="baza nomida 'test' yo'q"):
+        _get_safe_test_postgres_url()
 
 
 @pytest.mark.asyncio
 async def test_parallel_claim_next_never_double_claims():
-    _assert_localhost_only(TEST_POSTGRES_URL)
-    engine = create_async_engine(TEST_POSTGRES_URL, echo=False)
-    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    url = _get_safe_test_postgres_url()
+    schema_name = f"ingest_claim_{uuid.uuid4().hex[:8]}"
 
-    async with engine.begin() as conn:
-        await conn.run_sync(IngestItemModel.__table__.drop, checkfirst=True)
-        await conn.run_sync(IngestItemModel.__table__.create)
+    base_engine = create_async_engine(url, echo=False)
+    isolated_engine = base_engine.execution_options(
+        schema_translate_map={None: schema_name, "public": schema_name}
+    )
+    factory = async_sessionmaker(isolated_engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with base_engine.begin() as conn:
+        await conn.execute(text(f'CREATE SCHEMA "{schema_name}"'))
 
     try:
+        async with isolated_engine.begin() as conn:
+            await conn.run_sync(IngestItemModel.__table__.create)
+
         async with factory() as session:
-            added = await IngestService(session).add_batch([
+            added = await IngestService.enqueue_candidates(session, [
                 {"source": "uzmovi", "source_id": str(i), "title": f"Item {i}", "status": "queued"}
                 for i in range(N_ITEMS)
             ])
+            await session.commit()
             assert added == N_ITEMS
 
         async def worker(idx: int) -> list:
             claimed = []
             while True:
                 async with factory() as session:
-                    item = await IngestService(session).claim_next(worker_id=f"w{idx}")
+                    item = await IngestService.claim_next(session, worker_id=f"w{idx}")
                     if item is None:
                         return claimed
+                    await session.commit()
                     claimed.append(item.id)
                 await asyncio.sleep(0)
 
@@ -64,6 +96,6 @@ async def test_parallel_claim_next_never_double_claims():
         assert len(all_ids) == len(set(all_ids)), "Bitta item ikki marta claim qilingan"
         assert len(all_ids) == N_ITEMS
     finally:
-        async with engine.begin() as conn:
-            await conn.run_sync(IngestItemModel.__table__.drop, checkfirst=True)
-        await engine.dispose()
+        async with base_engine.begin() as conn:
+            await conn.execute(text(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE'))
+        await base_engine.dispose()
