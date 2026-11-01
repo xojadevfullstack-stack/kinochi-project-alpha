@@ -17,3 +17,12 @@ stage 8 DONE d598305
 
 ## QOLDI (C): Postgres tekshiruvi o'tkazilmadi
 Docker daemon ishlamaydi (dockerDesktopLinuxEngine pipe topilmadi). alembic upgrade/downgrade va backend/tests/test_ingest_claim_postgres.py (TEST_POSTGRES_URL bilan) Docker ishga tushgach qo'lda yurgiziladi.
+
+## AUDIT & GUARDS (#1-#6) DONE
+- #1 Alembic `c011ec7100`: `collections(id)` ga FK qiladi; `collections` migratsiyalarda yaratilmagan (`main.py:95` `create_all` orqali yaratilgan). Tavsiya: (a) tarixiy migratsiyalarga tegmaslik.
+- #2 `ingest_items` offline SQL (`f1322da82a96:9c8d7e6f5a4b --sql`): `IngestItemModel` bilan farq yo'q; single head `9c8d7e6f5a4b`.
+- #3 Guard `UZMOVI_BOT_CODE_VERIFIED` (default `False`): commit `3d285a1` (`uzmovi_code_unverified` -> `needs_review`).
+- #4 Guard `SCRAPER_ENABLED` (default `False`): commit `3bc154f` (CLI, ProcessManager, Admin API bloklandi; `--help`/`--stats` ishlaydi).
+- #5 Uncommitted fayllar auditi bajarildi; `.gitignore` ga `*.dump` commit qilindi (`abadfb1`).
+- #6 `test_ingest_claim_postgres.py`: localhost + `test` DB nomi talabi va vaqtinchalik `ingest_claim_<hex>` sxema izolyatsiyasi (`8ae094c`).
+
