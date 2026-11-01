@@ -3,7 +3,8 @@ import html
 import json
 import asyncio
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Header
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Header, Request
+from app.api.limiter import limiter
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
@@ -35,7 +36,9 @@ class NotifyNewEpisodeRequest(BaseModel):
 
 
 @router.post("/{series_id}/subscribe", response_model=SubscriptionStatusResponse)
+@limiter.limit("60/minute")
 async def toggle_series_subscription(
+    request: Request,
     series_id: int,
     payload: SubscribeRequest,
     current_user: dict | None = Depends(get_current_user_optional),

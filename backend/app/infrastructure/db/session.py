@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
+import os
 import logging
 import re
 import time
@@ -18,15 +19,15 @@ import uuid
 
 _original_getaddrinfo = socket.getaddrinfo
 _dns_cache: dict = {}
-DNS_CACHE_TTL_SECONDS: float = 300.0
-DNS_CACHE_MAX_SIZE: int = 500
+DNS_CACHE_TTL_SECONDS: float = float(os.environ.get("DNS_CACHE_TTL_SECONDS", "60.0"))
+DNS_CACHE_MAX_SIZE: int = int(os.environ.get("DNS_CACHE_MAX_SIZE", "500"))
 
 def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     """
     Ba'zi bulut muhitlarida (Render) IPv6 (AAAA) manzillarga chiquvchi
     ulanish "blackhole" bo'lib, cheksiz kutishga sabab bo'ladi. Bu yerda
     DNS javobidan faqat IPv4 (AF_INET) natijalarni qoldiramiz.
-    DNS natijalarini 300s TTL bilan keshlaymiz, failover paytida yangi IP'ga o'tishni ta'minlaymiz.
+    DNS natijalarini 60s TTL (yoki DNS_CACHE_TTL_SECONDS) bilan keshlaymiz, failover paytida yangi IP'ga o'tishni ta'minlaymiz.
     """
     cache_key = (host, port, family, type, proto, flags)
     now = time.time()

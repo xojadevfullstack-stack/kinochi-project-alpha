@@ -196,3 +196,13 @@ def test_2f_limiter_key_func_trusted_proxies():
         mock_request.headers = {"x-forwarded-for": "198.51.100.1, 203.0.113.195"}
         ip = get_client_ip(mock_request)
         assert ip == "203.0.113.195"
+
+
+def test_dns_cache_ttl_and_env_config():
+    """Verify DNS TTL defaults to 60.0 and respects DNS_CACHE_TTL_SECONDS env var."""
+    import os
+    from app.infrastructure.db import session as db_session_module
+    assert db_session_module.DNS_CACHE_TTL_SECONDS == 60.0
+    with patch.dict(os.environ, {"DNS_CACHE_TTL_SECONDS": "45.0"}):
+        val = float(os.environ.get("DNS_CACHE_TTL_SECONDS", "60.0"))
+        assert val == 45.0

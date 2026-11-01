@@ -395,7 +395,9 @@ async def get_movie_franchise_context(
 
 # ── Subscriptions & Smart Notifications ──────────────────────────
 @router.post("/{collection_id}/subscribe", response_model=CollectionSubscriptionStatusResponse)
+@limiter.limit("60/minute")
 async def toggle_collection_subscription(
+    request: Request,
     collection_id: int,
     payload: SubscribeCollectionRequest,
     current_user: dict | None = Depends(get_current_user_optional),
