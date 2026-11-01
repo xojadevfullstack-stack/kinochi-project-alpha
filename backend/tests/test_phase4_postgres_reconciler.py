@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from alembic.config import Config
 from alembic import command
 from app.infrastructure.db.session import Base
-import app.infrastructure.db.models  # Load all models
+import app.infrastructure.db.models  # noqa: F401  # Load all models
 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -159,4 +159,57 @@ async def test_4_5_disposable_postgres_reconciler_scenarios():
     # Qayta upgrade qilib head holatiga olib kelish
     with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
         await asyncio.to_thread(command.upgrade, cfg, "head")
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_reconciler_with_orphan_series_source_id():
+    """
+    Yetim (orphan) series.source_id qatorlari bo'lgan holatda
+    reconciler migratsiyasi (b2c3d4e5f6a7) xatosiz o'tishi va
+    NOT VALID constraint qo'shilishi tekshiriladi.
+    """
+    host, port, user, password, admin_url, test_pg_url, test_pg_sync_url = _resolve_pg_config()
+    cfg = get_alembic_config(test_pg_sync_url)
+
+    await reset_db(admin_url)
+    engine = create_async_engine(test_pg_url)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        # Drop any existing FK constraints to simulate historical drift before b2c3d4e5f6a7
+        await conn.execute(text("ALTER TABLE series DROP CONSTRAINT IF EXISTS series_source_id_fkey"))
+        await conn.execute(text("ALTER TABLE series DROP CONSTRAINT IF EXISTS fk_series_source_id"))
+        # Insert orphan row in series
+        await conn.execute(text("""
+            INSERT INTO series (title, status, source_id, created_at, updated_at)
+            VALUES ('Orphan Test Series', 'ongoing', 999999, now(), now())
+        """))
+
+    with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
+        await asyncio.to_thread(command.stamp, cfg, "9c8d7e6f5a4b")
+        # Upgrade head b2c3d4e5f6a7 (orphan qator bo'lsa ham yiqilmasligi shart)
+        await asyncio.to_thread(command.upgrade, cfg, "head")
+
+    # Tekshiruv: constraint mavjud va convalidated = False (chunki orphan bor)
+    async with engine.connect() as conn:
+        res = await conn.execute(text("""
+            SELECT conname, convalidated
+            FROM pg_constraint
+            WHERE conname = 'fk_series_source_id'
+        """))
+        row = res.fetchone()
+        assert row is not None, "fk_series_source_id constraint yaratilishi shart"
+        assert row[1] is False, "Orphan qator borligi sababli constraint NOT VALID (convalidated=False) bo'lishi kerak"
+
+        # Yangi noto'g'ri FK yozish urinishi bloklanishi kerak
+        with pytest.raises(Exception):
+            await conn.execute(text("""
+                INSERT INTO series (title, status, source_id, created_at, updated_at)
+                VALUES ('Second Invalid Series', 'ongoing', 888888, now(), now())
+            """))
+
+    # Qayta upgrade qilish idempotent ekanligi (duplicate_object exception handling)
+    with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
+        await asyncio.to_thread(command.upgrade, cfg, "head")
+
     await engine.dispose()

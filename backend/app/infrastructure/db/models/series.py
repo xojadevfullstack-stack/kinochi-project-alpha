@@ -31,6 +31,7 @@ class SeriesModel(Base):
     is_18_plus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     
     imdb_rating: Mapped[float | None] = mapped_column(Float)
+    tmdb_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     tmdb_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
     kinochi_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     kinochi_votes_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)

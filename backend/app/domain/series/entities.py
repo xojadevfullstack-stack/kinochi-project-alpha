@@ -80,6 +80,7 @@ class SeriesBase(BaseModel):
     poster_url: str | None = Field(None, max_length=1024)
     trailer_url: str | None = Field(None, max_length=1024)
     imdb_rating: float | None = Field(None, ge=0, le=10)
+    tmdb_rating: float | None = Field(None, ge=0, le=10)
     tmdb_id: int | None = None
     kinochi_rating: float | None = None
     kinochi_votes_count: int = 0

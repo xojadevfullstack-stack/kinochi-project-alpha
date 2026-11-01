@@ -6,7 +6,7 @@ Create Date: 2026-11-01 18:35:00.000000
 """
 from typing import Sequence, Union
 from alembic import op
-import sqlalchemy as sa
+import sqlalchemy as sa  # noqa: F401
 
 
 revision: str = 'b2c3d4e5f6a7'
@@ -155,16 +155,36 @@ def upgrade() -> None:
     op.execute("CREATE INDEX IF NOT EXISTS ix_series_source_id ON series(source_id)")
 
     op.execute("""
-        DO $$ BEGIN
+        DO $$
+        DECLARE
+            orphan_count integer;
+        BEGIN
+            -- 1. Agar constraint yo'q bo'lsa, NOT VALID bilan yaratish (mavjud qatorlarni bloklamaslik uchun)
             IF NOT EXISTS (
                 SELECT 1 FROM pg_constraint WHERE conname = 'fk_series_source_id'
             ) THEN
                 ALTER TABLE series
                 ADD CONSTRAINT fk_series_source_id
                 FOREIGN KEY (source_id) REFERENCES series_sources(id)
-                ON DELETE SET NULL;
+                ON DELETE SET NULL
+                NOT VALID;
             END IF;
-        EXCEPTION WHEN others THEN NULL;
+
+            -- 2. Yetim (orphan) qatorlarni tekshirish
+            SELECT count(*) INTO orphan_count
+            FROM series s
+            WHERE s.source_id IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM series_sources ss WHERE ss.id = s.source_id);
+
+            -- 3. Agar yetim qatorlar bo'lmasa VALIDATE qilish, aks holda ogohlantirish berish
+            IF orphan_count > 0 THEN
+                RAISE WARNING 'fk_series_source_id: % ta yetim (orphan) qator topildi; VALIDATE CONSTRAINT keyinga qoldirildi', orphan_count;
+            ELSE
+                ALTER TABLE series VALIDATE CONSTRAINT fk_series_source_id;
+            END IF;
+        EXCEPTION
+            WHEN duplicate_object THEN
+                NULL;
         END $$;
     """)
 
