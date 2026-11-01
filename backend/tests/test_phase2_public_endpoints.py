@@ -68,15 +68,39 @@ async def test_2b_diag_requires_admin_and_omits_database_url(db_session):
 
 @pytest.mark.asyncio
 async def test_2c_cors_rejects_arbitrary_vercel_subdomains():
-    """Arbitrary vercel.app domains must NOT receive Access-Control-Allow-Origin headers."""
+    """Verify strict CORS enforcement on allowed domains, arbitrary domains, credentials, and preflights."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        resp = await ac.get("/", headers={"Origin": "https://malicious-phishing.vercel.app"})
-        assert resp.headers.get("access-control-allow-origin") != "https://malicious-phishing.vercel.app"
+        # 1. Arbitrary and phishing vercel subdomains rejected
+        resp_evil_vercel = await ac.get("/", headers={"Origin": "https://kinochi-evil.vercel.app"})
+        assert resp_evil_vercel.headers.get("access-control-allow-origin") is None
 
-        # Allowed origin receives header
-        resp_valid = await ac.get("/", headers={"Origin": "https://kinochi-project-alpha.vercel.app"})
-        assert resp_valid.headers.get("access-control-allow-origin") == "https://kinochi-project-alpha.vercel.app"
+        resp_evil_com = await ac.get("/", headers={"Origin": "https://evil.com"})
+        assert resp_evil_com.headers.get("access-control-allow-origin") is None
+
+        # 2. Legitimate production frontend domains pass with credentials
+        resp_alpha = await ac.get("/", headers={"Origin": "https://kinochi-project-alpha.vercel.app"})
+        assert resp_alpha.headers.get("access-control-allow-origin") == "https://kinochi-project-alpha.vercel.app"
+        assert resp_alpha.headers.get("access-control-allow-credentials") == "true"
+
+        resp_custom = await ac.get("/", headers={"Origin": "https://kinochi.uz"})
+        assert resp_custom.headers.get("access-control-allow-origin") == "https://kinochi.uz"
+        assert resp_custom.headers.get("access-control-allow-credentials") == "true"
+
+        # 3. Preflight OPTIONS request
+        opt_ok = await ac.options("/health", headers={
+            "Origin": "https://kinochi-project-alpha.vercel.app",
+            "Access-Control-Request-Method": "GET",
+        })
+        assert opt_ok.status_code == 200
+        assert opt_ok.headers.get("access-control-allow-origin") == "https://kinochi-project-alpha.vercel.app"
+        assert opt_ok.headers.get("access-control-allow-credentials") == "true"
+
+        opt_evil = await ac.options("/health", headers={
+            "Origin": "https://kinochi-evil.vercel.app",
+            "Access-Control-Request-Method": "GET",
+        })
+        assert opt_evil.headers.get("access-control-allow-origin") is None
 
 
 @pytest.mark.asyncio

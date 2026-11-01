@@ -59,22 +59,47 @@ class Settings(BaseSettings):
     # ── CORS ─────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = [
         "https://kinochi-project-alpha.vercel.app",
+        "https://kinochi.uz",
     ]
     CORS_ALLOWED_ORIGINS: str = ""
-    CORS_ORIGIN_REGEX: str = r"^https://kinochi(-[a-z0-9]+)?\.vercel\.app$"
+    # Optional regex: strictly disabled by default (None).
+    # Can be set via env for team preview deployments, e.g.:
+    # CORS_ORIGIN_REGEX=^https://kinochi-project-alpha-[a-z0-9-]+-<team-slug>\.vercel\.app$
+    CORS_ORIGIN_REGEX: str | None = None
 
     # ── Reverse Proxy / Rate Limiting ────────────────────────────
     TRUST_PROXY: bool = False
     TRUSTED_PROXIES_COUNT: int = 1
 
     def model_post_init(self, __context):
-        if self.CORS_ALLOWED_ORIGINS:
-            for origin in self.CORS_ALLOWED_ORIGINS.split(","):
-                o = origin.strip()
-                if o and o not in self.CORS_ORIGINS:
-                    self.CORS_ORIGINS.append(o)
+        # Guarantee core frontend domains are always present
+        for core_origin in [
+            "https://kinochi-project-alpha.vercel.app",
+            "https://kinochi.uz",
+        ]:
+            if core_origin not in self.CORS_ORIGINS:
+                self.CORS_ORIGINS.append(core_origin)
 
-        if self.APP_ENV != "production":
+        # Merge CORS_ALLOWED_ORIGINS alias (comma-separated or JSON list)
+        if self.CORS_ALLOWED_ORIGINS:
+            raw = self.CORS_ALLOWED_ORIGINS.strip()
+            if raw.startswith("[") and raw.endswith("]"):
+                try:
+                    import json
+                    parsed = json.loads(raw)
+                    for o in parsed:
+                        s = str(o).strip()
+                        if s and s not in self.CORS_ORIGINS:
+                            self.CORS_ORIGINS.append(s)
+                except Exception:
+                    pass
+            else:
+                for origin in raw.split(","):
+                    o = origin.strip()
+                    if o and o not in self.CORS_ORIGINS:
+                        self.CORS_ORIGINS.append(o)
+
+        if getattr(self, "APP_ENV", "development") != "production":
             for dev_origin in [
                 "http://localhost:3000",   # website dev
                 "http://localhost:3001",   # admin panel dev
