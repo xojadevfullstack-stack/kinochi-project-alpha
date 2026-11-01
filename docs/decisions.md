@@ -39,3 +39,9 @@
 - **Context:** Bulky standalone trailer section consumed excessive vertical space and broke visual flow on movie and series details pages.
 - **Decision:** Migrate trailers to an ambient background video layer (`HeroTrailerBackdrop.tsx`) behind the hero banner with protective vignette gradients, instant LCP poster fallback, muted loop playback, interactive floating sound toggle, and an ergonomic "TREYLER" modal trigger in the primary actions row.
 - **Status:** Accepted & Implemented (F1-S27).
+
+
+## ADR-009: Idempotent Schema Reconciler & Historical Alembic Migrations Integrity
+- **Context:** Historical migrations `c011ec7100`, `da3404d65ffd`, and `8e4e155f48db` contain anomalies: `c011ec7100` references `collections(id)` which was historically created via `Base.metadata.create_all` rather than an earlier Alembic migration, and historical downgrades contain destructive drops or missing cascade clauses.
+- **Decision:** Do not rewrite or modify historical migration files (`c011ec7100`, `da3404d65ffd`, `8e4e155f48db`), because they may have already been applied to existing production environments and editing them would cause checksum/history divergence. Instead, implement an idempotent schema reconciler migration (`b2c3d4e5f6a7`) with `IF NOT EXISTS` DDL guards for all drifted tables/columns (`series_sources`, `collections`, `collection_items`, `series_subscriptions`, `reports`, `blacklist`, and `movies`/`series` metadata columns). Keep `downgrade()` in `b2c3d4e5f6a7` non-destructive to preserve user data in production. If historical migrations are replayed on empty databases, run initial bootstrap schema before stamping or replaying.
+- **Status:** Accepted & Implemented (Phase 4, 2026-11-01).
