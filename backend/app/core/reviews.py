@@ -5,7 +5,7 @@ from sqlalchemy import select, update, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.infrastructure.db.session import async_session_factory
+import app.infrastructure.db.session as db_session_module
 from app.infrastructure.db.models.review import ReviewModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel, EpisodeModel, SeasonModel
@@ -85,7 +85,7 @@ async def submit_review(
     rating = max(1, min(10, int(rating)))
     clean_comment = comment.strip() if comment and comment.strip() else None
 
-    async with async_session_factory() as session:
+    async with db_session_module.async_session_factory() as session:
         actual_uid = await _get_actual_user_id(session, user_id)
 
         # If episode_id is provided but series_id is not, resolve series_id through season
@@ -138,13 +138,13 @@ async def submit_review(
         await session.commit()
 
         try:
-            from app.infrastructure.cache.redis import delete_cache_pattern
+            from app.core.cache import delete_cache_pattern
             if movie_id:
                 await delete_cache_pattern("cache:movies:*")
             elif series_id:
                 await delete_cache_pattern("cache:series:*")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Kesh invalidatsiyasida xatolik yuz berdi: %s", e, exc_info=True)
 
         return {
             "success": True,
@@ -163,7 +163,7 @@ async def get_reviews(
     offset: int = 0
 ) -> Dict[str, Any]:
     """Fetches paginated reviews for a given movie, series, or episode."""
-    async with async_session_factory() as session:
+    async with db_session_module.async_session_factory() as session:
         query = select(ReviewModel).options(selectinload(ReviewModel.user))
         count_query = select(func.count(ReviewModel.id))
 
@@ -233,7 +233,7 @@ async def get_user_review(
     episode_id: Optional[int] = None
 ) -> Optional[Dict[str, Any]]:
     """Gets the current user's existing review for this content."""
-    async with async_session_factory() as session:
+    async with db_session_module.async_session_factory() as session:
         actual_uid = await _get_actual_user_id(session, user_id)
         stmt = select(ReviewModel).where(ReviewModel.user_id == actual_uid)
         if movie_id:

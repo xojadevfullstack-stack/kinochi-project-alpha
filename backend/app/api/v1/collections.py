@@ -545,7 +545,7 @@ async def broadcast_new_collection_item_notification(
         m_title = html.escape(movie.title)
         m_year = f" ({movie.release_year})" if movie.release_year else ""
         rating_str = f"⭐️ IMDb: <b>{movie.imdb_rating}</b> | " if movie.imdb_rating else ""
-        dur_str = f"⏱ {movie.duration_minutes} daqiqa\n" if movie.duration_minutes else "\n"
+        dur_str = f"⏱ {movie.runtime} daqiqa\n" if movie.runtime else "\n"
         order_str = f"🔢 <b>Xronologiya bo'yicha:</b> {current_order}-qism (jami {total_parts} ta)\n"
 
         text = (

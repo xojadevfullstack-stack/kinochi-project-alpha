@@ -31,8 +31,9 @@ async def test_health_endpoint_includes_bot_alive():
 
 @pytest.mark.asyncio
 async def test_supervised_run_bot_retries_and_exits_nonzero():
-    """supervised_run_bot() xatolik yuz berganda exponential backoff bilan qayta urinadi va oxirida non-zero (sys.exit(1)) bilan tugaydi."""
+    """supervised_run_bot() xatolik yuz berganda exponential backoff bilan qayta urinadi va oxirida API'ni o'ldirmay degraded rejimga o'tadi."""
     import run
+    from app.core.bot_status import get_bot_status
 
     call_count = 0
     async def failing_run_bot():
@@ -48,8 +49,9 @@ async def test_supervised_run_bot_retries_and_exits_nonzero():
         await run.supervised_run_bot()
 
         assert call_count == 3
-        # sys.exit(1) non-zero bilan chaqirilgan bo'lishi shart
-        mock_exit.assert_called_with(1)
+        # sys.exit(1) chaqirilmasligi kerak (API tirik qoladi)
+        mock_exit.assert_not_called()
+        assert get_bot_status() == "degraded"
         # 2 marta qayta urinish oralig'ida sleep chaqirilgan bo'lishi kerak
         assert mock_sleep.await_count == 2
 

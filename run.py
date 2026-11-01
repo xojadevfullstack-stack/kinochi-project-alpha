@@ -67,9 +67,10 @@ async def supervised_run_bot():
     """
     from bot.main import run_bot
     try:
-        from app.core.bot_status import set_bot_alive
+        from app.core.bot_status import set_bot_alive, set_bot_status
     except Exception:
         def set_bot_alive(v): pass
+        def set_bot_status(v): pass
 
     max_attempts = int(os.environ.get("MAX_BOT_RESTARTS", "5"))
     base_delay = float(os.environ.get("BOT_RESTART_BASE_DELAY", "2.0"))
@@ -94,13 +95,16 @@ async def supervised_run_bot():
             attempts += 1
             logging.error(f"[SUPERVISOR] run_bot() crashed with exception (attempt {attempts}/{max_attempts}):", exc_info=True)
             if attempts >= max_attempts:
-                logging.critical(f"[SUPERVISOR] run_bot() failed after {max_attempts} attempts. Exiting non-zero so Render restarts service.")
-                sys.exit(1)
+                set_bot_status("degraded")
+                logging.critical(
+                    f"[SUPERVISOR] run_bot() failed after {max_attempts} attempts. "
+                    "Leaving FastAPI API alive in degraded mode instead of killing the process."
+                )
                 return
             logging.info(f"[SUPERVISOR] Restarting bot in {delay:.1f}s...")
             await asyncio.sleep(delay)
             delay = min(delay * 2, max_delay)
-    sys.exit(1)
+    set_bot_status("degraded")
 
 # ── Main Entrypoint ──────────────────────────────────────────────
 async def main():
