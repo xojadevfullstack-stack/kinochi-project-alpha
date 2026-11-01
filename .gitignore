@@ -96,6 +96,7 @@ scraper/autopilot_v2/quarantine_items.json
 
 # Database backups and dumps
 *.dump
+*.bak
 *.sql
 kinochi_*.dump
 backups/

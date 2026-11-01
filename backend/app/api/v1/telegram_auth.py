@@ -251,7 +251,11 @@ async def dev_login(
     """
     Direct login endpoint for instant verification, testing, and bot one-click links.
     Generates a valid JWT token without relying on Telegram's third-party widget popup.
+    Disabled in production.
     """
+    if settings.APP_ENV == "production":
+        raise HTTPException(status_code=403, detail="Dev login is disabled in production.")
+
     user = await _upsert_telegram_user(
         session=session,
         telegram_id=data.telegram_id,
