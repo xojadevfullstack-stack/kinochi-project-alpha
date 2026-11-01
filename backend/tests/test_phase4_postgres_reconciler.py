@@ -1,5 +1,7 @@
 import os
 import asyncio
+import socket
+from urllib.parse import urlparse
 from unittest.mock import patch
 import asyncpg
 import pytest
@@ -11,10 +13,58 @@ from app.infrastructure.db.session import Base
 import app.infrastructure.db.models  # Load all models
 
 
-TEST_PG_URL = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/kinochi_reconciler_test"
-TEST_PG_SYNC_URL = "postgresql://postgres:postgres@127.0.0.1:5433/kinochi_reconciler_test"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ALEMBIC_INI = os.path.join(ROOT_DIR, "alembic.ini")
+
+
+def _is_port_open(host: str, port: int) -> bool:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        res = s.connect_ex((host, port))
+        s.close()
+        return res == 0
+    except Exception:
+        return False
+
+
+def _resolve_pg_config():
+    """
+    Resolve test PostgreSQL connection parameters dynamically.
+    Checks TEST_DATABASE_URL / TEST_POSTGRES_URL / TEST_DB_PORT / standard ports.
+    Safely skips if not localhost or unreachable.
+    """
+    raw_url = os.environ.get("TEST_POSTGRES_URL") or os.environ.get("TEST_DATABASE_URL") or ""
+    if raw_url:
+        clean = raw_url.replace("postgresql+asyncpg://", "http://").replace("postgres://", "http://").replace("postgresql://", "http://")
+        parsed = urlparse(clean)
+        host = (parsed.hostname or "127.0.0.1").lower()
+        port = parsed.port or int(os.environ.get("TEST_DB_PORT", "5432"))
+        user = parsed.username or "postgres"
+        password = parsed.password or "postgres"
+    else:
+        host = os.environ.get("TEST_DB_HOST", "127.0.0.1").lower()
+        user = os.environ.get("TEST_DB_USER", "postgres")
+        password = os.environ.get("TEST_DB_PASSWORD", "postgres")
+        if "TEST_DB_PORT" in os.environ:
+            port = int(os.environ["TEST_DB_PORT"])
+        elif _is_port_open("127.0.0.1", 5433):
+            port = 5433
+        elif _is_port_open("127.0.0.1", 5432):
+            port = 5432
+        else:
+            port = 5432
+
+    if host not in ("localhost", "127.0.0.1", "::1"):
+        pytest.skip(f"Safety guard: host '{host}' is not localhost; skipping reconciler integration test.")
+
+    if not _is_port_open(host, port):
+        pytest.skip(f"Test PostgreSQL port {host}:{port} is closed; skipping reconciler integration test.")
+
+    admin_url = f"postgresql://{user}:{password}@{host}:{port}/postgres"
+    test_pg_url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/kinochi_reconciler_test"
+    test_pg_sync_url = f"postgresql://{user}:{password}@{host}:{port}/kinochi_reconciler_test"
+    return host, port, user, password, admin_url, test_pg_url, test_pg_sync_url
 
 
 def get_alembic_config(db_url: str) -> Config:
@@ -24,28 +74,34 @@ def get_alembic_config(db_url: str) -> Config:
     return cfg
 
 
-async def reset_db():
-    conn = await asyncpg.connect("postgresql://postgres:postgres@127.0.0.1:5433/postgres")
-    await conn.execute("DROP DATABASE IF EXISTS kinochi_reconciler_test WITH (FORCE);")
-    await conn.execute("CREATE DATABASE kinochi_reconciler_test;")
-    await conn.close()
+async def reset_db(admin_url: str):
+    try:
+        conn = await asyncpg.connect(admin_url, timeout=2.0)
+    except Exception as e:
+        pytest.skip(f"Could not connect to PostgreSQL admin database at {admin_url}: {e}")
+    try:
+        await conn.execute("DROP DATABASE IF EXISTS kinochi_reconciler_test WITH (FORCE);")
+        await conn.execute("CREATE DATABASE kinochi_reconciler_test;")
+    finally:
+        await conn.close()
 
 
 @pytest.mark.asyncio
 async def test_4_5_disposable_postgres_reconciler_scenarios():
     """Verify all 4 migration scenarios on disposable PostgreSQL 17."""
-    cfg = get_alembic_config(TEST_PG_SYNC_URL)
+    host, port, user, password, admin_url, test_pg_url, test_pg_sync_url = _resolve_pg_config()
+    cfg = get_alembic_config(test_pg_sync_url)
 
     # -------------------------------------------------------------
     # Scenario (i): Bo'sh bazada alembic upgrade head xatti-harakati
     # -------------------------------------------------------------
-    await reset_db()
+    await reset_db(admin_url)
     # Eslatma: c011ec7100 migratsiyasi bo'sh bazada collections jadvalisiz yiqiladi
     # Bu tarixiy migratsiyani o'zgartirmaslik qoidasining tabiiy natijasi
     failed_on_empty = False
     fail_reason = ""
     try:
-        with patch.dict(os.environ, {"DATABASE_URL": TEST_PG_URL}):
+        with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
             await asyncio.to_thread(command.upgrade, cfg, "head")
     except Exception as e:
         failed_on_empty = True
@@ -57,13 +113,13 @@ async def test_4_5_disposable_postgres_reconciler_scenarios():
     # -------------------------------------------------------------
     # Scenario (ii): create_all bilan yaratilgan baza + stamp + upgrade head
     # -------------------------------------------------------------
-    await reset_db()
-    engine = create_async_engine(TEST_PG_URL)
+    await reset_db(admin_url)
+    engine = create_async_engine(test_pg_url)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     # Stamp head dan oldingi holat (9c8d7e6f5a4b)
-    with patch.dict(os.environ, {"DATABASE_URL": TEST_PG_URL}):
+    with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
         await asyncio.to_thread(command.stamp, cfg, "9c8d7e6f5a4b")
 
         # Endi upgrade head (b2c3d4e5f6a7 reconciler) ishlaydi
@@ -87,13 +143,13 @@ async def test_4_5_disposable_postgres_reconciler_scenarios():
     # Scenario (iii): Migratsiyani 2 marta ishga tushirish (idempotentlik)
     # -------------------------------------------------------------
     # Qayta upgrade head xato bermasligi kerak
-    with patch.dict(os.environ, {"DATABASE_URL": TEST_PG_URL}):
+    with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
         await asyncio.to_thread(command.upgrade, cfg, "head")
 
     # -------------------------------------------------------------
     # Scenario (iv): Downgrade xavfsizligi
     # -------------------------------------------------------------
-    with patch.dict(os.environ, {"DATABASE_URL": TEST_PG_URL}):
+    with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
         await asyncio.to_thread(command.downgrade, cfg, "-1")
     # collections jadvali o'chib ketmasligi shart (xavfsiz downgrade)
     async with engine.connect() as conn:
@@ -101,6 +157,6 @@ async def test_4_5_disposable_postgres_reconciler_scenarios():
         assert res_safe.scalar() is not None
 
     # Qayta upgrade qilib head holatiga olib kelish
-    with patch.dict(os.environ, {"DATABASE_URL": TEST_PG_URL}):
+    with patch.dict(os.environ, {"DATABASE_URL": test_pg_url}):
         await asyncio.to_thread(command.upgrade, cfg, "head")
     await engine.dispose()

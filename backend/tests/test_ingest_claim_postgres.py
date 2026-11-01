@@ -58,21 +58,25 @@ async def test_parallel_claim_next_never_double_claims():
     url = _get_safe_test_postgres_url()
     schema_name = f"ingest_claim_{uuid.uuid4().hex[:8]}"
 
-    base_engine = create_async_engine(url, echo=False)
+    try:
+        base_engine = create_async_engine(url, echo=False)
+        async with base_engine.begin() as conn:
+            await conn.execute(text(f'CREATE SCHEMA "{schema_name}"'))
+    except Exception as e:
+        pytest.skip(f"TEST_POSTGRES_URL database unreachable or schema create failed: {e}")
+
     isolated_engine = base_engine.execution_options(
         schema_translate_map={None: schema_name, "public": schema_name}
     )
     factory = async_sessionmaker(isolated_engine, class_=AsyncSession, expire_on_commit=False)
-
-    async with base_engine.begin() as conn:
-        await conn.execute(text(f'CREATE SCHEMA "{schema_name}"'))
 
     try:
         async with isolated_engine.begin() as conn:
             await conn.run_sync(IngestItemModel.__table__.create)
 
         async with factory() as session:
-            added = await IngestService.enqueue_candidates(session, [
+            service = IngestService(session)
+            added = await service.add_batch([
                 {"source": "uzmovi", "source_id": str(i), "title": f"Item {i}", "status": "queued"}
                 for i in range(N_ITEMS)
             ])
@@ -83,10 +87,10 @@ async def test_parallel_claim_next_never_double_claims():
             claimed = []
             while True:
                 async with factory() as session:
-                    item = await IngestService.claim_next(session, worker_id=f"w{idx}")
+                    service = IngestService(session)
+                    item = await service.claim_next(worker_id=f"w{idx}")
                     if item is None:
                         return claimed
-                    await session.commit()
                     claimed.append(item.id)
                 await asyncio.sleep(0)
 

@@ -63,11 +63,20 @@ jobs:
           fi
           echo "Alembic single head verified: $HEADS"
 
+      - name: Bootstrap Postgres Schema (ADR-009)
+        env:
+          DATABASE_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/kinochi_v2_test"
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
+        run: |
+          cd backend
+          python scripts/init_collections_db.py
+          alembic stamp 9c8d7e6f5a4b
+          alembic upgrade head
+
       - name: Run Pytest Backend
         env:
           TEST_DB_PORT: "5432"
           DATABASE_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/kinochi_v2_test"
-          TEST_DATABASE_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/kinochi_v2_test"
           TEST_POSTGRES_URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/kinochi_v2_test"
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
         run: |
