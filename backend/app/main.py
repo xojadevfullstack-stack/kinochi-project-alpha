@@ -14,7 +14,7 @@ logging.info("CHECKPOINT 5: main.py moduli import qilinmoqda")
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, Response, status
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -241,16 +241,38 @@ async def root():
 
 # ── Health-check endpoint ────────────────────────────────────────
 @app.get("/health", tags=["health"])
-async def health_check() -> dict:
+async def health_check(response: Response) -> dict:
     """
-    Basic liveness probe.
-    Returns 200 if the process is running.
-    Includes bot_alive status.
+    Comprehensive liveness and readiness probe.
+    Executes a fast (<= 2s) DB ping query. If DB fails, returns 503.
+    Reports Redis availability and bot supervisor status (alive/degraded/stopped).
+    Degraded bot does not fail the overall web health check.
     """
-    from app.core.bot_status import is_bot_alive
+    import asyncio
+    from sqlalchemy import text
+    from app.core.bot_status import is_bot_alive, get_bot_status
+    from app.core.cache import is_redis_available
+    import app.infrastructure.db.session as db_session_module
+
+    db_status = "connected"
+    try:
+        async with db_session_module.async_session_factory() as session:
+            await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=2.0)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Database health check ping failed: %s", exc)
+        db_status = "unavailable"
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+    redis_status = "connected" if is_redis_available() else "unavailable"
+    bot_status = get_bot_status()
+    overall_status = "healthy" if db_status == "connected" else "unhealthy"
+
     return {
-        "status": "healthy",
+        "status": overall_status,
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
+        "database": db_status,
+        "redis": redis_status,
+        "bot": bot_status,
         "bot_alive": is_bot_alive(),
     }
