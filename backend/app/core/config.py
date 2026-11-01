@@ -57,16 +57,32 @@ class Settings(BaseSettings):
         return v
 
     # ── CORS ─────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = []
+    CORS_ORIGINS: list[str] = [
+        "https://kinochi-project-alpha.vercel.app",
+    ]
+    CORS_ALLOWED_ORIGINS: str = ""
+    CORS_ORIGIN_REGEX: str = r"^https://kinochi(-[a-z0-9]+)?\.vercel\.app$"
+
+    # ── Reverse Proxy / Rate Limiting ────────────────────────────
+    TRUST_PROXY: bool = False
+    TRUSTED_PROXIES_COUNT: int = 1
 
     def model_post_init(self, __context):
+        if self.CORS_ALLOWED_ORIGINS:
+            for origin in self.CORS_ALLOWED_ORIGINS.split(","):
+                o = origin.strip()
+                if o and o not in self.CORS_ORIGINS:
+                    self.CORS_ORIGINS.append(o)
+
         if self.APP_ENV != "production":
-            self.CORS_ORIGINS.extend([
+            for dev_origin in [
                 "http://localhost:3000",   # website dev
                 "http://localhost:3001",   # admin panel dev
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:3001",
-            ])
+            ]:
+                if dev_origin not in self.CORS_ORIGINS:
+                    self.CORS_ORIGINS.append(dev_origin)
 
     # ── Security (Phase 1+) ──────────────────────────────────────────
     SECRET_KEY: str = "change-me-in-production"

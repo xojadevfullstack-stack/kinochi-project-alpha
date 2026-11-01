@@ -7,13 +7,14 @@ logic lives here.
 """
 
 import re
+import uuid
 import logging
 logging.info("CHECKPOINT 5: main.py moduli import qilinmoqda")
 
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -21,6 +22,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
+from app.api.deps import get_current_admin
 from app.api.v1 import movies, categories, users, channels, auth, broadcasts, series, sources, pages, telegram_auth, reviews, statistics, content_lookup, scraper, collections, search, reports, audit, blacklist, series_subscriptions, rejected, admin_cache, content_requests, actors
 from app.api.limiter import limiter
 from fastapi.staticfiles import StaticFiles
@@ -119,39 +121,53 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+def is_origin_allowed(origin: str | None) -> bool:
+    """Check if an origin is permitted under strict CORS rules."""
+    if not origin:
+        return False
+    if origin in settings.CORS_ORIGINS:
+        return True
+    if settings.CORS_ORIGIN_REGEX and re.match(settings.CORS_ORIGIN_REGEX, origin):
+        return True
+    return False
+
+
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    logging.error(f"Unhandled server error on {request.method} {request.url.path}: {exc}", exc_info=True)
+    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    logging.exception(f"Unhandled server error [{request_id}] on {request.method} {request.url.path}: {exc}")
     headers = {}
     origin = request.headers.get("origin")
-    if origin:
-        is_allowed = False
-        if origin in settings.CORS_ORIGINS:
-            is_allowed = True
-        elif re.match(r"^https://.*\.vercel\.app$", origin):
-            is_allowed = True
+    if is_origin_allowed(origin):
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Allow-Methods"] = "*"
 
-        if is_allowed:
-            headers["Access-Control-Allow-Origin"] = origin
-            headers["Access-Control-Allow-Credentials"] = "true"
-            headers["Access-Control-Allow-Headers"] = "*"
-            headers["Access-Control-Allow-Methods"] = "*"
-
-    return JSONResponse(
-        status_code=500,
-        content={
+    if getattr(settings, "APP_ENV", "development") == "production":
+        content = {
+            "detail": "Serverda kutilmagan xatolik yuz berdi. Bir ozdan so'ng qayta urinib ko'ring.",
+            "request_id": request_id,
+        }
+    else:
+        content = {
             "detail": "Serverda kutilmagan xatolik yuz berdi. Bir ozdan so'ng qayta urinib ko'ring.",
             "error_type": type(exc).__name__,
             "error_message": str(exc),
-        },
+            "request_id": request_id,
+        }
+
+    return JSONResponse(
+        status_code=500,
+        content=content,
         headers=headers,
     )
 
 app.add_middleware(SlowAPIMiddleware)
 
 @app.get("/api/v1/diag")
-async def diag():
-    import traceback
+async def diag(admin: dict = Depends(get_current_admin)):
     from app.infrastructure.db.session import async_session_factory
     from sqlalchemy import text
     db_status = "unknown"
@@ -172,7 +188,6 @@ async def diag():
         "db_status": db_status,
         "movies_count": count,
         "db_error": err,
-        "database_url_masked": settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "not_set",
     }
 
 
@@ -210,7 +225,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=settings.CORS_ORIGIN_REGEX or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

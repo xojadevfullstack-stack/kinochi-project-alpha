@@ -10,13 +10,13 @@ import logging
 from datetime import datetime
 from typing import Literal
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Header
 from pydantic import BaseModel
 from sqlalchemy import select, func, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db_session, get_current_admin, get_admin_or_bot, get_current_user_optional
+from app.api.deps import get_db_session, get_current_admin, get_admin_or_bot, get_current_user_optional, verify_telegram_user_ownership
 from app.api.limiter import limiter
 from app.infrastructure.db.models.collection import CollectionModel, CollectionItemModel
 from app.infrastructure.db.models.collection_subscription import CollectionSubscriptionModel
@@ -400,6 +400,7 @@ async def toggle_collection_subscription(
     payload: SubscribeCollectionRequest,
     current_user: dict | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db_session),
+    x_bot_secret: str | None = Header(None, alias="X-Bot-Secret"),
 ):
     """
     Toggle subscription for a user on a franchise / collection.
@@ -416,6 +417,8 @@ async def toggle_collection_subscription(
 
     if not tg_id:
         raise HTTPException(status_code=401, detail="Obuna bo'lish uchun Telegram orqali kiring")
+
+    verify_telegram_user_ownership(tg_id, current_user=current_user, x_bot_secret=x_bot_secret)
 
     stmt = select(CollectionSubscriptionModel).where(
         CollectionSubscriptionModel.collection_id == collection_id,
@@ -452,6 +455,7 @@ async def check_collection_subscription(
     telegram_user_id: int | None = Query(None),
     current_user: dict | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db_session),
+    x_bot_secret: str | None = Header(None, alias="X-Bot-Secret"),
 ):
     """Check if user is subscribed to franchise / collection updates (bot or web)."""
     tg_id = telegram_user_id
@@ -464,6 +468,8 @@ async def check_collection_subscription(
             collection_id=collection_id,
             telegram_user_id=0,
         )
+
+    verify_telegram_user_ownership(tg_id, current_user=current_user, x_bot_secret=x_bot_secret)
 
     stmt = select(CollectionSubscriptionModel).where(
         CollectionSubscriptionModel.collection_id == collection_id,

@@ -3,12 +3,12 @@ import html
 import json
 import asyncio
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Header
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
-from app.api.deps import get_db_session, get_admin_or_bot, get_current_user_optional
+from app.api.deps import get_db_session, get_admin_or_bot, get_current_user_optional, verify_telegram_user_ownership
 from app.infrastructure.db.models.series_subscription import SeriesSubscriptionModel
 from app.infrastructure.db.models.series import SeriesModel
 from app.infrastructure.db.session import async_session_factory
@@ -39,7 +39,8 @@ async def toggle_series_subscription(
     series_id: int,
     payload: SubscribeRequest,
     current_user: dict | None = Depends(get_current_user_optional),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    x_bot_secret: str | None = Header(None, alias="X-Bot-Secret"),
 ):
     """
     Toggle subscription for a user on a series.
@@ -56,6 +57,8 @@ async def toggle_series_subscription(
 
     if not tg_id:
         raise HTTPException(status_code=401, detail="Obuna bo'lish uchun Telegram orqali kiring")
+
+    verify_telegram_user_ownership(tg_id, current_user=current_user, x_bot_secret=x_bot_secret)
 
     stmt = select(SeriesSubscriptionModel).where(
         SeriesSubscriptionModel.series_id == series_id,
@@ -91,7 +94,8 @@ async def check_series_subscription(
     series_id: int,
     telegram_user_id: int | None = Query(None),
     current_user: dict | None = Depends(get_current_user_optional),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    x_bot_secret: str | None = Header(None, alias="X-Bot-Secret"),
 ):
     """Check if user is subscribed to series updates (bot or web)."""
     tg_id = telegram_user_id
@@ -104,6 +108,8 @@ async def check_series_subscription(
             series_id=series_id,
             telegram_user_id=0
         )
+
+    verify_telegram_user_ownership(tg_id, current_user=current_user, x_bot_secret=x_bot_secret)
 
     stmt = select(SeriesSubscriptionModel).where(
         SeriesSubscriptionModel.series_id == series_id,

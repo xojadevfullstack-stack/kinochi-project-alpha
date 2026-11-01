@@ -1,4 +1,5 @@
 """API v1 — Users endpoints."""
+import hmac
 import logging
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
@@ -35,7 +36,7 @@ async def verify_bot_secret(x_bot_secret: str = Header(..., alias="X-Bot-Secret"
             status_code=500,
             detail="BOT_API_SECRET konfiguratsiyalanmagan. .env faylini tekshiring."
         )
-    if x_bot_secret != settings.BOT_API_SECRET:
+    if not (x_bot_secret and hmac.compare_digest(x_bot_secret.encode(), settings.BOT_API_SECRET.encode())):
         raise HTTPException(
             status_code=403,
             detail="Forbidden: noto'g'ri bot secret."

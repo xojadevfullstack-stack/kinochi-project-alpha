@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.infrastructure.db.session import async_session_factory
+import app.infrastructure.db.session as db_session_module
 from app.infrastructure.db.repositories.movie_repo import MovieRepositoryImpl
 from app.infrastructure.db.repositories.category_repo import CategoryRepositoryImpl
 from app.infrastructure.db.repositories.user_repo import UserRepositoryImpl
@@ -29,7 +29,7 @@ from app.infrastructure.telegram.telegram_client import telegram_client
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to provide a DB session."""
-    async with async_session_factory() as session:
+    async with db_session_module.async_session_factory() as session:
         try:
             yield session
             await session.commit()
@@ -214,3 +214,26 @@ async def resolve_publish_status(
                 )
             raise e
     return None if effective_status == "all" else effective_status
+
+
+def verify_telegram_user_ownership(
+    target_telegram_id: int,
+    current_user: dict | None = None,
+    x_bot_secret: str | None = None,
+) -> None:
+    """
+    Ensure the request to modify/view user subscription is authorized:
+    1. Valid X-Bot-Secret (bot requests), OR
+    2. Valid JWT where current_user["telegram_id"] matches target_telegram_id.
+    Otherwise raise 403 Forbidden.
+    """
+    if x_bot_secret and settings.BOT_API_SECRET and hmac.compare_digest(x_bot_secret.encode(), settings.BOT_API_SECRET.encode()):
+        return
+
+    if current_user and current_user.get("telegram_id") == target_telegram_id:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Ruxsat berilmagan: obuna amali faqat o'z hisobingizdan yoki bot orqali bajarilishi mumkin.",
+    )

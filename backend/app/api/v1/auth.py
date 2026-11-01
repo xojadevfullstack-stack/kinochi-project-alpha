@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.api.deps import get_db_session
+from app.api.limiter import limiter
 from app.infrastructure.db.models.admin_user import AdminUserModel
 from app.infrastructure.security.password_hasher import verify_password
 from app.infrastructure.security.jwt_handler import (
@@ -79,7 +80,9 @@ def _clear_auth_cookies(response: Response) -> None:
 
 # ── Endpoints ────────────────────────────────────────────────────
 @router.post("/login")
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     login_in: LoginRequest,
     response: Response,
     session: AsyncSession = Depends(get_db_session),
