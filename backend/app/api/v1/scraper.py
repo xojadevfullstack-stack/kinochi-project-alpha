@@ -26,6 +26,15 @@ def _require_auto_content():
             detail="AUTO_CONTENT_ENABLED o'chirilgan (False): avtomatik media yozish taqiqlangan."
         )
 
+
+def _require_scraper_enabled():
+    """SCRAPER_ENABLED kill-switch tekshiruvi. O'chirilgan bo'lsa tashqi scraper start endpointlari taqiqlanadi."""
+    if not getattr(settings, "SCRAPER_ENABLED", False):
+        raise HTTPException(
+            status_code=403,
+            detail="SCRAPER_ENABLED o'chirilgan (False): scraper/grabber jarayonlarini ishga tushirish taqiqlangan."
+        )
+
 # Discover and register scraper directory across any deployment mode (Docker, VPS, Render, local dev)
 candidate_roots = [
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")),
@@ -152,7 +161,7 @@ class StatusResponse(BaseModel):
     speed_movies_per_min: float = 0.0
     bot_status: str = "idle"
     logs: List[Dict[str, Any]]
-    stats: Dict[str, int]
+    stats: Dict[str, Any]
     state: Optional[Dict[str, Any]] = None
 
 
@@ -222,6 +231,7 @@ def update_scraper_state(data: UpdateStateRequest, admin=Depends(require_scraper
 def start_autopilot(data: AutopilotRequest, admin=Depends(require_scraper)):
     """Bitta tugma bilan to'liq avtonom sikl (Parse + 6+ Filtr + Download) ni boshlash."""
     _require_auto_content()
+    _require_scraper_enabled()
     if data.media_type not in MEDIA_TYPES:
         raise HTTPException(status_code=400, detail="Noma'lum media turi")
     return _ensure_ok(
@@ -293,6 +303,7 @@ def get_queue(
 @router.post("/start-parse")
 def start_parse(data: ParseRequest, admin=Depends(require_scraper)):
     """Saytdan katalog yig'ish (Parse) jarayonini ishga tushirish."""
+    _require_scraper_enabled()
     if data.source not in SOURCES:
         raise HTTPException(status_code=400, detail="Noma'lum manba")
     if data.media_type not in MEDIA_TYPES:
@@ -312,6 +323,7 @@ def start_parse(data: ParseRequest, admin=Depends(require_scraper)):
 def start_download(data: DownloadRequest, admin=Depends(require_scraper)):
     """Telegram botdan film/seriallarni yuklash (Download/Grab) jarayonini ishga tushirish."""
     _require_auto_content()
+    _require_scraper_enabled()
     if data.target not in SOURCES:
         raise HTTPException(status_code=400, detail="Noma'lum maqsadli bot")
     if data.media_type not in MEDIA_TYPES:
@@ -366,6 +378,7 @@ def quick_grab(
 ):
     """Qidiruv natijalaridagi filmni darhol Telegram botdan yuklashni boshlash."""
     _require_auto_content()
+    _require_scraper_enabled()
     qm = QueueManager()
     new_item = QueueItem(
         id=item_data["id"],
@@ -493,6 +506,7 @@ def delete_queue_item(item_id: str, admin=Depends(require_scraper)):
 def grab_now(item_id: str, admin=Depends(require_scraper)):
     """Aynan bitta film yoki serialni navbatdan darhol yuklashni boshlash."""
     _require_auto_content()
+    _require_scraper_enabled()
     qm = QueueManager()
     item = qm.items.get(item_id)
     if not item:

@@ -35,7 +35,7 @@ from scraper.state_manager import StateManager
 from scraper.duplicate_checker import DuplicateChecker
 from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, create_telethon_client
 from telethon.errors import FloodWaitError
-from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH
+from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH, is_scraper_enabled
 from scraper.autopilot_v2 import autopilot_engine
 from filelock import FileLock, Timeout
 
@@ -814,6 +814,10 @@ def main():
     if args.stats:
         cmd_stats()
         return
+
+    if (args.parse or args.download or args.autopilot or args.tmdb_autopilot) and not is_scraper_enabled():
+        print("⛔ SCRAPER_ENABLED=False: tashqi scraper/grabber buyruqlari (parse, download, autopilot, tmdb-autopilot) o'chirilgan.", flush=True)
+        sys.exit(1)
 
     lock = ScraperCliLock()
     try:

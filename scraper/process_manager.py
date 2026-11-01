@@ -8,6 +8,7 @@ import subprocess
 from typing import Dict, Any, List, Optional
 from scraper.queue_manager import QueueManager
 from scraper.state_manager import StateManager
+from scraper.config import is_scraper_enabled
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SCRAPER_SCRIPT = os.path.join(ROOT_DIR, "scraper", "run_scraper.py")
@@ -230,6 +231,11 @@ class ProcessManager:
                 self.stop_requested = False
 
     def _launch(self, cmd: List[str], task_name: str, expected_total: int, ok_message: str) -> Dict[str, Any]:
+        if task_name in ("parse", "download", "autopilot", "tmdb_autopilot") and not is_scraper_enabled():
+            return {
+                "success": False,
+                "message": "SCRAPER_ENABLED o'chirilgan (False): tashqi scraper jarayonlarini ishga tushirish taqiqlangan."
+            }
         with self._lock:
             if self.is_running:
                 return {"success": False, "message": "Boshqa jarayon allaqachon ishlayapti!"}
