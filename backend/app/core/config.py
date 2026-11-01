@@ -90,6 +90,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     AUTO_TOPIC_CHAT_ID: int | None = None
     AUTO_CONTENT_ENABLED: bool = False
+    SCRAPER_ENABLED: bool = False
+    UZMOVI_BOT_CODE_VERIFIED: bool = False
     AUTO_INDEX_DRY_RUN: bool = True
     AUTO_INDEX_ALLOWED_CHAT_IDS: list[int] = []
     MOVIE_RUNTIME_TOLERANCE_MINUTES: int = 30

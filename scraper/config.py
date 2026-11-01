@@ -37,6 +37,34 @@ def _parse_chat_id(val, default: int = 0):
     except (ValueError, TypeError):
         return val_str
 
+def _parse_bool(val, default: bool = False) -> bool:
+    if val is None:
+        return default
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
+def is_uzmovi_bot_code_verified() -> bool:
+    try:
+        from app.core.config import settings as _backend_settings
+        if "UZMOVI_BOT_CODE_VERIFIED" in os.environ:
+            return _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), False)
+        return bool(getattr(_backend_settings, "UZMOVI_BOT_CODE_VERIFIED", False))
+    except Exception:
+        return _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), False)
+
+
+def is_scraper_enabled() -> bool:
+    try:
+        from app.core.config import settings as _backend_settings
+        if "SCRAPER_ENABLED" in os.environ:
+            return _parse_bool(os.environ.get("SCRAPER_ENABLED"), False)
+        return bool(getattr(_backend_settings, "SCRAPER_ENABLED", False))
+    except Exception:
+        return _parse_bool(os.environ.get("SCRAPER_ENABLED"), False)
+
+
 TELEGRAM_API_ID = _parse_int(os.environ.get("TELEGRAM_API_ID"), 0)
 TELEGRAM_API_HASH = (os.environ.get("TELEGRAM_API_HASH") or "").strip()
 TELEGRAM_STRING_SESSION = (os.environ.get("TELEGRAM_STRING_SESSION") or "").strip()
@@ -47,6 +75,8 @@ AUTO_TOPIC_CHAT_ID = _parse_chat_id(os.environ.get("AUTO_TOPIC_CHAT_ID"), 0)
 BACKEND_API_URL = os.environ.get("BACKEND_API_URL", "http://localhost:8000/api/v1")
 BOT_API_SECRET = os.environ.get("BOT_API_SECRET", "oqqora")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+UZMOVI_BOT_CODE_VERIFIED = _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), False)
+SCRAPER_ENABLED = _parse_bool(os.environ.get("SCRAPER_ENABLED"), False)
 
 # Target bots
 TARGET_BOTS = {

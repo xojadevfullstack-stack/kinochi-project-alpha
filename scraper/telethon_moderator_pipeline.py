@@ -46,7 +46,8 @@ from scraper.config import (
     BOT_TOKEN,
     STORAGE_CHANNEL_ID,
     AUTO_TOPIC_CHAT_ID,
-    TARGET_BOTS
+    TARGET_BOTS,
+    is_uzmovi_bot_code_verified,
 )
 from scraper.queue_manager import QueueManager, QueueItem
 from scraper.duplicate_checker import DuplicateChecker
@@ -898,6 +899,13 @@ class TelethonModeratorPipeline:
                 item.reason = "no_exact_code"
                 item.error_message = "no_exact_code"
                 QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
+                return False
+            if not is_uzmovi_bot_code_verified():
+                logger.warning(f"[@{target_bot}] UZMOVI_BOT_CODE_VERIFIED=False ({item.id}) -> needs_review ('uzmovi_code_unverified')")
+                item.status = "needs_review"
+                item.reason = "uzmovi_code_unverified"
+                item.error_message = "uzmovi_code_unverified"
+                QueueManager().update_status(item.id, "needs_review", error_message="uzmovi_code_unverified")
                 return False
             queries_to_try = [exact_code]
         elif is_asilmedia:
@@ -4164,6 +4172,14 @@ class TelethonModeratorPipeline:
                     item.error_message = "no_exact_code"
                     QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
                 return None
+            if not is_uzmovi_bot_code_verified():
+                logger.warning(f"[@UzmovieTV_Bot] UZMOVI_BOT_CODE_VERIFIED=False ({getattr(item, 'id', None)}) -> needs_review ('uzmovi_code_unverified')")
+                if item:
+                    item.status = "needs_review"
+                    item.reason = "uzmovi_code_unverified"
+                    item.error_message = "uzmovi_code_unverified"
+                    QueueManager().update_status(item.id, "needs_review", error_message="uzmovi_code_unverified")
+                return None
             return await self._fetch_uzmovie_video(query=exact_code, code=exact_code, item=item)
 
         # Asilmedia (faqat asilmedia source uchun)
@@ -4194,6 +4210,14 @@ class TelethonModeratorPipeline:
                 item.reason = "no_exact_code"
                 item.error_message = "no_exact_code"
                 QueueManager().update_status(item.id, "needs_review", error_message="no_exact_code")
+            return None
+        if not is_uzmovi_bot_code_verified():
+            logger.warning(f"[@{bot}] UZMOVI_BOT_CODE_VERIFIED=False ('{clean_code}') -> needs_review ('uzmovi_code_unverified')")
+            if item:
+                item.status = "needs_review"
+                item.reason = "uzmovi_code_unverified"
+                item.error_message = "uzmovi_code_unverified"
+                QueueManager().update_status(item.id, "needs_review", error_message="uzmovi_code_unverified")
             return None
 
         logger.info(f"[@{bot}] botiga aniq kod yuborilmoqda: '{clean_code}'...")
