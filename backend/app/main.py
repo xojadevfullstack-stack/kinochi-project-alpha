@@ -39,6 +39,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     logging.info("CHECKPOINT 6: lifespan/startup handler boshlandi")
 
+    # Guard: Non-production connected to remote/external database warning
+    if not settings.is_production:
+        from urllib.parse import urlparse
+        try:
+            clean_db = str(settings.DATABASE_URL).replace("postgresql+asyncpg://", "http://").replace("postgres://", "http://")
+            parsed_db = urlparse(clean_db)
+            db_host = (parsed_db.hostname or "").lower()
+            if db_host and db_host not in ("localhost", "127.0.0.1", "::1"):
+                logging.warning(
+                    "⚠️  XAVFSIZLIK OGOHLANTIRISHI: Ilova no-production muhitida (APP_ENV=%s, ENVIRONMENT=%s), "
+                    "ammo tashqi/remote bazaga (%s) ulanmoqda! Ma'lumotlar xavfsizligiga e'tibor bering.",
+                    settings.APP_ENV, getattr(settings, "ENVIRONMENT", None), db_host
+                )
+        except Exception:
+            pass
+
     async def keep_alive():
         url = os.getenv("RENDER_EXTERNAL_URL")
         if not url:
@@ -145,7 +161,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
         headers["Access-Control-Allow-Headers"] = "*"
         headers["Access-Control-Allow-Methods"] = "*"
 
-    if getattr(settings, "APP_ENV", "development") == "production":
+    if settings.is_production:
         content = {
             "detail": "Serverda kutilmagan xatolik yuz berdi. Bir ozdan so'ng qayta urinib ko'ring.",
             "request_id": request_id,

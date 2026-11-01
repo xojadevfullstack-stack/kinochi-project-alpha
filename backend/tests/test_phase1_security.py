@@ -61,3 +61,49 @@ def test_gitignore_has_dump_and_bak():
         lines = [line.strip() for line in f.readlines()]
     assert "*.dump" in lines
     assert "*.bak" in lines
+
+
+def test_is_production_conflict_safest_wins():
+    """
+    APP_ENV va ENVIRONMENT to'qnashganda eng xavfsiz (production) tomoni g'alaba qozonishi shart.
+    """
+    # 1. APP_ENV=production, ENVIRONMENT=development
+    s1 = Settings(APP_ENV="production", ENVIRONMENT="development", _env_file=None, BOT_TOKEN="x", STORAGE_CHANNEL_ID="1", SECRET_KEY="a"*32)
+    assert s1.is_production is True
+
+    # 2. APP_ENV=development, ENVIRONMENT=production
+    s2 = Settings(APP_ENV="development", ENVIRONMENT="production", _env_file=None, BOT_TOKEN="x", STORAGE_CHANNEL_ID="1", SECRET_KEY="a"*32)
+    assert s2.is_production is True
+
+    # 3. APP_ENV=staging, ENVIRONMENT=dev
+    s3 = Settings(APP_ENV="staging", ENVIRONMENT="dev", _env_file=None, BOT_TOKEN="x", STORAGE_CHANNEL_ID="1", SECRET_KEY="a"*32)
+    assert s3.is_production is True
+
+    # 4. Ikkalasi ham development
+    s4 = Settings(APP_ENV="development", ENVIRONMENT="development", _env_file=None, BOT_TOKEN="x", STORAGE_CHANNEL_ID="1", SECRET_KEY="a"*32)
+    assert s4.is_production is False
+
+
+@pytest.mark.asyncio
+async def test_dev_login_requires_explicit_enable_flag(monkeypatch):
+    """
+    /auth/dev-login faqat no-production rejimida VA explicit ENABLE_DEV_LOGIN=true bo'lganda ruxsat etiladi.
+    """
+    app.dependency_overrides[get_db_session] = lambda: None
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            # Rejim 1: development ammo ENABLE_DEV_LOGIN=False (default) -> 403
+            monkeypatch.setattr(settings, "APP_ENV", "development")
+            monkeypatch.setattr(settings, "ENVIRONMENT", None)
+            monkeypatch.setattr(settings, "ENABLE_DEV_LOGIN", False)
+            resp = await ac.post("/api/v1/auth/dev-login", json={"telegram_id": 1111, "username": "dev1"})
+            assert resp.status_code == 403
+            assert "Dev login is disabled" in resp.text
+
+            # Rejim 2: production ammo ENABLE_DEV_LOGIN=True -> baribir 403 (fail-safe)
+            monkeypatch.setattr(settings, "APP_ENV", "production")
+            monkeypatch.setattr(settings, "ENABLE_DEV_LOGIN", True)
+            resp = await ac.post("/api/v1/auth/dev-login", json={"telegram_id": 1111, "username": "dev1"})
+            assert resp.status_code == 403
+    finally:
+        app.dependency_overrides.pop(get_db_session, None)

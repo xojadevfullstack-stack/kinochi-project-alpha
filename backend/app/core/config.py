@@ -17,7 +17,21 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "MediaPlus"
     VERSION: str = "0.1.0"
     APP_ENV: str = "development"          # development | staging | production
+    ENVIRONMENT: str | None = None        # alternative env marker used by cloud platforms
+    ENABLE_DEV_LOGIN: bool = False       # explicitly enable dev mock login in dev/test only
     DEBUG: bool = False
+
+    @property
+    def is_production(self) -> bool:
+        """
+        Fail-safe production check:
+        If either APP_ENV or ENVIRONMENT is 'production', 'prod', or 'staging',
+        safest side wins and evaluates to True.
+        """
+        prod_markers = {"production", "prod", "staging"}
+        app_env_val = str(self.APP_ENV or "").strip().lower()
+        env_val = str(self.ENVIRONMENT or "").strip().lower()
+        return (app_env_val in prod_markers) or (env_val in prod_markers)
 
     # ── Database (async PostgreSQL) ──────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://kinochi:kinochi_secret@localhost:5432/kinochi"
@@ -99,7 +113,7 @@ class Settings(BaseSettings):
                     if o and o not in self.CORS_ORIGINS:
                         self.CORS_ORIGINS.append(o)
 
-        if getattr(self, "APP_ENV", "development") != "production":
+        if not self.is_production:
             for dev_origin in [
                 "http://localhost:3000",   # website dev
                 "http://localhost:3001",   # admin panel dev
@@ -116,7 +130,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_security(self):
-        if self.APP_ENV == "production":
+        if self.is_production:
             if not self.SECRET_KEY or self.SECRET_KEY == "change-me-in-production":
                 raise ValueError("SECRET_KEY must be set to a secure secret in production!")
         return self

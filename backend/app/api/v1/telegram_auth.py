@@ -253,8 +253,11 @@ async def dev_login(
     Generates a valid JWT token without relying on Telegram's third-party widget popup.
     Disabled in production.
     """
-    if settings.APP_ENV == "production":
-        raise HTTPException(status_code=403, detail="Dev login is disabled in production.")
+    if settings.is_production or not settings.ENABLE_DEV_LOGIN:
+        raise HTTPException(
+            status_code=403,
+            detail="Dev login is disabled. It is only permitted in development when ENABLE_DEV_LOGIN=true."
+        )
 
     user = await _upsert_telegram_user(
         session=session,
