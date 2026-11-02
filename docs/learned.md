@@ -161,3 +161,7 @@
 ## Contextual Facet Visibility (Filtr holatiga ko'ra moslashuvchan ko'rinish)
 - Suppressing static category navigation tiles when active faceted search filters are engaged allows search results to rise directly below the filter controls, eliminating scrolling friction.
 - Analogy: A supermarket aisle sign board that is clearly visible when entering the floor, but as soon as you open a specific product shelf, your focus is entirely on the products without the overhead signs blocking your view.
+
+## Glassmorphic Text Scrim with Backdrop Filter
+- Blurring the background layer behind overlay typography isolates the text from chaotic image details while preserving ambient poster colors without harsh opaque black boxes.
+- Analogy: Writing on frosted tracing paper placed over a detailed painting, making the writing easily readable while still sensing the artwork beneath.

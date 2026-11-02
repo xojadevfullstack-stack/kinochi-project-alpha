@@ -59,7 +59,6 @@ export default function MediaMarqueeSection({ items }: MediaMarqueeSectionProps)
 
     // Stagger card sizes: every 4th card is a wide rectangle like Setanta/TV Cinema in reference
     const isWide = (index + (rowId === "r2" ? 1 : rowId === "r3" ? 2 : 0)) % 4 === 0;
-    const qualityBadge = index % 2 === 0 ? "FHD" : "HD";
 
     return (
       <Link
@@ -89,23 +88,18 @@ export default function MediaMarqueeSection({ items }: MediaMarqueeSectionProps)
         {/* Ambient Dark Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/20 opacity-75 group-hover:opacity-40 transition-opacity pointer-events-none" />
 
-        {/* Top Badges (HD / FHD & Age / Code) */}
-        <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1 pointer-events-none">
-          <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/95 text-white font-black text-[8px] sm:text-[9px] leading-none tracking-wider shadow-sm">
-            {qualityBadge}
-          </span>
-          {is18 ? (
-            <span className="px-1.5 py-0.5 rounded-md bg-red-600/95 text-white font-black text-[8px] sm:text-[9px] leading-none shadow-sm">
+        {/* Top Badges (18+ only when applicable) */}
+        {is18 ? (
+          <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1 pointer-events-none">
+            <span className="px-1.5 py-0.5 rounded-md bg-red-600/95 text-white font-bold text-[8px] sm:text-[9px] leading-none shadow-sm">
               18+
             </span>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
-
-
-        {/* Bottom Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2 z-10 pointer-events-none bg-gradient-to-t from-black via-black/85 to-transparent">
-          <h4 className="text-white text-xs sm:text-[13px] font-bold truncate leading-tight group-hover:text-primary transition-colors">
+        {/* Bottom Title Overlay with Backdrop Blur */}
+        <div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2 z-10 pointer-events-none bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-md">
+          <h4 className="text-white text-xs sm:text-[13px] font-medium truncate leading-tight group-hover:text-primary transition-colors">
             {item.title}
           </h4>
         </div>
