@@ -36,20 +36,24 @@ async def test_d4e5f6a1b2c3_partial_unique_index_rejects_duplicate(pg_session_fa
     from app.infrastructure.db.models.movie import MovieModel
 
     async with pg_session_factory() as session:
+        await session.execute(text("DELETE FROM movies WHERE code IN ('NLL001', 'NLL002', 'UNQ001', 'DUP001')"))
+        await session.execute(text("DELETE FROM movies WHERE tmdb_id = 99990001"))
+        await session.commit()
+
         # Bir nechta NULL tmdb_id kiritish (ruxsat berilgan)
-        m_null_1 = MovieModel(title="Null TMDb 1", tmdb_id=None, publish_status="pending")
-        m_null_2 = MovieModel(title="Null TMDb 2", tmdb_id=None, publish_status="pending")
+        m_null_1 = MovieModel(title="Null TMDb 1", tmdb_id=None, publish_status="pending", code="NLL001")
+        m_null_2 = MovieModel(title="Null TMDb 2", tmdb_id=None, publish_status="pending", code="NLL002")
         session.add_all([m_null_1, m_null_2])
         await session.commit()
 
         # Birinchi unikal tmdb_id
         unique_tmdb = 99990001
-        m1 = MovieModel(title="Unique Movie 1", tmdb_id=unique_tmdb, publish_status="published")
+        m1 = MovieModel(title="Unique Movie 1", tmdb_id=unique_tmdb, publish_status="published", code="UNQ001")
         session.add(m1)
         await session.commit()
 
         # Ikkinchi marta ayni tmdb_id bilan kiritish (taqiqlangan, IntegrityError berishi kerak)
-        m2 = MovieModel(title="Duplicate Movie 2", tmdb_id=unique_tmdb, publish_status="pending")
+        m2 = MovieModel(title="Duplicate Movie 2", tmdb_id=unique_tmdb, publish_status="pending", code="DUP001")
         session.add(m2)
         with pytest.raises(IntegrityError):
             await session.commit()
@@ -69,6 +73,11 @@ async def test_10_parallel_admits_same_tmdb_id_exactly_one_row(pg_session_factor
     success_count = 0
     failure_count = 0
 
+    async with pg_session_factory() as session:
+        await session.execute(text(f"DELETE FROM movies WHERE tmdb_id = {target_tmdb}"))
+        await session.execute(text("DELETE FROM movies WHERE code LIKE 'PAR%'"))
+        await session.commit()
+
     async def admit_worker(idx: int):
         nonlocal success_count, failure_count
         async with pg_session_factory() as session:
@@ -84,7 +93,8 @@ async def test_10_parallel_admits_same_tmdb_id_exactly_one_row(pg_session_factor
                 movie = MovieModel(
                     title=f"Parallel Admit {idx}",
                     tmdb_id=target_tmdb,
-                    publish_status="pending"
+                    publish_status="pending",
+                    code=f"PAR{idx:03d}",
                 )
                 session.add(movie)
                 await session.commit()
@@ -124,12 +134,16 @@ async def test_rejected_items_upsert_increments_attempts(pg_session_factory):
 
     s_key = "tmdb:movie:99990003"
     async with pg_session_factory() as session:
+        await session.execute(text(f"DELETE FROM rejected_items WHERE source_key = '{s_key}'"))
+        await session.commit()
+
         # Birinchi rad etish
         item1 = RejectedItemModel(
+            media_type="movie",
             source="tmdb_seed",
             source_key=s_key,
             title="Defective Film",
-            defect="ambiguous_source_match",
+            defects=[{"defect": "ambiguous_source_match"}],
             status="rejected",
             attempts=1
         )
@@ -162,6 +176,8 @@ async def test_seed_candidates_unique_kind_tmdb_id(pg_session_factory):
 
     test_tmdb = 99990004
     async with pg_session_factory() as session:
+        await session.execute(text(f"DELETE FROM seed_candidates WHERE tmdb_id = {test_tmdb}"))
+        await session.commit()
         c1 = SeedCandidateModel(
             kind="movie",
             tmdb_id=test_tmdb,
@@ -195,12 +211,16 @@ async def test_gate_promotes_pending_to_published_only_through_gate(pg_session_f
     from app.core.admission_gate import promote_to_published
 
     async with pg_session_factory() as session:
+        await session.execute(text("DELETE FROM movies WHERE code = 'PND001' OR tmdb_id = 99990005"))
+        await session.commit()
+
         movie = MovieModel(
             title="Pending Film",
             tmdb_id=99990005,
             poster_url="https://image.tmdb.org/t/p/w500/valid.jpg",
             trailer_url="https://www.youtube.com/watch?v=valid_trailer",
-            publish_status="pending"
+            publish_status="pending",
+            code="PND001"
         )
         session.add(movie)
         await session.commit()
@@ -226,9 +246,12 @@ async def test_public_read_paths_hide_pending_and_hidden(pg_session_factory):
     from app.infrastructure.db.models.movie import MovieModel
 
     async with pg_session_factory() as session:
-        m_pub = MovieModel(title="Public Movie", tmdb_id=99990006, publish_status="published")
-        m_pend = MovieModel(title="Pending Movie", tmdb_id=99990007, publish_status="pending")
-        m_hid = MovieModel(title="Hidden Movie", tmdb_id=99990008, publish_status="hidden")
+        await session.execute(text("DELETE FROM movies WHERE code IN ('PUB001', 'PND002', 'HID001') OR tmdb_id IN (99990006, 99990007, 99990008)"))
+        await session.commit()
+
+        m_pub = MovieModel(title="Public Movie", tmdb_id=99990006, publish_status="published", code="PUB001")
+        m_pend = MovieModel(title="Pending Movie", tmdb_id=99990007, publish_status="pending", code="PND002")
+        m_hid = MovieModel(title="Hidden Movie", tmdb_id=99990008, publish_status="hidden", code="HID001")
         session.add_all([m_pub, m_pend, m_hid])
         await session.commit()
 
@@ -245,7 +268,7 @@ async def test_public_read_paths_hide_pending_and_hidden(pg_session_factory):
 
 @skip_no_test_db
 @pytest.mark.asyncio
-async def test_reset_media_on_branch_guards_and_execution(pg_session_factory, tmp_path):
+async def test_reset_media_on_branch_guards_and_execution(pg_session_factory, tmp_path, monkeypatch):
     """
     5. Data copy/branch ustida reset_media.py:
     - Dry run tekshiruvi (o'zgarishsiz)
@@ -253,6 +276,8 @@ async def test_reset_media_on_branch_guards_and_execution(pg_session_factory, tm
     - Barcha 3 ta guard bilan haqiqiy tozalash: saqlanadigan jadvallar daxlsiz,
       seed_candidates yangilangan.
     """
+    import scripts.reset_media
+    monkeypatch.setattr(scripts.reset_media, "async_session_factory", pg_session_factory)
     from scripts.reset_media import reset_media
     from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
     from app.infrastructure.db.models.user import UserModel
@@ -263,6 +288,11 @@ async def test_reset_media_on_branch_guards_and_execution(pg_session_factory, tm
         f.write("-- valid backup")
 
     async with pg_session_factory() as session:
+        await session.execute(text("DELETE FROM seed_candidates WHERE tmdb_id = 99990009"))
+        await session.execute(text("DELETE FROM users WHERE telegram_id = 88880001"))
+        await session.execute(text("DELETE FROM blacklist WHERE title = 'Safe Blacklist Item'"))
+        await session.commit()
+
         # Saqlanadigan jadvallar uchun test yozuvlari
         u = UserModel(telegram_id=88880001, username="safe_user")
         bl = BlacklistModel(title="Safe Blacklist Item")
@@ -307,6 +337,10 @@ async def test_raw_insert_without_publish_status_defaults_to_pending(pg_session_
     bazaning server_default darajasida 'pending' qiymati avtomatik o'rnatilishi tekshiriladi.
     """
     async with pg_session_factory() as session:
+        await session.execute(text("DELETE FROM movies WHERE code = 'RAW001'"))
+        await session.execute(text("DELETE FROM series WHERE title = 'Raw Insert Test Series'"))
+        await session.commit()
+
         # 1. movies jadvaliga raw INSERT
         await session.execute(text("""
             INSERT INTO movies (title, code, created_at, updated_at)
