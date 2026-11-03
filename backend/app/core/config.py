@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     ]
     CORS_ALLOWED_ORIGINS: str = ""
     # Regex allowing legitimate Vercel deployments and preview URLs
-    CORS_ORIGIN_REGEX: str | None = r"^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$"
+    CORS_ORIGIN_REGEX: str | None = r"^https:\/\/(kinochi-project-alpha|kinochi-admin)(-[a-zA-Z0-9_-]+)?\.vercel\.app$"
 
     # ── Reverse Proxy / Rate Limiting ────────────────────────────
     TRUST_PROXY: bool = False
