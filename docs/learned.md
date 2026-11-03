@@ -165,3 +165,8 @@
 ## Glassmorphic Text Scrim with Backdrop Filter
 - Blurring the background layer behind overlay typography isolates the text from chaotic image details while preserving ambient poster colors without harsh opaque black boxes.
 - Analogy: Writing on frosted tracing paper placed over a detailed painting, making the writing easily readable while still sensing the artwork beneath.
+
+
+## Asyncpg Event Loop Binding & Cross-Loop Future Collision
+- SQLAlchemy asyncpg engine connection pools are strictly bound to the event loop that created them; calling async DB operations via separate threads or newly created event loops causes protocol state corruption ('got Future attached to a different loop').
+- Analogy: A bank safe whose biometric lock is tied to the morning shift manager's fingerprint; trying to open that same safe with an afternoon manager's fingerprint triggers an instant security shutdown.
