@@ -170,3 +170,8 @@
 ## Asyncpg Event Loop Binding & Cross-Loop Future Collision
 - SQLAlchemy asyncpg engine connection pools are strictly bound to the event loop that created them; calling async DB operations via separate threads or newly created event loops causes protocol state corruption ('got Future attached to a different loop').
 - Analogy: A bank safe whose biometric lock is tied to the morning shift manager's fingerprint; trying to open that same safe with an afternoon manager's fingerprint triggers an instant security shutdown.
+
+
+## Symmetric Token Overlap (Dice Coefficient) & Non-Latin Fallback Guard
+- Short single-word queries (e.g. 'Gul') must be guarded using symmetric Dice similarity against candidate tokens to prevent partial substring false matches, and non-Latin character fallbacks must never trigger without an explicit foreign original title.
+- Analogy: A passport officer who does not stamp a Japanese passport for someone whose name tag says 'Ali' just because both have a stamp on the page.
