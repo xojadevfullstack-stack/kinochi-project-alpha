@@ -102,15 +102,19 @@ async def enrich_movie_metadata(
         matched_tmdb = None
 
         if search_results:
-            # Agar yil bo'lsa, yilga eng yaqinini tanlaymiz
-            if year:
-                for res in search_results:
-                    res_year = res.get("year")
-                    if res_year and abs(res_year - year) <= 1:
-                        matched_tmdb = res
-                        break
-            if not matched_tmdb:
-                matched_tmdb = search_results[0]
+            try:
+                from scraper.smart_enricher import score_tmdb_candidate
+            except ImportError:
+                from smart_enricher import score_tmdb_candidate
+
+            best_score = -1.0
+            for res in search_results:
+                sc = score_tmdb_candidate(candidate=res, query=clean_title, target_year=year)
+                if sc > best_score:
+                    best_score = sc
+                    matched_tmdb = res
+            if best_score < 60.0:
+                matched_tmdb = None
 
         if matched_tmdb and matched_tmdb.get("id"):
             tmdb_id = matched_tmdb["id"]

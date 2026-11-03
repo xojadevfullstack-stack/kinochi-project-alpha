@@ -402,9 +402,10 @@ def score_tmdb_candidate(
             continue
         overlap = target_set.intersection(cand_tokens)
         ratio = len(overlap) / len(target_set)
-        if ratio >= 0.4:
+        dice_ratio = (2.0 * len(overlap)) / (len(target_set) + len(cand_tokens)) if (len(target_set) + len(cand_tokens)) > 0 else 0.0
+        if ratio >= 0.4 and (len(target_set) > 1 or dice_ratio >= 0.4):
             match_found = True
-            title_overlap = max(title_overlap, ratio)
+            title_overlap = max(title_overlap, max(ratio, dice_ratio))
 
     # Substring / exact slug tekshiruvi (xavfsiz taqqoslash)
     q_clean = re.sub(r'[^\w]', '', query.lower())
@@ -424,12 +425,15 @@ def score_tmdb_candidate(
                     match_found = True
                     title_overlap = max(title_overlap, 0.8)
 
-    # Agar nomzod Kanji/Kirill bo'lsa va TMDb qidiruvida topilgan bo'lsa (yapon animelari uchun)
-    if not match_found and (expected_original_title or query):
-        has_non_latin = any(ord(c) > 1200 or 0x4E00 <= ord(c) <= 0x9FFF for c in cand_title + cand_orig)
-        if has_non_latin and poster_url:
-            match_found = True
-            title_overlap = max(title_overlap, 0.75)
+    # Agar nomzod Kanji/Kirill bo'lsa, FAQAT expected_original_title berilgan va unda ham non-latin belgilar bo'lsa
+    if not match_found and expected_original_title:
+        exp_non_latin = any(ord(c) > 1200 or 0x4E00 <= ord(c) <= 0x9FFF for c in expected_original_title)
+        cand_non_latin = any(ord(c) > 1200 or 0x4E00 <= ord(c) <= 0x9FFF for c in cand_title + cand_orig)
+        if exp_non_latin and cand_non_latin and poster_url:
+            overlap = orig_tokens.intersection(cand_tokens)
+            if overlap or expected_original_title.strip().lower() in (cand_title + cand_orig).lower():
+                match_found = True
+                title_overlap = max(title_overlap, 0.75)
 
     if not match_found:
         return -1.0
