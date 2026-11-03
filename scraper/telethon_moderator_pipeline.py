@@ -757,6 +757,8 @@ class TelethonModeratorPipeline:
             if updated and updated.buttons and not any(w in (updated.text or "").lower() for w in ["obuna bo'ling", "homiy"]):
                 return updated
             async for nm in self.client.iter_messages(bot_username, limit=3):
+                if getattr(nm, 'file', None) or getattr(nm, 'video', None) or (nm.media and getattr(getattr(nm, 'media', None), 'document', None)):
+                    return nm
                 if nm.buttons and not any(w in (nm.text or "").lower() for w in ["obuna bo'ling", "homiy"]):
                     return nm
 
@@ -3990,8 +3992,16 @@ class TelethonModeratorPipeline:
             mime = getattr(getattr(m, 'document', None), 'mime_type', '')
             return bool(mime and mime.startswith('video/'))
 
+        def is_sponsor_msg(m):
+            if not m:
+                return False
+            txt = (m.text or "").lower()
+            is_sp = any(w in txt for w in ["obuna bo'ling", "homiy", "kanalga a'zo", "obuna bo'lmagansiz", "obuna talab", "a'zo bo'ling"])
+            has_btn = bool(m.buttons and any(any(any(w in b.text.lower() for w in ["tekshirish", "a'zo bo'ldim", "tasdiqlash", "davom etish"]) for b in row) for row in m.buttons))
+            return is_sp or has_btn
+
         def has_vid_or_flood(msgs):
-            return any(is_bot_flood_text(vm.text) or is_valid_vid(vm) for vm in msgs)
+            return any(is_bot_flood_text(vm.text) or is_valid_vid(vm) or is_sponsor_msg(vm) for vm in msgs)
 
         for q_idx, q_item in enumerate(ladder):
             r_idx, c_idx = q_item["row"], q_item["col"]
@@ -4025,6 +4035,24 @@ class TelethonModeratorPipeline:
                     if chk_m.id > quality_click_id and is_valid_vid(chk_m):
                         valid_vm = chk_m
                         break
+
+            if not valid_vm:
+                sponsor_msg = next((vm for vm in video_replies if is_sponsor_msg(vm) and not is_valid_vid(vm)), None)
+                if not sponsor_msg:
+                    async for chk_m in self.client.iter_messages(bot, limit=4):
+                        if chk_m.id > quality_click_id and is_sponsor_msg(chk_m) and not is_valid_vid(chk_m):
+                            sponsor_msg = chk_m
+                            break
+                if sponsor_msg:
+                    logger.info(f"🛡️ [@{bot}] Sifat tanlashdan so'ng homiy kanal talabi aniqlandi. Ulanmoqda...")
+                    unlocked = await self.handle_sponsor_lock(bot, sponsor_msg)
+                    if is_valid_vid(unlocked):
+                        valid_vm = unlocked
+                    else:
+                        async for chk_m in self.client.iter_messages(bot, limit=4):
+                            if chk_m.id > quality_click_id and is_valid_vid(chk_m):
+                                valid_vm = chk_m
+                                break
 
             if valid_vm:
                 size_mb = round((valid_vm.file.size or 0) / (1024 * 1024), 1)

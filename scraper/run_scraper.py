@@ -316,7 +316,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
     await checker.refresh_cache(force=True)
 
     qm = QueueManager()
-    recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
+    recovered = await qm.recover_stale_in_progress_async(max_age_seconds=1800)
     if recovered > 0:
         print(f"♻️ {recovered} ta qolib ketgan (stale in_progress) element 'pending' holatiga qaytarildi.")
 
@@ -325,7 +325,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
     
     if item_id:
         qm = QueueManager()
-        target_item = qm.items.get(item_id)
+        target_item = await qm.get_item_async(item_id)
         if not target_item:
             print(f"❌ Element #{item_id} navbatda topilmadi!")
             return
@@ -354,7 +354,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             raise ValueError(f"Noma'lum maqsadli manba/bot: '{target}'")
         target_source = target_source_map[target]
         m_type = None if media_type == "all" else media_type
-        pending = qm.get_pending(limit=limit, source=target_source, media_type=m_type)
+        pending = await qm.get_pending_async(limit=limit, source=target_source, media_type=m_type)
 
         if not pending:
             m_label = f"'{media_type.upper()}'" if media_type != "all" else "yangi kino/serial"
@@ -441,18 +441,18 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     url=getattr(item, "url", None)
                 )
                 if dup.match_type == "blacklist":
-                    qm.update_status(item.id, "blacklisted", error_message=f"Qora ro'yxatda: {dup.reason}")
+                    await qm.update_status_async(item.id, "blacklisted", error_message=f"Qora ro'yxatda: {dup.reason}")
                     print(f"🛑 [{media_label}] '{item.title}' qora ro'yxatda: {dup.reason}. O'tkazib yuborildi.")
                     continue
                 elif dup.is_duplicate:
-                    qm.update_status(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
+                    await qm.update_status_async(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
                     print(f"⏭️ [{media_label}] '{item.title}' bazada mavjud: [{dup.matched_type}] '{dup.matched_title}' (ID: {dup.matched_id}). O'tkazib yuborildi.")
                     continue
                 elif getattr(dup, "is_incomplete", False):
                     print(f"🔄 [{media_label}] '{item.title}' bazada mavjud ammo qismlari to'liq emas (ID: {dup.matched_id}). Mavjud mavzuga ulanib qismlar yuklanmoqda...")
 
                 print(f"\n[{downloaded_count + 1}/{limit}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
-                qm.update_status(item.id, "in_progress")
+                await qm.update_status_async(item.id, "in_progress")
                 
                 success = False
                 fw_attempt = 0
@@ -468,28 +468,32 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                             continue
                         else:
                             print(f"\n❌ '{item.title}': Telegram FloodWait maksimal urinishlar sonidan oshdi ({max_fw_retries} marta). Element 'failed' holatiga o'tkazildi.", flush=True)
-                            qm.update_status(item.id, "failed", error_message=f"Telegram FloodWait limiti oshdi ({fe.seconds}s, {max_fw_retries} urinish)")
+                            await qm.update_status_async(item.id, "failed", error_message=f"Telegram FloodWait limiti oshdi ({fe.seconds}s, {max_fw_retries} urinish)")
                             success = False
                             break
                     except Exception as ex:
                         print(f"❌ '{item.title}' yuklashda kutilmagan xatolik: {ex}")
-                        qm.update_status(item.id, "failed", error_message=f"Kutilmagan xatolik: {ex}")
+                        await qm.update_status_async(item.id, "failed", error_message=f"Kutilmagan xatolik: {ex}")
                         success = False
                         break
 
                 if success:
-                    qm.update_status(item.id, "published")
+                    await qm.update_status_async(item.id, "published")
                     downloaded_count += 1
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
+                    await asyncio.sleep(0.2)
                     qm.load()
-                    fresh = qm.items.get(item.id)
+                    fresh = await qm.get_item_async(item.id)
                     if fresh and fresh.status in ("already_exists", "needs_review", "rejected", "blacklisted"):
                         print(f"⏭️ {item.title}: {fresh.error_message or fresh.status}")
                     elif not (fresh and fresh.status == "failed"):
                         err_msg = fresh.error_message if (fresh and fresh.error_message) else "Video olinmadi yoki xatolik"
-                        qm.update_status(item.id, "failed", error_message=err_msg)
-                        print(f"⚠️ Yuklab bo'lmadi: {item.title} ({err_msg})")
+                        try:
+                            await qm.update_status_async(item.id, "failed", error_message=err_msg)
+                            print(f"⚠️ Yuklab bo'lmadi: {item.title} ({err_msg})")
+                        except Exception as e:
+                            print(f"⚠️ {item.title}: Holatni yangilashda xatolik ({e})")
                     elif fresh and fresh.status == "failed" and fresh.error_message:
                         print(f"⚠️ Yuklab bo'lmadi: {item.title} ({fresh.error_message})")
                     else:
@@ -513,7 +517,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
         print("\n🏁 Yuklash jarayoni to'xtatildi.")
         if not code_list:
             qm = QueueManager()
-            print(f"📊 Navbat statistikasi: {qm.stats()}\n")
+            print(f"📊 Navbat statistikasi: {await qm.stats_async()}\n")
 
 async def cmd_clean_duplicates():
     qm = QueueManager()
@@ -529,11 +533,11 @@ async def cmd_clean_duplicates():
             dup = await checker.check(item.title, year=item.year, original_title=item.original_title, media_type=item.media_type)
             if dup.is_duplicate:
                 duplicates_found += 1
-                qm.update_status(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
+                await qm.update_status_async(item.id, "already_exists", error_message=f"Bazada mavjud: {dup.reason} (ID: {dup.matched_id})")
                 print(f"  ❌ [{dup.matched_type.upper()}] '{item.title}' -> Bazada mavjud: '{dup.matched_title}' (ID: {dup.matched_id}, Kod: {dup.matched_code or 'yoq'})")
 
     print(f"\n✅ Tekshiruv yakunlandi! Jami tekshirildi: {checked}, Dublikat deb topildi: {duplicates_found}")
-    print(f"📊 Yangilangan navbat statistikasi: {qm.stats()}\n")
+    print(f"📊 Yangilangan navbat statistikasi: {await qm.stats_async()}\n")
 
 def cmd_stats():
     qm = QueueManager()
@@ -571,7 +575,7 @@ async def cmd_tmdb_autopilot(
 ):
     from scraper.tmdb_top_ingestor import TmdbTopIngestor
     qm = QueueManager()
-    recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
+    recovered = await qm.recover_stale_in_progress_async(max_age_seconds=1800)
     if recovered > 0:
         print(f"♻️ {recovered} ta qolib ketgan (stale in_progress) element 'pending' holatiga qaytarildi.")
 
@@ -640,7 +644,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
         )
         return
     qm = QueueManager()
-    recovered = qm.recover_stale_in_progress(max_age_seconds=1800)
+    recovered = await qm.recover_stale_in_progress_async(max_age_seconds=1800)
     if recovered > 0:
         print(f"♻️ {recovered} ta qolib ketgan (stale in_progress) element 'pending' holatiga qaytarildi.")
     sm = StateManager()

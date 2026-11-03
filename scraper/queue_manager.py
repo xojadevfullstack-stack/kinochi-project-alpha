@@ -672,6 +672,26 @@ class QueueManager:
         storage_message_id: Optional[int] = None,
         media_id: Optional[int] = None,
     ):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is not None and loop.is_running():
+            return loop.create_task(
+                self.update_status_async(
+                    item_id=item_id,
+                    status=status,
+                    error_message=error_message,
+                    episodes_count=episodes_count,
+                    downloaded_episodes=downloaded_episodes,
+                    topic_chat_id=topic_chat_id,
+                    topic_id=topic_id,
+                    storage_message_id=storage_message_id,
+                    media_id=media_id,
+                )
+            )
+
         return _run_coro_sync(
             self.update_status_async(
                 item_id=item_id,
