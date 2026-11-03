@@ -76,10 +76,8 @@ class Settings(BaseSettings):
         "https://kinochi.uz",
     ]
     CORS_ALLOWED_ORIGINS: str = ""
-    # Optional regex: strictly disabled by default (None).
-    # Can be set via env for team preview deployments, e.g.:
-    # CORS_ORIGIN_REGEX=^https://kinochi-project-alpha-[a-z0-9-]+-<team-slug>\.vercel\.app$
-    CORS_ORIGIN_REGEX: str | None = None
+    # Regex allowing legitimate Vercel deployments and preview URLs
+    CORS_ORIGIN_REGEX: str | None = r"^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$"
 
     # ── Reverse Proxy / Rate Limiting ────────────────────────────
     TRUST_PROXY: bool = False
@@ -89,7 +87,9 @@ class Settings(BaseSettings):
         # Guarantee core frontend domains are always present
         for core_origin in [
             "https://kinochi-project-alpha.vercel.app",
+            "https://kinochi-admin.vercel.app",
             "https://kinochi.uz",
+            "https://admin.kinochi.uz",
         ]:
             if core_origin not in self.CORS_ORIGINS:
                 self.CORS_ORIGINS.append(core_origin)

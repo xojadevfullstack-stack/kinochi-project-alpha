@@ -1,9 +1,35 @@
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-const RENDER_BASE_URL = BASE_API_URL.replace(/\/api\/v1\/?$/, "");
-const API_URL = BASE_API_URL;
-const DIRECT_API_URL = BASE_API_URL;
+const PROD_API_URL = "https://kinochi-project-alpha-9g6j.onrender.com/api/v1";
+const DEV_API_URL = "http://127.0.0.1:8000/api/v1";
 
+function resolveApiUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (raw) {
+    const normalized = raw.replace(
+      "https://kinochi-project-alpha.onrender.com",
+      "https://kinochi-project-alpha-9g6j.onrender.com"
+    );
+    // If running in browser on remote domain (e.g. *.vercel.app) and raw is pointing to localhost, fallback to prod
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host !== "localhost" && host !== "127.0.0.1" && (normalized.includes("127.0.0.1") || normalized.includes("localhost"))) {
+        return PROD_API_URL;
+      }
+    }
+    return normalized;
+  }
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") {
+      return PROD_API_URL;
+    }
+  }
+  return process.env.NODE_ENV === "production" ? PROD_API_URL : DEV_API_URL;
+}
+
+export const API_URL = resolveApiUrl();
+const RENDER_BASE_URL = API_URL.replace(/\/api\/v1\/?$/, "");
 export const HEALTH_URL = `${RENDER_BASE_URL}/health`;
+export const DIRECT_API_URL = API_URL;
 
 function isTokenExpired(token: string | null): boolean {
   if (!token) return true;

@@ -175,3 +175,7 @@
 ## Symmetric Token Overlap (Dice Coefficient) & Non-Latin Fallback Guard
 - Short single-word queries (e.g. 'Gul') must be guarded using symmetric Dice similarity against candidate tokens to prevent partial substring false matches, and non-Latin character fallbacks must never trigger without an explicit foreign original title.
 - Analogy: A passport officer who does not stamp a Japanese passport for someone whose name tag says 'Ali' just because both have a stamp on the page.
+
+## Dynamic Cross-Origin Adaptation & Environment Normalization
+- When administrative dashboards run across both local ports and remote cloud hosting (e.g. Vercel preview environments), relying on hardcoded localhost addresses or strict origin lists breaks authentication. Auto-detecting client origin context and matching against wildcard regexes ensures reliable API connectivity without exposing security holes.
+- Analogy: A security gate pass with an encrypted company QR code that works whether entering through the downtown main headquarters turnstile or a remote regional office, rather than only recognizing one specific front door.

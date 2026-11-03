@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-const HEALTH_URL = API_URL.replace(/\/api\/v1\/?$/, "") + "/health";
+import { API_URL, HEALTH_URL } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();

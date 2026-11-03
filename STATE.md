@@ -71,10 +71,11 @@ Catalog enhancements, home page UX upgrade (iTV design patterns, continue watchi
       2. Set fixed desktop iframe dimensions (`1280x720` for cards, `1920x1080` for hero) with CSS transforms. Inside the iframe, YouTube measures `window.innerWidth >= 1280px` (desktop resolution), which completely disables YouTube's mobile small-mode and mobile touch overlay (`.ytp-touch-mode`), permanently eliminating the center `||` pause button and arrows across both desktop and mobile emulation.
     - Verified `test_youtube_clean_and_hero_gap.py` and `test_card_trailer_hover.py` (5 passed), Next.js lint (0 errors).
   - F1-S45: Merged `v2-f1-catalog-and-ux` into `main` (fast-forward), fixed `Episode.display_code` (`248e6b3`), verified live Render deployment (`kinochi-project-alpha-9g6j.onrender.com`: 200 OK across `/actors`, `/movies`, `/series`, `/categories`, `/broadcasts/public`, `/content-requests`), and normalized `API_URL` in `website/lib/api.ts` (and client components) to auto-route dead `kinochi-project-alpha.onrender.com` and production fallback to `https://kinochi-project-alpha-9g6j.onrender.com/api/v1` (`test_api_url_production_fallback.py`, 30 passed, 0 lint errors).
-  - F1-S47: Cleaned mock FHD/HD badges and refined title legibility in MediaMarqueeSection.tsx: removed mock quality badge; toned down title font weight from ont-bold to clean ont-medium; added ackdrop-blur-md with soft gradient (rom-black/90 via-black/70 to-transparent) behind title text matching cinema card glassmorphic standards (	est_marquee_card_text_and_badge_cleanup.py, 6 passed, 0 lint errors).
+  - F1-S47: Cleaned mock FHD/HD badges and refined title legibility in `MediaMarqueeSection.tsx`: removed mock quality badge; toned down title font weight from `font-bold` to clean `font-medium`; added `backdrop-blur-md` with soft gradient (`from-black/90 via-black/70 to-transparent`) behind title text matching cinema card glassmorphic standards (`test_marquee_card_text_and_badge_cleanup.py`, 6 passed, 0 lint errors).
+  - F1-S48: Resolved Admin Panel "Serverga ulanib bo'lmadi" connection and CORS rejection: configured backend `CORS_ORIGIN_REGEX` for Vercel deployment domains; added `resolveApiUrl()` in `admin-panel/lib/api.ts` with auto-routing to active Render backend (`https://kinochi-project-alpha-9g6j.onrender.com/api/v1`) when accessed remotely or in production; connected `LoginPage.tsx` to centralized `API_URL` and `HEALTH_URL`; extended health check Neon ping timeout from 2.0s to 5.0s (`test_admin_cors_and_api_url_resolution.py`, 8 passed, 0 tsc errors).
 
 ## In progress (slice, branch)
-- Slice: F1-S47 complete.
+- Slice: F1-S48 complete.
 - Branch: `main` (clean, equals `origin/main` at `248e6b3`).
 
 ## Blocked

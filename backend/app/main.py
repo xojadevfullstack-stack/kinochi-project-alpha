@@ -273,7 +273,7 @@ async def health_check(response: Response) -> dict:
     db_status = "connected"
     try:
         async with db_session_module.async_session_factory() as session:
-            await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=2.0)
+            await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=5.0)
     except Exception as exc:
         logging.getLogger(__name__).warning("Database health check ping failed: %s", exc)
         db_status = "unavailable"
