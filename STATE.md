@@ -73,10 +73,16 @@ Catalog enhancements, home page UX upgrade (iTV design patterns, continue watchi
   - F1-S45: Merged `v2-f1-catalog-and-ux` into `main` (fast-forward), fixed `Episode.display_code` (`248e6b3`), verified live Render deployment (`kinochi-project-alpha-9g6j.onrender.com`: 200 OK across `/actors`, `/movies`, `/series`, `/categories`, `/broadcasts/public`, `/content-requests`), and normalized `API_URL` in `website/lib/api.ts` (and client components) to auto-route dead `kinochi-project-alpha.onrender.com` and production fallback to `https://kinochi-project-alpha-9g6j.onrender.com/api/v1` (`test_api_url_production_fallback.py`, 30 passed, 0 lint errors).
   - F1-S47: Cleaned mock FHD/HD badges and refined title legibility in `MediaMarqueeSection.tsx`: removed mock quality badge; toned down title font weight from `font-bold` to clean `font-medium`; added `backdrop-blur-md` with soft gradient (`from-black/90 via-black/70 to-transparent`) behind title text matching cinema card glassmorphic standards (`test_marquee_card_text_and_badge_cleanup.py`, 6 passed, 0 lint errors).
   - F1-S48: Resolved Admin Panel "Serverga ulanib bo'lmadi" connection and CORS rejection: configured backend `CORS_ORIGIN_REGEX` for Vercel deployment domains; added `resolveApiUrl()` in `admin-panel/lib/api.ts` with auto-routing to active Render backend (`https://kinochi-project-alpha-9g6j.onrender.com/api/v1`) when accessed remotely or in production; connected `LoginPage.tsx` to centralized `API_URL` and `HEALTH_URL`; extended health check Neon ping timeout from 2.0s to 5.0s (`test_admin_cors_and_api_url_resolution.py`, 8 passed, 0 tsc errors).
+  - F1-S49: Eliminated asyncpg connection leaks, cross-thread event loop mismatch, and status machine race conditions across TMDb Top Seed Ingestor, site search, and Telethon download pipeline:
+    - Fixed `RuntimeError: Event loop is closed` in `site_search.py` and `tmdb_top_ingestor.py` by replacing sync `qm.items` / `_run_coro_sync` with direct async queries (`get_item_async` and direct session lookups).
+    - Fixed `ValueError: Taqiqlangan status o'tishi: 'needs_review' -> 'failed'` by adding `await self.set_queue_status_async(...)` in `TelethonModeratorPipeline` and safeguarding terminal status checks in `run_scraper.py`.
+    - Added `--kind` filter (`all`, `movie`, `tv`) to `tmdb_top_ingestor.py`.
+    - Confirmed matches for TMDb Top candidates (`Bleach`, `Doktor Haus`, `The Flash`, `Ted Lasso`) across Uzbek providers and enqueued them into `ingest_items` with priority 100 (`priority=100`).
+    - Verified all 21 unit tests passed, 0 lint errors, clean exit codes.
 
 ## In progress (slice, branch)
-- Slice: F1-S48 complete.
-- Branch: `main` (clean, equals `origin/main` at `248e6b3`).
+- Slice: F1-S49 complete.
+- Branch: `main` (clean).
 
 ## Blocked
 - None.

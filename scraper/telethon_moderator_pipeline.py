@@ -586,9 +586,19 @@ class TelethonModeratorPipeline:
     def __init__(self, client: TelegramClient, duplicate_checker: DuplicateChecker):
         self.client = client
         self.dup_checker = duplicate_checker
+        self.qm = QueueManager()
         self._last_card_msg: Optional[Message] = None
         self._last_chosen_quality: Optional[str] = None
         self._is_premium: Optional[bool] = None
+
+    async def set_queue_status_async(self, item_id: str, status: str, error_message: Optional[str] = None, **kwargs):
+        if not item_id:
+            return None
+        try:
+            return await self.qm.update_status_async(item_id, status, error_message=error_message, **kwargs)
+        except Exception as e:
+            logger.warning(f"Error updating queue status for {item_id}: {e}")
+            return None
 
     async def get_max_file_size_mb(self) -> float:
         if self._is_premium is None:
@@ -1101,7 +1111,7 @@ class TelethonModeratorPipeline:
             ap_ok, ap_msg, _ = autopilot_engine.process_incoming_media(series_eval)
             if not ap_ok:
                 logger.warning(f"🛡️ [AUTOPILOT 2.0]: Serial '{title}' qabul qilinmadi: {ap_msg}")
-                QueueManager().update_status(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
+                await self.set_queue_status_async(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
                 return False
 
         thread_id = None
@@ -3616,7 +3626,7 @@ class TelethonModeratorPipeline:
             ap_ok, ap_msg, _ = autopilot_engine.process_incoming_media(movie_eval)
             if not ap_ok:
                 logger.warning(f"🛡️ [AUTOPILOT 2.0]: Film '{title}' karantinga olindi: {ap_msg}")
-                QueueManager().update_status(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
+                await self.set_queue_status_async(item.id, "needs_review", error_message=f"Karantin: {ap_msg}")
                 return False
 
         # ── 2. Admission Gate pre_check (DB ga yozuv yozilmaydi!) ──

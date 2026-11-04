@@ -55,6 +55,7 @@ from app.infrastructure.db.models.rejected_item import RejectedItemModel
 from app.infrastructure.db.models.blacklist import BlacklistModel
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel
+from app.infrastructure.db.models.ingest_item import IngestItemModel
 from app.infrastructure.external.tmdb_client import tmdb_client
 from app.core.config import settings
 from app.core.seed_config import (
@@ -76,6 +77,7 @@ from scraper.title_cleaner import clean_scraped_title
 import re
 from scraper.duplicate_checker import extract_part_number, to_slug, to_stem_slug
 from scraper.site_search import search_sites
+from scraper.duplicate_checker import DuplicateChecker
 
 logger = logging.getLogger(__name__)
 
@@ -251,9 +253,11 @@ class TmdbTopIngestor:
             return True, "Oldin rad etilgan yoki qora ro'yxatga olingan (rejected_items)"
 
         # 4. Navbatda bormi?
-        for item in self.qm.items.values():
-            if getattr(item, "tmdb_id", None) == tmdb_id:
-                return True, "Allaqachon navbatda mavjud"
+        res_q = await session.execute(
+            select(IngestItemModel.id).where(IngestItemModel.tmdb_id == tmdb_id).limit(1)
+        )
+        if res_q.scalar_one_or_none():
+            return True, "Allaqachon navbatda mavjud"
 
         return False, "Tizimda mavjud emas"
 
@@ -357,7 +361,7 @@ class TmdbTopIngestor:
         )
         return stats
 
-    async def search_candidates(self, limit: int = SEED_BATCH_SIZE) -> Dict[str, int]:
+    async def search_candidates(self, limit: int = SEED_BATCH_SIZE, kind: Optional[str] = "all") -> Dict[str, int]:
         """
         status=new bo'lgan nomzodlarni O'zbek manbalaridan (Uzmovi, Asilmedia, AniToob, Animeelar) qidiradi.
         3-qismli qat'iy tekshiruvdan o'tkazadi.
@@ -365,6 +369,9 @@ class TmdbTopIngestor:
         stats = {"searched": 0, "found": 0, "ambiguous": 0, "not_found": 0, "skipped": 0}
         now = datetime.now(timezone.utc)
         retry_cutoff = now - timedelta(days=SEED_NOT_FOUND_RETRY_DAYS)
+
+        checker = DuplicateChecker()
+        await checker.refresh_cache()
 
         async with async_session_factory() as session:
             # Nomzodlarni olish: status='new' YOKI (status='not_found' va 30 kundan ko'p o'tgan)
@@ -379,9 +386,10 @@ class TmdbTopIngestor:
                         )
                     )
                 )
-                .order_by(SeedCandidateModel.popularity.desc(), SeedCandidateModel.vote_count.desc())
-                .limit(limit)
             )
+            if kind and kind != "all":
+                query = query.where(SeedCandidateModel.kind == kind.lower())
+            query = query.order_by(SeedCandidateModel.popularity.desc(), SeedCandidateModel.vote_count.desc()).limit(limit)
             res = await session.execute(query)
             candidates = res.scalars().all()
 
@@ -415,7 +423,7 @@ class TmdbTopIngestor:
                 for q_text in queries_to_try:
                     for src in sources:
                         try:
-                            s_res = await search_sites(q_text, source=src)
+                            s_res = await search_sites(q_text, source=src, checker=checker, qm=self.qm)
                             if s_res:
                                 all_site_results.extend(s_res)
                         except Exception as e:
@@ -550,7 +558,15 @@ class TmdbTopIngestor:
                     item_id = f"{src}_{code}" if code else f"{src}_{cand.tmdb_id}"
 
                     # Navbatda bormi?
-                    if item_id in self.qm.items or any(getattr(q, "tmdb_id", None) == cand.tmdb_id for q in self.qm.items.values()):
+                    src_id_part = code if code else str(cand.tmdb_id)
+                    stmt_check = select(IngestItemModel.id).where(
+                        or_(
+                            and_(IngestItemModel.source == src, IngestItemModel.source_id == src_id_part),
+                            IngestItemModel.tmdb_id == cand.tmdb_id
+                        )
+                    ).limit(1)
+                    res_check = await session.execute(stmt_check)
+                    if res_check.scalar_one_or_none():
                         stats["skipped_existing"] += 1
                         if execute:
                             cand.status = "queued"
@@ -574,7 +590,7 @@ class TmdbTopIngestor:
                     )
 
                     if execute:
-                        self.qm.add_item(queue_item)
+                        await self.qm.add_items_batch_async([queue_item])
                         cand.status = "queued"
                         stats["enqueued"] += 1
                         print(
@@ -648,7 +664,9 @@ class TmdbTopIngestor:
         print(f"Anime nomzodlar               : {anime_counts.get(True, 0)}")
         print(f"Kino / Serial nomzodlar       : {anime_counts.get(False, 0)}")
         print("-" * 65)
-        print(f"Hozirgi navbatdagi elementlar : {len(self.qm.items)}")
+        qm_stats = await self.qm.stats_async()
+        queue_count = qm_stats.get("total", 0)
+        print(f"Hozirgi navbatdagi elementlar : {queue_count}")
         print(f"Rad etilgan seed nomzodlar    : {sum(rejection_counts.values())}")
         print("=" * 65 + "\n")
 
@@ -664,6 +682,7 @@ def main():
     parser = argparse.ArgumentParser(description="Kinochi TMDb Top Seed Ingestor")
     parser.add_argument("--build-seeds", action="store_true", help="TMDb dan mashhur va yuqori reytingli filmlarni yig'ish")
     parser.add_argument("--search", action="store_true", help="Yangi seed nomzodlarini O'zbek manbalaridan qidirish")
+    parser.add_argument("--kind", choices=["all", "movie", "tv"], default="all", help="Qidiriladigan media turi (all, movie, tv)")
     parser.add_argument("--limit", type=int, default=SEED_BATCH_SIZE, help=f"Bajarish hajmi (default: {SEED_BATCH_SIZE})")
     parser.add_argument("--enqueue", action="store_true", help="Topilgan nomzodlarni navbatga qo'yish (standart: DRY-RUN)")
     parser.add_argument("--execute", action="store_true", help="DRY-RUN emas, haqiqiy o'zgarishlarni kiritish")
@@ -675,7 +694,7 @@ def main():
     if args.build_seeds:
         asyncio.run(ingestor.build_seeds())
     elif args.search:
-        asyncio.run(ingestor.search_candidates(limit=args.limit))
+        asyncio.run(ingestor.search_candidates(limit=args.limit, kind=args.kind))
     elif args.enqueue:
         asyncio.run(ingestor.enqueue_candidates(limit=args.limit, execute=args.execute))
     elif args.stats:

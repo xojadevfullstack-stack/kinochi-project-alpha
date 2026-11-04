@@ -482,12 +482,12 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     downloaded_count += 1
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
-                    await asyncio.sleep(0.2)
+                    await asyncio.sleep(0.5)
                     qm.load()
                     fresh = await qm.get_item_async(item.id)
                     if fresh and fresh.status in ("already_exists", "needs_review", "rejected", "blacklisted"):
                         print(f"⏭️ {item.title}: {fresh.error_message or fresh.status}")
-                    elif not (fresh and fresh.status == "failed"):
+                    elif fresh and fresh.status == "in_progress":
                         err_msg = fresh.error_message if (fresh and fresh.error_message) else "Video olinmadi yoki xatolik"
                         try:
                             await qm.update_status_async(item.id, "failed", error_message=err_msg)

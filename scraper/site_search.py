@@ -119,8 +119,13 @@ async def search_sites(
             db_code = dup_res.matched_code
             db_reason = dup_res.reason
 
-        q_item = qm.items.get(item.id)
-        queue_status = q_item.status if q_item else None
+        queue_status = None
+        if qm is not None:
+            try:
+                q_item = await qm.get_item_async(item.id)
+                queue_status = q_item.status if q_item else None
+            except Exception:
+                queue_status = None
 
         num_match = re.search(r'\d+', item.id)
         code = num_match.group(0) if num_match else ""
