@@ -20,8 +20,10 @@ echo ======================================================================
 echo           KINOCHI - PARSER VA GRABBER BOSHQARUV PANELI
 echo ======================================================================
 echo.
-echo   [ VEB SAYT / ADMIN PANEL ORQALI ISHLATISH ]
-echo   1) Saytdan boshqarish (Backend + Admin Panelni yoqish va brauzerda ochish)
+echo   [ VEB SAYT / ADMIN PANEL VA AVTOPILOT ]
+echo   1) Admin Panelda Avtopilot / Grabberni ochish (Backend + Admin Panel) [ENTER]
+echo   20) Terminalda To'liq Avtopilot (--autopilot: Parse + Yuklash)
+echo   21) Terminalda TMDb Oltin Avtopilot (--tmdb-autopilot)
 echo.
 echo   [ TERMINALDA PARSER (Saytlardan katalog yig'ish) ]
 echo   2) Uzmovi saytidan katalog yig'ish (Parse)
@@ -57,10 +59,8 @@ echo   0) Chiqish
 echo ======================================================================
 echo.
 
-set choice=
-set /p choice="Tanlovingizni kiriting (0-19): "
-
-if "%choice%"=="" exit /b
+set choice=1
+set /p choice="Tanlovingizni kiriting (0-21) [ENTER = 1 Admin Panel]: "
 
 :process_choice
 if "%choice%"=="1" goto opt_web
@@ -84,6 +84,10 @@ if "%choice%"=="16" goto opt_seed_enqueue_dry
 if "%choice%"=="17" goto opt_seed_enqueue_exec
 if "%choice%"=="18" goto opt_seed_stats
 if "%choice%"=="19" goto opt_seed_reset_dry
+if "%choice%"=="20" goto opt_autopilot
+if "%choice%"=="autopilot" goto opt_autopilot
+if "%choice%"=="21" goto opt_tmdb_autopilot
+if "%choice%"=="tmdb" goto opt_tmdb_autopilot
 if "%choice%"=="0" exit /b
 
 echo.
@@ -453,3 +457,51 @@ if not "%1"=="" exit /b
 pause
 goto menu
 
+:opt_autopilot
+cls
+echo ======================================================================
+echo   TERMINALDA TO'LIQ AVTOPILOT (--autopilot: Parse + Yuklash)
+echo ======================================================================
+echo.
+echo Manbani tanlang:
+echo 1) Barchasi (all) [Standart]
+echo 2) Uzmovi (uzmovi)
+echo 3) Asilmedia (asilmedia)
+echo 4) AniToob (anitoob)
+echo 5) Animeelar (animeelar)
+echo 6) Kinochilar (kinochilar)
+set ap_src_choice=1
+if "%1"=="" (
+    set /p ap_src_choice="Tanlovingiz (1-6) [Standart: 1]: "
+)
+set ap_source=all
+if "%ap_src_choice%"=="2" set ap_source=uzmovi
+if "%ap_src_choice%"=="3" set ap_source=asilmedia
+if "%ap_src_choice%"=="4" set ap_source=anitoob
+if "%ap_src_choice%"=="5" set ap_source=animeelar
+if "%ap_src_choice%"=="6" set ap_source=kinochilar
+echo.
+echo Avtopilot ishga tushirilmoqda (Manba: %ap_source%)...
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --autopilot --source %ap_source%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
+
+:opt_tmdb_autopilot
+cls
+echo ======================================================================
+echo   TMDB OLTIN AVTOPILOT (--tmdb-autopilot: TMDb Top -^> Qidiruv -^> Yuklash)
+echo ======================================================================
+echo.
+set tmdb_limit=10
+if "%1"=="" (
+    set /p tmdb_limit="Har siklda nechta film yuklansin? [Standart: 10]: "
+)
+echo.
+echo TMDb Avtopilot ishga tushirilmoqda (Limit: %tmdb_limit%)...
+backend\.venv\Scripts\python.exe scraper/run_scraper.py --tmdb-autopilot --limit %tmdb_limit%
+echo.
+if not "%1"=="" exit /b
+pause
+goto menu
