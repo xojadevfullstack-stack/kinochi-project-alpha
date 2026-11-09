@@ -120,7 +120,19 @@ export default async function Home() {
     ]);
     latestMovies = moviesRes?.items || [];
     latestSeries = seriesRes?.items || [];
-    const dynamicPages = pagesRes?.items || pagesRes || [];
+    const rawPages = pagesRes?.items || pagesRes || [];
+    const dynamicPages = rawPages.filter((page: any) => {
+      const slug = (page.slug || "").toLowerCase().trim();
+      const title = (page.title || "").toLowerCase().trim();
+      return (
+        slug !== "seriallar" &&
+        slug !== "kinolar" &&
+        slug !== "series" &&
+        slug !== "movies" &&
+        title !== "seriallar" &&
+        title !== "kinolar"
+      );
+    });
 
     pagesData = await Promise.all(
       dynamicPages.map(async (page: any) => {
@@ -159,11 +171,22 @@ export default async function Home() {
   }
 
   // Gather all recent items across unpaged movies, unpaged series, and pages
-  const allRecentItems: any[] = [
+  const rawRecentItems: any[] = [
     ...latestMovies.map((m) => ({ ...m, is_series: false })),
     ...latestSeries.map((s) => ({ ...s, is_series: true })),
     ...pagesData.flatMap((p) => p.items || [])
   ];
+
+  // Deduplicate items across multiple categories/pages (e.g. Anime + Multfilm)
+  const seenRecentKeys = new Set<string>();
+  const allRecentItems: any[] = [];
+  for (const item of rawRecentItems) {
+    const key = item.is_series ? `series-${item.id}` : `movie-${item.code || item.id}`;
+    if (!seenRecentKeys.has(key)) {
+      seenRecentKeys.add(key);
+      allRecentItems.push(item);
+    }
+  }
 
   allRecentItems.sort((a, b) => {
     const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
