@@ -256,3 +256,91 @@ async def get_user_review(
             "comment": r.comment,
             "created_at": r.created_at.isoformat() if r.created_at else None
         }
+
+async def delete_review(review_id: int) -> bool:
+    """Deletes a review and recalculates content rating."""
+    async with db_session_module.async_session_factory() as session:
+        stmt = select(ReviewModel).where(ReviewModel.id == review_id)
+        res = await session.execute(stmt)
+        review = res.scalar_one_or_none()
+        if not review:
+            return False
+
+        movie_id = review.movie_id
+        series_id = review.series_id
+
+        await session.delete(review)
+        await session.flush()
+
+        if movie_id:
+            await recalculate_movie_rating(session, movie_id)
+        elif series_id:
+            await recalculate_series_rating(session, series_id)
+
+        await session.commit()
+        return True
+
+async def list_admin_reviews(
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+) -> Dict[str, Any]:
+    """Admin stream of all reviews with user and content information."""
+    async with db_session_module.async_session_factory() as session:
+        query = (
+            select(ReviewModel)
+            .options(
+                selectinload(ReviewModel.user),
+                selectinload(ReviewModel.movie),
+                selectinload(ReviewModel.series),
+                selectinload(ReviewModel.episode),
+            )
+        )
+        count_query = select(func.count(ReviewModel.id))
+
+        if search and search.strip():
+            clean_search = f"%{search.strip()}%"
+            query = query.where(ReviewModel.comment.ilike(clean_search))
+            count_query = count_query.where(ReviewModel.comment.ilike(clean_search))
+
+        query = query.order_by(desc(ReviewModel.created_at)).limit(limit).offset(offset)
+
+        total_res = await session.execute(count_query)
+        total = total_res.scalar_one_or_none() or 0
+
+        reviews_res = await session.execute(query)
+        reviews = reviews_res.scalars().all()
+
+        items = []
+        for r in reviews:
+            user_name = "Foydalanuvchi"
+            username = None
+            if r.user:
+                name_parts = [r.user.first_name or "", r.user.last_name or ""]
+                full = " ".join([p for p in name_parts if p]).strip()
+                user_name = full or (f"@{r.user.username}" if r.user.username else "Foydalanuvchi")
+                username = r.user.username
+
+            content_title = "Noma'lum"
+            if r.movie:
+                content_title = f"Kino: {r.movie.title}"
+            elif r.series:
+                content_title = f"Serial: {r.series.title}"
+            elif r.episode:
+                content_title = f"Qism: #{r.episode.episode_number}"
+
+            items.append({
+                "id": r.id,
+                "user_id": r.user_id,
+                "user_name": user_name,
+                "username": username,
+                "content_title": content_title,
+                "movie_id": r.movie_id,
+                "series_id": r.series_id,
+                "episode_id": r.episode_id,
+                "rating": r.rating,
+                "comment": r.comment,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+
+        return {"items": items, "total": total}

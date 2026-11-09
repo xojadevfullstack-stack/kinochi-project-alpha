@@ -4,8 +4,8 @@ from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.api.deps import get_current_user, get_admin_or_bot, get_db_session
-from app.core.reviews import submit_review, get_reviews, get_user_review
+from app.api.deps import get_current_user, get_admin_or_bot, get_db_session, get_current_admin
+from app.core.reviews import submit_review, get_reviews, get_user_review, delete_review, list_admin_reviews
 from app.infrastructure.db.models.movie import MovieModel
 
 router = APIRouter(prefix="/reviews", tags=["Reviews & Ratings"])
@@ -113,3 +113,23 @@ async def create_bot_review(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/admin", response_model=Dict[str, Any])
+async def get_admin_reviews(
+    search: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    admin: dict = Depends(get_current_admin)
+):
+    """Admin: get paginated feed of all user reviews."""
+    return await list_admin_reviews(search=search, limit=limit, offset=offset)
+
+@router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_review(
+    review_id: int,
+    admin: dict = Depends(get_current_admin)
+):
+    """Admin: delete a review and recalculate content rating."""
+    success = await delete_review(review_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Review not found")

@@ -102,6 +102,8 @@ async def render_user_profile(user_id: int, first_name: str, username: str = Non
     builder.button(text="✨ Didga mos tavsiyalar", callback_data="rec_cat:personalized:0")
     if subscriptions or summary.get("collection_subscriptions"):
         builder.button(text="🔔 Obunalarni boshqarish", callback_data="manage_my_subs")
+    if total_watched > 0:
+        builder.button(text="🗑 Tarixni tozalash", callback_data="ask_clear_history")
 
     # Website magic login button
     try:
@@ -229,3 +231,54 @@ async def handle_prof_unsub_ser(callback: CallbackQuery):
             await callback.answer()
         except Exception:
             pass
+
+
+@router.callback_query(F.data == "ask_clear_history")
+async def handle_ask_clear_history(callback: CallbackQuery):
+    try:
+        text = (
+            "⚠️ <b>Tomosha tarixini tozalash</b>\n\n"
+            "Haqiqatan ham barcha ko'rilgan filmlar va seriallar tarixingizni tozalab tashlamoqchimisiz?\n\n"
+            "<i>Eslatma: bu amal qaytarilmaydi!</i>"
+        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="✅ Ha, tozalash", callback_data="confirm_clear_history")
+        builder.button(text="🔙 Bekor qilish", callback_data="menu_profile")
+        builder.adjust(1)
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=builder.as_markup())
+    except Exception as e:
+        logger.warning(f"Error in handle_ask_clear_history: {e}")
+    finally:
+        try:
+            await callback.answer()
+        except Exception:
+            pass
+
+
+@router.callback_query(F.data == "confirm_clear_history")
+async def handle_confirm_clear_history(callback: CallbackQuery):
+    answered = False
+    try:
+        success = await api_client.clear_user_history(callback.from_user.id)
+        if success:
+            await callback.answer("✅ Tomosha tarixingiz muvaffaqiyatli tozalandi!", show_alert=True)
+            answered = True
+        else:
+            await callback.answer("⚠️ Tarixni tozalashda xatolik yuz berdi.", show_alert=True)
+            answered = True
+        # Refresh profile view
+        text, markup = await render_user_profile(
+            user_id=callback.from_user.id,
+            first_name=callback.from_user.first_name,
+            username=callback.from_user.username
+        )
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    except Exception as e:
+        logger.warning(f"Error in handle_confirm_clear_history: {e}")
+    finally:
+        if not answered:
+            try:
+                await callback.answer()
+            except Exception:
+                pass
+

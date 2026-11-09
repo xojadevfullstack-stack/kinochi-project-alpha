@@ -18,7 +18,7 @@ from app.infrastructure.db.models.collection import CollectionModel
 from app.core.recommendations import get_user_recommendations
 from app.core.achievements import ACHIEVEMENTS
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -150,6 +150,35 @@ async def get_my_history(
         
     return {"items": items, "total": len(items)}
     # Accurate total requires a separate count query, simplified for now.
+
+@router.delete("/me/history/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_history_item(
+    history_id: int,
+    user: dict = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Delete a single watch history item for current user."""
+    stmt = (
+        delete(WatchHistoryModel)
+        .where(
+            WatchHistoryModel.id == history_id,
+            WatchHistoryModel.user_id == user["user_id"]
+        )
+    )
+    res = await session.execute(stmt)
+    await session.commit()
+    if res.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Tarix elementi topilmadi")
+
+@router.delete("/me/history", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_my_history(
+    user: dict = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Clear all watch history for current user."""
+    stmt = delete(WatchHistoryModel).where(WatchHistoryModel.user_id == user["user_id"])
+    await session.execute(stmt)
+    await session.commit()
 
 @router.get("/me/recommendations")
 async def get_my_recommendations(user: dict = Depends(get_current_user)):
@@ -407,6 +436,7 @@ async def get_user_summary_by_telegram(
             "username": user.username,
             "first_name": user.first_name,
             "last_name": user.last_name,
+            "is_banned": getattr(user, "is_banned", False),
             "joined_at": user.joined_at.isoformat() if user.joined_at else None,
         },
         "total_watched": total_history,
@@ -416,5 +446,21 @@ async def get_user_summary_by_telegram(
         "collection_subscriptions": collection_subscriptions,
         "recommendations": recs[:5]
     }
+
+
+@router.delete("/by-telegram/{telegram_id}/history", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_bot_secret)])
+async def clear_user_history_by_telegram(
+    telegram_id: int,
+    session: AsyncSession = Depends(get_db_session),
+    service: UserService = Depends(get_user_service),
+):
+    """Clear all watch history for user by telegram_id (Bot internal only)."""
+    user = await service.get_by_telegram_id(telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+    stmt = delete(WatchHistoryModel).where(WatchHistoryModel.user_id == user.id)
+    await session.execute(stmt)
+    await session.commit()
+
 
 
