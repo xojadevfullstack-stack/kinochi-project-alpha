@@ -12,7 +12,7 @@ from typing import Literal
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Header
 from pydantic import BaseModel
-from sqlalchemy import select, func, or_, delete
+from sqlalchemy import select, func, or_, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -183,18 +183,35 @@ async def list_collections(
     result = await db.execute(query)
     collections = result.scalars().all()
 
+    # Condition: only include items whose movie or series is published
+    published_condition = or_(
+        and_(CollectionItemModel.movie_id.is_not(None), MovieModel.publish_status == 'published'),
+        and_(CollectionItemModel.series_id.is_not(None), SeriesModel.publish_status == 'published'),
+    )
+
     # Calculate item counts and preview posters
     resp = []
     for c in collections:
         count_res = await db.execute(
-            select(func.count(CollectionItemModel.id)).where(CollectionItemModel.collection_id == c.id)
+            select(func.count(CollectionItemModel.id))
+            .outerjoin(MovieModel, CollectionItemModel.movie_id == MovieModel.id)
+            .outerjoin(SeriesModel, CollectionItemModel.series_id == SeriesModel.id)
+            .where(
+                CollectionItemModel.collection_id == c.id,
+                published_condition,
+            )
         )
         count = count_res.scalar_one() or 0
 
         # Fetch up to 3 item posters for fanned deck display
         items_res = await db.execute(
             select(CollectionItemModel)
-            .where(CollectionItemModel.collection_id == c.id)
+            .outerjoin(MovieModel, CollectionItemModel.movie_id == MovieModel.id)
+            .outerjoin(SeriesModel, CollectionItemModel.series_id == SeriesModel.id)
+            .where(
+                CollectionItemModel.collection_id == c.id,
+                published_condition,
+            )
             .options(
                 selectinload(CollectionItemModel.movie),
                 selectinload(CollectionItemModel.series),
