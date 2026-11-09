@@ -13,6 +13,7 @@ class APIClient:
         if settings.BOT_API_SECRET:
             headers["X-Bot-Secret"] = settings.BOT_API_SECRET
         self.client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0, headers=headers)
+        self._ban_cache: dict[int, tuple[bool, float]] = {}
 
     async def close(self):
         await self.client.aclose()
@@ -411,6 +412,48 @@ class APIClient:
             logger.warning(f"Error fetching collection {slug_or_id}: {e}")
             return None
 
+    async def check_user_banned(self, telegram_id: int) -> bool:
+        """Checks if user is banned with 60-second TTL cache and hybrid stale-while-error policy."""
+        import time
+        now = time.monotonic()
+        stale_is_banned = None
+        if telegram_id in self._ban_cache:
+            is_banned, expire_at = self._ban_cache[telegram_id]
+            if now < expire_at:
+                return is_banned
+            stale_is_banned = is_banned
+
+        try:
+            summary = await self.get_user_summary(telegram_id)
+            if summary and "user" in summary:
+                is_banned = bool(summary["user"].get("is_banned", False))
+                self._ban_cache[telegram_id] = (is_banned, now + 60.0)
+                return is_banned
+        except Exception as e:
+            logger.warning(f"Backend error during ban check for {telegram_id}: {e}")
+
+        # Stale-while-error: If user was known to be banned, retain ban during backend outage
+        if stale_is_banned is True:
+            logger.warning(f"Stale ban cache retained for banned user {telegram_id} during backend outage")
+            return True
+
+        if stale_is_banned is None:
+            logger.warning(f"Fail-open: unrecorded user {telegram_id} permitted access due to backend unavailability")
+
+        return False
+
+    def invalidate_ban_cache(self, telegram_id: int):
+        self._ban_cache.pop(telegram_id, None)
+
+    async def clear_user_history(self, telegram_id: int) -> bool:
+        """Clears all watch history for user via backend API."""
+        try:
+            resp = await self.client.delete(f"/users/by-telegram/{telegram_id}/history")
+            return resp.status_code in (200, 204)
+        except Exception as e:
+            logger.warning(f"Error clearing history for user {telegram_id}: {e}")
+            return False
+
     async def submit_report(
         self,
         media_type: str,
@@ -418,7 +461,8 @@ class APIClient:
         movie_id: Optional[int] = None,
         series_id: Optional[int] = None,
         episode_id: Optional[int] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        telegram_user_id: Optional[int] = None,
     ) -> bool:
         """Submits an issue report for a movie, series, or episode."""
         try:
@@ -434,6 +478,8 @@ class APIClient:
                 data["episode_id"] = str(episode_id)
             if description:
                 data["description"] = description
+            if telegram_user_id:
+                data["telegram_user_id"] = str(telegram_user_id)
 
             resp = await self.client.post("/reports", data=data)
             return resp.status_code in (200, 201)

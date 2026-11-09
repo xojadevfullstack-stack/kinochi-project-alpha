@@ -17,16 +17,120 @@ from config import settings
 from handlers.start import router as start_router
 from handlers.check_sub import router as check_sub_router
 from handlers.search import router as search_router
+from middlewares.ban_check import BanCheckMiddleware
 from middlewares.subscription_check import SubscriptionMiddleware
 from middlewares.throttling import ThrottlingMiddleware
 from services.api_client import api_client
 
+DEFAULT_BOT_LOCK_FILE = os.path.join(BOT_DIR, ".bot.lock")
+DEFAULT_BOT_PID_FILE = os.path.join(BOT_DIR, ".bot.pid")
+
+class BotAlreadyRunningError(RuntimeError):
+    pass
+
+class BotInstanceLock:
+    """Ensures only a single bot polling instance runs at any given time using atomic OS flags."""
+    def __init__(self, lock_file: str | None = None, pid_file: str | None = None):
+        self.lock_file = lock_file or DEFAULT_BOT_LOCK_FILE
+        self.pid_file = pid_file or DEFAULT_BOT_PID_FILE
+        self._fd: int | None = None
+        self._is_locked = False
+
+    @staticmethod
+    def _is_pid_alive(pid: int) -> bool:
+        if pid <= 0:
+            return False
+        try:
+            if sys.platform == "win32":
+                import ctypes
+                PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                STILL_ACTIVE = 259
+                handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+                if not handle:
+                    return False
+                exit_code = ctypes.c_ulong()
+                ctypes.windll.kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code))
+                ctypes.windll.kernel32.CloseHandle(handle)
+                return exit_code.value == STILL_ACTIVE
+            else:
+                os.kill(pid, 0)
+                return True
+        except Exception:
+            return False
+
+    def acquire(self) -> bool:
+        # Check for stale lock
+        if os.path.exists(self.lock_file):
+            try:
+                with open(self.lock_file, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                if content.isdigit():
+                    pid = int(content)
+                    if not self._is_pid_alive(pid):
+                        try:
+                            os.remove(self.lock_file)
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+        try:
+            fd = os.open(self.lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            self._fd = fd
+            self._is_locked = True
+            current_pid = str(os.getpid())
+            os.write(fd, current_pid.encode("utf-8"))
+            try:
+                with open(self.pid_file, "w", encoding="utf-8") as pf:
+                    pf.write(current_pid)
+            except Exception:
+                pass
+            return True
+        except (FileExistsError, OSError):
+            existing_pid = None
+            if os.path.exists(self.lock_file):
+                try:
+                    with open(self.lock_file, "r", encoding="utf-8") as f:
+                        existing_pid = f.read().strip()
+                except Exception:
+                    pass
+            pid_info = f" (PID: {existing_pid})" if existing_pid else ""
+            raise BotAlreadyRunningError(
+                f"Telegram bot boshqa jarayonda allaqachon ishlayapti{pid_info}. "
+                "Ikkita bot bir vaqtda polling qila olmaydi (TelegramConflictError)."
+            )
+
+    def release(self):
+        if self._is_locked:
+            if self._fd is not None:
+                try:
+                    os.close(self._fd)
+                except Exception:
+                    pass
+                self._fd = None
+            self._is_locked = False
+            if os.path.exists(self.lock_file):
+                try:
+                    os.remove(self.lock_file)
+                except Exception:
+                    pass
+            if os.path.exists(self.pid_file):
+                try:
+                    os.remove(self.pid_file)
+                except Exception:
+                    pass
+
 async def run_bot():
     logging.info("CHECKPOINT 10: run_bot() funksiyasiga kirildi")
+    bot_lock = BotInstanceLock()
+    bot_lock.acquire()
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
 
-    # Register Middlewares
+    # Register Middlewares (Ban check runs first, before subscription and handlers)
+    dp.message.middleware(BanCheckMiddleware())
+    dp.callback_query.middleware(BanCheckMiddleware())
+    dp.inline_query.middleware(BanCheckMiddleware())
     dp.message.middleware(SubscriptionMiddleware())
     dp.callback_query.middleware(SubscriptionMiddleware())
 
@@ -116,6 +220,7 @@ async def run_bot():
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
         logging.info("CHECKPOINT 13: dp.start_polling(bot) tugadi")
     finally:
+        bot_lock.release()
         try:
             from app.core.bot_status import set_bot_alive
             set_bot_alive(False)
