@@ -17,13 +17,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute("""
-        DO $$ BEGIN
-            IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections') THEN
-                ALTER TABLE collections ADD COLUMN IF NOT EXISTS category_type VARCHAR(50) DEFAULT 'franchise' NOT NULL;
-            END IF;
-        EXCEPTION WHEN others THEN NULL;
-        END $$;
+        CREATE TABLE IF NOT EXISTS collections (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            slug VARCHAR(255) NOT NULL,
+            description TEXT,
+            poster_url VARCHAR(1024),
+            banner_url VARCHAR(1024),
+            is_franchise BOOLEAN DEFAULT TRUE NOT NULL,
+            category_type VARCHAR(50) DEFAULT 'franchise' NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE NOT NULL,
+            sort_order INTEGER DEFAULT 0 NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+        );
     """)
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_collections_slug ON collections(slug);")
 
     op.execute("""
         CREATE TABLE IF NOT EXISTS collection_subscriptions (
@@ -40,4 +49,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS collection_subscriptions CASCADE;")
-    op.execute("ALTER TABLE collections DROP COLUMN IF EXISTS category_type;")
+    op.execute("DROP TABLE IF EXISTS collections CASCADE;")
