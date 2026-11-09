@@ -35,6 +35,30 @@ class BroadcastService:
     async def get_broadcast(self, id: int) -> Broadcast | None:
         return await self.broadcast_repo.get_by_id(id)
 
+    async def update_broadcast(
+        self,
+        id: int,
+        message_text: str | None = None,
+        media_type: str | None = None,
+        media_url: str | None = None,
+        button_text: str | None = None,
+        button_url: str | None = None,
+    ) -> Broadcast | None:
+        broadcast = await self.broadcast_repo.get_by_id(id)
+        if not broadcast or broadcast.status != BroadcastStatus.DRAFT:
+            return None
+        return await self.broadcast_repo.update(
+            id,
+            message_text=message_text,
+            media_type=media_type,
+            media_url=media_url,
+            button_text=button_text,
+            button_url=button_url,
+        )
+
+    async def delete_broadcast(self, id: int) -> bool:
+        return await self.broadcast_repo.delete(id)
+
     async def list_broadcasts(self, skip: int = 0, limit: int = 20) -> tuple[Sequence[Broadcast], int]:
         return await self.broadcast_repo.list_broadcasts(skip, limit)
 

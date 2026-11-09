@@ -161,6 +161,16 @@ export default function BroadcastsPage() {
     }
   };
 
+  const handleDeleteBroadcast = async (id: number) => {
+    if (!confirm("Ushbu xabarnomani o'chirishni xohlaysizmi?")) return;
+    try {
+      await fetchApi(`/broadcasts/${id}`, { method: "DELETE" });
+      loadBroadcasts();
+    } catch (e: any) {
+      alert("O'chirishda xato: " + e.message);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-text-secondary">Yuklanmoqda...</div>;
 
   return (
@@ -499,29 +509,43 @@ export default function BroadcastsPage() {
                     ) : null}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
-                    {b.status === "draft" && (
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => handleTestSend(b.id)} 
-                          className="bg-rating-gold/10 text-rating-gold border border-rating-gold/30 hover:bg-rating-gold/20 px-3 py-1.5 rounded-lg transition-all text-xs font-medium min-h-[32px]"
-                          title="O'zimga test qilib yuborish"
+                    <div className="flex items-center justify-end gap-2">
+                      {b.status === "draft" && (
+                        <>
+                          <button 
+                            onClick={() => handleTestSend(b.id)} 
+                            className="bg-white/10 text-white border border-white/20 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-all text-xs font-medium min-h-[32px]"
+                            title="O'zimga test qilib yuborish"
+                          >
+                            Test
+                          </button>
+                          <button 
+                            onClick={() => handleRealSend(b.id, b.total_recipients)} 
+                            className="bg-primary-container text-white hover:bg-inverse-primary px-3 py-1.5 rounded-lg transition-all text-xs font-bold shadow-[0_0_10px_rgba(229,9,20,0.3)] min-h-[32px]"
+                          >
+                            YUBORISH!
+                          </button>
+                        </>
+                      )}
+                      {b.status === "sending" && (
+                        <span className="text-primary-container font-bold text-xs animate-pulse">Yuborilmoqda...</span>
+                      )}
+                      {b.status === "completed" && (
+                        <span className="text-green-400 font-bold text-xs">Yakunlangan</span>
+                      )}
+                      {b.status === "failed" && (
+                        <span className="text-red-400 font-bold text-xs">Xatolik</span>
+                      )}
+                      {b.status !== "sending" && (
+                        <button
+                          onClick={() => handleDeleteBroadcast(b.id)}
+                          className="text-xs bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-2.5 py-1.5 rounded-lg transition-colors min-h-[32px] inline-flex items-center"
+                          title="O'chirish"
                         >
-                          Test
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
                         </button>
-                        <button 
-                          onClick={() => handleRealSend(b.id, b.total_recipients)} 
-                          className="bg-primary-container text-white hover:bg-inverse-primary px-3 py-1.5 rounded-lg transition-all text-xs font-bold shadow-[0_0_10px_rgba(229,9,20,0.3)] min-h-[32px]"
-                        >
-                          YUBORISH!
-                        </button>
-                      </div>
-                    )}
-                    {b.status === "sending" && (
-                      <span className="text-primary-container font-bold text-xs animate-pulse">Yuborilmoqda...</span>
-                    )}
-                    {b.status === "completed" && (
-                      <span className="text-green-400 font-bold text-xs">Yakunlangan</span>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

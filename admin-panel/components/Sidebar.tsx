@@ -60,6 +60,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     {
       title: "Moderatsiya",
       items: [
+        { name: "Foydalanuvchilar", href: "/users", icon: "group" },
         { name: "Kontent Auditi", href: "/audit", icon: "fact_check" },
         { name: "Rad Etilganlar", href: "/rejected", icon: "rule_folder" },
         { name: "Qora Ro'yxat", href: "/blacklist", icon: "block" },

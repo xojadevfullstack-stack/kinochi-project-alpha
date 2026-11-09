@@ -46,6 +46,29 @@ class BroadcastRepositoryImpl(IBroadcastRepository):
         
         return [self._to_entity(m) for m in models], total
 
+    async def update(self, id: int, **kwargs) -> Broadcast | None:
+        stmt = select(BroadcastModel).where(BroadcastModel.id == id)
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            return None
+        for key, value in kwargs.items():
+            if hasattr(model, key) and value is not None:
+                setattr(model, key, value)
+        await self.session.flush()
+        await self.session.refresh(model)
+        return self._to_entity(model)
+
+    async def delete(self, id: int) -> bool:
+        stmt = select(BroadcastModel).where(BroadcastModel.id == id)
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            return False
+        await self.session.delete(model)
+        await self.session.flush()
+        return True
+
     async def update_status(self, id: int, status: BroadcastStatus) -> Broadcast | None:
         stmt = select(BroadcastModel).where(BroadcastModel.id == id)
         result = await self.session.execute(stmt)

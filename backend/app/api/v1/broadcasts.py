@@ -20,6 +20,13 @@ class BroadcastCreate(BaseModel):
 class BroadcastTestRequest(BaseModel):
     test_telegram_id: int
 
+class BroadcastUpdate(BaseModel):
+    message_text: str | None = None
+    media_type: str | None = None
+    media_url: str | None = None
+    button_text: str | None = None
+    button_url: str | None = None
+
 class BroadcastResponse(BaseModel):
     id: int
     message_text: str
@@ -92,6 +99,39 @@ async def get_broadcast(
     if not broadcast:
         raise HTTPException(status_code=404, detail="Broadcast not found")
     return broadcast
+
+
+@router.put("/{broadcast_id}", response_model=BroadcastResponse)
+async def update_broadcast(
+    broadcast_id: int,
+    data: BroadcastUpdate,
+    service: BroadcastService = Depends(get_broadcast_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Update a draft broadcast (Admin only)."""
+    broadcast = await service.update_broadcast(
+        id=broadcast_id,
+        message_text=data.message_text,
+        media_type=data.media_type,
+        media_url=data.media_url,
+        button_text=data.button_text,
+        button_url=data.button_url,
+    )
+    if not broadcast:
+        raise HTTPException(status_code=400, detail="Broadcast not found or cannot be edited (only draft can be edited)")
+    return broadcast
+
+
+@router.delete("/{broadcast_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_broadcast(
+    broadcast_id: int,
+    service: BroadcastService = Depends(get_broadcast_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete a broadcast (Admin only)."""
+    success = await service.delete_broadcast(broadcast_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Broadcast not found")
 
 
 @router.post("/{broadcast_id}/send", status_code=status.HTTP_202_ACCEPTED)
