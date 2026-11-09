@@ -131,6 +131,13 @@ def _model_to_queue_item(row: Any) -> QueueItem:
     item_id = f"{src}_{src_id}" if src and src_id and not src_id.startswith(f"{src}_") else (src_id or str(row.id))
     updated_ts = row.updated_at.timestamp() if getattr(row, "updated_at", None) else time.time()
     reason = getattr(row, "reason", None)
+    raw_status = row.status or "queued"
+    if raw_status == "queued":
+        status_val = "pending"
+    elif raw_status == "published":
+        status_val = "completed"
+    else:
+        status_val = raw_status
     return QueueItem(
         id=item_id,
         source=src,
@@ -141,7 +148,7 @@ def _model_to_queue_item(row: Any) -> QueueItem:
         media_type=row.media_type or "movie",
         url=row.url or "",
         poster_url=row.poster_url,
-        status=row.status or "queued",
+        status=status_val,
         episodes_count=payload.get("episodes_count"),
         downloaded_episodes=int(payload.get("downloaded_episodes") or 0),
         error_message=reason,
@@ -170,38 +177,71 @@ def _parse_item_key(item_id: str) -> Tuple[Optional[str], str]:
     return None, raw
 
 
+def _build_item_select_stmt(item_id: str):
+    from sqlalchemy import select
+    from app.infrastructure.db.models.ingest_item import IngestItemModel
+
+    raw = str(item_id or "").strip()
+    src, src_id = _parse_item_key(raw)
+    if raw.isdigit():
+        return select(IngestItemModel).where(IngestItemModel.id == int(raw))
+    if src:
+        cands = {src_id, raw}
+        if not src_id.startswith(f"{src}_"):
+            cands.add(f"{src}_{src_id}")
+        return select(IngestItemModel).where(
+            IngestItemModel.source == src,
+            IngestItemModel.source_id.in_(list(cands)),
+        )
+    return select(IngestItemModel).where(IngestItemModel.source_id == src_id)
+
+
 def _run_coro_sync(coro):
     """Run an async coroutine safely from either sync or running event loop context."""
+    async def _runner_coro():
+        try:
+            return await coro
+        finally:
+            try:
+                running_loop = asyncio.get_running_loop()
+                factory = getattr(running_loop, "_kinochi_loop_session_factory", None)
+                if factory is not None and hasattr(factory, "kw") and "bind" in factory.kw:
+                    setattr(running_loop, "_kinochi_loop_session_factory", None)
+                    await factory.kw["bind"].dispose()
+            except Exception:
+                pass
+
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = None
 
     if loop is None:
-        return asyncio.run(coro)
+        return asyncio.run(_runner_coro())
 
-    result_box: Dict[str, Any] = {}
-    error_box: Dict[str, BaseException] = {}
-
-    def _runner():
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        try:
-            result_box["value"] = new_loop.run_until_complete(coro)
-        except BaseException as exc:
-            error_box["err"] = exc
-        finally:
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        def _runner():
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
             try:
-                new_loop.close()
-            except Exception:
-                pass
+                return new_loop.run_until_complete(_runner_coro())
+            finally:
+                try:
+                    factory = getattr(new_loop, "_kinochi_loop_session_factory", None)
+                    if factory is not None and hasattr(factory, "kw") and "bind" in factory.kw:
+                        setattr(new_loop, "_kinochi_loop_session_factory", None)
+                        if not new_loop.is_closed():
+                            new_loop.run_until_complete(factory.kw["bind"].dispose())
+                except Exception:
+                    pass
+                try:
+                    new_loop.close()
+                except Exception:
+                    pass
 
-    t = threading.Thread(target=_runner, daemon=True)
-    t.start()
-    t.join()
-    if "err" in error_box:
-        raise error_box["err"]
-    return result_box.get("value")
+        fut = pool.submit(_runner)
+        return fut.result()
 
 
 class QueueManager:
@@ -212,14 +252,38 @@ class QueueManager:
 
     _default_session_factory: Optional[Callable] = None
 
+    @classmethod
+    def _get_nullpool_session_factory(cls):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is not None:
+            factory = getattr(loop, "_kinochi_loop_session_factory", None)
+            if factory is not None:
+                return factory
+
+        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+        from sqlalchemy.pool import NullPool
+        from app.infrastructure.db.session import db_url, get_engine_kwargs
+        kwargs = get_engine_kwargs(db_url)
+        kwargs["poolclass"] = NullPool
+        for k in ["pool_size", "max_overflow", "pool_timeout", "pool_recycle"]:
+            kwargs.pop(k, None)
+        null_engine = create_async_engine(db_url, **kwargs)
+        factory = async_sessionmaker(null_engine, class_=AsyncSession, expire_on_commit=False)
+        if loop is not None:
+            setattr(loop, "_kinochi_loop_session_factory", factory)
+        return factory
+
     def __init__(self, session_factory: Optional[Callable] = None, **kwargs):
         self._session_factory = session_factory or self._default_session_factory
 
     def _get_session_factory(self):
         if self._session_factory is not None:
             return self._session_factory
-        from app.infrastructure.db.session import async_session_factory
-        return async_session_factory
+        return self._get_nullpool_session_factory()
 
     @property
     def items(self) -> Dict[str, QueueItem]:
@@ -319,11 +383,6 @@ class QueueManager:
         storage_message_id: Optional[int] = None,
         media_id: Optional[int] = None,
     ) -> Optional[QueueItem]:
-        from sqlalchemy import select
-        from app.infrastructure.db.models.ingest_item import (
-            IngestItemModel,
-            ALLOWED_STATUS_TRANSITIONS,
-        )
         from app.application.ingest_service import IngestService
 
         norm_status = _normalize_status(status)
@@ -337,16 +396,7 @@ class QueueManager:
 
         factory = self._get_session_factory()
         async with factory() as session:
-            if src:
-                stmt = select(IngestItemModel).where(
-                    IngestItemModel.source == src,
-                    IngestItemModel.source_id == src_id,
-                )
-            elif str(src_id).isdigit():
-                stmt = select(IngestItemModel).where(IngestItemModel.id == int(src_id))
-            else:
-                stmt = select(IngestItemModel).where(IngestItemModel.source_id == src_id)
-
+            stmt = _build_item_select_stmt(item_id)
             res = await session.execute(stmt)
             row = res.scalar_one_or_none()
             if not row:
@@ -366,24 +416,19 @@ class QueueManager:
             return _model_to_queue_item(updated) if updated else None
 
     async def delete_item_async(self, item_id: str) -> bool:
-        from sqlalchemy import select, delete
+        from sqlalchemy import delete
         from app.infrastructure.db.models.ingest_item import IngestItemModel
-
-        src, src_id = _parse_item_key(item_id)
         factory = self._get_session_factory()
         async with factory() as session:
-            if src:
-                stmt = delete(IngestItemModel).where(
-                    IngestItemModel.source == src,
-                    IngestItemModel.source_id == src_id,
-                )
-            elif str(src_id).isdigit():
-                stmt = delete(IngestItemModel).where(IngestItemModel.id == int(src_id))
-            else:
-                stmt = delete(IngestItemModel).where(IngestItemModel.source_id == src_id)
+            stmt = _build_item_select_stmt(item_id)
             res = await session.execute(stmt)
+            row = res.scalar_one_or_none()
+            if not row:
+                return False
+            del_stmt = delete(IngestItemModel).where(IngestItemModel.id == row.id)
+            res_del = await session.execute(del_stmt)
             await session.commit()
-            return (res.rowcount or 0) > 0
+            return (res_del.rowcount or 0) > 0
 
     async def update_item_details_async(
         self,
@@ -397,22 +442,11 @@ class QueueManager:
         error_message: Optional[str] = None,
     ) -> bool:
         from datetime import datetime, timezone
-        from sqlalchemy import select
-        from app.infrastructure.db.models.ingest_item import IngestItemModel, validate_status_transition
+        from app.infrastructure.db.models.ingest_item import validate_status_transition
 
-        src, src_id = _parse_item_key(item_id)
         factory = self._get_session_factory()
         async with factory() as session:
-            if src:
-                stmt = select(IngestItemModel).where(
-                    IngestItemModel.source == src,
-                    IngestItemModel.source_id == src_id,
-                )
-            elif str(src_id).isdigit():
-                stmt = select(IngestItemModel).where(IngestItemModel.id == int(src_id))
-            else:
-                stmt = select(IngestItemModel).where(IngestItemModel.source_id == src_id)
-
+            stmt = _build_item_select_stmt(item_id)
             res = await session.execute(stmt)
             row = res.scalar_one_or_none()
             if not row:
@@ -447,7 +481,9 @@ class QueueManager:
             stmt = update(IngestItemModel).where(
                 IngestItemModel.status.in_(["failed", "needs_review"])
             )
-            if source and source != "all":
+            if source == "both":
+                stmt = stmt.where(IngestItemModel.source.in_(["uzmovi", "asilmedia"]))
+            elif source and source != "all":
                 stmt = stmt.where(IngestItemModel.source == source.lower())
             stmt = stmt.values(
                 status="queued",
@@ -468,12 +504,39 @@ class QueueManager:
         from app.application.ingest_service import IngestService
 
         factory = self._get_session_factory()
-        async with factory() as session:
-            svc = IngestService(session)
-            count = await svc.recover_stale(max_age_seconds=max_age_seconds)
-            if count > 0:
-                logger.info(f"♻️ {count} ta eskirgan (stale) 'in_progress' element 'queued' holatiga qaytarildi.")
-            return count
+        try:
+            async with factory() as session:
+                svc = IngestService(session)
+                count = await svc.recover_stale(max_age_seconds=max_age_seconds)
+                if count > 0:
+                    logger.info(f"♻️ {count} ta eskirgan (stale) 'in_progress' element 'queued' holatiga qaytarildi.")
+                return count
+        except Exception as exc:
+            if "different loop" in str(exc) or "Future" in str(exc):
+                from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+                from sqlalchemy.pool import NullPool
+                from app.infrastructure.db.session import db_url, get_engine_kwargs
+                kwargs = get_engine_kwargs(db_url)
+                kwargs["poolclass"] = NullPool
+                kwargs.pop("pool_size", None)
+                kwargs.pop("max_overflow", None)
+                kwargs.pop("pool_timeout", None)
+                kwargs.pop("pool_recycle", None)
+                temp_engine = create_async_engine(db_url, **kwargs)
+                temp_factory = async_sessionmaker(temp_engine, class_=AsyncSession, expire_on_commit=False)
+                try:
+                    async with temp_factory() as session:
+                        svc = IngestService(session)
+                        count = await svc.recover_stale(max_age_seconds=max_age_seconds)
+                        if count > 0:
+                            logger.info(f"♻️ {count} ta eskirgan (stale) 'in_progress' element 'queued' holatiga qaytarildi.")
+                        return count
+                except Exception as inner_exc:
+                    logger.warning(f"Fallback recover_stale muvaffaqiyatsiz: {inner_exc}")
+                    return 0
+                finally:
+                    await temp_engine.dispose()
+            raise
 
     async def clear_by_status_async(self, status: str) -> int:
         from sqlalchemy import delete
@@ -512,21 +575,9 @@ class QueueManager:
             return int(res.rowcount or 0)
 
     async def get_item_async(self, item_id: str) -> Optional[QueueItem]:
-        from sqlalchemy import select
-        from app.infrastructure.db.models.ingest_item import IngestItemModel
-
-        src, src_id = _parse_item_key(item_id)
         factory = self._get_session_factory()
         async with factory() as session:
-            if src:
-                stmt = select(IngestItemModel).where(
-                    IngestItemModel.source == src,
-                    IngestItemModel.source_id == src_id,
-                )
-            elif str(src_id).isdigit():
-                stmt = select(IngestItemModel).where(IngestItemModel.id == int(src_id))
-            else:
-                stmt = select(IngestItemModel).where(IngestItemModel.source_id == src_id)
+            stmt = _build_item_select_stmt(item_id)
             res = await session.execute(stmt)
             row = res.scalar_one_or_none()
             return _model_to_queue_item(row) if row else None
@@ -564,7 +615,9 @@ class QueueManager:
         factory = self._get_session_factory()
         async with factory() as session:
             stmt = select(IngestItemModel).where(IngestItemModel.status == "queued")
-            if source and source != "all":
+            if source == "both":
+                stmt = stmt.where(IngestItemModel.source.in_(["uzmovi", "asilmedia"]))
+            elif source and source != "all":
                 stmt = stmt.where(IngestItemModel.source == source.lower())
             stmt = stmt.order_by(
                 IngestItemModel.priority.desc(),
@@ -594,7 +647,9 @@ class QueueManager:
             if status and status != "all":
                 norm_st = _normalize_status(status)
                 stmt = stmt.where(IngestItemModel.status == norm_st)
-            if source and source != "all":
+            if source == "both":
+                stmt = stmt.where(IngestItemModel.source.in_(["uzmovi", "asilmedia"]))
+            elif source and source != "all":
                 stmt = stmt.where(IngestItemModel.source == source.lower())
             if search:
                 q = f"%{search.strip()}%"
