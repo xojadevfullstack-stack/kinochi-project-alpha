@@ -22,58 +22,75 @@ export interface ContinueItem {
   is_18_plus?: boolean;
 }
 
-export default function ContinueWatchingSection() {
-  const { status } = useAuth();
-  const [items, setItems] = useState<ContinueItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface ContinueWatchingSyncOptions {
+  status: "authenticated" | "unauthenticated" | "loading" | "error" | string;
+  getHistoryFn?: () => Promise<any>;
+  storage?: {
+    getItem: (key: string) => string | null;
+    removeItem?: (key: string) => void;
+  } | null;
+}
 
-  const loadItems = useCallback(async () => {
-    const combinedItems: ContinueItem[] = [];
+export async function resolveContinueWatchingItems({
+  status,
+  getHistoryFn,
+  storage,
+}: ContinueWatchingSyncOptions): Promise<ContinueItem[]> {
+  const combinedItems: ContinueItem[] = [];
+  let authFetched = false;
+  let authItemsCount = 0;
 
-    // 1. Authenticated user history
-    if (status === "authenticated") {
-      try {
-        const historyData = await getHistory(0, 10);
-        if (historyData?.items && Array.isArray(historyData.items)) {
-          const authItems: ContinueItem[] = historyData.items.map((h: HistoryItem) => {
-            if (h.type === "episode" && h.episode) {
-              return {
-                id: h.episode.series_id || h.id,
-                code: h.episode.code,
-                title: `${h.episode.series_title} (${h.episode.display_code})`,
-                poster_url: h.episode.series_poster,
-                is_series: true,
-                release_year: h.episode.release_year || null,
-                imdb_rating: h.episode.imdb_rating || null,
-                genres: h.episode.genres || null,
-                progress: h.status === "completed" ? 100 : 55,
-                last_watched_at: h.last_watched_at,
-              };
-            }
+  // 1. Authenticated user history
+  if (status === "authenticated" && getHistoryFn) {
+    try {
+      const historyData = await getHistoryFn();
+      authFetched = true;
+      if (historyData?.items && Array.isArray(historyData.items)) {
+        authItemsCount = historyData.items.length;
+        const authItems: ContinueItem[] = historyData.items.map((h: HistoryItem) => {
+          if (h.type === "episode" && h.episode) {
             return {
-              id: h.movie?.id || h.id,
-              code: h.movie?.code,
-              title: h.movie?.title || "Noma'lum film",
-              poster_url: h.movie?.poster_url || null,
-              is_series: false,
-              release_year: h.movie?.release_year || null,
-              imdb_rating: h.movie?.imdb_rating || null,
-              genres: h.movie?.genres || null,
-              progress: h.status === "completed" ? 100 : 65,
+              id: h.episode.series_id || h.id,
+              code: h.episode.code,
+              title: `${h.episode.series_title} (${h.episode.display_code})`,
+              poster_url: h.episode.series_poster,
+              is_series: true,
+              release_year: h.episode.release_year || null,
+              imdb_rating: h.episode.imdb_rating || null,
+              genres: h.episode.genres || null,
+              progress: h.status === "completed" ? 100 : 55,
               last_watched_at: h.last_watched_at,
             };
-          });
-          combinedItems.push(...authItems);
-        }
-      } catch (err) {
-        console.error("Failed to fetch authenticated watch history:", err);
+          }
+          return {
+            id: h.movie?.id || h.id,
+            code: h.movie?.code,
+            title: h.movie?.title || "Noma'lum film",
+            poster_url: h.movie?.poster_url || null,
+            is_series: false,
+            release_year: h.movie?.release_year || null,
+            imdb_rating: h.movie?.imdb_rating || null,
+            genres: h.movie?.genres || null,
+            progress: h.status === "completed" ? 100 : 65,
+            last_watched_at: h.last_watched_at,
+          };
+        });
+        combinedItems.push(...authItems);
       }
+    } catch (err) {
+      console.error("Failed to fetch authenticated watch history:", err);
     }
+  }
 
-    // 2. Local storage guest history
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem("mediaplus_continue_watching");
+  // 2. Local storage guest history
+  if (storage) {
+    try {
+      if (status === "authenticated" && authFetched && authItemsCount === 0) {
+        if (typeof storage.removeItem === "function") {
+          storage.removeItem("mediaplus_continue_watching");
+        }
+      } else if (status !== "authenticated") {
+        const raw = storage.getItem("mediaplus_continue_watching");
         if (raw) {
           const localParsed = JSON.parse(raw);
           if (Array.isArray(localParsed)) {
@@ -116,12 +133,28 @@ export default function ContinueWatchingSection() {
             }
           }
         }
-      } catch (err) {
-        console.error("Failed to parse local continue watching items:", err);
       }
+    } catch (err) {
+      console.error("Failed to parse local continue watching items:", err);
     }
+  }
 
-    const sliced = combinedItems.slice(0, 10);
+  return combinedItems.slice(0, 10);
+}
+
+export default function ContinueWatchingSection() {
+  const { status } = useAuth();
+  const [items, setItems] = useState<ContinueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadItems = useCallback(async () => {
+    const storage = typeof window !== "undefined" ? window.localStorage : null;
+    const sliced = await resolveContinueWatchingItems({
+      status,
+      getHistoryFn: () => getHistory(0, 10),
+      storage,
+    });
+
     setItems(sliced);
     setLoading(false);
 
@@ -257,7 +290,7 @@ export default function ContinueWatchingSection() {
         /* Empty State Card */
         <div className="p-6 sm:p-8 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="w-12 h-12 rounded-xl bg-rating-gold/10 border border-rating-gold/20 flex items-center justify-center text-rating-gold shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
               <span className="material-symbols-outlined text-2xl">history</span>
             </div>
             <div>
