@@ -233,7 +233,7 @@ function ProfileContent() {
                 </p>
 
                 <div className="flex items-center gap-2 mt-3">
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-rating-gold text-[11px] font-bold border border-white/10 flex items-center gap-1">
+                  <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold border border-primary/20 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[14px]">verified</span>
                     <span>{status === "authenticated" ? "Faol profil" : "Mehmon"}</span>
                   </span>
@@ -295,7 +295,7 @@ function ProfileContent() {
             onClick={() => setActiveTab("subscriptions")}
             className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center gap-3.5 transition text-left cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-lg bg-white/10 text-rating-gold flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-white/10 text-primary flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-xl">loyalty</span>
             </div>
             <div>
@@ -423,7 +423,7 @@ function ProfileContent() {
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                               item.statusBadge === "completed"
                                 ? "bg-emerald-500/20 text-emerald-400"
-                                : "bg-rating-gold/20 text-rating-gold"
+                                : "bg-primary/20 text-primary"
                             }`}>
                               {item.statusBadge === "completed" ? "Tugallangan" : "Ko'rilmoqda"}
                             </span>
@@ -489,7 +489,7 @@ function ProfileContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <span className="material-symbols-outlined text-rating-gold text-lg">loyalty</span>
+                    <span className="material-symbols-outlined text-primary text-lg">loyalty</span>
                     <span>Kuzatilayotgan Franshizalar va Seriallar ({userSubscriptions.length})</span>
                   </h2>
                   <p className="text-xs text-text-secondary mt-0.5">
@@ -535,7 +535,7 @@ function ProfileContent() {
               {/* Active Subscriptions List */}
               {status !== "authenticated" ? (
                 <div className="py-8 text-center bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
-                  <span className="material-symbols-outlined text-4xl text-rating-gold">account_circle</span>
+                  <span className="material-symbols-outlined text-4xl text-primary">account_circle</span>
                   <h3 className="text-base font-bold text-white">Obunalarni boshqarish uchun kiring</h3>
                   <p className="text-xs text-text-secondary max-w-sm mx-auto">
                     Telegram orqali tizimga kirsangiz, barcha obunalaringiz bu yerda ko'rinadi va boshqariladi.

@@ -83,7 +83,7 @@ export default function SubscriptionsPage() {
           <BackButton fallbackUrl="/" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-rating-gold/15 text-rating-gold text-[10px] sm:text-xs font-bold tracking-wider uppercase border border-rating-gold/30">
+              <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] sm:text-xs font-bold tracking-wider uppercase border border-primary/30">
                 Mening Obunalarim
               </span>
               <span className="text-text-secondary text-xs">Kuzatuv ro&apos;yxati</span>
@@ -133,7 +133,7 @@ export default function SubscriptionsPage() {
       {!user && (
         <div className="mb-6 p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-rating-gold text-2xl">info</span>
+            <span className="material-symbols-outlined text-primary text-2xl">info</span>
             <p className="text-xs sm:text-sm text-text-secondary">
               Telegram orqali tizimga kirsangiz, obuna bo&apos;lgan kino va seriallaringiz yangi qismlari chiqqanda Telegram orqali darhol xabarnoma olasiz!
             </p>
@@ -205,7 +205,7 @@ export default function SubscriptionsPage() {
                       )}
                       {series.imdb_rating && (
                         <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 text-[10px] font-bold text-white flex items-center gap-1">
-                          <span className="text-rating-gold">★</span>
+                          <span className="text-rating-gold" aria-label="IMDb rating">★</span>
                           <span>{series.imdb_rating}</span>
                         </div>
                       )}

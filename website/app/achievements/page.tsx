@@ -137,15 +137,15 @@ export default function AchievementsPage() {
 
         {/* Hero Banner & Stats Card */}
         <div className="relative rounded-3xl p-6 sm:p-8 bg-white/[0.03] backdrop-blur-2xl border border-white/10 mb-8 shadow-2xl overflow-hidden">
-          {/* Subtle Ambient Gold Glow */}
-          <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Subtle Ambient Glow */}
+          <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-primary-container/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10">
             {/* Top row: Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
               <div className="flex items-start sm:items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/5 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined text-[32px]">emoji_events</span>
                 </div>
                 <div>
@@ -161,7 +161,7 @@ export default function AchievementsPage() {
               {/* Quick Badge */}
               <div className="flex items-center gap-2 self-start md:self-auto">
                 <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
                   <span className="text-xs font-semibold text-text-secondary">
                     Status: <strong className="text-white font-bold">{rank.title}</strong>
                   </span>
@@ -173,7 +173,7 @@ export default function AchievementsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-6">
               {/* Metric 1: User Rank */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined text-[24px]">{rank.icon}</span>
                 </div>
                 <div className="overflow-hidden">
@@ -202,11 +202,11 @@ export default function AchievementsPage() {
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col justify-center">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs text-text-secondary font-medium">Umumiy natija</span>
-                  <span className="text-sm font-bold text-amber-400">{progressPercent}%</span>
+                  <span className="text-sm font-bold text-primary">{progressPercent}%</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full transition-all duration-700"
+                    className="bg-gradient-to-r from-primary to-primary-hover h-full rounded-full transition-all duration-700"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -219,7 +219,7 @@ export default function AchievementsPage() {
         {status === "unauthenticated" && (
           <div className="mb-8 p-5 sm:p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
                 <span className="material-symbols-outlined text-2xl">lock_open</span>
               </div>
               <div>
@@ -252,11 +252,11 @@ export default function AchievementsPage() {
               onClick={() => setFilter("unlocked")}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 filter === "unlocked"
-                  ? "bg-amber-400/20 text-amber-400 shadow-md border border-amber-400/30"
+                  ? "bg-primary/20 text-primary shadow-md border border-primary/30"
                   : "text-text-secondary hover:text-white hover:bg-white/5"
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               Ochilganlar ({unlockedCount})
             </button>
             <button
@@ -307,7 +307,7 @@ export default function AchievementsPage() {
                   key={item.code}
                   className={`relative rounded-3xl p-5 sm:p-6 backdrop-blur-xl transition-all duration-300 flex flex-col justify-between group ${
                     isUnlocked
-                      ? "bg-white/[0.035] border border-amber-400/25 hover:border-amber-400/50 hover:bg-white/[0.06] shadow-lg shadow-black/40"
+                      ? "bg-white/[0.035] border border-primary/25 hover:border-primary/50 hover:bg-white/[0.06] shadow-lg shadow-black/40"
                       : "bg-white/[0.02] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] opacity-75 hover:opacity-100 shadow-sm"
                   }`}
                 >
@@ -317,7 +317,7 @@ export default function AchievementsPage() {
                       <div
                         className={`w-13 h-13 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 duration-300 ${
                           isUnlocked
-                            ? "bg-gradient-to-br from-amber-400/20 via-amber-500/10 to-transparent border border-amber-400/30 text-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.15)]"
+                            ? "bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 text-primary shadow-[0_0_20px_rgba(229,9,20,0.15)]"
                             : "bg-white/5 border border-white/10 text-zinc-500"
                         }`}
                       >
@@ -339,7 +339,7 @@ export default function AchievementsPage() {
 
                     {/* Title & Description */}
                     <h3 className={`font-bold text-base sm:text-lg mb-1.5 transition-colors ${
-                      isUnlocked ? "text-white group-hover:text-amber-300" : "text-zinc-300"
+                      isUnlocked ? "text-white group-hover:text-primary-hover" : "text-zinc-300"
                     }`}>
                       {item.title}
                     </h3>
@@ -355,7 +355,7 @@ export default function AchievementsPage() {
                     {isUnlocked && earnedDate ? (
                       <>
                         <div className="flex items-center gap-1.5 text-text-secondary font-medium">
-                          <span className="material-symbols-outlined text-[16px] text-amber-400/80">calendar_today</span>
+                          <span className="material-symbols-outlined text-[16px] text-primary/80">calendar_today</span>
                           <span>{formatAchievementDate(earnedDate)}</span>
                         </div>
                         <span className="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>

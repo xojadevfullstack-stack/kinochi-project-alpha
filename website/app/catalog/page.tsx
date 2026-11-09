@@ -23,8 +23,8 @@ const CATALOG_CATEGORIES = [
     subtitle: "Eng sara 100 ta film va serial",
     href: "/top100",
     icon: "emoji_events",
-    accent: "from-amber-500/20 to-transparent",
-    iconColor: "text-rating-gold",
+    accent: "from-primary/20 to-transparent",
+    iconColor: "text-primary",
   },
   {
     id: "movies",

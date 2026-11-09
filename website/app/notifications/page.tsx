@@ -252,7 +252,7 @@ export default function NotificationsPage() {
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-[18px] text-amber-400">campaign</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">campaign</span>
             <span>Tizim yangiliklari ({notifications.filter((n) => n.type === "system").length})</span>
           </button>
         </div>
@@ -286,7 +286,7 @@ export default function NotificationsPage() {
                   className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center border ${
                     item.type === "personal"
                       ? "bg-sky-500/15 border-sky-500/25 text-sky-400"
-                      : "bg-amber-400/15 border-amber-400/25 text-amber-400"
+                      : "bg-primary/15 border-primary/25 text-primary"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
