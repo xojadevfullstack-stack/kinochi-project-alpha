@@ -208,43 +208,56 @@ class TMDbClient:
         if not clean_query:
             return []
 
-        endpoint_type = "tv" if content_type in ("tv", "series") else "movie"
+        is_tv_pref = content_type in ("tv", "series", "anime", "dorama")
+        endpoint_type = "tv" if is_tv_pref else "movie"
+        other_endpoint = "movie" if is_tv_pref else "tv"
         cache_key = f"cache:tmdb:search:{endpoint_type}:{clean_query.lower()}"
         cached = await get_cache(cache_key)
         if cached:
             return cached
 
         items: list[dict[str, Any]] = []
-        seen_ids: set[int] = set()
+        seen_keys: set[str] = set()
 
-        # Direct numeric ID check
+        # Direct numeric ID check - queries BOTH TV and Movie to prevent missing anime/serials
         if clean_query.isdigit():
+            direct_id = int(clean_query)
             try:
-                direct_id = int(clean_query)
-                direct_data = await self.get_details(direct_id, kind=endpoint_type)
-                if direct_data:
-                    items.append({
-                        "id": direct_data["tmdb_id"],
-                        "tmdb_id": direct_data["tmdb_id"],
-                        "content_type": direct_data["content_type"],
-                        "title": direct_data["title"],
-                        "original_title": direct_data.get("original_title"),
-                        "release_year": direct_data.get("release_year"),
-                        "poster_url": direct_data.get("poster_url"),
-                        "overview": direct_data.get("overview") or "",
-                        "vote_average": direct_data.get("tmdb_rating") or 0.0,
-                        "adult": bool(direct_data.get("adult", False)),
-                    })
-                    seen_ids.add(direct_id)
+                import asyncio
+                results_direct = await asyncio.gather(
+                    self.get_details(direct_id, kind=endpoint_type),
+                    self.get_details(direct_id, kind=other_endpoint),
+                    return_exceptions=True
+                )
+                for d in results_direct:
+                    if isinstance(d, dict) and d.get("title") and d.get("title") != "Noma'lum":
+                        d_id = d.get("tmdb_id") or direct_id
+                        d_ctype = d.get("content_type", "movie")
+                        seen_key = f"{d_ctype}:{d_id}"
+                        if seen_key not in seen_keys:
+                            seen_keys.add(seen_key)
+                            items.append({
+                                "id": d_id,
+                                "tmdb_id": d_id,
+                                "content_type": d_ctype,
+                                "title": d["title"],
+                                "original_title": d.get("original_title"),
+                                "release_year": d.get("release_year"),
+                                "poster_url": d.get("poster_url"),
+                                "overview": d.get("overview") or "",
+                                "vote_average": d.get("tmdb_rating") or 0.0,
+                                "adult": bool(d.get("adult", False)),
+                            })
             except Exception as e:
                 logger.warning(f"To'g'ridan-to'g'ri TMDb ID qidiruvi xatoligi ({clean_query}): {e}")
 
-        # Search in Russian first
+        # Search in preferred endpoint first
         data = await self._request_with_retry(
             f"search/{endpoint_type}",
             params={"query": clean_query, "language": "ru-RU", "include_adult": "true"},
         )
         results = (data or {}).get("results", [])
+        curr_endpoint = endpoint_type
 
         # Fallback to international search if Russian returned empty
         if not results:
@@ -254,15 +267,32 @@ class TMDbClient:
             )
             results = (data_en or {}).get("results", [])
 
+        # Fallback to the other endpoint (e.g. search TV if Movie was empty, or vice-versa)
+        if not results:
+            data_other = await self._request_with_retry(
+                f"search/{other_endpoint}",
+                params={"query": clean_query, "language": "ru-RU", "include_adult": "true"},
+            )
+            results = (data_other or {}).get("results", [])
+            if not results:
+                data_other_en = await self._request_with_retry(
+                    f"search/{other_endpoint}",
+                    params={"query": clean_query, "language": "en-US", "include_adult": "true"},
+                )
+                results = (data_other_en or {}).get("results", [])
+            if results:
+                curr_endpoint = other_endpoint
+
         for item in results:
             item_id = item["id"]
-            if item_id in seen_ids:
+            seen_key = f"{curr_endpoint}:{item_id}"
+            if seen_key in seen_keys:
                 continue
-            seen_ids.add(item_id)
+            seen_keys.add(seen_key)
 
-            title = item.get("title") if endpoint_type == "movie" else item.get("name")
-            orig_title = item.get("original_title") if endpoint_type == "movie" else item.get("original_name")
-            release_date = item.get("release_date") if endpoint_type == "movie" else item.get("first_air_date")
+            title = item.get("title") if curr_endpoint == "movie" else item.get("name")
+            orig_title = item.get("original_title") if curr_endpoint == "movie" else item.get("original_name")
+            release_date = item.get("release_date") if curr_endpoint == "movie" else item.get("first_air_date")
             year = None
             if release_date and len(release_date) >= 4 and release_date[:4].isdigit():
                 year = int(release_date[:4])
@@ -273,7 +303,7 @@ class TMDbClient:
             items.append({
                 "id": item_id,
                 "tmdb_id": item_id,
-                "content_type": "series" if endpoint_type == "tv" else "movie",
+                "content_type": "series" if curr_endpoint == "tv" else "movie",
                 "title": title or orig_title or "Noma'lum",
                 "original_title": orig_title,
                 "release_year": year,
@@ -311,6 +341,7 @@ class TMDbClient:
             f"{endpoint_type}/{tmdb_id}",
             params={
                 "append_to_response": "videos,credits,translations,external_ids",
+                "include_video_language": "en,ru,ja,null",
                 "language": "ru-RU",
             },
         )
@@ -349,8 +380,12 @@ class TMDbClient:
         ]
         if youtube_trailers:
             official = next((v for v in youtube_trailers if v.get("official") and v.get("type") == "Trailer"), None)
-            best_video = official or youtube_trailers[0]
+            best_video = official or next((v for v in youtube_trailers if v.get("type") == "Trailer"), None) or youtube_trailers[0]
             trailer_url = f"https://www.youtube.com/watch?v={best_video['key']}"
+        elif videos:
+            yt_any = [v for v in videos if v.get("site") == "YouTube" and v.get("key")]
+            if yt_any:
+                trailer_url = f"https://www.youtube.com/watch?v={yt_any[0]['key']}"
 
         # Fetch English data for clean Latin poster, director and cast
         en_data = None
