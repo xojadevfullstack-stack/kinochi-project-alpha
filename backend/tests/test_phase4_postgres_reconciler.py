@@ -96,8 +96,8 @@ async def test_4_5_disposable_postgres_reconciler_scenarios():
     # Scenario (i): Bo'sh bazada alembic upgrade head xatti-harakati
     # -------------------------------------------------------------
     await reset_db(admin_url)
-    # Eslatma: c011ec7100 migratsiyasi bo'sh bazada collections jadvalisiz yiqiladi
-    # Bu tarixiy migratsiyani o'zgartirmaslik qoidasining tabiiy natijasi
+    # Eslatma: BUG-003 tuzatilgach, c011ec7100 migratsiyasi collections jadvalini yaratadi
+    # va bo'sh bazada alembic upgrade head 100% muvaffaqiyatli o'tadi.
     failed_on_empty = False
     fail_reason = ""
     try:
@@ -107,8 +107,7 @@ async def test_4_5_disposable_postgres_reconciler_scenarios():
         failed_on_empty = True
         fail_reason = str(e)
 
-    assert failed_on_empty is True, "Bo'sh bazada collections yo'qligi sababli c011ec7100 xato berishi kutiladi"
-    assert "collections" in fail_reason.lower()
+    assert failed_on_empty is False, f"Bo'sh bazada upgrade head muvaffaqiyatli bo'lishi shart, xato: {fail_reason}"
 
     # -------------------------------------------------------------
     # Scenario (ii): create_all bilan yaratilgan baza + stamp + upgrade head
