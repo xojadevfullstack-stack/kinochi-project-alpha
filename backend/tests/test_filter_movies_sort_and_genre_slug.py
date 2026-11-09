@@ -62,11 +62,13 @@ async def test_filter_movies_sort_and_genre_slug_translation(engine, db_session:
     try:
         transport = ASGITransport(app=fastapi_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            target_ids = {m1.id, m2.id, m3.id}
+
             # 1. Assert Sort by Rating DESC
             resp_rating = await client.get("/api/v1/movies?sort=rating")
             assert resp_rating.status_code == 200, resp_rating.text
             items_rating = resp_rating.json()["items"]
-            rating_ids = [m["id"] for m in items_rating]
+            rating_ids = [m["id"] for m in items_rating if m["id"] in target_ids]
             assert rating_ids == [m3.id, m2.id, m1.id], (
                 f"Expected rating sort [m3({m3.id}), m2({m2.id}), m1({m1.id})], got {rating_ids}"
             )
@@ -75,7 +77,7 @@ async def test_filter_movies_sort_and_genre_slug_translation(engine, db_session:
             resp_latest = await client.get("/api/v1/movies?sort=latest")
             assert resp_latest.status_code == 200, resp_latest.text
             items_latest = resp_latest.json()["items"]
-            latest_ids = [m["id"] for m in items_latest]
+            latest_ids = [m["id"] for m in items_latest if m["id"] in target_ids]
             assert latest_ids == [m1.id, m2.id, m3.id], (
                 f"Expected latest sort [m1({m1.id}), m2({m2.id}), m3({m3.id})], got {latest_ids}"
             )

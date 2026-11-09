@@ -51,11 +51,13 @@ async def test_filter_series_sort_by_rating_and_latest(engine, db_session: Async
     try:
         transport = ASGITransport(app=fastapi_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
+            target_ids = {s1.id, s2.id, s3.id}
+
             # 1. Assert Sort by Rating DESC
             resp_rating = await client.get("/api/v1/series?sort=rating")
             assert resp_rating.status_code == 200, resp_rating.text
             items_rating = resp_rating.json()["items"]
-            rating_ids = [s["id"] for s in items_rating]
+            rating_ids = [s["id"] for s in items_rating if s["id"] in target_ids]
             assert rating_ids == [s3.id, s2.id, s1.id], (
                 f"Expected rating sort [s3({s3.id}), s2({s2.id}), s1({s1.id})], got {rating_ids}"
             )
@@ -64,7 +66,7 @@ async def test_filter_series_sort_by_rating_and_latest(engine, db_session: Async
             resp_latest = await client.get("/api/v1/series?sort=latest")
             assert resp_latest.status_code == 200, resp_latest.text
             items_latest = resp_latest.json()["items"]
-            latest_ids = [s["id"] for s in items_latest]
+            latest_ids = [s["id"] for s in items_latest if s["id"] in target_ids]
             assert latest_ids == [s1.id, s2.id, s3.id], (
                 f"Expected latest sort [s1({s1.id}), s2({s2.id}), s3({s3.id})], got {latest_ids}"
             )
