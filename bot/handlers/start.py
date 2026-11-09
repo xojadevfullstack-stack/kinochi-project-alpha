@@ -16,12 +16,19 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message, command: CommandObject):
     # Register or update user
-    await api_client.register_user(
+    reg = await api_client.register_user(
         telegram_id=message.from_user.id,
         username=message.from_user.username,
         first_name=message.from_user.first_name,
         last_name=message.from_user.last_name
     )
+    if reg and reg.get("is_banned"):
+        await message.answer(
+            "⛔️ <b>Sizning hisobingiz ma'muriyat tomonidan bloklangan.</b>\n\n"
+            "Agar bu xatolik deb hisoblasangiz, ma'muriyatga murojaat qiling.",
+            parse_mode="HTML"
+        )
+        return
 
     args = command.args
     if args and args.strip():

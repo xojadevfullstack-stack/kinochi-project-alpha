@@ -1,6 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from services.api_client import api_client
+from services.api_client import api_client, APIConnectionError
+
+SERVER_RETRY_MSG = "⏳ Serverga ulanishda vaqtinchalik kechikish yuz berdi. Iltimos, qayta urinib ko'ring."
 from utils.movie_sender import send_movie_to_user
 from utils.episode_sender import send_episode_to_user
 from utils.info_sender import send_movie_info, send_series_info, send_season_info
@@ -17,7 +19,12 @@ async def handle_watch_movie(callback: CallbackQuery):
             code = callback.data[2:].strip()
         else:
             code = callback.data.split("_", 2)[2].strip()
-        movie = await api_client.get_movie_by_code(code)
+        try:
+            movie = await api_client.get_movie_by_code(code)
+        except APIConnectionError:
+            await callback.message.answer(SERVER_RETRY_MSG)
+            return
+
         if not movie:
             await callback.message.answer("⚠️ Bu kino topilmadi.")
             return
@@ -38,7 +45,12 @@ async def handle_watch_episode(callback: CallbackQuery):
             code = callback.data[8:].strip()
         else:
             code = callback.data.split("_", 2)[2].strip()
-        episode = await api_client.get_episode_by_code(code)
+        try:
+            episode = await api_client.get_episode_by_code(code)
+        except APIConnectionError:
+            await callback.message.answer(SERVER_RETRY_MSG)
+            return
+
         if not episode:
             await callback.message.answer("⚠️ Bu qism topilmadi.")
             return
@@ -59,7 +71,12 @@ async def handle_show_season(callback: CallbackQuery):
         series_id = int(parts[2])
         season_id = int(parts[3])
         
-        series = await api_client.get_series_by_id(series_id)
+        try:
+            series = await api_client.get_series_by_id(series_id)
+        except APIConnectionError:
+            await callback.message.answer(SERVER_RETRY_MSG)
+            return
+
         if not series:
             await callback.message.answer("⚠️ Bu serial topilmadi.")
             return

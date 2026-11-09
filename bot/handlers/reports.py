@@ -134,7 +134,8 @@ async def handle_execute_report(callback: CallbackQuery):
             movie_id=movie_id,
             series_id=series_id,
             episode_id=episode_id,
-            description=desc
+            description=desc,
+            telegram_user_id=callback.from_user.id
         )
 
         if success:

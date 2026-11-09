@@ -5,6 +5,10 @@ logger = logging.getLogger(__name__)
 from typing import Optional, Dict, Any, List, Union
 from config import settings
 
+class APIConnectionError(Exception):
+    """Raised when backend API times out or cannot be reached (not a 404)."""
+    pass
+
 class APIClient:
     def __init__(self):
         self.base_url = settings.BACKEND_API_URL.rstrip('/')
@@ -12,7 +16,7 @@ class APIClient:
         headers = {}
         if settings.BOT_API_SECRET:
             headers["X-Bot-Secret"] = settings.BOT_API_SECRET
-        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=10.0, headers=headers)
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=25.0, headers=headers)
         self._ban_cache: dict[int, tuple[bool, float]] = {}
 
     async def close(self):
@@ -41,6 +45,9 @@ class APIClient:
                 return None
             response.raise_for_status()
             return response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as e:
+            logger.error(f"Network/timeout error fetching movie {code}: {e}")
+            raise APIConnectionError(f"Backend timeout or connection error: {e}")
         except httpx.HTTPError as e:
             logger.error(f"Error fetching movie {code}: {e}")
             return None
@@ -54,6 +61,9 @@ class APIClient:
             response.raise_for_status()
             data = response.json()
             return data if data else None
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as e:
+            logger.warning(f"Network error fetching franchise context for {code}: {e}")
+            return None
         except httpx.HTTPError as e:
             logger.error(f"Error fetching franchise context for movie {code}: {e}")
             return None
@@ -65,6 +75,9 @@ class APIClient:
                 return None
             response.raise_for_status()
             return response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as e:
+            logger.error(f"Network/timeout error fetching movie by ID {movie_id}: {e}")
+            raise APIConnectionError(f"Backend timeout or connection error: {e}")
         except httpx.HTTPError as e:
             logger.error(f"Error fetching movie by ID {movie_id}: {e}")
             return None
@@ -77,6 +90,9 @@ class APIClient:
                 return None
             response.raise_for_status()
             return response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as e:
+            logger.error(f"Network/timeout error fetching episode {code}: {e}")
+            raise APIConnectionError(f"Backend timeout or connection error: {e}")
         except httpx.HTTPError as e:
             logger.error(f"Error fetching episode {code}: {e}")
             return None
@@ -88,6 +104,9 @@ class APIClient:
                 return None
             response.raise_for_status()
             return response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as e:
+            logger.error(f"Network/timeout error fetching series {series_id}: {e}")
+            raise APIConnectionError(f"Backend timeout or connection error: {e}")
         except httpx.HTTPError as e:
             logger.error(f"Error fetching series {series_id}: {e}")
             return None
@@ -113,6 +132,9 @@ class APIClient:
                 return None
             response.raise_for_status()
             return response.json()
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as e:
+            logger.error(f"Network/timeout error fetching series by code {code}: {e}")
+            raise APIConnectionError(f"Backend timeout or connection error: {e}")
         except httpx.HTTPError as e:
             logger.error(f"Error fetching series by code {code}: {e}")
             return None

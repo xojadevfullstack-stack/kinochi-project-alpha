@@ -325,9 +325,19 @@ async def handle_page_catalog(callback: CallbackQuery):
             await callback.answer("Hozircha ushbu sahifada hech narsa yo'q.", show_alert=True)
             return
 
+        page_title = "Katalog"
+        try:
+            pages_data = await api_client.get_pages()
+            pages_list = pages_data.get("items", [])
+            page_obj = next((p for p in pages_list if p.get("id") == page_id), None)
+            if page_obj and page_obj.get("title"):
+                page_title = page_obj["title"]
+        except Exception:
+            pass
+
         total_pages = max(1, math.ceil(total / limit)) if total > 0 else 1
         text = (
-            f"📂 <b>Sahifa natijalari</b> (Sahifa {page}/{total_pages})\n"
+            f"📂 <b>{page_title}</b> (Sahifa {page}/{total_pages})\n"
             f"<i>Jami: {total} ta material. Quyidagilardan birini tanlang:</i>"
         )
         markup = build_page_items_list(results, page_id=page_id, page=page, total=total, page_size=limit)

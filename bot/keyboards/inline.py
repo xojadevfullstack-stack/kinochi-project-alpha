@@ -77,28 +77,59 @@ def get_main_menu_inline(webapp_url: str) -> InlineKeyboardMarkup:
 def get_catalog_categories_inline(pages: list[dict] = None) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     
-    # Asosiy bo'limlar
+    # 1. Asosiy bo'limlar: Kinolar va Seriallar
     builder.button(text="🎬 Kinolar", callback_data="catalog_all_movies")
     builder.button(text="📺 Seriallar", callback_data="catalog_all_series")
+    
+    # 2. Franshizalar & To'plamlar (alohida to'liq qator)
     builder.button(text="📚 Franshizalar & To'plamlar", callback_data="catalog_collections")
     
-    # Dinamik sahifalar (Admin panel va saytdan qo'shilgan)
+    # 3. Dinamik sahifalar (Admin panel va saytdan qo'shilgan, dublikatlar olib tashlanadi)
+    dyn_count = 0
     if pages:
         for page in pages:
-            if page.get('is_active'):
-                title = page.get('title', '')
-                icon = "📂"
-                t_lower = title.lower()
-                if "anime" in t_lower:
-                    icon = "🎌"
-                elif "dorama" in t_lower:
-                    icon = "🎭"
-                elif "mult" in t_lower:
-                    icon = "🧸"
-                builder.button(text=f"{icon} {title}", callback_data=f"menu_page_{page.get('id')}")
+            if not page.get('is_active'):
+                continue
+            title = page.get('title', '').strip()
+            slug = (page.get('slug') or '').strip().lower()
+            t_lower = title.lower()
+
+            # Dublikat kino va serial sahifalarini tashlab o'tish (chunki yuqorida 🎬 Kinolar va 📺 Seriallar mavjud)
+            if slug in ("movie", "movies", "series", "serial", "film", "filmlar") or t_lower in ("kino", "kinolar", "serial", "seriallar", "film", "filmlar"):
+                continue
+
+            icon = "📂"
+            if "anime" in t_lower:
+                icon = "🥷"
+            elif "dorama" in t_lower:
+                icon = "🎭"
+            elif "mult" in t_lower or "animatsiya" in t_lower:
+                icon = "🧸"
+            elif "premyera" in t_lower:
+                icon = "🔥"
+            elif "top" in t_lower:
+                icon = "🏆"
+
+            builder.button(text=f"{icon} {title}", callback_data=f"menu_page_{page.get('id')}")
+            dyn_count += 1
                 
+    # 4. Asosiy menyu
     builder.button(text="🔙 Asosiy menyu", callback_data="menu_main")
-    builder.adjust(2)
+
+    # Qatorlar kengligini ergonomik moslashtirish:
+    # - [Kinolar, Seriallar] (2)
+    # - [Franshizalar & To'plamlar] (1)
+    # - Dinamik sahifalar 2 tadan (agar toq bo'lsa, oxirgisi 1)
+    # - [Asosiy menyu] (1)
+    adjust_pattern = [2, 1]
+    for i in range(0, dyn_count, 2):
+        if i + 1 < dyn_count:
+            adjust_pattern.append(2)
+        else:
+            adjust_pattern.append(1)
+    adjust_pattern.append(1)
+
+    builder.adjust(*adjust_pattern)
     return builder.as_markup()
 
 import math
