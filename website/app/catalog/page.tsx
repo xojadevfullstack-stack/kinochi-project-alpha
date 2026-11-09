@@ -118,6 +118,9 @@ export default async function FullCatalogPage({
     if (searchParams.search) {
       query += `&search=${encodeURIComponent(searchParams.search)}`;
     }
+    if (searchParams.sort) {
+      query += `&sort=${encodeURIComponent(searchParams.sort)}`;
+    }
 
     // If "all" is explicitly selected, fetch a balanced mix of movies and series
     if (searchParams.type === "all") {
@@ -215,6 +218,7 @@ export default async function FullCatalogPage({
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
               selectedType={selectedType}
+              selectedSort={searchParams.sort}
               baseUrl="/catalog"
               totalItems={total}
             />
@@ -303,12 +307,14 @@ export default async function FullCatalogPage({
           </div>
 
           <CatalogGrid
+            key={`catalog-${selectedCategory || 'all'}-${selectedGenre || 'all'}-${selectedYear || 'all'}-${searchParams.search || ''}-${searchParams.sort || ''}`}
             initialItems={movies}
             total={total}
             categoryId={selectedCategory}
             genre={selectedGenre}
             year={selectedYear}
             search={searchParams.search}
+            sort={searchParams.sort}
             emptyMessage="Ushbu mezon bo'yicha hozircha kontent topilmadi."
           />
         </div>

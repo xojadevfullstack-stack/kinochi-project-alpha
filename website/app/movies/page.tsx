@@ -23,7 +23,7 @@ type Category = {
 export default async function MoviesListPage({
   searchParams
 }: {
-  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string; page_id?: string }
+  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string; page_id?: string; sort?: string }
 }) {
   let movies: CatalogItem[] = [];
   let total = 0;
@@ -58,6 +58,9 @@ export default async function MoviesListPage({
     }
     if (searchParams.search) {
       query += `&search=${encodeURIComponent(searchParams.search)}`;
+    }
+    if (searchParams.sort) {
+      query += `&sort=${encodeURIComponent(searchParams.sort)}`;
     }
 
     const [moviesData, categoriesData, pagesData] = await Promise.all([
@@ -126,6 +129,7 @@ export default async function MoviesListPage({
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
               selectedType={selectedType}
+              selectedSort={searchParams.sort}
               baseUrl="/movies"
               totalItems={total}
             />

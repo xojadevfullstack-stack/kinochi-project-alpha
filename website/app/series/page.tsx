@@ -23,7 +23,7 @@ type Category = {
 export default async function SeriesListPage({
   searchParams
 }: {
-  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string; page_id?: string }
+  searchParams: { category?: string; genre?: string; year?: string; search?: string; type?: string; page_id?: string; sort?: string }
 }) {
   let seriesList: CatalogItem[] = [];
   let total = 0;
@@ -52,6 +52,9 @@ export default async function SeriesListPage({
     }
     if (searchParams.search) {
       query += `&search=${encodeURIComponent(searchParams.search)}`;
+    }
+    if (searchParams.sort) {
+      query += `&sort=${encodeURIComponent(searchParams.sort)}`;
     }
 
     const [seriesData, categoriesData, pagesData] = await Promise.all([
@@ -120,6 +123,7 @@ export default async function SeriesListPage({
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
               selectedType={selectedType}
+              selectedSort={searchParams.sort}
               baseUrl="/series"
               totalItems={total}
             />
