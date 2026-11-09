@@ -96,6 +96,9 @@ export default function MoviesPage() {
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSource, setSelectedSource] = useState<string>("all");
 
   const PAGE_SIZE = 50;
 
@@ -115,14 +118,14 @@ export default function MoviesPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Load movies on query change or initial mount
+  // Load movies on query change or filter change or initial mount
   useEffect(() => {
     setIsSearching(true);
     loadMovies(true, debouncedQuery).finally(() => {
       setIsSearching(false);
       setLoading(false);
     });
-  }, [debouncedQuery]);
+  }, [debouncedQuery, selectedStatus, selectedCategory, selectedSource]);
 
   const loadSources = async () => {
     try {
@@ -137,24 +140,33 @@ export default function MoviesPage() {
     try {
       const query = queryOverride !== undefined ? queryOverride : debouncedQuery;
       let url = "";
+      const statusParam = `&publish_status=${selectedStatus}`;
+      const catParam = selectedCategory ? `&category_id=${selectedCategory}` : "";
       if (reset) {
         if (query.length >= 2) {
-          url = `/movies/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}&publish_status=all`;
+          url = `/movies/search?q=${encodeURIComponent(query)}&skip=0&limit=${PAGE_SIZE}${statusParam}${catParam}`;
         } else {
-          url = `/movies?skip=0&limit=${PAGE_SIZE}&publish_status=all`;
+          url = `/movies?skip=0&limit=${PAGE_SIZE}${statusParam}${catParam}`;
         }
         const data = await fetchApi(url);
-        setMovies(data.items || []);
-        setTotalMovies(typeof data.total === "number" ? data.total : (data.items || []).length);
+        let items: Movie[] = data.items || [];
+        if (selectedSource !== "all") {
+          items = items.filter((m) => m.source_type === selectedSource);
+        }
+        setMovies(items);
+        setTotalMovies(typeof data.total === "number" ? data.total : items.length);
       } else {
         const skip = movies.length;
         if (query.length >= 2) {
-          url = `/movies/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}&publish_status=all`;
+          url = `/movies/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${PAGE_SIZE}${statusParam}${catParam}`;
         } else {
-          url = `/movies?skip=${skip}&limit=${PAGE_SIZE}&publish_status=all`;
+          url = `/movies?skip=${skip}&limit=${PAGE_SIZE}${statusParam}${catParam}`;
         }
         const data = await fetchApi(url);
-        const newItems: Movie[] = data.items || [];
+        let newItems: Movie[] = data.items || [];
+        if (selectedSource !== "all") {
+          newItems = newItems.filter((m) => m.source_type === selectedSource);
+        }
         setMovies((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const uniqueNew = newItems.filter((m) => !existingIds.has(m.id));
@@ -1159,28 +1171,73 @@ export default function MoviesPage() {
             )}
           </div>
 
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72 md:w-80">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[18px]">
-              search
-            </span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Kinolar bo'yicha qidirish (nomi yoki kodi)..."
-              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary-container focus:outline-none transition-colors"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white text-xs p-1"
-                title="Tozalash"
-              >
-                ✕
-              </button>
-            )}
+          {/* Search & Filters */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            {/* Status Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="bg-surface-container-lowest border border-white/10 rounded-xl px-3 py-2 text-xs text-text-primary focus:border-primary-container focus:outline-none transition-colors"
+              title="Nashr holati"
+            >
+              <option value="all">Barcha holatlar</option>
+              <option value="published">Chop etilgan</option>
+              <option value="draft">Qoralama / Pending</option>
+            </select>
+
+            {/* Category Filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-surface-container-lowest border border-white/10 rounded-xl px-3 py-2 text-xs text-text-primary focus:border-primary-container focus:outline-none transition-colors max-w-[150px]"
+              title="Kategoriya filtri"
+            >
+              <option value="">Barcha kategoriyalar</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Source Filter */}
+            <select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+              className="bg-surface-container-lowest border border-white/10 rounded-xl px-3 py-2 text-xs text-text-primary focus:border-primary-container focus:outline-none transition-colors"
+              title="Manba filtri"
+            >
+              <option value="all">Barcha manbalar</option>
+              <option value="uzmovi">UzMovi</option>
+              <option value="anitoob">AniToob</option>
+              <option value="animeuzb">AnimeUzb</option>
+              <option value="asilmedia">AsilMedia</option>
+              <option value="boshqa">Boshqa</option>
+            </select>
+
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64 md:w-72">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Nomi yoki kodi..."
+                className="w-full bg-surface-container-lowest border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-secondary/50 focus:border-primary-container focus:outline-none transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white text-xs p-1"
+                  title="Tozalash"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
