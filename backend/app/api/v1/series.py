@@ -1,1063 +1,1083 @@
-"""API v1 — Series endpoints."""
-import html
-import logging
-import asyncio
-import os
-import tempfile
-from datetime import datetime
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
-from pydantic import BaseModel
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot, get_db_session, resolve_publish_status
-from app.application.series.series_service import SeriesService
-from app.domain.series.entities import (
-    Series, SeriesCreate, SeriesUpdate,
-    PaginatedSeriesSummaryResponse,
-    Season, SeasonCreate, SeasonUpdate,
-    Episode, EpisodeCreate, EpisodeUpdate
-)
-from app.infrastructure.telegram.telegram_client import telegram_client
-import time
-from app.core.job_manager import job_manager, JobStatus
-from app.api.limiter import limiter
-from app.utils.trailer import validate_and_normalize_trailer_url
-from app.core.cache import get_cache, set_cache, delete_cache_pattern
-from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
-from app.core.config import settings
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from app.infrastructure.db.models.source import SourceModel
-from app.infrastructure.db.models.movie import MovieModel
-from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
-from app.infrastructure.db.session import async_session_factory
-
-logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix="/series", tags=["series"])
-
-
-# --- SERIES ---
-
-@router.post("", response_model=Series, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")
-async def create_series(
-    request: Request,
-    series_in: SeriesCreate,
-    service: SeriesService = Depends(get_series_service),
-    db: AsyncSession = Depends(get_db_session),
-    admin: dict = Depends(get_current_admin)
-):
-    """Create a new series (Admin only)."""
-    create_dict = series_in.model_dump(exclude_unset=True)
-    
-    current_year = datetime.now().year
-    raw_year = create_dict.get("release_year") or create_dict.get("year") or current_year
-    try:
-        clean_year = int(raw_year)
-        if clean_year < 1880 or clean_year > current_year + 5:
-            clean_year = current_year
-    except (ValueError, TypeError):
-        clean_year = current_year
-
-    create_dict["release_year"] = clean_year
-    create_dict.pop("year", None)
-
-    if create_dict.get("trailer_url"):
-        create_dict["trailer_url"] = await validate_and_normalize_trailer_url(create_dict["trailer_url"])
-
-    # Admission Gate pre_check
-    gate_payload = dict(create_dict)
-    gate_payload["source"] = gate_payload.get("source") or create_dict.get("source_type") or "admin"
-    gate_payload["source_key"] = gate_payload.get("source_key") or f"admin_{int(time.time())}"
-    gate_payload["manual_verified"] = True
-    gate_payload["year"] = clean_year
-    gate_payload["release_year"] = clean_year
-    if "genres" not in gate_payload and gate_payload.get("category_ids"):
-        gate_payload["genres"] = gate_payload["category_ids"]
-    is_valid, defects = await pre_check("series", gate_payload, session=db, check_reachability=False)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
-
-    series = await service.create_series(create_dict)
-    await delete_cache_pattern("cache:series:*")
-    return series
-
-
-class SeriesBulkImportItem(BaseModel):
-    title: str
-    code: str | None = None
-    release_year: int | None = None
-    description: str | None = None
-    poster_url: str | None = None
-    category_ids: list[int] | None = None
-
-
-class SeriesBulkImportRequest(BaseModel):
-    items: list[SeriesBulkImportItem] = []
-
-
-@router.post("/bulk-import", status_code=status.HTTP_201_CREATED)
-async def bulk_import_series(
-    request: Request,
-    payload: SeriesBulkImportRequest,
-    db: AsyncSession = Depends(get_db_session),
-    admin: dict = Depends(get_current_admin),
-):
-    """Admin bulk-import endpoint for series with kill-switch protection."""
-    if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AUTO_CONTENT_ENABLED o'chirilgan (False): ommaviy serial importi taqiqlangan."
-        )
-    return {"success": True, "count": len(payload.items)}
-
-
-@router.get("", response_model=PaginatedSeriesSummaryResponse)
-@limiter.limit("100/minute")
-async def list_series(
-    request: Request,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
-    category_id: int | None = None,
-    page_id: int | None = None,
-    exclude_paged: bool = False,
-    publish_status: str | None = Depends(resolve_publish_status),
-    search: str | None = Query(None, description="Qidiruv"),
-    year: int | None = Query(None, description="Yil"),
-    genre: str | None = Query(None, description="Janr"),
-    service: SeriesService = Depends(get_series_service)
-):
-    """List series (Public: published)."""
-    target_status = publish_status
-    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}:{search}:{year}:{genre}"
-    cached = await get_cache(cache_key)
-    if cached:
-        return cached
-
-    items, total = await service.get_all_series(
-        skip=skip,
-        limit=limit,
-        category_id=category_id,
-        page_id=page_id,
-        exclude_paged=exclude_paged,
-        publish_status=target_status,
-        search=search,
-        year=year,
-        genre=genre
-    )
-    
-    # Calculate pages
-    pages = (total + limit - 1) // limit if total > 0 else 0
-    page = (skip // limit) + 1 if limit > 0 else 1
-    
-    response_data = {
-        "items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in items], 
-        "total": total, 
-        "page": page, 
-        "size": limit, 
-        "pages": pages
-    }
-    await set_cache(cache_key, response_data, 300)
-
-    return response_data
-
-
-@router.get("/search", response_model=PaginatedSeriesSummaryResponse)
-@limiter.limit("60/minute")
-async def search_series(
-    request: Request,
-    q: str = Query(..., min_length=2),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
-    publish_status: str | None = Depends(resolve_publish_status),
-    service: SeriesService = Depends(get_series_service)
-):
-    """Search series by title (Public: published)."""
-    target_status = publish_status
-    cache_key = f"cache:series:search:{q}:{skip}:{limit}:{target_status}"
-    cached = await get_cache(cache_key)
-    if cached:
-        return cached
-
-    items, total = await service.search_series(title_query=q, skip=skip, limit=limit, publish_status=target_status)
-    
-    pages = (total + limit - 1) // limit if total > 0 else 0
-    page = (skip // limit) + 1 if limit > 0 else 1
-    
-    response_data = {
-        "items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in items], 
-        "total": total, 
-        "page": page, 
-        "size": limit, 
-        "pages": pages
-    }
-    await set_cache(cache_key, response_data, 300)
-
-    return response_data
-
-
-@router.get("/by-source", response_model=Series)
-@limiter.limit("120/minute")
-async def get_series_by_source(
-    request: Request,
-    chat_id: int = Query(..., description="Telegram kanal/guruh chat ID"),
-    topic_id: int = Query(..., description="Forum mavzu (topic/message_thread_id) ID - majburiy"),
-    db: AsyncSession = Depends(get_db_session),
-    service: SeriesService = Depends(get_series_service)
-):
-    """Get series by source (chat_id and topic_id). Aniq qidiruv, noaniqlik bo'lsa rad etiladi."""
-    # 1. Ushbu chat_id va topic_id ga biriktirilgan seriallarni qidiramiz
-    stmt_series = (
-        select(SeriesModel)
-        .options(
-            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
-            selectinload(SeriesModel.categories),
-            selectinload(SeriesModel.pages),
-            selectinload(SeriesModel.source)
-        )
-        .join(SourceModel, SeriesModel.source_id == SourceModel.id)
-        .where(
-            SourceModel.chat_id == chat_id,
-            SourceModel.topic_id == topic_id
-        )
-    )
-    res_s = await db.execute(stmt_series)
-    series_models = list(res_s.scalars().all())
-
-    # 2. Ushbu chat_id va topic_id ga biriktirilgan kinolar bormi-yo'qligini tekshiramiz
-    stmt_movies = (
-        select(MovieModel)
-        .where(
-            MovieModel.source_chat_id == chat_id,
-            MovieModel.source_topic_id == topic_id,
-        )
-    )
-    res_m = await db.execute(stmt_movies)
-    movie_models = list(res_m.scalars().all())
-
-    # 3. Noaniqlik (ambiguous topic): 1 tadan ortiq serial yoki bir vaqtda ham film, ham serial mavjud bo'lsa
-    if len(series_models) > 1 or (len(series_models) >= 1 and len(movie_models) >= 1):
-        defect_msg = f"Topic maps to {len(series_models)} series and {len(movie_models)} movies"
-        logger.warning(f"Ambiguous topic detected: chat_id={chat_id}, topic_id={topic_id}. {defect_msg}")
-        rejection_payload = {
-            "chat_id": chat_id,
-            "topic_id": topic_id,
-            "series_count": len(series_models),
-            "movie_count": len(movie_models),
-        }
-        rejection_defects = [{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}]
-        try:
-            async with async_session_factory() as reject_session:
-                await record_rejection(
-                    session=reject_session,
-                    media_type="series",
-                    source="auto_index",
-                    source_key=f"{chat_id}:{topic_id}",
-                    title=f"Ambiguous topic {chat_id}:{topic_id}",
-                    payload=rejection_payload,
-                    defects=rejection_defects,
-                    status="rejected"
-                )
-                await reject_session.commit()
-        except Exception as e:
-            logger.warning(f"Could not commit rejection in independent session: {e}")
-            await record_rejection(
-                session=db,
-                media_type="series",
-                source="auto_index",
-                source_key=f"{chat_id}:{topic_id}",
-                title=f"Ambiguous topic {chat_id}:{topic_id}",
-                payload=rejection_payload,
-                defects=rejection_defects,
-                status="rejected"
-            )
-            await db.commit()
-
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": "Noaniq mavzu: bitta topic birdan ortiq ob'ektga yoki ham serial, ham filmga biriktirilgan", "defect": "ambiguous_topic"}
-        )
-
-    if len(series_models) == 0:
-        raise HTTPException(status_code=404, detail="Series not found by source")
-
-    return Series.model_validate(series_models[0])
-
-
-@router.get("/code/{code}", response_model=Series)
-@limiter.limit("120/minute")
-async def get_series_by_code(
-    request: Request,
-    code: str,
-    service: SeriesService = Depends(get_series_service)
-):
-    """Get series by code or ID (e.g. s_30, s30, 30) (Public: published)."""
-    series = await service.get_series_by_code(code, publish_status="published")
-    if not series:
-        raise HTTPException(status_code=404, detail="Series not found")
-    return series
-
-@router.get("/{series_id_or_code}/credits")
-@limiter.limit("120/minute")
-async def get_series_credits(
-    request: Request,
-    series_id_or_code: str,
-    service: SeriesService = Depends(get_series_service),
-):
-    """Get cast & crew credits for a series (from TMDb, cached)."""
-    clean_identifier = str(series_id_or_code).strip()
-    series = None
-    if clean_identifier.isdigit():
-        series = await service.get_series_by_id(int(clean_identifier), publish_status="published")
-    if not series:
-        series = await service.get_series_by_code(clean_identifier, publish_status="published")
-
-    if not series or not series.tmdb_id:
-        return {"items": [], "details": None}
-
-    from app.infrastructure.external.tmdb_client import tmdb_client
-    res = await tmdb_client.get_credits_and_details(series.tmdb_id, kind="tv")
-    return res
-
-
-@router.get("/{series_id_or_code}", response_model=Series)
-@limiter.limit("120/minute")
-async def get_series(
-    request: Request,
-    series_id_or_code: str,
-    publish_status: str | None = Depends(resolve_publish_status),
-    service: SeriesService = Depends(get_series_service),
-):
-    """Get series by ID or code (Public: published, Admin: all/pending/hidden)."""
-    clean_identifier = str(series_id_or_code).strip()
-    series = None
-    if clean_identifier.isdigit():
-        series = await service.get_series_by_id(int(clean_identifier), publish_status=publish_status)
-    if not series:
-        series = await service.get_series_by_code(clean_identifier, publish_status=publish_status)
-    if not series:
-        raise HTTPException(status_code=404, detail="Series not found")
-    return series
-
-
-@router.put("/{series_id}", response_model=Series)
-async def update_series(
-    series_id: int,
-    series_in: SeriesUpdate,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Update a series (Admin only)."""
-    update_dict = series_in.model_dump(exclude_unset=True)
-    if "trailer_url" in update_dict and update_dict["trailer_url"]:
-        update_dict["trailer_url"] = await validate_and_normalize_trailer_url(update_dict["trailer_url"])
-    series = await service.update_series(series_id, update_dict)
-    if not series:
-        raise HTTPException(status_code=404, detail="Series not found")
-    await delete_cache_pattern("cache:series:*")
-    await delete_cache_pattern("cache:search:*")
-    return series
-
-
-@router.delete("/{series_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_series(
-    series_id: int,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Delete a series (Admin only) with full cascade: DB + Telegram topic + Cache."""
-    series = await service.get_series_by_id(series_id)
-    if not series:
-        raise HTTPException(status_code=404, detail="Series not found")
-
-    if series.source and series.source.chat_id and series.source.topic_id:
-        try:
-            from app.infrastructure.telegram.telegram_client import telegram_client
-            await telegram_client.delete_forum_topic(series.source.chat_id, series.source.topic_id)
-        except Exception as e:
-            logger.warning(f"Could not cascade delete telegram topic for series {series_id}: {e}")
-
-    success = await service.delete_series(series_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Series not found")
-    await delete_cache_pattern("cache:series:*")
-
-
-# --- SEASONS ---
-
-@router.post("/{series_id}/seasons", response_model=Season, status_code=status.HTTP_201_CREATED)
-async def create_season(
-    series_id: int,
-    season_in: SeasonCreate,
-    announce_in_topic: bool = Query(False, description="Telegram forum topicga ajratgich xabar yuborish"),
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    """Create a new season for a series (Admin only)."""
-    if season_in.series_id != series_id:
-        raise HTTPException(status_code=400, detail="Series ID mismatch")
-    
-    try:
-        season = await service.create_season(season_in)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-    if announce_in_topic:
-        series = await service.get_series_by_id(series_id)
-        if series and series.source and series.source.chat_id and series.source.topic_id:
-            title_suffix = f" ({html.escape(season.title)})" if season.title and season.title not in (f"Mavsum {season.season_number}", f"{season.season_number}-mavsum", f"{season.season_number}-fasl") else ""
-            separator_text = (
-                f"━━━━━━━━━━━━━━\n"
-                f"📺 <b>{season.season_number}-FASL</b>{title_suffix}\n"
-                f"━━━━━━━━━━━━━━\n"
-                f"<i>Bu yozuvdan keyingi videolar {season.season_number}-faslga qo'shiladi.</i>"
-            )
-            try:
-                await telegram_client.send_topic_message(
-                    chat_id=series.source.chat_id,
-                    message_thread_id=series.source.topic_id,
-                    text=separator_text,
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                logger.warning(f"Failed to send season separator to Telegram topic: {e}")
-
-    await delete_cache_pattern("cache:series:*")
-    return season
-
-
-@router.get("/{series_id}/seasons", response_model=List[Season])
-@limiter.limit("120/minute")
-async def list_seasons(
-    request: Request,
-    series_id: int,
-    service: SeriesService = Depends(get_series_service)
-):
-    """Get all seasons for a series (Public: published only)."""
-    series = await service.get_series_by_id(series_id, publish_status="published")
-    if not series:
-        raise HTTPException(status_code=404, detail="Series not found")
-    return series.seasons
-
-@router.get("/seasons/{season_id}", response_model=Season)
-@limiter.limit("120/minute")
-async def get_season(
-    request: Request,
-    season_id: int,
-    service: SeriesService = Depends(get_series_service)
-):
-    """Get a season by ID (Public: published)."""
-    season = await service.get_season_by_id(season_id, publish_status="published")
-    if not season:
-        raise HTTPException(status_code=404, detail="Season not found")
-    return season
-
-
-@router.put("/seasons/{season_id}", response_model=Season)
-async def update_season(
-    season_id: int,
-    season_in: SeasonUpdate,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    """Update a season (Admin only)."""
-    season = await service.update_season(season_id, season_in)
-    if not season:
-        raise HTTPException(status_code=404, detail="Season not found")
-    await delete_cache_pattern("cache:series:*")
-    return season
-
-
-@router.delete("/seasons/{season_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_season(
-    season_id: int,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Delete a season (Admin only)."""
-    success = await service.delete_season(season_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Season not found")
-    await delete_cache_pattern("cache:series:*")
-
-
-@router.post("/{series_id}/seasons/{season_id}/announce")
-async def announce_season_in_topic(
-    series_id: int,
-    season_id: int,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    """Post season separator banner into series Telegram forum topic (Admin only)."""
-    series = await service.get_series_by_id(series_id)
-    if not series:
-        raise HTTPException(status_code=404, detail="Serial topilmadi.")
-
-    season = await service.get_season_by_id(season_id)
-    if not season or season.series_id != series_id:
-        raise HTTPException(status_code=404, detail="Fasl topilmadi.")
-
-    if not series.source or not series.source.chat_id or not series.source.topic_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Ushbu serial uchun Telegram guruhi/topik biriktirilmagan."
-        )
-
-    title_suffix = f" ({html.escape(season.title)})" if season.title and season.title not in (f"Mavsum {season.season_number}", f"{season.season_number}-mavsum", f"{season.season_number}-fasl") else ""
-    separator_text = (
-        f"━━━━━━━━━━━━━━\n"
-        f"📺 <b>{season.season_number}-FASL</b>{title_suffix}\n"
-        f"━━━━━━━━━━━━━━\n"
-        f"<i>Bu yozuvdan keyingi videolar {season.season_number}-faslga qo'shiladi.</i>"
-    )
-
-    await telegram_client.send_topic_message(
-        chat_id=series.source.chat_id,
-        message_thread_id=series.source.topic_id,
-        text=separator_text,
-        parse_mode="HTML"
-    )
-
-    return {
-        "success": True,
-        "chat_id": series.source.chat_id,
-        "topic_id": series.source.topic_id,
-        "season_number": season.season_number,
-        "message": f"{season.season_number}-fasl ajratgichi Telegram topicga muvaffaqiyatli yuborildi."
-    }
-
-
-# --- EPISODES ---
-
-from app.domain.series.entities import EpisodeDetail
-
-@router.get("/episodes/code/{code}", response_model=EpisodeDetail)
-@limiter.limit("120/minute")
-async def get_episode_by_code(
-    request: Request,
-    code: str,
-    service: SeriesService = Depends(get_series_service)
-):
-    """Get episode details by code (Public: published, for Bot)."""
-    episode = await service.get_episode_detail_by_code(code, publish_status="published")
-    if not episode:
-        raise HTTPException(status_code=404, detail="Episode not found")
-    return episode
-
-@router.post("/seasons/{season_id}/episodes", response_model=Episode, status_code=status.HTTP_201_CREATED)
-async def create_episode(
-    season_id: int,
-    episode_in: EpisodeCreate,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    """Create a new episode for a season (Admin or Bot)."""
-    if episode_in.season_id != season_id:
-        raise HTTPException(status_code=400, detail="Season ID mismatch")
-        
-    try:
-        return await service.create_episode(episode_in)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
-class EpisodeReservationItem(BaseModel):
-    source_message_id: int
-    explicit_episode_number: int | None = None
-    title: str | None = None
-    telegram_file_id: str | None = None
-
-class ReserveEpisodesRequest(BaseModel):
-    items: list[EpisodeReservationItem]
-
-class ReservedEpisodeResponse(BaseModel):
-    id: int
-    episode_number: int
-    code: str
-    display_code: str
-    source_message_id: int | None = None
-    season_number: int
-    is_update: bool = False
-    is_duplicate: bool = False
-
-@router.post("/seasons/{season_id}/reserve-episodes", response_model=List[ReservedEpisodeResponse])
-async def reserve_episodes(
-    season_id: int,
-    request: ReserveEpisodesRequest,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    """
-    BOSQICH A: Atomik tarzda season qatorini qulflab (SELECT ... FOR UPDATE),
-    qismlarni oldindan band qilish. Hech qanday Telegram network chaqiruvisiz.
-    """
-    try:
-        items_dict = [item.model_dump() for item in request.items]
-        return await service.reserve_episodes(season_id, items_dict)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error reserving episodes for season {season_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Qismlarni band qilishda xatolik.")
-
-
-
-@router.get("/seasons/{season_id}/episodes", response_model=List[Episode])
-@limiter.limit("120/minute")
-async def list_episodes(
-    request: Request,
-    season_id: int,
-    service: SeriesService = Depends(get_series_service)
-):
-    """Get all episodes for a season (Public: published)."""
-    season = await service.get_season_by_id(season_id, publish_status="published")
-    if not season:
-        raise HTTPException(status_code=404, detail="Season not found")
-    return season.episodes
-
-
-@router.put("/episodes/{episode_id}", response_model=Episode)
-async def update_episode(
-    episode_id: int,
-    episode_in: EpisodeUpdate,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    """Update an episode (Admin only)."""
-    episode = await service.update_episode(episode_id, episode_in)
-    if not episode:
-        raise HTTPException(status_code=404, detail="Episode not found")
-    return episode
-
-
-@router.delete("/episodes/{episode_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_episode(
-    episode_id: int,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Delete an episode (Admin only)."""
-    success = await service.delete_episode(episode_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Episode not found")
-
-
-class UploadJobResponse(BaseModel):
-    job_id: str
-    status: str
-    message: str
-
-
-@router.post("/episodes/{episode_id}/upload-video", response_model=UploadJobResponse)
-async def upload_episode_video(
-    episode_id: int,
-    request: Request,
-    file: UploadFile = File(...),
-    language: str = Form("O'zbekcha"),
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Qism videosini qabul qilib, orqa fonda Telegram'ga yuklaydi."""
-    if not file.content_type or not file.content_type.startswith("video/"):
-        raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi.")
-
-    suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
-    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    tmp_path = tmp_file.name
-
-    try:
-        while True:
-            chunk = await file.read(1024 * 1024)
-            if not chunk:
-                break
-            tmp_file.write(chunk)
-        tmp_file.close()
-    except HTTPException:
-        raise
-    except Exception as e:
-        try:
-            tmp_file.close()
-            os.remove(tmp_path)
-        except Exception as cleanup_err:
-            logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
-        raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
-
-    ep_data = await service.get_episode_by_id(episode_id)
-    if not ep_data:
-        raise HTTPException(status_code=404, detail="Qism topilmadi.")
-
-    ep_caption = None
-    ep_detail = await service.get_episode_detail_by_code(ep_data.code)
-    if ep_detail:
-        import html
-        s_title = html.escape(ep_detail.series_title or "Serial")
-        s_num = ep_detail.season_number or 1
-        e_num = ep_detail.episode_number
-        caption_lines = [
-            f"🍿 <b>{s_title}</b>",
-            f"📌 <b>{s_num}-mavsum, {e_num}-qism</b>"
-        ]
-        if ep_detail.display_code:
-            caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{ep_detail.display_code}</code>")
-        if ep_detail.series_id:
-            caption_lines.append(f"📺 <b>Serial kodi:</b> <code>s_{ep_detail.series_id}</code>")
-            series_obj = await service.get_series_by_id(ep_detail.series_id)
-            if series_obj and series_obj.release_year:
-                caption_lines.append(f"📅 <b>Yili:</b> {series_obj.release_year}")
-        ep_caption = "\n".join(caption_lines)
-
-    job_id = await job_manager.create_job(meta={"episode_id": episode_id, "language": language})
-
-    async def _background_upload():
-        await job_manager.set_processing(job_id, progress=5)
-        try:
-            async def _on_progress(pct: int):
-                await job_manager.set_progress(job_id, pct)
-
-            file_id, message_id = await telegram_client.send_video_to_storage(
-                tmp_path=tmp_path,
-                filename=file.filename or "video.mp4",
-                mime_type=file.content_type or "video/mp4",
-                caption=ep_caption,
-                on_progress=lambda p: asyncio.ensure_future(_on_progress(p)),
-            )
-
-            episode = await service.add_episode_translation(
-                episode_id=episode_id,
-                language=language,
-                file_id=file_id,
-                message_id=message_id
-            )
-            if not episode:
-                await job_manager.set_failed(job_id, "Qism topilmadi.")
-                return
-
-            # Admission Gate final_check & parent series promotion
-            is_valid, defects = final_check("episode", {
-                "telegram_file_id": file_id,
-                "storage_channel_message_id": message_id,
-                "language": language
-            })
-            async with async_session_factory() as sess:
-                s_model = await sess.get(SeriesModel, ep_detail.series_id) if (ep_detail and ep_detail.series_id) else None
-                if is_valid and s_model:
-                    if s_model.publish_status == "pending":
-                        await promote_to_published(sess, s_model)
-                        await sess.commit()
-                elif s_model:
-                    await record_rejection(
-                        session=sess,
-                        media_type="episode",
-                        source=getattr(s_model, "custom_source_name", None) or "upload",
-                        source_key=f"ep_{episode_id}",
-                        title=f"{s_model.title} (Ep {ep_detail.episode_number})",
-                        payload={"telegram_file_id": file_id, "storage_channel_message_id": message_id, "language": language},
-                        defects=defects,
-                        media_id=ep_detail.series_id
-                    )
-                    await sess.commit()
-
-            await delete_cache_pattern("cache:series:*")
-            await job_manager.set_done(job_id, result={"episode_id": episode_id, "language": language})
-        except Exception as e:
-            err_msg = str(e)
-            logger.error(f"Background upload failed for job {job_id}: {err_msg}", exc_info=True)
-            await job_manager.set_failed(job_id, err_msg)
-            try:
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
-            except Exception as cleanup_err:
-                logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
-
-    asyncio.create_task(_background_upload())
-    await job_manager.cleanup_old_jobs()
-
-    return UploadJobResponse(
-        job_id=job_id,
-        status=JobStatus.PROCESSING,
-        message="Video qabul qilindi. Telegram'ga yuklanmoqda..."
-    )
-
-
-@router.get("/episodes/{episode_id}/upload-jobs/{job_id}")
-async def get_episode_upload_job_status(
-    episode_id: int,
-    job_id: str,
-    admin: dict = Depends(get_current_admin)
-):
-    """Episode background upload job statusini tekshirish."""
-    job = await job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job topilmadi.")
-    return job
-
-
-class LinkVideoRequest(BaseModel):
-    message_id: int
-    language: str = "O'zbekcha"
-    source_url: str | None = None
-    telegram_file_id: str | None = None
-    duration: int | None = None
-    replace: bool = False
-    reason: str | None = None
-
-@router.post("/episodes/{episode_id}/link-video", response_model=Episode)
-async def link_episode_video(
-    episode_id: int,
-    request: LinkVideoRequest,
-    replace: bool = Query(False),
-    reason: str | None = Query(None),
-    service: SeriesService = Depends(get_series_service),
-    db: AsyncSession = Depends(get_db_session),
-    admin: dict = Depends(get_admin_or_bot)
-):
-    ep_model = await db.get(EpisodeModel, episode_id)
-    if not ep_model:
-        raise HTTPException(status_code=404, detail="Episode not found")
-
-    is_replace = replace or request.replace
-    replace_reason = reason or request.reason
-
-    if is_replace:
-        user_role = (admin or {}).get("role")
-        if user_role != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Faqat admin videoni almashtirishi mumkin (replace=true)"
-            )
-        if not replace_reason or not replace_reason.strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Videoni almashtirish uchun sabab (reason) ko'rsatilishi shart"
-            )
-        logger.warning(
-            f"[ADMIN_REPLACE] Episode {episode_id} video replaced by admin. Reason: '{replace_reason}'. Lang: {request.language}, MsgID: {request.message_id}"
-        )
-
-    season_model = await db.get(SeasonModel, ep_model.season_id) if ep_model else None
-
-    # Admission Gate final_check tekshiruvi (type consistency, season/episode numbers, limits)
-    gate_payload = {
-        "telegram_file_id": request.telegram_file_id,
-        "storage_channel_message_id": request.message_id,
-        "language": request.language,
-        "season_number": season_model.season_number if season_model else None,
-        "episode_number": ep_model.episode_number if ep_model else None,
-    }
-    if request.duration is not None:
-        gate_payload["duration"] = request.duration
-    is_valid, defects = final_check("episode", gate_payload, allow_replace=is_replace)
-    if not is_valid:
-        title = ep_model.title or f"Episode {episode_id}"
-        await record_rejection(
-            session=db,
-            media_type="episode",
-            source="auto_index",
-            source_key=f"episode_{episode_id}",
-            title=title,
-            payload={
-                "telegram_file_id": request.telegram_file_id,
-                "storage_channel_message_id": request.message_id,
-                "language": request.language,
-                "duration": request.duration,
-                "source_url": request.source_url
-            },
-            defects=defects,
-            media_id=episode_id,
-            status="rejected"
-        )
-        await db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": "Admission gate final_check xatosi", "defects": defects}
-        )
-
-    try:
-        episode = await service.link_episode_video_from_message(
-            episode_id,
-            request.message_id,
-            request.language,
-            source_url=request.source_url,
-            telegram_file_id=request.telegram_file_id,
-            allow_replace=is_replace
-        )
-        if not episode:
-            raise HTTPException(status_code=404, detail="Episode not found")
-
-        # Series ni tekshirib, agar pending bo'lsa uni 'published' qilish
-        if season_model and season_model.series_id:
-            series_model = await db.get(SeriesModel, season_model.series_id)
-            if series_model and series_model.publish_status == "pending":
-                await promote_to_published(db, series_model)
-                await db.commit()
-
-        await delete_cache_pattern("cache:series:*")
-        return episode
-    except HTTPException:
-        raise
-    except ValueError as e:
-        logger.warning(f"Rejecting episode video link for episode {episode_id}: {e}")
-        await record_rejection(
-            session=db,
-            media_type="episode",
-            source="auto_index",
-            source_key=f"episode_{episode_id}",
-            title=f"Episode {episode_id}",
-            payload={
-                "telegram_file_id": request.telegram_file_id,
-                "storage_channel_message_id": request.message_id,
-                "language": request.language,
-                "source_url": request.source_url
-            },
-            defects=[{"field": "video", "defect": "no_overwrite", "reason": str(e)}],
-            media_id=episode_id,
-            status="rejected"
-        )
-        await db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": str(e), "defect": "no_overwrite"}
-        )
-    except Exception as e:
-        logger.error(f"Error in link_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")
-
-class UpdateTranslationRequest(BaseModel):
-    language: str
-
-@router.put("/episodes/translations/{translation_id}")
-async def update_episode_translation(
-    translation_id: int,
-    request: UpdateTranslationRequest,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Update an episode translation language (Admin only)."""
-    success = await service.update_episode_translation(translation_id, request.language)
-    if not success:
-        raise HTTPException(status_code=404, detail="Translation not found")
-    return {"message": "Success"}
-
-@router.delete("/episodes/translations/{translation_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_episode_translation(
-    translation_id: int,
-    service: SeriesService = Depends(get_series_service),
-    admin: dict = Depends(get_current_admin)
-):
-    """Delete an episode translation (Admin only)."""
-    success = await service.delete_episode_translation(translation_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Translation not found")
-
-
-class OpenTopicRequest(BaseModel):
-    chat_id: int | None = None
-
-
-@router.post("/{series_id}/open-topic")
-@limiter.limit("10/minute")
-async def open_series_topic(
-    request: Request,
-    series_id: int,
-    payload: OpenTopicRequest | None = None,
-    service: SeriesService = Depends(get_series_service),
-    db: AsyncSession = Depends(get_db_session),
-    admin: dict = Depends(get_current_admin),
-):
-    """Create a Telegram forum topic for a series and link it as source (Admin only)."""
-    import html
-    from app.core.config import settings
-    from app.infrastructure.telegram.telegram_client import telegram_client
-    from app.infrastructure.db.repositories.source_repository import SourceRepository
-
-    series = await service.get_series_by_id(series_id)
-    if not series:
-        raise HTTPException(status_code=404, detail="Serial topilmadi.")
-
-    def _make_source_link(cid: int | None, tid: int | None) -> str | None:
-        if not cid:
-            return None
-        c_str = str(cid).replace("-100", "")
-        return f"https://t.me/c/{c_str}/{tid}" if tid else f"https://t.me/c/{c_str}"
-
-    # Idempotent check
-    if series.source_id and getattr(series, "source", None):
-        return {
-            "success": True,
-            "already_existed": True,
-            "source_id": series.source_id,
-            "chat_id": series.source.chat_id,
-            "topic_id": series.source.topic_id,
-            "source_link": _make_source_link(series.source.chat_id, series.source.topic_id),
-            "message": "Bu serial uchun Topic allaqachon mavjud.",
-        }
-
-    target_chat_id = None
-    if payload and payload.chat_id:
-        target_chat_id = payload.chat_id
-    elif series.source_id and getattr(series, "source", None) and series.source.chat_id:
-        target_chat_id = series.source.chat_id
-    else:
-        try:
-            source_repo = SourceRepository(db)
-            all_sources = await source_repo.get_all_sources()
-            supergroup_sources = [s for s in all_sources if s.type == "superguruh" and s.chat_id]
-            if supergroup_sources:
-                target_chat_id = supergroup_sources[-1].chat_id
-        except Exception as e:
-            logger.warning("Superguruh manbalarini olishda xatolik yuz berdi: %s", e)
-
-    if not target_chat_id:
-        target_chat_id = settings.AUTO_TOPIC_CHAT_ID
-
-    if not target_chat_id:
-        raise HTTPException(
-            status_code=400,
-            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi yoki manba tanlanishi kerak).",
-        )
-
-    year_str = f" ({series.release_year})" if series.release_year else ""
-    topic_name = f"📺 {series.title}{year_str}"
-
-    # 1. Create topic in Telegram
-    thread_id = await telegram_client.create_forum_topic(chat_id=target_chat_id, name=topic_name)
-
-    # 2. Send intro message into topic
-    welcome_text = (
-        f"📺 <b>{html.escape(series.title)}</b>{year_str}\n"
-        f"🔑 <b>Serial ID:</b> <code>s_{series.id}</code>\n\n"
-        f"⬇️ <i>Serial qismlarini shu yerga tashlang. Bot qismlarni avtomatik indekslaydi.</i>"
-    )
-    await telegram_client.send_topic_message(
-        chat_id=target_chat_id,
-        message_thread_id=thread_id,
-        text=welcome_text,
-        parse_mode="HTML",
-    )
-
-    # 3. Create Source record in series_sources table
-    source_repo = SourceRepository(db)
-    source = await source_repo.create_source({
-        "name": f"{series.title} (Topic)",
-        "type": "superguruh",
-        "chat_id": int(target_chat_id),
-        "topic_id": thread_id,
-    })
-
-    # 4. Link source to series
-    await service.update_series(series_id, {"source_id": source.id})
-    await delete_cache_pattern("cache:series:*")
-
-    return {
-        "success": True,
-        "already_existed": False,
-        "source_id": source.id,
-        "chat_id": target_chat_id,
-        "topic_id": thread_id,
-        "source_link": _make_source_link(int(target_chat_id), thread_id),
-        "message": "Topic muvaffaqiyatli ochildi va serialga ulandi.",
-    }
-
-
+"""API v1 — Series endpoints."""
+import html
+import logging
+import asyncio
+import os
+import tempfile
+from datetime import datetime
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
+from pydantic import BaseModel
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.deps import get_series_service, get_current_admin, get_admin_or_bot, get_db_session, resolve_publish_status
+from app.application.series.series_service import SeriesService
+from app.domain.series.entities import (
+    Series, SeriesCreate, SeriesUpdate,
+    PaginatedSeriesSummaryResponse,
+    Season, SeasonCreate, SeasonUpdate,
+    Episode, EpisodeCreate, EpisodeUpdate
+)
+from app.infrastructure.telegram.telegram_client import telegram_client
+import time
+from app.core.job_manager import job_manager, JobStatus
+from app.api.limiter import limiter
+from app.utils.trailer import validate_and_normalize_trailer_url
+from app.core.cache import get_cache, set_cache, delete_cache_pattern
+from app.core.admission_gate import pre_check, final_check, promote_to_published, record_rejection
+from app.core.config import settings
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from app.infrastructure.db.models.source import SourceModel
+from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
+from app.infrastructure.db.session import async_session_factory
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/series", tags=["series"])
+
+
+# --- SERIES ---
+
+@router.post("", response_model=Series, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
+async def create_series(
+    request: Request,
+    series_in: SeriesCreate,
+    service: SeriesService = Depends(get_series_service),
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin)
+):
+    """Create a new series (Admin only)."""
+    create_dict = series_in.model_dump(exclude_unset=True)
+    
+    current_year = datetime.now().year
+    raw_year = create_dict.get("release_year") or create_dict.get("year") or current_year
+    try:
+        clean_year = int(raw_year)
+        if clean_year < 1880 or clean_year > current_year + 5:
+            clean_year = current_year
+    except (ValueError, TypeError):
+        clean_year = current_year
+
+    create_dict["release_year"] = clean_year
+    create_dict.pop("year", None)
+
+    if create_dict.get("trailer_url"):
+        create_dict["trailer_url"] = await validate_and_normalize_trailer_url(create_dict["trailer_url"])
+
+    # Admission Gate pre_check
+    gate_payload = dict(create_dict)
+    gate_payload["source"] = gate_payload.get("source") or create_dict.get("source_type") or "admin"
+    gate_payload["source_key"] = gate_payload.get("source_key") or f"admin_{int(time.time())}"
+    gate_payload["manual_verified"] = True
+    gate_payload["year"] = clean_year
+    gate_payload["release_year"] = clean_year
+    if "genres" not in gate_payload and gate_payload.get("category_ids"):
+        gate_payload["genres"] = gate_payload["category_ids"]
+    is_valid, defects = await pre_check("series", gate_payload, session=db, check_reachability=False)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
+
+    series = await service.create_series(create_dict)
+    await delete_cache_pattern("cache:series:*")
+    return series
+
+
+class SeriesBulkImportItem(BaseModel):
+    title: str
+    code: str | None = None
+    release_year: int | None = None
+    description: str | None = None
+    poster_url: str | None = None
+    category_ids: list[int] | None = None
+
+
+class SeriesBulkImportRequest(BaseModel):
+    items: list[SeriesBulkImportItem] = []
+
+
+@router.post("/bulk-import", status_code=status.HTTP_201_CREATED)
+async def bulk_import_series(
+    request: Request,
+    payload: SeriesBulkImportRequest,
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """Admin bulk-import endpoint for series with kill-switch protection."""
+    if not getattr(settings, "AUTO_CONTENT_ENABLED", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AUTO_CONTENT_ENABLED o'chirilgan (False): ommaviy serial importi taqiqlangan."
+        )
+    return {"success": True, "count": len(payload.items)}
+
+
+@router.get("", response_model=PaginatedSeriesSummaryResponse)
+@limiter.limit("100/minute")
+async def list_series(
+    request: Request,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    category_id: int | None = None,
+    page_id: int | None = None,
+    exclude_paged: bool = False,
+    publish_status: str | None = Depends(resolve_publish_status),
+    search: str | None = Query(None, description="Qidiruv"),
+    year: int | None = Query(None, description="Yil"),
+    genre: str | None = Query(None, description="Janr"),
+    sort: str | None = Query(None, description="Saralash: rating, latest, az, popular"),
+    service: SeriesService = Depends(get_series_service)
+):
+    """List series (Public: published)."""
+    target_status = publish_status
+    cache_key = f"cache:series:list:{skip}:{limit}:{category_id}:{page_id}:{exclude_paged}:{target_status}:{search}:{year}:{genre}:{sort}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
+    items, total = await service.get_all_series(
+        skip=skip,
+        limit=limit,
+        category_id=category_id,
+        page_id=page_id,
+        exclude_paged=exclude_paged,
+        publish_status=target_status,
+        search=search,
+        year=year,
+        genre=genre,
+        sort=sort
+    )
+    
+    # Calculate pages
+    pages = (total + limit - 1) // limit if total > 0 else 0
+    page = (skip // limit) + 1 if limit > 0 else 1
+    
+    response_data = {
+        "items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in items], 
+        "total": total, 
+        "page": page, 
+        "size": limit, 
+        "pages": pages
+    }
+    await set_cache(cache_key, response_data, 300)
+
+    return response_data
+
+
+@router.get("/search", response_model=PaginatedSeriesSummaryResponse)
+@limiter.limit("60/minute")
+async def search_series(
+    request: Request,
+    q: str = Query(..., min_length=2),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    publish_status: str | None = Depends(resolve_publish_status),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Search series by title (Public: published)."""
+    target_status = publish_status
+    cache_key = f"cache:series:search:{q}:{skip}:{limit}:{target_status}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
+    items, total = await service.search_series(title_query=q, skip=skip, limit=limit, publish_status=target_status)
+    
+    pages = (total + limit - 1) // limit if total > 0 else 0
+    page = (skip // limit) + 1 if limit > 0 else 1
+    
+    response_data = {
+        "items": [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in items], 
+        "total": total, 
+        "page": page, 
+        "size": limit, 
+        "pages": pages
+    }
+    await set_cache(cache_key, response_data, 300)
+
+    return response_data
+
+
+@router.get("/by-source", response_model=Series)
+@limiter.limit("120/minute")
+async def get_series_by_source(
+    request: Request,
+    chat_id: int = Query(..., description="Telegram kanal/guruh chat ID"),
+    topic_id: int = Query(..., description="Forum mavzu (topic/message_thread_id) ID - majburiy"),
+    db: AsyncSession = Depends(get_db_session),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get series by source (chat_id and topic_id). Aniq qidiruv, noaniqlik bo'lsa rad etiladi."""
+    # 1. Ushbu chat_id va topic_id ga biriktirilgan seriallarni qidiramiz
+    stmt_series = (
+        select(SeriesModel)
+        .options(
+            selectinload(SeriesModel.seasons).selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations),
+            selectinload(SeriesModel.categories),
+            selectinload(SeriesModel.pages),
+            selectinload(SeriesModel.source)
+        )
+        .join(SourceModel, SeriesModel.source_id == SourceModel.id)
+        .where(
+            SourceModel.chat_id == chat_id,
+            SourceModel.topic_id == topic_id
+        )
+    )
+    res_s = await db.execute(stmt_series)
+    series_models = list(res_s.scalars().all())
+
+    # 2. Ushbu chat_id va topic_id ga biriktirilgan kinolar bormi-yo'qligini tekshiramiz
+    stmt_movies = (
+        select(MovieModel)
+        .where(
+            MovieModel.source_chat_id == chat_id,
+            MovieModel.source_topic_id == topic_id,
+        )
+    )
+    res_m = await db.execute(stmt_movies)
+    movie_models = list(res_m.scalars().all())
+
+    # 3. Noaniqlik (ambiguous topic): 1 tadan ortiq serial yoki bir vaqtda ham film, ham serial mavjud bo'lsa
+    if len(series_models) > 1 or (len(series_models) >= 1 and len(movie_models) >= 1):
+        defect_msg = f"Topic maps to {len(series_models)} series and {len(movie_models)} movies"
+        logger.warning(f"Ambiguous topic detected: chat_id={chat_id}, topic_id={topic_id}. {defect_msg}")
+        rejection_payload = {
+            "chat_id": chat_id,
+            "topic_id": topic_id,
+            "series_count": len(series_models),
+            "movie_count": len(movie_models),
+        }
+        rejection_defects = [{"field": "topic_id", "defect": "ambiguous_topic", "reason": defect_msg}]
+        try:
+            async with async_session_factory() as reject_session:
+                await record_rejection(
+                    session=reject_session,
+                    media_type="series",
+                    source="auto_index",
+                    source_key=f"{chat_id}:{topic_id}",
+                    title=f"Ambiguous topic {chat_id}:{topic_id}",
+                    payload=rejection_payload,
+                    defects=rejection_defects,
+                    status="rejected"
+                )
+                await reject_session.commit()
+        except Exception as e:
+            logger.warning(f"Could not commit rejection in independent session: {e}")
+            await record_rejection(
+                session=db,
+                media_type="series",
+                source="auto_index",
+                source_key=f"{chat_id}:{topic_id}",
+                title=f"Ambiguous topic {chat_id}:{topic_id}",
+                payload=rejection_payload,
+                defects=rejection_defects,
+                status="rejected"
+            )
+            await db.commit()
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": "Noaniq mavzu: bitta topic birdan ortiq ob'ektga yoki ham serial, ham filmga biriktirilgan", "defect": "ambiguous_topic"}
+        )
+
+    if len(series_models) == 0:
+        raise HTTPException(status_code=404, detail="Series not found by source")
+
+    return Series.model_validate(series_models[0])
+
+
+@router.get("/code/{code}", response_model=Series)
+@limiter.limit("120/minute")
+async def get_series_by_code(
+    request: Request,
+    code: str,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get series by code or ID (e.g. s_30, s30, 30) (Public: published)."""
+    series = await service.get_series_by_code(code, publish_status="published")
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series
+
+@router.get("/{series_id_or_code}/credits")
+@limiter.limit("120/minute")
+async def get_series_credits(
+    request: Request,
+    series_id_or_code: str,
+    service: SeriesService = Depends(get_series_service),
+):
+    """Get cast & crew credits for a series (from TMDb, cached)."""
+    clean_identifier = str(series_id_or_code).strip()
+    series = None
+    if clean_identifier.isdigit():
+        series = await service.get_series_by_id(int(clean_identifier), publish_status="published")
+    if not series:
+        series = await service.get_series_by_code(clean_identifier, publish_status="published")
+
+    if not series or not series.tmdb_id:
+        return {"items": [], "details": None}
+
+    from app.infrastructure.external.tmdb_client import tmdb_client
+    res = await tmdb_client.get_credits_and_details(series.tmdb_id, kind="tv")
+    return res
+
+
+@router.get("/{series_id_or_code}", response_model=Series)
+@limiter.limit("120/minute")
+async def get_series(
+    request: Request,
+    series_id_or_code: str,
+    publish_status: str | None = Depends(resolve_publish_status),
+    service: SeriesService = Depends(get_series_service),
+):
+    """Get series by ID or code (Public: published, Admin: all/pending/hidden)."""
+    clean_identifier = str(series_id_or_code).strip()
+    cache_key = f"cache:series:detail:{clean_identifier}:{publish_status or 'pub'}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
+    series = None
+    if clean_identifier.isdigit():
+        series = await service.get_series_by_id(int(clean_identifier), publish_status=publish_status)
+    if not series:
+        series = await service.get_series_by_code(clean_identifier, publish_status=publish_status)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    cache_data = series.model_dump(mode="json") if hasattr(series, "model_dump") else series
+    await set_cache(cache_key, cache_data, ttl_seconds=60)
+    return series
+
+
+@router.put("/{series_id}", response_model=Series)
+async def update_series(
+    series_id: int,
+    series_in: SeriesUpdate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Update a series (Admin only)."""
+    update_dict = series_in.model_dump(exclude_unset=True)
+    if "trailer_url" in update_dict and update_dict["trailer_url"]:
+        update_dict["trailer_url"] = await validate_and_normalize_trailer_url(update_dict["trailer_url"])
+    series = await service.update_series(series_id, update_dict)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    await delete_cache_pattern("cache:series:*")
+    await delete_cache_pattern("cache:search:*")
+    return series
+
+
+@router.delete("/{series_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_series(
+    series_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete a series (Admin only) with full cascade: DB + Telegram topic + Cache."""
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+
+    if series.source and series.source.chat_id and series.source.topic_id:
+        try:
+            from app.infrastructure.telegram.telegram_client import telegram_client
+            await telegram_client.delete_forum_topic(series.source.chat_id, series.source.topic_id)
+        except Exception as e:
+            logger.warning(f"Could not cascade delete telegram topic for series {series_id}: {e}")
+
+    success = await service.delete_series(series_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Series not found")
+    await delete_cache_pattern("cache:series:*")
+
+
+# --- SEASONS ---
+
+@router.post("/{series_id}/seasons", response_model=Season, status_code=status.HTTP_201_CREATED)
+async def create_season(
+    series_id: int,
+    season_in: SeasonCreate,
+    announce_in_topic: bool = Query(False, description="Telegram forum topicga ajratgich xabar yuborish"),
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """Create a new season for a series (Admin only)."""
+    if season_in.series_id != series_id:
+        raise HTTPException(status_code=400, detail="Series ID mismatch")
+    
+    try:
+        season = await service.create_season(season_in)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    if announce_in_topic:
+        series = await service.get_series_by_id(series_id)
+        if series and series.source and series.source.chat_id and series.source.topic_id:
+            title_suffix = f" ({html.escape(season.title)})" if season.title and season.title not in (f"Mavsum {season.season_number}", f"{season.season_number}-mavsum", f"{season.season_number}-fasl") else ""
+            separator_text = (
+                f"━━━━━━━━━━━━━━\n"
+                f"📺 <b>{season.season_number}-FASL</b>{title_suffix}\n"
+                f"━━━━━━━━━━━━━━\n"
+                f"<i>Bu yozuvdan keyingi videolar {season.season_number}-faslga qo'shiladi.</i>"
+            )
+            try:
+                await telegram_client.send_topic_message(
+                    chat_id=series.source.chat_id,
+                    message_thread_id=series.source.topic_id,
+                    text=separator_text,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send season separator to Telegram topic: {e}")
+
+    await delete_cache_pattern("cache:series:*")
+    return season
+
+
+@router.get("/{series_id}/seasons", response_model=List[Season])
+@limiter.limit("120/minute")
+async def list_seasons(
+    request: Request,
+    series_id: int,
+    publish_status: str | None = Depends(resolve_publish_status),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get all seasons for a series (Public: published only)."""
+    series = await service.get_series_by_id(series_id, publish_status=publish_status)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    return series.seasons
+
+@router.get("/seasons/{season_id}", response_model=Season)
+@limiter.limit("120/minute")
+async def get_season(
+    request: Request,
+    season_id: int,
+    publish_status: str | None = Depends(resolve_publish_status),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get a season by ID (Public: published)."""
+    season = await service.get_season_by_id(season_id, publish_status=publish_status)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    return season
+
+
+@router.put("/seasons/{season_id}", response_model=Season)
+async def update_season(
+    season_id: int,
+    season_in: SeasonUpdate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """Update a season (Admin only)."""
+    season = await service.update_season(season_id, season_in)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    await delete_cache_pattern("cache:series:*")
+    return season
+
+
+@router.delete("/seasons/{season_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_season(
+    season_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete a season (Admin only)."""
+    success = await service.delete_season(season_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Season not found")
+    await delete_cache_pattern("cache:series:*")
+
+
+@router.post("/{series_id}/seasons/{season_id}/announce")
+async def announce_season_in_topic(
+    series_id: int,
+    season_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """Post season separator banner into series Telegram forum topic (Admin only)."""
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Serial topilmadi.")
+
+    season = await service.get_season_by_id(season_id)
+    if not season or season.series_id != series_id:
+        raise HTTPException(status_code=404, detail="Fasl topilmadi.")
+
+    if not series.source or not series.source.chat_id or not series.source.topic_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Ushbu serial uchun Telegram guruhi/topik biriktirilmagan."
+        )
+
+    title_suffix = f" ({html.escape(season.title)})" if season.title and season.title not in (f"Mavsum {season.season_number}", f"{season.season_number}-mavsum", f"{season.season_number}-fasl") else ""
+    separator_text = (
+        f"━━━━━━━━━━━━━━\n"
+        f"📺 <b>{season.season_number}-FASL</b>{title_suffix}\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"<i>Bu yozuvdan keyingi videolar {season.season_number}-faslga qo'shiladi.</i>"
+    )
+
+    await telegram_client.send_topic_message(
+        chat_id=series.source.chat_id,
+        message_thread_id=series.source.topic_id,
+        text=separator_text,
+        parse_mode="HTML"
+    )
+
+    return {
+        "success": True,
+        "chat_id": series.source.chat_id,
+        "topic_id": series.source.topic_id,
+        "season_number": season.season_number,
+        "message": f"{season.season_number}-fasl ajratgichi Telegram topicga muvaffaqiyatli yuborildi."
+    }
+
+
+# --- EPISODES ---
+
+from app.domain.series.entities import EpisodeDetail
+
+@router.get("/episodes/code/{code}", response_model=EpisodeDetail)
+@limiter.limit("120/minute")
+async def get_episode_by_code(
+    request: Request,
+    code: str,
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get episode details by code (Public: published, for Bot)."""
+    clean_code = str(code).strip()
+    cache_key = f"cache:episode:detail:{clean_code}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
+    episode = await service.get_episode_detail_by_code(clean_code, publish_status="published")
+    if not episode:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    cache_data = episode.model_dump(mode="json") if hasattr(episode, "model_dump") else episode
+    await set_cache(cache_key, cache_data, ttl_seconds=60)
+    return episode
+
+@router.post("/seasons/{season_id}/episodes", response_model=Episode, status_code=status.HTTP_201_CREATED)
+async def create_episode(
+    season_id: int,
+    episode_in: EpisodeCreate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """Create a new episode for a season (Admin or Bot)."""
+    if episode_in.season_id != season_id:
+        raise HTTPException(status_code=400, detail="Season ID mismatch")
+        
+    try:
+        return await service.create_episode(episode_in)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+class EpisodeReservationItem(BaseModel):
+    source_message_id: int
+    explicit_episode_number: int | None = None
+    title: str | None = None
+    telegram_file_id: str | None = None
+
+class ReserveEpisodesRequest(BaseModel):
+    items: list[EpisodeReservationItem]
+
+class ReservedEpisodeResponse(BaseModel):
+    id: int
+    episode_number: int
+    code: str
+    display_code: str
+    source_message_id: int | None = None
+    season_number: int
+    is_update: bool = False
+    is_duplicate: bool = False
+
+@router.post("/seasons/{season_id}/reserve-episodes", response_model=List[ReservedEpisodeResponse])
+async def reserve_episodes(
+    season_id: int,
+    request: ReserveEpisodesRequest,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """
+    BOSQICH A: Atomik tarzda season qatorini qulflab (SELECT ... FOR UPDATE),
+    qismlarni oldindan band qilish. Hech qanday Telegram network chaqiruvisiz.
+    """
+    try:
+        items_dict = [item.model_dump() for item in request.items]
+        return await service.reserve_episodes(season_id, items_dict)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error reserving episodes for season {season_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Qismlarni band qilishda xatolik.")
+
+
+
+@router.get("/seasons/{season_id}/episodes", response_model=List[Episode])
+@limiter.limit("120/minute")
+async def list_episodes(
+    request: Request,
+    season_id: int,
+    publish_status: str | None = Depends(resolve_publish_status),
+    service: SeriesService = Depends(get_series_service)
+):
+    """Get all episodes for a season (Public: published)."""
+    season = await service.get_season_by_id(season_id, publish_status=publish_status)
+    if not season:
+        raise HTTPException(status_code=404, detail="Season not found")
+    return season.episodes
+
+
+@router.put("/episodes/{episode_id}", response_model=Episode)
+async def update_episode(
+    episode_id: int,
+    episode_in: EpisodeUpdate,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    """Update an episode (Admin only)."""
+    episode = await service.update_episode(episode_id, episode_in)
+    if not episode:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    return episode
+
+
+@router.delete("/episodes/{episode_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_episode(
+    episode_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete an episode (Admin only)."""
+    success = await service.delete_episode(episode_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Episode not found")
+
+
+class UploadJobResponse(BaseModel):
+    job_id: str
+    status: str
+    message: str
+
+
+@router.post("/episodes/{episode_id}/upload-video", response_model=UploadJobResponse)
+async def upload_episode_video(
+    episode_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    language: str = Form("O'zbekcha"),
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Qism videosini qabul qilib, orqa fonda Telegram'ga yuklaydi."""
+    if not file.content_type or not file.content_type.startswith("video/"):
+        raise HTTPException(status_code=400, detail="Faqat video fayllar ruxsat etiladi.")
+
+    suffix = os.path.splitext(file.filename or "video.mp4")[1] or ".mp4"
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp_path = tmp_file.name
+
+    try:
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
+            tmp_file.write(chunk)
+        tmp_file.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        try:
+            tmp_file.close()
+            os.remove(tmp_path)
+        except Exception as cleanup_err:
+            logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
+        raise HTTPException(status_code=500, detail="Faylni saqlashda xato.")
+
+    ep_data = await service.get_episode_by_id(episode_id)
+    if not ep_data:
+        raise HTTPException(status_code=404, detail="Qism topilmadi.")
+
+    ep_caption = None
+    ep_detail = await service.get_episode_detail_by_code(ep_data.code)
+    if ep_detail:
+        import html
+        s_title = html.escape(ep_detail.series_title or "Serial")
+        s_num = ep_detail.season_number or 1
+        e_num = ep_detail.episode_number
+        caption_lines = [
+            f"🍿 <b>{s_title}</b>",
+            f"📌 <b>{s_num}-mavsum, {e_num}-qism</b>"
+        ]
+        if ep_detail.display_code:
+            caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{ep_detail.display_code}</code>")
+        if ep_detail.series_id:
+            caption_lines.append(f"📺 <b>Serial kodi:</b> <code>s_{ep_detail.series_id}</code>")
+            series_obj = await service.get_series_by_id(ep_detail.series_id)
+            if series_obj and series_obj.release_year:
+                caption_lines.append(f"📅 <b>Yili:</b> {series_obj.release_year}")
+        ep_caption = "\n".join(caption_lines)
+
+    job_id = await job_manager.create_job(meta={"episode_id": episode_id, "language": language})
+
+    async def _background_upload():
+        await job_manager.set_processing(job_id, progress=5)
+        try:
+            async def _on_progress(pct: int):
+                await job_manager.set_progress(job_id, pct)
+
+            file_id, message_id = await telegram_client.send_video_to_storage(
+                tmp_path=tmp_path,
+                filename=file.filename or "video.mp4",
+                mime_type=file.content_type or "video/mp4",
+                caption=ep_caption,
+                on_progress=lambda p: asyncio.ensure_future(_on_progress(p)),
+            )
+
+            episode = await service.add_episode_translation(
+                episode_id=episode_id,
+                language=language,
+                file_id=file_id,
+                message_id=message_id
+            )
+            if not episode:
+                await job_manager.set_failed(job_id, "Qism topilmadi.")
+                return
+
+            # Admission Gate final_check & parent series promotion
+            is_valid, defects = final_check("episode", {
+                "telegram_file_id": file_id,
+                "storage_channel_message_id": message_id,
+                "language": language
+            })
+            async with async_session_factory() as sess:
+                s_model = await sess.get(SeriesModel, ep_detail.series_id) if (ep_detail and ep_detail.series_id) else None
+                if is_valid and s_model:
+                    if s_model.publish_status == "pending":
+                        await promote_to_published(sess, s_model)
+                        await sess.commit()
+                elif s_model:
+                    await record_rejection(
+                        session=sess,
+                        media_type="episode",
+                        source=getattr(s_model, "custom_source_name", None) or "upload",
+                        source_key=f"ep_{episode_id}",
+                        title=f"{s_model.title} (Ep {ep_detail.episode_number})",
+                        payload={"telegram_file_id": file_id, "storage_channel_message_id": message_id, "language": language},
+                        defects=defects,
+                        media_id=ep_detail.series_id
+                    )
+                    await sess.commit()
+
+            await delete_cache_pattern("cache:series:*")
+            await job_manager.set_done(job_id, result={"episode_id": episode_id, "language": language})
+        except Exception as e:
+            err_msg = str(e)
+            logger.error(f"Background upload failed for job {job_id}: {err_msg}", exc_info=True)
+            await job_manager.set_failed(job_id, err_msg)
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception as cleanup_err:
+                logger.debug(f"Vaqtincha faylni tozalashda xatolik: {cleanup_err}")
+
+    asyncio.create_task(_background_upload())
+    await job_manager.cleanup_old_jobs()
+
+    return UploadJobResponse(
+        job_id=job_id,
+        status=JobStatus.PROCESSING,
+        message="Video qabul qilindi. Telegram'ga yuklanmoqda..."
+    )
+
+
+@router.get("/episodes/{episode_id}/upload-jobs/{job_id}")
+async def get_episode_upload_job_status(
+    episode_id: int,
+    job_id: str,
+    admin: dict = Depends(get_current_admin)
+):
+    """Episode background upload job statusini tekshirish."""
+    job = await job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job topilmadi.")
+    return job
+
+
+class LinkVideoRequest(BaseModel):
+    message_id: int
+    language: str = "O'zbekcha"
+    source_url: str | None = None
+    telegram_file_id: str | None = None
+    duration: int | None = None
+    replace: bool = False
+    reason: str | None = None
+
+@router.post("/episodes/{episode_id}/link-video", response_model=Episode)
+async def link_episode_video(
+    episode_id: int,
+    request: LinkVideoRequest,
+    replace: bool = Query(False),
+    reason: str | None = Query(None),
+    service: SeriesService = Depends(get_series_service),
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_admin_or_bot)
+):
+    ep_model = await db.get(EpisodeModel, episode_id)
+    if not ep_model:
+        raise HTTPException(status_code=404, detail="Episode not found")
+
+    is_replace = replace or request.replace
+    replace_reason = reason or request.reason
+
+    if is_replace:
+        user_role = (admin or {}).get("role")
+        if user_role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Faqat admin videoni almashtirishi mumkin (replace=true)"
+            )
+        if not replace_reason or not replace_reason.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Videoni almashtirish uchun sabab (reason) ko'rsatilishi shart"
+            )
+        logger.warning(
+            f"[ADMIN_REPLACE] Episode {episode_id} video replaced by admin. Reason: '{replace_reason}'. Lang: {request.language}, MsgID: {request.message_id}"
+        )
+
+    season_model = await db.get(SeasonModel, ep_model.season_id) if ep_model else None
+
+    # Admission Gate final_check tekshiruvi (type consistency, season/episode numbers, limits)
+    gate_payload = {
+        "telegram_file_id": request.telegram_file_id,
+        "storage_channel_message_id": request.message_id,
+        "language": request.language,
+        "season_number": season_model.season_number if season_model else None,
+        "episode_number": ep_model.episode_number if ep_model else None,
+    }
+    if request.duration is not None:
+        gate_payload["duration"] = request.duration
+    is_valid, defects = final_check("episode", gate_payload, allow_replace=is_replace)
+    if not is_valid:
+        title = ep_model.title or f"Episode {episode_id}"
+        await record_rejection(
+            session=db,
+            media_type="episode",
+            source="auto_index",
+            source_key=f"episode_{episode_id}",
+            title=title,
+            payload={
+                "telegram_file_id": request.telegram_file_id,
+                "storage_channel_message_id": request.message_id,
+                "language": request.language,
+                "duration": request.duration,
+                "source_url": request.source_url
+            },
+            defects=defects,
+            media_id=episode_id,
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Admission gate final_check xatosi", "defects": defects}
+        )
+
+    try:
+        episode = await service.link_episode_video_from_message(
+            episode_id,
+            request.message_id,
+            request.language,
+            source_url=request.source_url,
+            telegram_file_id=request.telegram_file_id,
+            allow_replace=is_replace
+        )
+        if not episode:
+            raise HTTPException(status_code=404, detail="Episode not found")
+
+        # Series ni tekshirib, agar pending bo'lsa uni 'published' qilish
+        if season_model and season_model.series_id:
+            series_model = await db.get(SeriesModel, season_model.series_id)
+            if series_model and series_model.publish_status == "pending":
+                await promote_to_published(db, series_model)
+                await db.commit()
+
+        await delete_cache_pattern("cache:series:*")
+        return episode
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.warning(f"Rejecting episode video link for episode {episode_id}: {e}")
+        await record_rejection(
+            session=db,
+            media_type="episode",
+            source="auto_index",
+            source_key=f"episode_{episode_id}",
+            title=f"Episode {episode_id}",
+            payload={
+                "telegram_file_id": request.telegram_file_id,
+                "storage_channel_message_id": request.message_id,
+                "language": request.language,
+                "source_url": request.source_url
+            },
+            defects=[{"field": "video", "defect": "no_overwrite", "reason": str(e)}],
+            media_id=episode_id,
+            status="rejected"
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"message": str(e), "defect": "no_overwrite"}
+        )
+    except Exception as e:
+        logger.error(f"Error in link_episode_video endpoint for episode {episode_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Xabardan video olishda kutilmagan xatolik.")
+
+class UpdateTranslationRequest(BaseModel):
+    language: str
+
+@router.put("/episodes/translations/{translation_id}")
+async def update_episode_translation(
+    translation_id: int,
+    request: UpdateTranslationRequest,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Update an episode translation language (Admin only)."""
+    success = await service.update_episode_translation(translation_id, request.language)
+    if not success:
+        raise HTTPException(status_code=404, detail="Translation not found")
+    return {"message": "Success"}
+
+@router.delete("/episodes/translations/{translation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_episode_translation(
+    translation_id: int,
+    service: SeriesService = Depends(get_series_service),
+    admin: dict = Depends(get_current_admin)
+):
+    """Delete an episode translation (Admin only)."""
+    success = await service.delete_episode_translation(translation_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Translation not found")
+
+
+class OpenTopicRequest(BaseModel):
+    chat_id: int | None = None
+
+
+@router.post("/{series_id}/open-topic")
+@limiter.limit("10/minute")
+async def open_series_topic(
+    request: Request,
+    series_id: int,
+    payload: OpenTopicRequest | None = None,
+    service: SeriesService = Depends(get_series_service),
+    db: AsyncSession = Depends(get_db_session),
+    admin: dict = Depends(get_current_admin),
+):
+    """Create a Telegram forum topic for a series and link it as source (Admin only)."""
+    import html
+    from app.core.config import settings
+    from app.infrastructure.telegram.telegram_client import telegram_client
+    from app.infrastructure.db.repositories.source_repository import SourceRepository
+
+    series = await service.get_series_by_id(series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Serial topilmadi.")
+
+    def _make_source_link(cid: int | None, tid: int | None) -> str | None:
+        if not cid:
+            return None
+        c_str = str(cid).replace("-100", "")
+        return f"https://t.me/c/{c_str}/{tid}" if tid else f"https://t.me/c/{c_str}"
+
+    # Idempotent check
+    if series.source_id and getattr(series, "source", None):
+        return {
+            "success": True,
+            "already_existed": True,
+            "source_id": series.source_id,
+            "chat_id": series.source.chat_id,
+            "topic_id": series.source.topic_id,
+            "source_link": _make_source_link(series.source.chat_id, series.source.topic_id),
+            "message": "Bu serial uchun Topic allaqachon mavjud.",
+        }
+
+    target_chat_id = None
+    if payload and payload.chat_id:
+        target_chat_id = payload.chat_id
+    elif series.source_id and getattr(series, "source", None) and series.source.chat_id:
+        target_chat_id = series.source.chat_id
+    else:
+        try:
+            source_repo = SourceRepository(db)
+            all_sources = await source_repo.get_all_sources()
+            supergroup_sources = [s for s in all_sources if s.type == "superguruh" and s.chat_id]
+            if supergroup_sources:
+                target_chat_id = supergroup_sources[-1].chat_id
+        except Exception as e:
+            logger.warning("Superguruh manbalarini olishda xatolik yuz berdi: %s", e)
+
+    if not target_chat_id:
+        target_chat_id = settings.AUTO_TOPIC_CHAT_ID
+
+    if not target_chat_id:
+        raise HTTPException(
+            status_code=400,
+            detail="AUTO_TOPIC_CHAT_ID sozlanmagan (.env faylida ko'rsatilishi yoki manba tanlanishi kerak).",
+        )
+
+    year_str = f" ({series.release_year})" if series.release_year else ""
+    topic_name = f"📺 {series.title}{year_str}"
+
+    # 1. Create topic in Telegram
+    thread_id = await telegram_client.create_forum_topic(chat_id=target_chat_id, name=topic_name)
+
+    # 2. Send intro message into topic
+    welcome_text = (
+        f"📺 <b>{html.escape(series.title)}</b>{year_str}\n"
+        f"🔑 <b>Serial ID:</b> <code>s_{series.id}</code>\n\n"
+        f"⬇️ <i>Serial qismlarini shu yerga tashlang. Bot qismlarni avtomatik indekslaydi.</i>"
+    )
+    await telegram_client.send_topic_message(
+        chat_id=target_chat_id,
+        message_thread_id=thread_id,
+        text=welcome_text,
+        parse_mode="HTML",
+    )
+
+    # 3. Create Source record in series_sources table
+    source_repo = SourceRepository(db)
+    source = await source_repo.create_source({
+        "name": f"{series.title} (Topic)",
+        "type": "superguruh",
+        "chat_id": int(target_chat_id),
+        "topic_id": thread_id,
+    })
+
+    # 4. Link source to series
+    await service.update_series(series_id, {"source_id": source.id})
+    await delete_cache_pattern("cache:series:*")
+
+    return {
+        "success": True,
+        "already_existed": False,
+        "source_id": source.id,
+        "chat_id": target_chat_id,
+        "topic_id": thread_id,
+        "source_link": _make_source_link(int(target_chat_id), thread_id),
+        "message": "Topic muvaffaqiyatli ochildi va serialga ulandi.",
+    }
+
+
