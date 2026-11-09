@@ -59,7 +59,7 @@ interface QueueItem {
   media_type: string;
   url: string;
   poster_url?: string | null;
-  status: "pending" | "in_progress" | "completed" | "failed" | "already_exists" | "needs_review";
+  status: "pending" | "queued" | "in_progress" | "completed" | "published" | "failed" | "already_exists" | "needs_review";
   episodes_count?: number | null;
   downloaded_episodes: number;
   error_message?: string | null;
