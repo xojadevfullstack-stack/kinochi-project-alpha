@@ -48,7 +48,7 @@ BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, update
 from app.infrastructure.db.session import async_session_factory
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
 from app.infrastructure.db.models.rejected_item import RejectedItemModel
@@ -391,75 +391,103 @@ class TmdbTopIngestor:
                 query = query.where(SeedCandidateModel.kind == kind.lower())
             query = query.order_by(SeedCandidateModel.popularity.desc(), SeedCandidateModel.vote_count.desc()).limit(limit)
             res = await session.execute(query)
-            candidates = res.scalars().all()
+            raw_candidates = res.scalars().all()
+            candidate_list = [
+                {
+                    "id": c.id,
+                    "kind": c.kind,
+                    "tmdb_id": c.tmdb_id,
+                    "title_en": c.title_en,
+                    "title_ru": c.title_ru,
+                    "original_title": c.original_title,
+                    "release_year": c.release_year,
+                    "is_anime": c.is_anime,
+                    "attempts": c.attempts or 0,
+                }
+                for c in raw_candidates
+            ]
 
-            if not candidates:
-                print("ℹ️ [SEARCH] Qidirish uchun yangi nomzodlar topilmadi.", flush=True)
-                return stats
+        if not candidate_list:
+            print("ℹ️ [SEARCH] Qidirish uchun yangi nomzodlar topilmadi.", flush=True)
+            return stats
 
-            for cand in candidates:
-                stats["searched"] += 1
-                cand.attempts += 1
-                cand.last_searched_at = now
+        for c_data in candidate_list:
+            stats["searched"] += 1
+            cand_id = c_data["id"]
+            cand_kind = c_data["kind"]
+            cand_tmdb_id = c_data["tmdb_id"]
+            cand_title_ru = c_data["title_ru"]
+            cand_title_en = c_data["title_en"]
+            cand_original_title = c_data["original_title"]
+            cand_release_year = c_data["release_year"]
+            cand_is_anime = c_data["is_anime"]
+            cand_attempts = c_data["attempts"] + 1
 
-                # Tizimda oldindan mavjudligini tekshirish
+            # Tizimda oldindan mavjudligini tekshirish (qisqa alohida DB sessiya)
+            async with async_session_factory() as check_session:
                 already_in, skip_reason = await self.is_candidate_already_in_system(
-                    session, cand.kind, cand.tmdb_id, cand.title_ru or cand.title_en or ""
+                    check_session, cand_kind, cand_tmdb_id, cand_title_ru or cand_title_en or ""
                 )
                 if already_in:
-                    cand.status = "skipped"
+                    upd_stmt = (
+                        update(SeedCandidateModel)
+                        .where(SeedCandidateModel.id == cand_id)
+                        .values(status="skipped", attempts=cand_attempts, last_searched_at=now)
+                    )
+                    await check_session.execute(upd_stmt)
+                    await check_session.commit()
                     stats["skipped"] += 1
-                    print(f"⏩ [SKIP] TMDb {cand.tmdb_id} ('{cand.title_en}'): {skip_reason}", flush=True)
+                    print(f"⏩ [SKIP] TMDb {cand_tmdb_id} ('{cand_title_en}'): {skip_reason}", flush=True)
                     continue
 
-                sources = get_target_sources_for_seed(cand.is_anime)
-                queries_to_try = []
-                for t in (cand.title_ru, cand.title_en, cand.original_title):
-                    if t and t.strip() and t.strip() not in queries_to_try:
-                        queries_to_try.append(t.strip())
+            sources = get_target_sources_for_seed(cand_is_anime)
+            queries_to_try = []
+            for t in (cand_title_ru, cand_title_en, cand_original_title):
+                if t and t.strip() and t.strip() not in queries_to_try:
+                    queries_to_try.append(t.strip())
 
-                # Har bir manba bo'yicha qidiruv natijalari
-                all_site_results: List[Dict[str, Any]] = []
-                for q_text in queries_to_try:
-                    for src in sources:
-                        try:
-                            s_res = await search_sites(q_text, source=src, checker=checker, qm=self.qm)
-                            if s_res:
-                                all_site_results.extend(s_res)
-                        except Exception as e:
-                            logger.warning(f"Manbadan qidiruv xatosi ({src}, '{q_text}'): {e}")
-                    if SEED_SEARCH_DELAY_SECONDS > 0:
-                        await asyncio.sleep(SEED_SEARCH_DELAY_SECONDS)
+            # Har bir manba bo'yicha qidiruv natijalari (ochiq DB sessiyasi ushlanmaydi)
+            all_site_results: List[Dict[str, Any]] = []
+            for q_text in queries_to_try:
+                for src in sources:
+                    try:
+                        s_res = await search_sites(q_text, source=src, checker=checker, qm=self.qm)
+                        if s_res:
+                            all_site_results.extend(s_res)
+                    except Exception as e:
+                        logger.warning(f"Manbadan qidiruv xatosi ({src}, '{q_text}'): {e}")
+                if SEED_SEARCH_DELAY_SECONDS > 0:
+                    await asyncio.sleep(SEED_SEARCH_DELAY_SECONDS)
 
-                # Natijalarni unikal URL bo'yicha saralash
-                unique_scraped: Dict[str, Dict[str, Any]] = {}
-                for item in all_site_results:
-                    url = item.get("url")
-                    if url and url not in unique_scraped:
-                        unique_scraped[url] = item
+            # Natijalarni unikal URL bo'yicha saralash
+            unique_scraped: Dict[str, Dict[str, Any]] = {}
+            for item in all_site_results:
+                url = item.get("url")
+                if url and url not in unique_scraped:
+                    unique_scraped[url] = item
 
-                # 3-qismli qat'iy tekshiruvdan o'tgan nomzodlarni saralash
-                passing_candidates: List[Dict[str, Any]] = []
-                for item in unique_scraped.values():
-                    is_match, reason = evaluate_candidate_match(
-                        seed_title_ru=cand.title_ru,
-                        seed_title_en=cand.title_en,
-                        seed_orig_title=cand.original_title,
-                        seed_year=cand.release_year,
-                        scraped_title=item.get("title", ""),
-                        scraped_year=item.get("year"),
-                        scraped_url=item.get("url")
-                    )
-                    if is_match:
-                        passing_candidates.append(item)
+            # 3-qismli qat'iy tekshiruvdan o'tgan nomzodlarni saralash
+            passing_candidates: List[Dict[str, Any]] = []
+            for item in unique_scraped.values():
+                is_match, reason = evaluate_candidate_match(
+                    seed_title_ru=cand_title_ru,
+                    seed_title_en=cand_title_en,
+                    seed_orig_title=cand_original_title,
+                    seed_year=cand_release_year,
+                    scraped_title=item.get("title", ""),
+                    scraped_year=item.get("year"),
+                    scraped_url=item.get("url")
+                )
+                if is_match:
+                    passing_candidates.append(item)
 
-                # Natijaga qarab holatni belgilash
+            # Natijaga qarab holatni belgilash va darhol DB ga yozish (qisqa alohida DB sessiya)
+            async with async_session_factory() as save_session:
                 if len(passing_candidates) == 1:
                     # Aniq 1 ta moslik topildi!
                     winner = passing_candidates[0]
                     src = winner.get("source", "uzmovi")
-                    cand.status = "found"
-                    cand.matches = {
+                    matches_val = {
                         src: {
                             "code": winner.get("source_code") or winner.get("id"),
                             "url": winner.get("url"),
@@ -468,42 +496,57 @@ class TmdbTopIngestor:
                             "score": 1.0
                         }
                     }
+                    upd_stmt = (
+                        update(SeedCandidateModel)
+                        .where(SeedCandidateModel.id == cand_id)
+                        .values(status="found", matches=matches_val, attempts=cand_attempts, last_searched_at=now)
+                    )
+                    await save_session.execute(upd_stmt)
+                    await save_session.commit()
                     stats["found"] += 1
                     print(
-                        f"🎯 [FOUND] TMDb {cand.tmdb_id} ('{cand.title_en}') -> "
+                        f"🎯 [FOUND] TMDb {cand_tmdb_id} ('{cand_title_en}') -> "
                         f"[{src.upper()}] '{winner.get('title')}' ({winner.get('url')})",
                         flush=True
                     )
                 elif len(passing_candidates) > 1:
                     # Bir nechta qarama-qarshi moslik -> Ambiguous! (S5)
-                    cand.status = "ambiguous"
-                    stats["ambiguous"] += 1
-                    cand.matches = {"ambiguous_candidates": passing_candidates}
-
-                    # rejected_items jadvaliga qayd etish
-                    rej_key = f"tmdb:{cand.kind}:{cand.tmdb_id}"
+                    matches_val = {"ambiguous_candidates": passing_candidates}
+                    rej_key = f"tmdb:{cand_kind}:{cand_tmdb_id}"
                     rej_item = RejectedItemModel(
-                        media_type=cand.kind,
+                        media_type=cand_kind,
                         source="tmdb_seed",
                         source_key=rej_key,
-                        title=cand.title_ru or cand.title_en or "Seed Ambiguous",
-                        payload={"kind": cand.kind, "tmdb_id": cand.tmdb_id, "candidates": passing_candidates},
+                        title=cand_title_ru or cand_title_en or "Seed Ambiguous",
+                        payload={"kind": cand_kind, "tmdb_id": cand_tmdb_id, "candidates": passing_candidates},
                         defects=[{"defect": "ambiguous_source_match", "candidates_count": len(passing_candidates)}],
                         status="rejected"
                     )
-                    session.add(rej_item)
+                    save_session.add(rej_item)
+                    upd_stmt = (
+                        update(SeedCandidateModel)
+                        .where(SeedCandidateModel.id == cand_id)
+                        .values(status="ambiguous", matches=matches_val, attempts=cand_attempts, last_searched_at=now)
+                    )
+                    await save_session.execute(upd_stmt)
+                    await save_session.commit()
+                    stats["ambiguous"] += 1
                     print(
-                        f"⚠️ [AMBIGUOUS] TMDb {cand.tmdb_id} ('{cand.title_en}') bo'yicha {len(passing_candidates)} ta moslik topildi. "
+                        f"⚠️ [AMBIGUOUS] TMDb {cand_tmdb_id} ('{cand_title_en}') bo'yicha {len(passing_candidates)} ta moslik topildi. "
                         f"Admin ko'rishi uchun rejected_items ga yozildi.",
                         flush=True
                     )
                 else:
                     # 0 ta moslik -> Not found
-                    cand.status = "not_found"
+                    upd_stmt = (
+                        update(SeedCandidateModel)
+                        .where(SeedCandidateModel.id == cand_id)
+                        .values(status="not_found", attempts=cand_attempts, last_searched_at=now)
+                    )
+                    await save_session.execute(upd_stmt)
+                    await save_session.commit()
                     stats["not_found"] += 1
-                    print(f"❌ [NOT FOUND] TMDb {cand.tmdb_id} ('{cand.title_en}') O'zbek manbalarida topilmadi.", flush=True)
-
-            await session.commit()
+                    print(f"❌ [NOT FOUND] TMDb {cand_tmdb_id} ('{cand_title_en}') O'zbek manbalarida topilmadi.", flush=True)
 
         print(
             f"✅ [SEARCH] Yakunlandi: {stats['searched']} ta qidirildi -> "

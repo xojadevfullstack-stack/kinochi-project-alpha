@@ -386,8 +386,47 @@ class ProcessManager:
         threading.Thread(target=kill_if_alive, daemon=True).start()
         return {"success": True, "message": "Jarayonni to'xtatish so'rovi berildi."}
 
+    async def get_status_async(self) -> Dict[str, Any]:
+        stats = await QueueManager().stats_async()
+        state = StateManager().get_state()
+        with self._lock:
+            elapsed = 0
+            speed = 0.0
+            if self.started_at:
+                end = time.time() if self.is_running else (self.finished_at or time.time())
+                elapsed = int(end - self.started_at)
+                done_in_run = self.progress.get("current", 0)
+                if elapsed > 10 and done_in_run > 0:
+                    speed = round((done_in_run / elapsed) * 60, 1)
+
+            bot_status = state.get("telegram_bot_status", "idle")
+            if self.is_running:
+                if bot_status in ("idle", "offline"):
+                    bot_status = "online"
+                if "floodwaiterror" in self.current_action.lower() or "flood-wait" in self.current_action.lower() or bot_status == "flood_wait":
+                    bot_status = "flood_wait"
+
+            return {
+                "is_running": self.is_running,
+                "task_type": self.task_type,
+                "current_action": self.current_action,
+                "current_item": dict(self.current_item) if self.current_item else None,
+                "progress": dict(self.progress),
+                "started_at": datetime.datetime.fromtimestamp(self.started_at).isoformat() if self.started_at else None,
+                "elapsed_seconds": elapsed,
+                "speed_movies_per_min": speed,
+                "bot_status": bot_status,
+                "logs": list(self.logs),
+                "stats": stats,
+                "state": state,
+            }
+
     def get_status(self) -> Dict[str, Any]:
-        stats = QueueManager().stats()
+        try:
+            stats = QueueManager().stats()
+        except Exception as e:
+            logger.warning(f"ProcessManager stats olishda xatolik: {e}")
+            stats = {"total": 0, "pending": 0, "completed": 0, "failed": 0}
         state = StateManager().get_state()
         with self._lock:
             elapsed = 0

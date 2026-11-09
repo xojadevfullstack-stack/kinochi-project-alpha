@@ -82,10 +82,11 @@ def test_queue_manager_filtering(setup_test_db):
 
 
 def test_resolve_page_ids():
-    # Anime should map to page id=1
+    # Anime should map to page id=1 and NEVER map to page id=8 (Multfilm/Cartoon)
     anime_item = QueueItem(id="10", source="anitoob", title="Naruto", media_type="anime", url="http://a")
-    pages_anime = resolve_page_ids(anime_item, {"category_ids": [2]})
+    pages_anime = resolve_page_ids(anime_item, {"category_ids": [2], "genres": ["Animatsiya", "Jangari"]})
     assert 1 in pages_anime
+    assert 8 not in pages_anime
 
     # Dorama should map to page id=5
     dorama_item = QueueItem(id="11", source="asilmedia", title="Koreya dorama", media_type="dorama", url="http://d")
@@ -96,6 +97,12 @@ def test_resolve_page_ids():
     mult_item = QueueItem(id="12", source="uzmovi", title="Muzlik davri", media_type="multfilm", url="http://m")
     pages_mult = resolve_page_ids(mult_item, {"category_ids": [22]})
     assert 8 in pages_mult
+
+    # Standard TV series should NOT map to page 13 (it is a primary content type, not a custom subpage)
+    series_item = QueueItem(id="13", source="uzmovi", title="Flash", media_type="series", url="http://s")
+    pages_series = resolve_page_ids(series_item, {"genres": ["Action", "Sci-Fi"]})
+    assert 13 not in pages_series
+    assert pages_series == []
 
 
 def test_media_types_api_validation():

@@ -83,19 +83,31 @@ class StateManager:
     def update(self, **kwargs) -> Dict[str, Any]:
         self.load()
         for k, v in kwargs.items():
-            if k in DEFAULT_STATE or k in self.state:
-                self.state[k] = v
+            self.state[k] = v
         self.save()
         return dict(self.state)
 
-    def advance_page(self, source: str, count: int, from_page: int = None) -> int:
+    def get_current_page(self, source: str, media_type: str = None) -> int:
         self.load()
-        key = f"{source.lower()}_current_page"
+        if media_type and media_type != "all":
+            specific_key = f"{source.lower()}_{media_type.lower()}_current_page"
+            if specific_key in self.state:
+                return int(self.state[specific_key])
+            return 1
+        return int(self.state.get(f"{source.lower()}_current_page", 1))
+
+    def advance_page(self, source: str, count: int, from_page: int = None, media_type: str = None) -> int:
+        self.load()
+        if media_type and media_type != "all":
+            key = f"{source.lower()}_{media_type.lower()}_current_page"
+        else:
+            key = f"{source.lower()}_current_page"
         current = from_page if from_page is not None else int(self.state.get(key, 1))
         new_page = current + count
         self.state[key] = new_page
         self.save()
-        logger.info(f"[STATE] {source} sahifasi oshirildi: {current} -> {new_page}")
+        label = f"{source} ({media_type})" if media_type and media_type != "all" else source
+        logger.info(f"[STATE] {label} sahifasi oshirildi: {current} -> {new_page}")
         return new_page
 
     def set_bot_status(self, status: str):

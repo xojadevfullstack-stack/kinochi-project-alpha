@@ -536,3 +536,52 @@ def test_html_card_parsers_extract_exact_source_id():
     assert kc_items[0].source_id == "9312"
     assert kc_items[0].id == "kinochilar_9312"
     assert kc_items[0].payload == {"quality_tag": "1080p"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 10. SEASON & EPISODE CONSISTENCY VERIFIER
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_verify_season_episode_consistency_both_arg_styles():
+    from scraper.telethon_moderator_pipeline import verify_season_episode_consistency
+
+    # Call with btn_episode keyword
+    ok, reason = verify_season_episode_consistency(
+        btn_season=1,
+        btn_episode=5,
+        filename="The.Flash.S01E05.720p.mkv",
+        caption="Flash 1-mavsum 5-qism",
+    )
+    assert ok is True
+    assert reason is None
+
+    # Call with positional btn_ep
+    ok, reason = verify_season_episode_consistency(
+        1,
+        5,
+        filename="The.Flash.S01E05.720p.mkv",
+        caption="Flash 1-mavsum 5-qism",
+    )
+    assert ok is True
+    assert reason is None
+
+    # Episode mismatch with file
+    ok, reason = verify_season_episode_consistency(
+        btn_season=1,
+        btn_episode=5,
+        filename="The.Flash.S01E06.720p.mkv",
+        caption="Flash 1-mavsum 5-qism",
+    )
+    assert ok is False
+    assert "episode_number_conflict" in reason
+
+    # Season mismatch with file
+    ok, reason = verify_season_episode_consistency(
+        btn_season=2,
+        btn_episode=5,
+        filename="The.Flash.S01E05.720p.mkv",
+        caption="Flash 1-mavsum 5-qism",
+    )
+    assert ok is False
+    assert "season_number_conflict" in reason
+

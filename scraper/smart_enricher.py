@@ -32,17 +32,21 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "qahramon x": {"en": "To Be Hero X", "orig": "To Be Hero X", "ru": "Быть героем Икс"},
     "metal alximik aka uka": {"en": "Fullmetal Alchemist: Brotherhood", "orig": "Hagane no Renkinjutsushi", "ru": "Стальной алхимик"},
     "metal alximik": {"en": "Fullmetal Alchemist", "orig": "Hagane no Renkinjutsushi", "ru": "Стальной алхимик"},
-    "kelajak kundaligi": {"en": "The Future Diary", "orig": "Mirai Nikki", "ru": "Дневник будущего"},
+    "kelajak kundaligi": {"en": "The Future Diary", "orig": "Mirai Nikki", "ru": "Дневник будущего", "uz": "Kelajak kundaligi", "tmdb_id": 46671, "type": "tv"},
+    "kelajak kundlami": {"en": "The Future Diary", "orig": "Mirai Nikki", "ru": "Дневник будущего", "uz": "Kelajak kundaligi", "tmdb_id": 46671, "type": "tv"},
     "tabiat farzandi": {"en": "Weathering with You", "orig": "Tenki no Ko", "ru": "Дитя погоды"},
     "arra odam": {"en": "Chainsaw Man", "orig": "Chainsaw Man", "ru": "Человек-бензопила"},
-    "qilich sanati online": {"en": "Sword Art Online", "orig": "Sword Art Online", "ru": "Мастера Меча Онлайн"},
+    "qilich sanati online": {"en": "Sword Art Online", "orig": "Sword Art Online", "ru": "Мастера Меча Онлайн", "uz": "Qilich san'ati onlayn", "tmdb_id": 45782, "type": "tv"},
+    "qilich o'nlay magistrlari": {"en": "Sword Art Online", "orig": "Sword Art Online", "ru": "Мастера Меча Онлайн", "uz": "Qilich san'ati onlayn", "tmdb_id": 45782, "type": "tv"},
+    "qilich onlay magistrlari": {"en": "Sword Art Online", "orig": "Sword Art Online", "ru": "Мастера Меча Онлайн", "uz": "Qilich san'ati onlayn", "tmdb_id": 45782, "type": "tv"},
     "olim kundaligi": {"en": "Death Note", "orig": "Death Note", "ru": "Тетрадь смерти"},
     "salom dunyo": {"en": "Hello World", "orig": "Hello World", "ru": "Здравствуй, мир"},
     "jodugarlar jangi": {"en": "Jujutsu Kaisen", "orig": "Jujutsu Kaisen", "ru": "Магическая битва"},
     "yetti o'lim gunohlari": {"en": "The Seven Deadly Sins", "orig": "Nanatsu no Taizai", "ru": "Семь смертных грехов"},
     "yetti olim gunohlari": {"en": "The Seven Deadly Sins", "orig": "Nanatsu no Taizai", "ru": "Семь смертных грехов"},
-    "yolg'izlikda daraja ko'tarish": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку"},
-    "yolgizlikda daraja kotarish": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку"},
+    "yolg'izlikda daraja ko'tarish": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку", "uz": "Yakkaxon daraja oshirish (Solo Leveling)", "tmdb_id": 127532, "type": "tv"},
+    "yolgizlikda daraja kotarish": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку", "uz": "Yakkaxon daraja oshirish (Solo Leveling)", "tmdb_id": 127532, "type": "tv"},
+    "solo leveling": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку", "uz": "Yakkaxon daraja oshirish (Solo Leveling)", "tmdb_id": 127532, "type": "tv"},
     "tungi boyqush kuyi": {"en": "Call of the Night", "orig": "Yofukashi no Uta", "ru": "Песнь ночных сов"},
     "jahannam jannati": {"en": "Hell's Paradise", "orig": "Jigokuraku", "ru": "Адский рай"},
     "mushuk niqobi": {"en": "A Whisker Away", "orig": "Nakitai Watashi wa Neko wo Kaburu", "ru": "Сквозь слёзы я притворяюсь кошкой"},
@@ -70,7 +74,10 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "qora klever": {"en": "Black Clover", "orig": "Black Clover", "ru": "Чёрный клевер"},
     "dandadan": {"en": "Dan Da Dan", "orig": "Dandadan", "ru": "Дандадан"},
     "dororo": {"en": "Dororo", "orig": "Dororo", "ru": "Дороро"},
-    "kaiju 8": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь"},
+    "kaiju 8": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь", "uz": "Kaiju: 8-son", "tmdb_id": 207468, "type": "tv"},
+    "kaiju ra 8-son": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь", "uz": "Kaiju: 8-son", "tmdb_id": 207468, "type": "tv"},
+    "kaiju ra 8 son": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь", "uz": "Kaiju: 8-son", "tmdb_id": 207468, "type": "tv"},
+    "kaiju 8 1-2-fasllar": {"en": "Kaiju No. 8", "orig": "Kaijuu 8-gou", "ru": "Кайдзю номер восемь", "uz": "Kaiju: 8-son", "tmdb_id": 207468, "type": "tv"},
     "songi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!", "tmdb_id": 280042, "type": "tv"},
     "so'nggi telba boss paydo bo'ldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!", "tmdb_id": 280042, "type": "tv"},
     "oxirgi telba boss paydo boldi": {"en": "A Wild Last Boss Appeared!", "orig": "Yasei no Last Boss ga Arawareta!", "ru": "Дикий последний босс появился!", "tmdb_id": 280042, "type": "tv"},
@@ -94,9 +101,26 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "sehr yaratuvchisi qanday qilib boshqa": {"en": "Magic Maker: How to Make Magic in Another World", "orig": "Majikku Meikā: Isekai Mahō no Tsukurikata", "ru": "Создатель магии: Как создать магию в другом мире", "tmdb_id": 258912, "type": "tv"},
     "sehr yaratuvchisi": {"en": "Magic Maker: How to Make Magic in Another World", "orig": "Majikku Meikā: Isekai Mahō no Tsukurikata", "ru": "Создатель магии: Как создать магию в другом мире", "tmdb_id": 258912, "type": "tv"},
     "salom dunyo": {"en": "Hello World", "orig": "Hello World", "ru": "Здравствуй, мир", "tmdb_id": 604605, "type": "movie"},
-    "arra odam arc": {"en": "Chainsaw Man", "orig": "Chainsaw Man", "ru": "Человек-бензопила", "tmdb_id": 114410, "type": "tv"},
+    "arra odam arc": {"en": "Chainsaw Man - The Movie: Reze Arc", "orig": "劇場版 チェンソーマン レゼ篇", "ru": "Человек-бензопила. Фильм: История Резе", "uz": "Chainsaw Man: Reze hikoyasi", "tmdb_id": 1218925, "type": "movie"},
+    "chainsaw man reze arc": {"en": "Chainsaw Man - The Movie: Reze Arc", "orig": "劇場版 チェンソーマン レゼ篇", "ru": "Человек-бензопила. Фильм: История Резе", "uz": "Chainsaw Man: Reze hikoyasi", "tmdb_id": 1218925, "type": "movie"},
+    "chainsaw man reze": {"en": "Chainsaw Man - The Movie: Reze Arc", "orig": "劇場版 チェンソーマン レゼ篇", "ru": "Человек-бензопила. Фильм: История Резе", "uz": "Chainsaw Man: Reze hikoyasi", "tmdb_id": 1218925, "type": "movie"},
+    "u dunyo zugaylari": {"en": "Daemons of the Shadow Realm", "orig": "Yomi no Tsugai", "ru": "Цугаи загробного мира", "uz": "U dunyo tsugaylari", "tmdb_id": 260463, "type": "tv"},
+    "u dunyo tsugaylari": {"en": "Daemons of the Shadow Realm", "orig": "Yomi no Tsugai", "ru": "Цугаи загробного мира", "uz": "U dunyo tsugaylari", "tmdb_id": 260463, "type": "tv"},
     "yozgi urushima tuneli": {"en": "The Tunnel to Summer, the Exit of Goodbyes", "orig": "Natsu e no Tunnel, Sayonara no Deguchi", "ru": "Туннель в лето, выход прощаний", "tmdb_id": 916192, "type": "movie"},
     "vampirlar ovchisi d": {"en": "Vampire Hunter D: Bloodlust", "orig": "Banpaia Hantā Dī: Buraddorasuto", "ru": "Ди: Жажда крови", "tmdb_id": 9463, "type": "movie"},
+    "bleach": {"en": "Bleach", "orig": "Bleach", "ru": "Блич", "tmdb_id": 30984, "type": "tv", "uz": "Bleach"},
+    "blich": {"en": "Bleach", "orig": "Bleach", "ru": "Блич", "tmdb_id": 30984, "type": "tv", "uz": "Bleach"},
+    "death note": {"en": "Death Note", "orig": "Death Note", "ru": "Тетрадь смерти", "tmdb_id": 13916, "type": "tv", "uz": "Death Note"},
+    "olim kundaligi": {"en": "Death Note", "orig": "Death Note", "ru": "Тетрадь смерти", "tmdb_id": 13916, "type": "tv", "uz": "Death Note"},
+    "o'lim kundaligi": {"en": "Death Note", "orig": "Death Note", "ru": "Тетрадь смерти", "tmdb_id": 13916, "type": "tv", "uz": "Death Note"},
+    "tabiat farzandi": {"en": "Weathering with You", "orig": "Tenki no Ko", "ru": "Дитя погоды", "tmdb_id": 568160, "type": "movie", "uz": "Ob-havo farzandi"},
+    "ob havo farzandi": {"en": "Weathering with You", "orig": "Tenki no Ko", "ru": "Дитя погоды", "tmdb_id": 568160, "type": "movie", "uz": "Ob-havo farzandi"},
+    "ob-havo farzandi": {"en": "Weathering with You", "orig": "Tenki no Ko", "ru": "Дитя погоды", "tmdb_id": 568160, "type": "movie", "uz": "Ob-havo farzandi"},
+    "kiki va eltuv xizmati": {"en": "Kiki's Delivery Service", "orig": "Majo no Takkyuubin", "ru": "Ведьмина служба доставки", "tmdb_id": 16859, "type": "movie", "uz": "Kiki: Eltuv xizmati"},
+    "kiki eltuv xizmati": {"en": "Kiki's Delivery Service", "orig": "Majo no Takkyuubin", "ru": "Ведьмина служба доставки", "tmdb_id": 16859, "type": "movie", "uz": "Kiki: Eltuv xizmati"},
+    "kiki": {"en": "Kiki's Delivery Service", "orig": "Majo no Takkyuubin", "ru": "Ведьмина служба доставки", "tmdb_id": 16859, "type": "movie", "uz": "Kiki: Eltuv xizmati"},
+    "aka-uka grimm ertaklari": {"en": "Grimm's Fairy Tale Classics", "orig": "Grimm Meisaku Gekijou", "ru": "Сказки братьев Гримм", "tmdb_id": 9892, "type": "tv", "uz": "Aka-uka Grimm ertaklari"},
+    "aka uka grimm ertaklari": {"en": "Grimm's Fairy Tale Classics", "orig": "Grimm Meisaku Gekijou", "ru": "Сказки братьев Гримм", "tmdb_id": 9892, "type": "tv", "uz": "Aka-uka Grimm ertaklari"},
 }
 
 
@@ -140,6 +164,7 @@ QAT'IY QOIDALAR:
 4. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil yoki o'zbekcha nomini qoldir.
 5. "description" maydoniga albatta berilgan filmning HAQIQIY syujetini o'zbek tilida to'liq va ravon yoz.
 6. Agar ushbu kino/serial/anime 18+ (kattalar uchun, erotik, hentay, ecchi, jinsiy aloqa, zo'ravonlik yoki kattalar mavzusidagi) kontent bo'lsa, "is_18_plus": true, aks holda false qilib qaytar.
+7. Mashhur brend, xalqaro franshiza va anime nomlarini (masalan: Bleach, Naruto, Death Note, One Piece, Matrix, Inception, Avatar va b.) hech qachon lug'aviy so'zma-so'z kulgili qilib tarjima qilma (masalan: "Bleach" ni "Oqartiruvchi" deb EMAS, "Bleach" deb qoldir). clean_uz_title sifatida o'zbek tomoshabiniga tanish brend nomini qoldir!
 
 Film/Serial nomi: '{raw_title}'
 Yil taxmini: {year_hint or 'Noma\'lum'}
@@ -610,7 +635,7 @@ async def enrich_movie_smart(
         clean_default_desc = f"🍿 {clean_title} {'seriali' if detected_type == 'series' else 'kinofilmi'} o'zbek tilida."
 
     metadata: Dict[str, Any] = {
-        "title": clean_title or raw_title,
+        "title": (matched_anime_dict.get("uz") if (matched_anime_dict and matched_anime_dict.get("uz")) else clean_title or raw_title),
         "original_title": original_title or (matched_anime_dict.get("orig") if matched_anime_dict else None),
         "description": clean_default_desc,
         "poster_url": source_poster,
@@ -641,7 +666,7 @@ async def enrich_movie_smart(
         logger.info(f"🤖 Gemini tahlili: '{ai_info.get('search_title_en') or ai_info.get('clean_uz_title')}' ({ai_info.get('release_year')})")
         if ai_info.get("clean_uz_title"):
             clean_ai = ai_info["clean_uz_title"].strip()
-            if clean_ai:
+            if clean_ai and not (matched_anime_dict and matched_anime_dict.get("uz")):
                 metadata["title"] = clean_ai
         if ai_info.get("original_title"):
             metadata["original_title"] = ai_info["original_title"]
@@ -695,10 +720,10 @@ async def enrich_movie_smart(
 
     # Smart Subtitle and Variant generator for TMDb:
     # 1. Qism/subtitle ajratuvchilarni qirqish (Masalan: "Lara Kroft 2: Hayot beshigi" -> "Lara Kroft 2")
-    sub_parts = re.split(r"[:\-\–\—\/]", clean_title)
+    sub_parts = re.split(r"\s+[:\-\–\—\/]\s+|:\s*", clean_title)
     if len(sub_parts) > 1:
         base_part = sub_parts[0].strip()
-        if base_part and len(base_part) >= 2 and base_part not in [q[0] for q in search_queries]:
+        if base_part and len(base_part) >= 4 and base_part not in [q[0] for q in search_queries]:
             search_queries.append((base_part, default_tmdb_type))
 
     # 2. O'zbekcha-Lotin yozilishidan xalqaro inglizcha nomga fonetik transliteratsiya
@@ -719,8 +744,15 @@ async def enrich_movie_smart(
     target_year = metadata["release_year"] or year
     expected_orig = ai_info.get("original_title") if ai_info else None
 
-    # Agar anime xaritasida to'g'ridan-to'g'ri TMDB ID ko'rsatilgan bo'lsa, qidiruvsiz darhol ulanamiz
-    if matched_anime_dict and matched_anime_dict.get("tmdb_id"):
+    # Agar aniq TMDB ID berilgan bo'lsa (masalan TmdbTopIngestor yoki navbatdan), darhol ulanamiz
+    explicit_tmdb_id = kwargs.get("tmdb_id")
+    if explicit_tmdb_id:
+        matched_tmdb = {
+            "id": int(explicit_tmdb_id),
+            "content_type": default_tmdb_type
+        }
+        best_score = 100.0
+    elif matched_anime_dict and matched_anime_dict.get("tmdb_id"):
         matched_tmdb = {
             "id": matched_anime_dict["tmdb_id"],
             "content_type": matched_anime_dict.get("type", default_tmdb_type)
@@ -812,15 +844,18 @@ async def enrich_movie_smart(
                 tmdb_orig_title = details.get("original_title")
                 if tmdb_orig_title:
                     metadata["original_title"] = tmdb_orig_title
-                    try:
-                        canon_t, _ = await translator_service.translate_title_to_uzbek(
-                            title=details.get("title") or clean_title,
-                            original_title=tmdb_orig_title
-                        )
-                        if canon_t and len(canon_t.strip()) > 1:
-                            metadata["title"] = canon_t.strip()
-                    except Exception as t_err:
-                        logger.debug(f"Title translation error: {t_err}")
+                    if matched_anime_dict and matched_anime_dict.get("uz"):
+                        metadata["title"] = matched_anime_dict["uz"]
+                    else:
+                        try:
+                            canon_t, _ = await translator_service.translate_title_to_uzbek(
+                                title=details.get("title") or clean_title,
+                                original_title=tmdb_orig_title
+                            )
+                            if canon_t and len(canon_t.strip()) > 1:
+                                metadata["title"] = canon_t.strip()
+                        except Exception as t_err:
+                            logger.debug(f"Title translation error: {t_err}")
 
                 # Janrlar
                 tmdb_uz_genres = map_tmdb_genres(details.get("genres_raw", []))
@@ -968,10 +1003,15 @@ async def enrich_movie_smart(
     # Media type ga qarab qo'shimcha kategoriyalarni qo'shish
     raw_lower = (raw_title or "").lower()
     meta_genres_lower = (metadata.get("genres") or "").lower()
-    if media_type == "anime" or "anime" in raw_lower or "anime" in meta_genres_lower:
+    is_anime_enrich = media_type == "anime" or "anime" in raw_lower or "anime" in meta_genres_lower
+    if is_anime_enrich:
         anime_cat_id = cat_map.get("anime") or 2
         final_cat_ids.append(anime_cat_id)
-    if media_type == "multfilm" or any(w in raw_lower or w in meta_genres_lower for w in ["animatsiya", "multfilm", "animation"]):
+        # Anime hech qachon Multfilm (22) kategoriyasiga kirmasligi shart
+        anim_cat_id = cat_map.get("animatsiya") or cat_map.get("animation") or 22
+        if anim_cat_id in final_cat_ids:
+            final_cat_ids.remove(anim_cat_id)
+    elif media_type == "multfilm" or any(w in raw_lower or w in meta_genres_lower for w in ["animatsiya", "multfilm", "animation"]):
         anim_cat_id = cat_map.get("animatsiya") or cat_map.get("animation") or 22
         final_cat_ids.append(anim_cat_id)
     if media_type == "dorama" or "dorama" in raw_lower or "dorama" in meta_genres_lower:

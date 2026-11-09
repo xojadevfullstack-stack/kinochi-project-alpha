@@ -241,7 +241,8 @@ async def parse_anitoob_page_async(
             # Check if title indicates film
             is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE))
             m_type = "movie" if is_film else "series"
-            if media_type != "all" and m_type != media_type:
+            effective_mt = "anime" if media_type == "anime" else m_type
+            if media_type not in ("all", "anime") and m_type != media_type:
                 continue
 
             poster = info.get("poster_url")
@@ -251,7 +252,7 @@ async def parse_anitoob_page_async(
                 title=cleaned_title,
                 original_title=None,
                 year=item_year,
-                media_type=m_type,
+                media_type=effective_mt,
                 url=f"https://t.me/ANITOOBUZ_BOT?start={c}",
                 poster_url=poster,
                 episodes_count=1 if m_type == "movie" else info.get("episodes_count")

@@ -139,7 +139,11 @@ def is_bot_flood_text(text: Optional[str]) -> bool:
         "juda ko'p so'rov",
         "flood",
         "kutib turing",
-        "biroz kuting"
+        "biroz kuting",
+        "kunlik chegaraga yetdingiz",
+        "chegaraga yetdingiz",
+        "kuniga shuncha beriladi",
+        "fayl oldingiz"
     ])
 
 
@@ -161,6 +165,52 @@ def get_flood_wait_seconds(msg_or_msgs: Any) -> int:
                 return int(m_min.group(1)) * 60 + 5
             return 65  # Default "Bir daqiqadan so'ng urinib ko'ring" -> 60s + 5s zaxira
     return 0
+
+
+MAX_BOT_FLOOD_WAIT = 120  # Soniyalarda: 2 daqiqadan ortiq flood kutish taqiqlanadi
+
+
+class BotFloodWaitError(Exception):
+    """Donor bot (masalan @asilmediabot) tomonidan uzoq muddatli flood wait berilganda chaqiriladi."""
+    def __init__(self, bot: str, seconds: int, message: str = ""):
+        self.bot = bot
+        self.seconds = seconds
+        self.message = message or f"[@{bot}] flood wait {seconds}s"
+        super().__init__(self.message)
+
+
+async def handle_bot_flood_wait(bot: str, seconds: int, context: str = "") -> bool:
+    """
+    Agar bot flood kutish vaqti MAX_BOT_FLOOD_WAIT (120s) dan kichik yoki teng bo'lsa,
+    qisqa muddat kutiladi va True qaytariladi.
+    Agar 120 soniyadan oshsa (masalan 41 daqiqa, 59 daqiqa):
+    Kutish taqiqlanadi! BotFloodWaitError chaqiriladi va StateManager da holat yangilanadi.
+    """
+    if seconds <= 0:
+        return True
+    if seconds > MAX_BOT_FLOOD_WAIT:
+        msg = f"🚫 [@{bot}] Uzoq muddatli flood limiti ({seconds}s = {seconds // 60} daqiqa > {MAX_BOT_FLOOD_WAIT}s). {context}".strip()
+        logger.warning(msg)
+        print(f"  {msg}", flush=True)
+        try:
+            StateManager().set_bot_status("flood_wait")
+            StateManager().update(bot_flood_until=time.time() + seconds, bot_flood_bot=bot)
+        except Exception:
+            pass
+        raise BotFloodWaitError(bot=bot, seconds=seconds, message=msg)
+
+    logger.warning(f"⏳ [@{bot}] Qisqa flood-wait ({seconds}s). {context} Kutilmoqda...".strip())
+    print(f"  ⏳ [@{bot}] Qisqa flood-wait ({seconds}s). Kutilmoqda...", flush=True)
+    try:
+        StateManager().set_bot_status("flood_wait")
+    except Exception:
+        pass
+    await asyncio.sleep(seconds)
+    try:
+        StateManager().set_bot_status("online")
+    except Exception:
+        pass
+    return True
 
 
 def is_video_message(m: Any) -> bool:
@@ -284,23 +334,26 @@ def extract_season_number_from_text(text: Optional[str]) -> Optional[int]:
 
 def verify_season_episode_consistency(
     btn_season: int,
-    btn_ep: int,
+    btn_ep: Optional[int] = None,
     filename: Optional[str] = None,
     caption: Optional[str] = None,
+    *,
+    btn_episode: Optional[int] = None,
 ) -> Tuple[bool, Optional[str]]:
     """
     4d: Fasl/qism raqami donor tugma matni + fayl nomi + caption'dan tekshiriladi,
     ziddiyat bo'lsa (False, reason) qaytaradi (-> needs_review).
     """
+    actual_ep = btn_episode if btn_episode is not None else btn_ep
     fn_ep = extract_episode_number_from_text(filename)
     cap_ep = extract_episode_number_from_text(caption)
     fn_season = extract_season_number_from_text(filename)
     cap_season = extract_season_number_from_text(caption)
 
-    if fn_ep is not None and fn_ep != btn_ep:
-        return False, f"episode_number_conflict:btn={btn_ep},file={fn_ep}"
-    if cap_ep is not None and cap_ep != btn_ep:
-        return False, f"episode_number_conflict:btn={btn_ep},caption={cap_ep}"
+    if fn_ep is not None and actual_ep is not None and fn_ep != actual_ep:
+        return False, f"episode_number_conflict:btn={actual_ep},file={fn_ep}"
+    if cap_ep is not None and actual_ep is not None and cap_ep != actual_ep:
+        return False, f"episode_number_conflict:btn={actual_ep},caption={cap_ep}"
     if fn_ep is not None and cap_ep is not None and fn_ep != cap_ep:
         return False, f"episode_number_conflict:file={fn_ep},caption={cap_ep}"
 
@@ -501,8 +554,8 @@ async def poll_new_messages(
     client: TelegramClient,
     chat: str,
     after_id: int,
-    timeout: float = 12.0,
-    interval: float = 0.35,
+    timeout: float = 10.0,
+    interval: float = 0.8,
     condition = None
 ) -> List[Message]:
     """
@@ -555,13 +608,16 @@ def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
     t_low = str(getattr(item, "title", "") or "").lower()
 
     # Page 1: Anime
-    if (m_type == "anime" or "anime" in genres or "anime" in t_low or (2 in cat_ids and ("anime" in genres or "anime" in t_low))) and 1 not in page_ids:
+    tmdb_gids = meta.get("tmdb_genre_ids") or []
+    is_live_action_override = (meta.get("is_animation") is False) or (bool(tmdb_gids) and 16 not in tmdb_gids and "anime" not in t_low)
+    if not is_live_action_override and (m_type == "anime" or "anime" in genres or "anime" in t_low or (2 in cat_ids and ("anime" in genres or "anime" in t_low))) and 1 not in page_ids:
         page_ids.append(1)
     # Page 5: Doramalar
     if (m_type == "dorama" or "dorama" in genres or "dorama" in t_low or any(k in t_low for k in ["korey", "xitoy", "dorama"])) and 5 not in page_ids:
         page_ids.append(5)
-    # Page 8: Multfilm
-    if (22 in cat_ids or m_type == "multfilm" or any(w in genres for w in ["animatsiya", "multfilm", "animation"]) or any(w in t_low for w in ["multfilm", "multik"])) and 8 not in page_ids:
+    # Page 8: Multfilm (Faqat multfilm bo'lsa va Anime bo'lmasa!)
+    is_anime = 1 in page_ids or m_type == "anime" or "anime" in genres or "anime" in t_low
+    if not is_anime and (22 in cat_ids or m_type == "multfilm" or any(w in genres for w in ["animatsiya", "multfilm", "animation"]) or any(w in t_low for w in ["multfilm", "multik"])) and 8 not in page_ids:
         page_ids.append(8)
     # Page 12: Turk seriallari
     if (m_type == "series" or "serial" in t_low) and any(w in t_low or w in genres for w in ["turk", "turkiya"]) and 12 not in page_ids:
@@ -572,9 +628,6 @@ def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
     # Page 10: Hind kinolari
     if any(w in t_low or w in genres for w in ["hind", "hindiston", "bollywood"]) and 10 not in page_ids:
         page_ids.append(10)
-    # Page 13: Seriallar
-    if (m_type == "series" or "serial" in t_low) and 13 not in page_ids:
-        page_ids.append(13)
     # Page 9: Tarjima kinolar
     if m_type not in ["series", "anime", "multfilm"] and 9 not in page_ids:
         page_ids.append(9)
@@ -780,6 +833,11 @@ class TelethonModeratorPipeline:
         item_timeout = 7200 if getattr(item, "media_type", "movie") in ("series", "dorama") else 1200
         try:
             return await asyncio.wait_for(self._run_item_inner(item, target_bot, max_episodes=max_episodes), timeout=item_timeout)
+        except BotFloodWaitError as bfe:
+            logger.warning(f"🚫 '{item.title}': {bfe.message}. Jarayon to'xtatildi.")
+            print(f"🚫 '{item.title}': {bfe.message}. O'tkazib yuborildi.", flush=True)
+            QueueManager().update_status(item.id, "failed", error_message=f"Bot flood limiti ({bfe.seconds // 60} daqiqa kutilishi talab etiladi)")
+            return False
         except asyncio.TimeoutError:
             logger.error(f"⏱️ '{item.title}' jarayoni {item_timeout // 60} daqiqadan oshdi (Timeout). Keyingi kinoga o'tilmoqda...")
             print(f"⏱️ '{item.title}' jarayoni {item_timeout // 60} daqiqadan oshdi (Timeout). Keyingi kinoga o'tilmoqda...", flush=True)
@@ -820,6 +878,7 @@ class TelethonModeratorPipeline:
             item.media_type in ("series", "dorama")
             or (getattr(item, "episodes_count", 0) or 0) > 1
             or any(w in (item.title or "").lower() for w in ["serial", "dorama", "fasl", "mavsum", "qismlar", "multserial"])
+            or any(w in (getattr(item, "url", None) or "").lower() for w in ["serial", "dorama", "fasl", "mavsum", "qismlar", "multserial", "barcha-qismlar", "barcha_qismlar"])
         )
         if is_multi_part:
             # Seriallar va ko'p qismli doramalar mos bot orqali yuklanadi
@@ -1051,9 +1110,11 @@ class TelethonModeratorPipeline:
         meta = await enrich_movie_smart(
             raw_title=clean_query or item.title,
             year=item.year,
+            original_title=getattr(item, "original_title", None),
             source_poster=item.poster_url,
             caption=caption,
-            media_type=getattr(item, "media_type", "series")
+            media_type=getattr(item, "media_type", "series"),
+            tmdb_id=getattr(item, "tmdb_id", None)
         )
 
         # M6: Tur ziddiyatini tekshirish (donor serial tugmalari berdi, TMDb esa movie qaytardi)
@@ -1235,13 +1296,14 @@ class TelethonModeratorPipeline:
                         await asyncio.sleep(2.0)
                         _, s_flood = await self.safe_click(card_msg, sr, sc)
                         if s_flood > 0:
-                            logger.warning(f"⏳ [@{target_bot}] Fasl bosishda flood ({s_flood}s). Kutilmoqda...")
-                            await asyncio.sleep(s_flood)
+                            await handle_bot_flood_wait(target_bot, s_flood, context="Fasl bosishda")
                             await self.safe_click(card_msg, sr, sc)
                         await asyncio.sleep(2.5)
                         refreshed = await self.client.get_messages(target_bot, ids=card_msg.id)
                         if refreshed and refreshed.buttons:
                             card_msg = refreshed
+                except BotFloodWaitError:
+                    raise
                 except Exception as s_err:
                     logger.debug(f"Fasl tugmasini bosishda xatolik: {s_err}")
 
@@ -1399,8 +1461,8 @@ class TelethonModeratorPipeline:
                         return False
                     continue
 
-                logger.info(f"\n--- 📺 {s_num}-Mavsum, {ep_num}-qism yuklanmoqda ({btn_name}) [{uploaded_count + 1}/{total_eps_in_season}] ---")
-                print(f"  📺 [{s_num}-mavsum] {ep_num}-qism yuklanmoqda ({uploaded_count + 1}/{total_eps_in_season})...", flush=True)
+                logger.info(f"\n--- 📺 {s_num}-Mavsum, {ep_num}-qism yuklanmoqda ({btn_name}) [Qism: {ep_num}/{total_eps_in_season}, yuklangan: {uploaded_count}] ---")
+                print(f"  📺 [{s_num}-mavsum] {ep_num}-qism yuklanmoqda (Qism: {ep_num}/{total_eps_in_season}, yuklangan: {uploaded_count})...", flush=True)
 
                 try:
                     ep_video_msg = None
@@ -1410,12 +1472,7 @@ class TelethonModeratorPipeline:
                         click_id = card_msg.id
                         success, click_flood = await self.safe_click(card_msg, target_r_idx, target_c_idx)
                         if click_flood > 0:
-                            logger.warning(
-                                f"⏳ [@{target_bot}] Anti-flood chegarasi ({click_flood}s). "
-                                f"Kutib turamiz ({ep_attempt + 1}/3)..."
-                            )
-                            print(f"  ⏳ Telegram flood-wait ({click_flood}s). Kutib turamiz...", flush=True)
-                            await asyncio.sleep(click_flood)
+                            await handle_bot_flood_wait(target_bot, click_flood, context=f"Anti-flood ({ep_attempt + 1}/3)")
                             card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
                             continue
 
@@ -1450,12 +1507,7 @@ class TelethonModeratorPipeline:
                         # Flood tekshiruvi:
                         flood_wait = get_flood_wait_seconds(ep_reply_msgs)
                         if flood_wait > 0:
-                            logger.warning(
-                                f"⏳ [@{target_bot}] Bot xabarida flood chegarasi: 'Biroz sekinroq. Bir daqiqadan so'ng urinib ko'ring.' "
-                                f"{flood_wait} soniya kutilmoqda ({ep_attempt + 1}/3)..."
-                            )
-                            print(f"  ⏳ Bot flood-wait ({flood_wait}s). Kutilmoqda...", flush=True)
-                            await asyncio.sleep(flood_wait)
+                            await handle_bot_flood_wait(target_bot, flood_wait, context=f"Qism kutishda ({ep_attempt + 1}/3)")
                             card_msg = await self.client.get_messages(target_bot, ids=episodes_grid_msg_id)
                             continue
 
@@ -1486,8 +1538,7 @@ class TelethonModeratorPipeline:
                                 await asyncio.sleep(2.0)
                                 _, q_flood = await self.safe_click(quality_msg, q_r, q_c)
                                 if q_flood > 0:
-                                    logger.warning(f"⏳ [@{target_bot}] Sifat tugmasida flood ({q_flood}s)...")
-                                    await asyncio.sleep(q_flood)
+                                    await handle_bot_flood_wait(target_bot, q_flood, context="Sifat tugmasida")
 
                                 def has_final_video(msgs):
                                     return any(
@@ -1498,8 +1549,7 @@ class TelethonModeratorPipeline:
                                 v_list = await poll_new_messages(self.client, target_bot, q_click_id, timeout=18.0, interval=0.4, condition=has_final_video)
                                 v_flood = get_flood_wait_seconds(v_list)
                                 if v_flood > 0:
-                                    logger.warning(f"⏳ [@{target_bot}] Video kutishda flood: {v_flood}s kutilmoqda...")
-                                    await asyncio.sleep(v_flood)
+                                    await handle_bot_flood_wait(target_bot, v_flood, context="Video kutishda")
 
                                 for vm in v_list:
                                     if matches_series_video(vm, title, ep_num, total_eps_in_season, item=item):
@@ -1890,6 +1940,8 @@ class TelethonModeratorPipeline:
                         pass
 
                     await asyncio.sleep(3.5)
+                except BotFloodWaitError:
+                    raise
                 except Exception as ep_err:
                     logger.error(f"❌ {ep_num}-qismni yuklashda xatolik: {ep_err}")
                     print(f"  ❌ [{s_num}-mavsum] {ep_num}-qismda xatolik: {ep_err}", flush=True)
@@ -1976,16 +2028,15 @@ class TelethonModeratorPipeline:
             if getattr(item, "status", None) == "needs_review":
                 return False
 
-            # M6: Agar item movie sifatida kelgan bo'lsa, ammo donor bot serial tugmalarini qaytargan bo'lsa -> needs_review
+            # M6: Agar item movie sifatida kelgan bo'lsa, ammo donor bot serial tugmalarini qaytargan bo'lsa
             if self._last_card_msg and self._last_card_msg.buttons:
                 has_eps = any(
                     b for row in self._last_card_msg.buttons for b in row
                     if b.text.strip().isdigit() or "qism" in b.text.lower() or "fasl" in b.text.lower() or "mavsum" in b.text.lower()
                 )
                 if has_eps:
-                    logger.warning(f"⚠️ [M6 ZIDDIYAT]: '{item.title}' kino sifatida keldi, ammo donor botda serial tugmalari bor -> needs_review")
-                    QueueManager().update_status(item.id, "needs_review", error_message="media_type_conflict:item=movie,donor=series")
-                    return False
+                    logger.info(f"🔄 '{item.title}' donor botda qismlar/serial sifatida aniqlandi. Serial sifatida yuklanmoqda...")
+                    return await self.run_single_series(item=item, target_bot=target_bot)
 
             if getattr(self, "_last_unreleased_notice", None):
                 msg = self._last_unreleased_notice
@@ -2125,12 +2176,36 @@ class TelethonModeratorPipeline:
             original_title=item.original_title,
             source_poster=item.poster_url,
             caption=card_text,
-            media_type="movie" if ep_count == 1 else "series"
+            media_type="movie" if ep_count == 1 else "series",
+            tmdb_id=getattr(item, "tmdb_id", None)
         )
         title = meta.get("title") or raw_title
         year = meta.get("year") or year
         target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
         storage_chat = STORAGE_CHANNEL_ID
+        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+
+        # 5b. Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
+        sec_dup = await self.dup_checker.check(
+            title=title,
+            year=year,
+            original_title=meta.get("original_title"),
+            media_type="movie" if is_single_movie else "series",
+            tmdb_id=meta.get("tmdb_id"),
+        )
+        if sec_dup.is_duplicate:
+            if sec_dup.matched_type == "movie" and is_single_movie:
+                logger.info(f"ℹ️ [ANITOOB] Film TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANITOOB] '{title}' bazada film sifatida allaqachon mavjud (TMDb: {meta.get('tmdb_id')}), o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif sec_dup.matched_type == "series" and not is_single_movie and not getattr(sec_dup, "is_incomplete", False):
+                logger.info(f"ℹ️ [ANITOOB] Serial TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon to'liq mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANITOOB] '{title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif sec_dup.matched_type == "series" and not is_single_movie and getattr(sec_dup, "is_incomplete", False):
+                existing_series_id = sec_dup.matched_id
 
         # 6. YUKLAB OLISH tugmasini topish
         download_btn_coords = None
@@ -2265,6 +2340,9 @@ class TelethonModeratorPipeline:
                     trailer_url=meta.get("trailer_url"),
                     category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2],
                     page_ids=[1],
+                    source_chat_id=int(AUTO_TOPIC_CHAT_ID) if AUTO_TOPIC_CHAT_ID else None,
+                    source_topic_id=int(thread_id) if thread_id else None,
+                    source_type=getattr(item, "source", "anitoob"),
                     is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 movie_id = created_movie.id
@@ -2282,12 +2360,14 @@ class TelethonModeratorPipeline:
                 }
                 f_ok, f_defects = final_check("movie", fin_payload, fin_payload)
                 if f_ok:
-                    await promote_to_published(
-                        session,
-                        created_movie,
-                        source=getattr(item, 'source', 'animeelar'),
-                        source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
-                    )
+                    m_db_obj = await session.get(MovieModel, movie_id)
+                    if m_db_obj:
+                        await promote_to_published(
+                            session,
+                            m_db_obj,
+                            source=getattr(item, 'source', 'animeelar'),
+                            source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
+                        )
                 else:
                     await record_rejection(
                         session=session,
@@ -2581,13 +2661,17 @@ class TelethonModeratorPipeline:
                 ep_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
                 if str(ep_lang).strip().lower() in ("asosiy", "", "none"):
                     ep_lang = "O'zbekcha"
-                await series_repo.add_episode_translation(
-                    episode_id=ep_id,
-                    language=ep_lang,
-                    telegram_file_id=ep_bot_file_id,
-                    storage_channel_message_id=storage_msg.id
-                )
-                from scraper.admission_gate import final_check, promote_to_published, record_rejection
+                try:
+                    await series_repo.add_episode_translation(
+                        episode_id=ep_id,
+                        language=ep_lang,
+                        telegram_file_id=ep_bot_file_id,
+                        storage_channel_message_id=storage_msg.id
+                    )
+                except ValueError as ve:
+                    logger.warning(f"⚠️ {current_ep}-qism tarjimasini biriktirishda xatolik: {ve}")
+                    current_ep += 1
+                    continue
                 is_valid, defects = final_check("episode", {
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
@@ -2740,6 +2824,21 @@ class TelethonModeratorPipeline:
         card_text = card_msg.text or ""
 
         if "Nomi:" not in card_text and "Kod:" not in card_text:
+            logger.info(f"[@{target_bot}] Homiy tekshiruvidan keyin qayta /start {code} so'rovi yuborilmoqda...")
+            sent_retry = await self.client.send_message(target_bot, req_cmd)
+            retry_msgs = await poll_new_messages(
+                self.client,
+                target_bot,
+                sent_retry.id,
+                timeout=10.0,
+                interval=0.8,
+                condition=lambda msgs: any(m.buttons for m in msgs)
+            )
+            if retry_msgs:
+                card_msg = retry_msgs[0]
+                card_text = card_msg.text or ""
+
+        if "Nomi:" not in card_text and "Kod:" not in card_text:
             logger.warning(f"❌ [@{target_bot}] Kod #{code} bo'yicha anime topilmadi.")
             print(f"❌ [ANITOOB] Kod #{code} bo'yicha anime topilmadi.", flush=True)
             QueueManager().update_status(item.id, "failed", error_message=f"Kod #{code} topilmadi")
@@ -2809,12 +2908,36 @@ class TelethonModeratorPipeline:
             original_title=item.original_title,
             source_poster=item.poster_url,
             caption=card_text,
-            media_type="movie" if ep_count == 1 else "series"
+            media_type="movie" if ep_count == 1 else "series",
+            tmdb_id=getattr(item, "tmdb_id", None)
         )
         title = meta.get("title") or raw_title
         year = meta.get("year") or year
         target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
         storage_chat = STORAGE_CHANNEL_ID
+        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+
+        # 5b. Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
+        sec_dup = await self.dup_checker.check(
+            title=title,
+            year=year,
+            original_title=meta.get("original_title"),
+            media_type="movie" if is_single_movie else "series",
+            tmdb_id=meta.get("tmdb_id"),
+        )
+        if sec_dup.is_duplicate:
+            if sec_dup.matched_type == "movie" and is_single_movie:
+                logger.info(f"ℹ️ [ANITOOB] Film TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANITOOB] '{title}' bazada film sifatida allaqachon mavjud (TMDb: {meta.get('tmdb_id')}), o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif sec_dup.matched_type == "series" and not is_single_movie and not getattr(sec_dup, "is_incomplete", False):
+                logger.info(f"ℹ️ [ANITOOB] Serial TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon to'liq mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
+                print(f"ℹ️ [ANITOOB] '{title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
+                QueueManager().update_status(item.id, "already_exists")
+                return True
+            elif sec_dup.matched_type == "series" and not is_single_movie and getattr(sec_dup, "is_incomplete", False):
+                existing_series_id = sec_dup.matched_id
 
         # 6. 'Tomosha qilish' tugmasini topish va bosish
         watch_btn_coords = None
@@ -2946,6 +3069,9 @@ class TelethonModeratorPipeline:
                     trailer_url=meta.get("trailer_url"),
                     category_ids=[2] + [c for c in (meta.get("category_ids") or []) if c != 2],
                     page_ids=[1],
+                    source_chat_id=int(AUTO_TOPIC_CHAT_ID) if AUTO_TOPIC_CHAT_ID else None,
+                    source_topic_id=int(thread_id) if thread_id else None,
+                    source_type=getattr(item, "source", "anitoob"),
                     is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 movie_id = created_movie.id
@@ -2963,12 +3089,14 @@ class TelethonModeratorPipeline:
                 }
                 f_ok, f_defects = final_check("movie", fin_payload, fin_payload)
                 if f_ok:
-                    await promote_to_published(
-                        session,
-                        created_movie,
-                        source=getattr(item, 'source', 'anitoob'),
-                        source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
-                    )
+                    m_db_obj = await session.get(MovieModel, movie_id)
+                    if m_db_obj:
+                        await promote_to_published(
+                            session,
+                            m_db_obj,
+                            source=getattr(item, 'source', 'anitoob'),
+                            source_key=str(getattr(item, 'code', None) or getattr(item, 'url', None) or title)
+                        )
                 else:
                     await record_rejection(
                         session=session,
@@ -3203,7 +3331,7 @@ class TelethonModeratorPipeline:
                     else:
                         recent_check = await self.client.get_messages(target_bot, limit=2)
                         for rcm in recent_check:
-                            if rcm.media and getattr(rcm.media, "document", None):
+                            if rcm.id > latest_btn_msg.id and rcm.media and getattr(rcm.media, "document", None):
                                 v_msg = rcm
                                 latest_btn_msg = v_msg
                                 break
@@ -3291,13 +3419,17 @@ class TelethonModeratorPipeline:
                 ep_lang = getattr(item, "voiceover", None) or getattr(item, "language", None) or "O'zbekcha"
                 if str(ep_lang).strip().lower() in ("asosiy", "", "none"):
                     ep_lang = "O'zbekcha"
-                await series_repo.add_episode_translation(
-                    episode_id=ep_id,
-                    language=ep_lang,
-                    telegram_file_id=ep_bot_file_id,
-                    storage_channel_message_id=storage_msg.id
-                )
-                from scraper.admission_gate import final_check, promote_to_published, record_rejection
+                try:
+                    await series_repo.add_episode_translation(
+                        episode_id=ep_id,
+                        language=ep_lang,
+                        telegram_file_id=ep_bot_file_id,
+                        storage_channel_message_id=storage_msg.id
+                    )
+                except ValueError as ve:
+                    logger.warning(f"⚠️ {current_ep}-qism tarjimasini biriktirishda xatolik: {ve}")
+                    current_ep += 1
+                    continue
                 is_valid, defects = final_check("episode", {
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
@@ -3551,7 +3683,8 @@ class TelethonModeratorPipeline:
             source_desc=card_text or None,
             caption=full_context_caption,
             item_url=item.url,
-            media_type=getattr(item, "media_type", "movie")
+            media_type=getattr(item, "media_type", "movie"),
+            tmdb_id=getattr(item, "tmdb_id", None)
         )
 
         # M6: Tur (movie/series/anime) regex'dan emas: TMDb natijasi + donor tarkibi bo'yicha. Ziddiyat bo'lsa needs_review.
@@ -4022,17 +4155,15 @@ class TelethonModeratorPipeline:
             await asyncio.sleep(2.0)
             _, q_flood = await self.safe_click(card_msg, r_idx, c_idx)
             if q_flood > 0:
-                logger.warning(f"⏳ [@{bot}] Sifat bosishda flood: {q_flood}s kutilmoqda...")
-                await asyncio.sleep(q_flood)
+                await handle_bot_flood_wait(bot, q_flood, context="Sifat bosishda")
                 await self.safe_click(card_msg, r_idx, c_idx)
 
-            video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_vid_or_flood)
+            video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=10.0, interval=0.8, condition=has_vid_or_flood)
             v_flood = get_flood_wait_seconds(video_replies)
             if v_flood > 0:
-                logger.warning(f"⏳ [@{bot}] Video kutishda flood: {v_flood}s kutilmoqda...")
-                await asyncio.sleep(v_flood)
+                await handle_bot_flood_wait(bot, v_flood, context="Video kutishda")
                 await self.safe_click(card_msg, r_idx, c_idx)
-                video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=20.0, interval=0.4, condition=has_vid_or_flood)
+                video_replies = await poll_new_messages(self.client, bot, quality_click_id, timeout=10.0, interval=0.8, condition=has_vid_or_flood)
 
             valid_vm = None
             for vm in video_replies:

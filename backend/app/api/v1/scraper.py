@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_db_session
 from app.infrastructure.db.models.movie import MovieModel
-from app.infrastructure.db.models.ingest_item import IngestItemModel, validate_status_transition
+from app.infrastructure.db.models.ingest_item import IngestItemModel
 from app.application.ingest_service import IngestService
 from app.core.cache import delete_cache_pattern
 from app.core.config import settings
@@ -175,13 +175,16 @@ def _ensure_ok(res: Dict[str, Any]) -> Dict[str, Any]:
 # bookkeeping never blocks the event loop.
 
 @router.get("/status", response_model=StatusResponse)
-def get_status(admin=Depends(get_current_admin)):
+async def get_status(admin=Depends(get_current_admin)):
     """Scraper jarayonining hozirgi holati, progressi va loglarini olish."""
     if not SCRAPER_AVAILABLE:
         _init_scraper()
     if SCRAPER_AVAILABLE and ProcessManager:
         try:
-            return ProcessManager().get_status()
+            pm = ProcessManager()
+            if hasattr(pm, "get_status_async"):
+                return await pm.get_status_async()
+            return pm.get_status()
         except Exception as e:
             logger.warning(f"ProcessManager status olishda xatolik: {e}")
 
@@ -252,7 +255,7 @@ def retry_failed(admin=Depends(require_scraper)):
 
 
 @router.get("/queue")
-def get_queue(
+async def get_queue(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     status: Optional[str] = Query("all"),
@@ -275,7 +278,7 @@ def get_queue(
 
             qm = QueueManager()
             skip = (page - 1) * page_size
-            items, total_count = qm.get_filtered(status=status, source=source, media_type=media_type, search=search, skip=skip, limit=page_size)
+            items, total_count = await qm.get_filtered_async(status=status, source=source, media_type=media_type, search=search, skip=skip, limit=page_size)
             total_pages = max(1, (total_count + page_size - 1) // page_size)
 
             return {
@@ -284,7 +287,7 @@ def get_queue(
                 "page": page,
                 "page_size": page_size,
                 "total_pages": total_pages,
-                "stats": qm.stats(),
+                "stats": await qm.stats_async(),
             }
         except Exception as e:
             logger.warning(f"QueueManager get_queue xatolik: {e}")
@@ -348,7 +351,7 @@ async def search_site(
 
 
 @router.post("/queue-add")
-def queue_add(
+async def queue_add(
     item_data: Dict[str, Any] = Body(...),
     admin=Depends(require_scraper),
 ):
@@ -367,12 +370,12 @@ def queue_add(
         status="already_exists" if is_dup else "pending",
         error_message=f"Bazada mavjud: {item_data.get('db_title')}" if is_dup else None,
     )
-    qm.add_item(new_item)
+    await qm.add_item_async(new_item)
     return {"success": True, "message": f"'{new_item.title}' navbatga qo'shildi.", "item": new_item.__dict__}
 
 
 @router.post("/quick-grab")
-def quick_grab(
+async def quick_grab(
     item_data: Dict[str, Any] = Body(...),
     admin=Depends(require_scraper),
 ):
@@ -390,7 +393,7 @@ def quick_grab(
         poster_url=item_data.get("poster_url"),
         status="pending",
     )
-    qm.add_item(new_item)
+    await qm.add_item_async(new_item)
 
     target_bot = item_data["source"]
     res = ProcessManager().start_download(
@@ -423,43 +426,43 @@ def clear_logs(admin=Depends(require_scraper)):
 
 
 def _forbid_while_running(detail: str):
-    if ProcessManager().get_status()["is_running"]:
+    if ProcessManager().is_running:
         raise HTTPException(status_code=409, detail=detail)
 
 
 @router.post("/queue/retry-all-failed")
-def retry_all_failed(source: Optional[str] = Query(None), admin=Depends(require_scraper)):
+async def retry_all_failed(source: Optional[str] = Query(None), admin=Depends(require_scraper)):
     """Barcha xatolikka uchragan elementlarni qayta kutilayotgan holatga o'tkazish."""
     if source and source not in SOURCES:
         raise HTTPException(status_code=400, detail="Noto'g'ri manba")
-    count = QueueManager().retry_all_failed(source=source)
+    count = await QueueManager().retry_all_failed_async(source=source)
     return {"success": True, "count": count, "message": f"{count} ta element qayta navbatga qo'yildi."}
 
 
 @router.post("/queue/clear-by-status")
-def clear_by_status(status: str = Body(..., embed=True), admin=Depends(require_scraper)):
+async def clear_by_status(status: str = Body(..., embed=True), admin=Depends(require_scraper)):
     """Berilgan statusdagi elementlarni navbatdan o'chirish (completed, already_exists, failed...)."""
     if status not in STATUSES:
         raise HTTPException(status_code=400, detail="Noto'g'ri status")
     if status == "in_progress":
         raise HTTPException(status_code=400, detail="Jarayondagi elementlarni o'chirib bo'lmaydi")
-    count = QueueManager().clear_by_status(status=status)
+    count = await QueueManager().clear_by_status_async(status=status)
     return {"success": True, "count": count, "message": f"{count} ta element tozalandi."}
 
 
 @router.post("/queue/clear-all")
-def clear_all_queue(admin=Depends(require_scraper)):
+async def clear_all_queue(admin=Depends(require_scraper)):
     """Butun navbatdagi barcha elementlarni tozalash (butunlay bo'shatish)."""
     _forbid_while_running("Jarayon ishlayotgan paytda butun navbatni tozalab bo'lmaydi!")
-    count = QueueManager().clear_all()
+    count = await QueueManager().clear_all_async()
     return {"success": True, "count": count, "message": f"Butun navbat tozalandi ({count} ta element o'chirildi)."}
 
 
 @router.post("/queue/clear-finished")
-def clear_finished_queue(admin=Depends(require_scraper)):
+async def clear_finished_queue(admin=Depends(require_scraper)):
     """Bajarilgan va allaqachon bazada bor barcha elementlarni navbatdan tozalash."""
     _forbid_while_running("Jarayon ishlayotgan paytda navbatni tozalab bo'lmaydi!")
-    count = QueueManager().clear_finished_and_existing()
+    count = await QueueManager().clear_finished_and_existing_async()
     return {"success": True, "count": count, "message": f"{count} ta bajarilgan va bazada bor elementlar tozalandi."}
 
 
@@ -472,10 +475,10 @@ def reset_scraper_state(admin=Depends(require_scraper)):
 
 
 @router.post("/master-reset")
-def master_reset_scraper(admin=Depends(require_scraper)):
+async def master_reset_scraper(admin=Depends(require_scraper)):
     """To'liq tozalash: Butun navbat + Sahifa xotiralari (1-sahifaga) + Jonli loglar."""
     _forbid_while_running("Jarayon ishlayotgan paytda to'liq tozalash mumkin emas!")
-    q_count = QueueManager().clear_all()
+    q_count = await QueueManager().clear_all_async()
     new_state = StateManager().reset_to_defaults()
     ProcessManager().clear_logs()
     return {
@@ -487,28 +490,28 @@ def master_reset_scraper(admin=Depends(require_scraper)):
 
 
 @router.post("/queue/{item_id}/retry")
-def retry_queue_item(item_id: str, admin=Depends(require_scraper)):
+async def retry_queue_item(item_id: str, admin=Depends(require_scraper)):
     """Xatolikka uchragan elementni qayta navbatga qo'yish."""
-    if not QueueManager().retry_item(item_id):
+    if not await QueueManager().retry_item_async(item_id):
         raise HTTPException(status_code=404, detail="Element topilmadi")
     return {"success": True, "message": f"{item_id} qayta navbatga qo'yildi."}
 
 
 @router.delete("/queue/{item_id}")
-def delete_queue_item(item_id: str, admin=Depends(require_scraper)):
+async def delete_queue_item(item_id: str, admin=Depends(require_scraper)):
     """Elementni navbatdan o'chirish."""
-    if not QueueManager().delete_item(item_id):
+    if not await QueueManager().delete_item_async(item_id):
         raise HTTPException(status_code=404, detail="Element topilmadi")
     return {"success": True, "message": f"{item_id} o'chirildi."}
 
 
 @router.post("/queue/{item_id}/grab-now")
-def grab_now(item_id: str, admin=Depends(require_scraper)):
+async def grab_now(item_id: str, admin=Depends(require_scraper)):
     """Aynan bitta film yoki serialni navbatdan darhol yuklashni boshlash."""
     _require_auto_content()
     _require_scraper_enabled()
     qm = QueueManager()
-    item = qm.items.get(item_id)
+    item = await qm.get_item_async(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Element navbatda topilmadi")
 
@@ -555,7 +558,7 @@ async def get_incomplete_movies(
         .where(
             (func.lower(MovieModel.title).in_(["kino", "film", "serial", "tarjima kino", "premyera", "noma'lum"]))
             | (func.length(MovieModel.title) < 4)
-            | (MovieModel.description == None)
+            | (MovieModel.description.is_(None))
             | (func.length(MovieModel.description) < 20)
         )
         .order_by(MovieModel.id.desc())
@@ -567,7 +570,8 @@ async def get_incomplete_movies(
     qm = QueueManager()
     queue_items = []
     suspicious_words = {"kino", "film", "serial", "tarjima kino", "premyera", "noma'lum", "movie"}
-    for item in qm.items.values():
+    all_queue, _ = await qm.get_filtered_async(limit=500)
+    for item in all_queue:
         if (
             item.status == "needs_review"
             or item.title.lower().strip() in suspicious_words
@@ -596,14 +600,14 @@ async def get_incomplete_movies(
 
 
 @router.put("/queue/{item_id}")
-def update_queue_item(
+async def update_queue_item(
     item_id: str,
     req: UpdateQueueItemRequest,
     admin=Depends(require_scraper),
 ):
     """Navbatdagi element ma'lumotlarini (nomi, yili, posteri) qo'lda to'g'rilash va tayyorlash."""
     qm = QueueManager()
-    success = qm.update_item_details(
+    success = await qm.update_item_details_async(
         item_id=item_id,
         title=req.title,
         year=req.year,

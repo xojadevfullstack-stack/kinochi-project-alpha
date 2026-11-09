@@ -19,7 +19,7 @@ import uuid
 
 _original_getaddrinfo = socket.getaddrinfo
 _dns_cache: dict = {}
-DNS_CACHE_TTL_SECONDS: float = float(os.environ.get("DNS_CACHE_TTL_SECONDS", "60.0"))
+DNS_CACHE_TTL_SECONDS: float = float(os.environ.get("DNS_CACHE_TTL_SECONDS", "300.0"))
 DNS_CACHE_MAX_SIZE: int = int(os.environ.get("DNS_CACHE_MAX_SIZE", "500"))
 
 def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
@@ -27,7 +27,8 @@ def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     Ba'zi bulut muhitlarida (Render) IPv6 (AAAA) manzillarga chiquvchi
     ulanish "blackhole" bo'lib, cheksiz kutishga sabab bo'ladi. Bu yerda
     DNS javobidan faqat IPv4 (AF_INET) natijalarni qoldiramiz.
-    DNS natijalarini 60s TTL (yoki DNS_CACHE_TTL_SECONDS) bilan keshlaymiz, failover paytida yangi IP'ga o'tishni ta'minlaymiz.
+    DNS natijalarini TTL bilan keshlaymiz, failover va tarmoq uzilishlarida
+    stale kesh fallback va retry orqali uzluksizlikni ta'minlaymiz.
     """
     cache_key = (host, port, family, type, proto, flags)
     now = time.time()
@@ -37,20 +38,35 @@ def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
             res, exp = cached_entry
             if now < exp:
                 return res
-            _dns_cache.pop(cache_key, None)
         else:
             return cached_entry
 
-    results = _original_getaddrinfo(host, port, family, type, proto, flags)
-    ipv4_results = [r for r in results if r[0] == socket.AF_INET]
-    res = ipv4_results if ipv4_results else results
+    last_err = None
+    for attempt in range(3):
+        try:
+            results = _original_getaddrinfo(host, port, family, type, proto, flags)
+            ipv4_results = [r for r in results if r[0] == socket.AF_INET]
+            res = ipv4_results if ipv4_results else results
 
-    while len(_dns_cache) >= DNS_CACHE_MAX_SIZE:
-        oldest_key = next(iter(_dns_cache))
-        _dns_cache.pop(oldest_key, None)
+            while len(_dns_cache) >= DNS_CACHE_MAX_SIZE:
+                oldest_key = next(iter(_dns_cache))
+                _dns_cache.pop(oldest_key, None)
 
-    _dns_cache[cache_key] = (res, now + DNS_CACHE_TTL_SECONDS)
-    return res
+            _dns_cache[cache_key] = (res, now + DNS_CACHE_TTL_SECONDS)
+            return res
+        except socket.gaierror as e:
+            last_err = e
+            if cache_key in _dns_cache:
+                cached_entry = _dns_cache[cache_key]
+                return cached_entry[0] if isinstance(cached_entry, tuple) else cached_entry
+            if attempt < 2:
+                time.sleep(0.4)
+
+    if cache_key in _dns_cache:
+        cached_entry = _dns_cache[cache_key]
+        return cached_entry[0] if isinstance(cached_entry, tuple) else cached_entry
+
+    raise last_err
 
 socket.getaddrinfo = _ipv4_only_getaddrinfo
 logging.info("CHECKPOINT 5b: DB engine yaratilmoqda")

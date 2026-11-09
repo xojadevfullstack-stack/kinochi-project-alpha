@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import asyncio
 import argparse
 
@@ -33,7 +34,11 @@ from scraper.site_parser import (
 )
 from scraper.state_manager import StateManager
 from scraper.duplicate_checker import DuplicateChecker
-from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, create_telethon_client
+from scraper.telethon_moderator_pipeline import (
+    TelethonModeratorPipeline,
+    create_telethon_client,
+    BotFloodWaitError,
+)
 from telethon.errors import FloodWaitError
 from scraper.config import TARGET_BOTS, TELEGRAM_API_ID, TELEGRAM_API_HASH, is_scraper_enabled
 from scraper.autopilot_v2 import autopilot_engine
@@ -41,6 +46,24 @@ from filelock import FileLock, Timeout
 
 DEFAULT_CLI_LOCK_FILE = os.path.join(os.path.dirname(__file__), ".scraper_cli.lock")
 DEFAULT_CLI_PID_FILE = os.path.join(os.path.dirname(__file__), ".scraper_cli.pid")
+
+SOURCE_MEDIA_TOTAL_PAGES = {
+    ("asilmedia", "anime"): 3,
+    ("asilmedia", "multfilm"): 25,
+    ("asilmedia", "dorama"): 30,
+    ("asilmedia", "series"): 50,
+    ("asilmedia", "movie"): 400,
+    ("uzmovi", "anime"): 2,
+    ("uzmovi", "multfilm"): 30,
+    ("uzmovi", "dorama"): 25,
+    ("uzmovi", "series"): 60,
+    ("uzmovi", "movie"): 350,
+    ("anitoob", "anime"): 20,
+    ("animeelar", "anime"): 50,
+    ("kinochilar", "movie"): 200,
+    ("kinochilar", "series"): 50,
+    ("kinochilar", "multfilm"): 25,
+}
 
 
 class ScraperAlreadyRunningError(Exception):
@@ -112,7 +135,7 @@ async def cmd_parse(
     state = sm.get_state()
 
     if start_page is None:
-        start_page = int(state.get(f"{source.lower()}_current_page", 1))
+        start_page = sm.get_current_page(source, media_type)
     if min_rating is None:
         min_rating = float(state.get("min_rating", 6.0))
 
@@ -149,8 +172,13 @@ async def cmd_parse(
                     urls.append(f"https://asilmedia.org/films/tarjima_kinolar/page/{page}/" if page > 1 else "https://asilmedia.org/films/tarjima_kinolar/")
                 if media_type in ("all", "series", "dorama"):
                     urls.append(f"https://asilmedia.org/films/serial/page/{page}/" if page > 1 else "https://asilmedia.org/films/serial/")
-                if media_type in ("all", "multfilm", "anime"):
+                if media_type in ("all", "multfilm"):
                     urls.append(f"https://asilmedia.org/films/multfilmlar_multiklar/page/{page}/" if page > 1 else "https://asilmedia.org/films/multfilmlar_multiklar/")
+                if media_type in ("all", "anime"):
+                    if page <= 3:
+                        urls.append(f"https://asilmedia.org/xfsearch/genre/anime/page/{page}/" if page > 1 else "https://asilmedia.org/xfsearch/genre/anime/")
+                    if page <= 2:
+                        urls.append(f"https://asilmedia.org/kolleksiya/anime-ozbek-tilida/page/{page}/" if page > 1 else "https://asilmedia.org/kolleksiya/anime-ozbek-tilida/")
     elif source in ("anitoob", "anitoobuz", "animeelar", "anime"):
         if media_type not in ("all", "anime"):
             print(f"ℹ️ [{source.upper()}] faqat Anime kontentiga ega. '{media_type}' filtri uchun o'tkazib yuborildi.")
@@ -183,6 +211,15 @@ async def cmd_parse(
             continue
         all_items.extend(res)
         print(f"📄 Sahifa {actual_page}: {len(res)} ta mos element yuklandi.")
+
+    # Deduplicate in-memory items across gathered URLs (e.g. from collection + search)
+    unique_items = []
+    seen_item_ids = set()
+    for item in all_items:
+        if item.id not in seen_item_ids:
+            seen_item_ids.add(item.id)
+            unique_items.append(item)
+    all_items = unique_items
 
     if media_type != "all":
         all_items = [item for item in all_items if matches_media_type(item, media_type)]
@@ -244,10 +281,11 @@ async def cmd_parse(
             item.status = "queued"
 
     total_added = await qm.add_items_batch_async(all_items)
-    next_page = sm.advance_page(source, max_pages, from_page=start_page)
+    next_page = sm.advance_page(source, max_pages, from_page=start_page, media_type=media_type)
     print(f"\n✅ Yig'ish yakunlandi! Jami topilgan: {len(all_items)}, Yangi qo'shilgan: {total_added}, Bazadagi dublikatlar: {duplicates_detected}, Qora ro'yxatda: {blacklisted_detected}, Rad etilganlar: {rejected_detected}")
     print(f"📑 [STATE] {source.upper()} keyingi sahifa: {next_page}")
     print(f"📊 Navbat holati: {await qm.stats_async()}\n")
+    return len(all_items)
 
 def parse_codes_arg(codes_str: str) -> list:
     res = []
@@ -337,6 +375,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
     else:
         qm = QueueManager()
         target_source_map = {
+            "all": "all",
+            "both": "both",
             "uzmovi": "uzmovi",
             "UzmovieTV_Bot": "uzmovi",
             "asilmedia": "asilmedia",
@@ -354,7 +394,7 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             raise ValueError(f"Noma'lum maqsadli manba/bot: '{target}'")
         target_source = target_source_map[target]
         m_type = None if media_type == "all" else media_type
-        pending = await qm.get_pending_async(limit=limit, source=target_source, media_type=m_type)
+        pending = await qm.get_pending_async(limit=limit, source=None if target_source == "all" else target_source, media_type=m_type)
 
         if not pending:
             m_label = f"'{media_type.upper()}'" if media_type != "all" else "yangi kino/serial"
@@ -384,6 +424,14 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
         if code_list:
             qm = QueueManager()
             for idx, c in enumerate(code_list, 1):
+                state = StateManager().get_state()
+                flood_until = state.get("bot_flood_until") or 0
+                flood_bot = state.get("bot_flood_bot")
+                if flood_until > time.time() and flood_bot and flood_bot.lower() == bot_username.lower():
+                    rem_min = int((flood_until - time.time()) // 60) + 1
+                    print(f"\n⛔ [@{bot_username}] botida {rem_min} daqiqalik faol flood-wait mavjud! Qolgan kodlar bo'yicha so'rovlar to'xtatildi.", flush=True)
+                    break
+
                 print(f"\n[{idx}/{len(code_list)}] 🎬 Kod #{c} bo'yicha moderator sikli boshlanmoqda...")
                 success = False
                 fw_attempt = 0
@@ -391,6 +439,13 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 while True:
                     try:
                         success = await pipeline.run_by_code(code=c, target_bot=bot_username)
+                        break
+                    except BotFloodWaitError as bfe:
+                        print(f"\n⛔ Kod #{c}: {bfe.message}. Donor bot cheklovi tufayli to'xtatildi.", flush=True)
+                        for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"animeelar_{c}", f"anitoob_{c}"]:
+                            if await qm.get_item_async(qid):
+                                await qm.update_status_async(qid, "failed", error_message=f"Bot flood limiti: {bfe.seconds // 60} daqiqa")
+                        success = False
                         break
                     except FloodWaitError as fe:
                         fw_attempt += 1
@@ -400,8 +455,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                         else:
                             print(f"\n❌ Kod #{c}: Telegram FloodWait maksimal urinishlar sonidan oshdi ({max_fw_retries} marta). Element o'tkazib yuborilmoqda.", flush=True)
                             for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"animeelar_{c}", f"anitoob_{c}"]:
-                                if qid in qm.items:
-                                    qm.update_status(qid, "failed", error_message=f"Telegram FloodWait limiti oshdi ({fe.seconds}s, {max_fw_retries} urinish)")
+                                if await qm.get_item_async(qid):
+                                    await qm.update_status_async(qid, "failed", error_message=f"Telegram FloodWait limiti oshdi ({fe.seconds}s, {max_fw_retries} urinish)")
                             success = False
                             break
                     except Exception as ex:
@@ -412,8 +467,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 if success:
                     print(f"✅ Kod #{c} muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi.")
                     for qid in [f"asilmedia_{c}", f"uzmovi_{c}", f"animeelar_{c}", f"anitoob_{c}"]:
-                        if qid in qm.items:
-                            qm.update_status(qid, "published")
+                        if await qm.get_item_async(qid):
+                            await qm.update_status_async(qid, "published")
                 else:
                     print(f"⚠️ Kod #{c} yuklab bo'lmadi yoki o'tkazib yuborildi.")
                 
@@ -438,7 +493,8 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     original_title=item.original_title,
                     media_type=item.media_type,
                     episodes_count=item.episodes_count,
-                    url=getattr(item, "url", None)
+                    url=getattr(item, "url", None),
+                    tmdb_id=getattr(item, "tmdb_id", None)
                 )
                 if dup.match_type == "blacklist":
                     await qm.update_status_async(item.id, "blacklisted", error_message=f"Qora ro'yxatda: {dup.reason}")
@@ -451,7 +507,16 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 elif getattr(dup, "is_incomplete", False):
                     print(f"🔄 [{media_label}] '{item.title}' bazada mavjud ammo qismlari to'liq emas (ID: {dup.matched_id}). Mavjud mavzuga ulanib qismlar yuklanmoqda...")
 
-                print(f"\n[{downloaded_count + 1}/{limit}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda...")
+                effective_target_bot = TARGET_BOTS.get(item.source, bot_username)
+                state = StateManager().get_state()
+                flood_until = state.get("bot_flood_until") or 0
+                flood_bot = state.get("bot_flood_bot")
+                if flood_until > time.time() and flood_bot and flood_bot.lower() == effective_target_bot.lower():
+                    rem_min = int((flood_until - time.time()) // 60) + 1
+                    print(f"\n⛔ [@{effective_target_bot}] botida {rem_min} daqiqalik faol flood-wait mavjud! Qolgan elementlar bo'yicha so'rovlar to'xtatildi.", flush=True)
+                    break
+
+                print(f"\n[{idx}/{len(pending)}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda (Yuklangan: {downloaded_count}/{limit})...")
                 await qm.update_status_async(item.id, "in_progress")
                 
                 success = False
@@ -459,7 +524,12 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 max_fw_retries = 3
                 while True:
                     try:
-                        success = await pipeline.run_item(item, target_bot=bot_username)
+                        success = await pipeline.run_item(item, target_bot=effective_target_bot)
+                        break
+                    except BotFloodWaitError as bfe:
+                        print(f"\n⛔ [{media_label}] '{item.title}': {bfe.message}. Donor bot cheklovi tufayli to'xtatildi.", flush=True)
+                        await qm.update_status_async(item.id, "failed", error_message=f"Bot flood limiti: {bfe.seconds // 60} daqiqa")
+                        success = False
                         break
                     except FloodWaitError as fe:
                         fw_attempt += 1
@@ -483,19 +553,27 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                     print(f"✅ Muvaffaqiyatli saqlandi, Topic ochildi va Websaytga ulandi: {item.title}")
                 else:
                     await asyncio.sleep(0.5)
-                    qm.load()
                     fresh = await qm.get_item_async(item.id)
-                    if fresh and fresh.status in ("already_exists", "needs_review", "rejected", "blacklisted"):
-                        print(f"⏭️ {item.title}: {fresh.error_message or fresh.status}")
+                    item_st = getattr(item, "status", None)
+                    effective_status = (fresh.status if (fresh and fresh.status in ("already_exists", "needs_review", "rejected", "blacklisted", "failed")) else None) or item_st
+                    effective_err = getattr(item, "error_message", None) or getattr(item, "reason", None) or (fresh.error_message if fresh else None)
+
+                    if effective_status in ("already_exists", "needs_review", "rejected", "blacklisted"):
+                        print(f"⏭️ {item.title}: {effective_err or effective_status}")
+                        if fresh and fresh.status == "in_progress":
+                            try:
+                                await qm.update_status_async(item.id, effective_status, error_message=effective_err)
+                            except Exception:
+                                pass
                     elif fresh and fresh.status == "in_progress":
-                        err_msg = fresh.error_message if (fresh and fresh.error_message) else "Video olinmadi yoki xatolik"
+                        err_msg = effective_err or "Video olinmadi yoki xatolik"
                         try:
                             await qm.update_status_async(item.id, "failed", error_message=err_msg)
                             print(f"⚠️ Yuklab bo'lmadi: {item.title} ({err_msg})")
                         except Exception as e:
                             print(f"⚠️ {item.title}: Holatni yangilashda xatolik ({e})")
-                    elif fresh and fresh.status == "failed" and fresh.error_message:
-                        print(f"⚠️ Yuklab bo'lmadi: {item.title} ({fresh.error_message})")
+                    elif effective_status == "failed" and effective_err:
+                        print(f"⚠️ Yuklab bo'lmadi: {item.title} ({effective_err})")
                     else:
                         print(f"⚠️ Yuklab bo'lmadi: {item.title}")
 
@@ -516,8 +594,11 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
             pass
         print("\n🏁 Yuklash jarayoni to'xtatildi.")
         if not code_list:
-            qm = QueueManager()
-            print(f"📊 Navbat statistikasi: {await qm.stats_async()}\n")
+            try:
+                qm = QueueManager()
+                print(f"📊 Navbat statistikasi: {await qm.stats_async()}\n")
+            except Exception:
+                pass
 
 async def cmd_clean_duplicates():
     qm = QueueManager()
@@ -527,7 +608,8 @@ async def cmd_clean_duplicates():
     
     checked = 0
     duplicates_found = 0
-    for item_id, item in list(qm.items.items()):
+    items, _ = await qm.get_filtered_async(limit=5000)
+    for item in items:
         if item.status in ("pending", "failed"):
             checked += 1
             dup = await checker.check(item.title, year=item.year, original_title=item.original_title, media_type=item.media_type)
@@ -539,11 +621,12 @@ async def cmd_clean_duplicates():
     print(f"\n✅ Tekshiruv yakunlandi! Jami tekshirildi: {checked}, Dublikat deb topildi: {duplicates_found}")
     print(f"📊 Yangilangan navbat statistikasi: {await qm.stats_async()}\n")
 
-def cmd_stats():
+async def cmd_stats():
     qm = QueueManager()
     sm = StateManager()
     print("\n📊 Navbat statistikasi:")
-    for k, v in qm.stats().items():
+    stats = await qm.stats_async()
+    for k, v in stats.items():
         print(f"  • {k}: {v}")
     st = sm.get_state()
     print("\n📑 Checkpoint holati:")
@@ -554,17 +637,11 @@ def cmd_stats():
     print(f"  • Minimal reyting: {st.get('min_rating', 6.0)}+")
     print()
 
-def cmd_retry_failed():
+async def cmd_retry_failed():
     qm = QueueManager()
-    count = 0
-    for item_id, item in list(qm.items.items()):
-        if item.status == "failed":
-            item.status = "pending"
-            item.error_message = None
-            count += 1
-    qm.save()
+    count = await qm.retry_all_failed_async()
     print(f"\n♻️ {count} ta muvaffaqiyatsiz (failed) element 'kutilmoqda' holatiga qaytarildi.")
-    print(f"📊 Yangilangan navbat statistikasi: {qm.stats()}\n")
+    print(f"📊 Yangilangan navbat statistikasi: {await qm.stats_async()}\n")
 
 async def cmd_tmdb_autopilot(
     limit: int = 10,
@@ -620,10 +697,10 @@ async def cmd_tmdb_autopilot(
         await ingestor.enqueue_candidates(limit=limit, execute=True)
 
         # 4. Navbatdagi TMDb filmlarini yuklash (download pipeline)
-        pending = qm.get_pending(limit=limit, media_type=None if media_type == "all" else media_type)
+        pending = await qm.get_pending_async(limit=limit, media_type=None if media_type == "all" else media_type)
         if pending:
             print(f"🚀 [TMDB] Navbatdagi {len(pending)} ta sara kontent yuklanmoqda...", flush=True)
-            await cmd_download(limit=len(pending), target="asilmedia", media_type=media_type)
+            await cmd_download(limit=len(pending), target="all", media_type=media_type)
         else:
             print("ℹ️ [TMDB] Hozircha yangi mos kelgan nomzod topilmadi.", flush=True)
 
@@ -654,11 +731,13 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
     if min_rating is None:
         min_rating = float(sm.get_state().get("min_rating", 6.0))
 
-    if source in ("all", "both"):
+    if source == "both":
+        sources_to_run = ["uzmovi", "asilmedia"]
+    elif source == "all":
         if media_type == "dorama":
             sources_to_run = ["uzmovi", "asilmedia", "kinochilar"]
         elif media_type == "anime":
-            sources_to_run = ["anitoob", "animeelar", "uzmovi", "kinochilar"]
+            sources_to_run = ["uzmovi", "asilmedia", "anitoob", "animeelar", "kinochilar"]
         elif media_type == "multfilm":
             sources_to_run = ["uzmovi", "asilmedia", "kinochilar"]
         elif media_type in ("movie", "series"):
@@ -693,7 +772,8 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
                 print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
                 return
             target_bot_map = {
-                "uzmovi": "uzmovi",
+                "all": "all",
+            "uzmovi": "uzmovi",
                 "asilmedia": "asilmedia",
                 "kinochilar": "kinochilar",
                 "anitoob": "anitoob",
@@ -716,6 +796,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             print(f"\n⛔ AVTOPILOT TO'XTATILGAN (Circuit Breaker): {cb_status.pause_reason}. Tizim to'xtatildi!", flush=True)
             return
         target_bot_map = {
+            "all": "all",
             "uzmovi": "uzmovi",
             "asilmedia": "asilmedia",
             "kinochilar": "kinochilar",
@@ -727,7 +808,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
         if s not in target_bot_map:
             raise ValueError(f"Noma'lum manba: '{s}'")
         target_bot = target_bot_map[s]
-        old_pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
+        old_pending = await qm.get_pending_async(limit=25, source=s, media_type=None if media_type == "all" else media_type)
         if old_pending:
             print(f"📋 [{s.upper()}] Oldingi navbatda kutilayotgan {len(old_pending)} ta film yuklanmoqda...", flush=True)
             await cmd_download(limit=len(old_pending), target=target_bot, media_type=media_type)
@@ -745,8 +826,12 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 
         for s in sources_to_run:
             st = sm.get_state()
-            cur_page = int(st.get(f"{s.lower()}_current_page", 1))
-            total_pages = int(st.get(f"{s.lower()}_total_pages", 400))
+            cur_page = sm.get_current_page(s, media_type)
+            default_total = int(st.get(f"{s.lower()}_total_pages", 400))
+            m_key = media_type.lower() if media_type else "all"
+            total_pages = SOURCE_MEDIA_TOTAL_PAGES.get((s.lower(), m_key), default_total)
+            if media_type == "all":
+                total_pages = default_total
 
             if cur_page > total_pages:
                 print(f"ℹ️ [{s.upper()}] Saytdagi barcha sahifalar ({total_pages}) to'liq ko'rib chiqilgan.", flush=True)
@@ -758,7 +843,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             print(f"------------------------------------------------------------", flush=True)
 
             # Aynan bitta sahifani tahlil qilamiz va checkpointni 1 ga oshiramiz
-            await cmd_parse(
+            found_count = await cmd_parse(
                 source=s,
                 max_pages=1,
                 start_page=cur_page,
@@ -768,7 +853,8 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 
             # Yangi saralangan pending filmlarni yuklaymiz
             target_bot_map = {
-                "uzmovi": "uzmovi",
+                "all": "all",
+            "uzmovi": "uzmovi",
                 "asilmedia": "asilmedia",
                 "kinochilar": "kinochilar",
                 "anitoob": "anitoob",
@@ -779,7 +865,7 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             if s not in target_bot_map:
                 raise ValueError(f"Noma'lum manba: '{s}'")
             target_bot = target_bot_map[s]
-            pending = qm.get_pending(limit=25, source=s, media_type=None if media_type == "all" else media_type)
+            pending = await qm.get_pending_async(limit=25, source=s, media_type=None if media_type == "all" else media_type)
             if pending:
                 print(f"🚀 [{s.upper()}] {len(pending)} ta yangi saralangan film Telegram orqali yuklanmoqda...", flush=True)
                 await cmd_download(limit=len(pending), target=target_bot, media_type=media_type)
@@ -796,14 +882,14 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 def main():
     parser = argparse.ArgumentParser(description="Kinochi Avtomatlashtirilgan Parser & Grabber")
     parser.add_argument("--parse", action="store_true", help="Saytdan kinolar ro'yxatini yig'ish")
-    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "kinochilar", "all", "tmdb"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar, all yoki tmdb)")
+    parser.add_argument("--source", type=str, default="all", choices=["uzmovi", "asilmedia", "both", "anitoob", "animeelar", "kinochilar", "all", "tmdb"], help="Sayt manbasi (uzmovi, asilmedia, anitoob, animeelar, all yoki tmdb)")
     parser.add_argument("--tmdb-autopilot", action="store_true", help="TMDB Top bo'yicha to'liq avtonom avtopilot: TMDB -> Qidiruv -> Navbat -> Yuklash")
     parser.add_argument("--include-series", action="store_true", default=True, help="Seriallarni ham qamrab olish (default: True)")
     parser.add_argument("--pages", type=int, default=None, help="Yig'iladigan sahifalar soni")
     parser.add_argument("--start-page", type=int, default=None, help="Boshlang'ich sahifa (agar berilmasa, state.json dan olinadi)")
     parser.add_argument("--min-rating", type=float, default=None, help="Minimal reyting (default: 6.0)")
     parser.add_argument("--download", action="store_true", help="Navbatdagi kinolarni Telegram botdan yuklab olish")
-    parser.add_argument("--target", type=str, default="uzmovi", choices=["uzmovi", "asilmedia", "anitoob", "animeelar", "kinochilar"], help="Maqsadli bot (uzmovi, asilmedia, anitoob yoki animeelar)")
+    parser.add_argument("--target", type=str, default="uzmovi", choices=["all", "both", "uzmovi", "asilmedia", "anitoob", "animeelar", "kinochilar"], help="Maqsadli bot (uzmovi, asilmedia, both, anitoob, animeelar yoki all)")
     parser.add_argument("--limit", type=int, default=5, help="Yuklanadigan kinolar soni (default: 5)")
     parser.add_argument("--codes", type=str, default=None, help="Muayyan film kodlari (masalan: 15 yoki 1-5 yoki 10,15,20)")
     parser.add_argument("--clean-duplicates", action="store_true", help="Navbatdagi mavjud bazadagi dublikatlarni tozalash")
@@ -816,7 +902,7 @@ def main():
     args = parser.parse_args()
 
     if args.stats:
-        cmd_stats()
+        asyncio.run(cmd_stats())
         return
 
     if (args.parse or args.download or args.autopilot or args.tmdb_autopilot) and not is_scraper_enabled():
@@ -834,7 +920,7 @@ def main():
         if args.clean_duplicates:
             asyncio.run(cmd_clean_duplicates())
         elif args.retry_failed:
-            cmd_retry_failed()
+            asyncio.run(cmd_retry_failed())
         elif args.tmdb_autopilot or (args.autopilot and args.source == "tmdb"):
             asyncio.run(cmd_tmdb_autopilot(
                 limit=args.limit or 10,

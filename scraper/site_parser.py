@@ -44,7 +44,7 @@ def extract_rating(text: str) -> Optional[float]:
             pass
     return None
 
-def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0) -> List[QueueItem]:
+def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0, default_media_type: Optional[str] = None) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
     seen_ids = set()
@@ -115,7 +115,9 @@ def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0) -> List[
         seen_ids.add(item_id_num)
         combined_text = (href + " " + raw_title).lower()
         is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama)', combined_text))
-        if "anime" in combined_text or "/anime" in href.lower():
+        if default_media_type:
+            media_type = default_media_type
+        elif "anime" in combined_text or "/anime" in href.lower():
             media_type = "anime"
         elif "dorama" in combined_text or "/drama" in href.lower() or (is_series and any(w in combined_text for w in ["koreys", "xitoy"])):
             media_type = "dorama"
@@ -148,7 +150,7 @@ def _extract_uzmovi_items_from_html(html: str, min_rating: float = 0.0) -> List[
 
     return items
 
-def _extract_asilmedia_items_from_html(html: str, min_rating: float = 0.0) -> List[QueueItem]:
+def _extract_asilmedia_items_from_html(html: str, min_rating: float = 0.0, default_media_type: Optional[str] = None) -> List[QueueItem]:
     items: List[QueueItem] = []
     soup = BeautifulSoup(html, "html.parser")
     seen_ids = set()
@@ -199,7 +201,9 @@ def _extract_asilmedia_items_from_html(html: str, min_rating: float = 0.0) -> Li
         seen_ids.add(item_id_num)
         combined_text = (href + " " + raw_title).lower()
         is_series = bool(re.search(r'(serial|barcha qismlar|mavsum|fasl|dorama|multiserial)', combined_text))
-        if "anime" in combined_text or "/anime" in href.lower():
+        if default_media_type:
+            media_type = default_media_type
+        elif "anime" in combined_text or "/anime" in href.lower():
             media_type = "anime"
         elif "dorama" in combined_text or "/dorama" in href.lower() or (is_series and any(w in combined_text for w in ["koreys", "xitoy"])):
             media_type = "dorama"
@@ -254,7 +258,8 @@ def parse_uzmovi_page(page_url: str, min_rating: float = 0.0) -> List[QueueItem]
         req = urllib.request.Request(target_url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
-        return _extract_uzmovi_items_from_html(html, min_rating=min_rating)
+        default_mt = "anime" if "anime" in page_url.lower() else None
+        return _extract_uzmovi_items_from_html(html, min_rating=min_rating, default_media_type=default_mt)
     except Exception as e:
         logger.error(f"Error scraping Uzmovi page {page_url}: {e}")
         return []
@@ -268,7 +273,8 @@ def parse_asilmedia_page(page_url: str, min_rating: float = 0.0) -> List[QueueIt
         req = urllib.request.Request(page_url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
-        return _extract_asilmedia_items_from_html(html, min_rating=min_rating)
+        default_mt = "anime" if "anime" in page_url.lower() else None
+        return _extract_asilmedia_items_from_html(html, min_rating=min_rating, default_media_type=default_mt)
     except Exception as e:
         logger.error(f"Error scraping Asilmedia page {page_url}: {e}")
         return []
@@ -279,7 +285,8 @@ async def parse_uzmovi_page_async(session: aiohttp.ClientSession, page_url: str,
         async with session.get(target_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
-                return _extract_uzmovi_items_from_html(html, min_rating=min_rating)
+                default_mt = "anime" if "anime" in page_url.lower() else None
+                return _extract_uzmovi_items_from_html(html, min_rating=min_rating, default_media_type=default_mt)
             else:
                 logger.warning(f"Uzmovi HTTP {resp.status} for {target_url}")
     except Exception as e:
@@ -291,7 +298,8 @@ async def parse_asilmedia_page_async(session: aiohttp.ClientSession, page_url: s
         async with session.get(page_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
-                return _extract_asilmedia_items_from_html(html, min_rating=min_rating)
+                default_mt = "anime" if "anime" in page_url.lower() else None
+                return _extract_asilmedia_items_from_html(html, min_rating=min_rating, default_media_type=default_mt)
             else:
                 logger.warning(f"Asilmedia HTTP {resp.status} for {page_url}")
     except Exception as e:

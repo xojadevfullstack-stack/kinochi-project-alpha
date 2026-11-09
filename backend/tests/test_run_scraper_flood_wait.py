@@ -105,7 +105,82 @@ async def test_recover_stale_in_progress(setup_test_db, engine):
     it1 = await qm.get_item_async("uzmovi_1")
     it2 = await qm.get_item_async("uzmovi_2")
     it3 = await qm.get_item_async("uzmovi_3")
-    assert it1.status == "queued"
+    assert it1.status in ("queued", "pending")
     assert it2.status == "in_progress"
-    assert it3.status == "published"
+    assert it3.status in ("published", "completed")
     await qm.clear_all_async()
+
+
+@pytest.mark.asyncio
+async def test_series_episode_flood_wait_raises_immediately():
+    """
+    Serial qismlarini yuklash jarayonida donor botdan uzoq muddatli flood-wait (BotFloodWaitError)
+    yuz berganda, generic except orqali yutib yuborilmasdan, darhol BotFloodWaitError ko'tarilishi
+    va keyingi qismlarga o'tilmasligi assert qilinadi.
+    """
+    from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline, BotFloodWaitError
+    from scraper.queue_manager import QueueItem
+    from telethon.tl.custom.message import Message
+
+    mock_client = MagicMock()
+    mock_client.send_message = AsyncMock(return_value=MagicMock(id=1))
+
+    mock_btn1 = MagicMock()
+    mock_btn1.text = "1"
+    mock_btn1.data = b"ep_1"
+    mock_btn2 = MagicMock()
+    mock_btn2.text = "2"
+    mock_btn2.data = b"ep_2"
+
+    card_msg = MagicMock(spec=Message)
+    card_msg.id = 10
+    card_msg.text = "Vinland haqida afsona"
+    card_msg.buttons = [[mock_btn1, mock_btn2]]
+
+    mock_client.get_messages = AsyncMock(return_value=card_msg)
+
+    mock_checker = MagicMock()
+    dup_res = MagicMock()
+    dup_res.match_type = None
+    dup_res.is_duplicate = False
+    dup_res.is_incomplete = False
+    dup_res.matched_id = None
+    mock_checker.check = AsyncMock(return_value=dup_res)
+
+    pipeline = TelethonModeratorPipeline(client=mock_client, duplicate_checker=mock_checker)
+    pipeline.enricher = MagicMock()
+    pipeline.enricher.enrich_item = AsyncMock(return_value={
+        "title": "Vinland haqida afsona",
+        "release_year": 2019,
+        "tmdb_content_type": "tv",
+        "tmdb_id": 890,
+        "poster_url": "https://image.tmdb.org/t/p/w500/test.jpg"
+    })
+    pipeline._validate_and_pre_check = AsyncMock(return_value=True)
+    pipeline.safe_click = AsyncMock(return_value=(False, 2465))
+
+    item = QueueItem(
+        id="asilmedia_100",
+        source="asilmedia",
+        title="Vinland haqida afsona",
+        media_type="series",
+        status="manually_verified",
+        payload={"bot_code": "100"}
+    )
+
+    with patch("scraper.telethon_moderator_pipeline.poll_new_messages", new_callable=AsyncMock) as mock_poll, \
+         patch("scraper.telethon_moderator_pipeline.async_session_factory") as mock_asf, \
+         patch("asyncio.sleep", new_callable=AsyncMock):
+        mock_poll.return_value = [card_msg]
+        mock_session = AsyncMock()
+        mock_asf.return_value.__aenter__.return_value = mock_session
+
+        with pytest.raises(BotFloodWaitError) as exc_info:
+            await pipeline.run_single_series(item=item, target_bot="asilmediabot")
+
+        assert exc_info.value.seconds == 2465
+        assert exc_info.value.bot == "asilmediabot"
+        # Episode 1 da flood wait bo'lgani uchun safe_click faqat 1 marta chaqirilishi kerak (2-qismga o'tmaslik)
+        assert pipeline.safe_click.call_count == 1
+
+

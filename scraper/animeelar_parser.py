@@ -87,7 +87,8 @@ async def parse_animeelar_page_async(
             # Determine media_type: if 'film' in title -> movie, else series
             is_film = bool(re.search(r'\b(film|kino|filmi)\b', title, re.IGNORECASE))
             m_type = "movie" if is_film else "series"
-            if media_type != "all" and m_type != media_type:
+            effective_mt = "anime" if media_type == "anime" else m_type
+            if media_type not in ("all", "anime") and m_type != media_type:
                 continue
 
             items.append(QueueItem(
@@ -96,7 +97,7 @@ async def parse_animeelar_page_async(
                 title=cleaned_title,
                 original_title=None,
                 year=found_year,
-                media_type=m_type,
+                media_type=effective_mt,
                 url=f"https://t.me/Animeelar_Bot?start={c}",
                 poster_url=None,
                 episodes_count=1 if m_type == "movie" else None

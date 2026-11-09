@@ -79,6 +79,11 @@ async def supervised_run_bot():
     attempts = 0
     delay = base_delay
 
+    if os.environ.get("RUN_LOCAL_BOT", "true").lower() in ("false", "0", "no"):
+        logging.info("[SUPERVISOR] Local bot polling o'chirilgan (RUN_LOCAL_BOT=false). Faqat FastAPI API ishlaydi.")
+        while True:
+            await asyncio.sleep(3600)
+
     while attempts < max_attempts:
         try:
             logging.info(f"[SUPERVISOR] Starting run_bot() (attempt {attempts + 1}/{max_attempts})...")
@@ -90,8 +95,16 @@ async def supervised_run_bot():
         except (KeyboardInterrupt, asyncio.CancelledError):
             set_bot_alive(False)
             raise
-        except Exception:
+        except Exception as exc:
             set_bot_alive(False)
+            is_conflict = "conflict" in str(exc).lower() or "TelegramConflictError" in type(exc).__name__
+            if is_conflict:
+                logging.warning(
+                    f"[SUPERVISOR] Telegram bot polling conflict (boshqa nusxa ishlamoqda). "
+                    f"Bot polling {max_delay:.0f}s ga to'xtatildi. FastAPI API to'liq faol qoladi."
+                )
+                await asyncio.sleep(max_delay)
+                continue
             attempts += 1
             logging.error(f"[SUPERVISOR] run_bot() crashed with exception (attempt {attempts}/{max_attempts}):", exc_info=True)
             if attempts >= max_attempts:
@@ -100,7 +113,8 @@ async def supervised_run_bot():
                     f"[SUPERVISOR] run_bot() failed after {max_attempts} attempts. "
                     "Leaving FastAPI API alive in degraded mode instead of killing the process."
                 )
-                return
+                while True:
+                    await asyncio.sleep(3600)
             logging.info(f"[SUPERVISOR] Restarting bot in {delay:.1f}s...")
             await asyncio.sleep(delay)
             delay = min(delay * 2, max_delay)
