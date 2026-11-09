@@ -22,6 +22,7 @@ from app.application.users.service import UserService
 from app.application.channels.service import ChannelService
 from app.application.broadcasts.service import BroadcastService
 from app.infrastructure.db.models.admin_user import AdminUserModel
+from app.infrastructure.db.models.user import UserModel
 from app.infrastructure.security.jwt_handler import decode_token
 from app.infrastructure.db.repositories.series_repository import SeriesRepository
 from app.application.series.series_service import SeriesService
@@ -126,7 +127,10 @@ async def get_current_admin(request: Request, session: AsyncSession = Depends(ge
 
     return {"admin_id": admin.id, "email": admin.email, "role": admin.role}
 
-async def get_current_user(request: Request):
+async def get_current_user(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
     """
     Dependency: validate access_token for regular users (from Telegram Auth).
     Returns user dict. Raises 401 if token missing/invalid or role is not user.
@@ -157,15 +161,40 @@ async def get_current_user(request: Request):
             detail="Faqat foydalanuvchilar uchun",
         )
 
-    return {"user_id": int(payload.get("sub")), "telegram_id": payload.get("telegram_id")}
+    user_id = int(payload.get("sub"))
+    stmt = select(UserModel).where(UserModel.id == user_id)
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Foydalanuvchi topilmadi",
+        )
+    if user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hisobingiz ma'muriyat tomonidan bloklangan",
+        )
 
-async def get_current_user_optional(request: Request) -> dict | None:
+    return {
+        "user_id": user.id,
+        "telegram_id": user.telegram_id,
+        "is_banned": user.is_banned,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    }
+
+async def get_current_user_optional(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict | None:
     """
     Dependency: optional user authentication.
     Returns user dict if valid token is present, else None.
     """
     try:
-        return await get_current_user(request)
+        return await get_current_user(request, session=session)
     except HTTPException:
         return None
 

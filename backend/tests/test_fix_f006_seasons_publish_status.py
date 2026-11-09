@@ -26,6 +26,7 @@ async def test_f006_list_seasons_filters_published():
         await list_seasons(
             request=mock_request,
             series_id=123,
+            publish_status="published",
             service=mock_service
         )
 

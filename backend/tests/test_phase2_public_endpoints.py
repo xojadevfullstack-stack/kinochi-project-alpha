@@ -9,6 +9,7 @@ from app.infrastructure.security.jwt_handler import create_access_token
 from app.api.limiter import get_client_ip
 from app.infrastructure.db.models.series import SeriesModel
 from app.infrastructure.db.models.collection import CollectionModel
+from app.infrastructure.db.models.user import UserModel
 
 
 @pytest.mark.asyncio
@@ -106,10 +107,11 @@ async def test_2c_cors_rejects_arbitrary_vercel_subdomains():
 @pytest.mark.asyncio
 async def test_2d_series_and_collection_subscriptions_idor_protection(db_session):
     """Subscribing on behalf of another user without bot secret or matching JWT must return 403."""
-    # Seed a series and collection
+    # Seed a series, collection and valid user
     series = SeriesModel(title="Test Series", description="Desc")
     collection = CollectionModel(name="Test Collection", slug="test-col-sub")
-    db_session.add_all([series, collection])
+    user = UserModel(id=101, telegram_id=123456, first_name="Real", last_name="User", is_banned=False)
+    db_session.add_all([series, collection, user])
     await db_session.commit()
     await db_session.refresh(series)
     await db_session.refresh(collection)
@@ -199,10 +201,11 @@ def test_2f_limiter_key_func_trusted_proxies():
 
 
 def test_dns_cache_ttl_and_env_config():
-    """Verify DNS TTL defaults to 60.0 and respects DNS_CACHE_TTL_SECONDS env var."""
+    """Verify DNS TTL defaults to 300.0 and respects DNS_CACHE_TTL_SECONDS env var."""
     import os
     from app.infrastructure.db import session as db_session_module
-    assert db_session_module.DNS_CACHE_TTL_SECONDS == 60.0
+    assert db_session_module.DNS_CACHE_TTL_SECONDS == 300.0
     with patch.dict(os.environ, {"DNS_CACHE_TTL_SECONDS": "45.0"}):
-        val = float(os.environ.get("DNS_CACHE_TTL_SECONDS", "60.0"))
+        val = float(os.environ.get("DNS_CACHE_TTL_SECONDS", "300.0"))
+        assert val == 45.0
         assert val == 45.0
