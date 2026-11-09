@@ -4,7 +4,7 @@ Allows searching TMDb and fetching movie/series metadata.
 """
 from typing import Any, Literal
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -26,8 +26,8 @@ async def search_content(
     request: Request,
     q: str | None = Query(None, description="Movie or series title to search"),
     query: str | None = Query(None, description="Alias for q"),
-    type: Literal["movie", "tv", "series"] | None = Query(None, description="Type of content: movie or tv/series"),
-    content_type: Literal["movie", "tv", "series"] | None = Query(None, description="Alias for type"),
+    type: str | None = Query(None, description="Type of content: movie, tv, series, anime, dorama, multfilm"),
+    content_type: str | None = Query(None, description="Type of content: movie, tv, series, anime, dorama, multfilm"),
     admin: dict = Depends(get_current_admin),
 ) -> list[dict[str, Any]]:
     """Search for movies or TV series on TMDb."""
@@ -41,8 +41,7 @@ async def search_content(
     if not search_query:
         return []
     ctype = content_type or type or "movie"
-    endpoint_type = "tv" if ctype in ("tv", "series") else "movie"
-    results = await tmdb_client.search(query=search_query, content_type=endpoint_type)
+    results = await tmdb_client.search(query=search_query, content_type=ctype)
     return results
 
 
@@ -50,7 +49,7 @@ async def search_content(
 @limiter.limit("30/minute")
 async def get_content_details(
     request: Request,
-    content_type: Literal["movie", "tv", "series"],
+    content_type: str,
     tmdb_id: int,
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin),
@@ -107,12 +106,17 @@ async def get_content_details(
 
     # 6. Match category IDs from database
     suggested_category_ids: list[int] = []
-    if uz_genres:
+    is_anime_content = content_type == "anime" or "anime" in (details.get("title") or "").lower() or "anime" in (details.get("original_title") or "").lower()
+    if uz_genres or is_anime_content:
         try:
             stmt = select(CategoryModel.id, CategoryModel.name)
             res = await db.execute(stmt)
             for cat_id, cat_name in res.all():
+                if is_anime_content and cat_name in ("Animatsiya", "Multfilm"):
+                    continue
                 if cat_name in uz_genres:
+                    suggested_category_ids.append(cat_id)
+                if is_anime_content and cat_name.lower() == "anime" and cat_id not in suggested_category_ids:
                     suggested_category_ids.append(cat_id)
         except Exception as e:
             logger.warning(f"Kategoriyalarni qidirishda xatolik: {e}")
@@ -235,4 +239,34 @@ async def check_duplicates(
     return {
         "exact": exact_matches,
         "similar": similar_matches,
+    }
+
+@router.post("/translate")
+@limiter.limit("60/minute")
+async def translate_metadata(
+    request: Request,
+    payload: dict[str, Any] = Body(...),
+    admin: dict = Depends(get_current_admin),
+) -> dict[str, Any]:
+    """Translate movie/series title and description to natural Uzbek (Latin script)."""
+    title = (payload.get("title") or "").strip()
+    original_title = (payload.get("original_title") or "").strip()
+    description = (payload.get("description") or "").strip()
+
+    uz_title = title
+    if title:
+        trans_title, _ = await translator_service.translate_title_to_uzbek(title, original_title)
+        if trans_title:
+            uz_title = trans_title
+
+    uz_desc = description
+    if description:
+        trans_desc, _ = await translator_service.translate_to_uzbek(description)
+        if trans_desc:
+            uz_desc = trans_desc
+
+    return {
+        "title": uz_title,
+        "description": uz_desc,
+        "original_title": original_title,
     }

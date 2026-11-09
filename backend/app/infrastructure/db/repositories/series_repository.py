@@ -56,10 +56,16 @@ class SeriesRepository:
             stmt = stmt.filter(*filters)
 
         if search:
-            search_pattern = f"%{search.strip()}%"
+            clean_s = search.strip()
+            words_s = [w for w in re.split(r"[\s\-_:]+", clean_s) if w]
+            wildcard_s = f"%{'%'.join(words_s)}%" if words_s else f"%{clean_s}%"
+            search_pattern = f"%{clean_s}%"
+            title_conditions = [SeriesModel.title.ilike(search_pattern)]
+            if wildcard_s != search_pattern:
+                title_conditions.append(SeriesModel.title.ilike(wildcard_s))
             stmt = stmt.filter(
                 or_(
-                    SeriesModel.title.ilike(search_pattern),
+                    *title_conditions,
                     SeriesModel.description.ilike(search_pattern),
                     SeriesModel.custom_source_name.ilike(search_pattern),
                     SeriesModel.director.ilike(search_pattern),
@@ -88,11 +94,15 @@ class SeriesRepository:
     async def search_series(self, title_query: str, skip: int = 0, limit: int = 100, publish_status: str | None = None) -> Tuple[List[SeriesModel], int]:
         clean_q = str(title_query).strip()
         code_q = clean_q.lstrip("#").strip()
+        words = [w for w in re.split(r"[\s\-_:]+", clean_q) if w]
+        word_wildcard = f"%{'%'.join(words)}%" if words else f"%{clean_q}%"
         search_pattern = f"%{clean_q}%"
         
         conditions = [
             SeriesModel.title.ilike(search_pattern),
         ]
+        if word_wildcard != search_pattern:
+            conditions.append(SeriesModel.title.ilike(word_wildcard))
         if code_q != clean_q and code_q:
             conditions.append(SeriesModel.title.ilike(f"%{code_q}%"))
 
@@ -410,25 +420,32 @@ class SeriesRepository:
 
     async def get_episode_with_context_by_code(self, code: str, publish_status: str | None = None):
         """
-        Bitta SQL so'rovida episode + uning season + series + barcha episodlarini yuklaydi.
-        Bu get_episode_detail_by_code uchun N+1 muammosini bartaraf etadi.
+        Optimallashtirilgan metod: B-Tree indeksdan foydalanib qismni oladi
+        va kerakli season hamda series kontekstini yuklaydi.
         Returns: (episode, season, series) yoki (None, None, None)
         """
         clean_code = str(code).strip()
-        code_conds = [func.lower(EpisodeModel.code) == func.lower(clean_code)]
-        if clean_code.isdigit():
-            code_conds.append(EpisodeModel.id == int(clean_code))
-
-        # 1. Episode + translations: Birinchi navbatda unikal kod (code) yoki ID bo'yicha qidiramiz
-        stmt = (
+        
+        # 1. Tezkor yo'l: Unikal kod bo'yicha to'g'ridan-to'g'ri indeksli qidiruv
+        stmt_exact = (
             select(EpisodeModel)
             .options(selectinload(EpisodeModel.translations))
-            .where(or_(*code_conds))
+            .where(EpisodeModel.code == clean_code)
         )
-        result = await self.session.execute(stmt)
-        episode = result.scalars().first()
+        res_exact = await self.session.execute(stmt_exact)
+        episode = res_exact.scalars().first()
 
-        # Agar compound kod bo'lsa (masalan: s_1007_s1_ep1, s1007_1_1, s1007-ch2)
+        # 1b. Agar aniq kod bo'yicha topilmasa, ID bo'yicha
+        if not episode and clean_code.isdigit():
+            stmt_id = (
+                select(EpisodeModel)
+                .options(selectinload(EpisodeModel.translations))
+                .where(EpisodeModel.id == int(clean_code))
+            )
+            res_id = await self.session.execute(stmt_id)
+            episode = res_id.scalars().first()
+
+        # 1c. Compound kod bo'lsa (masalan: s_1007_s1_ep1, s1007_1_1, s1007-ch2)
         if not episode:
             compound_match = re.match(r"^s_?(\d+)[_\-]s?(\d+)[_\-](?:ch|e|ep|qism)?(\d+)$", clean_code, re.IGNORECASE)
             if compound_match:
@@ -449,7 +466,7 @@ class SeriesRepository:
                 res_comp = await self.session.execute(stmt_comp)
                 episode = res_comp.scalars().first()
 
-        # Agar unikal kod bo'yicha topilmasa, display_code bo'yicha qidiramiz
+        # 1d. display_code yoki case-insensitive qidiruv (fallback)
         if not episode:
             norm_code = clean_code.lower().replace("-", "").replace(" ", "").replace("_", "")
             db_norm = func.replace(func.replace(func.replace(func.lower(EpisodeModel.display_code), "-", ""), " ", ""), "_", "")
@@ -457,6 +474,7 @@ class SeriesRepository:
                 select(EpisodeModel)
                 .options(selectinload(EpisodeModel.translations))
                 .where(or_(
+                    func.lower(EpisodeModel.code) == func.lower(clean_code),
                     func.lower(EpisodeModel.display_code) == func.lower(clean_code),
                     db_norm == norm_code
                 ))
@@ -467,13 +485,9 @@ class SeriesRepository:
         if not episode:
             return None, None, None
 
-
-        # 2. Season + uning barcha episodes (navigatsiya uchun)
+        # 2. Season (qismning o'z fasli)
         season_stmt = (
             select(SeasonModel)
-            .options(
-                selectinload(SeasonModel.episodes).selectinload(EpisodeModel.translations)
-            )
             .where(SeasonModel.id == episode.season_id)
         )
         season_result = await self.session.execute(season_stmt)
@@ -481,15 +495,12 @@ class SeriesRepository:
         if not season:
             return episode, None, None
 
-        # 3. Series + barcha seasons va episodes (prev/next navigatsiya uchun)
+        # 3. Series + uning barcha seasonlari va qismlari (faqat id, code navigatsiya uchun, ortiqcha tarjimalarsiz!)
         series_stmt = (
             select(SeriesModel)
             .options(
                 selectinload(SeriesModel.seasons)
                 .selectinload(SeasonModel.episodes)
-                .selectinload(EpisodeModel.translations),
-                selectinload(SeriesModel.categories),
-                selectinload(SeriesModel.source)
             )
             .where(SeriesModel.id == season.series_id)
         )

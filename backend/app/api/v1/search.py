@@ -2,6 +2,7 @@
 API v1 — Search endpoints.
 Provides ultra-fast debounced live search for website autocomplete and Telegram bot.
 """
+import re
 from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
@@ -59,6 +60,10 @@ async def live_search(
         return cached
 
     results: list[LiveSearchResultItem] = []
+
+    # Punctuation and space tolerance (e.g. 'aka uka' matches 'Aka-uka', 'spider man' matches 'Spider-Man')
+    words = [w for w in re.split(r"[\s\-_:]+", clean_query) if w]
+    word_wildcard = f"%{'%'.join(words)}%" if words else f"%{clean_query}%"
 
     # 1. Check if user typed a movie code or ID (e.g., "#BYVC33", "BYVC33", "#190", "190", "s_993")
     code_query = clean_query.lstrip("#").strip()
@@ -121,10 +126,13 @@ async def live_search(
                 )
 
     # 2. Check collections / franchises
-    col_filter = or_(
+    col_conditions = [
         CollectionModel.name.ilike(f"%{clean_query}%"),
         CollectionModel.slug.ilike(f"%{clean_query}%"),
-    )
+    ]
+    if word_wildcard and word_wildcard != f"%{clean_query}%":
+        col_conditions.append(CollectionModel.name.ilike(word_wildcard))
+    col_filter = or_(*col_conditions)
     col_query = (
         select(CollectionModel)
         .where(
@@ -155,6 +163,9 @@ async def live_search(
         MovieModel.title.ilike(f"%{clean_query}%"),
         MovieModel.original_title.ilike(f"%{clean_query}%"),
     ]
+    if word_wildcard and word_wildcard != f"%{clean_query}%":
+        movie_conditions.append(MovieModel.title.ilike(word_wildcard))
+        movie_conditions.append(MovieModel.original_title.ilike(word_wildcard))
     is_potential_code = (
         " " not in code_query
         and len(code_query) <= 8
@@ -200,6 +211,8 @@ async def live_search(
     series_conditions = [
         SeriesModel.title.ilike(f"%{clean_query}%"),
     ]
+    if word_wildcard and word_wildcard != f"%{clean_query}%":
+        series_conditions.append(SeriesModel.title.ilike(word_wildcard))
     if code_query and code_query != clean_query:
         series_conditions.append(SeriesModel.title.ilike(f"%{code_query}%"))
     if series_id_target:
