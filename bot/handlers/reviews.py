@@ -1,5 +1,6 @@
 import html
 from aiogram import Router, F, Bot
+from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -313,9 +314,24 @@ async def handle_ask_comment(callback: CallbackQuery, state: FSMContext):
         except Exception:
             pass
 
+@router.message(Command("cancel"))
+async def cancel_command_handler(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is not None:
+        await state.clear()
+        await message.reply("Jarayon bekor qilindi. ❌")
+    else:
+        await message.reply("Bekor qilinadigan faol jarayon yo'q.")
+
+
 @router.message(ReviewStates.waiting_for_comment, F.text)
 async def handle_review_comment(message: Message, state: FSMContext):
     comment_text = message.text.strip()
+
+    if comment_text.casefold() in ("/cancel", "cancel", "bekor qilish"):
+        await state.clear()
+        await message.reply("Sharh qoldirish jarayoni bekor qilindi. ❌")
+        return
 
     if not comment_text or len(comment_text) < 2:
         await message.reply("Iltimos, sharhingizni matn ko'rinishida yozing yoki 'Bekor qilish' tugmasini bosing.")
