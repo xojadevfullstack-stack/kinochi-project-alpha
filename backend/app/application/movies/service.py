@@ -1,169 +1,172 @@
-"""
-Movie application service.
-"""
-from typing import Sequence
-import shortuuid
-
-from app.domain.movies.entities import Movie
-from app.domain.movies.repository import IMovieRepository
-
-
-class MovieService:
-    def __init__(self, movie_repo: IMovieRepository):
-        self.movie_repo = movie_repo
-
-    async def _generate_unique_code(self) -> str:
-        # Generates a short unique code (6 chars, unambiguous alphabet)
-        alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
-        
-        while True:
-            code = shortuuid.ShortUUID(alphabet=alphabet).random(length=6)
-            existing = await self.movie_repo.get_by_code(code)
-            if not existing:
-                return code
-
-    async def create_movie(
-        self,
-        title: str,
-        code: str | None = None,
-        original_title: str | None = None,
-        description: str | None = None,
-        imdb_rating: float | None = None,
-        tmdb_rating: float | None = None,
-        genres: str | None = None,
-        cast: str | None = None,
-        director: str | None = None,
-        release_year: int | None = None,
-        runtime: int | None = None,
-        poster_url: str | None = None,
-        trailer_url: str | None = None,
-        tmdb_id: int | None = None,
-        category_ids: list[int] | None = None,
-        page_ids: list[int] | None = None,
-        source_chat_id: int | None = None,
-        source_topic_id: int | None = None,
-        is_18_plus: bool = False,
-        source_type: str | None = "uzmovi",
-        custom_source_name: str | None = None,
-        custom_source_logo: str | None = None,
-        publish_status: str | None = None,
-        **kwargs
-    ) -> Movie:
-        if code is None:
-            code = await self._generate_unique_code()
-            
-        movie = Movie(
-            title=title,
-            code=code,
-            original_title=original_title,
-            description=description,
-            imdb_rating=imdb_rating,
-            tmdb_rating=tmdb_rating,
-            tmdb_id=tmdb_id,
-            genres=genres,
-            cast=cast,
-            director=director,
-            release_year=release_year,
-            runtime=runtime,
-            poster_url=poster_url,
-            trailer_url=trailer_url,
-            source_chat_id=source_chat_id,
-            source_topic_id=source_topic_id,
-            is_18_plus=is_18_plus,
-            source_type=source_type or "uzmovi",
-            custom_source_name=custom_source_name,
-            custom_source_logo=custom_source_logo,
-            publish_status=publish_status or "pending",
-        )
-        return await self.movie_repo.create(movie, category_ids=category_ids, page_ids=page_ids)
-
-    async def get_movie(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
-        if publish_status is not None:
-            return await self.movie_repo.get_by_id(movie_id, publish_status=publish_status)
-        return await self.movie_repo.get_by_id(movie_id)
-
-    async def get_movie_by_id(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
-        if publish_status is not None:
-            return await self.movie_repo.get_by_id(movie_id, publish_status=publish_status)
-        return await self.movie_repo.get_by_id(movie_id)
-
-    async def get_movie_by_code(self, code: str, publish_status: str | None = None) -> Movie | None:
-        if publish_status is not None:
-            return await self.movie_repo.get_by_code(code, publish_status=publish_status)
-        return await self.movie_repo.get_by_code(code)
-
-    async def get_movie_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
-        return await self.movie_repo.get_by_source(chat_id, topic_id)
-
-    async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
-        if publish_status is not None:
-            return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit, publish_status=publish_status)
-        return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
-
-    async def list_movies(
-        self,
-        skip: int = 0,
-        limit: int = 20,
-        category_id: int | None = None,
-        page_id: int | None = None,
-        exclude_paged: bool = False,
-        publish_status: str | None = None,
-        **kwargs
-    ) -> tuple[Sequence[Movie], int]:
-        call_kwargs = {
-            "skip": skip,
-            "limit": limit,
-            "category_id": category_id,
-            "page_id": page_id,
-            "exclude_paged": exclude_paged,
-            "publish_status": publish_status
-        }
-        for k in ("genre", "year", "search"):
-            if k in kwargs and kwargs[k] is not None:
-                call_kwargs[k] = kwargs[k]
-        return await self.movie_repo.list_movies(**call_kwargs)
-
-    async def update_movie(
-        self,
-        movie_id: int,
-        **kwargs
-    ) -> Movie | None:
-        movie = await self.movie_repo.get_by_id(movie_id)
-        if not movie:
-            return None
-            
-        # Extract explicit relationship fields
-        category_ids = kwargs.pop("category_ids", None)
-        page_ids = kwargs.pop("page_ids", None)
-            
-        # Update scalar fields
-        for key, value in kwargs.items():
-            if hasattr(movie, key):
-                setattr(movie, key, value)
-
-        return await self.movie_repo.update(movie, category_ids=category_ids, page_ids=page_ids)
-
-    async def delete_movie(self, movie_id: int) -> bool:
-        return await self.movie_repo.delete(movie_id)
-
-    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "O'zbekcha", source_url: str | None = None, telegram_file_id: str | None = None, allow_replace: bool = False) -> Movie | None:
-        movie = await self.movie_repo.get_by_id(movie_id)
-        if not movie:
-            return None
-            
-        if telegram_file_id:
-            file_id = telegram_file_id
-        else:
-            # Get file_id from telegram message
-            from app.infrastructure.telegram.telegram_client import telegram_client
-            file_id = await telegram_client.get_video_file_id_from_message(message_id, source_url=source_url)
-        
-        if allow_replace:
-            return await self.movie_repo.add_translation(movie_id, language, file_id, message_id, allow_replace=True)
-        return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
-
-    async def add_movie_translation(self, movie_id: int, language: str, file_id: str, message_id: int) -> Movie | None:
-        return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
-        
-    async def delete_movie_translation(self, translation_id: int) -> bool:
-        return await self.movie_repo.delete_translation(translation_id)
+"""
+Movie application service.
+"""
+from typing import Sequence
+import shortuuid
+
+from app.domain.movies.entities import Movie
+from app.domain.movies.repository import IMovieRepository
+
+
+class MovieService:
+    def __init__(self, movie_repo: IMovieRepository):
+        self.movie_repo = movie_repo
+
+    async def _generate_unique_code(self) -> str:
+        # Generates a short unique code (6 chars, unambiguous alphabet)
+        alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+        
+        while True:
+            code = shortuuid.ShortUUID(alphabet=alphabet).random(length=6)
+            existing = await self.movie_repo.get_by_code(code)
+            if not existing:
+                return code
+
+    async def create_movie(
+        self,
+        title: str,
+        code: str | None = None,
+        original_title: str | None = None,
+        description: str | None = None,
+        imdb_rating: float | None = None,
+        tmdb_rating: float | None = None,
+        genres: str | None = None,
+        cast: str | None = None,
+        director: str | None = None,
+        release_year: int | None = None,
+        runtime: int | None = None,
+        poster_url: str | None = None,
+        trailer_url: str | None = None,
+        tmdb_id: int | None = None,
+        category_ids: list[int] | None = None,
+        page_ids: list[int] | None = None,
+        source_chat_id: int | None = None,
+        source_topic_id: int | None = None,
+        is_18_plus: bool = False,
+        source_type: str | None = "uzmovi",
+        custom_source_name: str | None = None,
+        custom_source_logo: str | None = None,
+        publish_status: str | None = None,
+        **kwargs
+    ) -> Movie:
+        if code is None:
+            code = await self._generate_unique_code()
+            
+        movie = Movie(
+            title=title,
+            code=code,
+            original_title=original_title,
+            description=description,
+            imdb_rating=imdb_rating,
+            tmdb_rating=tmdb_rating,
+            tmdb_id=tmdb_id,
+            genres=genres,
+            cast=cast,
+            director=director,
+            release_year=release_year,
+            runtime=runtime,
+            poster_url=poster_url,
+            trailer_url=trailer_url,
+            source_chat_id=source_chat_id,
+            source_topic_id=source_topic_id,
+            is_18_plus=is_18_plus,
+            source_type=source_type or "uzmovi",
+            custom_source_name=custom_source_name,
+            custom_source_logo=custom_source_logo,
+            publish_status=publish_status or "pending",
+        )
+        return await self.movie_repo.create(movie, category_ids=category_ids, page_ids=page_ids)
+
+    async def get_movie(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
+        if publish_status is not None:
+            return await self.movie_repo.get_by_id(movie_id, publish_status=publish_status)
+        return await self.movie_repo.get_by_id(movie_id)
+
+    async def get_movie_by_id(self, movie_id: int, publish_status: str | None = None) -> Movie | None:
+        if publish_status is not None:
+            return await self.movie_repo.get_by_id(movie_id, publish_status=publish_status)
+        return await self.movie_repo.get_by_id(movie_id)
+
+    async def get_movie_by_code(self, code: str, publish_status: str | None = None) -> Movie | None:
+        if publish_status is not None:
+            return await self.movie_repo.get_by_code(code, publish_status=publish_status)
+        return await self.movie_repo.get_by_code(code)
+
+    async def get_movie_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:
+        return await self.movie_repo.get_by_source(chat_id, topic_id)
+
+    async def search_movies(self, title_query: str, skip: int = 0, limit: int = 20, publish_status: str | None = None) -> tuple[Sequence[Movie], int]:
+        if publish_status is not None:
+            return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit, publish_status=publish_status)
+        return await self.movie_repo.search_by_title(title_query, skip=skip, limit=limit)
+
+    async def list_movies(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        category_id: int | None = None,
+        page_id: int | None = None,
+        exclude_paged: bool = False,
+        publish_status: str | None = None,
+        **kwargs
+    ) -> tuple[Sequence[Movie], int]:
+        call_kwargs = {
+            "skip": skip,
+            "limit": limit,
+            "category_id": category_id,
+            "page_id": page_id,
+            "exclude_paged": exclude_paged,
+            "publish_status": publish_status
+        }
+        for k in ("genre", "year", "search", "sort"):
+            if k in kwargs and kwargs[k] is not None:
+                call_kwargs[k] = kwargs[k]
+        return await self.movie_repo.list_movies(**call_kwargs)
+
+    async def update_movie(
+        self,
+        movie_id: int,
+        **kwargs
+    ) -> Movie | None:
+        movie = await self.movie_repo.get_by_id(movie_id)
+        if not movie:
+            return None
+            
+        # Extract explicit relationship fields
+        category_ids = kwargs.pop("category_ids", None)
+        page_ids = kwargs.pop("page_ids", None)
+            
+        # Update scalar fields
+        for key, value in kwargs.items():
+            if hasattr(movie, key):
+                setattr(movie, key, value)
+
+        return await self.movie_repo.update(movie, category_ids=category_ids, page_ids=page_ids)
+
+    async def delete_movie(self, movie_id: int) -> bool:
+        return await self.movie_repo.delete(movie_id)
+
+    async def link_movie_video_from_message(self, movie_id: int, message_id: int, language: str = "O'zbekcha", source_url: str | None = None, telegram_file_id: str | None = None, allow_replace: bool = False) -> Movie | None:
+        movie = await self.movie_repo.get_by_id(movie_id)
+        if not movie:
+            return None
+            
+        if telegram_file_id:
+            file_id = telegram_file_id
+        else:
+            # Get file_id from telegram message
+            from app.infrastructure.telegram.telegram_client import telegram_client
+            file_id = await telegram_client.get_video_file_id_from_message(message_id, source_url=source_url)
+        
+        if allow_replace:
+            return await self.movie_repo.add_translation(movie_id, language, file_id, message_id, allow_replace=True)
+        return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
+
+    async def add_movie_translation(self, movie_id: int, language: str, file_id: str, message_id: int) -> Movie | None:
+        return await self.movie_repo.add_translation(movie_id, language, file_id, message_id)
+        
+    async def update_movie_translation(self, translation_id: int, language: str) -> bool:
+        return await self.movie_repo.update_translation(translation_id, language)
+
+    async def delete_movie_translation(self, translation_id: int) -> bool:
+        return await self.movie_repo.delete_translation(translation_id)
