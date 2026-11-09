@@ -47,6 +47,16 @@
 - Overly verbose headings on mobile screens cause awkward line breaks that push actual media content below the fold. Shortening titles and ensuring touch targets are at least 44x44px preserves screen real estate and makes navigation effortless on touchscreens.
 - Analogy: Highway road signs that use concise, punchy text ("Aeroport 2 km") instead of lengthy paragraphs, allowing drivers to read instantly without slowing down.
 
+## Fast-Fail Flood Wait & Rate-Limit Circuit Breaking
+- When interacting with Telegram or third-party scraper bots, hitting 429 Flood Wait must trigger immediate circuit-breaking backoff rather than hammering the API with retries, which leads to exponential bans.
+- Analogy: Pulling over at a rest stop during a blinding snowstorm until roads are cleared, rather than driving blindly into an icy wall.
+
+## Telegram Inline Callback Message In-Place Edits vs New Messages
+- Many Telegram bots edit the current message in-place with new media and buttons instead of sending a new message when inline callback buttons are clicked. Polling exclusively for `id > current_id` misses edited messages, causing artificial timeouts and skipped episodes.
+- Analogy: Looking for a mailman to bring a brand-new notebook when a teacher simply updated the existing chalkboard right in front of you.
+- Imposing a strict maximum delay ceiling (120s) on external bot rate-limits prevents automated scrapers from freezing in multi-hour sleeps when remote APIs mandate lengthy bans.
+- Analogy: A delivery driver encountering a closed mountain pass with a sign "Closed for 2 hours" who immediately turns around to take another road instead of idling the engine for 2 hours in the snow.
+
 ## 3-Column Mobile Catalog Density (Visual Throughput)
 - Moving from 2 columns to 3 columns on mobile screens increases content density by 50%, enabling users to scan 6 to 9 movie options per screen fold without excessive finger scrolling.
 - Analogy: A supermarket shelf displaying 3 neatly organized products across each rack rather than 2 oversized boxes, making browsing faster and choices clearer.
@@ -179,3 +189,61 @@
 ## Dynamic Cross-Origin Adaptation & Environment Normalization
 - When administrative dashboards run across both local ports and remote cloud hosting (e.g. Vercel preview environments), relying on hardcoded localhost addresses or strict origin lists breaks authentication. Auto-detecting client origin context and matching against wildcard regexes ensures reliable API connectivity without exposing security holes.
 - Analogy: A security gate pass with an encrypted company QR code that works whether entering through the downtown main headquarters turnstile or a remote regional office, rather than only recognizing one specific front door.
+
+## Dual-Source Query Aggregation & Type Preservation
+- Combining CMS collection routes and search endpoints concurrently while preserving originating media types ensures hidden catalog niches are completely discovered without being misclassified as generic movies.
+- Analogy: A library clerk who checks both the specialized manga shelf and the general catalog search box, properly tagging every found book as manga even if the cover only says 'Volume 1'.
+
+
+## Canonical Entity Separation vs Dynamic Subpage Pollution
+- Primary entity models (Movies, Series) must not be tagged with arbitrary dynamic subpage IDs that duplicate primary navigation headers.
+- Analogy: A library having a main hall shelf for "Books", but also putting a solitary novel inside a separate locked glass case labeled "Books", confusing readers looking for the collection.
+
+## FastAPI Async Handler Integrity & Threadpool Event Loop Containment
+- FastAPI synchronous (`def`) route handlers are dispatched into a background threadpool, creating detached secondary event loops when invoking coroutines. If these coroutines acquire database connections from an asyncpg connection pool created on the main loop, an immediate `got Future attached to a different loop` failure occurs. Route handlers accessing async database state must remain native `async def` functions.
+- Analogy: Attempting to steer a train by turning the steering wheel of a car strapped to a flatbed railcar; the driver's wheel movements are completely disconnected from the rail switches below.
+
+## Fuzzy Punctuation Tolerance (Tinish belgilariga moslashuvchan qidiruv)
+- Tokenizes query keywords across spaces and hyphens into wildcard patterns so queries match punctuated database titles regardless of user typing habits.
+- Analogy: A library assistant who hands you the book 'Aka-uka Grimm' immediately, even if you wrote 'aka uka grimm' on the paper slip without a hyphen.
+
+## Explicit Exception Propagation & Flow Control Preservation
+- Re-raising specific circuit-breaker exceptions (except BotFloodWaitError: raise) before generic except Exception blocks prevents background workers from swallowing critical abort signals and needlessly repeating failing operations.
+- Analogy: An emergency brake handle on a train that immediately halts the whole engine rather than being treated as a routine passenger button that only rings a quiet bell while the train keeps rolling towards a collapsed bridge.
+
+
+## Cross-Loop Connection Isolation (Event looplararo ulanish izolyatsiyasi)
+- Using NullPool session factories for thread-spawned workers and enforcing native async calls in asynchronous contexts prevents pooled asyncpg connections from crossing event loop boundaries.
+- Analogy: Har bir ishchiga shaxsiy alohida asboblar qutisi berish; agar hamma bir vaqtda boshqa ustaxonaning qulfli asbobini olishga urinsa, butun jarayon to'xtab qoladi.
+
+
+## Content Domain Checkpoint Segmentation (Kategoriya bo'yicha mustaqil checkpointlar)
+- Scraper offsets and total page horizons must be partitioned by media type so scraping deep general catalogs does not skip shallow specialty categories.
+- Analogy: Kutubxonadagi 400 javonli "Badiiy adabiyotlar" qatorida 6-javonga yetib kelgach, 3 javonli "Anime" qatoriga o'tganda to'g'ridan-to'g'ri 6-javonni qidirmasdan, 1-javondan boshlash kerak.
+
+
+## Loop-Bound NullPool Engine Isolation
+- In asynchronous Python, database connections and underlying engine protocol loops are strictly tied to the event loop on which they are created. Binding a NullPool sessionmaker per unique event loop guarantees that secondary worker threads or test runners never cross-contaminate or attempt to use connections on closed event loops.
+- Analogy: Har bir poyezd yo'lovchisiga umumiy foydalaniladigan chiptani qo'lma-qo'l o'tkazish o'rniga, har bir yangi reys uchun alohida, qaytarib olinmaydigan bir martalik yangi chipta berish.
+
+## In-Memory TTL Cache Gate & Thin-Client Authorization
+- Caching user ban status and security states in local memory for short intervals (60s) prevents overwhelming the database on every micro-interaction while enforcing real-time administrative sanctions.
+- Analogy: An event security guard who stamps attendees' hands for fast re-entry during the evening rather than scanning their government passport at every restroom door.
+
+## Database Index Preservation with Exact Match vs Expression Wrapping
+- Wrapping indexed columns in SQL functions (e.g. `func.lower(code)`) disables standard B-Tree index scans and forces expensive sequential table scans; keeping exact indexed lookups preserves instant O(log N) lookups.
+- Analogy: Lug'at kitobidagi so'zlarni alifbo tartibida o'z holicha varaqlab topish o'rniga, har bir sahifadagi har bir so'zni kichik harfga o'girib, butun kitobni boshidan oxirigacha o'qib chiqish.
+
+
+
+## Canonical Mapping for Multilingual Media Ingestion
+- Mapping scraped foreign or mistranslated titles against a canonical verified dictionary ensures consistent database records and prevents fuzzy match pollution.
+- Analogy: Pasport nazorati: yo'lovchi o'zini xalq orasida qanday atashidan qat'i nazar, uning shaxsi rasmiy pasport ma'lumotlar bazasi bo'yicha qat'iy belgilanishi.
+
+## Multilingual Video Fallback in Metadata Harvesting
+- Restricting video/trailer metadata queries to a single localized locale (e.g. `ru-RU`) misses trailers for content originally released in Japanese or English; passing `include_video_language: "en,ru,ja,null"` guarantees full video capture.
+- Analogy: Xalqaro kutubxonada faqat rus tilidagi risolalarni so'rab, yaponcha kitoblar bo'limidagi asl rasmiy afishalar va treylerlarni ko'rmay o'tib ketish.
+
+## Asynchronous Callback Query ACK vs Slow I/O (Telegram Callback Answering)
+- Calling `callback.answer()` immediately before executing high-latency network or DB queries prevents Telegram 30-second callback expiration ("query is too old") and avoids client-side button spinner freezes.
+- Analogy: Restoranda ofitsiant mijoz buyurtmasini olgach darhol "Qabul qilindi" deb chek berishi; aks holda mijoz ovqat pishguncha 25 daqiqa hech kim eshitmadi deb tugmani qayta-qayta bosaverishi.

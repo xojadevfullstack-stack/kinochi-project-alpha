@@ -35,6 +35,8 @@ Thumbs.db
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+website/test-results/
+test-results/
 
 # ── Node (website / admin panel — future phases) ─────────────────
 node_modules/
@@ -56,7 +58,9 @@ backend/unknown_errors.txt
 unknown_errors.txt
 
 # Ad-hoc test and scratch scripts
+scratch/
 scratch_*.py
+bot/.bot.pid
 test_*.js
 test_*.ts
 /test_*.py
