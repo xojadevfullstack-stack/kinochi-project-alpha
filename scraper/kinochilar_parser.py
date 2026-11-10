@@ -1,3 +1,4 @@
+import asyncio
 """
 Kinochilar (kinochilar.com / @kinochilar_fast_bot) parser for Kinochi Project.
 Parses movie/series cards, handles deep-links, ratings, posters, and quality indicators.
@@ -216,7 +217,19 @@ async def parse_kinochilar_page_async(session: aiohttp.ClientSession, page_url: 
         async with session.get(page_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=12)) as resp:
             if resp.status == 200:
                 html = await resp.text(errors="ignore")
-                return _extract_kinochilar_items_from_html(html, min_rating=min_rating)
+                items = _extract_kinochilar_items_from_html(html, min_rating=min_rating)
+                if items:
+                    tasks = [
+                        fetch_kinochilar_start_hash_async(session, it.url) if it.url else asyncio.sleep(0, result=None)
+                        for it in items
+                    ]
+                    hashes = await asyncio.gather(*tasks, return_exceptions=True)
+                    for it, h in zip(items, hashes):
+                        if isinstance(h, str) and h:
+                            pl = it.payload or {}
+                            pl["start_hash"] = h
+                            it.payload = pl
+                return items
             else:
                 logger.warning(f"Kinochilar HTTP {resp.status} for {page_url}")
     except Exception as e:

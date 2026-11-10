@@ -4247,7 +4247,7 @@ class TelethonModeratorPipeline:
                 item.reason = "missing_start_hash"
                 item.error_message = "missing_start_hash"
                 QueueManager().update_status(item.id, "needs_review", error_message="missing_start_hash")
-            return None, None, None
+            return None
 
         msg_to_send = f"/start {start_hash}"
 
@@ -4274,7 +4274,7 @@ class TelethonModeratorPipeline:
             if m.buttons and extract_quality_ladder(m.buttons):
                 card_msg = m
                 break
-            elif m.file and m.file.name and m.file.name.endswith(('.mp4', '.mkv', '.avi')):
+            elif is_video_message(m):
                 self._last_chosen_quality = "720p"
                 return m
 
@@ -4283,6 +4283,9 @@ class TelethonModeratorPipeline:
                 if nm.id > sent.id and nm.buttons and extract_quality_ladder(nm.buttons):
                     card_msg = nm
                     break
+                elif nm.id > sent.id and is_video_message(nm):
+                    self._last_chosen_quality = "720p"
+                    return nm
 
         if not card_msg:
             logger.warning(f"[@{bot}] Sifat tugmalari topilmadi: '{msg_to_send}'")

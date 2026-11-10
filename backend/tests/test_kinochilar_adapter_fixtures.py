@@ -1,3 +1,4 @@
+import pytest
 """
 TDD Tests for Kinochilar Adapter Fixtures:
 1. Valid item extraction from HTML
@@ -149,3 +150,28 @@ def test_kinochilar_source_down_graceful_handling():
     with patch("urllib.request.urlopen", side_effect=Exception("503 Service Unavailable")):
         items = parse_kinochilar_page("https://kinochilar.com/page/9999/")
         assert items == []
+
+
+@pytest.mark.asyncio
+async def test_kinochilar_missing_hash_returns_none_not_tuple():
+    from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline
+    from scraper.queue_manager import QueueItem
+    pipeline = TelethonModeratorPipeline.__new__(TelethonModeratorPipeline)
+    item = QueueItem(
+        id="kinochilar_16577",
+        source="kinochilar",
+        source_id="16577",
+        title="Sevgi uchburchagi",
+        original_title=None,
+        year=2024,
+        media_type="movie",
+        url="https://kinochilar.com/tarjima-kinolar/16577-sevgi-uchburchagi.html",
+        payload=None
+    )
+    with patch("scraper.kinochilar_parser.fetch_kinochilar_start_hash", return_value=None):
+        with patch("scraper.queue_manager.QueueManager.update_status") as mock_st:
+            res = await pipeline._fetch_kinochilar_video(item=item, query="16577")
+            assert res is None
+            assert not isinstance(res, tuple)
+            assert item.status == "needs_review"
+            assert item.error_message == "missing_start_hash"
