@@ -265,3 +265,8 @@
 ## Service-to-Service Secret Authentication & Non-Blocking Background Polling
 - Passing pre-shared secrets (`X-Bot-Secret`) allows trusted microservices to generate user access tokens directly, while decoupling background polling loaders prevents UI table deadlocks.
 - Analogy: A VIP back-alley keycard that lets authorized staff bypass the public nightclub queue without making the dance floor pause music every 4 seconds.
+
+
+## Missing Episode Consecutive Circuit Breaker & Inline Markup Re-fetching
+- When ingesting episodic content across dynamic bot pagination, looping without an early-exit threshold when episodes are absent wastes requests and triggers flood waits; re-fetching messages by ID captures in-place markup edits.
+- Analogy: A librarian flipping pages in a catalog looking for chapter 20: if chapters 20 and 21 are missing from the book, stopping immediately instead of searching blank pages all the way to chapter 170.

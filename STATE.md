@@ -1,26 +1,33 @@
 # Project State (STATE.md)
 
 ## Current goal
-Telegram bot orqali sayt profiliga 1-click kirish autentifikatsiyasini yo'lga qo'yish va Admin panel scraper navbat jadvalidagi cheksiz "Yuklanmoqda..." yuklagich blokirovkasini to'liq bartaraf etish.
+AniToob cheksiz pagination loopini to'xtatish (circuit-breaker), Qora klever kanonik nomini mashina tarjimasi va sun'iy intellekt tomonidan buzilishidan himoyalash hamda A Silent Voice (Ovoz shakli) animesini TMDb ID 378064 (2016) bilan to'g'ri bog'lash.
 
 ## In progress (slice, branch)
-- Slice: C15 (Bot One-Click Login Token & Scraper Queue Infinite Loading Fix).
+- Slice: C16 (AniToob Pagination Circuit-Breaker, Black Clover Canonical Title & A Silent Voice TMDb Matching).
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, bot login va admin panel navbat jadvali to'liq ishlaydi).
+- None (Barcha testlar 100% yashil, AniToob loopi tuzatildi, Movie #849 bazada 100% yangilandi).
 
 ## Next step (one task)
-- O'zgarishlarni commit va push qilish (`git commit -m "fix(auth,scraper): add secure bot-login endpoint and resolve queue table loader race condition"`).
+- O'zgarishlarni commit va push qilish (`git commit -m "fix(scraper,enricher): resolve anitoob episode loop, Black Clover title and A Silent Voice TMDb match"`).
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Pytest Gate:** 11 passed in 1.46s (`test_telegram_auth.py` va `test_scraper_queue_endpoint.py`).
-- **Live Backend Verification:** `api_client.generate_login_token` returned status 200 with valid JWT access_token.
-- **TypeScript Gate (Admin Panel):** Zero errors (`tsc --noEmit`: code 0).
-- **Git Diff:** 4 files, 132 insertions, 15 deletions (147 lines <= 200 lines atomic slice).
+- **Pytest Gate:** 4 passed in 1.00s (`backend/tests/test_anime_catalog_titles_and_kaiju.py`).
+- **Auth & Queue Gate:** 11 passed in 1.65s (`test_telegram_auth.py` va `test_scraper_queue_endpoint.py`).
+- **PostgreSQL Movie #849 Live Verification:**
+  - `Title`: 'A Silent Voice (Ovoz shakli)'
+  - `TMDb ID`: 378064 (eski 1171702 o'rniga)
+  - `Release Year`: 2016
+  - `Director`: 'Naoko Yamada'
+  - `Rating`: 8.4
+  - `Poster`: 'https://image.tmdb.org/t/p/w500/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg'
+- **Series #1036 Live Verification:** `Title`: 'Qora klever', `Status`: 'published'.
+- **Git Diff:** 3 files, 88 insertions, 6 deletions (94 lines <= 200 lines atomic slice).
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)

@@ -3235,6 +3235,7 @@ class TelethonModeratorPipeline:
         total_ep_count = ep_count
         downloaded_in_session = len(existing_episodes_set)
         current_ep = 1
+        consecutive_missing = 0
 
         latest_btn_msg = current_video_msg
 
@@ -3246,6 +3247,7 @@ class TelethonModeratorPipeline:
             if current_ep in existing_episodes_set:
                 logger.info(f"⏩ {current_ep}-qism bazada allaqachon mavjud, o'tkazib yuborildi.")
                 current_ep += 1
+                consecutive_missing = 0
                 continue
 
             print(f"  🎬 [ANITOOB] {current_ep}-qism yuklanmoqda...", flush=True)
@@ -3263,7 +3265,15 @@ class TelethonModeratorPipeline:
                     for r_idx, row in enumerate(latest_btn_msg.buttons):
                         for c_idx, btn in enumerate(row):
                             b_txt = btn.text.strip()
-                            if b_txt == str(current_ep) or b_txt == f"[💽] - {current_ep}" or b_txt == f"[{current_ep}] - 💽":
+                            matched_ep = False
+                            if b_txt == str(current_ep) or b_txt == f"{current_ep}-qism" or b_txt == f"[💽] - {current_ep}" or b_txt == f"[{current_ep}] - 💽":
+                                matched_ep = True
+                            elif re.match(rf'^(\[|\()?\s*{current_ep}\s*(\]|\))?(\s*-\s*qism|\s*qism|\s*💽)?$', b_txt, re.IGNORECASE):
+                                matched_ep = True
+                            elif btn.data and (btn.data == f"ep_{current_ep}".encode() or btn.data == f"ep:{current_ep}".encode() or btn.data == f"episode_{current_ep}".encode()):
+                                matched_ep = True
+
+                            if matched_ep:
                                 target_btn_coords = (r_idx, c_idx)
                                 break
                         if target_btn_coords:
@@ -3284,8 +3294,18 @@ class TelethonModeratorPipeline:
 
                     if next_page_btn:
                         logger.info(f"[{current_ep}-qism] Keyingi qismlar sahifasiga o'tilmoqda (➡️)...")
-                        await self.safe_click(latest_btn_msg, next_page_btn[0], next_page_btn[1])
+                        old_buttons_repr = [[b.text for b in row] for row in (latest_btn_msg.buttons or [])]
+                        click_res = await self.safe_click(latest_btn_msg, next_page_btn[0], next_page_btn[1])
+                        if click_res == -1:
+                            logger.warning("⚠️ Flood wait tufayli sahifa almashtirish to'xtatildi.")
+                            break
                         await asyncio.sleep(1.8)
+                        try:
+                            updated_msg = await self.client.get_messages(target_bot, ids=latest_btn_msg.id)
+                            if updated_msg and updated_msg.buttons:
+                                latest_btn_msg = updated_msg
+                        except Exception:
+                            pass
                         recent_after = await self.client.get_messages(target_bot, limit=2)
                         for ram in recent_after:
                             if ram.buttons:
@@ -3293,11 +3313,19 @@ class TelethonModeratorPipeline:
                                 if is_video_message(ram) and f"{current_ep}-qism" in (ram.text or ""):
                                     v_msg = ram
                                 break
+                        new_buttons_repr = [[b.text for b in row] for row in (latest_btn_msg.buttons or [])]
+                        if old_buttons_repr == new_buttons_repr:
+                            logger.info(f"Sahifa o'zgarmadi (oxirgi sahifa), qidiruv to'xtatildi.")
+                            break
                     else:
                         break
 
                 if not target_btn_coords and not v_msg:
-                    logger.warning(f"⚠️ {current_ep}-qism tugmasi botda topilmadi.")
+                    consecutive_missing += 1
+                    logger.warning(f"⚠️ {current_ep}-qism tugmasi botda topilmadi (ketma-ket {consecutive_missing}-marta).")
+                    if consecutive_missing >= 2:
+                        logger.info(f"🏁 Botda ketma-ket {consecutive_missing} ta qism topilmadi. Mavjud qismlar ({downloaded_in_session} ta) to'liq yuklandi deb hisoblanadi.")
+                        break
                     current_ep += 1
                     continue
 
@@ -3325,7 +3353,11 @@ class TelethonModeratorPipeline:
                                 break
 
             if not v_msg or not is_video_message(v_msg):
-                logger.warning(f"❌ {current_ep}-qism videosi olinmadi, keyingisiga o'tilmoqda.")
+                consecutive_missing += 1
+                logger.warning(f"❌ {current_ep}-qism videosi olinmadi (ketma-ket {consecutive_missing}-marta), keyingisiga o'tilmoqda.")
+                if consecutive_missing >= 2:
+                    logger.info(f"🏁 Botda ketma-ket {consecutive_missing} ta qism olinmadi. Mavjud qismlar ({downloaded_in_session} ta) to'liq yuklandi deb hisoblanadi.")
+                    break
                 current_ep += 1
                 continue
 
@@ -3463,6 +3495,7 @@ class TelethonModeratorPipeline:
             downloaded_in_session += 1
             existing_episodes_set.add(current_ep)
             item.downloaded_episodes = downloaded_in_session
+            consecutive_missing = 0
             print(f"  ✅ [ANITOOB] {current_ep}-qism saqlandi!", flush=True)
 
             # Topic ichiga tasdiqlash xabari

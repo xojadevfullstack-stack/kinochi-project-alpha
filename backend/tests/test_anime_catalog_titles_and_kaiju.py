@@ -58,6 +58,30 @@ def test_anime_title_map_canonical_entries():
     assert solo["uz"] == "Yakkaxon daraja oshirish (Solo Leveling)"
     assert solo["tmdb_id"] == 127532
 
+    # 7. Black Clover (Qora klever)
+    clover = ANIME_TITLE_MAP.get("qora klever")
+    assert clover is not None
+    assert clover.get("uz") == "Qora klever"
+    assert clover.get("tmdb_id") == 73223
+    assert clover.get("type") == "tv"
+
+    clover_en = ANIME_TITLE_MAP.get("black clover")
+    assert clover_en is not None
+    assert clover_en.get("uz") == "Qora klever"
+    assert clover_en.get("tmdb_id") == 73223
+
+    # 8. A Silent Voice (Ovoz shakli / Koe no Katachi)
+    silent = ANIME_TITLE_MAP.get("a silent voice")
+    assert silent is not None
+    assert silent.get("tmdb_id") == 378064
+    assert silent.get("type") == "movie"
+    assert silent.get("uz") == "A Silent Voice (Ovoz shakli)"
+
+    silent_uz = ANIME_TITLE_MAP.get("ovoz shakli")
+    assert silent_uz is not None
+    assert silent_uz.get("tmdb_id") == 378064
+    assert silent_uz.get("type") == "movie"
+
 
 @pytest.mark.asyncio
 async def test_kaiju_sequence_gap_detection_and_consecutive_flow(db_session):
@@ -148,3 +172,24 @@ async def test_chainsaw_man_reze_movie_card(db_session):
     assert saved_m.tmdb_id == 1218925
     assert saved_m.runtime == 100
     assert saved_m.release_year == 2025
+
+
+def test_anitoob_button_pattern_matcher():
+    """AniToob qismlar tugmasi regex va moslik qoidalarini tekshiradi."""
+    import re
+    def matches_ep(btn_text: str, current_ep: int) -> bool:
+        b_txt = btn_text.strip()
+        if b_txt == str(current_ep) or b_txt == f"{current_ep}-qism" or b_txt == f"[💽] - {current_ep}" or b_txt == f"[{current_ep}] - 💽":
+            return True
+        if re.match(rf'^(\[|\()?\s*{current_ep}\s*(\]|\))?(\s*-\s*qism|\s*qism|\s*💽)?$', b_txt, re.IGNORECASE):
+            return True
+        return False
+
+    assert matches_ep("20", 20) is True
+    assert matches_ep("20-qism", 20) is True
+    assert matches_ep("[20]", 20) is True
+    assert matches_ep("[💽] - 20", 20) is True
+    assert matches_ep("[20] - 💽", 20) is True
+    assert matches_ep("20 qism", 20) is True
+    assert matches_ep("21", 20) is False
+    assert matches_ep("2-qism", 20) is False
