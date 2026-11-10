@@ -279,3 +279,7 @@
 ## Remote Latency Timeout Hardening & Exponential Socket Retry
 - Cloud databases hosted cross-continent (e.g. AWS us-east-1 from Central Asia) suffer from TLS handshake latency jitter exceeding default 10s timeouts; extending asyncpg connect timeouts to 45s and wrapping DB transactions in exponential retry loops prevents socket semaphore crashes.
 - Analogy: Okean ortiga qo'ng'iroq qilganda telefon signalining kechikishi sababli trubkani 5 soniyada qo'yib yubormasdan, 45 soniya kutish va agar liniya band bo'lsa darhol qayta terish.
+
+## Incomplete Media Ingest Gate & Episodes Parity Assertion
+- When performing secondary duplicate detection post-enrichment, omitting candidate episode counts causes incomplete series in the database (e.g. 1 out of 58 episodes) to falsely match as complete duplicates and abort download; explicitly asserting `db_eps < candidate_ep_count` routes existing entities to resume appending missing episodes.
+- Analogy: Ko'p tomli entsiklopediyani to'ldirayotgan kutubxonachi tokchada faqat 1-jild turganini ko'rib, "bu kitob allaqachon kutubxonada bor" deb qolgan 57 ta jildni qabul qilishdan bosh tortmasligi; aksincha bor jild yoniga yetishmayotgan jildlarni terib qo'yishi.

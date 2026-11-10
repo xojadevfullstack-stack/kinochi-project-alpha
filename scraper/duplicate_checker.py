@@ -309,7 +309,7 @@ class DuplicateChecker:
             )
             raw_series = await conn.fetch(
                 """
-                SELECT s.id, s.title, s.release_year, s.tmdb_id,
+                SELECT s.id, s.title, s.release_year, s.tmdb_id, s.status,
                        COALESCE(ep_stats.ep_count, 0) AS episode_count,
                        COALESCE(ep_stats.trans_count, 0) AS translation_count
                 FROM series s
@@ -397,7 +397,7 @@ class DuplicateChecker:
                 is_incomplete = True
             elif candidate_ep_count and db_eps < candidate_ep_count:
                 is_incomplete = True
-            elif not candidate_ep_count and db_eps <= 3 and item.get("status") == "ongoing":
+            elif not candidate_ep_count and (item.get("status") in ("ongoing", "returning series") or db_eps <= 3):
                 is_incomplete = True
         return DuplicateCheckResult(
             is_duplicate=not is_incomplete,

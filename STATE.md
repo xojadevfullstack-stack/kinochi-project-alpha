@@ -1,35 +1,28 @@
 # Project State (STATE.md)
 
 ## Current goal
-Tizim barqarorligini ta'minlash, Neon DB uzoq server ulanishlaridagi timeout/semafor xatolarini bartaraf etish, hamda Qora klever va Demon Slayer media qismlarini to'liq yuklashga tayyor holatga keltirish.
+Demon Slayer va Qora klever kabi chala yuklangan seriallarni aniqlash va qolgan qismlarini to'liq yuklab borishni ta'minlash (Incomplete series resume).
 
 ## In progress (slice, branch)
-- Slice: C18 (Remote DB Connection Timeout Hardening & Exponential Socket Retry).
+- Slice: C19 (Incomplete Series Detection & Episode Count Parity in Secondary Duplicate Checker).
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, DB ulanish timeout 45s ga oshirildi, retry qo'shildi).
+- None (Barcha testlar 100% yashil, Demon Slayer (1/58) va Qora klever (1/171) uchun is_incomplete=True tasdiqlandi).
 
 ## Next step (one task)
-- Foydalanuvchiga natijalarni hisobot qilish va download/autopilot jarayonini boshqarishga topshirish.
+- Foydalanuvchiga 1-qismda to'xtab qolish sababi va yechimini taqdim etish.
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Pytest Gate:** 17 passed in 2.54s across anime catalog, auth and queue tests.
-- **QueueManager + DuplicateChecker Remote Connect Test:** `ITEM: anitoob_41 Iblislar qotili (Demon Slayer) series pending`, `DC DONE` (Exit code: 0).
-- **TypeScript Gate (Admin & Website):** Zero errors (`tsc --noEmit`: code 0).
-- **Live Backend Page 8 (Multfilm) Verification:** Faqat haqiqiy multfilm qaytarilmoqda (`Ajoyib raqamli sirk`), Anime to'liq izolyatsiya qilindi.
-- **Series #1036 (Qora klever) Verification:**
-  - `Pages`: ['Anime'] (Multfilm yorlig'i butunlay yo'qoldi)
-  - `Seasons`: Season 1 tartiblandi, soxta qismlar tozalandi.
-- **Series #1035 (Demon Slayer) Verification:**
-  - `Title`: 'Iblislar qotili (Demon Slayer)' (eski 'temirchilar qishlogi' o'rniga)
-  - `TMDb ID`: 85937 (TV Series, 2019, Reyting: 8.6)
-  - `Pages`: ['Anime']
-- **Ingest Queue Verification:** `anitoob_41` media_type = 'series', 58 qism bilan qayta navbatga qo'yildi.
-- **Git Diff:** Atomic slice within governance budget.
+- **Pytest Gate:** 17 passed in 2.77s across anime catalog, auth and queue tests.
+- **DuplicateChecker Incomplete Assertion:**
+  - Demon Slayer (ID: 1035): `is_duplicate: False`, `is_incomplete: True`, `reason: Serial bazada mavjud ammo qismlari to'liq emas (1/58)`
+  - Qora klever (ID: 1036): `is_duplicate: False`, `is_incomplete: True`, `reason: Serial bazada mavjud ammo qismlari to'liq emas (1/171)`
+- **AniToob Code 41 MTProto Live Test:** Episode 1 yuklanganidan so'ng Episode 2 tugmasi (`yuklanolish=41=2=1`) bosilganda, bot yangi video hujjati va qolgan 10 tagacha qism tugmalarini to'liq yuborishi amalda tasdiqlandi.
+- **Git Diff:** 2 files, 24 insertions, 20 deletions (44 lines <= 200 lines atomic slice).
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)

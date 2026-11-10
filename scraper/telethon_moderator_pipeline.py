@@ -2185,20 +2185,22 @@ class TelethonModeratorPipeline:
             original_title=meta.get("original_title"),
             media_type="movie" if is_single_movie else "series",
             tmdb_id=meta.get("tmdb_id"),
+            episodes_count=ep_count,
         )
-        if sec_dup.is_duplicate:
-            if sec_dup.matched_type == "movie" and is_single_movie:
-                logger.info(f"ℹ️ [ANITOOB] Film TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
-                print(f"ℹ️ [ANITOOB] '{title}' bazada film sifatida allaqachon mavjud (TMDb: {meta.get('tmdb_id')}), o'tkazib yuborildi.", flush=True)
-                QueueManager().update_status(item.id, "already_exists")
-                return True
-            elif sec_dup.matched_type == "series" and not is_single_movie and not getattr(sec_dup, "is_incomplete", False):
+        if sec_dup.matched_type == "series" and not is_single_movie:
+            if getattr(sec_dup, "is_incomplete", False):
+                existing_series_id = sec_dup.matched_id
+                logger.info(f"🔄 [ANITOOB] Serial bazada mavjud ammo qismlari to'liq emas (ID: {existing_series_id}). Qismlar to'ldiriladi...")
+            elif sec_dup.is_duplicate:
                 logger.info(f"ℹ️ [ANITOOB] Serial TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon to'liq mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
                 print(f"ℹ️ [ANITOOB] '{title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
                 QueueManager().update_status(item.id, "already_exists")
                 return True
-            elif sec_dup.matched_type == "series" and not is_single_movie and getattr(sec_dup, "is_incomplete", False):
-                existing_series_id = sec_dup.matched_id
+        elif sec_dup.is_duplicate and is_single_movie and sec_dup.matched_type == "movie":
+            logger.info(f"ℹ️ [ANITOOB] Film TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
+            print(f"ℹ️ [ANITOOB] '{title}' bazada film sifatida allaqachon mavjud (TMDb: {meta.get('tmdb_id')}), o'tkazib yuborildi.", flush=True)
+            QueueManager().update_status(item.id, "already_exists")
+            return True
 
         # 6. YUKLAB OLISH tugmasini topish
         download_btn_coords = None
@@ -2927,20 +2929,22 @@ class TelethonModeratorPipeline:
             original_title=meta.get("original_title"),
             media_type="movie" if is_single_movie else "series",
             tmdb_id=meta.get("tmdb_id"),
+            episodes_count=ep_count,
         )
-        if sec_dup.is_duplicate:
-            if sec_dup.matched_type == "movie" and is_single_movie:
-                logger.info(f"ℹ️ [ANITOOB] Film TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
-                print(f"ℹ️ [ANITOOB] '{title}' bazada film sifatida allaqachon mavjud (TMDb: {meta.get('tmdb_id')}), o'tkazib yuborildi.", flush=True)
-                QueueManager().update_status(item.id, "already_exists")
-                return True
-            elif sec_dup.matched_type == "series" and not is_single_movie and not getattr(sec_dup, "is_incomplete", False):
+        if sec_dup.matched_type == "series" and not is_single_movie:
+            if getattr(sec_dup, "is_incomplete", False):
+                existing_series_id = sec_dup.matched_id
+                logger.info(f"🔄 [ANITOOB] Serial bazada mavjud ammo qismlari to'liq emas (ID: {existing_series_id}). Qismlar to'ldiriladi...")
+            elif sec_dup.is_duplicate:
                 logger.info(f"ℹ️ [ANITOOB] Serial TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon to'liq mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
                 print(f"ℹ️ [ANITOOB] '{title}' bazada to'liq serial sifatida allaqachon mavjud, o'tkazib yuborildi.", flush=True)
                 QueueManager().update_status(item.id, "already_exists")
                 return True
-            elif sec_dup.matched_type == "series" and not is_single_movie and getattr(sec_dup, "is_incomplete", False):
-                existing_series_id = sec_dup.matched_id
+        elif sec_dup.is_duplicate and is_single_movie and sec_dup.matched_type == "movie":
+            logger.info(f"ℹ️ [ANITOOB] Film TMDb ID ({meta.get('tmdb_id')}) orqali bazada allaqachon mavjud: ID={sec_dup.matched_id} ('{sec_dup.matched_title}'). O'tkazib yuborildi.")
+            print(f"ℹ️ [ANITOOB] '{title}' bazada film sifatida allaqachon mavjud (TMDb: {meta.get('tmdb_id')}), o'tkazib yuborildi.", flush=True)
+            QueueManager().update_status(item.id, "already_exists")
+            return True
 
         # 6. '1-FASL' yoki 'Tomosha qilish' tugmasini topish va bosish (Hech qachon 'Davom ettirish' tanlanmaydi!)
         watch_btn_coords = None
