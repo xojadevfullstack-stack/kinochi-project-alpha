@@ -10,7 +10,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.api.deps import get_db_session
 from app.api.limiter import limiter
@@ -88,9 +88,13 @@ async def login(
     session: AsyncSession = Depends(get_db_session),
 ):
     """Authenticate admin and set httpOnly cookies."""
-    # Find admin by email
+    # Find admin by email (normalize and support 'admin' alias)
+    clean_login = login_in.email.strip().lower()
+    if clean_login == "admin":
+        clean_login = "admin@kinochi.uz"
+
     result = await session.execute(
-        select(AdminUserModel).where(AdminUserModel.email == login_in.email)
+        select(AdminUserModel).where(func.lower(AdminUserModel.email) == clean_login)
     )
     admin = result.scalar_one_or_none()
 

@@ -35,7 +35,13 @@ export default function LoginPage() {
           return;
         }
         const data = await res.json().catch(() => ({}));
-        setError(data.detail || "Email yoki parol noto'g'ri");
+        let errText = "Email yoki parol noto'g'ri";
+        if (typeof data.detail === "string") {
+          errText = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          errText = data.detail.map((d: any) => d.msg || d.message).join(", ");
+        }
+        setError(errText);
         return;
       }
 
@@ -75,12 +81,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Email</label>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Email yoki Login</label>
             <input
-              type="email"
+              type="text"
+              autoComplete="username"
               required
               className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container outline-none transition text-sm min-h-[44px]"
-              placeholder="admin@kinochi.uz"
+              placeholder="admin yoki admin@kinochi.uz"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />

@@ -9,18 +9,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET_KEY || ""
-);
-
 async function verifyToken(token: string): Promise<boolean> {
-  if (!process.env.JWT_SECRET_KEY) {
+  const secret = process.env.JWT_SECRET_KEY;
+  if (!secret) {
     // Secret konfiguratsiyalanmagan — faqat token mavjudligi tekshiriladi (fallback)
     console.warn("JWT_SECRET_KEY konfiguratsiyalanmagan — token yaroqliligi tekshirilmaydi!");
     return true;
   }
   try {
-    await jwtVerify(token, SECRET_KEY, { algorithms: ["HS256"] });
+    const key = new TextEncoder().encode(secret);
+    await jwtVerify(token, key, { algorithms: ["HS256"] });
     return true;
   } catch {
     return false;
