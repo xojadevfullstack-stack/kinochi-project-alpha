@@ -107,6 +107,8 @@ def get_engine_kwargs(
                 "statement_cache_size": 0,
                 "prepared_statement_cache_size": 0,
                 "prepared_statement_name_func": lambda: f"__asyncpg_{uuid.uuid4()}__",
+                "timeout": 45.0,
+                "command_timeout": 60.0,
             },
         })
     return kwargs

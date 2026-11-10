@@ -270,11 +270,16 @@ class DuplicateChecker:
         if not self.db_url:
             logger.warning("[DUPLICATE_CHECKER] DATABASE_URL sozlanmagan!")
             return None
-        try:
-            return await asyncpg.connect(self.db_url)
-        except Exception as e:
-            logger.error(f"[DUPLICATE_CHECKER] Bazaga ulanishda xatolik: {e}")
-            return None
+        for attempt in range(3):
+            try:
+                return await asyncpg.connect(self.db_url, timeout=45.0, command_timeout=60.0)
+            except Exception as e:
+                if attempt < 2:
+                    logger.warning(f"[DUPLICATE_CHECKER] Bazaga ulanishda xatolik ({attempt+1}/3): {e}. Qayta urinilmoqda...")
+                    await asyncio.sleep(1.0 * (attempt + 1))
+                else:
+                    logger.error(f"[DUPLICATE_CHECKER] Bazaga ulanishda xatolik: {e}")
+                    return None
 
     async def refresh_cache(self, force: bool = False):
         """

@@ -275,3 +275,7 @@
 ## Season Navigation Priority & Category Anti-Contamination Filters
 - In multi-season bot scraping, never click dynamic user resume buttons ('Davom ettirish') as they bypass early episodes; always enforce season 1 entry points. In heterogeneous media querying, explicitly negate intersecting taxonomy genres (e.g., Anime Category 2 must be negated from Western Cartoons Category 22).
 - Analogy: Kutubxonada yangi o'quvchiga kitobning oldingi o'quvchi qoldirgan betidan emas, har doim 1-betidan boshlab berish; va 'multfilm' javoniga yapon anime kitoblarini aralashtirib yubormaslik uchun qat'iy filtr qo'yish.
+
+## Remote Latency Timeout Hardening & Exponential Socket Retry
+- Cloud databases hosted cross-continent (e.g. AWS us-east-1 from Central Asia) suffer from TLS handshake latency jitter exceeding default 10s timeouts; extending asyncpg connect timeouts to 45s and wrapping DB transactions in exponential retry loops prevents socket semaphore crashes.
+- Analogy: Okean ortiga qo'ng'iroq qilganda telefon signalining kechikishi sababli trubkani 5 soniyada qo'yib yubormasdan, 45 soniya kutish va agar liniya band bo'lsa darhol qayta terish.

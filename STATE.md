@@ -1,23 +1,24 @@
 # Project State (STATE.md)
 
 ## Current goal
-Multfilm sahifasidan anime ifloslanishini to'liq tozalash, Qora klever 2-qismini o'tkazib yuboruvchi bot resume tugmasi o'rniga har doim 1-faslni ochish qoidasini kiritish, hamda Iblislar qotilini (Demon Slayer) soxta "temirchilar qishlog'i filmi" emas, 58 qismli to'liq serial (TMDb 85937) sifatida normallashtirish.
+Tizim barqarorligini ta'minlash, Neon DB uzoq server ulanishlaridagi timeout/semafor xatolarini bartaraf etish, hamda Qora klever va Demon Slayer media qismlarini to'liq yuklashga tayyor holatga keltirish.
 
 ## In progress (slice, branch)
-- Slice: C17 (Anime Category Isolation, Season-1 Entry Priority & Demon Slayer Normalization).
+- Slice: C18 (Remote DB Connection Timeout Hardening & Exponential Socket Retry).
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, Qora klever Page 1 ga biriktirildi, Series 1035 TMDb 85937 ga ulandi).
+- None (Barcha testlar 100% yashil, DB ulanish timeout 45s ga oshirildi, retry qo'shildi).
 
 ## Next step (one task)
-- O'zgarishlarni commit va push qilish (`git commit -m "fix(catalog,scraper): isolate anime from multfilm, enforce season 1 entry, and normalize Demon Slayer series"`).
+- Foydalanuvchiga natijalarni hisobot qilish va download/autopilot jarayonini boshqarishga topshirish.
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Pytest Gate:** 17 passed in 1.60s across anime catalog, auth and queue tests.
+- **Pytest Gate:** 17 passed in 2.54s across anime catalog, auth and queue tests.
+- **QueueManager + DuplicateChecker Remote Connect Test:** `ITEM: anitoob_41 Iblislar qotili (Demon Slayer) series pending`, `DC DONE` (Exit code: 0).
 - **TypeScript Gate (Admin & Website):** Zero errors (`tsc --noEmit`: code 0).
 - **Live Backend Page 8 (Multfilm) Verification:** Faqat haqiqiy multfilm qaytarilmoqda (`Ajoyib raqamli sirk`), Anime to'liq izolyatsiya qilindi.
 - **Series #1036 (Qora klever) Verification:**
@@ -28,7 +29,7 @@ Multfilm sahifasidan anime ifloslanishini to'liq tozalash, Qora klever 2-qismini
   - `TMDb ID`: 85937 (TV Series, 2019, Reyting: 8.6)
   - `Pages`: ['Anime']
 - **Ingest Queue Verification:** `anitoob_41` media_type = 'series', 58 qism bilan qayta navbatga qo'yildi.
-- **Git Diff:** 6 files, 96 insertions, 13 deletions (109 lines <= 200 lines atomic slice).
+- **Git Diff:** Atomic slice within governance budget.
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)
