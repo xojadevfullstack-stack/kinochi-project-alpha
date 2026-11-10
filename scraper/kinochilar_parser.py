@@ -80,9 +80,9 @@ def _extract_kinochilar_items_from_html(html: str, min_rating: float = 0.0) -> L
 
         img = c.find("img")
         raw_title = (
-            (img.get("alt") if img else None)
-            or title_a.get("title")
+            title_a.get("title")
             or title_a.get_text().strip()
+            or (img.get("alt") if img else None)
         )
 
         if not raw_title or len(raw_title) < 2 or raw_title.lower() in ["tomosha qilish", "bosh sahifa", "aloqa"]:
@@ -99,6 +99,12 @@ def _extract_kinochilar_items_from_html(html: str, min_rating: float = 0.0) -> L
             continue
 
         cleaned = clean_scraped_title(raw_title, url_or_slug=slug)
+        if not cleaned["year"]:
+            # Fallback to search year in card_text or anchor text
+            y_m = re.search(r'\b(19\d\d|20\d\d)\b', title_a.get_text() + " " + (title_a.get("title") or "") + " " + slug)
+            if y_m:
+                cleaned["year"] = int(y_m.group(1))
+
         if not cleaned["title"] or len(cleaned["title"]) < 2:
             continue
 
