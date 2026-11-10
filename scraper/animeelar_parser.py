@@ -50,6 +50,29 @@ def save_animeelar_catalog(catalog: Dict[str, str]) -> None:
         logger.error(f"Error saving animeelar_catalog.json: {e}")
 
 
+def is_animeelar_film(title: str, episodes_count: Optional[int] = None) -> bool:
+    """Determines if an Animeelar item is a movie or series."""
+    if episodes_count and episodes_count > 1:
+        return False
+    raw = (title or "").strip().lower()
+    if re.search(r"\b(s\d+|fasl|mavsum|qismlar|serial)\b", raw):
+        return False
+    if re.search(r"\b\d+\s*(?:qism|ep|seriya)\b", raw):
+        return False
+    if re.search(r"(?:va|\+|\.{2,})\s*\d*\s*film", raw):
+        return False
+    if re.search(r"\b(film|kino|filmi|movie)\b", raw):
+        return True
+    try:
+        from scraper.smart_enricher import ANIME_TITLE_MAP
+        for key, entry in ANIME_TITLE_MAP.items():
+            if key in raw:
+                return entry.get("type") == "movie"
+    except Exception:
+        pass
+    return False
+
+
 async def parse_animeelar_page_async(
     session: Optional[Any] = None,
     page: int = 1,
@@ -85,7 +108,7 @@ async def parse_animeelar_page_async(
             found_year = clean_res.get("year")
             
             # Determine media_type: if 'film' in title -> movie, else series
-            is_film = bool(re.search(r'\b(film|kino|filmi)\b', title, re.IGNORECASE))
+            is_film = is_animeelar_film(title)
             m_type = "movie" if is_film else "series"
             effective_mt = "anime" if media_type == "anime" else m_type
             if media_type not in ("all", "anime") and m_type != media_type:
@@ -149,7 +172,7 @@ async def search_animeelar_async(
     # 1. Local catalog search
     for code, title in catalog.items():
         if q_lower in title.lower():
-            is_film = bool(re.search(r'\b(film|kino|filmi)\b', title, re.IGNORECASE))
+            is_film = is_animeelar_film(title)
             m_type = "movie" if is_film else "series"
             clean_res = clean_scraped_title(title)
             cleaned_title = clean_res.get("title") or title

@@ -1,28 +1,30 @@
 # Project State (STATE.md)
 
 ## Current goal
-Demon Slayer va Qora klever kabi chala yuklangan seriallarni aniqlash va qolgan qismlarini to'liq yuklab borishni ta'minlash (Incomplete series resume).
+Demon Slayer va Qora klever kabi chala yuklangan seriallarni aniqlash, noto'g'ri "KINO" tasnifini bartaraf etish va qolgan qismlarini to'liq yuklab borishni ta'minlash.
 
 ## In progress (slice, branch)
-- Slice: C19 (Incomplete Series Detection & Episode Count Parity in Secondary Duplicate Checker).
+- Slice: C20 (Fix False Movie Classification for Anime Multi-Season Bundles & Demon Slayer Queue Resolution).
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, Demon Slayer (1/58) va Qora klever (1/171) uchun is_incomplete=True tasdiqlandi).
+- None (Barcha testlar 100% yashil, Demon Slayer (anitoob_41) serial sifatida to'g'rilandi, media_type='series', episodes_count=58).
 
 ## Next step (one task)
-- Foydalanuvchiga 1-qismda to'xtab qolish sababi va yechimini taqdim etish.
+- Demon Slayer va Qora klever seriallarining keyingi qismlarini scraper orqali yakuniga yetkazish.
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Pytest Gate:** 17 passed in 2.77s across anime catalog, auth and queue tests.
-- **DuplicateChecker Incomplete Assertion:**
-  - Demon Slayer (ID: 1035): `is_duplicate: False`, `is_incomplete: True`, `reason: Serial bazada mavjud ammo qismlari to'liq emas (1/58)`
-  - Qora klever (ID: 1036): `is_duplicate: False`, `is_incomplete: True`, `reason: Serial bazada mavjud ammo qismlari to'liq emas (1/171)`
-- **AniToob Code 41 MTProto Live Test:** Episode 1 yuklanganidan so'ng Episode 2 tugmasi (`yuklanolish=41=2=1`) bosilganda, bot yangi video hujjati va qolgan 10 tagacha qism tugmalarini to'liq yuborishi amalda tasdiqlandi.
-- **Git Diff:** 2 files, 24 insertions, 20 deletions (44 lines <= 200 lines atomic slice).
+- **Pytest Gate:** 17 passed in 2.23s across anime catalog, auth and queue tests.
+- **Anime Classifier Assertion:**
+  - `resolve_anitoob_item("41")`: `title='Iblislar qotili (Demon Slayer)'`, `media_type='series'`, `episodes_count=58`.
+  - `is_anitoob_film("Iblislar qotili fanart film")`: `True` (film sifatida saqlandi).
+  - `is_anitoob_film("Iblislar qotili s1, ... 2 film")`: `False` (serial sifatida tanildi).
+  - `is_anitoob_film("Qilich sanati online ... 1 film")`: `False` (serial sifatida tanildi).
+  - DB item 987: `title='Iblislar qotili (Demon Slayer)'`, `media_type='series'`, `episodes_count=58`, `status='queued'`.
+- **Git Diff:** 5 files, 105 insertions, 17 deletions (122 lines <= 200 lines atomic slice).
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)

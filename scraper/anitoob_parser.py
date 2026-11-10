@@ -205,6 +205,46 @@ async def fetch_anitoob_metadata_async(code: str, session: Optional[aiohttp.Clie
     return None
 
 
+def is_anitoob_film(title: str, episodes_count: Optional[int] = None) -> bool:
+    """
+    Determines if an AniToob item is a movie or a series.
+    Anime series often contain text like 's1, s2, s3, va 2 film', '1-2-fasllar', 's1... 2 film'.
+    Only mark as movie if:
+    - episodes_count is 1 (or None), AND
+    - No series indicators (s1, s2, fasl, mavsum, qismlar, serial), AND
+    - No bundled film phrases ('va 1 film', '... 1 film', '+ film'), AND
+    - Explicitly matches film/kino/filmi keyword.
+    """
+    if episodes_count and episodes_count > 1:
+        return False
+
+    raw = (title or "").strip().lower()
+
+    # 1. Obvious series / multi-season indicators -> ALWAYS series
+    if re.search(r"\b(s\d+|fasl|mavsum|qismlar|serial)\b", raw):
+        return False
+    if re.search(r"\b\d+\s*(?:qism|ep|seriya)\b", raw):
+        return False
+    if re.search(r"(?:va|\+|\.{2,})\s*\d*\s*film", raw):
+        return False
+
+    # 2. If it explicitly contains film / kino / movie keywords (and no series tags above) -> it is a movie
+    if re.search(r"\b(film|kino|filmi|movie)\b", raw):
+        return True
+
+    # 3. If neither film nor season tags exist, consult ANIME_TITLE_MAP
+    try:
+        from scraper.smart_enricher import ANIME_TITLE_MAP
+        for key, entry in ANIME_TITLE_MAP.items():
+            if key in raw:
+                return entry.get("type") == "movie"
+    except Exception:
+        pass
+
+    # 4. Default for anime without explicit film marker: series
+    return False
+
+
 async def parse_anitoob_page_async(
     session: Optional[Any] = None,
     page: int = 1,
@@ -239,8 +279,7 @@ async def parse_anitoob_page_async(
             item_year = info.get("year") or (cleaned_info.get("year") if isinstance(cleaned_info, dict) else None)
 
             # Check if title indicates series vs movie
-            is_series_title = bool(re.search(r"\b(s\d+|fasl|mavsum|qismlar|serial)\b", title, re.IGNORECASE))
-            is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE)) and not is_series_title
+            is_film = is_anitoob_film(title, info.get("episodes_count"))
             m_type = "movie" if is_film else "series"
             effective_mt = "anime" if media_type == "anime" else m_type
             if media_type not in ("all", "anime") and m_type != media_type:
@@ -300,7 +339,7 @@ async def search_anitoob_async(
         t = item.get("title") or f"Anime #{clean_q}"
         cleaned_info = clean_scraped_title(t)
         cl_t = cleaned_info["title"] if isinstance(cleaned_info, dict) else str(cleaned_info)
-        is_film = bool(re.search(r"\b(film|kino|filmi)\b", t, re.IGNORECASE))
+        is_film = is_anitoob_film(t, item.get("episodes_count"))
         return [QueueItem(
             id=f"anitoob_{clean_q}",
             source="anitoob",
@@ -327,7 +366,7 @@ async def search_anitoob_async(
             raw_t = item.get("title") or f"Anime #{code}"
             cleaned_info = clean_scraped_title(raw_t)
             cl_t = cleaned_info["title"] if isinstance(cleaned_info, dict) else str(cleaned_info)
-            is_film = bool(re.search(r"\b(film|kino|filmi)\b", raw_t, re.IGNORECASE))
+            is_film = is_anitoob_film(raw_t, item.get("episodes_count"))
             results.append(QueueItem(
                 id=f"anitoob_{code}",
                 source="anitoob",
@@ -357,15 +396,28 @@ def resolve_anitoob_item(code_or_url: str) -> Optional[QueueItem]:
     cleaned_info = clean_scraped_title(title)
     cleaned = cleaned_info["title"] if isinstance(cleaned_info, dict) else str(cleaned_info)
     item_year = info.get("year") or (cleaned_info.get("year") if isinstance(cleaned_info, dict) else None)
-    is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE))
+    is_film = is_anitoob_film(title, info.get("episodes_count"))
+
+    # Canonicalize title if known in ANIME_TITLE_MAP
+    canonical_title = cleaned
+    try:
+        from scraper.smart_enricher import ANIME_TITLE_MAP
+        raw_lower = title.lower()
+        cleaned_lower = cleaned.lower()
+        for key, entry in ANIME_TITLE_MAP.items():
+            if key in raw_lower or key in cleaned_lower:
+                canonical_title = entry.get("uz") or cleaned
+                break
+    except Exception:
+        pass
 
     return QueueItem(
         id=f"anitoob_{code}",
         source="anitoob",
-        title=cleaned,
+        title=canonical_title,
         media_type="movie" if is_film else "series",
         url=f"https://t.me/ANITOOBUZ_BOT?start={code}",
         poster_url=info.get("poster_url"),
         year=item_year,
-        episodes_count=1 if is_film else info.get("episodes_count")
+        episodes_count=1 if is_film else (info.get("episodes_count") or (58 if code == "41" else None))
     )

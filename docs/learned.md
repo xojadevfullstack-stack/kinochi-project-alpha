@@ -48,6 +48,10 @@
 - Analogy: Highway road signs that use concise, punchy text ("Aeroport 2 km") instead of lengthy paragraphs, allowing drivers to read instantly without slowing down.
 
 ## Fast-Fail Flood Wait & Rate-Limit Circuit Breaking
+
+## False Keyword Heuristics in Media Classification
+- Relying on substring keyword checks (e.g. `film` inside `s1, s2, s3, va 2 film`) without structural token validation falsely categorizes complex multi-season bundles.
+- Analogy: A parcel sorter rejecting an entire multi-volume book series as a single postcard just because the packing slip mentioned 'includes 1 promotional postcard'.
 - When interacting with Telegram or third-party scraper bots, hitting 429 Flood Wait must trigger immediate circuit-breaking backoff rather than hammering the API with retries, which leads to exponential bans.
 - Analogy: Pulling over at a rest stop during a blinding snowstorm until roads are cleared, rather than driving blindly into an icy wall.
 

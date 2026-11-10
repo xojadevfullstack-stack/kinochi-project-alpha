@@ -52,6 +52,10 @@ def clean_scraped_title(raw_title: str, url_or_slug: Optional[str] = None) -> Di
     text = re.sub(r'\b\d+(?:-\d+)?\s*-(?:fasl|mavsum)[lar]*\b!?', '', text, flags=re.I)
     text = re.sub(r'\b\d+-(?:fasl|mavsum)\s+\d+-qism\b!?', '', text, flags=re.I)
     text = re.sub(r'\b\d+\s+(?:mavsum|fasl)\b.*$', '', text, flags=re.I)
+    # Anime va seriallarda fasllar ro'yxati va biriktirilgan filmlar: masalan "s1, s2, s3", "s1", "va 2 film", "+ film"
+    text = re.sub(r'(?:va|\+|\.{2,})\s*\d*\s*film(?:lar)?\b', ' ', text, flags=re.I)
+    text = re.sub(r'\bs\d+(?:[\s,/\-]+\s*s?\d+)*\b', ' ', text, flags=re.I)
+    text = re.sub(r'\bseason\s*\d+\b', ' ', text, flags=re.I)
     
     # Filmlardagi qism ko'rsatkichlari (masalan "2-qism", "3 qism", "Part 2") — RAQAMNI SAQLAB QOLAMIZ:
     # "Cho'qintirgan ota 2-qism" -> "Cho'qintirgan ota 2"

@@ -233,9 +233,16 @@ def test_anitoob_card_button_season_one_priority():
 
 def test_anitoob_title_is_not_falsely_classified_as_movie():
     """'Iblislar qotili s1.. va 2 film' serial sifatida tanilishini tasdiqlaydi."""
-    import re
-    title = "Iblislar qotili s1, s2, s3, s4, s5, va 2 film"
-    is_series_title = bool(re.search(r"\b(s\d+|fasl|mavsum|qismlar|serial)\b", title, re.IGNORECASE))
-    is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE)) and not is_series_title
-    assert is_series_title is True
-    assert is_film is False
+    from scraper.anitoob_parser import resolve_anitoob_item, is_anitoob_film
+    item = resolve_anitoob_item("41")
+    assert item is not None
+    assert item.media_type == "series"
+    assert "s1" not in item.title.lower()
+    assert item.title in ("Iblislar qotili", "Iblislar qotili (Demon Slayer)")
+
+    # Test standalone movie vs multi-season
+    assert is_anitoob_film("Iblislar qotili fanart film") is True
+    assert is_anitoob_film("Iblislar qotili s1, ... 2 film") is False
+    assert is_anitoob_film("Qilich sanati online ... 1 film") is False
+    assert is_anitoob_film("Jonli sana s1, ... + film") is False
+

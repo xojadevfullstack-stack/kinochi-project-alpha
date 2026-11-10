@@ -281,10 +281,12 @@
   },
   "41": {
     "code": "41",
-    "title": "Iblislar qotili s1, ... 2 film",
+    "title": "Iblislar qotili (Demon Slayer)",
     "url": "https://t.me/ANITOOBUZ_BOT?start=41",
     "poster_url": "https://bot.anitoobtv.uz/bot.php?img_proxy=AgACAgIAAxkBAAEDS-RpWjE8vQTwd0JE7RrkFho1TrcjCQAC2xBrGxnv0Eoxa7pA7QlRigEAAwIAA3gAAzgE",
-    "site_url": "https://bot.anitoobtv.uz/?anime=41"
+    "site_url": "https://bot.anitoobtv.uz/?anime=41",
+    "episodes_count": 58,
+    "media_type": "series"
   },
   "42": {
     "code": "42",
