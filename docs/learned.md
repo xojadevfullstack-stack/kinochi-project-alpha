@@ -247,3 +247,8 @@
 ## Asynchronous Callback Query ACK vs Slow I/O (Telegram Callback Answering)
 - Calling `callback.answer()` immediately before executing high-latency network or DB queries prevents Telegram 30-second callback expiration ("query is too old") and avoids client-side button spinner freezes.
 - Analogy: Restoranda ofitsiant mijoz buyurtmasini olgach darhol "Qabul qilindi" deb chek berishi; aks holda mijoz ovqat pishguncha 25 daqiqa hech kim eshitmadi deb tugmani qayta-qayta bosaverishi.
+
+
+## Multi-Axis Admission Gate (Ko'p o'qli qabul qo'riqchisi)
+- Ingest qilinayotgan mediani bazaga kiritishdan oldin mustaqil metrikalar (davomiylik, nom, qism soni, file_unique_id, tiriklik) bo'yicha atomik tekshirib, xatolikda elementni o'chirmasdan `needs_review` ga yo'naltirish.
+- Analogy: Aeroportdagi bojxona tekshiruvi: yo'lovchi yukida shubhali narsa bo'lsa uni yoqib yubormasdan, qo'shimcha ko'rik xonasiga olib o'tish.
