@@ -42,9 +42,23 @@ class SeriesRepository:
             stmt = stmt.filter(SeriesModel.publish_status == publish_status)
         
         if category_id:
-            stmt = stmt.filter(SeriesModel.categories.any(id=category_id))
+            if category_id == 40:
+                stmt = stmt.filter(or_(SeriesModel.categories.any(id=40), SeriesModel.pages.any(id=5)))
+            elif category_id == 2:
+                stmt = stmt.filter(or_(SeriesModel.categories.any(id=2), SeriesModel.pages.any(id=1)))
+            elif category_id == 22:
+                stmt = stmt.filter(or_(SeriesModel.categories.any(id=22), SeriesModel.pages.any(id=8)))
+            else:
+                stmt = stmt.filter(SeriesModel.categories.any(id=category_id))
         if page_id:
-            stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
+            if page_id == 5:
+                stmt = stmt.filter(or_(SeriesModel.pages.any(id=5), SeriesModel.categories.any(id=40)))
+            elif page_id == 1:
+                stmt = stmt.filter(or_(SeriesModel.pages.any(id=1), SeriesModel.categories.any(id=2)))
+            elif page_id == 8:
+                stmt = stmt.filter(or_(SeriesModel.pages.any(id=8), SeriesModel.categories.any(id=22)))
+            else:
+                stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
         elif exclude_paged:
             filters = [~SeriesModel.pages.any()]
             if not category_id and not search and not genre:

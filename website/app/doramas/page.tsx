@@ -26,27 +26,27 @@ export default async function DoramasListPage({
   const pageSize = 36;
 
   try {
-    let query = `/series?limit=${pageSize}&category_id=40`;
-    if (searchParams.genre) {
-      query += `&genre=${encodeURIComponent(searchParams.genre)}`;
-    }
-    if (searchParams.year) {
-      query += `&year=${searchParams.year}`;
-    }
-    if (searchParams.search) {
-      query += `&search=${encodeURIComponent(searchParams.search)}`;
-    }
+    const genreParam = searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : "";
+    const yearParam = searchParams.year ? `&year=${searchParams.year}` : "";
+    const searchParam = searchParams.search ? `&search=${encodeURIComponent(searchParams.search)}` : "";
 
-    const [seriesData, categoriesData] = await Promise.all([
-      fetchApi(query).catch((e) => {
-        console.error("fetch doramas failed:", e);
+    const [seriesData, moviesData, categoriesData] = await Promise.all([
+      fetchApi(`/series?limit=${pageSize}&category_id=40${genreParam}${yearParam}${searchParam}`).catch((e) => {
+        console.error("fetch doramas series failed:", e);
+        return { items: [], total: 0 };
+      }),
+      fetchApi(`/movies?limit=12&category_id=40${genreParam}${yearParam}${searchParam}`).catch((e) => {
+        console.error("fetch doramas movies failed:", e);
         return { items: [], total: 0 };
       }),
       fetchApi("/categories").catch(() => []),
     ]);
 
-    doramas = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-    total = seriesData?.total ?? doramas.length;
+    const sItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+    const mItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+
+    doramas = [...sItems, ...mItems];
+    total = (seriesData?.total || 0) + (moviesData?.total || 0);
     categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
   } catch (err) {
     console.error("Failed to load doramas:", err);

@@ -613,24 +613,12 @@ def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
     if not is_live_action_override and (m_type == "anime" or "anime" in genres or "anime" in t_low or (2 in cat_ids and ("anime" in genres or "anime" in t_low))) and 1 not in page_ids:
         page_ids.append(1)
     # Page 5: Doramalar
-    if (m_type == "dorama" or "dorama" in genres or "dorama" in t_low or any(k in t_low for k in ["korey", "xitoy", "dorama"])) and 5 not in page_ids:
+    if (m_type == "dorama" or "dorama" in genres or "dorama" in t_low or 40 in cat_ids or any(k in t_low for k in ["korey", "xitoy", "dorama"])) and 5 not in page_ids:
         page_ids.append(5)
     # Page 8: Multfilm (Faqat multfilm bo'lsa va Anime bo'lmasa!)
     is_anime = 1 in page_ids or m_type == "anime" or "anime" in genres or "anime" in t_low
     if not is_anime and (22 in cat_ids or m_type == "multfilm" or any(w in genres for w in ["animatsiya", "multfilm", "animation"]) or any(w in t_low for w in ["multfilm", "multik"])) and 8 not in page_ids:
         page_ids.append(8)
-    # Page 12: Turk seriallari
-    if (m_type == "series" or "serial" in t_low) and any(w in t_low or w in genres for w in ["turk", "turkiya"]) and 12 not in page_ids:
-        page_ids.append(12)
-    # Page 11: Turk kinolari
-    if m_type != "series" and any(w in t_low or w in genres for w in ["turk", "turkiya"]) and 11 not in page_ids:
-        page_ids.append(11)
-    # Page 10: Hind kinolari
-    if any(w in t_low or w in genres for w in ["hind", "hindiston", "bollywood"]) and 10 not in page_ids:
-        page_ids.append(10)
-    # Page 9: Tarjima kinolar
-    if m_type not in ["series", "anime", "multfilm"] and 9 not in page_ids:
-        page_ids.append(9)
 
     return page_ids
 

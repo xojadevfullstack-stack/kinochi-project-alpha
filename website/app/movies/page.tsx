@@ -38,6 +38,8 @@ export default async function MoviesListPage({
     }
     if (searchParams.category) {
       query += `&category_id=${searchParams.category}`;
+    } else if (searchParams.type === "dorama") {
+      query += `&category_id=40`;
     } else if (searchParams.type === "anime") {
       query += `&category_id=2`;
     } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {

@@ -226,7 +226,14 @@ class MovieRepositoryImpl(IMovieRepository):
             query = query.filter(MovieModel.publish_status == publish_status)
 
         if category_id:
-            query = query.filter(MovieModel.categories.any(id=category_id))
+            if category_id == 40:
+                query = query.filter(or_(MovieModel.categories.any(id=40), MovieModel.pages.any(id=5)))
+            elif category_id == 2:
+                query = query.filter(or_(MovieModel.categories.any(id=2), MovieModel.pages.any(id=1)))
+            elif category_id == 22:
+                query = query.filter(or_(MovieModel.categories.any(id=22), MovieModel.pages.any(id=8)))
+            else:
+                query = query.filter(MovieModel.categories.any(id=category_id))
 
         if genre:
             clean_g = genre.strip()
@@ -284,7 +291,14 @@ class MovieRepositoryImpl(IMovieRepository):
             query = query.filter(or_(*s_conditions))
 
         if page_id:
-            query = query.filter(MovieModel.pages.any(id=page_id))
+            if page_id == 5:
+                query = query.filter(or_(MovieModel.pages.any(id=5), MovieModel.categories.any(id=40)))
+            elif page_id == 1:
+                query = query.filter(or_(MovieModel.pages.any(id=1), MovieModel.categories.any(id=2)))
+            elif page_id == 8:
+                query = query.filter(or_(MovieModel.pages.any(id=8), MovieModel.categories.any(id=22)))
+            else:
+                query = query.filter(MovieModel.pages.any(id=page_id))
         elif exclude_paged and not category_id and not genre and not search:
             query = query.filter(
                 ~MovieModel.pages.any(),

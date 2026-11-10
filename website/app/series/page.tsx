@@ -38,6 +38,10 @@ export default async function SeriesListPage({
     }
     if (searchParams.type === "dorama") {
       query += `&category_id=40`;
+    } else if (searchParams.type === "anime") {
+      query += `&category_id=2`;
+    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
+      query += `&category_id=22`;
     } else if (searchParams.category) {
       query += `&category_id=${searchParams.category}`;
     }
@@ -46,6 +50,8 @@ export default async function SeriesListPage({
       query += `&genre=${encodeURIComponent(searchParams.genre)}`;
     } else if (searchParams.type === "anime") {
       query += `&genre=anime`;
+    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
+      query += `&genre=animatsiya`;
     }
     if (searchParams.year) {
       query += `&year=${searchParams.year}`;

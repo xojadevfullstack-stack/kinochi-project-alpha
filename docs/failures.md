@@ -108,4 +108,18 @@
 - **Fix:** Increased timeout to 25.0s, introduced `APIConnectionError` for timeout/network failures with an explicit retry notice ("⏳ Serverga ulanishda vaqtinchalik kechikish yuz berdi. Iltimos, qayta urinib ko'ring."), stripped heavy eager loads in `SeriesRepository`, preserved exact indexed lookup on `code`, and added 60s TTL caching in FastAPI.
 - **Rule:** Never map transient network or timeout errors to `None`/404. Keep database lookups indexed directly without expression wrappers on unique columns.
 
-
+### 2026-11-10: Media Type Misclassification, Dorama Category Drift & Asymmetric Catalog Queries
+- **What happened:** Newly scraped doramas appeared on the homepage but rendered completely empty inside the catalog (/doramas and /catalog?type=dorama). Concurrently, 20 anime series polluted the Cartoons (/cartoons) catalog, and catalog type searches for anime/cartoons ignored all TV series.
+- **Root cause:**
+  1. Typo in smart_enricher.py assigned Category 3 (Drama) instead of Category 40 (Doramalar).
+  2. Fragile single-index coupling: frontend queried only category_id=40 while scraper pipeline attached page_id=5.
+  3. External API genre bleed: TMDb genre 16 ('Animation') automatically attached Category 22 (Animatsiya) to anime series.
+  4. Scraper pipeline attached phantom Page IDs (9, 10, 11, 12) that did not exist in the PostgreSQL pages table.
+  5. Asymmetric frontend queries: /catalog?type=anime and /catalog?type=cartoon only queried /movies, hiding all TV series.
+- **Fix:**
+  1. Corrected smart_enricher.py to map doramas strictly to Category 40, Turkish series/movies to 39/38, Indian movies to 37, and Tarjima to 36.
+  2. Implemented strict mutual de-contamination: stripped Category 22 from anime and Category 2 from cartoons in scraper and backfilled 26 affected database records.
+  3. Implemented Dual-Index Fault Tolerance in series_repository.py and movie_repo.py uniting Categories (40, 2, 22) with Pages (5, 1, 8).
+  4. Updated catalog/page.tsx, doramas/page.tsx, movies/page.tsx, and series/page.tsx to fetch balanced mixes of series and movies.
+  5. Added comprehensive regression test suite in ackend/tests/test_dorama_catalog_distribution.py (4 tests).
+- **Rule:** Never rely on a single categorization vector; always enforce dual-index resilience between Categories and Pages in repositories. Isolate anime from cartoons by explicitly stripping cross-genres. Always query both series and movie endpoints when rendering polymorphic catalog media types.

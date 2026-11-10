@@ -122,11 +122,12 @@ export default async function FullCatalogPage({
       query += `&sort=${encodeURIComponent(searchParams.sort)}`;
     }
 
-    // If "all" is explicitly selected, fetch a balanced mix of movies and series
+    const commonParams = `${searchParams.year ? `&year=${searchParams.year}` : ""}${searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : ""}${searchParams.search ? `&search=${encodeURIComponent(searchParams.search)}` : ""}${searchParams.sort ? `&sort=${encodeURIComponent(searchParams.sort)}` : ""}`;
+
     if (searchParams.type === "all") {
       const [moviesData, seriesData, categoriesData] = await Promise.all([
-        fetchApi(`/movies?limit=24${searchParams.year ? `&year=${searchParams.year}` : ""}${searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : ""}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi(`/series?limit=12${searchParams.year ? `&year=${searchParams.year}` : ""}${searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : ""}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/movies?limit=24${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/series?limit=12${commonParams}`).catch(() => ({ items: [], total: 0 })),
         fetchApi("/categories").catch(() => []),
       ]);
 
@@ -134,6 +135,42 @@ export default async function FullCatalogPage({
       const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
       movies = [...movieItems, ...seriesItems];
       total = (moviesData?.total || 0) + (seriesData?.total || 0);
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (searchParams.type === "anime") {
+      const [seriesData, moviesData, categoriesData] = await Promise.all([
+        fetchApi(`/series?limit=24&category_id=2${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/movies?limit=12&category_id=2${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      movies = [...seriesItems, ...movieItems];
+      total = (seriesData?.total || 0) + (moviesData?.total || 0);
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
+      const [moviesData, seriesData, categoriesData] = await Promise.all([
+        fetchApi(`/movies?limit=24&category_id=22${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/series?limit=12&category_id=22${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      movies = [...movieItems, ...seriesItems];
+      total = (moviesData?.total || 0) + (seriesData?.total || 0);
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (searchParams.type === "dorama") {
+      const [seriesData, moviesData, categoriesData] = await Promise.all([
+        fetchApi(`/series?limit=24&category_id=40${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/movies?limit=12&category_id=40${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      movies = [...seriesItems, ...movieItems];
+      total = (seriesData?.total || 0) + (moviesData?.total || 0);
       categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     } else {
       const [contentData, categoriesData] = await Promise.all([

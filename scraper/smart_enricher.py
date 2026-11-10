@@ -1014,9 +1014,37 @@ async def enrich_movie_smart(
     elif media_type == "multfilm" or any(w in raw_lower or w in meta_genres_lower for w in ["animatsiya", "multfilm", "animation"]):
         anim_cat_id = cat_map.get("animatsiya") or cat_map.get("animation") or 22
         final_cat_ids.append(anim_cat_id)
-    if media_type == "dorama" or "dorama" in raw_lower or "dorama" in meta_genres_lower:
-        drama_cat_id = cat_map.get("drama") or 3
-        final_cat_ids.append(drama_cat_id)
+        # Multfilm hech qachon Anime (2) kategoriyasiga kirmasligi shart
+        anime_cat_id = cat_map.get("anime") or 2
+        if anime_cat_id in final_cat_ids:
+            final_cat_ids.remove(anime_cat_id)
+
+    # Doramalar (Koreys va Osiyo serial/filmlari)
+    is_dorama = media_type == "dorama" or "dorama" in raw_lower or "dorama" in meta_genres_lower or any(w in raw_lower for w in ["korey", "xitoy"])
+    if is_dorama:
+        dorama_cat_id = cat_map.get("doramalar") or cat_map.get("dorama") or 40
+        final_cat_ids.append(dorama_cat_id)
+
+    # Turk seriallari / Turk kinolari
+    is_turk = any(w in raw_lower or w in meta_genres_lower for w in ["turk", "turkiya", "turkish"])
+    if is_turk:
+        if media_type == "series" or "serial" in raw_lower:
+            turk_cat_id = cat_map.get("turk seriallari") or cat_map.get("turk-seriallari") or 39
+            final_cat_ids.append(turk_cat_id)
+        else:
+            turk_cat_id = cat_map.get("turk kinolari") or cat_map.get("turk-kinolari") or 38
+            final_cat_ids.append(turk_cat_id)
+
+    # Hind kinolari
+    is_hind = any(w in raw_lower or w in meta_genres_lower for w in ["hind", "hindiston", "bollywood", "indian"])
+    if is_hind:
+        hind_cat_id = cat_map.get("hind kinolari") or cat_map.get("hind-kinolari") or 37
+        final_cat_ids.append(hind_cat_id)
+
+    # Tarjima kinolar (umumiy xorijiy film bo'lib, serial/anime/multfilm/dorama bo'lmasa)
+    if media_type not in ["series", "anime", "multfilm", "dorama"] and not is_turk and not is_hind and not is_dorama:
+        tarjima_cat_id = cat_map.get("tarjima kinolar") or cat_map.get("tarjima-kinolar") or 36
+        final_cat_ids.append(tarjima_cat_id)
 
     if is_adult:
         cat_18_id = cat_map.get("18+") or cat_map.get("18-plus") or 33
