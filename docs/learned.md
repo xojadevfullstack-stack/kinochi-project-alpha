@@ -261,3 +261,7 @@
 ## Unified Catalog Heterogeneous Aggregation
 - Fetching and merging disparate entity streams (movies + series) into a single unified catalog pipeline with shared sorting and pagination guarantees complete data parity with aggregated leaderboards (Top 100).
 - Analogy: A grand library catalog where books and magazines are searchable together in one unified index rather than forcing readers to check two separate catalog drawers.
+
+## Service-to-Service Secret Authentication & Non-Blocking Background Polling
+- Passing pre-shared secrets (`X-Bot-Secret`) allows trusted microservices to generate user access tokens directly, while decoupling background polling loaders prevents UI table deadlocks.
+- Analogy: A VIP back-alley keycard that lets authorized staff bypass the public nightclub queue without making the dance floor pause music every 4 seconds.

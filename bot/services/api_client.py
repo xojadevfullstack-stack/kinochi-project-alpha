@@ -274,8 +274,7 @@ class APIClient:
 
     async def generate_login_token(self, telegram_id: int, first_name: Optional[str] = None, username: Optional[str] = None) -> Optional[str]:
         """
-        Requests an access_token from /auth/dev-login.
-        First tries internal configured client, then falls back to public Render backend if needed.
+        Requests an access_token from /auth/bot-login (or /auth/dev-login as fallback).
         """
         payload = {
             "telegram_id": telegram_id,
@@ -283,7 +282,19 @@ class APIClient:
             "username": username or "user"
         }
         
-        # 1. Try via self.client
+        # 1. Try secure /auth/bot-login via self.client (with X-Bot-Secret header)
+        try:
+            response = await self.client.post("/auth/bot-login", json=payload)
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                if token:
+                    return token
+            logger.warning(f"Internal /auth/bot-login returned status {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.warning(f"Internal /auth/bot-login failed: {e}")
+
+        # 2. Fallback to /auth/dev-login in local development
         try:
             response = await self.client.post("/auth/dev-login", json=payload)
             if response.status_code == 200:
@@ -291,21 +302,23 @@ class APIClient:
                 token = data.get("access_token")
                 if token:
                     return token
-            logger.warning(f"Internal /auth/dev-login returned status {response.status_code}: {response.text}")
         except Exception as e:
-            logger.warning(f"Internal /auth/dev-login failed: {e}. Trying public fallback...")
+            logger.debug(f"Dev-login fallback failed: {e}")
 
-        # 2. Fallback via public Render backend directly
-        public_url = "https://kinochi-project-alpha.onrender.com/api/v1/auth/dev-login"
+        # 3. Fallback via public Render backend
+        headers = {}
+        if settings.BOT_API_SECRET:
+            headers["X-Bot-Secret"] = settings.BOT_API_SECRET
+        public_url = "https://kinochi-project-alpha-9g6j.onrender.com/api/v1/auth/bot-login"
         try:
             async with httpx.AsyncClient(timeout=10.0) as fallback_client:
-                response = await fallback_client.post(public_url, json=payload)
+                response = await fallback_client.post(public_url, json=payload, headers=headers)
                 if response.status_code == 200:
                     data = response.json()
                     return data.get("access_token")
-                logger.error(f"Fallback /auth/dev-login returned status {response.status_code}: {response.text}")
+                logger.error(f"Fallback /auth/bot-login returned status {response.status_code}: {response.text}")
         except Exception as e:
-            logger.error(f"Fallback /auth/dev-login failed: {e}")
+            logger.error(f"Fallback /auth/bot-login failed: {e}")
 
         return None
 

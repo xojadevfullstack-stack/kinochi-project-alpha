@@ -146,3 +146,54 @@ async def test_telegram_webapp_success(monkeypatch):
         resp = await ac.post("/api/v1/auth/telegram-webapp", json={"initData": initData})
         assert resp.status_code == 200
         assert "access_token" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_bot_login_unauthorized_without_secret():
+    settings.BOT_API_SECRET = "super_secret_bot_token_12345"
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.post("/api/v1/auth/bot-login", json={"telegram_id": 999111})
+        assert resp.status_code in (403, 422)
+
+
+@pytest.mark.asyncio
+async def test_bot_login_wrong_secret():
+    settings.BOT_API_SECRET = "super_secret_bot_token_12345"
+    headers = {"X-Bot-Secret": "wrong_secret"}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.post("/api/v1/auth/bot-login", json={"telegram_id": 999111}, headers=headers)
+        assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_bot_login_success(monkeypatch):
+    from app.api.deps import get_db_session
+    app.dependency_overrides[get_db_session] = lambda: None
+
+    import app.api.v1.telegram_auth as auth_module
+
+    class MockUser:
+        id = 42
+        telegram_id = 999111
+        is_banned = False
+
+    async def mock_upsert(*args, **kwargs):
+        return MockUser()
+
+    monkeypatch.setattr(auth_module, "_upsert_telegram_user", mock_upsert)
+    settings.BOT_API_SECRET = "super_secret_bot_token_12345"
+    headers = {"X-Bot-Secret": "super_secret_bot_token_12345"}
+
+    payload = {
+        "telegram_id": 999111,
+        "first_name": "Asilbek",
+        "username": "asilbek_dev"
+    }
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.post("/api/v1/auth/bot-login", json=payload, headers=headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "access_token" in data
+        assert data["message"] == "Login successful"
+

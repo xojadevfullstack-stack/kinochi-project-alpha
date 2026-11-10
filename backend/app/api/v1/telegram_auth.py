@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.api.deps import get_db_session
+from app.api.v1.users import verify_bot_secret
 from app.infrastructure.db.models.user import UserModel
 from app.infrastructure.security.jwt_handler import create_access_token
 from app.core.config import settings
@@ -31,6 +32,13 @@ class TelegramWidgetAuthRequest(BaseModel):
 
 class TelegramWebAppAuthRequest(BaseModel):
     initData: str
+
+class BotLoginRequest(BaseModel):
+    telegram_id: int
+    first_name: str | None = None
+    last_name: str | None = None
+    username: str | None = None
+
 
 class DevLoginRequest(BaseModel):
     telegram_id: int = 123456789
@@ -278,3 +286,35 @@ async def dev_login(
 
     return {"message": "Login successful", "access_token": access_token}
 
+
+
+@router.post("/bot-login")
+async def bot_login(
+    data: BotLoginRequest,
+    response: Response,
+    session: AsyncSession = Depends(get_db_session),
+    _bot: None = Depends(verify_bot_secret),
+):
+    """
+    Secure 1-click login endpoint used exclusively by our verified Telegram bot.
+    Authenticates via X-Bot-Secret header.
+    Works seamlessly in development and production.
+    """
+    user = await _upsert_telegram_user(
+        session=session,
+        telegram_id=data.telegram_id,
+        first_name=data.first_name,
+        last_name=data.last_name,
+        username=data.username,
+    )
+
+    if user.is_banned:
+        raise HTTPException(status_code=403, detail="User is banned.")
+
+    access_token = create_access_token(
+        subject=str(user.id),
+        extra={"telegram_id": user.telegram_id, "role": "user"}
+    )
+    _set_user_cookie(response, access_token)
+
+    return {"message": "Login successful", "access_token": access_token}

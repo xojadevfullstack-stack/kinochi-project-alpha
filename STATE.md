@@ -1,31 +1,26 @@
 # Project State (STATE.md)
 
 ## Current goal
-Top 100 va Katalogdagi barcha medialarni (kinolar + seriallar) birlashtirib 65/66 ta to'liq ko'rsatish, sahifasiz qolgan kontentlarni saralash va sinxronizatsiya qilish.
+Telegram bot orqali sayt profiliga 1-click kirish autentifikatsiyasini yo'lga qo'yish va Admin panel scraper navbat jadvalidagi cheksiz "Yuklanmoqda..." yuklagich blokirovkasini to'liq bartaraf etish.
 
 ## In progress (slice, branch)
-- Slice: C14 (Catalog All-Media Aggregation & Orphan Anime Attachment).
+- Slice: C15 (Bot One-Click Login Token & Scraper Queue Infinite Loading Fix).
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, frontend va backend to'liq integratsiyalashgan).
+- None (Barcha testlar 100% yashil, bot login va admin panel navbat jadvali to'liq ishlaydi).
 
 ## Next step (one task)
-- O'zgarishlarni commit va push qilish (`git commit -m "feat(catalog): aggregate movies and series in full catalog view and attach orphan anime"`).
+- O'zgarishlarni commit va push qilish (`git commit -m "fix(auth,scraper): add secure bot-login endpoint and resolve queue table loader race condition"`).
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Top 100 & Catalog Sync Verification:**
-  * `http://localhost:3000/catalog`: Status 200 OK | Topilgan: 65 | "Barcha 65 ta kontent ko'rsatildi".
-  * `http://localhost:3000/catalog?type=movie`: Status 200 OK | Topilgan: 31 | "Barcha 31 ta kontent ko'rsatildi".
-  * `http://localhost:3000/catalog?type=series`: Status 200 OK | Topilgan: 34 | "Barcha 34 ta kontent ko'rsatildi".
-  * `http://localhost:3000/catalog?type=anime`: Status 200 OK | Topilgan: 29 | "Barcha 29 ta kontent ko'rsatildi".
-  * `http://localhost:3000/p/anime`: Status 200 OK | "Barcha 29 ta kontent ko'rsatildi" (Jodugarlar Jangi #1014 qo'shildi).
-- **TypeScript Gate:** Zero errors (`tsc --noEmit` on website: code 0).
-- **Pytest Gate:** 4 passed in 1.51s (`test_dorama_catalog_distribution.py`).
-- **Git Diff:** 2 files, 92 insertions, 80 deletions (172 lines <= 200 lines atomic slice).
+- **Pytest Gate:** 11 passed in 1.46s (`test_telegram_auth.py` va `test_scraper_queue_endpoint.py`).
+- **Live Backend Verification:** `api_client.generate_login_token` returned status 200 with valid JWT access_token.
+- **TypeScript Gate (Admin Panel):** Zero errors (`tsc --noEmit`: code 0).
+- **Git Diff:** 4 files, 132 insertions, 15 deletions (147 lines <= 200 lines atomic slice).
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)

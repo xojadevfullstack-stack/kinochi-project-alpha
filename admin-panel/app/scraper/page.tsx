@@ -148,6 +148,8 @@ export default function ScraperPage() {
 
   // Trackers to prevent stale async responses
   const queueReqId = useRef(0);
+  const queueInFlight = useRef(false);
+  const isFirstMount = useRef(true);
   const statusInFlight = useRef(false);
   const wasRunning = useRef(false);
 
@@ -169,9 +171,13 @@ export default function ScraperPage() {
   };
 
   // ── Fetch Queue Items ─────────────────────────────────────
-  const fetchQueue = async (page = queuePage) => {
+  const fetchQueue = async (page = queuePage, isBackground = false) => {
+    if (isBackground && queueInFlight.current) return;
+    queueInFlight.current = true;
     const reqId = ++queueReqId.current;
-    setLoadingQueue(true);
+    if (!isBackground && queueItems.length === 0) {
+      setLoadingQueue(true);
+    }
     try {
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -187,7 +193,8 @@ export default function ScraperPage() {
       if (reqId !== queueReqId.current) return;
 
       if ((data.items || []).length === 0 && page > 1 && data.total_pages < page) {
-        fetchQueue(Math.max(1, data.total_pages));
+        queueInFlight.current = false;
+        fetchQueue(Math.max(1, data.total_pages), isBackground);
         return;
       }
       setQueueItems(data.items || []);
@@ -199,6 +206,7 @@ export default function ScraperPage() {
         console.error("Queue fetch error:", err);
       }
     } finally {
+      queueInFlight.current = false;
       if (reqId === queueReqId.current) {
         setLoadingQueue(false);
       }
@@ -328,7 +336,7 @@ export default function ScraperPage() {
   // Queue Polling while process is running (every 4 seconds)
   useEffect(() => {
     if (!status?.is_running) return;
-    const qInterval = setInterval(() => fetchQueue(queuePage), 4000);
+    const qInterval = setInterval(() => fetchQueue(queuePage, true), 4000);
     return () => clearInterval(qInterval);
   }, [status?.is_running, queuePage, statusFilter, sourceFilter, searchQuery]);
 
@@ -343,6 +351,10 @@ export default function ScraperPage() {
 
   // Search Debounce (350ms)
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       fetchQueue(1);
     }, 350);
@@ -2199,6 +2211,7 @@ export default function ScraperPage() {
               <option value="all">Barchasi</option>
               <option value="uzmovi">Uzmovi</option>
               <option value="asilmedia">Asilmedia</option>
+              <option value="kinochilar">Kinochilar</option>
               <option value="anitoob">AniToob</option>
               <option value="animeelar">Animeelar</option>
             </select>
@@ -2237,7 +2250,7 @@ export default function ScraperPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loadingQueue ? (
+              {loadingQueue && queueItems.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-zinc-400">
                     <span className="material-symbols-outlined text-2xl animate-spin">sync</span>
