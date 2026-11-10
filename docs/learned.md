@@ -252,3 +252,8 @@
 ## Multi-Axis Admission Gate (Ko'p o'qli qabul qo'riqchisi)
 - Ingest qilinayotgan mediani bazaga kiritishdan oldin mustaqil metrikalar (davomiylik, nom, qism soni, file_unique_id, tiriklik) bo'yicha atomik tekshirib, xatolikda elementni o'chirmasdan `needs_review` ga yo'naltirish.
 - Analogy: Aeroportdagi bojxona tekshiruvi: yo'lovchi yukida shubhali narsa bo'lsa uni yoqib yubormasdan, qo'shimcha ko'rik xonasiga olib o'tish.
+
+
+## CDN Video Embed vs Telegram Direct File Bot (Veb-Pleyer va Telegram Fayl Farqi)
+- Saytdagi HLS/Iframe pleyerlar video oqimini faqat brauzerda qismlarga bo'lib ko'rsatadi, ammo Telegram botlariga to'liq yuklab olinadigan butun `.mp4` fayl havolasini taqdim etmaydi.
+- Analogy: Kinoteatr zalidagi ekrandan filmni tomosha qilish (faqat ko'rish mumkin, faylni olib ketib bo'lmaydi) vs Do'kondan tayyor kino yozilgan fleshka xarid qilish (faylni bemalol o'z serveringizga ko'chirib olish mumkin).
