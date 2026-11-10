@@ -8,7 +8,6 @@ TDD Tests for Kinochilar Adapter Fixtures:
 6. Pagination end (empty page / no cards)
 7. Source down (network error / HTTP 500)
 """
-import pytest
 from unittest.mock import patch, MagicMock
 from scraper.kinochilar_parser import (
     _extract_kinochilar_items_from_html,

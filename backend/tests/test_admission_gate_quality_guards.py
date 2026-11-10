@@ -6,7 +6,6 @@ TDD Tests for Admission Gate Quality Guards:
 4. Duplicate file_unique_id
 5. file_id liveness check
 """
-import pytest
 from app.core.admission_gate import final_check
 
 def test_final_check_runtime_tolerance_10_percent():

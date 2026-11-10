@@ -7,8 +7,7 @@ TDD Tests for Uzmovi Adapter Fixtures:
 5. Pagination end (empty page / no cards)
 6. Source down (network error / HTTP 500)
 """
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from scraper.site_parser import _extract_uzmovi_items_from_html, parse_uzmovi_page
 from app.core.admission_gate import final_check
 

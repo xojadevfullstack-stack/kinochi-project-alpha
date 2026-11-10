@@ -22,13 +22,13 @@ import datetime
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
-from sqlalchemy import select, or_, and_, func, text
+from sqlalchemy import select, or_, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models.rejected_item import RejectedItemModel
 from app.infrastructure.db.models.blacklist import BlacklistModel
 from app.infrastructure.db.models.movie import MovieModel
-from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
+from app.infrastructure.db.models.series import SeriesModel
 from app.infrastructure.db.models.translation import MovieTranslationModel, EpisodeTranslationModel
 
 logger = logging.getLogger(__name__)

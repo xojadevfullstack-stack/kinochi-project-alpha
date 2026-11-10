@@ -169,7 +169,6 @@ def fetch_kinochilar_start_hash(page_url: str) -> Optional[str]:
     Fetches the movie/series detail page and extracts the Telegram bot start hash:
     https://t.me/kinochilar_fast_bot?start=<HASH> -> returns <HASH>
     """
-    import ssl
     try:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -199,7 +198,6 @@ async def fetch_kinochilar_start_hash_async(session: aiohttp.ClientSession, page
 
 
 def parse_kinochilar_page(page_url: str, min_rating: float = 0.0) -> List[QueueItem]:
-    import ssl
     try:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
