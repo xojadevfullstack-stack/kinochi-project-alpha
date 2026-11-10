@@ -1,39 +1,36 @@
 # Project State (STATE.md)
 
 ## Current goal
-Doramalar va barcha media turlari (dorama, anime, multfilm, turk, hind) taqsimoti, filtrlari va sahifalarini to'liq sinxronlashtirish hamda barqarorlashtirish.
+Top 100 va Katalogdagi barcha medialarni (kinolar + seriallar) birlashtirib 65/66 ta to'liq ko'rsatish, sahifasiz qolgan kontentlarni saralash va sinxronizatsiya qilish.
 
 ## In progress (slice, branch)
-- Slice: C13 (Media Type Distribution & Dorama Category Normalization).
+- Slice: C14 (Catalog All-Media Aggregation & Orphan Anime Attachment).
 - Branch: `main`.
 
 ## Blocked
 - None (Barcha testlar 100% yashil, frontend va backend to'liq integratsiyalashgan).
 
 ## Next step (one task)
-- Foydalanuvchi tasdig'i bilan commit va push qilish (`git commit -m "fix(catalog,scraper): fix dorama category 40 enrichment and catalog page distribution"`).
+- O'zgarishlarni commit va push qilish (`git commit -m "feat(catalog): aggregate movies and series in full catalog view and attach orphan anime"`).
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Dorama & Media Distribution Tests (pytest):** 19 passed in 5.83s (`test_dorama_catalog_distribution.py`, `test_autopilot_rebuild.py`, `test_anime_enricher_guards.py`, etc.).
-- **Live Website Verification (HTTP 200):**
-  * `http://localhost:3000/doramas`: Status 200 OK (Tasodifmi: True, Mehribon doktor Kim: True).
-  * `http://localhost:3000/catalog?type=dorama`: Status 200 OK (Tasodifmi: True, Mehribon doktor Kim: True).
-  * `http://localhost:3000/catalog?type=anime`: Status 200 OK (Series & Movies mix).
-  * `http://localhost:3000/catalog?type=cartoon`: Status 200 OK (Movies & Series mix).
-- **Backend API Verification:**
-  * `http://127.0.0.1:8000/api/v1/series?category_id=40`: total 2 (Tasodifmi, Mehribon doktor Kim).
-  * `http://127.0.0.1:8000/api/v1/series?page_id=5`: total 2.
-- **TypeScript Gate:** Zero errors (`tsc --noEmit` on website & admin-panel).
-- **Git Diff:** 6 files, 119 insertions, 38 deletions (<= 200 lines atomic slice).
+- **Top 100 & Catalog Sync Verification:**
+  * `http://localhost:3000/catalog`: Status 200 OK | Topilgan: 65 | "Barcha 65 ta kontent ko'rsatildi".
+  * `http://localhost:3000/catalog?type=movie`: Status 200 OK | Topilgan: 31 | "Barcha 31 ta kontent ko'rsatildi".
+  * `http://localhost:3000/catalog?type=series`: Status 200 OK | Topilgan: 34 | "Barcha 34 ta kontent ko'rsatildi".
+  * `http://localhost:3000/catalog?type=anime`: Status 200 OK | Topilgan: 29 | "Barcha 29 ta kontent ko'rsatildi".
+  * `http://localhost:3000/p/anime`: Status 200 OK | "Barcha 29 ta kontent ko'rsatildi" (Jodugarlar Jangi #1014 qo'shildi).
+- **TypeScript Gate:** Zero errors (`tsc --noEmit` on website: code 0).
+- **Pytest Gate:** 4 passed in 1.51s (`test_dorama_catalog_distribution.py`).
+- **Git Diff:** 2 files, 92 insertions, 80 deletions (172 lines <= 200 lines atomic slice).
 
 ## Live Database Metrics (PostgreSQL Evidence)
-- **Movies (Kinolar):** 29 ta (100% sog'lom)
-- **Series (Seriallar):** 34 ta (100% sog'lom, jumladan 2 ta dorama)
-- **Categories:** Doramalar (ID 40) va Page 5 sinxron bog'landi.
-- **Multfilms:** Anime (ID 2) tozalab olindi, Animatsiya (ID 22) va Page 8 bilan mustahkamlandi.
+- **Movies (Kinolar):** 31 ta (100% sog'lom)
+- **Series (Seriallar):** 35 ta (100% sog'lom, 34 ta published, 1 ta Jodugarlar Jangi Page 1 ga biriktirildi)
+- **Catalog Default View:** Barcha kinolar va seriallar birlashtirilib reyting / sana / ID bo'yicha to'liq ko'rsatilmoqda.
 
 ---
 

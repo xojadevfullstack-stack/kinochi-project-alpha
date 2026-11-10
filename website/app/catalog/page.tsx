@@ -81,111 +81,102 @@ export default async function FullCatalogPage({
   let movies: CatalogItem[] = [];
   let total = 0;
   let categories: any[] = [];
-  const pageSize = 36;
+  const pageSize = 60;
+
+  const selectedType = searchParams.type;
+  const isAll = !selectedType || selectedType === "all";
+  const isMovie = selectedType === "movie" || selectedType === "movies";
+  const isSeries = selectedType === "series";
+  const isDorama = selectedType === "dorama" || selectedType === "doramas";
+  const isAnime = selectedType === "anime";
+  const isCartoon = selectedType === "cartoon" || selectedType === "cartoons" || selectedType === "animation";
+
+  const paramParts: string[] = [];
+  if (searchParams.category) paramParts.push(`category_id=${searchParams.category}`);
+  if (searchParams.page_id) paramParts.push(`page_id=${searchParams.page_id}`);
+  if (searchParams.genre) paramParts.push(`genre=${encodeURIComponent(searchParams.genre)}`);
+  if (searchParams.year) paramParts.push(`year=${searchParams.year}`);
+  if (searchParams.search) paramParts.push(`search=${encodeURIComponent(searchParams.search)}`);
+  if (searchParams.sort) paramParts.push(`sort=${encodeURIComponent(searchParams.sort)}`);
+  const commonParams = paramParts.length > 0 ? `&${paramParts.join("&")}` : "";
 
   try {
-    const isSeriesSearch = searchParams.type === "series" || searchParams.type === "dorama";
-    const endpoint = isSeriesSearch ? "/series" : "/movies";
-    let query = `${endpoint}?limit=${pageSize}`;
-
-    if (searchParams.type === "dorama") {
-      query += `&category_id=40`;
-    } else if (searchParams.category) {
-      query += `&category_id=${searchParams.category}`;
-    } else if (searchParams.type === "anime") {
-      query += `&category_id=2`;
-    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
-      query += `&category_id=22`;
-    }
-
-    if (searchParams.page_id) {
-      query += `&page_id=${searchParams.page_id}`;
-    }
-
-    if (searchParams.genre) {
-      query += `&genre=${encodeURIComponent(searchParams.genre)}`;
+    if (isMovie) {
+      const [moviesData, categoriesData] = await Promise.all([
+        fetchApi(`/movies?limit=${pageSize}${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+      movies = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      total = moviesData?.total || movies.length;
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (isSeries) {
+      const [seriesData, categoriesData] = await Promise.all([
+        fetchApi(`/series?limit=${pageSize}${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+      movies = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      total = seriesData?.total || movies.length;
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (isAnime) {
+      const [seriesData, moviesData, categoriesData] = await Promise.all([
+        fetchApi(`/series?limit=${pageSize}&category_id=2${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/movies?limit=${pageSize}&category_id=2${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      movies = [...seriesItems, ...movieItems];
+      total = (seriesData?.total || 0) + (moviesData?.total || 0);
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (isCartoon) {
+      const [moviesData, seriesData, categoriesData] = await Promise.all([
+        fetchApi(`/movies?limit=${pageSize}&category_id=22${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/series?limit=${pageSize}&category_id=22${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      movies = [...movieItems, ...seriesItems];
+      total = (moviesData?.total || 0) + (seriesData?.total || 0);
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
+    } else if (isDorama) {
+      const [seriesData, moviesData, categoriesData] = await Promise.all([
+        fetchApi(`/series?limit=${pageSize}&category_id=40${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/movies?limit=${pageSize}&category_id=40${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      movies = [...seriesItems, ...movieItems];
+      total = (seriesData?.total || 0) + (moviesData?.total || 0);
+      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     } else {
-      if (searchParams.type === "anime" && searchParams.category) {
-        query += `&genre=anime`;
-      } else if ((searchParams.type === "cartoon" || searchParams.type === "animation") && searchParams.category) {
-        query += `&genre=animatsiya`;
+      // Default: ALL (Fetch both movies and series combined)
+      const [moviesData, seriesData, categoriesData] = await Promise.all([
+        fetchApi(`/movies?limit=${pageSize}${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi(`/series?limit=${pageSize}${commonParams}`).catch(() => ({ items: [], total: 0 })),
+        fetchApi("/categories").catch(() => []),
+      ]);
+
+      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
+      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
+      const combined = [...movieItems, ...seriesItems];
+
+      if (searchParams.sort === "rating" || searchParams.sort === "imdb") {
+        combined.sort((a, b) => Number(b.imdb_rating || b.rating || 0) - Number(a.imdb_rating || a.rating || 0));
+      } else if (searchParams.sort === "year") {
+        combined.sort((a, b) => Number(b.release_year || b.year || 0) - Number(a.release_year || a.year || 0));
+      } else {
+        combined.sort((a, b) => {
+          const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          if (tB !== tA) return tB - tA;
+          return Number(b.id || 0) - Number(a.id || 0);
+        });
       }
-    }
 
-    if (searchParams.year) {
-      query += `&year=${searchParams.year}`;
-    }
-    if (searchParams.search) {
-      query += `&search=${encodeURIComponent(searchParams.search)}`;
-    }
-    if (searchParams.sort) {
-      query += `&sort=${encodeURIComponent(searchParams.sort)}`;
-    }
-
-    const commonParams = `${searchParams.year ? `&year=${searchParams.year}` : ""}${searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : ""}${searchParams.search ? `&search=${encodeURIComponent(searchParams.search)}` : ""}${searchParams.sort ? `&sort=${encodeURIComponent(searchParams.sort)}` : ""}`;
-
-    if (searchParams.type === "all") {
-      const [moviesData, seriesData, categoriesData] = await Promise.all([
-        fetchApi(`/movies?limit=24${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi(`/series?limit=12${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi("/categories").catch(() => []),
-      ]);
-
-      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
-      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-      movies = [...movieItems, ...seriesItems];
+      movies = combined;
       total = (moviesData?.total || 0) + (seriesData?.total || 0);
-      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
-    } else if (searchParams.type === "anime") {
-      const [seriesData, moviesData, categoriesData] = await Promise.all([
-        fetchApi(`/series?limit=24&category_id=2${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi(`/movies?limit=12&category_id=2${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi("/categories").catch(() => []),
-      ]);
-
-      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
-      movies = [...seriesItems, ...movieItems];
-      total = (seriesData?.total || 0) + (moviesData?.total || 0);
-      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
-    } else if (searchParams.type === "cartoon" || searchParams.type === "animation") {
-      const [moviesData, seriesData, categoriesData] = await Promise.all([
-        fetchApi(`/movies?limit=24&category_id=22${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi(`/series?limit=12&category_id=22${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi("/categories").catch(() => []),
-      ]);
-
-      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
-      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-      movies = [...movieItems, ...seriesItems];
-      total = (moviesData?.total || 0) + (seriesData?.total || 0);
-      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
-    } else if (searchParams.type === "dorama") {
-      const [seriesData, moviesData, categoriesData] = await Promise.all([
-        fetchApi(`/series?limit=24&category_id=40${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi(`/movies?limit=12&category_id=40${commonParams}`).catch(() => ({ items: [], total: 0 })),
-        fetchApi("/categories").catch(() => []),
-      ]);
-
-      const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-      const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
-      movies = [...seriesItems, ...movieItems];
-      total = (seriesData?.total || 0) + (moviesData?.total || 0);
-      categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
-    } else {
-      const [contentData, categoriesData] = await Promise.all([
-        fetchApi(query).catch((e) => {
-          console.error("fetch content failed:", e);
-          return { items: [], total: 0 };
-        }),
-        fetchApi("/categories").catch((e) => {
-          console.error("fetch categories failed:", e);
-          return [];
-        }),
-      ]);
-
-      movies = (contentData?.items || []).map((m: any) => ({ ...m, is_series: isSeriesSearch || m.is_series || false }));
-      total = contentData?.total ?? movies.length;
       categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     }
   } catch (error) {
@@ -195,7 +186,6 @@ export default async function FullCatalogPage({
   const selectedYear = searchParams.year;
   const selectedCategory = searchParams.category;
   const selectedGenre = searchParams.genre;
-  const selectedType = searchParams.type;
   const hasFilterActive = Boolean(
     selectedCategory ||
     selectedYear ||
@@ -208,14 +198,18 @@ export default async function FullCatalogPage({
   // Active filter label
   const activeCategoryName = categories.find((c) => String(c.id) === String(selectedCategory))?.name;
   const activeTypeName =
-    selectedType === "all"
+    isAll
       ? "Barcha filmlar va seriallar"
-      : selectedType === "dorama"
+      : isDorama
       ? "Doramalar"
-      : selectedType === "anime"
+      : isAnime
       ? "Anime"
-      : selectedType === "cartoon" || selectedType === "animation"
+      : isCartoon
       ? "Multfilmlar"
+      : isMovie
+      ? "Kinolar"
+      : isSeries
+      ? "Seriallar"
       : DEFAULT_MEDIA_TYPES.find((t) => t.id === selectedType)?.name;
   const activeGenreName = DEFAULT_GENRES.find((g) => g.id === selectedGenre)?.name;
 
@@ -344,9 +338,10 @@ export default async function FullCatalogPage({
           </div>
 
           <CatalogGrid
-            key={`catalog-${selectedCategory || 'all'}-${selectedGenre || 'all'}-${selectedYear || 'all'}-${searchParams.search || ''}-${searchParams.sort || ''}`}
+            key={`catalog-${selectedType || 'all'}-${selectedCategory || 'all'}-${selectedGenre || 'all'}-${selectedYear || 'all'}-${searchParams.search || ''}-${searchParams.sort || ''}`}
             initialItems={movies}
             total={total}
+            type={isSeries ? "series" : isMovie ? "movies" : "all"}
             categoryId={selectedCategory}
             genre={selectedGenre}
             year={selectedYear}

@@ -8,7 +8,7 @@ import { fetchApi } from "@/lib/api";
 export type CatalogGridProps = {
   initialItems: CatalogItem[];
   total: number;
-  type?: "movies" | "series" | "page";
+  type?: "movies" | "series" | "page" | "all";
   pageSlug?: string;
   pageId?: number;
   categoryId?: string;
@@ -23,7 +23,7 @@ export type CatalogGridProps = {
 export default function CatalogGrid({
   initialItems = [],
   total: initialTotal = 0,
-  type = "movies",
+  type = "all",
   pageSlug = "",
   pageId,
   categoryId,
@@ -78,6 +78,23 @@ export default function CatalogGrid({
         const res = await getPageContent(pageSlug, items.length, pageSize, categoryId);
         newItems = res.items || [];
         if (res.total !== undefined) nextTotal = res.total;
+      } else if (type === "all") {
+        const halfSkip = Math.floor(items.length / 2);
+        let mUrl = `/movies?skip=${halfSkip}&limit=${pageSize}`;
+        let sUrl = `/series?skip=${halfSkip}&limit=${pageSize}`;
+        if (categoryId) { mUrl += `&category_id=${categoryId}`; sUrl += `&category_id=${categoryId}`; }
+        if (genre) { mUrl += `&genre=${encodeURIComponent(genre)}`; sUrl += `&genre=${encodeURIComponent(genre)}`; }
+        if (year) { mUrl += `&year=${year}`; sUrl += `&year=${year}`; }
+        if (search) { mUrl += `&search=${encodeURIComponent(search)}`; sUrl += `&search=${encodeURIComponent(search)}`; }
+        if (sort) { mUrl += `&sort=${encodeURIComponent(sort)}`; sUrl += `&sort=${encodeURIComponent(sort)}`; }
+        const [mRes, sRes] = await Promise.all([
+          fetchApi(mUrl).catch(() => ({ items: [], total: 0 })),
+          fetchApi(sUrl).catch(() => ({ items: [], total: 0 }))
+        ]);
+        const mItems = (mRes?.items || []).map((m: any) => ({ ...m, is_series: false }));
+        const sItems = (sRes?.items || []).map((s: any) => ({ ...s, is_series: true }));
+        newItems = [...mItems, ...sItems];
+        if (mRes?.total !== undefined && sRes?.total !== undefined) nextTotal = mRes.total + sRes.total;
       }
 
       if (newItems.length > 0) {
