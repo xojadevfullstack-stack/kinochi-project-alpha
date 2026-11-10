@@ -47,6 +47,16 @@ export default function PagesPage() {
   const [attachedMovies, setAttachedMovies] = useState<ContentItem[]>([]);
   const [attachedSeries, setAttachedSeries] = useState<ContentItem[]>([]);
   const [contentSearch, setContentSearch] = useState("");
+  const [contentViewMode, setContentViewMode] = useState<"attached" | "available">("attached");
+
+  // Multi-Select Catalog Attachment States
+  const [availableMovies, setAvailableMovies] = useState<ContentItem[]>([]);
+  const [availableSeries, setAvailableSeries] = useState<ContentItem[]>([]);
+  const [loadingAvailable, setLoadingAvailable] = useState(false);
+  const [selectedMovieIds, setSelectedMovieIds] = useState<number[]>([]);
+  const [selectedSeriesIds, setSelectedSeriesIds] = useState<number[]>([]);
+  const [availableSearch, setAvailableSearch] = useState("");
+  const [isBatchAttaching, setIsBatchAttaching] = useState(false);
 
   // Attach Content Form State inside Modal
   const [attachType, setAttachType] = useState<"movie" | "series">("movie");
@@ -160,13 +170,53 @@ export default function PagesPage() {
     }
   };
 
+  // Fetch Available Content from Catalog
+  const fetchAvailableContent = async (searchQuery: string = "") => {
+    setLoadingAvailable(true);
+    try {
+      const q = searchQuery.trim() ? `&search=${encodeURIComponent(searchQuery.trim())}` : "";
+      const [mRes, sRes] = await Promise.all([
+        fetchApi(`/movies?page=1&page_size=60${q}`),
+        fetchApi(`/series?page=1&page_size=60${q}`),
+      ]);
+      setAvailableMovies(
+        (mRes.items || []).map((m: any) => ({
+          id: m.id,
+          title: m.title,
+          code: m.code,
+          year: m.release_year || m.year,
+          poster_url: m.poster_url,
+          genres: Array.isArray(m.genres) ? m.genres.join(", ") : m.genres,
+        }))
+      );
+      setAvailableSeries(
+        (sRes.items || []).map((s: any) => ({
+          id: s.id,
+          title: s.title,
+          code: s.code,
+          year: s.release_year || s.year,
+          poster_url: s.poster_url,
+          genres: Array.isArray(s.genres) ? s.genres.join(", ") : s.genres,
+        }))
+      );
+    } catch (err: any) {
+      console.error("fetchAvailableContent error:", err);
+    } finally {
+      setLoadingAvailable(false);
+    }
+  };
+
   // Open Content Management Modal
   const openContentManager = async (page: PageItem) => {
     setContentModalPage(page);
     setContentLoading(true);
     setContentSearch("");
+    setAvailableSearch("");
     setModalMsg(null);
     setAttachIdOrCode("");
+    setSelectedMovieIds([]);
+    setSelectedSeriesIds([]);
+    setContentViewMode("attached");
     try {
       const res = await fetchApi(`/pages/${page.id}/content`);
       setAttachedMovies(res.movies || []);
@@ -176,11 +226,94 @@ export default function PagesPage() {
       } else {
         setContentTab("movies");
       }
+      fetchAvailableContent("");
     } catch (e: any) {
       console.error(e);
       setModalMsg({ text: "Kontentni yuklashda xato: " + e.message, isError: true });
     } finally {
       setContentLoading(false);
+    }
+  };
+
+  // Toggle selection for available movie
+  const toggleSelectMovie = (id: number) => {
+    setSelectedMovieIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // Toggle selection for available series
+  const toggleSelectSeries = (id: number) => {
+    setSelectedSeriesIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // Select or Deselect All
+  const toggleSelectAll = (type: "movies" | "series") => {
+    if (type === "movies") {
+      const unattached = availableMovies
+        .filter((m) => !attachedMovies.some((am) => am.id === m.id))
+        .map((m) => m.id);
+      const allSelected = unattached.length > 0 && unattached.every((id) => selectedMovieIds.includes(id));
+      if (allSelected) {
+        setSelectedMovieIds((prev) => prev.filter((id) => !unattached.includes(id)));
+      } else {
+        setSelectedMovieIds((prev) => Array.from(new Set([...prev, ...unattached])));
+      }
+    } else {
+      const unattached = availableSeries
+        .filter((s) => !attachedSeries.some((as) => as.id === s.id))
+        .map((s) => s.id);
+      const allSelected = unattached.length > 0 && unattached.every((id) => selectedSeriesIds.includes(id));
+      if (allSelected) {
+        setSelectedSeriesIds((prev) => prev.filter((id) => !unattached.includes(id)));
+      } else {
+        setSelectedSeriesIds((prev) => Array.from(new Set([...prev, ...unattached])));
+      }
+    }
+  };
+
+  // Batch Attach Selected Items
+  const handleBatchAttach = async () => {
+    if (!contentModalPage) return;
+    const totalCount = selectedMovieIds.length + selectedSeriesIds.length;
+    if (totalCount === 0) return;
+    setIsBatchAttaching(true);
+    try {
+      const payload = {
+        movie_ids: selectedMovieIds,
+        series_ids: selectedSeriesIds,
+      };
+      await fetchApi(`/pages/${contentModalPage.id}/attach`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      // Refresh attached content
+      const res = await fetchApi(`/pages/${contentModalPage.id}/content`);
+      setAttachedMovies(res.movies || []);
+      setAttachedSeries(res.series || []);
+      setModalMsg({ text: `${totalCount} ta kontent muvaffaqiyatli biriktirildi!` });
+      setSelectedMovieIds([]);
+      setSelectedSeriesIds([]);
+
+      // Update parent list counts
+      setPages((prev) =>
+        prev.map((p) =>
+          p.id === contentModalPage.id
+            ? {
+                ...p,
+                movies_count: (res.movies || []).length,
+                series_count: (res.series || []).length,
+              }
+            : p
+        )
+      );
+    } catch (e: any) {
+      setModalMsg({ text: "Biriktirishda xato: " + e.message, isError: true });
+    } finally {
+      setIsBatchAttaching(false);
     }
   };
 
@@ -333,6 +466,28 @@ export default function PagesPage() {
         String(s.code || "").includes(q)
     );
   }, [attachedSeries, contentSearch]);
+
+  const filteredAvailableMovies = useMemo(() => {
+    if (!availableSearch.trim()) return availableMovies;
+    const q = availableSearch.toLowerCase();
+    return availableMovies.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        String(m.id).includes(q) ||
+        String(m.code || "").includes(q)
+    );
+  }, [availableMovies, availableSearch]);
+
+  const filteredAvailableSeries = useMemo(() => {
+    if (!availableSearch.trim()) return availableSeries;
+    const q = availableSearch.toLowerCase();
+    return availableSeries.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        String(s.id).includes(q) ||
+        String(s.code || "").includes(q)
+    );
+  }, [availableSeries, availableSearch]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -741,246 +896,569 @@ export default function PagesPage() {
               </button>
             </div>
 
-            {/* Modal Quick Attach Form */}
-            <div className="p-4 sm:p-6 bg-surface-container-lowest/80 border-b border-white/10">
-              <form onSubmit={handleAttachContent} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
-                <div className="w-full sm:w-36">
-                  <label className="block text-[11px] font-semibold text-text-secondary uppercase mb-1">
-                    Kontent Turi
-                  </label>
-                  <select
-                    value={attachType}
-                    onChange={(e) => setAttachType(e.target.value as any)}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-container"
-                  >
-                    <option value="movie">🎬 Kino</option>
-                    <option value="series">📺 Serial</option>
-                  </select>
-                </div>
+            {/* Content View Mode Switcher (Attached vs Available Catalog) */}
+            <div className="flex border-b border-white/10 bg-black/60 px-6 pt-3 gap-2">
+              <button
+                onClick={() => setContentViewMode("attached")}
+                className={`pb-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                  contentViewMode === "attached"
+                    ? "border-primary-container text-white"
+                    : "border-transparent text-text-secondary hover:text-white"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">link</span>
+                <span>Biriktirilgan Kontent ({attachedMovies.length + attachedSeries.length})</span>
+              </button>
 
-                <div className="flex-1">
-                  <label className="block text-[11px] font-semibold text-text-secondary uppercase mb-1">
-                    Kino / Serial ID, Kodi yoki Nomi
-                  </label>
-                  <input
-                    type="text"
-                    value={attachIdOrCode}
-                    onChange={(e) => setAttachIdOrCode(e.target.value)}
-                    placeholder="Masalan: 831 yoki Qashqirlar makoni"
-                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isAttaching || !attachIdOrCode.trim()}
-                  className="bg-primary-container hover:brightness-110 active:scale-95 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-sm font-medium transition flex items-center justify-center gap-1.5 h-[38px]"
-                >
-                  {isAttaching ? (
-                    <span className="material-symbols-outlined animate-spin text-sm">
-                      progress_activity
-                    </span>
-                  ) : (
-                    <span className="material-symbols-outlined text-base">add_link</span>
-                  )}
-                  <span>Biriktirish</span>
-                </button>
-              </form>
-
-              {modalMsg && (
-                <div
-                  className={`mt-3 p-3 rounded-xl text-xs flex items-center justify-between ${
-                    modalMsg.isError
-                      ? "bg-red-500/10 border border-red-500/30 text-red-400"
-                      : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">
-                      {modalMsg.isError ? "error" : "check_circle"}
-                    </span>
-                    <span>{modalMsg.text}</span>
-                  </div>
-                  <button onClick={() => setModalMsg(null)} className="opacity-70 hover:opacity-100">
-                    <span className="material-symbols-outlined text-xs">close</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Tabs & Search */}
-            <div className="px-6 py-3 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/20">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setContentTab("movies")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    contentTab === "movies"
-                      ? "bg-primary-container text-white shadow"
-                      : "bg-white/5 text-text-secondary hover:text-white"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[15px]">movie</span>
-                  <span>Biriktirilgan Kinolar ({attachedMovies.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setContentTab("series")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    contentTab === "series"
-                      ? "bg-primary-container text-white shadow"
-                      : "bg-white/5 text-text-secondary hover:text-white"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[15px]">tv</span>
-                  <span>Biriktirilgan Seriallar ({attachedSeries.length})</span>
-                </button>
-              </div>
-
-              <div className="relative w-full sm:w-64">
-                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary text-base">
-                  search
-                </span>
-                <input
-                  type="text"
-                  value={contentSearch}
-                  onChange={(e) => setContentSearch(e.target.value)}
-                  placeholder="Ro'yxatdan qidirish..."
-                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary-container"
-                />
-              </div>
-            </div>
-
-            {/* Attached Items List Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
-              {contentLoading ? (
-                <div className="py-20 text-center text-text-secondary">
-                  <span className="material-symbols-outlined animate-spin text-3xl mb-2 text-primary-container">
-                    progress_activity
+              <button
+                onClick={() => {
+                  setContentViewMode("available");
+                  if (availableMovies.length === 0 && availableSeries.length === 0) {
+                    fetchAvailableContent(availableSearch);
+                  }
+                }}
+                className={`pb-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                  contentViewMode === "available"
+                    ? "border-primary-container text-white"
+                    : "border-transparent text-text-secondary hover:text-white"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">playlist_add_check</span>
+                <span>Katalogdan Biriktirish (Multi-Select)</span>
+                {(selectedMovieIds.length > 0 || selectedSeriesIds.length > 0) && (
+                  <span className="px-1.5 py-0.2 bg-primary-container text-white rounded-full text-[10px] font-bold">
+                    {selectedMovieIds.length + selectedSeriesIds.length}
                   </span>
-                  <div>Kontent yuklanmoqda...</div>
+                )}
+              </button>
+            </div>
+
+            {/* Notification Alert */}
+            {modalMsg && (
+              <div
+                className={`mx-6 mt-3 p-3 rounded-xl text-xs flex items-center justify-between ${
+                  modalMsg.isError
+                    ? "bg-red-500/10 border border-red-500/30 text-red-400"
+                    : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">
+                    {modalMsg.isError ? "error" : "check_circle"}
+                  </span>
+                  <span>{modalMsg.text}</span>
                 </div>
-              ) : contentTab === "movies" ? (
-                filteredModalMovies.length === 0 ? (
-                  <div className="py-16 text-center text-text-secondary border border-dashed border-white/10 rounded-2xl">
-                    <span className="material-symbols-outlined text-4xl mb-2 opacity-40">
-                      movie
-                    </span>
-                    <div className="text-sm font-medium">Bu sahifada hali kinolar biriktirilmagan</div>
-                    <div className="text-xs text-text-secondary mt-1">
-                      Yuqoridagi forma orqali kino ID yoki kodini kiritib sahifaga qo'shishingiz mumkin
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {filteredModalMovies.map((m) => (
-                      <div
-                        key={m.id}
-                        className="bg-black/40 border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-white/20 transition"
+                <button onClick={() => setModalMsg(null)} className="opacity-70 hover:opacity-100">
+                  <span className="material-symbols-outlined text-xs">close</span>
+                </button>
+              </div>
+            )}
+
+            {/* VIEW 1: ATTACHED CONTENT */}
+            {contentViewMode === "attached" && (
+              <>
+                {/* Quick Attach Form */}
+                <div className="p-4 sm:p-6 bg-surface-container-lowest/80 border-b border-white/10">
+                  <form onSubmit={handleAttachContent} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+                    <div className="w-full sm:w-36">
+                      <label className="block text-[11px] font-semibold text-text-secondary uppercase mb-1">
+                        Kontent Turi
+                      </label>
+                      <select
+                        value={attachType}
+                        onChange={(e) => setAttachType(e.target.value as any)}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-container"
                       >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          {m.poster_url ? (
-                            <img
-                              src={m.poster_url}
-                              alt={m.title}
-                              className="w-12 h-16 rounded-lg object-cover flex-shrink-0 bg-white/5 border border-white/10"
-                            />
-                          ) : (
-                            <div className="w-12 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-text-secondary">
-                              <span className="material-symbols-outlined text-lg">movie</span>
-                            </div>
-                          )}
-                          <div className="truncate">
-                            <div className="font-semibold text-white text-sm truncate">{m.title}</div>
-                            <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
-                              <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
-                                ID: {m.id}
-                              </span>
-                              {m.code && (
-                                <span className="font-mono bg-primary-container/20 text-primary-container px-1.5 py-0.5 rounded text-[11px]">
-                                  #{m.code}
-                                </span>
+                        <option value="movie">🎬 Kino</option>
+                        <option value="series">📺 Serial</option>
+                      </select>
+                    </div>
+
+                    <div className="flex-1">
+                      <label className="block text-[11px] font-semibold text-text-secondary uppercase mb-1">
+                        Kino / Serial ID, Kodi yoki Nomi
+                      </label>
+                      <input
+                        type="text"
+                        value={attachIdOrCode}
+                        onChange={(e) => setAttachIdOrCode(e.target.value)}
+                        placeholder="Masalan: 831 yoki Qashqirlar makoni"
+                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isAttaching || !attachIdOrCode.trim()}
+                      className="bg-primary-container hover:brightness-110 active:scale-95 disabled:opacity-50 text-white px-5 py-2 rounded-xl text-sm font-medium transition flex items-center justify-center gap-1.5 h-[38px]"
+                    >
+                      {isAttaching ? (
+                        <span className="material-symbols-outlined animate-spin text-sm">
+                          progress_activity
+                        </span>
+                      ) : (
+                        <span className="material-symbols-outlined text-base">add_link</span>
+                      )}
+                      <span>Biriktirish</span>
+                    </button>
+                  </form>
+                </div>
+
+                {/* Subtabs & Search for Attached Items */}
+                <div className="px-6 py-3 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/20">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setContentTab("movies")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        contentTab === "movies"
+                          ? "bg-primary-container text-white shadow"
+                          : "bg-white/5 text-text-secondary hover:text-white"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[15px]">movie</span>
+                      <span>Biriktirilgan Kinolar ({attachedMovies.length})</span>
+                    </button>
+
+                    <button
+                      onClick={() => setContentTab("series")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        contentTab === "series"
+                          ? "bg-primary-container text-white shadow"
+                          : "bg-white/5 text-text-secondary hover:text-white"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[15px]">tv</span>
+                      <span>Biriktirilgan Seriallar ({attachedSeries.length})</span>
+                    </button>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary text-base">
+                      search
+                    </span>
+                    <input
+                      type="text"
+                      value={contentSearch}
+                      onChange={(e) => setContentSearch(e.target.value)}
+                      placeholder="Ro'yxatdan qidirish..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary-container"
+                    />
+                  </div>
+                </div>
+
+                {/* Attached Items List Body */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
+                  {contentLoading ? (
+                    <div className="py-20 text-center text-text-secondary">
+                      <span className="material-symbols-outlined animate-spin text-3xl mb-2 text-primary-container">
+                        progress_activity
+                      </span>
+                      <div>Kontent yuklanmoqda...</div>
+                    </div>
+                  ) : contentTab === "movies" ? (
+                    filteredModalMovies.length === 0 ? (
+                      <div className="py-16 text-center text-text-secondary border border-dashed border-white/10 rounded-2xl">
+                        <span className="material-symbols-outlined text-4xl mb-2 opacity-40">
+                          movie
+                        </span>
+                        <div className="text-sm font-medium">Bu sahifada hali kinolar biriktirilmagan</div>
+                        <div className="text-xs text-text-secondary mt-1">
+                          "Katalogdan Biriktirish" tabiga o'tib, mavjud kinolarni checkbox bilan tanlashingiz mumkin
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {filteredModalMovies.map((m) => (
+                          <div
+                            key={m.id}
+                            className="bg-black/40 border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-white/20 transition"
+                          >
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              {m.poster_url ? (
+                                <img
+                                  src={m.poster_url}
+                                  alt={m.title}
+                                  className="w-12 h-16 rounded-lg object-cover flex-shrink-0 bg-white/5 border border-white/10"
+                                />
+                              ) : (
+                                <div className="w-12 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-text-secondary">
+                                  <span className="material-symbols-outlined text-lg">movie</span>
+                                </div>
                               )}
-                              {m.year && <span>{m.year}</span>}
+                              <div className="truncate">
+                                <div className="font-semibold text-white text-sm truncate">{m.title}</div>
+                                <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
+                                  <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
+                                    ID: {m.id}
+                                  </span>
+                                  {m.code && (
+                                    <span className="font-mono bg-primary-container/20 text-primary-container px-1.5 py-0.5 rounded text-[11px]">
+                                      #{m.code}
+                                    </span>
+                                  )}
+                                  {m.year && <span>{m.year}</span>}
+                                </div>
+                                {m.genres && (
+                                  <div className="text-[11px] text-text-secondary truncate mt-0.5 opacity-80">
+                                    {m.genres}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            {m.genres && (
-                              <div className="text-[11px] text-text-secondary truncate mt-0.5 opacity-80">
-                                {m.genres}
+
+                            <button
+                              onClick={() => handleDetachContent(m.id, "movie")}
+                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition flex-shrink-0"
+                              title="Sahifadan chiqarish"
+                            >
+                              <span className="material-symbols-outlined text-base">link_off</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  ) : filteredModalSeries.length === 0 ? (
+                    <div className="py-16 text-center text-text-secondary border border-dashed border-white/10 rounded-2xl">
+                      <span className="material-symbols-outlined text-4xl mb-2 opacity-40">tv</span>
+                      <div className="text-sm font-medium">Bu sahifada hali seriallar biriktirilmagan</div>
+                      <div className="text-xs text-text-secondary mt-1">
+                        "Katalogdan Biriktirish" tabiga o'tib, mavjud seriallarni checkbox bilan tanlashingiz mumkin
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {filteredModalSeries.map((s) => (
+                        <div
+                          key={s.id}
+                          className="bg-black/40 border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-white/20 transition"
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            {s.poster_url ? (
+                              <img
+                                src={s.poster_url}
+                                alt={s.title}
+                                className="w-12 h-16 rounded-lg object-cover flex-shrink-0 bg-white/5 border border-white/10"
+                              />
+                            ) : (
+                              <div className="w-12 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-text-secondary">
+                                <span className="material-symbols-outlined text-lg">tv</span>
                               </div>
                             )}
+                            <div className="truncate">
+                              <div className="font-semibold text-white text-sm truncate">{s.title}</div>
+                              <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
+                                <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
+                                  ID: {s.id}
+                                </span>
+                                {s.code && (
+                                  <span className="font-mono bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded text-[11px]">
+                                    #{s.code}
+                                  </span>
+                                )}
+                                {s.year && <span>{s.year}</span>}
+                              </div>
+                              {s.genres && (
+                                <div className="text-[11px] text-text-secondary truncate mt-0.5 opacity-80">
+                                  {s.genres}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        <button
-                          onClick={() => handleDetachContent(m.id, "movie")}
-                          className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition flex-shrink-0"
-                          title="Sahifadan chiqarish"
-                        >
-                          <span className="material-symbols-outlined text-base">link_off</span>
-                        </button>
-                      </div>
-                    ))}
+                          <button
+                            onClick={() => handleDetachContent(s.id, "series")}
+                            className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition flex-shrink-0"
+                            title="Sahifadan chiqarish"
+                          >
+                            <span className="material-symbols-outlined text-base">link_off</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* VIEW 2: AVAILABLE CATALOG (MULTI-SELECT CHECKBOXES) */}
+            {contentViewMode === "available" && (
+              <>
+                {/* Catalog Filter & Live Search Toolbar */}
+                <div className="px-6 py-3 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-black/40">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setContentTab("movies")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        contentTab === "movies"
+                          ? "bg-primary-container text-white shadow"
+                          : "bg-white/5 text-text-secondary hover:text-white"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[15px]">movie</span>
+                      <span>Mavjud Kinolar ({availableMovies.length})</span>
+                    </button>
+
+                    <button
+                      onClick={() => setContentTab("series")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        contentTab === "series"
+                          ? "bg-primary-container text-white shadow"
+                          : "bg-white/5 text-text-secondary hover:text-white"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[15px]">tv</span>
+                      <span>Mavjud Seriallar ({availableSeries.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleSelectAll(contentTab)}
+                      className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium border border-white/10 flex items-center gap-1.5 transition ml-2"
+                      title="Biriktirilmaganlarni barchasini tanlash / bekor qilish"
+                    >
+                      <span className="material-symbols-outlined text-sm">select_all</span>
+                      <span>Barchasini Tanlash</span>
+                    </button>
                   </div>
-                )
-              ) : filteredModalSeries.length === 0 ? (
-                <div className="py-16 text-center text-text-secondary border border-dashed border-white/10 rounded-2xl">
-                  <span className="material-symbols-outlined text-4xl mb-2 opacity-40">tv</span>
-                  <div className="text-sm font-medium">Bu sahifada hali seriallar biriktirilmagan</div>
-                  <div className="text-xs text-text-secondary mt-1">
-                    Yuqoridagi forma orqali serial ID yoki kodini kiritib sahifaga qo'shishingiz mumkin
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-64">
+                      <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary text-base">
+                        search
+                      </span>
+                      <input
+                        type="text"
+                        value={availableSearch}
+                        onChange={(e) => {
+                          setAvailableSearch(e.target.value);
+                          fetchAvailableContent(e.target.value);
+                        }}
+                        placeholder="Katalogdan qidirish..."
+                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary-container"
+                      />
+                    </div>
+                    <button
+                      onClick={() => fetchAvailableContent(availableSearch)}
+                      className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10"
+                      title="Qayta yuklash"
+                    >
+                      <span className="material-symbols-outlined text-sm">refresh</span>
+                    </button>
                   </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {filteredModalSeries.map((s) => (
-                    <div
-                      key={s.id}
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-white/20 transition"
-                    >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        {s.poster_url ? (
-                          <img
-                            src={s.poster_url}
-                            alt={s.title}
-                            className="w-12 h-16 rounded-lg object-cover flex-shrink-0 bg-white/5 border border-white/10"
-                          />
-                        ) : (
-                          <div className="w-12 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-text-secondary">
-                            <span className="material-symbols-outlined text-lg">tv</span>
-                          </div>
-                        )}
-                        <div className="truncate">
-                          <div className="font-semibold text-white text-sm truncate">{s.title}</div>
-                          <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
-                            <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
-                              ID: {s.id}
-                            </span>
-                            {s.code && (
-                              <span className="font-mono bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded text-[11px]">
-                                #{s.code}
-                              </span>
-                            )}
-                            {s.year && <span>{s.year}</span>}
-                          </div>
-                          {s.genres && (
-                            <div className="text-[11px] text-text-secondary truncate mt-0.5 opacity-80">
-                              {s.genres}
-                            </div>
-                          )}
-                        </div>
-                      </div>
 
+                {/* Available Items Multi-Select Grid Body */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
+                  {loadingAvailable ? (
+                    <div className="py-20 text-center text-text-secondary">
+                      <span className="material-symbols-outlined animate-spin text-3xl mb-2 text-primary-container">
+                        progress_activity
+                      </span>
+                      <div>Katalog yuklanmoqda...</div>
+                    </div>
+                  ) : contentTab === "movies" ? (
+                    filteredAvailableMovies.length === 0 ? (
+                      <div className="py-16 text-center text-text-secondary border border-dashed border-white/10 rounded-2xl">
+                        <span className="material-symbols-outlined text-4xl mb-2 opacity-40">movie</span>
+                        <div className="text-sm font-medium">Katalogda kinolar topilmadi</div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {filteredAvailableMovies.map((m) => {
+                          const isAttached = attachedMovies.some((am) => am.id === m.id);
+                          const isSelected = selectedMovieIds.includes(m.id);
+                          return (
+                            <div
+                              key={m.id}
+                              onClick={() => {
+                                if (!isAttached) toggleSelectMovie(m.id);
+                              }}
+                              className={`rounded-xl p-3 flex items-center justify-between gap-3 border transition cursor-pointer select-none ${
+                                isAttached
+                                  ? "bg-white/[0.02] border-white/5 opacity-60 cursor-not-allowed"
+                                  : isSelected
+                                  ? "bg-primary-container/15 border-primary-container shadow-sm shadow-primary-container/20 ring-1 ring-primary-container"
+                                  : "bg-black/40 border-white/10 hover:border-white/25 hover:bg-white/[0.04]"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                <input
+                                  type="checkbox"
+                                  checked={isAttached || isSelected}
+                                  disabled={isAttached}
+                                  onChange={() => {
+                                    if (!isAttached) toggleSelectMovie(m.id);
+                                  }}
+                                  className="w-4 h-4 rounded text-primary-container bg-black/60 border-white/20 focus:ring-primary-container cursor-pointer disabled:cursor-not-allowed"
+                                />
+
+                                {m.poster_url ? (
+                                  <img
+                                    src={m.poster_url}
+                                    alt={m.title}
+                                    className="w-12 h-16 rounded-lg object-cover flex-shrink-0 bg-white/5 border border-white/10"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-text-secondary">
+                                    <span className="material-symbols-outlined text-lg">movie</span>
+                                  </div>
+                                )}
+
+                                <div className="truncate">
+                                  <div className="font-semibold text-white text-sm truncate flex items-center gap-2">
+                                    <span className="truncate">{m.title}</span>
+                                    {isAttached && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0 font-medium">
+                                        ✓ Biriktirilgan
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
+                                    <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
+                                      ID: {m.id}
+                                    </span>
+                                    {m.code && (
+                                      <span className="font-mono bg-primary-container/20 text-primary-container px-1.5 py-0.5 rounded text-[11px]">
+                                        #{m.code}
+                                      </span>
+                                    )}
+                                    {m.year && <span>{m.year}</span>}
+                                  </div>
+                                  {m.genres && (
+                                    <div className="text-[11px] text-text-secondary truncate mt-0.5 opacity-80">
+                                      {m.genres}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  ) : filteredAvailableSeries.length === 0 ? (
+                    <div className="py-16 text-center text-text-secondary border border-dashed border-white/10 rounded-2xl">
+                      <span className="material-symbols-outlined text-4xl mb-2 opacity-40">tv</span>
+                      <div className="text-sm font-medium">Katalogda seriallar topilmadi</div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {filteredAvailableSeries.map((s) => {
+                        const isAttached = attachedSeries.some((as) => as.id === s.id);
+                        const isSelected = selectedSeriesIds.includes(s.id);
+                        return (
+                          <div
+                            key={s.id}
+                            onClick={() => {
+                              if (!isAttached) toggleSelectSeries(s.id);
+                            }}
+                            className={`rounded-xl p-3 flex items-center justify-between gap-3 border transition cursor-pointer select-none ${
+                              isAttached
+                                ? "bg-white/[0.02] border-white/5 opacity-60 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-primary-container/15 border-primary-container shadow-sm shadow-primary-container/20 ring-1 ring-primary-container"
+                                : "bg-black/40 border-white/10 hover:border-white/25 hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <input
+                                type="checkbox"
+                                checked={isAttached || isSelected}
+                                disabled={isAttached}
+                                onChange={() => {
+                                  if (!isAttached) toggleSelectSeries(s.id);
+                                }}
+                                className="w-4 h-4 rounded text-primary-container bg-black/60 border-white/20 focus:ring-primary-container cursor-pointer disabled:cursor-not-allowed"
+                              />
+
+                              {s.poster_url ? (
+                                <img
+                                  src={s.poster_url}
+                                  alt={s.title}
+                                  className="w-12 h-16 rounded-lg object-cover flex-shrink-0 bg-white/5 border border-white/10"
+                                />
+                              ) : (
+                                <div className="w-12 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-text-secondary">
+                                  <span className="material-symbols-outlined text-lg">tv</span>
+                                </div>
+                              )}
+
+                              <div className="truncate">
+                                <div className="font-semibold text-white text-sm truncate flex items-center gap-2">
+                                  <span className="truncate">{s.title}</span>
+                                  {isAttached && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0 font-medium">
+                                      ✓ Biriktirilgan
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-text-secondary mt-1">
+                                  <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[11px] text-zinc-300">
+                                    ID: {s.id}
+                                  </span>
+                                  {s.code && (
+                                    <span className="font-mono bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded text-[11px]">
+                                      #{s.code}
+                                    </span>
+                                  )}
+                                  {s.year && <span>{s.year}</span>}
+                                </div>
+                                {s.genres && (
+                                  <div className="text-[11px] text-text-secondary truncate mt-0.5 opacity-80">
+                                    {s.genres}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Multi-Select Sticky Action Bottom Bar */}
+                {(selectedMovieIds.length > 0 || selectedSeriesIds.length > 0) && (
+                  <div className="px-6 py-3 bg-gradient-to-r from-primary-container/20 via-black/80 to-primary-container/20 border-t border-primary-container/40 flex items-center justify-between animate-fade-in shadow-xl">
+                    <div className="text-xs text-white flex items-center gap-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>
+                        Tanlangan: <strong>{selectedMovieIds.length + selectedSeriesIds.length}</strong> ta kontent
+                        ({selectedMovieIds.length} kino, {selectedSeriesIds.length} serial)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleDetachContent(s.id, "series")}
-                        className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition flex-shrink-0"
-                        title="Sahifadan chiqarish"
+                        type="button"
+                        onClick={() => {
+                          setSelectedMovieIds([]);
+                          setSelectedSeriesIds([]);
+                        }}
+                        className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 rounded-lg text-xs transition"
                       >
-                        <span className="material-symbols-outlined text-base">link_off</span>
+                        Tozalash
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isBatchAttaching}
+                        onClick={handleBatchAttach}
+                        className="px-4 py-1.5 bg-primary-container hover:brightness-110 active:scale-95 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-primary-container/30"
+                      >
+                        {isBatchAttaching ? (
+                          <span className="material-symbols-outlined animate-spin text-sm">
+                            progress_activity
+                          </span>
+                        ) : (
+                          <span className="material-symbols-outlined text-sm">add_link</span>
+                        )}
+                        <span>Sahifaga Biriktirish ({selectedMovieIds.length + selectedSeriesIds.length})</span>
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Modal Footer */}
             <div className="px-6 py-3 border-t border-white/10 bg-black/40 flex items-center justify-between">

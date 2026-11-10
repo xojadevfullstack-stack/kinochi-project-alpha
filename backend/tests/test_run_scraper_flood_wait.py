@@ -184,3 +184,30 @@ async def test_series_episode_flood_wait_raises_immediately():
         assert pipeline.safe_click.call_count == 1
 
 
+
+
+@pytest.mark.asyncio
+async def test_run_autopilot_halts_when_bot_in_flood_wait():
+    """
+    Agar botda faol flood wait bo'lsa (bot_flood_until > now),
+    run_autopilot_loop yangi sahifalarni skanerlamasdan darhol to'xtaydi (cmd_parse chaqirilmaydi).
+    """
+    import scraper.run_scraper as rs
+
+    mock_state = {
+        "bot_flood_until": time.time() + 1800,
+        "bot_flood_bot": "asilmediabot",
+        "asilmedia_current_page": 1,
+        "asilmedia_total_pages": 100,
+    }
+
+    with patch.object(rs.StateManager, "get_state", return_value=mock_state), \
+         patch.object(rs, "cmd_parse", new_callable=AsyncMock) as mock_parse, \
+         patch.object(rs.autopilot_engine.health_evaluator, "check_circuit_breaker") as mock_cb:
+        
+        mock_cb.return_value = MagicMock(is_paused=False)
+
+        await rs.cmd_autopilot(source="asilmedia", media_type="movie")
+
+        # cmd_parse hech qachon chaqirilmasligi shart (bekorga sahifa yig'ilmaydi)
+        mock_parse.assert_not_called()

@@ -49,10 +49,10 @@ def is_uzmovi_bot_code_verified() -> bool:
     try:
         from app.core.config import settings as _backend_settings
         if "UZMOVI_BOT_CODE_VERIFIED" in os.environ:
-            return _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), False)
+            return _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), True)
         return bool(getattr(_backend_settings, "UZMOVI_BOT_CODE_VERIFIED", False))
     except Exception:
-        return _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), False)
+        return _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), True)
 
 
 def is_scraper_enabled() -> bool:
@@ -75,7 +75,7 @@ AUTO_TOPIC_CHAT_ID = _parse_chat_id(os.environ.get("AUTO_TOPIC_CHAT_ID"), 0)
 BACKEND_API_URL = os.environ.get("BACKEND_API_URL", "http://localhost:8000/api/v1")
 BOT_API_SECRET = os.environ.get("BOT_API_SECRET", "oqqora")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-UZMOVI_BOT_CODE_VERIFIED = _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), False)
+UZMOVI_BOT_CODE_VERIFIED = _parse_bool(os.environ.get("UZMOVI_BOT_CODE_VERIFIED"), True)
 SCRAPER_ENABLED = _parse_bool(os.environ.get("SCRAPER_ENABLED"), False)
 
 # Target bots

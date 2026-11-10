@@ -429,8 +429,9 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 flood_bot = state.get("bot_flood_bot")
                 if flood_until > time.time() and flood_bot and flood_bot.lower() == bot_username.lower():
                     rem_min = int((flood_until - time.time()) // 60) + 1
-                    print(f"\n⛔ [@{bot_username}] botida {rem_min} daqiqalik faol flood-wait mavjud! Qolgan kodlar bo'yicha so'rovlar to'xtatildi.", flush=True)
-                    break
+                    msg = f"[@{bot_username}] botida {rem_min} daqiqalik faol flood-wait mavjud!"
+                    print(f"\n⛔ {msg} Qolgan kodlar bo'yicha so'rovlar to'xtatildi.", flush=True)
+                    raise BotFloodWaitError(bot=bot_username, seconds=int(flood_until - time.time()), message=msg)
 
                 print(f"\n[{idx}/{len(code_list)}] 🎬 Kod #{c} bo'yicha moderator sikli boshlanmoqda...")
                 success = False
@@ -513,8 +514,9 @@ async def cmd_download(limit: int, target: str, codes: str = None, media_type: s
                 flood_bot = state.get("bot_flood_bot")
                 if flood_until > time.time() and flood_bot and flood_bot.lower() == effective_target_bot.lower():
                     rem_min = int((flood_until - time.time()) // 60) + 1
-                    print(f"\n⛔ [@{effective_target_bot}] botida {rem_min} daqiqalik faol flood-wait mavjud! Qolgan elementlar bo'yicha so'rovlar to'xtatildi.", flush=True)
-                    break
+                    msg = f"[@{effective_target_bot}] botida {rem_min} daqiqalik faol flood-wait mavjud!"
+                    print(f"\n⛔ {msg} Qolgan elementlar bo'yicha so'rovlar to'xtatildi.", flush=True)
+                    raise BotFloodWaitError(bot=effective_target_bot, seconds=int(flood_until - time.time()), message=msg)
 
                 print(f"\n[{idx}/{len(pending)}] 🚀 [{media_label}] '{item.title}' ({item.year or 'Noma\'lum'}) bo'yicha sikl boshlanmoqda (Yuklangan: {downloaded_count}/{limit})...")
                 await qm.update_status_async(item.id, "in_progress")
@@ -785,7 +787,11 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
                 raise ValueError(f"Noma'lum manba: '{s}'")
             target_bot = target_bot_map[s]
             await cmd_parse(source=s, max_pages=pages, media_type=media_type, min_rating=min_rating)
-            await cmd_download(limit=limit, target=target_bot, media_type=media_type)
+            try:
+                await cmd_download(limit=limit, target=target_bot, media_type=media_type)
+            except BotFloodWaitError as bfe:
+                print(f"\n⛔ [{s.upper()}] Donor bot flood-wait berdi: {bfe.message}. Avtopilot sikli to'xtatildi.", flush=True)
+                return
         print("\n🏁 Avtopilot sikli yakunlandi!", flush=True)
         return
 
@@ -811,7 +817,11 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
         old_pending = await qm.get_pending_async(limit=25, source=s, media_type=None if media_type == "all" else media_type)
         if old_pending:
             print(f"📋 [{s.upper()}] Oldingi navbatda kutilayotgan {len(old_pending)} ta film yuklanmoqda...", flush=True)
-            await cmd_download(limit=len(old_pending), target=target_bot, media_type=media_type)
+            try:
+                await cmd_download(limit=len(old_pending), target=target_bot, media_type=media_type)
+            except BotFloodWaitError as bfe:
+                print(f"\n⛔ [{s.upper()}] Donor bot flood-wait berdi: {bfe.message}. Avtopilot sikli to'xtatildi.", flush=True)
+                return
 
     # 3. CHEKSIZ AVTONOM REJIM (Foydalanuvchi xohlagan yangi uzluksiz avtopilot)
     cycle_count = 0
@@ -835,6 +845,19 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
 
             if cur_page > total_pages:
                 print(f"ℹ️ [{s.upper()}] Saytdagi barcha sahifalar ({total_pages}) to'liq ko'rib chiqilgan.", flush=True)
+                continue
+
+            target_bot = target_bot_map[s]
+            effective_bot = TARGET_BOTS.get(s, target_bot)
+            state_chk = sm.get_state()
+            flood_until_chk = state_chk.get("bot_flood_until") or 0
+            flood_bot_chk = state_chk.get("bot_flood_bot")
+            if flood_until_chk > time.time() and flood_bot_chk and flood_bot_chk.lower() == effective_bot.lower():
+                rem_min = int((flood_until_chk - time.time()) // 60) + 1
+                print(f"\n⛔ [{s.upper()}] [@{effective_bot}] botida {rem_min} daqiqalik faol flood-wait mavjud! Yangi sahifalar skanerlanmadi.", flush=True)
+                if len(sources_to_run) == 1:
+                    print(f"⛔ Manba [{s.upper()}] flood-wait muddati tugaguncha avtopilot sikli to'xtatildi (Pauza).", flush=True)
+                    return
                 continue
 
             any_pages_left = True
@@ -868,7 +891,11 @@ async def cmd_autopilot(source: str = "all", pages: int = None, limit: int = Non
             pending = await qm.get_pending_async(limit=25, source=s, media_type=None if media_type == "all" else media_type)
             if pending:
                 print(f"🚀 [{s.upper()}] {len(pending)} ta yangi saralangan film Telegram orqali yuklanmoqda...", flush=True)
-                await cmd_download(limit=len(pending), target=target_bot, media_type=media_type)
+                try:
+                    await cmd_download(limit=len(pending), target=target_bot, media_type=media_type)
+                except BotFloodWaitError as bfe:
+                    print(f"\n⛔ [{s.upper()}] Donor bot flood-wait berdi: {bfe.message}. Avtopilot sikli to'xtatildi.", flush=True)
+                    return
             else:
                 print(f"ℹ️ [{s.upper()}] {cur_page}-sahifada yangi film yo'q (bazada mavjud yoki reyting past).", flush=True)
 

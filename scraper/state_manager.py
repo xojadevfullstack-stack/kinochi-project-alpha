@@ -20,6 +20,8 @@ DEFAULT_STATE: Dict[str, Any] = {
     "uzmovi_total_pages": 350,
     "asilmedia_current_page": 1,
     "asilmedia_total_pages": 400,
+    "kinochilar_current_page": 1,
+    "kinochilar_total_pages": 150,
     "animeelar_current_page": 1,
     "animeelar_total_pages": 50,
     "anitoob_current_page": 1,

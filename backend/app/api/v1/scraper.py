@@ -143,6 +143,8 @@ class UpdateStateRequest(BaseModel):
     uzmovi_total_pages: Optional[int] = None
     asilmedia_current_page: Optional[int] = None
     asilmedia_total_pages: Optional[int] = None
+    kinochilar_current_page: Optional[int] = None
+    kinochilar_total_pages: Optional[int] = None
     anitoob_current_page: Optional[int] = None
     anitoob_total_pages: Optional[int] = None
     animeelar_current_page: Optional[int] = None

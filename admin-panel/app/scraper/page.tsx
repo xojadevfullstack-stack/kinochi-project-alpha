@@ -20,6 +20,8 @@ interface ScraperState {
   uzmovi_total_pages?: number;
   asilmedia_current_page?: number;
   asilmedia_total_pages?: number;
+  kinochilar_current_page?: number;
+  kinochilar_total_pages?: number;
   anitoob_current_page?: number;
   anitoob_total_pages?: number;
   animeelar_current_page?: number;
@@ -94,13 +96,14 @@ export default function ScraperPage() {
   const [downloadMediaType, setDownloadMediaType] = useState("all");
 
   // ── Autopilot & Checkpoint States ─────────────────────────
-  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia" | "anitoob" | "animeelar">("all");
+  const [autopilotSource, setAutopilotSource] = useState<"all" | "uzmovi" | "asilmedia" | "kinochilar" | "anitoob" | "animeelar">("all");
   const [autopilotMinRating, setAutopilotMinRating] = useState(6.0);
   const [autopilotMediaType, setAutopilotMediaType] = useState<"all" | "movie" | "series" | "dorama" | "anime" | "multfilm">("all");
   const [autopilotLoading, setAutopilotLoading] = useState(false);
   const [editingCheckpoint, setEditingCheckpoint] = useState(false);
   const [editUzmoviPage, setEditUzmoviPage] = useState<number | "">("");
   const [editAsilPage, setEditAsilPage] = useState<number | "">("");
+  const [editKinochilarPage, setEditKinochilarPage] = useState<number | "">("");
   const [editAnitoobPage, setEditAnitoobPage] = useState<number | "">("");
   const [editAnimeelarPage, setEditAnimeelarPage] = useState<number | "">("");
   const [editMinRating, setEditMinRating] = useState<number | "">("");
@@ -111,7 +114,7 @@ export default function ScraperPage() {
 
   // ── Site Search States ────────────────────────────────────
   const [siteSearchQuery, setSiteSearchQuery] = useState("");
-  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia" | "anitoob" | "animeelar">("all");
+  const [siteSearchSource, setSiteSearchSource] = useState<"all" | "uzmovi" | "asilmedia" | "kinochilar" | "anitoob" | "animeelar">("all");
   const [siteSearchResults, setSiteSearchResults] = useState<any[]>([]);
   const [searchingSite, setSearchingSite] = useState(false);
   const [searchHasSearched, setSearchHasSearched] = useState(false);
@@ -487,6 +490,7 @@ export default function ScraperPage() {
       const body: any = {};
       if (editUzmoviPage !== "") body.uzmovi_current_page = Number(editUzmoviPage);
       if (editAsilPage !== "") body.asilmedia_current_page = Number(editAsilPage);
+      if (editKinochilarPage !== "") body.kinochilar_current_page = Number(editKinochilarPage);
       if (editAnitoobPage !== "") body.anitoob_current_page = Number(editAnitoobPage);
       if (editAnimeelarPage !== "") body.animeelar_current_page = Number(editAnimeelarPage);
       if (editMinRating !== "") body.min_rating = Number(editMinRating);
@@ -1084,6 +1088,7 @@ export default function ScraperPage() {
                         if (!editingCheckpoint) {
                           setEditUzmoviPage(status?.state?.uzmovi_current_page ?? 1);
                           setEditAsilPage(status?.state?.asilmedia_current_page ?? 1);
+                          setEditKinochilarPage(status?.state?.kinochilar_current_page ?? 1);
                           setEditAnitoobPage(status?.state?.anitoob_current_page ?? 1);
                           setEditAnimeelarPage(status?.state?.animeelar_current_page ?? 1);
                           setEditMinRating(status?.state?.min_rating ?? 6.0);
@@ -1097,7 +1102,7 @@ export default function ScraperPage() {
                   </div>
 
                   {!editingCheckpoint ? (
-                    <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">Uzmovi:</span>
                         <strong className="text-white text-sm">{status?.state?.uzmovi_current_page ?? "..."}</strong>
@@ -1107,6 +1112,11 @@ export default function ScraperPage() {
                         <span className="text-text-secondary block text-[10px]">Asilmedia:</span>
                         <strong className="text-white text-sm">{status?.state?.asilmedia_current_page ?? "..."}</strong>
                         <span className="text-zinc-500 text-[10px]"> / {status?.state?.asilmedia_total_pages ?? "..."}</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                        <span className="text-text-secondary block text-[10px]">Kinochilar:</span>
+                        <strong className="text-white text-sm">{status?.state?.kinochilar_current_page ?? "..."}</strong>
+                        <span className="text-zinc-500 text-[10px]"> / {status?.state?.kinochilar_total_pages ?? "..."}</span>
                       </div>
                       <div className="p-2 rounded-lg bg-white/5 border border-white/5">
                         <span className="text-text-secondary block text-[10px]">AniToob:</span>
@@ -1121,7 +1131,7 @@ export default function ScraperPage() {
                     </div>
                   ) : (
                     <div className="space-y-2 pt-1 border-t border-white/5">
-                      <div className="grid grid-cols-5 gap-2">
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                         <div>
                           <label className="text-[10px] text-zinc-400">Uzmovi sahifa</label>
                           <input
@@ -1137,6 +1147,15 @@ export default function ScraperPage() {
                             type="number"
                             value={editAsilPage}
                             onChange={(e) => setEditAsilPage(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-400">Kinochilar sahifa</label>
+                          <input
+                            type="number"
+                            value={editKinochilarPage}
+                            onChange={(e) => setEditKinochilarPage(e.target.value === "" ? "" : Number(e.target.value))}
                             className="w-full bg-white/5 border border-white/10 rounded-lg p-1.5 text-xs text-white"
                           />
                         </div>
@@ -1182,7 +1201,7 @@ export default function ScraperPage() {
                 {/* Source Selection (5 buttons: Barchasi, Uzmovi, Asilmedia, AniToob, Animeelar) */}
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary mb-1">Sayt Manbasi</label>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     <button
                       type="button"
                       onClick={() => setAutopilotSource("all")}
@@ -1218,6 +1237,18 @@ export default function ScraperPage() {
                     >
                       <span className="text-base">📺</span>
                       <span>Asilmedia</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutopilotSource("kinochilar")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 ${
+                        autopilotSource === "kinochilar"
+                          ? "bg-sky-500/20 border-sky-500 text-white shadow-lg shadow-sky-500/20"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-base">🍿</span>
+                      <span>Kinochilar</span>
                     </button>
                     <button
                       type="button"
@@ -1353,6 +1384,7 @@ export default function ScraperPage() {
                   >
                     <option value="uzmovi">Uzmovi (@UzmovieTV_Bot)</option>
                     <option value="asilmedia">Asilmedia (@asilmediabot)</option>
+                    <option value="kinochilar">Kinochilar (@kinochilar_fast_bot)</option>
                     <option value="anitoob">AniToob (@ANITOOBUZ_BOT)</option>
                     <option value="animeelar">Animeelar (@Animeelar_Bot)</option>
                   </select>
@@ -1439,6 +1471,7 @@ export default function ScraperPage() {
                   >
                     <option value="uzmovi">Uzmovi (uzmovi.net / tarjima-kinolar)</option>
                     <option value="asilmedia">Asilmedia (asilmedia.org)</option>
+                    <option value="kinochilar">Kinochilar (kinochilar.com / @kinochilar_fast_bot)</option>
                     <option value="anitoob">AniToob (bot.anitoobtv.uz / anime)</option>
                     <option value="animeelar">Animeelar (@Animeelar_Bot)</option>
                   </select>
@@ -1510,6 +1543,7 @@ export default function ScraperPage() {
                   { id: "all", label: "Barchasi" },
                   { id: "uzmovi", label: "Uzmovi" },
                   { id: "asilmedia", label: "Asilmedia" },
+                  { id: "kinochilar", label: "Kinochilar" },
                   { id: "anitoob", label: "AniToob" },
                   { id: "animeelar", label: "Animeelar" },
                 ] as const).map((s) => (
