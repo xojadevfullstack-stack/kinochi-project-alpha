@@ -257,3 +257,7 @@
 ## CDN Video Embed vs Telegram Direct File Bot (Veb-Pleyer va Telegram Fayl Farqi)
 - Saytdagi HLS/Iframe pleyerlar video oqimini faqat brauzerda qismlarga bo'lib ko'rsatadi, ammo Telegram botlariga to'liq yuklab olinadigan butun `.mp4` fayl havolasini taqdim etmaydi.
 - Analogy: Kinoteatr zalidagi ekrandan filmni tomosha qilish (faqat ko'rish mumkin, faylni olib ketib bo'lmaydi) vs Do'kondan tayyor kino yozilgan fleshka xarid qilish (faylni bemalol o'z serveringizga ko'chirib olish mumkin).
+
+## Unified Catalog Heterogeneous Aggregation
+- Fetching and merging disparate entity streams (movies + series) into a single unified catalog pipeline with shared sorting and pagination guarantees complete data parity with aggregated leaderboards (Top 100).
+- Analogy: A grand library catalog where books and magazines are searchable together in one unified index rather than forcing readers to check two separate catalog drawers.
