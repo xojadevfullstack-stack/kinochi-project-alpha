@@ -238,8 +238,9 @@ async def parse_anitoob_page_async(
             cleaned_title = cleaned_info["title"] if isinstance(cleaned_info, dict) else str(cleaned_info)
             item_year = info.get("year") or (cleaned_info.get("year") if isinstance(cleaned_info, dict) else None)
 
-            # Check if title indicates film
-            is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE))
+            # Check if title indicates series vs movie
+            is_series_title = bool(re.search(r"\b(s\d+|fasl|mavsum|qismlar|serial)\b", title, re.IGNORECASE))
+            is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE)) and not is_series_title
             m_type = "movie" if is_film else "series"
             effective_mt = "anime" if media_type == "anime" else m_type
             if media_type not in ("all", "anime") and m_type != media_type:

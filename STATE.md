@@ -1,33 +1,34 @@
 # Project State (STATE.md)
 
 ## Current goal
-AniToob cheksiz pagination loopini to'xtatish (circuit-breaker), Qora klever kanonik nomini mashina tarjimasi va sun'iy intellekt tomonidan buzilishidan himoyalash hamda A Silent Voice (Ovoz shakli) animesini TMDb ID 378064 (2016) bilan to'g'ri bog'lash.
+Multfilm sahifasidan anime ifloslanishini to'liq tozalash, Qora klever 2-qismini o'tkazib yuboruvchi bot resume tugmasi o'rniga har doim 1-faslni ochish qoidasini kiritish, hamda Iblislar qotilini (Demon Slayer) soxta "temirchilar qishlog'i filmi" emas, 58 qismli to'liq serial (TMDb 85937) sifatida normallashtirish.
 
 ## In progress (slice, branch)
-- Slice: C16 (AniToob Pagination Circuit-Breaker, Black Clover Canonical Title & A Silent Voice TMDb Matching).
+- Slice: C17 (Anime Category Isolation, Season-1 Entry Priority & Demon Slayer Normalization).
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, AniToob loopi tuzatildi, Movie #849 bazada 100% yangilandi).
+- None (Barcha testlar 100% yashil, Qora klever Page 1 ga biriktirildi, Series 1035 TMDb 85937 ga ulandi).
 
 ## Next step (one task)
-- O'zgarishlarni commit va push qilish (`git commit -m "fix(scraper,enricher): resolve anitoob episode loop, Black Clover title and A Silent Voice TMDb match"`).
+- O'zgarishlarni commit va push qilish (`git commit -m "fix(catalog,scraper): isolate anime from multfilm, enforce season 1 entry, and normalize Demon Slayer series"`).
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Pytest Gate:** 4 passed in 1.00s (`backend/tests/test_anime_catalog_titles_and_kaiju.py`).
-- **Auth & Queue Gate:** 11 passed in 1.65s (`test_telegram_auth.py` va `test_scraper_queue_endpoint.py`).
-- **PostgreSQL Movie #849 Live Verification:**
-  - `Title`: 'A Silent Voice (Ovoz shakli)'
-  - `TMDb ID`: 378064 (eski 1171702 o'rniga)
-  - `Release Year`: 2016
-  - `Director`: 'Naoko Yamada'
-  - `Rating`: 8.4
-  - `Poster`: 'https://image.tmdb.org/t/p/w500/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg'
-- **Series #1036 Live Verification:** `Title`: 'Qora klever', `Status`: 'published'.
-- **Git Diff:** 3 files, 88 insertions, 6 deletions (94 lines <= 200 lines atomic slice).
+- **Pytest Gate:** 17 passed in 1.60s across anime catalog, auth and queue tests.
+- **TypeScript Gate (Admin & Website):** Zero errors (`tsc --noEmit`: code 0).
+- **Live Backend Page 8 (Multfilm) Verification:** Faqat haqiqiy multfilm qaytarilmoqda (`Ajoyib raqamli sirk`), Anime to'liq izolyatsiya qilindi.
+- **Series #1036 (Qora klever) Verification:**
+  - `Pages`: ['Anime'] (Multfilm yorlig'i butunlay yo'qoldi)
+  - `Seasons`: Season 1 tartiblandi, soxta qismlar tozalandi.
+- **Series #1035 (Demon Slayer) Verification:**
+  - `Title`: 'Iblislar qotili (Demon Slayer)' (eski 'temirchilar qishlogi' o'rniga)
+  - `TMDb ID`: 85937 (TV Series, 2019, Reyting: 8.6)
+  - `Pages`: ['Anime']
+- **Ingest Queue Verification:** `anitoob_41` media_type = 'series', 58 qism bilan qayta navbatga qo'yildi.
+- **Git Diff:** 6 files, 96 insertions, 13 deletions (109 lines <= 200 lines atomic slice).
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)

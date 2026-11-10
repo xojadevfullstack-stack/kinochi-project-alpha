@@ -270,3 +270,8 @@
 ## Missing Episode Consecutive Circuit Breaker & Inline Markup Re-fetching
 - When ingesting episodic content across dynamic bot pagination, looping without an early-exit threshold when episodes are absent wastes requests and triggers flood waits; re-fetching messages by ID captures in-place markup edits.
 - Analogy: A librarian flipping pages in a catalog looking for chapter 20: if chapters 20 and 21 are missing from the book, stopping immediately instead of searching blank pages all the way to chapter 170.
+
+
+## Season Navigation Priority & Category Anti-Contamination Filters
+- In multi-season bot scraping, never click dynamic user resume buttons ('Davom ettirish') as they bypass early episodes; always enforce season 1 entry points. In heterogeneous media querying, explicitly negate intersecting taxonomy genres (e.g., Anime Category 2 must be negated from Western Cartoons Category 22).
+- Analogy: Kutubxonada yangi o'quvchiga kitobning oldingi o'quvchi qoldirgan betidan emas, har doim 1-betidan boshlab berish; va 'multfilm' javoniga yapon anime kitoblarini aralashtirib yubormaslik uchun qat'iy filtr qo'yish.

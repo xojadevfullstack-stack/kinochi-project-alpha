@@ -47,7 +47,7 @@ class SeriesRepository:
             elif category_id == 2:
                 stmt = stmt.filter(or_(SeriesModel.categories.any(id=2), SeriesModel.pages.any(id=1)))
             elif category_id == 22:
-                stmt = stmt.filter(or_(SeriesModel.categories.any(id=22), SeriesModel.pages.any(id=8)))
+                stmt = stmt.filter(or_(SeriesModel.categories.any(id=22), SeriesModel.pages.any(id=8)), ~SeriesModel.categories.any(id=2), ~SeriesModel.pages.any(id=1))
             else:
                 stmt = stmt.filter(SeriesModel.categories.any(id=category_id))
         if page_id:
@@ -56,7 +56,7 @@ class SeriesRepository:
             elif page_id == 1:
                 stmt = stmt.filter(or_(SeriesModel.pages.any(id=1), SeriesModel.categories.any(id=2)))
             elif page_id == 8:
-                stmt = stmt.filter(or_(SeriesModel.pages.any(id=8), SeriesModel.categories.any(id=22)))
+                stmt = stmt.filter(or_(SeriesModel.pages.any(id=8), SeriesModel.categories.any(id=22)), ~SeriesModel.categories.any(id=2), ~SeriesModel.pages.any(id=1))
             else:
                 stmt = stmt.filter(SeriesModel.pages.any(id=page_id))
         elif exclude_paged:

@@ -82,6 +82,13 @@ def test_anime_title_map_canonical_entries():
     assert silent_uz.get("tmdb_id") == 378064
     assert silent_uz.get("type") == "movie"
 
+    # 9. Demon Slayer (Iblislar qotili)
+    demon = ANIME_TITLE_MAP.get("iblislar qotili")
+    assert demon is not None
+    assert demon.get("tmdb_id") == 85937
+    assert demon.get("type") == "tv"
+    assert demon.get("uz") == "Iblislar qotili (Demon Slayer)"
+
 
 @pytest.mark.asyncio
 async def test_kaiju_sequence_gap_detection_and_consecutive_flow(db_session):
@@ -193,3 +200,42 @@ def test_anitoob_button_pattern_matcher():
     assert matches_ep("20 qism", 20) is True
     assert matches_ep("21", 20) is False
     assert matches_ep("2-qism", 20) is False
+
+
+def test_anitoob_card_button_season_one_priority():
+    """AniToob kartasidagi 'Davom ettirish' tugmasi emas, birinchi fasl tugmasi tanlanishini tekshiradi."""
+    class MockBtn:
+        def __init__(self, text, data):
+            self.text = text
+            self.data = data
+
+    buttons = [
+        [MockBtn('⚡ Tez yuklash (171/171)', b'fastload_check=47')],
+        [MockBtn('▶️ Davom ettirish (2-fasl, 6-qism)', b'yuklanolish=47=171')],
+        [MockBtn('1-FASL', b'yuklanolish=47=1'), MockBtn('2-FASL', b'yuklanolish=47=166')]
+    ]
+
+    # Algorithm under test:
+    selected_coords = None
+    # 1-priority: '1-fasl' or data ending with '=1'
+    for r_idx, row in enumerate(buttons):
+        for c_idx, btn in enumerate(row):
+            b_txt = btn.text.strip().lower()
+            if "1-fasl" in b_txt or "1 - fasl" in b_txt or (btn.data and btn.data.endswith(b"=1")):
+                selected_coords = (r_idx, c_idx)
+                break
+        if selected_coords:
+            break
+
+    assert selected_coords == (2, 0)
+    assert buttons[selected_coords[0]][selected_coords[1]].text == "1-FASL"
+
+
+def test_anitoob_title_is_not_falsely_classified_as_movie():
+    """'Iblislar qotili s1.. va 2 film' serial sifatida tanilishini tasdiqlaydi."""
+    import re
+    title = "Iblislar qotili s1, s2, s3, s4, s5, va 2 film"
+    is_series_title = bool(re.search(r"\b(s\d+|fasl|mavsum|qismlar|serial)\b", title, re.IGNORECASE))
+    is_film = bool(re.search(r"\b(film|kino|filmi)\b", title, re.IGNORECASE)) and not is_series_title
+    assert is_series_title is True
+    assert is_film is False

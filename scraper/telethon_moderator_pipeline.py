@@ -2171,7 +2171,12 @@ class TelethonModeratorPipeline:
         year = meta.get("year") or year
         target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
         storage_chat = STORAGE_CHANNEL_ID
-        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+        if meta.get("type") == "tv":
+            is_single_movie = False
+        elif meta.get("type") == "movie":
+            is_single_movie = True
+        else:
+            is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1 and not re.search(r"\b(s\d+|fasl|mavsum)\b", title, re.IGNORECASE))
 
         # 5b. Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
         sec_dup = await self.dup_checker.check(
@@ -2235,7 +2240,12 @@ class TelethonModeratorPipeline:
             return False
 
         current_video_msg = ep1_msgs[0]
-        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+        if meta.get("type") == "tv":
+            is_single_movie = False
+        elif meta.get("type") == "movie":
+            is_single_movie = True
+        else:
+            is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1 and not re.search(r"\b(s\d+|fasl|mavsum)\b", title, re.IGNORECASE))
 
         # ==========================================
         # A) KINO SIKLI (1 qism)
@@ -2903,7 +2913,12 @@ class TelethonModeratorPipeline:
         year = meta.get("year") or year
         target_chat = AUTO_TOPIC_CHAT_ID or STORAGE_CHANNEL_ID
         storage_chat = STORAGE_CHANNEL_ID
-        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+        if meta.get("type") == "tv":
+            is_single_movie = False
+        elif meta.get("type") == "movie":
+            is_single_movie = True
+        else:
+            is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1 and not re.search(r"\b(s\d+|fasl|mavsum)\b", title, re.IGNORECASE))
 
         # 5b. Qayta dublikat tekshiruvi (boyitilgandan so'ng aniqlangan toza nom va TMDb ID bo'yicha)
         sec_dup = await self.dup_checker.check(
@@ -2927,15 +2942,29 @@ class TelethonModeratorPipeline:
             elif sec_dup.matched_type == "series" and not is_single_movie and getattr(sec_dup, "is_incomplete", False):
                 existing_series_id = sec_dup.matched_id
 
-        # 6. 'Tomosha qilish' tugmasini topish va bosish
+        # 6. '1-FASL' yoki 'Tomosha qilish' tugmasini topish va bosish (Hech qachon 'Davom ettirish' tanlanmaydi!)
         watch_btn_coords = None
+
+        # 1-ustuvorlik: 1-fasl tugmasi (masalan: '1-FASL', '1-fasl' yoki callback data '=1' bilan tugaydigan)
         for r_idx, row in enumerate(card_msg.buttons or []):
             for c_idx, btn in enumerate(row):
-                if "tomosha qilish" in btn.text.lower() or (btn.data and btn.data.startswith(b"yuklanolish")):
+                b_txt = btn.text.strip().lower()
+                if "1-fasl" in b_txt or "1 - fasl" in b_txt or (btn.data and btn.data.endswith(b"=1")):
                     watch_btn_coords = (r_idx, c_idx)
                     break
             if watch_btn_coords:
                 break
+
+        # 2-ustuvorlik: 'Tomosha qilish' tugmasi
+        if not watch_btn_coords:
+            for r_idx, row in enumerate(card_msg.buttons or []):
+                for c_idx, btn in enumerate(row):
+                    b_txt = btn.text.strip().lower()
+                    if "tomosha qilish" in b_txt:
+                        watch_btn_coords = (r_idx, c_idx)
+                        break
+                if watch_btn_coords:
+                    break
 
         if not watch_btn_coords:
             logger.error(f"❌ [@{target_bot}] 'Tomosha qilish' tugmasi topilmadi.")
@@ -2964,7 +2993,12 @@ class TelethonModeratorPipeline:
             return False
 
         current_video_msg = ep1_msgs[0]
-        is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1)
+        if meta.get("type") == "tv":
+            is_single_movie = False
+        elif meta.get("type") == "movie":
+            is_single_movie = True
+        else:
+            is_single_movie = (ep_count == 1) or ("film" in title.lower() and ep_count <= 1 and not re.search(r"\b(s\d+|fasl|mavsum)\b", title, re.IGNORECASE))
 
         # ==========================================
         # A) KINO SIKLI (1 qism)
