@@ -16,6 +16,7 @@ Loyiha bo'yicha strategik rejalar, faza va qadamlar holati.
 | **C7 (F1-S70)** | Anime Catalog Titles & Kaiju Sequence Verification | MUVAFFAQIYATLI | Anime nomlari to'g'rilandi, Chainsaw Man Reze film kartochkasi yangilandi, Kaiju 12 ketma-ket qismlari sinxronlandi. |
 | **C8 (F1-S71)** | Media Audit Quality 100% Score | MUVAFFAQIYATLI | Media sifati 75.4% dan 100.0% ga chiqarildi, TMDb ko'p tilli treylerlar va premyera yillari to'ldirildi. |
 | **C11** | Autopilot Status Auditi va Yangi Manbalar (Uzmovi, Kinochilar) Tahlili | MUVAFFAQIYATLI | AUTOPILOT_STATUS.md tayyorlandi: 7 invariant isbotlandi, 10 ta rebuild testi yashil, Uzmovi va Kinochilar arxitekturasi va xavflari ochib berildi. |
+| **C12** | Autopilot Yangi Manbalar (Uzmovi, Kinochilar) va Sifat Qo'riqchilari Integratsiyasi | MUVAFFAQIYATLI | AUTOPILOT_SOURCES_REPORT.md tayyorlandi: 5 ta final_check qo'riqchisi ulandi, Uzmovi va Kinochilar offline fixture testlari yozildi, 8 ta PG integratsiya testi tiklandi, 54 ta test 100% yashil o'tdi. |
 
 ## Qoidalar va Standartlar
 1. **Haqiqatparvarlik va Dalil:** Hech qachon taxmin bilan tasdiqlama. Har bir o'zgarish xom terminal dalili bilan isbotlanishi shart.

@@ -1,27 +1,26 @@
 # Project State (STATE.md)
 
 ## Current goal
-MediaPlus / Kinochi barcha filtr va saralash tizimini audit qilish va tuzatish (`FILTER_AUDIT.md`, `FILTER_CONTRACT.md`, `FILTER_FIX_REPORT.md`).
+Autopilot yangi manbalar (Uzmovi, Kinochilar) adapterlarini yakunlash, 5 ta sifat qo'riqchisini final_check ga ulash va integratsiya testlarini o'tkazish (`AUTOPILOT_SOURCES_REPORT.md`, C12).
 
 ## In progress (slice, branch)
-- Slice: F1-S72: Filter & Sorting System Remediation (`FILTER_FIX_REPORT.md`).
-- Branch: `filters/fix-all`
+- Slice: C12 (Autopilot Sources & Quality Guards Integration).
+- Branch: `feat/autopilot-sources` (pushga tayyor holatda).
 
 ## Blocked
-- None (All 7 filter bugs fixed, verified with Oracle & Pytest, waiting for user review).
+- None (Barcha 54 ta test 100% yashil, kod toza, foydalanuvchining yakuniy push tasdig'i kutilmoqda).
 
 ## Next step (one task)
-- User review of `FILTER_FIX_REPORT.md` and decision on Director API (separate route vs actors department filter).
+- Foydalanuvchi buyrug'i bilan `feat/autopilot-sources` branchini GitHub reposiga push qilish (`git push origin feat/autopilot-sources` yoki `main` ga merge).
 
 ## Open questions for the user
-- Director API: Hozirda rejissyorlar `/actors` sahifasida `department: "Directing"` roli bilan qatnashmoqda. Ularni alohida `/directors` sahifasiga ajratamizmi yoki `/actors` ichida "Rejissyorlar" tabi qo'shamizmi?
+- `feat/autopilot-sources` alohida branch sifatida push qilinsinmi yoki avval `main` ga birlashtirilib, keyin `main` branchi push qilinsinmi?
 
 ## Last verification & check results (Terminal Evidence)
-- **Filter Regression Suite (pytest):** 4 passed in 3.86s (`pytest backend/tests/test_filter_*.py`).
-- **Backend Filter Oracle Suite:** 16 PASS | 0 FAIL | 1 MAVJUD EMAS (`python scratch/audit_backend_oracle.py`).
-- **TypeScript Static Verification:**
-  * Website: `tsc -p website/tsconfig.json --noEmit` -> 0 errors.
-  * Admin-Panel: `tsc -p admin-panel/tsconfig.json --noEmit` -> 0 errors.
+- **Autopilot Test Suite (pytest):** 54 passed in 26.35s (10 ta to'plam, jumladan 8 ta lokal PG integratsiya testi).
+- **Ruff Linters:** 0 errors across changed files.
+- **Alembic Heads:** `b2c3d4e5f6a7 (head)` sinxron.
+- **Git Tree:** Clean, uncommitted o'zgarishlar yo'q.
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 29 ta (100% sog'lom)
