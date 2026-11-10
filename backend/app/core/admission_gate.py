@@ -537,6 +537,12 @@ def final_check(
             "code": "missing_telegram_file_id",
             "message": "Telegram video file_id biriktirilmagan"
         })
+    elif get_val("file_id_alive") is False or get_val("file_id_dead") is True:
+        defects.append({
+            "field": "telegram_file_id",
+            "code": "file_id_dead",
+            "message": "Telegram file_id tirik emas yoki o'chirilgan"
+        })
 
     # 2. Saqlash kanali xabar ID (storage_channel_message_id)
     msg_id = get_val("storage_channel_message_id") or get_val("channel_message_id") or get_val("message_id")
@@ -653,7 +659,45 @@ def final_check(
                 "message": "Serial mavzusi uchun qism raqami (episode_number) talab qilinadi"
             })
 
-    # 7. Movie video duration vs TMDb runtime with relative tolerance (default 15%, min 5 min)
+        # (a) Qismlar soni vs TMDb mavsum epizodlari soni tekshiruvi
+        tmdb_ep_count = get_val("tmdb_season_episode_count") or get_val("tmdb_episode_count")
+        if tmdb_ep_count is not None and episode_num is not None:
+            try:
+                ep_val_int = int(episode_num)
+                tmdb_cnt_int = int(tmdb_ep_count)
+                if ep_val_int > tmdb_cnt_int:
+                    defects.append({
+                        "field": "episode_number",
+                        "code": "episode_count_exceeds_tmdb",
+                        "message": f"Qism raqami ({ep_val_int}) TMDb mavsumidagi jami qismlar sonidan ({tmdb_cnt_int}) oshib ketgan"
+                    })
+            except (ValueError, TypeError):
+                pass
+
+        # (b) Fayl nomi, caption va qism raqami mosligi (Kaiju holati oldini olish)
+        filename = get_val("filename") or get_val("file_name") or ""
+        caption = get_val("caption") or ""
+        if (filename or caption) and season_num is not None and episode_num is not None:
+            try:
+                from scraper.telethon_moderator_pipeline import verify_season_episode_consistency
+                s_int = int(season_num) if str(season_num).isdigit() else 1
+                e_int = int(episode_num) if str(episode_num).isdigit() else 1
+                ok_cons, reason_cons = verify_season_episode_consistency(
+                    btn_season=s_int,
+                    btn_episode=e_int,
+                    filename=str(filename),
+                    caption=str(caption)
+                )
+                if not ok_cons:
+                    defects.append({
+                        "field": "episode_number",
+                        "code": "season_episode_conflict",
+                        "message": f"Fayl nomi yoki caption qism raqami bilan mos kelmadi ({reason_cons})"
+                    })
+            except Exception:
+                pass
+
+    # 7. Movie video duration vs TMDb runtime with relative tolerance (default 10%, min 5 min)
     if kind == "movie":
         runtime = get_val("runtime") or get_val("tmdb_runtime")
         if duration is not None and runtime is not None:
@@ -664,7 +708,7 @@ def final_check(
                 rt_minutes = float(runtime)
                 if rt_minutes > 0 and dur_minutes > 0:
                     from app.core.config import settings
-                    tol_percent = getattr(settings, "MOVIE_RUNTIME_TOLERANCE_PERCENT", 15)
+                    tol_percent = get_val("runtime_tolerance_percent") or getattr(settings, "MOVIE_RUNTIME_TOLERANCE_PERCENT", 10)
                     tolerance_minutes = max(rt_minutes * (tol_percent / 100.0), 5.0)
                     diff = abs(dur_minutes - rt_minutes)
                     if diff > tolerance_minutes:
@@ -682,6 +726,14 @@ def final_check(
             "field": "telegram_file_id",
             "code": "file_belongs_to_multiple_titles",
             "message": "Bitta fayl birdan ortiq nomga (title) tegishli bo'lishi mumkin emas"
+        })
+
+    # 9. Dublikat Telegram file_unique_id nazorati
+    if get_val("duplicate_file_unique_id") is True or get_val("duplicate_file_unique"):
+        defects.append({
+            "field": "file_unique_id",
+            "code": "duplicate_file_unique_id",
+            "message": "Ushbu Telegram video file_unique_id boshqa mediaga biriktirilgan"
         })
 
     return len(defects) == 0, defects
