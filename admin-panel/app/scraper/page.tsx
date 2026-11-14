@@ -2336,7 +2336,7 @@ export default function ScraperPage() {
                             ? "Multfilm"
                             : "Kino"}
                         </span>
-                        {(item.media_type === "series" || item.media_type === "dorama") && item.episodes_count && (
+                        {(item.media_type === "series" || item.media_type === "dorama" || item.media_type === "anime") && item.episodes_count && (
                           <div className="text-[10px] text-zinc-400 mt-1">
                             {item.downloaded_episodes || 0} / {item.episodes_count} qism
                           </div>

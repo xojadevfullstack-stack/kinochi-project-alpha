@@ -723,7 +723,7 @@ class QueueManager:
                             IngestItemModel.source_id.ilike(q),
                         )
                     )
-                stmt = stmt.order_by(IngestItemModel.id.desc())
+                stmt = stmt.order_by(IngestItemModel.priority.desc(), IngestItemModel.id.asc())
                 res = await session.execute(stmt)
                 all_items = [_model_to_queue_item(r) for r in res.scalars().all()]
 
@@ -733,15 +733,17 @@ class QueueManager:
                 status_priority = {
                     "in_progress": 0,
                     "queued": 1,
+                    "pending": 1,
                     "needs_review": 2,
                     "failed": 3,
                     "rejected": 4,
                     "blacklisted": 5,
                     "published": 6,
+                    "completed": 6,
                     "already_exists": 7,
                     "discovered": 8,
                 }
-                all_items.sort(key=lambda i: status_priority.get(i.status, 99))
+                all_items.sort(key=lambda i: (status_priority.get(i.status, 99), -int(getattr(i, "priority", 0) or 0)))
                 total_count = len(all_items)
                 return all_items[skip: skip + limit], total_count
         return await _with_db_retry(_run)

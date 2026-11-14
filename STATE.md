@@ -1,34 +1,31 @@
 # Project State (STATE.md)
 
 ## Current goal
-Dynamic latest Hero Premiere banner & newest-first catalog listing fix.
+AniToob merged franchise queue with sequential priority ordering and real-time Admin Panel progress tracking.
 
 ## In progress (slice, branch)
-- Slice: Inverted catalog sorting remediation (`id.asc()` -> `id.desc()`) and homepage global premiere Hero ingestion — COMPLETED.
+- Slice: AniToob catalog parse (319 items, 9,074 eps), multi-season franchise merging, TMDb association, priority queue synchronization, and Admin Panel progress visibility — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
 - None.
 
 ## Next step (one task)
-- User confirmation on latest Hero banner display on live deployment, and optional bulk cleanup of orphan Telegram forum topics.
+- Start the first download batch for merged anime franchises via Admin Panel `/scraper` and observe live progress.
 
 ## Open questions for the user
-- Baza va guruhda avvalgi uzilishlardan qolgan 78 ta bo'sh (orphan) topic va manba yozuvlari mavjud. Ularni ham to'liq avtomatik tozalash skriptini ishga tushiraylikmi?
+- None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Backend Default Sort & Regression Suite:** `pytest backend/tests/test_default_newest_first_sorting.py backend/tests/test_code_and_source_branding_fixes.py backend/tests/test_admission_gate.py backend/tests/test_pages_publish_status.py backend/tests/test_anime_enricher_guards.py backend/tests/test_anime_matching_fixes.py backend/tests/test_filter_series_sort.py backend/tests/test_filter_movies_sort_and_genre_slug.py` -> 24 passed in 6.89s (100% green).
-- **Bot Episode Resolution & UX Suite:** `pytest bot/tests/test_code_resolver.py bot/tests/test_episode_uploading_ux.py` -> 15 passed in 3.65s (100% green).
-- **Website Production Build:** `npm run build` -> 26/26 pages statically generated successfully with zero errors.
+- **Backend Queue Sorting & Regression Suite:** `pytest backend/tests/test_queue_sorting_and_anime_progress.py backend/tests/test_default_newest_first_sorting.py backend/tests/test_code_and_source_branding_fixes.py backend/tests/test_admission_gate.py backend/tests/test_pages_publish_status.py backend/tests/test_anime_enricher_guards.py backend/tests/test_anime_matching_fixes.py` -> 24 passed in 4.29s (100% green).
+- **Bot Episode Resolution & UX Suite:** `pytest bot/tests/test_code_resolver.py bot/tests/test_episode_uploading_ux.py` -> 15 passed in 3.39s (100% green).
+- **Admin Panel Typecheck:** `tsc --project admin-panel/tsconfig.json --noEmit` -> 0 errors (100% green).
 - **Total Tests Passed:** 39 passed, 0 failures.
 
 ## Live Database Metrics (PostgreSQL Evidence)
-- **Series #1092:** '86: Eighty Six' (TMDb: 100565, 2021, Rating: 8.1, poster & synopsis fixed)
-- **Series #1052:** 'Naruto: Shippuden' (TMDb: 31910, 2007, Rating: 8.5, Season 2, 78 eps, display_code S2-CH*)
-- **Series #1095:** 'Dunyo oxiridagi haram (World''s End Harem)' (TMDb: 103409, 2022, Rating: 7.5, clean title & synopsis)
-- **Series #1063:** 'Titanlar hujumi (Attack on Titan)' (TMDb: 1429, 2013, Rating: 8.7, TV series poster & synopsis, 66 eps)
-- **Topic #7035:** Deleted from Telegram supergroup, Source #1213 removed from PostgreSQL.
-- **Latest Hero Item Selection:** Dynamic across all media (`Laputa osmondagi qasr` / `Siundzi oilasining farzandlari`).
+- **Ingest Items (AniToob):** 299 queued (with verified TMDb IDs, canonical titles, multi-season payloads), 10 published, 7 redundant duplicates safely set to `already_exists`, 0 rejected/failed.
+- **Queue Priority Ordering:** My Hero Academia S1 (p=2000), S2 (p=1999) ... Naruto S1 (p=1994) ... Jujutsu Kaisen S1 (p=1990) ... Attack on Titan (p=1986).
+- **Admin Panel Progress Visibility:** Episode count progress (`0/12 qism`) rendered in real-time table for anime media type.
 
 ---
 
@@ -51,3 +48,4 @@ Dynamic latest Hero Premiere banner & newest-first catalog listing fix.
 - **F1-S73:** Fixed AniToob Aura anime metadata mismatch (DB #854 corrected to TMDb 225086 'Aura: Koga Maryuin\'s Last War', added canonical title mapping, enforced anime source genre disqualification guard in score_tmdb_candidate, added subtitle token compound generator). Full backend test suite passing (749 passed, 8 skipped).
 - **F1-S74:** Fixed Anime TMDb matching (Obs 86 Show, Naruto The Ocean Cut, World's End Harem, Attack on Titan TV vs movie conflict), added dynamic multi-season extraction and organization for AniToob & Animeelar pipelines, corrected Telethon DeleteTopicHistoryRequest signature bug, automated orphan forum topic and empty source cleanup on failed downloads, and remediated Series #1092, #1052, #1095, #1063 and purged Topic #7035. Full regression test suites passing (36 passed, 0 failures).
 - **F1-S75:** Fixed default catalog sorting order (inverted `id.asc()` -> `id.desc()`) across series and movie repositories, added direct global media candidate ingestion (`/movies?limit=10` and `/series?limit=10`) on homepage, resolved stuck Hero banner premiere bug so newly published movies and anime series dynamically take the Hero slot in real time, and added TDD regression test `test_default_newest_first_sorting.py`.
+- **F1-S76:** Parsed full AniToob catalog (319 items, 9,074 episodes), grouped 20+ multi-card franchises (My Hero Academia S1..S6, Naruto TV/Movies, Jujutsu Kaisen S1..S3/Movie, etc.) with verified TMDb IDs, synchronized PostgreSQL `ingest_items` queue (299 queued, 10 published, 7 redundant duplicates marked `already_exists`), and fixed Admin Panel progress visibility (episode counters for anime and priority-descending queue ordering in `scraper/queue_manager.py`). Full regression test suite passing (39 passed, 0 failures).
