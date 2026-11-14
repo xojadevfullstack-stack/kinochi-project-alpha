@@ -22,6 +22,8 @@ async def test_guest_issue_001_movie_search_no_name_error():
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
+    import app.core.cache as cache_module
+    cache_module._memory_cache.clear()
     async with session_factory() as session:
         # Seed one movie
         movie = MovieModel(
@@ -61,6 +63,8 @@ async def test_guest_issue_002_collections_no_n_plus_one():
         await conn.run_sync(Base.metadata.create_all)
 
     session_factory = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
+    import app.core.cache as cache_module
+    cache_module._memory_cache.clear()
 
     # Seed 5 collections, each with 2 items
     async with session_factory() as session:
@@ -114,5 +118,7 @@ async def test_guest_issue_002_collections_no_n_plus_one():
     finally:
         event.remove(test_engine.sync_engine, "before_cursor_execute", track_query)
         app.dependency_overrides.clear()
+        import app.core.cache as cache_module
+        cache_module._memory_cache.clear()
         await test_engine.dispose()
 
