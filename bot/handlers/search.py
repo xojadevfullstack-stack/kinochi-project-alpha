@@ -28,8 +28,10 @@ async def handle_search_query(message: Message):
     if query == "🔍 Kino qidirish":
         await message.answer("🍿 <b>Kino olamiga xush kelibsiz!</b>\n\nQidirmoqchi bo'lgan kinongiz nomini yoki maxsus kodini yuboring. Eng sifatli va yangi kinolar faqat bizda!", parse_mode="HTML")
         return
-    elif query == "🎲 Tavsiya kino":
-        await message.answer("🔥 <b>Tez kunda...</b>\n\nSiz uchun maxsus tavsiyalar, yilning eng qizg'in premyeralari ro'yxatini tayyorlayapmiz! Biz bilan qoling, zerikishga vaqt bo'lmaydi 😉", parse_mode="HTML")
+    elif query in ("🎲 Tavsiya kino", "🎲 Tavsiya", "tavsiya"):
+        from handlers.recommendation import build_recommendation_menu
+        text, markup = await build_recommendation_menu()
+        await message.answer(text, parse_mode="HTML", reply_markup=markup)
         return
     elif query == "🌐 Saytga o'tish":
         await message.answer(f"🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>{settings.WEBSITE_URL}</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")

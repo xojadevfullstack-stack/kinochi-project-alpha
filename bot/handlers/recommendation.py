@@ -10,49 +10,53 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
+async def build_recommendation_menu():
+    text = (
+        "🎲 <b>Tavsiya Bo'limi</b>\n\n"
+        "Qaysi yo'nalish bo'yicha film yoki serial tavsiya qilaylik?"
+    )
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✨ Didga mos (AI Shaxsiy)", callback_data="rec_cat:personalized:0")
+    builder.button(text="🎬 Kinolar", callback_data="rec_cat:movie:0")
+    builder.button(text="📺 Seriallar", callback_data="rec_cat:series:0")
+    
+    # Dynamic active pages (Anime, Doramalar, Multfilm va boshqalar)
+    try:
+        pages_data = await api_client.get_pages()
+        for p in pages_data.get("items", []):
+            if p.get("is_active"):
+                title = p.get("title", "")
+                pid = p.get("id")
+                icon = "📂"
+                t_low = title.lower()
+                if "anime" in t_low:
+                    icon = "🎌"
+                elif "dorama" in t_low:
+                    icon = "🎭"
+                elif "mult" in t_low:
+                    icon = "🧸"
+                builder.button(text=f"{icon} {title}", callback_data=f"rec_cat:page_{pid}:0")
+    except Exception as e:
+        logger.error(f"Error loading pages in recommendation: {e}")
+
+    builder.button(text="🎲 Har qanday (Random)", callback_data="rec_cat:any:0")
+    builder.button(text="🔙 Asosiy menyu", callback_data="menu_main")
+    builder.adjust(2)
+    return text, builder.as_markup()
+
 @router.callback_query(F.data == "menu_random")
 async def handle_recommendation_menu(callback: CallbackQuery):
     try:
-        text = (
-            "🎲 <b>Tavsiya Bo'limi</b>\n\n"
-            "Qaysi yo'nalish bo'yicha film yoki serial tavsiya qilaylik?"
-        )
-        builder = InlineKeyboardBuilder()
-        builder.button(text="✨ Didga mos (AI Shaxsiy)", callback_data="rec_cat:personalized:0")
-        builder.button(text="🎬 Kinolar", callback_data="rec_cat:movie:0")
-        builder.button(text="📺 Seriallar", callback_data="rec_cat:series:0")
-        
-        # Dynamic active pages (Anime, Doramalar, Multfilm va boshqalar)
-        try:
-            pages_data = await api_client.get_pages()
-            for p in pages_data.get("items", []):
-                if p.get("is_active"):
-                    title = p.get("title", "")
-                    pid = p.get("id")
-                    icon = "📂"
-                    t_low = title.lower()
-                    if "anime" in t_low:
-                        icon = "🎌"
-                    elif "dorama" in t_low:
-                        icon = "🎭"
-                    elif "mult" in t_low:
-                        icon = "🧸"
-                    builder.button(text=f"{icon} {title}", callback_data=f"rec_cat:page_{pid}:0")
-        except Exception as e:
-            logger.error(f"Error loading pages in recommendation: {e}")
-
-        builder.button(text="🎲 Har qanday (Random)", callback_data="rec_cat:any:0")
-        builder.button(text="🔙 Asosiy menyu", callback_data="menu_main")
-        builder.adjust(2)
+        text, markup = await build_recommendation_menu()
 
         try:
             if callback.message.photo or callback.message.video:
                 await callback.message.delete()
-                await callback.message.answer(text, parse_mode="HTML", reply_markup=builder.as_markup())
+                await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
             else:
-                await callback.message.edit_text(text, parse_mode="HTML", reply_markup=builder.as_markup())
+                await callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
         except Exception:
-            await callback.message.answer(text, parse_mode="HTML", reply_markup=builder.as_markup())
+            await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     finally:
         try:
             await callback.answer()

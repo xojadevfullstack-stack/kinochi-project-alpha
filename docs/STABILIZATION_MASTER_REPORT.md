@@ -14,8 +14,8 @@
 | **FLOW 1** | GUEST FLOW | **VERIFIED PASS** | 6 | 6 | 0 |
 | **FLOW 2** | USER / AUTH FLOW | **VERIFIED PASS** | 4 | 4 | 0 |
 | **FLOW 3** | ADMIN PANEL | **VERIFIED PASS** | 3 | 3 | 0 |
-| **FLOW 4** | TELEGRAM BOT | **AUDIT IN PROGRESS** | — | — | — |
-| **FLOW 5** | BACKEND / API / DB | QUEUED | — | — | — |
+| **FLOW 4** | TELEGRAM BOT | **VERIFIED PASS** | 2 | 2 | 0 |
+| **FLOW 5** | BACKEND / API / DB | **AUDIT IN PROGRESS** | — | — | — |
 | **FLOW 6** | CROSS-INTEGRATION | QUEUED | — | — | — |
 | **FLOW 7** | UI/UX COMPLETENESS | QUEUED | — | — | — |
 | **FLOW 8** | FINAL REGRESSION | QUEUED | — | — | — |
@@ -51,3 +51,13 @@
   - ADMIN-ISSUE-003 (P2 Branding / Consistency): Admin layout metadata va login ekranida eskirgan "MediaPlus" yozuvining qolib ketishi.
 - **Natija:** Barcha 3 ta muammo TDD (RED -> GREEN) tamoyilida bartaraf etildi.
 - **Tekshiruv dalillari:** `tests/audit2/test_admin_flow_repair.py` (PASSED), `website/tests/admin_panel.spec.ts` (2 passed), `npx playwright test` (10 passed), `admin-panel` va `website` TypeScript typecheck (0 errors).
+
+---
+
+## 5. FLOW 4: TELEGRAM BOT XULOSASI
+- **Audit:** Bot komandalari (`/start`, `/search`, `/profile`, `/login`), deep linklar, obuna tekshiruvi, xabar jo'natish, kino/serial qidiruv, tavsiyalar, sharhlar, shikoyatlar va inline query auditdan o'tkazildi.
+- **Topilgan muammolar:** 2 ta (BOT-ISSUE-001..002).
+  - BOT-ISSUE-001 (P2 Branding / Identity): Start xabarida eskirgan "MediaPlus botiga xush kelibsiz!" matni.
+  - BOT-ISSUE-002 (P1 Functional / Placeholder): Tavsiya so'rovida mavjud tavsiya tizimiga ulanmasdan soxta "Tez kunda..." xabari berilishi.
+- **Natija:** Barcha 2 ta muammo TDD (RED -> GREEN) tamoyilida bartaraf etildi.
+- **Tekshiruv dalillari:** `bot/tests/test_bot_flow_repair.py` (2 passed in 4.04s), to'liq bot test to'plami (`100 passed in 7.19s`, 100% green).

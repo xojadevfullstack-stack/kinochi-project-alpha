@@ -13,12 +13,12 @@
 | **FLOW 1: GUEST** | 6 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 6 |
 | **FLOW 2: USER** | 4 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 4 |
 | **FLOW 3: ADMIN** | 3 | 0 | 1 | 2 | 0 | 0 | 0 | 0 | 3 |
-| **FLOW 4: BOT** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **FLOW 4: BOT** | 2 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
 | **FLOW 5: BACKEND** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 6: INTEGRATION** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 7: UI/UX** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 8: REGRESSION** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| **JAMI** | **13** | **2** | **5** | **6** | **0** | **0** | **0** | **0** | **13** |
+| **JAMI** | **15** | **2** | **6** | **7** | **0** | **0** | **0** | **0** | **15** |
 
 ---
 
@@ -227,5 +227,38 @@
 - **Test Reference:** `website/tests/admin_panel.spec.ts:25` (PASSED in 5ms).
 - **Verification:** No occurrences of "MediaPlus" remain in layout or login headings; branded as "Kinochi Admin".
 - **Status:** `VERIFIED_FIX`
+
+---
+
+## 5. FLOW 4: BOT ISSUES
+
+### BOT-ISSUE-001 — Welcome Message Legacy Branding (P2 Identity)
+- **Flow:** Flow 4 (Telegram Bot)
+- **Modul:** Bot Start Handler
+- **Fayl:** `bot/handlers/start.py:89`
+- **Severity:** P2 Medium / Identity
+- **Root Cause:** In `/start` without deep-link parameters, welcome message hardcoded `"👋 <b>MediaPlus botiga xush kelibsiz!</b>\n\n"`.
+- **Reproduction:** Sending `/start` to the bot greets user with "MediaPlus botiga xush kelibsiz!".
+- **Evidence:** Code inspection of `bot/handlers/start.py:89`.
+- **Fix Description:** Update greeting to `"👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"`.
+- **Test Reference:** `bot/tests/test_bot_flow_repair.py:8` (PASSED in 4.04s).
+- **Verification:** Welcome text strictly contains "Kinochi" and zero references to obsolete "MediaPlus".
+- **Status:** `VERIFIED_FIX`
+
+---
+
+### BOT-ISSUE-002 — Fake "Tez kunda" Placeholder on Recommendation Query (P1 Functional)
+- **Flow:** Flow 4 (Telegram Bot)
+- **Modul:** Bot Search Handler & Recommendation Integration
+- **Fayl:** `bot/handlers/search.py:31-33`
+- **Severity:** P1 High / Functional
+- **Root Cause:** When user types or clicks `"🎲 Tavsiya kino"`, `search.py` intercepted it with a fake placeholder: `"🔥 <b>Tez kunda...</b>\n\nSiz uchun maxsus tavsiyalar, yilning eng qizg'in premyeralari ro'yxatini tayyorlayapmiz!..."`, even though a full recommendation engine already exists in `bot/handlers/recommendation.py`.
+- **Reproduction:** Sending message `"🎲 Tavsiya kino"` or `"🎲 Tavsiya"` returns placeholder "Tez kunda" message.
+- **Evidence:** `search.py:31-33`.
+- **Fix Description:** Intercept recommendation text intent and display the real recommendation menu (`InlineKeyboardMarkup` with AI personal, movies, series, dynamic pages, and random) directly to the user.
+- **Test Reference:** `bot/tests/test_bot_flow_repair.py:29` (PASSED in 4.04s).
+- **Verification:** Actionable inline keyboard with real recommendation choices displayed; no placeholder text.
+- **Status:** `VERIFIED_FIX`
+
 
 

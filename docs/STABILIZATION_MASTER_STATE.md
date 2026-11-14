@@ -1,9 +1,9 @@
 # KINOCHI STABILIZATION MASTER STATE
 
 **Loyiha:** Kinochi Full Ecosystem Autonomous Stabilization  
-**Oxirgi yangilanish vaqti:** 2026-11-14T06:40:00+05:00  
-**Hozirgi faol Flow:** FLOW 4 — TELEGRAM BOT  
-**Oxirgi muvaffaqiyatli Checkpoint:** CHECKPOINT-03 (FLOW 3: ADMIN PANEL to'liq yakunlandi va tasdiqlandi)  
+**Oxirgi yangilanish vaqti:** 2026-11-14T06:43:00+05:00  
+**Hozirgi faol Flow:** FLOW 5 — BACKEND / API / DATABASE  
+**Oxirgi muvaffaqiyatli Checkpoint:** CHECKPOINT-04 (FLOW 4: TELEGRAM BOT to'liq yakunlandi va tasdiqlandi)  
 
 ---
 
@@ -14,8 +14,8 @@
 | **FLOW 1** | Guest (Mehmon oqimi) | **COMPLETED & VERIFIED** | 6 ta (GUEST-001..006) | 0 ta |
 | **FLOW 2** | User / Authenticated User | **COMPLETED & VERIFIED** | 4 ta (USER-001..004) | 0 ta |
 | **FLOW 3** | Admin Panel | **COMPLETED & VERIFIED** | 3 ta (ADMIN-001..003) | 0 ta |
-| **FLOW 4** | Telegram Bot | **IN PROGRESS** (Discovery & Audit boshlanmoqda) | 0 ta | 0 ta |
-| **FLOW 5** | Backend / API / Database | QUEUED | 0 ta | 0 ta |
+| **FLOW 4** | Telegram Bot | **COMPLETED & VERIFIED** | 2 ta (BOT-001..002) | 0 ta |
+| **FLOW 5** | Backend / API / Database | **IN PROGRESS** (Discovery & Audit boshlanmoqda) | 0 ta | 0 ta |
 | **FLOW 6** | Cross-System Integration | QUEUED | 0 ta | 0 ta |
 | **FLOW 7** | UI/UX & Functional Completeness | QUEUED | 0 ta | 0 ta |
 | **FLOW 8** | Final Regression & Release Readiness | QUEUED | 0 ta | 0 ta |
@@ -24,15 +24,12 @@
 
 ## 2. FAOL ISH VA O'ZGARISHLAR
 
-- **Hozirgi vazifa:** Flow 4 (Telegram Bot) — Aiogram 3 bot routerlari, callback handlerlar, inline query, majburiy obuna kanallari, video yuborish, kod orqali qidiruv va chuqur integratsiya audit va verifikatsiyasi.
+- **Hozirgi vazifa:** Flow 5 (Backend / API / Database) — Barcha 24 ta FastAPI routerlari, contract validation, database transaction boundaries, Alembic migrations, Redis caching & fallback error handling audit va stabilizatsiyasi.
 - **Oxirgi o'zgartirilgan fayllar:**
-  - `admin-panel/components/AdminShell.tsx` (ADMIN-ISSUE-001)
-  - `admin-panel/components/Sidebar.tsx` (ADMIN-ISSUE-001)
-  - `backend/app/api/v1/sources.py` (ADMIN-ISSUE-002)
-  - `admin-panel/app/layout.tsx` (ADMIN-ISSUE-003)
-  - `admin-panel/app/login/page.tsx` (ADMIN-ISSUE-003)
-  - `tests/audit2/test_admin_flow_repair.py`
-  - `website/tests/admin_panel.spec.ts`
+  - `bot/handlers/start.py` (BOT-ISSUE-001)
+  - `bot/handlers/search.py` (BOT-ISSUE-002)
+  - `bot/handlers/recommendation.py` (BOT-ISSUE-002)
+  - `bot/tests/test_bot_flow_repair.py`
 
 ---
 
@@ -41,7 +38,7 @@
 - **Backend Pytest Gate:**
   - `tests/audit2/` -> `14 passed in 7.07s` (100% green)
 - **Bot Pytest Gate:**
-  - `bot/tests/` -> `98 passed in 7.88s` (100% green)
+  - `bot/tests/` -> `100 passed in 7.19s` (100% green)
 - **Website Playwright Gate:**
   - `website/tests/` -> `10 passed in 1.9s` (100% green)
 - **TypeScript Compile:**
