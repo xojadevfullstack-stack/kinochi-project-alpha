@@ -123,6 +123,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    try {
+      fetchApi("/auth/logout", { method: "POST" }).catch(() => {});
+    } catch (e) {}
+    if (typeof document !== "undefined") {
+      document.cookie = "user_access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     clearToken();
     setTokenState(null);
     setUser(null);

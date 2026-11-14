@@ -76,6 +76,7 @@ def _clear_auth_cookies(response: Response) -> None:
     """Clear auth cookies by setting max_age=0."""
     response.delete_cookie(key="access_token", path=_COOKIE_PATH)
     response.delete_cookie(key="refresh_token", path=_COOKIE_PATH)
+    response.delete_cookie(key="user_access_token", path=_COOKIE_PATH)
 
 
 # ── Endpoints ────────────────────────────────────────────────────
