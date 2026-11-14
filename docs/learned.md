@@ -1,3 +1,7 @@
+## Default Newest-First Ordering & Global Premiere Ingestion
+- Defaulting relational queries to descending identifiers (`id.desc()`) and feeding global uploads directly into homepage hero pools guarantees that newly added premieres are immediately showcased on the website.
+- Analogy: A store display window where newly arrived fashion collections are placed right behind the front glass, rather than hidden in the basement archives behind 10-year-old stock.
+
 ## Dynamic Season Multiplexing & Orphan Cleanup
 - Extracting dynamic season numbers from media titles and routing episodes to their corresponding season models prevents multi-season corruption, while automated topic teardown on zero downloaded items prevents storage group spam.
 - Analogy: A postal sorting office with dedicated numbered pigeonholes for each apartment floor, automatically shredding unaddressed empty delivery slips so the mailroom never overflows with junk.
