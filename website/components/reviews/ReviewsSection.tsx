@@ -175,10 +175,10 @@ export default function ReviewsSection({
                 </div>
               </div>
 
-              {/* Kinochi Community Badge */}
+              {/* MediaPlus Community Badge */}
               <div className="flex items-center gap-2.5 sm:gap-3.5 bg-sky-500/10 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-sky-500/20 shadow-sm shadow-sky-500/5">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 font-black text-[10px] sm:text-[11px] shrink-0 tracking-wider">
-                  Kinochi
+                  MediaPlus
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">

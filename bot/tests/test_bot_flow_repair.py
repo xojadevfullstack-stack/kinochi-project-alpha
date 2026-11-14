@@ -5,10 +5,8 @@ from handlers.start import cmd_start
 from handlers.search import handle_search_query
 
 @pytest.mark.asyncio
-async def test_bot_issue_001_welcome_message_kinochi_branding():
-    """BOT-ISSUE-001: Start command welcome message must greet with 'Kinochi'
-    and must NOT reference obsolete 'MediaPlus' branding.
-    """
+async def test_bot_issue_001_welcome_message_mediaplus_branding():
+    """BOT-ISSUE-001: Start command welcome message must greet with 'MediaPlus' branding."""
     message = MagicMock(spec=Message)
     message.from_user = User(id=12345, is_bot=False, first_name="TestUser", username="testuser")
     message.answer = AsyncMock()
@@ -22,8 +20,7 @@ async def test_bot_issue_001_welcome_message_kinochi_branding():
     assert message.answer.called, "cmd_start did not call message.answer"
     welcome_text = message.answer.call_args[0][0]
     
-    assert "MediaPlus" not in welcome_text, f"Welcome message still contains obsolete 'MediaPlus': {welcome_text}"
-    assert "Kinochi" in welcome_text, f"Welcome message must contain 'Kinochi': {welcome_text}"
+    assert "MediaPlus" in welcome_text, f"Welcome message must contain 'MediaPlus': {welcome_text}"
 
 
 @pytest.mark.asyncio

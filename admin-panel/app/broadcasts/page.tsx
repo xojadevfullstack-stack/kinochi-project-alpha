@@ -286,7 +286,7 @@ export default function BroadcastsPage() {
                 className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm font-sans" 
                 value={form.message_text} 
                 onChange={e => setForm(f => ({ ...f, message_text: e.target.value }))} 
-                placeholder="Assalomu alaykum! Kinochi botida yangi premyera premyera qilindi..."
+                placeholder="Assalomu alaykum! MediaPlus botida yangi premyera premyera qilindi..."
               />
             </div>
 

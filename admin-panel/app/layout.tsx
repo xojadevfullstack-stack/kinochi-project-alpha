@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' }
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
-  title: "Kinochi Admin Panel",
-  description: "Admin panel for Kinochi streaming platform and Telegram bot",
+  title: "MediaPlus Admin Panel",
+  description: "Admin panel for MediaPlus streaming platform and Telegram bot",
 };
 
 export const viewport: Viewport = {

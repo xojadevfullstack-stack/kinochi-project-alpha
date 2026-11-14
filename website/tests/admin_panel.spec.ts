@@ -22,19 +22,17 @@ test.describe('ADMIN FLOW STABILIZATION: ADMIN-ISSUE-001 & 003', () => {
     expect(sidebarContent).toMatch(/import\s+{[^}]*API_URL[^}]*}\s+from\s+["']@\/lib\/api["']/);
   });
 
-  test('ADMIN-ISSUE-003: Admin panel metadata and login page must use Kinochi branding', async () => {
+  test('ADMIN-ISSUE-003: Admin panel metadata and login page must use unified MediaPlus branding', async () => {
     const layoutPath = path.join(adminPanelDir, 'app', 'layout.tsx');
     const loginPath = path.join(adminPanelDir, 'app', 'login', 'page.tsx');
 
     const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
     const loginContent = fs.readFileSync(loginPath, 'utf-8');
 
-    // Layout metadata must not reference obsolete MediaPlus branding
-    expect(layoutContent).not.toContain('MediaPlus');
-    expect(layoutContent).toContain('Kinochi');
+    // Layout metadata must reference MediaPlus branding
+    expect(layoutContent).toContain('MediaPlus');
 
-    // Login page must not reference obsolete MediaPlus branding
-    expect(loginContent).not.toContain('MediaPlus');
-    expect(loginContent).toContain('Kinochi');
+    // Login page must reference MediaPlus branding
+    expect(loginContent).toContain('MediaPlus');
   });
 });

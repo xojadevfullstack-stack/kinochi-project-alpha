@@ -111,7 +111,7 @@ async def handle_catalog_message(message: Message, state: FSMContext = None):
 async def handle_back_to_main(callback: CallbackQuery):
     try:
         welcome_text = (
-            "👋 <b>Kinochi botiga xush kelibsiz!</b>\n\n"
+            "👋 <b>MediaPlus botiga xush kelibsiz!</b>\n\n"
             "🎬 Eng sara kinolar va seriallar aynan shu yerda.\n"
             "🎥 Kinoni ko'rish uchun menyudan tanlang yoki izlang!\n\n"
             "🔍 <i>Qidirish uchun shunchaki kino nomini yozing.</i>"

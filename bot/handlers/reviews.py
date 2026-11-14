@@ -95,9 +95,9 @@ async def handle_view_movie_reviews(callback: CallbackQuery):
         text = f"🎬 <b>{title}</b> — Fikrlar va Sharhlar\n\n"
         text += f"⭐ IMDb: <b>{imdb_score} / 10</b>\n"
         if avg_score:
-            text += f"💜 Kinochi: <b>{avg_score} / 10</b> ({total} ta baho)\n\n"
+            text += f"💜 MediaPlus: <b>{avg_score} / 10</b> ({total} ta baho)\n\n"
         else:
-            text += "💜 Kinochi: <i>Hozircha baholanmagan</i>\n\n"
+            text += "💜 MediaPlus: <i>Hozircha baholanmagan</i>\n\n"
 
         comments_with_text = [r for r in reviews_list if r.get("comment")]
         if comments_with_text:
@@ -148,9 +148,9 @@ async def handle_view_series_reviews(callback: CallbackQuery):
         text = f"📺 <b>{title}</b> — Fikrlar va Sharhlar\n\n"
         text += f"⭐ IMDb: <b>{imdb_score} / 10</b>\n"
         if avg_score:
-            text += f"💜 Kinochi: <b>{avg_score} / 10</b> ({total} ta baho)\n\n"
+            text += f"💜 MediaPlus: <b>{avg_score} / 10</b> ({total} ta baho)\n\n"
         else:
-            text += "💜 Kinochi: <i>Hozircha baholanmagan</i>\n\n"
+            text += "💜 MediaPlus: <i>Hozircha baholanmagan</i>\n\n"
 
         comments_with_text = [r for r in reviews_list if r.get("comment")]
         if comments_with_text:

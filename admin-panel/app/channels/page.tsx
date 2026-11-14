@@ -134,7 +134,7 @@ export default function ChannelsPage() {
               className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm" 
               value={form.channel_title} 
               onChange={e => setForm({...form, channel_title: e.target.value})} 
-              placeholder="Kinochi Rasmiy Kanal"
+              placeholder="MediaPlus Rasmiy Kanal"
             />
           </div>
 
