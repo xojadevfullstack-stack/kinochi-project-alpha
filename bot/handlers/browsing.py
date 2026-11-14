@@ -28,10 +28,14 @@ async def handle_watch_movie(callback: CallbackQuery):
         if not movie:
             await callback.message.answer("⚠️ Bu kino topilmadi.")
             return
-            
+
+        if not movie.get("translations"):
+            await callback.message.answer("⚠️ Ushbu film uchun video fayl hali yuklanmagan.")
+            return
+
         success = await send_movie_to_user(callback.bot, callback.from_user.id, movie)
         if not success:
-            await callback.message.answer("⏳ Video yuklanmoqda...")
+            await callback.message.answer("⚠️ Videoni yuborishda xatolik yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.")
     finally:
         try:
             await callback.answer()
@@ -54,10 +58,14 @@ async def handle_watch_episode(callback: CallbackQuery):
         if not episode:
             await callback.message.answer("⚠️ Bu qism topilmadi.")
             return
-            
+
+        if not episode.get("translations"):
+            await callback.message.answer("⚠️ Ushbu qism uchun video fayl hali yuklanmagan.")
+            return
+
         success = await send_episode_to_user(callback.bot, callback.from_user.id, episode)
         if not success:
-            await callback.message.answer("⏳ Video yuklanmoqda...")
+            await callback.message.answer("⚠️ Videoni yuborishda xatolik yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.")
     finally:
         try:
             await callback.answer()
