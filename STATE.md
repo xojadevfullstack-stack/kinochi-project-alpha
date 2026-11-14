@@ -1,25 +1,26 @@
 # Project State (STATE.md)
 
 ## Current goal
-Kinochi Pre-Deploy Closure — Final Hardening, Verification & Audit Verification.
+Kinochi Production Readiness — CSRF Security Hardening & Pre-Deploy Stabilization.
 
 ## In progress (slice, branch)
-- Slice: Pre-Deploy Closure (`docs/PRE_DEPLOY_CLOSURE_REPORT.md` & `docs/PRODUCTION_BACKUP_RESTORE.md`) — COMPLETED.
+- Slice: CSRF Security Fix (`docs/CSRF_SECURITY_FIX_REPORT.md`) — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
 - None.
 
 ## Next step (one task)
-- User confirmation of CSRF Origin Verification Middleware minimal plan and production release go-live.
+- Final production deployment and release sign-off.
 
 ## Open questions for the user
-- `website/app/achievements/page.tsx` dagi branding to'g'irlandi. Aniqlangan CSRF zaifligi bo'yicha 15 qatorlik "Origin Header Verification Middleware" ni kiritishni tasdiqlaysizmi?
+- CSRF zaifligi to'liq bartaraf etildi (30/30 testlar Yashil). Production release deployment jarayonini boshlashga ruxsat berasizmi?
 
 ## Last verification & check results (Terminal Evidence)
-- **Pre-Deploy Security Suite:** `tests/audit2/test_pre_deploy_jwt_csrf_audit.py` -> 3 passed in 3.90s (0 warnings).
+- **CSRF Protection Suite:** `tests/audit2/test_csrf_origin_protection.py` -> 7 passed in 14.30s (0 warnings).
+- **Full Audit2 Regression Suite:** `tests/audit2/` -> 30 passed in 22.72s (100% green, 0 warnings).
+- **Pre-Deploy Security Suite:** `tests/audit2/test_pre_deploy_jwt_csrf_audit.py` -> 3 passed in 3.43s (0 warnings).
 - **Admin-panel Isolated Next.js Build:** `admin-panel` -> TypeScript 0 errors, 21/21 static/dynamic pages compiled.
-- **Production Readiness Audit Suite:** `tests/audit2/` -> 20 passed in 6.80s (0 warnings).
 - **Next.js Website Build:** `npx next build --no-lint` -> 26/26 static/dynamic routes compiled cleanly (0 errors).
 - **Alembic Migration Clean DB Test:** `alembic upgrade head` (`base` -> `b2c3d4e5f6a7`) -> 15 migrations executed cleanly (0 errors).
 - **Backend Endpoints vs Frontend Contract:** 204 backend endpoints, 168 frontend fetchApi calls, 113 unique operations -> 100% contract match.
