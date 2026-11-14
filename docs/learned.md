@@ -322,3 +322,8 @@
 ## Anime Source Genre Guard & Subtitle Compound Search
 - Scraping specialized anime sources (AniToob/Animeelar) requires strict disqualification (-200.0) of any TMDb candidate lacking Animation genre ID 16, and subtitle splitting must preserve prefix + token compounds (e.g. 'Aura Koga') to eliminate single-word ambiguous false matches.
 - Analogy: Bolalar bog'chasi katalogiga qabul qilishda nomzodning yoshini qat'iy tekshirish: kattalar filmi aralashib qolsa uni darhol rad etish va to'liq ism-familiyasi bilan qidirish.
+
+
+## Immediate Publish-State Synchronization & Multi-Tier Cache Invalidation
+- Scraping pipelines must initialize series records with publish_status='published' immediately, filter public web pages strictly by published status, and flush both parent (cache:series:*) and descendant (cache:episode:*) cache tiers to eliminate 404 desync lag.
+- Analogy: Restoran vitrinasiga yangi taom rasmini osishdan oldin oshxonada taomning tayyorligini ta'minlash va zal eshigidagi 'Yopiq' lavhasini ochish; aks holda xaridor taomni oynada ko'rib ichkariga kirsa, 'hali ochilmagan' deb qaytarib yuboriladi.
