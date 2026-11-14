@@ -320,7 +320,7 @@ class MovieRepositoryImpl(IMovieRepository):
         elif sort == "az":
             order_clause = [MovieModel.title.asc(), MovieModel.id.asc()]
         else:
-            order_clause = [MovieModel.id.asc()]
+            order_clause = [MovieModel.id.desc()]
 
         result = await self.session.execute(query.order_by(*order_clause).offset(skip).limit(limit))
         models = result.scalars().all()

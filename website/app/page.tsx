@@ -110,16 +110,22 @@ export default async function Home() {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
   let latestMovies: Movie[] = [];
   let latestSeries: Series[] = [];
+  let globalMovies: Movie[] = [];
+  let globalSeries: Series[] = [];
   let pagesData: any[] = [];
 
   try {
-    const [moviesRes, seriesRes, pagesRes] = await Promise.all([
+    const [moviesRes, seriesRes, pagesRes, globalMoviesRes, globalSeriesRes] = await Promise.all([
       fetchApi("/movies?limit=20&exclude_paged=true"),
       fetchApi("/series?limit=20&exclude_paged=true"),
-      fetchApi("/pages")
+      fetchApi("/pages"),
+      fetchApi("/movies?limit=10"),
+      fetchApi("/series?limit=10")
     ]);
     latestMovies = moviesRes?.items || [];
     latestSeries = seriesRes?.items || [];
+    globalMovies = globalMoviesRes?.items || [];
+    globalSeries = globalSeriesRes?.items || [];
     const rawPages = pagesRes?.items || pagesRes || [];
     const dynamicPages = rawPages.filter((page: any) => {
       const slug = (page.slug || "").toLowerCase().trim();
@@ -170,8 +176,10 @@ export default async function Home() {
     console.error("Error fetching data for home page:", error);
   }
 
-  // Gather all recent items across unpaged movies, unpaged series, and pages
+  // Gather all recent items across global movies, global series, unpaged rows, and pages
   const rawRecentItems: any[] = [
+    ...globalMovies.map((m) => ({ ...m, is_series: false })),
+    ...globalSeries.map((s) => ({ ...s, is_series: true })),
     ...latestMovies.map((m) => ({ ...m, is_series: false })),
     ...latestSeries.map((s) => ({ ...s, is_series: true })),
     ...pagesData.flatMap((p) => p.items || [])

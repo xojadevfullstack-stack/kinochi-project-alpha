@@ -26,9 +26,9 @@ class SeriesService:
         fetch_skip = 0 if sort else skip
         fetch_limit = max(100, skip + limit) if sort else limit
         if publish_status is not None:
-            series_models, total = await self.repository.get_all_series(fetch_skip, fetch_limit, category_id, page_id, exclude_paged, publish_status=publish_status, **kwargs_clean)
+            series_models, total = await self.repository.get_all_series(fetch_skip, fetch_limit, category_id, page_id, exclude_paged, publish_status=publish_status, sort=sort, **kwargs_clean)
         else:
-            series_models, total = await self.repository.get_all_series(fetch_skip, fetch_limit, category_id, page_id, exclude_paged, **kwargs_clean)
+            series_models, total = await self.repository.get_all_series(fetch_skip, fetch_limit, category_id, page_id, exclude_paged, sort=sort, **kwargs_clean)
 
         if sort:
             if sort == "rating":

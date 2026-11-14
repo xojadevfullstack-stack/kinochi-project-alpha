@@ -28,6 +28,7 @@ class SeriesRepository:
         search: str | None = None,
         year: int | None = None,
         genre: str | None = None,
+        sort: str | None = None,
         **kwargs
     ) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
@@ -101,7 +102,19 @@ class SeriesRepository:
         total_stmt = select(func.count()).select_from(stmt.subquery())
         total = await self.session.scalar(total_stmt)
         
-        stmt = stmt.order_by(SeriesModel.id.asc()).offset(skip).limit(limit)
+        effective_sort = sort or kwargs.get("sort")
+        if effective_sort == "rating":
+            stmt = stmt.order_by(SeriesModel.imdb_rating.desc().nullslast(), SeriesModel.id.desc())
+        elif effective_sort == "latest":
+            stmt = stmt.order_by(SeriesModel.release_year.desc().nullslast(), SeriesModel.id.desc())
+        elif effective_sort in ("popular", "views"):
+            stmt = stmt.order_by(SeriesModel.view_count.desc().nullslast(), SeriesModel.id.desc())
+        elif effective_sort == "az":
+            stmt = stmt.order_by(SeriesModel.title.asc(), SeriesModel.id.asc())
+        else:
+            stmt = stmt.order_by(SeriesModel.id.desc())
+
+        stmt = stmt.offset(skip).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
