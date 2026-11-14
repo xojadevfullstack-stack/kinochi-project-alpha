@@ -5,7 +5,7 @@ Admission Gate tomonidan rad etilgan kontentlarni boshqarish va qayta urinish (A
 import logging
 from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,8 +32,7 @@ class RejectedItemResponse(BaseModel):
     created_at: Any
     updated_at: Any
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedRejectedResponse(BaseModel):

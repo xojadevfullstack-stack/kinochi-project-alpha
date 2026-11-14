@@ -7,7 +7,7 @@ import logging
 from typing import Literal
 import httpx
 from fastapi import APIRouter, Depends, Query, Request, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import select, or_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,8 +81,7 @@ class ContentRequestResponse(BaseModel):
     admin_notes: str | None = None
     user_contact: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ContentRequestListResponse(BaseModel):

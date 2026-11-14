@@ -4,7 +4,7 @@ import uuid
 import logging
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select, func, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,8 +62,7 @@ class ReportItemResponse(BaseModel):
     media_title: Optional[str] = None
     media_code_or_id: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PaginatedReportsResponse(BaseModel):
