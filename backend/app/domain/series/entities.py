@@ -91,7 +91,7 @@ class SeriesBase(BaseModel):
     status: str = "ongoing"
     publish_status: str = "pending"
     is_18_plus: bool = False
-    source_type: str | None = "uzmovi"
+    source_type: str | None = None
     custom_source_name: str | None = None
     custom_source_logo: str | None = None
 

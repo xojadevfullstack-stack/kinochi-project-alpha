@@ -498,7 +498,7 @@ async def process_series_batch(messages: list[Message], bot: Bot, series: dict):
 
         ep_num = reserved_info["episode_number"]
         ep_id = reserved_info["id"]
-        ep_code = reserved_info["display_code"]
+        ep_code = reserved_info.get("code") or reserved_info.get("display_code")
         is_update = reserved_info.get("is_update", False)
 
         telegram_file_id, _ = extract_media_info(msg)

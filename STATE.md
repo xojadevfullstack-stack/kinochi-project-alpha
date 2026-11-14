@@ -1,25 +1,25 @@
 # Project State (STATE.md)
 
 ## Current goal
-Sync newly posted series, episodes, and anime between Website & Telegram bot; eliminate 5-minute "Bu qism topilmadi" delay.
+Fix episode code resolution (unique code vs display code), multi-source branding badges (Kinochilar, AniToob, Animeelar, Uzmovi), and scraper needs_review state transitions.
 
 ## In progress (slice, branch)
-- Slice: Sync published status across scraper, backend pages, and bot episode resolution — COMPLETED.
+- Slice: Episode unique code indexing, multi-source badges in admin/web, and scraper queue transition stability — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
 - None.
 
 ## Next step (one task)
-- Monitor live production bot resolution and scraper pipeline.
+- Verification of Telegram bot direct code searches with unique codes.
 
 ## Open questions for the user
 - None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Backend Cache & Pages Publish Suite:** `pytest backend/tests/test_pages_publish_status.py backend/tests/test_cache_flush.py backend/tests/test_admission_gate.py` -> 18 passed in 5.65s (100% green).
-- **Bot Episode Resolution & Missing Video Suite:** `pytest bot/tests/test_episode_uploading_ux.py bot/tests/test_code_resolver.py bot/tests/test_browsing_missing_video.py` -> 17 passed in 7.48s (100% green).
-- **Total Tests Passed:** 35 passed, 0 failures.
+- **Backend Code & Source Branding Suite:** `pytest backend/tests/test_code_and_source_branding_fixes.py backend/tests/test_admission_gate.py backend/tests/test_pages_publish_status.py` -> 15 passed in 3.01s (100% green).
+- **Bot Episode Resolution & UX Suite:** `pytest bot/tests/test_code_resolver.py bot/tests/test_episode_uploading_ux.py` -> 15 passed in 4.02s (100% green).
+- **Total Tests Passed:** 30 passed, 0 failures.
 
 
 ## Live Database Metrics (PostgreSQL Evidence)

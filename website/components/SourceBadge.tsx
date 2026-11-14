@@ -19,7 +19,7 @@ export default function SourceBadge({
 }: SourceBadgeProps) {
   const [imgError, setImgError] = useState(false);
 
-  if (!sourceType || !["asilmedia", "uzmovi", "kinochilar", "boshqa"].includes(sourceType)) {
+  if (!sourceType || !["asilmedia", "uzmovi", "kinochilar", "anitoob", "animeelar", "boshqa"].includes(sourceType)) {
     return null;
   }
 
@@ -66,6 +66,14 @@ export default function SourceBadge({
             />
           )}
           <span>Kinochilar</span>
+        </span>
+      ) : sourceType === "anitoob" ? (
+        <span className="text-orange-400 font-bold flex items-center gap-1.5">
+          <span>AniToob</span>
+        </span>
+      ) : sourceType === "animeelar" ? (
+        <span className="text-pink-400 font-bold flex items-center gap-1.5">
+          <span>Animeelar</span>
         </span>
       ) : sourceType === "boshqa" ? (
         <span className="text-purple-300 font-bold flex items-center gap-1.5">

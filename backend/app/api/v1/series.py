@@ -722,8 +722,9 @@ async def upload_episode_video(
             f"🍿 <b>{s_title}</b>",
             f"📌 <b>{s_num}-mavsum, {e_num}-qism</b>"
         ]
-        if ep_detail.display_code:
-            caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{ep_detail.display_code}</code>")
+        active_ep_code = getattr(ep_detail, "code", None) or getattr(ep_detail, "display_code", None)
+        if active_ep_code:
+            caption_lines.append(f"🔑 <b>Qism kodi:</b> <code>{active_ep_code}</code>")
         if ep_detail.series_id:
             caption_lines.append(f"📺 <b>Serial kodi:</b> <code>s_{ep_detail.series_id}</code>")
             series_obj = await service.get_series_by_id(ep_detail.series_id)

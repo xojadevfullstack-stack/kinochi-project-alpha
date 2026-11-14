@@ -972,6 +972,9 @@ export default function SeriesListPage() {
               {[
                 { id: "uzmovi", label: "Uzmovi", logo: "https://uzmovi.com/favicon.ico" },
                 { id: "asilmedia", label: "Asilmedia", logo: "https://asilmedia.org/favicon.svg" },
+                { id: "kinochilar", label: "Kinochilar", logo: "https://kinochilar.com/favicon.ico" },
+                { id: "anitoob", label: "AniToob" },
+                { id: "animeelar", label: "Animeelar" },
                 { id: "boshqa", label: "Boshqa studiya / Manba" },
               ].map((opt) => (
                 <button
@@ -1197,10 +1200,11 @@ export default function SeriesListPage() {
               title="Manba filtri"
             >
               <option value="all">Barcha manbalar</option>
-              <option value="uzmovi">UzMovi</option>
+              <option value="uzmovi">Uzmovi</option>
+              <option value="kinochilar">Kinochilar</option>
               <option value="anitoob">AniToob</option>
-              <option value="animeuzb">AnimeUzb</option>
-              <option value="asilmedia">AsilMedia</option>
+              <option value="animeelar">Animeelar</option>
+              <option value="asilmedia">Asilmedia</option>
               <option value="boshqa">Boshqa</option>
             </select>
 
@@ -1345,6 +1349,18 @@ export default function SeriesListPage() {
                     <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded font-bold">
                       Asilmedia
                     </span>
+                  ) : s.source_type === "kinochilar" ? (
+                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">
+                      Kinochilar
+                    </span>
+                  ) : s.source_type === "anitoob" ? (
+                    <span className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded font-bold">
+                      AniToob
+                    </span>
+                  ) : s.source_type === "animeelar" ? (
+                    <span className="text-[10px] bg-pink-500/10 text-pink-400 border border-pink-500/20 px-1.5 py-0.5 rounded font-bold">
+                      Animeelar
+                    </span>
                   ) : s.source_type === "boshqa" ? (
                     <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
                       {s.custom_source_logo && (
@@ -1352,11 +1368,15 @@ export default function SeriesListPage() {
                       )}
                       {s.custom_source_name || "Boshqa"}
                     </span>
-                  ) : (
+                  ) : s.source_type === "uzmovi" ? (
                     <span className="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded font-bold">
                       Uzmovi
                     </span>
-                  )}
+                  ) : s.source_type ? (
+                    <span className="text-[10px] bg-zinc-500/10 text-zinc-300 border border-zinc-500/20 px-1.5 py-0.5 rounded font-bold uppercase">
+                      {s.source_type}
+                    </span>
+                  ) : null}
                   {s.tmdb_id && (
                     <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.2 rounded font-mono">
                       TMDb

@@ -29,7 +29,7 @@ ALLOWED_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "discovered": {"queued", "already_exists", "rejected", "blacklisted", "needs_review"},
     "queued": {"in_progress", "already_exists", "rejected", "blacklisted", "needs_review", "failed"},
     "in_progress": {"published", "failed", "needs_review", "rejected", "blacklisted", "already_exists", "queued"},
-    "needs_review": {"queued", "in_progress", "rejected", "blacklisted", "already_exists"},
+    "needs_review": {"queued", "in_progress", "rejected", "blacklisted", "already_exists", "failed"},
     "failed": {"queued", "in_progress", "rejected", "blacklisted", "needs_review"},
     "rejected": {"queued", "blacklisted"},
     "already_exists": {"queued", "in_progress"},

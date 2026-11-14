@@ -947,7 +947,12 @@ class TelethonModeratorPipeline:
                     pass
             if not start_hash:
                 logger.warning(f"[@{target_bot}] Kinochilar start_hash topilmadi ({item.id}) -> needs_review")
-                QueueManager().update_status(item.id, "needs_review", error_message="missing_start_hash")
+                item.status = "needs_review"
+                item.error_message = "missing_start_hash"
+                try:
+                    await QueueManager().update_status_async(item.id, "needs_review", error_message="missing_start_hash")
+                except Exception:
+                    pass
                 return False
             queries_to_try = [f"/start {start_hash}"]
         elif is_uzmovie:
@@ -1773,6 +1778,7 @@ class TelethonModeratorPipeline:
                                     category_ids=meta.get("category_ids"),
                                     page_ids=resolve_page_ids(item, meta),
                                     source_id=source.id,
+                                    source_type=getattr(item, "source", None) or ("kinochilar" if "kinochilar" in getattr(item, "url", "") else "uzmovi"),
                                     status="ongoing",
                                     publish_status="published",
                                     is_18_plus=bool(meta.get("is_18_plus", False))
@@ -1843,7 +1849,7 @@ class TelethonModeratorPipeline:
                                     series_id=series_id,
                                     season_number=s_num,
                                     episode_number=ep_num,
-                                    display_code=ep_entity.display_code
+                                    display_code=getattr(ep_entity, "code", None) or ep_entity.display_code
                                 )
                             except Exception as sub_err:
                                 logger.warning(f"Error broadcasting episode notification: {sub_err}")
@@ -1883,9 +1889,10 @@ class TelethonModeratorPipeline:
 
                     # Topic ichiga tasdiqlash xabari
                     if ep_entity:
+                        ep_code_val = getattr(ep_entity, "code", None) or ep_entity.display_code
                         confirm_text = (
                             f"✅ <b>{ep_num}-qism</b> saqlandi va indekslandi.\n"
-                            f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                            f"🔑 Qism kodi: <code>{ep_code_val}</code>\n"
                             f"📺 Serial kodi: <code>s_{series_id}</code>"
                         )
                         try:
@@ -2500,6 +2507,7 @@ class TelethonModeratorPipeline:
                     category_ids=anime_cat_ids,
                     page_ids=[1],
                     source_id=source.id if source else None,
+                    source_type="animeelar",
                     status="ongoing",
                     publish_status="published",
                     is_18_plus=bool(meta.get("is_18_plus", False))
@@ -2712,7 +2720,7 @@ class TelethonModeratorPipeline:
                         series_id=series_id,
                         season_number=1,
                         episode_number=current_ep,
-                        display_code=ep_entity.display_code
+                        display_code=getattr(ep_entity, "code", None) or ep_entity.display_code
                     )
                 except Exception as sub_err:
                     logger.warning(f"Error broadcasting episode notification: {sub_err}")
@@ -2723,9 +2731,10 @@ class TelethonModeratorPipeline:
             print(f"  ✅ [ANIMEELAR] {current_ep}-qism saqlandi!", flush=True)
 
             # Topic ichiga tasdiqlash xabari
+            ep_code_val = getattr(ep_entity, "code", None) or ep_entity.display_code
             confirm_text = (
                 f"✅ <b>{current_ep}-qism</b> saqlandi va indekslandi.\n"
-                f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                f"🔑 Qism kodi: <code>{ep_code_val}</code>\n"
                 f"📺 Serial kodi: <code>s_{series_id}</code>"
             )
             try:
@@ -3267,6 +3276,7 @@ class TelethonModeratorPipeline:
                     category_ids=anime_cat_ids,
                     page_ids=[1],
                     source_id=source.id if source else None,
+                    source_type="animeelar",
                     status="ongoing",
                     publish_status="published",
                     is_18_plus=bool(meta.get("is_18_plus", False))
@@ -3531,7 +3541,7 @@ class TelethonModeratorPipeline:
                         series_id=series_id,
                         season_number=1,
                         episode_number=current_ep,
-                        display_code=ep_entity.display_code
+                        display_code=getattr(ep_entity, "code", None) or ep_entity.display_code
                     )
                 except Exception as sub_err:
                     logger.warning(f"Error broadcasting episode notification: {sub_err}")
@@ -3543,9 +3553,10 @@ class TelethonModeratorPipeline:
             print(f"  ✅ [ANITOOB] {current_ep}-qism saqlandi!", flush=True)
 
             # Topic ichiga tasdiqlash xabari
+            ep_code_val = getattr(ep_entity, "code", None) or ep_entity.display_code
             confirm_text = (
                 f"✅ <b>{current_ep}-qism</b> saqlandi va indekslandi.\n"
-                f"🔑 Qism kodi: <code>{ep_entity.display_code}</code>\n"
+                f"🔑 Qism kodi: <code>{ep_code_val}</code>\n"
                 f"📺 Serial kodi: <code>s_{series_id}</code>"
             )
             try:
@@ -4312,7 +4323,10 @@ class TelethonModeratorPipeline:
                 item.status = "needs_review"
                 item.reason = "missing_start_hash"
                 item.error_message = "missing_start_hash"
-                QueueManager().update_status(item.id, "needs_review", error_message="missing_start_hash")
+                try:
+                    await QueueManager().update_status_async(item.id, "needs_review", error_message="missing_start_hash")
+                except Exception:
+                    pass
             return None
 
         msg_to_send = f"/start {start_hash}"

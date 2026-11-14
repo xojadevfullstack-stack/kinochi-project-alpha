@@ -424,7 +424,7 @@ class SeriesRepository:
         if clean_code.isdigit():
             where_conditions.append(EpisodeModel.id == int(clean_code))
 
-        stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(or_(*where_conditions))
+        stmt = select(EpisodeModel).options(selectinload(EpisodeModel.translations)).where(or_(*where_conditions)).order_by(EpisodeModel.id.desc())
         if publish_status == "published":
             stmt = published_only(stmt, EpisodeModel)
         elif publish_status is not None and publish_status != "all":
@@ -492,6 +492,7 @@ class SeriesRepository:
                     func.lower(EpisodeModel.display_code) == func.lower(clean_code),
                     db_norm == norm_code
                 ))
+                .order_by(EpisodeModel.id.desc())
             )
             res_disp = await self.session.execute(stmt_disp)
             episode = res_disp.scalars().first()
