@@ -1,0 +1,284 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1380" width="100%" height="100%" style="background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Arrowhead markers -->
+    <marker id="arr-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#E50914" />
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38BDF8" />
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#A855F7" />
+    </marker>
+
+    <!-- Gradients -->
+    <linearGradient id="grad-red" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E50914" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#E50914" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="grad-card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ==================== HEADER ==================== -->
+  <rect x="30" y="25" width="940" height="70" rx="12" fill="url(#grad-card)" stroke="#1E293B" stroke-width="1.5" />
+  <text x="60" y="60" fill="#FFFFFF" font-size="20" font-weight="700" letter-spacing="0.5">MediaPlus / Kinochi — QA Holatlar Ketma-ketligi (State Machine)</text>
+  <text x="60" y="80" fill="#94A3B8" font-size="13">5 ta kritik hayot sikli bo'yicha holatlar o'zgarishi, triggerlar va tizim invariantlari</text>
+
+  <!-- ==================== 1. USER & AUTH LIFECYCLE ==================== -->
+  <g transform="translate(30, 115)">
+    <!-- Container -->
+    <rect x="0" y="0" width="940" height="210" rx="14" fill="url(#grad-card)" stroke="#334155" stroke-width="1.5" />
+    <rect x="20" y="16" width="6" height="22" rx="3" fill="#E50914" />
+    <text x="36" y="33" fill="#F8FAFC" font-size="16" font-weight="700">1. Foydalanuvchi Shaxsi va Xavfsizlik Holatlari (Auth &amp; Ban Lifecycle)</text>
+
+    <!-- Node S0: GUEST -->
+    <rect x="40" y="65" width="150" height="70" rx="10" fill="#0F172A" stroke="#475569" stroke-width="1.5" />
+    <text x="115" y="93" fill="#38BDF8" font-size="13" font-weight="700" text-anchor="middle">S0: GUEST</text>
+    <text x="115" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">Anonim / Token yo'q</text>
+    <text x="115" y="125" fill="#64748B" font-size="10" text-anchor="middle">localStorage tarixi</text>
+
+    <!-- Arrow S0 -> S1 -->
+    <line x1="190" y1="100" x2="270" y2="100" stroke="#38BDF8" stroke-width="2" marker-end="url(#arr-blue)" />
+    <text x="230" y="90" fill="#38BDF8" font-size="10" font-weight="600" text-anchor="middle">WebApp Login</text>
+
+    <!-- Node S1: ACTIVE_USER -->
+    <rect x="280" y="65" width="160" height="70" rx="10" fill="#0F172A" stroke="#10B981" stroke-width="1.5" />
+    <text x="360" y="93" fill="#10B981" font-size="13" font-weight="700" text-anchor="middle">S1: ACTIVE_USER</text>
+    <text x="360" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">JWT 200 OK</text>
+    <text x="360" y="125" fill="#64748B" font-size="10" text-anchor="middle">is_banned = False</text>
+
+    <!-- Arrow S1 -> S2 -->
+    <line x1="440" y1="100" x2="520" y2="100" stroke="#E50914" stroke-width="2" marker-end="url(#arr-red)" />
+    <text x="480" y="90" fill="#E50914" font-size="10" font-weight="600" text-anchor="middle">Admin Ban</text>
+
+    <!-- Node S2: BANNED_USER -->
+    <rect x="530" y="65" width="170" height="70" rx="10" fill="#0F172A" stroke="#E50914" stroke-width="2" />
+    <text x="615" y="93" fill="#EF4444" font-size="13" font-weight="700" text-anchor="middle">S2: BANNED_USER</text>
+    <text x="615" y="112" fill="#FCA5A5" font-size="11" text-anchor="middle">API: 403 Forbidden</text>
+    <text x="615" y="125" fill="#94A3B8" font-size="10" text-anchor="middle">Bot: switch_pm_text</text>
+
+    <!-- Loop back S2 -> S1 (Unban) -->
+    <path d="M 615 65 Q 490 25 360 65" fill="none" stroke="#10B981" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#arr-green)" />
+    <text x="490" y="38" fill="#10B981" font-size="10" font-weight="600" text-anchor="middle">Admin Unban (is_banned=False)</text>
+
+    <!-- Outage Invariant Node -->
+    <rect x="740" y="65" width="165" height="70" rx="10" fill="#1E1B4B" stroke="#818CF8" stroke-width="1.5" />
+    <text x="822" y="90" fill="#C7D2FE" font-size="12" font-weight="700" text-anchor="middle">STALE-WHILE-ERROR</text>
+    <text x="822" y="108" fill="#A5B4FC" font-size="10" text-anchor="middle">Backend uzilib qolsa:</text>
+    <text x="822" y="123" fill="#E0E7FF" font-size="10" font-weight="600" text-anchor="middle">Ban saqlab qolinadi</text>
+    <line x1="700" y1="100" x2="730" y2="100" stroke="#818CF8" stroke-width="1.5" stroke-dasharray="3,3" />
+
+    <!-- Invariant Bar -->
+    <rect x="40" y="155" width="865" height="36" rx="6" fill="#0B0F19" stroke="#1E293B" />
+    <text x="55" y="178" fill="#E50914" font-size="12" font-weight="700">INVARIANT:</text>
+    <text x="145" y="177" fill="#CBD5E1" font-size="11.5">Banned user har qanday JWT token bilan ham /users/me/* ga kira olmaydi (403) va inline qidiruv bloklanadi.</text>
+  </g>
+
+  <!-- ==================== 2. WATCH HISTORY & SYNC ==================== -->
+  <g transform="translate(30, 350)">
+    <rect x="0" y="0" width="940" height="215" rx="14" fill="url(#grad-card)" stroke="#334155" stroke-width="1.5" />
+    <rect x="20" y="16" width="6" height="22" rx="3" fill="#38BDF8" />
+    <text x="36" y="33" fill="#F8FAFC" font-size="16" font-weight="700">2. Tomosha Tarixi va Qurilmalararo Sinxronizatsiya (Sync FSM)</text>
+
+    <!-- Step 1 -->
+    <rect x="40" y="65" width="155" height="72" rx="10" fill="#0F172A" stroke="#475569" stroke-width="1.5" />
+    <text x="117" y="93" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle">MEHMON KO'RISHI</text>
+    <text x="117" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">localStorage ga yozildi</text>
+    <text x="117" y="126" fill="#64748B" font-size="10" text-anchor="middle">progress = 25%</text>
+
+    <!-- Arrow 1 -> 2 -->
+    <line x1="195" y1="101" x2="265" y2="101" stroke="#38BDF8" stroke-width="2" marker-end="url(#arr-blue)" />
+    <text x="230" y="91" fill="#38BDF8" font-size="10" font-weight="600" text-anchor="middle">Login</text>
+
+    <!-- Step 2 -->
+    <rect x="275" y="65" width="165" height="72" rx="10" fill="#0F172A" stroke="#10B981" stroke-width="1.5" />
+    <text x="357" y="93" fill="#10B981" font-size="12" font-weight="700" text-anchor="middle">SERVERGA BIRIKDI</text>
+    <text x="357" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">DB: watch_history</text>
+    <text x="357" y="126" fill="#64748B" font-size="10" text-anchor="middle">1 ta film saqlandi</text>
+
+    <!-- Arrow 2 -> 3 -->
+    <line x1="440" y1="101" x2="510" y2="101" stroke="#E50914" stroke-width="2" marker-end="url(#arr-red)" />
+    <text x="475" y="91" fill="#E50914" font-size="10" font-weight="600" text-anchor="middle">Botda Tozalash</text>
+
+    <!-- Step 3 -->
+    <rect x="520" y="65" width="175" height="72" rx="10" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5" />
+    <text x="607" y="91" fill="#F59E0B" font-size="12" font-weight="700" text-anchor="middle">DB: 0 TA (TOZALANDI)</text>
+    <text x="607" y="110" fill="#FDE68A" font-size="10" text-anchor="middle">Lekin kompyuter brauzeri</text>
+    <text x="607" y="125" fill="#EF4444" font-size="10" font-weight="600" text-anchor="middle">localStorage da qolib ketdi</text>
+
+    <!-- Arrow 3 -> 4 -->
+    <line x1="695" y1="101" x2="755" y2="101" stroke="#10B981" stroke-width="2" marker-end="url(#arr-green)" />
+    <text x="725" y="91" fill="#10B981" font-size="10" font-weight="600" text-anchor="middle">Sayt F5</text>
+
+    <!-- Step 4 -->
+    <rect x="765" y="65" width="140" height="72" rx="10" fill="#052E16" stroke="#10B981" stroke-width="2" />
+    <text x="835" y="93" fill="#34D399" font-size="12" font-weight="700" text-anchor="middle">TO'LIQ TOZA</text>
+    <text x="835" y="112" fill="#A7F3D0" font-size="10.5" text-anchor="middle">localStorage purged</text>
+    <text x="835" y="126" fill="#D1FAE5" font-size="10" text-anchor="middle">0 items ko'rinadi</text>
+
+    <!-- Invariant Bar -->
+    <rect x="40" y="157" width="865" height="38" rx="6" fill="#0B0F19" stroke="#1E293B" />
+    <text x="55" y="180" fill="#38BDF8" font-size="12" font-weight="700">BUG-010 RESOLUTION:</text>
+    <text x="210" y="179" fill="#CBD5E1" font-size="11.5">Foydalanuvchi tizimga kirganda server tarixi 0 ta bo'lsa, brauzer keshidagi eski kinolar qayta tirilmaydi.</text>
+  </g>
+
+  <!-- ==================== 3. CONTENT SCRAPER & RECOVERY ==================== -->
+  <g transform="translate(30, 590)">
+    <rect x="0" y="0" width="940" height="215" rx="14" fill="url(#grad-card)" stroke="#334155" stroke-width="1.5" />
+    <rect x="20" y="16" width="6" height="22" rx="3" fill="#10B981" />
+    <text x="36" y="33" fill="#F8FAFC" font-size="16" font-weight="700">3. Kontent Avtopiloti va Scraper Crash-Recovery (Ingestion FSM)</text>
+
+    <!-- Queued -->
+    <rect x="40" y="65" width="150" height="72" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-width="1.5" />
+    <text x="115" y="93" fill="#38BDF8" font-size="13" font-weight="700" text-anchor="middle">S0: QUEUED</text>
+    <text x="115" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">ingest_items jadvali</text>
+    <text x="115" y="126" fill="#64748B" font-size="10" text-anchor="middle">Dedup: 1 ta yozuv</text>
+
+    <!-- Arrow Queued -> In Progress -->
+    <line x1="190" y1="101" x2="260" y2="101" stroke="#38BDF8" stroke-width="2" marker-end="url(#arr-blue)" />
+    <text x="225" y="91" fill="#38BDF8" font-size="10" font-weight="600" text-anchor="middle">Worker Lock</text>
+
+    <!-- In Progress -->
+    <rect x="270" y="65" width="170" height="72" rx="10" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5" />
+    <text x="355" y="93" fill="#F59E0B" font-size="13" font-weight="700" text-anchor="middle">S1: IN_PROGRESS</text>
+    <text x="355" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">SKIP LOCKED claim</text>
+    <text x="355" y="126" fill="#64748B" font-size="10" text-anchor="middle">Video yuklanmoqda...</text>
+
+    <!-- Arrow Success -> Published -->
+    <line x1="440" y1="101" x2="515" y2="101" stroke="#10B981" stroke-width="2" marker-end="url(#arr-green)" />
+    <text x="478" y="91" fill="#10B981" font-size="10" font-weight="600" text-anchor="middle">Muvaffaqiyat</text>
+
+    <!-- Published -->
+    <rect x="525" y="65" width="165" height="72" rx="10" fill="#052E16" stroke="#10B981" stroke-width="2" />
+    <text x="607" y="93" fill="#34D399" font-size="13" font-weight="700" text-anchor="middle">S2: PUBLISHED</text>
+    <text x="607" y="112" fill="#A7F3D0" font-size="11" text-anchor="middle">Saytda ommaviy</text>
+    <text x="607" y="126" fill="#D1FAE5" font-size="10" text-anchor="middle">movies jadvalida kod</text>
+
+    <!-- Crash Loop -->
+    <path d="M 355 137 L 355 155 Q 355 175 440 175 L 680 175 Q 740 175 740 137" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#arr-red)" />
+    <text x="540" y="170" fill="#FCA5A5" font-size="10" font-weight="600" text-anchor="middle">Kutilmagan Crash / O'chish (>15 min)</text>
+
+    <!-- Crash Node -->
+    <rect x="750" y="65" width="155" height="72" rx="10" fill="#3B0764" stroke="#A855F7" stroke-width="1.5" />
+    <text x="827" y="93" fill="#E9D5FF" font-size="12" font-weight="700" text-anchor="middle">AUTO-RECOVER</text>
+    <text x="827" y="112" fill="#D8B4FE" font-size="10.5" text-anchor="middle">recover_stale()</text>
+    <text x="827" y="126" fill="#C084FC" font-size="10" text-anchor="middle">Qayta 'queued' holatga</text>
+
+    <!-- Loop back from Crash to Queued -->
+    <path d="M 827 65 Q 827 38 480 38 Q 115 38 115 65" fill="none" stroke="#A855F7" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#arr-purple)" />
+
+    <!-- Invariant Bar -->
+    <rect x="40" y="160" width="865" height="36" rx="6" fill="#0B0F19" stroke="#1E293B" />
+    <text x="55" y="183" fill="#10B981" font-size="12" font-weight="700">DEDUP &amp; LEAK GUARD:</text>
+    <text x="215" y="182" fill="#CBD5E1" font-size="11.5">Bitta film 5 marta topilsa ham bazada 1 ta qoladi. Worker thread loopi yopilganda engine dispose qilinadi.</text>
+  </g>
+
+  <!-- ==================== 4. BOT FSM & CANCEL GUARD ==================== -->
+  <g transform="translate(30, 830)">
+    <rect x="0" y="0" width="940" height="215" rx="14" fill="url(#grad-card)" stroke="#334155" stroke-width="1.5" />
+    <rect x="20" y="16" width="6" height="22" rx="3" fill="#F59E0B" />
+    <text x="36" y="33" fill="#F8FAFC" font-size="16" font-weight="700">4. Telegram Bot FSM va /cancel Komandasi (Bot FSM State Machine)</text>
+
+    <!-- S0: IDLE -->
+    <rect x="40" y="65" width="150" height="72" rx="10" fill="#0F172A" stroke="#475569" stroke-width="1.5" />
+    <text x="115" y="93" fill="#E2E8F0" font-size="13" font-weight="700" text-anchor="middle">S0: IDLE</text>
+    <text x="115" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">Boshlang'ich holat</text>
+    <text x="115" y="126" fill="#64748B" font-size="10" text-anchor="middle">State yo'q</text>
+
+    <!-- Arrow S0 -> S1 -->
+    <line x1="190" y1="101" x2="270" y2="101" stroke="#F59E0B" stroke-width="2" marker-end="url(#arr-amber)" />
+    <text x="230" y="91" fill="#F59E0B" font-size="10" font-weight="600" text-anchor="middle">Baho bosildi: 9</text>
+
+    <!-- S1: WAITING_FOR_COMMENT -->
+    <rect x="280" y="65" width="200" height="72" rx="10" fill="#0F172A" stroke="#F59E0B" stroke-width="2" />
+    <text x="380" y="91" fill="#FBBF24" font-size="12" font-weight="700" text-anchor="middle">WAITING_FOR_COMMENT</text>
+    <text x="380" y="110" fill="#94A3B8" font-size="10.5" text-anchor="middle">FSM state aktiv</text>
+    <text x="380" y="125" fill="#FDE68A" font-size="10" text-anchor="middle">Fikr kutilmoqda...</text>
+
+    <!-- Branch A: Normal Submit -->
+    <path d="M 480 85 L 565 85" stroke="#10B981" stroke-width="2" marker-end="url(#arr-green)" />
+    <text x="522" y="77" fill="#10B981" font-size="10" font-weight="600" text-anchor="middle">Matn yozildi</text>
+
+    <rect x="575" y="55" width="170" height="60" rx="9" fill="#052E16" stroke="#10B981" stroke-width="1.5" />
+    <text x="660" y="79" fill="#34D399" font-size="11.5" font-weight="700" text-anchor="middle">SHARH SAQLANDI</text>
+    <text x="660" y="98" fill="#A7F3D0" font-size="10" text-anchor="middle">Reyting qayta hisoblandi</text>
+
+    <!-- Branch B: /cancel -->
+    <path d="M 480 118 L 565 118" stroke="#EF4444" stroke-width="2" marker-end="url(#arr-red)" />
+    <text x="522" y="133" fill="#EF4444" font-size="10" font-weight="600" text-anchor="middle">/cancel bosildi</text>
+
+    <rect x="575" y="125" width="170" height="60" rx="9" fill="#450A0A" stroke="#EF4444" stroke-width="1.5" />
+    <text x="660" y="149" fill="#FCA5A5" font-size="11.5" font-weight="700" text-anchor="middle">BEKOR QILINDI</text>
+    <text x="660" y="167" fill="#FECACA" font-size="10" text-anchor="middle">Bazaga hech narsa tushmadi</text>
+
+    <!-- Loop back to Idle -->
+    <path d="M 745 85 Q 820 85 820 40 Q 820 20 480 20 Q 115 20 115 65" fill="none" stroke="#10B981" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arr-green)" />
+    <path d="M 745 155 Q 850 155 850 100 Q 850 30 500 30" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="3,3" />
+
+    <!-- Invariant Bar -->
+    <rect x="40" y="167" width="510" height="32" rx="6" fill="#0B0F19" stroke="#1E293B" />
+    <text x="55" y="188" fill="#F59E0B" font-size="12" font-weight="700">BUG-005 KAFOLATI:</text>
+    <text x="195" y="187" fill="#CBD5E1" font-size="11">'/cancel' so'zi hech qachon kino sharhi sifatida bazaga yozilmaydi.</text>
+  </g>
+
+  <!-- ==================== 5. BROADCAST & FLOODWAIT ==================== -->
+  <g transform="translate(30, 1070)">
+    <rect x="0" y="0" width="940" height="235" rx="14" fill="url(#grad-card)" stroke="#334155" stroke-width="1.5" />
+    <rect x="20" y="16" width="6" height="22" rx="3" fill="#A855F7" />
+    <text x="36" y="33" fill="#F8FAFC" font-size="16" font-weight="700">5. Ommaviy Xabarnoma va Telegram Uzilishlaridan Himoya (Broadcast FSM)</text>
+
+    <!-- DRAFT -->
+    <rect x="40" y="65" width="130" height="72" rx="10" fill="#0F172A" stroke="#475569" stroke-width="1.5" />
+    <text x="105" y="93" fill="#E2E8F0" font-size="13" font-weight="700" text-anchor="middle">S0: DRAFT</text>
+    <text x="105" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">Admin yaratdi</text>
+    <text x="105" y="126" fill="#64748B" font-size="10" text-anchor="middle">Hech kimga bormadi</text>
+
+    <!-- Arrow Draft -> Sending -->
+    <line x1="170" y1="101" x2="240" y2="101" stroke="#38BDF8" stroke-width="2" marker-end="url(#arr-blue)" />
+    <text x="205" y="91" fill="#38BDF8" font-size="10" font-weight="600" text-anchor="middle">Start</text>
+
+    <!-- SENDING -->
+    <rect x="250" y="65" width="165" height="72" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-width="2" />
+    <text x="332" y="93" fill="#38BDF8" font-size="13" font-weight="700" text-anchor="middle">S1: SENDING</text>
+    <text x="332" y="112" fill="#94A3B8" font-size="11" text-anchor="middle">30 msg/sec limit</text>
+    <text x="332" y="126" fill="#64748B" font-size="10" text-anchor="middle">DB: cursor = last_user_id</text>
+
+    <!-- Arrow Sending -> 429 -->
+    <line x1="415" y1="101" x2="495" y2="101" stroke="#F59E0B" stroke-width="2" marker-end="url(#arr-amber)" />
+    <text x="455" y="91" fill="#F59E0B" font-size="10" font-weight="600" text-anchor="middle">429 FloodWait</text>
+
+    <!-- FLOODWAIT PAUSE -->
+    <rect x="505" y="65" width="180" height="72" rx="10" fill="#451A03" stroke="#F59E0B" stroke-width="1.5" />
+    <text x="595" y="91" fill="#FDE68A" font-size="12" font-weight="700" text-anchor="middle">BACKOFF PAUSE</text>
+    <text x="595" y="110" fill="#FEF08A" font-size="10.5" text-anchor="middle">sleep(retry_after)</text>
+    <text x="595" y="125" fill="#FBBF24" font-size="10" text-anchor="middle">Avtomatik davom etadi</text>
+
+    <!-- Loop back from Pause to Sending -->
+    <path d="M 595 65 Q 460 30 332 65" fill="none" stroke="#F59E0B" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#arr-amber)" />
+    <text x="460" y="32" fill="#FBBF24" font-size="10" font-weight="600" text-anchor="middle">Kutish tugagach: Resume</text>
+
+    <!-- Arrow to Completed -->
+    <line x1="415" y1="120" x2="725" y2="120" stroke="#10B981" stroke-width="2" marker-end="url(#arr-green)" />
+    <text x="570" y="135" fill="#10B981" font-size="10" font-weight="600" text-anchor="middle">Ro'yxat tugadi</text>
+
+    <!-- COMPLETED -->
+    <rect x="735" y="65" width="165" height="72" rx="10" fill="#052E16" stroke="#10B981" stroke-width="2" />
+    <text x="817" y="93" fill="#34D399" font-size="13" font-weight="700" text-anchor="middle">S2: COMPLETED</text>
+    <text x="817" y="112" fill="#A7F3D0" font-size="11" text-anchor="middle">Statistika shakllandi</text>
+    <text x="817" y="126" fill="#D1FAE5" font-size="10" text-anchor="middle">100% yetkazildi</text>
+
+    <!-- Crash Recovery Callout -->
+    <rect x="40" y="155" width="865" height="58" rx="8" fill="#0B0F19" stroke="#1E293B" />
+    <text x="55" y="177" fill="#E50914" font-size="12" font-weight="700">CRASH &amp; SPAM HIMOYA INVARIANTI:</text>
+    <text x="55" y="196" fill="#CBD5E1" font-size="11">Agar 4,000-foydalanuvchida server restart bo'lsa, xabarnoma qayta boshlanganda aynan 4,001-foydalanuvchidan davom etadi. Dastlabki 4,000 ta odamga xabar qayta takrorlanmaydi (Zero Spam).</text>
+  </g>
+</svg>

@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 960" width="100%" height="100%" style="background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Arrow Markers -->
+    <marker id="arr-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF4444" />
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38BDF8" />
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#A855F7" />
+    </marker>
+
+    <!-- Gradients -->
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="header-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E50914" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ==================== HEADER ==================== -->
+  <rect x="30" y="20" width="1240" height="70" rx="14" fill="url(#card-grad)" stroke="#1E293B" stroke-width="1.5" />
+  <rect x="30" y="20" width="1240" height="70" rx="14" fill="url(#header-grad)" />
+  <rect x="50" y="36" width="6" height="38" rx="3" fill="#E50914" />
+  <text x="70" y="52" fill="#FFFFFF" font-size="19" font-weight="800" letter-spacing="0.5">MediaPlus / Kinochi — Yaxlit QA Holatlar Modeli (Unified State Machine)</text>
+  <text x="70" y="74" fill="#94A3B8" font-size="12.5">QA_SCENARIO_MODEL.md asosida: 11 ta mashina, 185 ta o'tish (91 ✅ ijobiy, 46 ⛔ salbiy), 4 ta qatlam yagona xaritada</text>
+
+  <!-- ==================== 1. FOYDALANUVCHILAR VA AUTH (M1) ==================== -->
+  <g transform="translate(30, 110)">
+    <rect x="0" y="0" width="290" height="420" rx="14" fill="url(#card-grad)" stroke="#334155" stroke-width="1.5" />
+    <text x="20" y="30" fill="#38BDF8" font-size="14" font-weight="700">M1. FOYDALANUVCHI &amp; AUTH</text>
+    <text x="20" y="47" fill="#64748B" font-size="11">Rollar: Guest, User, Banned, Admin</text>
+
+    <!-- Guest -->
+    <rect x="20" y="65" width="250" height="60" rx="10" fill="#0B132B" stroke="#475569" stroke-width="1.5" />
+    <text x="35" y="90" fill="#F8FAFC" font-size="13" font-weight="700">GUEST (Mehmon)</text>
+    <text x="35" y="108" fill="#94A3B8" font-size="10.5">Ommaviy katalog ✅ | Yozuvchi API ⛔ 401</text>
+
+    <!-- Arrow Guest -> User -->
+    <path d="M 145 125 L 145 160" stroke="#10B981" stroke-width="2" marker-end="url(#arr-green)" />
+    <text x="175" y="146" fill="#10B981" font-size="10" font-weight="600">Telegram Login ✅</text>
+
+    <!-- User -->
+    <rect x="20" y="165" width="250" height="60" rx="10" fill="#064E3B" stroke="#10B981" stroke-width="1.5" />
+    <text x="35" y="190" fill="#34D399" font-size="13" font-weight="700">USER (Faol Foydalanuvchi)</text>
+    <text x="35" y="208" fill="#A7F3D0" font-size="10.5">JWT 200 OK ✅ | Tarix, Sharh, Sevimlilar ✅</text>
+
+    <!-- Arrow User -> Banned -->
+    <path d="M 145 225 L 145 260" stroke="#EF4444" stroke-width="2" marker-end="url(#arr-red)" />
+    <text x="175" y="246" fill="#EF4444" font-size="10" font-weight="600">Admin Ban ⛔</text>
+
+    <!-- Banned -->
+    <rect x="20" y="265" width="250" height="65" rx="10" fill="#450A0A" stroke="#EF4444" stroke-width="2" />
+    <text x="35" y="290" fill="#FCA5A5" font-size="13" font-weight="700">BANNED (Bloklangan)</text>
+    <text x="35" y="307" fill="#FECACA" font-size="10.5">API: 403 Forbidden ⛔ | Bot: switch_pm ⛔</text>
+    <text x="35" y="321" fill="#FDA4AF" font-size="10">Ommaviy kinolarni ko'rish: Guest kabi ✅</text>
+
+    <!-- Loop back Unban -->
+    <path d="M 270 295 Q 295 240 270 195" fill="none" stroke="#10B981" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#arr-green)" />
+    <text x="290" y="245" fill="#10B981" font-size="9" font-weight="700">Unban ✅</text>
+
+    <!-- Admin Separate Box -->
+    <rect x="20" y="345" width="250" height="55" rx="10" fill="#1E1B4B" stroke="#818CF8" stroke-width="1.5" />
+    <text x="35" y="368" fill="#C7D2FE" font-size="12.5" font-weight="700">ADMIN (admin_users jadvali)</text>
+    <text x="35" y="386" fill="#A5B4FC" font-size="10">Alohida hisob: Ban qilib bo'lmaydi (is_active)</text>
+  </g>
+
+  <!-- ==================== 2. KONTENT AVTOPILOTI VA NASHR (M3 + M2) ==================== -->
+  <g transform="translate(340, 110)">
+    <rect x="0" y="0" width="580" height="195" rx="14" fill="url(#card-grad)" stroke="#334155" stroke-width="1.5" />
+    <text x="20" y="30" fill="#10B981" font-size="14" font-weight="700">M3 &amp; M2. KONTENT AVTOPILOTI VA NASHR QILISH</text>
+    <text x="20" y="47" fill="#64748B" font-size="11">Scraper navbati (ingest_items) ──> Ommaviy nashr (movies/series)</text>
+
+    <!-- S0: QUEUED -->
+    <rect x="20" y="65" width="130" height="55" rx="9" fill="#0F172A" stroke="#38BDF8" stroke-width="1.5" />
+    <text x="85" y="90" fill="#38BDF8" font-size="12" font-weight="700" text-anchor="middle">QUEUED</text>
+    <text x="85" y="107" fill="#94A3B8" font-size="10" text-anchor="middle">Navbatda (Dedup)</text>
+
+    <!-- Arrow Queued -> In Progress -->
+    <line x1="150" y1="92" x2="190" y2="92" stroke="#38BDF8" stroke-width="2" marker-end="url(#arr-blue)" />
+
+    <!-- S1: IN_PROGRESS -->
+    <rect x="195" y="65" width="150" height="55" rx="9" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5" />
+    <text x="270" y="88" fill="#FBBF24" font-size="12" font-weight="700" text-anchor="middle">IN_PROGRESS</text>
+    <text x="270" y="105" fill="#94A3B8" font-size="9.5" text-anchor="middle">Worker (SKIP LOCKED)</text>
+
+    <!-- Arrow In Progress -> Published -->
+    <line x1="345" y1="92" x2="395" y2="92" stroke="#10B981" stroke-width="2" marker-end="url(#arr-green)" />
+    <text x="370" y="84" fill="#10B981" font-size="9" font-weight="700" text-anchor="middle">Check OK</text>
+
+    <!-- S2: PUBLISHED -->
+    <rect x="400" y="60" width="160" height="65" rx="9" fill="#052E16" stroke="#10B981" stroke-width="2" />
+    <text x="480" y="86" fill="#34D399" font-size="13" font-weight="700" text-anchor="middle">PUBLISHED ✅</text>
+    <text x="480" y="103" fill="#A7F3D0" font-size="10" text-anchor="middle">Saytda ommaviy ko'rinadi</text>
+    <text x="480" y="117" fill="#6EE7B7" font-size="9.5" text-anchor="middle">Botda /start KOD bilan</text>
+
+    <!-- Needs Review Branch -->
+    <path d="M 270 120 L 270 145 L 395 145" stroke="#F59E0B" stroke-width="1.5" marker-end="url(#arr-amber)" />
+    <rect x="400" y="132" width="160" height="48" rx="8" fill="#451A03" stroke="#F59E0B" stroke-width="1.5" />
+    <text x="480" y="152" fill="#FDE68A" font-size="11" font-weight="700" text-anchor="middle">NEEDS_REVIEW ⚠️</text>
+    <text x="480" y="168" fill="#FEF08A" font-size="9.5" text-anchor="middle">Admin tekshiruvi kutiladi</text>
+
+    <!-- Auto Recovery Loop -->
+    <path d="M 230 120 L 230 160 L 85 160 L 85 120" stroke="#A855F7" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arr-purple)" />
+    <text x="155" y="174" fill="#C084FC" font-size="9.5" font-weight="600" text-anchor="middle">Crash bo'lsa: recover_stale() &gt;15m</text>
+  </g>
+
+  <!-- ==================== 3. ASOSIY FOYDALANUVCHI AMALLARI (M9 + M6 + M8) ==================== -->
+  <g transform="translate(340, 320)">
+    <rect x="0" y="0" width="580" height="210" rx="14" fill="url(#card-grad)" stroke="#334155" stroke-width="1.5" />
+    <text x="20" y="28" fill="#F59E0B" font-size="14" font-weight="700">M9, M6, M8. TOMOSHA TARIXI, SHARH VA BOT FSM</text>
+
+    <!-- M9: Continue Watching -->
+    <g transform="translate(20, 45)">
+      <rect x="0" y="0" width="260" height="70" rx="9" fill="#0F172A" stroke="#38BDF8" stroke-width="1" />
+      <text x="12" y="22" fill="#38BDF8" font-size="12" font-weight="700">M9. Tomosha Tarixi (Sinxron)</text>
+      <text x="12" y="40" fill="#CBD5E1" font-size="10.5">• Mehmon: localStorage ga yoziladi</text>
+      <text x="12" y="55" fill="#CBD5E1" font-size="10.5">• User: Server DB (watch_history)</text>
+      <text x="12" y="68" fill="#10B981" font-size="9.5" font-weight="600">Botda tozalansa: Sayt localStorage ham o'chadi</text>
+    </g>
+
+    <!-- M6: Review & Rating -->
+    <g transform="translate(295, 45)">
+      <rect x="0" y="0" width="265" height="70" rx="9" fill="#0F172A" stroke="#10B981" stroke-width="1" />
+      <text x="12" y="22" fill="#34D399" font-size="12" font-weight="700">M6. Sharh va Reyting Qoidalari</text>
+      <text x="12" y="40" fill="#CBD5E1" font-size="10.5">• 1 user 1 ta kontentga faqat 1 ta sharh</text>
+      <text x="12" y="55" fill="#CBD5E1" font-size="10.5">• Ikkinchi sharh kelsa: Yangilanadi (Upsert)</text>
+      <text x="12" y="68" fill="#A7F3D0" font-size="9.5" font-weight="600">Sharh o'chsa: Reyting atomik qayta hisoblanadi</text>
+    </g>
+
+    <!-- M8: Bot FSM & Cancel Guard -->
+    <g transform="translate(20, 125)">
+      <rect x="0" y="0" width="540" height="70" rx="9" fill="#0F172A" stroke="#F59E0B" stroke-width="1" />
+      <text x="15" y="22" fill="#FBBF24" font-size="12" font-weight="700">M8. Bot Dialogi (FSM) va /cancel Himoyasi</text>
+      <text x="15" y="40" fill="#CBD5E1" font-size="10.5">Baho bosildi: 9 ──> WAITING_FOR_COMMENT holatiga o'tadi</text>
+      <text x="15" y="55" fill="#10B981" font-size="10.5">✅ Matn yozilsa: Sharh saqlanadi va reyting hisoblanadi</text>
+      <text x="280" y="55" fill="#EF4444" font-size="10.5">⛔ /cancel bosilsa: state.clear() (sharh bo'lib saqlanmaydi)</text>
+    </g>
+  </g>
+
+  <!-- ==================== 4. ADMIN & XIZMATLAR (M7 + M4/M5) ==================== -->
+  <g transform="translate(940, 110)">
+    <rect x="0" y="0" width="330" height="420" rx="14" fill="url(#card-grad)" stroke="#334155" stroke-width="1.5" />
+    <text x="20" y="30" fill="#A855F7" font-size="14" font-weight="700">M7, M4, M5. ADMIN &amp; XIZMATLAR</text>
+    <text x="20" y="47" fill="#64748B" font-size="11">Broadcast, Buyurtma va Shikoyatlar</text>
+
+    <!-- M7 Broadcast -->
+    <rect x="20" y="65" width="290" height="135" rx="10" fill="#0F172A" stroke="#A855F7" stroke-width="1.5" />
+    <text x="35" y="88" fill="#C084FC" font-size="12.5" font-weight="700">M7. Broadcast (Xabarnoma)</text>
+    <text x="35" y="106" fill="#CBD5E1" font-size="10.5">• DRAFT: yaratildi, tahrirlandi</text>
+    <text x="35" y="122" fill="#38BDF8" font-size="10.5">• TEST: admin faqat o'ziga yuborib ko'radi</text>
+    <text x="35" y="138" fill="#FBBF24" font-size="10.5">• SENDING: 30 msg/sec limit</text>
+    <text x="35" y="154" fill="#EF4444" font-size="10.5">• 429 FloodWait: sleep(retry_after) va davom</text>
+    <text x="35" y="170" fill="#34D399" font-size="10.5" font-weight="600">• Crash Restart: Aynan last_user_id dan davom!</text>
+
+    <!-- M4 & M5 Requests & Reports -->
+    <rect x="20" y="215" width="290" height="185" rx="10" fill="#0F172A" stroke="#64748B" stroke-width="1" />
+    <text x="35" y="238" fill="#F8FAFC" font-size="12.5" font-weight="700">M4 &amp; M5. Buyurtma va Shikoyatlar</text>
+    
+    <text x="35" y="260" fill="#38BDF8" font-size="11" font-weight="600">Kino buyurtmasi (M4):</text>
+    <text x="35" y="276" fill="#94A3B8" font-size="10.5">pending ──> in_review ──> completed / rejected</text>
+    <text x="35" y="291" fill="#64748B" font-size="9.5">Bajarilgach: Buyurtmachiga botda xabar ketadi</text>
+
+    <text x="35" y="320" fill="#F59E0B" font-size="11" font-weight="600">Shikoyat (M5):</text>
+    <text x="35" y="336" fill="#94A3B8" font-size="10.5">pending ──> resolved / rejected</text>
+    <text x="35" y="351" fill="#64748B" font-size="9.5">telegram_user_id bilan adminga ko'rinadi</text>
+  </g>
+
+  <!-- ==================== 5. TIZIM CHIDAMLILIGI & DEGRADED REJIM (M10) ==================== -->
+  <g transform="translate(30, 550)">
+    <rect x="0" y="0" width="1240" height="175" rx="14" fill="url(#card-grad)" stroke="#334155" stroke-width="1.5" />
+    <text x="25" y="28" fill="#E2E8F0" font-size="14" font-weight="700">M10. TIZIM CHIDAMLILIGI (CHAOS &amp; INFRASTRUCTURE RESILIENCE)</text>
+    <text x="25" y="45" fill="#64748B" font-size="11">Tizim nosozliklarida zanjir uzilmaydi va foydalanuvchiga 500 o'rniga tushunarli yechim beriladi</text>
+
+    <!-- Box 1: Cold Start -->
+    <rect x="25" y="60" width="280" height="95" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-width="1" />
+    <text x="40" y="85" fill="#38BDF8" font-size="12" font-weight="700">1. Neon / Render Cold Start</text>
+    <text x="40" y="105" fill="#CBD5E1" font-size="10.5">• Baza uyqudan uyg'onguncha loading</text>
+    <text x="40" y="121" fill="#CBD5E1" font-size="10.5">• Botda "Topilmadi" emas:</text>
+    <text x="40" y="137" fill="#34D399" font-size="10.5" font-weight="600">• "Server kechikdi, qayta urinib ko'ring"</text>
+
+    <!-- Box 2: Redis Down -->
+    <rect x="330" y="60" width="280" height="95" rx="10" fill="#0F172A" stroke="#F59E0B" stroke-width="1" />
+    <text x="345" y="85" fill="#FBBF24" font-size="12" font-weight="700">2. Redis O'chib Qolsa (Crash)</text>
+    <text x="345" y="105" fill="#CBD5E1" font-size="10.5">• Tizim to'xtamaydi (Degraded mode)</text>
+    <text x="345" y="121" fill="#CBD5E1" font-size="10.5">• To'g'ridan-to'g'ri PostgreSQL ga so'rov</text>
+    <text x="345" y="137" fill="#FDE68A" font-size="10.5">• Faqat sekinroq ishlaydi, xato yo'q</text>
+
+    <!-- Box 3: Backend Outage -->
+    <rect x="635" y="60" width="280" height="95" rx="10" fill="#0F172A" stroke="#EF4444" stroke-width="1" />
+    <text x="650" y="85" fill="#EF4444" font-size="12" font-weight="700">3. Backend Uzilib Qolsa</text>
+    <text x="650" y="105" fill="#CBD5E1" font-size="10.5">• Bot ban keshi: Stale-While-Error</text>
+    <text x="650" y="121" fill="#CBD5E1" font-size="10.5">• Banned user ochilib ketmaydi</text>
+    <text x="650" y="137" fill="#FCA5A5" font-size="10.5">• Saytda chiroyli offline sahifa</text>
+
+    <!-- Box 4: Single Instance -->
+    <rect x="940" y="60" width="275" height="95" rx="10" fill="#0F172A" stroke="#10B981" stroke-width="1" />
+    <text x="955" y="85" fill="#10B981" font-size="12" font-weight="700">4. Bot Single Instance Lock</text>
+    <text x="955" y="105" fill="#CBD5E1" font-size="10.5">• .bot.lock fayl qulfi faol</text>
+    <text x="955" y="121" fill="#CBD5E1" font-size="10.5">• Ikkinchi bot yoniq bo'lsa darhol to'xtaydi</text>
+    <text x="955" y="137" fill="#34D399" font-size="10.5">• TelegramConflictError oldi olingan</text>
+  </g>
+
+  <!-- ==================== 6. TEST QATLAMLARI VA NATIJALAR ==================== -->
+  <g transform="translate(30, 745)">
+    <rect x="0" y="0" width="1240" height="185" rx="14" fill="url(#card-grad)" stroke="#334155" stroke-width="1.5" />
+    <text x="25" y="28" fill="#F8FAFC" font-size="14" font-weight="700">TEST QATLAMLARI VA QA NATIJALARI (COVERAGE MATRIX)</text>
+
+    <!-- Layer 1 -->
+    <rect x="25" y="45" width="280" height="115" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-width="1" />
+    <text x="40" y="70" fill="#38BDF8" font-size="12" font-weight="700">1. BACKEND API (pytest)</text>
+    <text x="40" y="90" fill="#CBD5E1" font-size="11">• 529 passed, 0 failed, 10 skipped</text>
+    <text x="40" y="107" fill="#CBD5E1" font-size="11">• RBAC 48 katak to'liq yashil</text>
+    <text x="40" y="124" fill="#CBD5E1" font-size="11">• 195 ta endpoint tekshirilgan</text>
+    <text x="40" y="141" fill="#10B981" font-size="11" font-weight="700">Natija: 100% Yashil</text>
+
+    <!-- Layer 2 -->
+    <rect x="330" y="45" width="280" height="115" rx="10" fill="#0F172A" stroke="#10B981" stroke-width="1" />
+    <text x="345" y="70" fill="#10B981" font-size="12" font-weight="700">2. TELEGRAM BOT (pytest)</text>
+    <text x="345" y="90" fill="#CBD5E1" font-size="11">• 92 passed, 0 failed</text>
+    <text x="345" y="107" fill="#CBD5E1" font-size="11">• M8 FSM (/cancel) himoyasi</text>
+    <text x="345" y="124" fill="#CBD5E1" font-size="11">• M11 19 ta ekran navigatsiyasi</text>
+    <text x="345" y="141" fill="#10B981" font-size="11" font-weight="700">Natija: 100% Yashil</text>
+
+    <!-- Layer 3 -->
+    <rect x="635" y="45" width="280" height="115" rx="10" fill="#0F172A" stroke="#F59E0B" stroke-width="1" />
+    <text x="650" y="70" fill="#FBBF24" font-size="12" font-weight="700">3. WEBSAYT E2E (Playwright)</text>
+    <text x="650" y="90" fill="#CBD5E1" font-size="11">• npx tsc --noEmit: 0 xato</text>
+    <text x="650" y="107" fill="#CBD5E1" font-size="11">• M9 ContinueWatching sync: 2 passed</text>
+    <text x="650" y="124" fill="#CBD5E1" font-size="11">• Cinematic Red: 0 amber buzilishi</text>
+    <text x="650" y="141" fill="#10B981" font-size="11" font-weight="700">Natija: 100% Yashil</text>
+
+    <!-- Layer 4 -->
+    <rect x="940" y="45" width="275" height="115" rx="10" fill="#0F172A" stroke="#A855F7" stroke-width="1" />
+    <text x="955" y="70" fill="#C084FC" font-size="12" font-weight="700">4. ADMIN PANEL (Playwright)</text>
+    <text x="955" y="90" fill="#CBD5E1" font-size="11">• npx tsc --noEmit: 0 xato</text>
+    <text x="955" y="107" fill="#CBD5E1" font-size="11">• TS2345/TS2367 statuslari tuzatildi</text>
+    <text x="955" y="124" fill="#CBD5E1" font-size="11">• Scraper navbati to'liq ishchi</text>
+    <text x="955" y="141" fill="#10B981" font-size="11" font-weight="700">Natija: 100% Yashil</text>
+  </g>
+</svg>
