@@ -303,3 +303,8 @@
 - Fetching top-N related child records across multiple parent entities in a single database round-trip via window functions eliminates N+1 query loops and network latency bottlenecks.
 - Analogy: Maktabdagi 10 ta sinf rahbariga bittalab borib "har bir sinfdan 3 tadan a'lochi o'quvchini olib kel" deb 10 marta yugurmasdan, barcha sinflar jurnali bo'yicha bitta umumiy ro'yxatdan har bir sinfning dastlabki 3 ta o'quvchisini bitta buyruq bilan saralab olish.
 
+## Stateless JWT Revocation Boundary & Client-Side Invalidation
+- Pure stateless JWT tokens avoid database roundtrips on every request, but cannot be immediately revoked server-side on logout without an in-memory or Redis-backed blocklist.
+- Analogy: Poyezdga sotib olingan qog'oz chipta: agar yo'lovchi safardan voz kechib chiptani o'z hamyonidan yirtib tashlasa ham, chiptada yozilgan jo'nash vaqti tugamaguncha konduktor uning yaroqliligini bilmaydi; shuning uchun xavfsizlikni oshirish uchun chiptaning amal qilish vaqti (TTL) juda qisqa qilib belgilanadi.
+
+
