@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, H
 from pydantic import BaseModel
 from sqlalchemy import select, func, or_, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, noload
 
 from app.api.deps import get_db_session, get_current_admin, get_admin_or_bot, get_current_user_optional, verify_telegram_user_ownership
 from app.api.limiter import limiter
@@ -173,7 +173,10 @@ async def list_collections(
     if cached:
         return cached
 
-    query = select(CollectionModel).where(CollectionModel.is_active == True)
+    query = select(CollectionModel).options(
+        noload(CollectionModel.items),
+        noload(CollectionModel.subscriptions),
+    ).where(CollectionModel.is_active == True)
     if franchise_only:
         query = query.where(CollectionModel.is_franchise == True)
     if category_type:
@@ -182,6 +185,11 @@ async def list_collections(
 
     result = await db.execute(query)
     collections = result.scalars().all()
+    if not collections:
+        await set_cache(cache_key, [], 300)
+        return []
+
+    collection_ids = [c.id for c in collections]
 
     # Condition: only include items whose movie or series is published
     published_condition = or_(
@@ -189,41 +197,62 @@ async def list_collections(
         and_(CollectionItemModel.series_id.is_not(None), SeriesModel.publish_status == 'published'),
     )
 
-    # Calculate item counts and preview posters
+    # 1. Batch calculate item counts for all collections in a single query
+    counts_res = await db.execute(
+        select(
+            CollectionItemModel.collection_id,
+            func.count(CollectionItemModel.id),
+        )
+        .outerjoin(MovieModel, CollectionItemModel.movie_id == MovieModel.id)
+        .outerjoin(SeriesModel, CollectionItemModel.series_id == SeriesModel.id)
+        .where(
+            CollectionItemModel.collection_id.in_(collection_ids),
+            published_condition,
+        )
+        .group_by(CollectionItemModel.collection_id)
+    )
+    counts_map = dict(counts_res.all())
+
+    # 2. Batch fetch up to 3 preview posters per collection using window function in a single query
+    poster_expr = func.coalesce(MovieModel.poster_url, SeriesModel.poster_url)
+    ranked_subq = (
+        select(
+            CollectionItemModel.collection_id.label("col_id"),
+            poster_expr.label("poster"),
+            func.row_number()
+            .over(
+                partition_by=CollectionItemModel.collection_id,
+                order_by=CollectionItemModel.chronological_order.asc(),
+            )
+            .label("rn"),
+        )
+        .outerjoin(MovieModel, CollectionItemModel.movie_id == MovieModel.id)
+        .outerjoin(SeriesModel, CollectionItemModel.series_id == SeriesModel.id)
+        .where(
+            CollectionItemModel.collection_id.in_(collection_ids),
+            published_condition,
+            poster_expr.is_not(None),
+            poster_expr != "",
+        )
+        .subquery()
+    )
+
+    posters_res = await db.execute(
+        select(ranked_subq.c.col_id, ranked_subq.c.poster)
+        .where(ranked_subq.c.rn <= 3)
+        .order_by(ranked_subq.c.col_id, ranked_subq.c.rn.asc())
+    )
+    posters_map = {}
+    for col_id, poster_url in posters_res.all():
+        if poster_url:
+            p_list = posters_map.setdefault(col_id, [])
+            if poster_url not in p_list:
+                p_list.append(poster_url)
+
     resp = []
     for c in collections:
-        count_res = await db.execute(
-            select(func.count(CollectionItemModel.id))
-            .outerjoin(MovieModel, CollectionItemModel.movie_id == MovieModel.id)
-            .outerjoin(SeriesModel, CollectionItemModel.series_id == SeriesModel.id)
-            .where(
-                CollectionItemModel.collection_id == c.id,
-                published_condition,
-            )
-        )
-        count = count_res.scalar_one() or 0
-
-        # Fetch up to 3 item posters for fanned deck display
-        items_res = await db.execute(
-            select(CollectionItemModel)
-            .outerjoin(MovieModel, CollectionItemModel.movie_id == MovieModel.id)
-            .outerjoin(SeriesModel, CollectionItemModel.series_id == SeriesModel.id)
-            .where(
-                CollectionItemModel.collection_id == c.id,
-                published_condition,
-            )
-            .options(
-                selectinload(CollectionItemModel.movie),
-                selectinload(CollectionItemModel.series),
-            )
-            .order_by(CollectionItemModel.chronological_order.asc())
-            .limit(3)
-        )
-        posters = []
-        for it in items_res.scalars().all():
-            p = (it.movie.poster_url if it.movie else None) or (it.series.poster_url if it.series else None)
-            if p and p not in posters:
-                posters.append(p)
+        count = counts_map.get(c.id, 0)
+        posters = list(posters_map.get(c.id, []))
         while len(posters) < 3:
             fallback = c.poster_url or c.banner_url
             if fallback:
@@ -270,7 +299,10 @@ async def get_collection(
     if cached:
         return cached
 
-    query = select(CollectionModel).where(CollectionModel.is_active == True)
+    query = select(CollectionModel).options(
+        noload(CollectionModel.items),
+        noload(CollectionModel.subscriptions),
+    ).where(CollectionModel.is_active == True)
     if slug_or_id.isdigit():
         query = query.where(CollectionModel.id == int(slug_or_id))
     else:
