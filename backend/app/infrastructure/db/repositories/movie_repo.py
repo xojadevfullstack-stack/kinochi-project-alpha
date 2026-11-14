@@ -1,7 +1,8 @@
 """
 Concrete implementation of IMovieRepository.
 """
-import logging
+import logging
+import re
 from typing import Sequence
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
