@@ -23,9 +23,9 @@ AniToob merged franchise queue with sequential priority ordering and real-time A
 - **Total Tests Passed:** 39 passed, 0 failures.
 
 ## Live Database Metrics (PostgreSQL Evidence)
-- **Ingest Items (Exclusively AniToob):** 299 queued (with verified TMDb IDs, canonical titles, multi-season payloads), 10 published, 7 redundant duplicates safely set to `already_exists`, 0 rejected/failed. All non-AniToob queued items purged (total queue: 299).
-- **Queue Priority Ordering:** My Hero Academia S1 (p=2000), S2 (p=1999) ... Naruto S1 (p=1994) ... Jujutsu Kaisen S1 (p=1990) ... Attack on Titan (p=1986).
-- **Admin Panel Progress Visibility:** Episode count progress (`0/12 qism`) rendered in real-time table for anime media type. Global queue badge: `Kutilmoqda (299)`.
+- **Ingest Items (Exclusively AniToob):** Exactly 319 queued items (100% of AniToob catalog from ID 1 to 319). Global queue badge: `Kutilmoqda (319)`.
+- **Queue Priority Ordering:** My Hero Academia S1 (p=2000), S2 (p=1999) ... Naruto S1 (p=1994), S2 (p=1993) ... Jujutsu Kaisen S1 (p=1990) ... Attack on Titan (p=1986).
+- **Admin Panel Progress Visibility:** Episode count progress (`0/12 qism`) rendered in real-time table for anime media type.
 
 ---
 
