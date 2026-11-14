@@ -1,26 +1,30 @@
 # Project State (STATE.md)
 
 ## Current goal
-Kinochi barqarorlashtirish loyihasi (KINOCHI STABILIZATION PROJECT) — Role-Based Vertical Stabilization (Guest -> User -> Admin).
+Kinochi Final Production Readiness Gate — Independent Senior QA, Security & Release Audit.
 
 ## In progress (slice, branch)
-- Slice: Guest Flow Complete Repair (GUEST-ISSUE-001..006) — COMPLETED.
+- Slice: Final Production Readiness Gate Report (`docs/FINAL_PRODUCTION_READINESS_GATE.md`) — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha 6 ta Guest Flow muammosi to'liq bartaraf etildi va testlar bilan tasdiqlandi).
+- None.
 
 ## Next step (one task)
-- USER FLOW bosqichini boshlash: Discovery, Audit va Stabilization (Ro'yxatdan o'tgan foydalanuvchi funksiyalari: Sevimlilar, Tarix, Baholash, So'rov berish, Profil).
+- User confirmation of CONDITIONAL RELEASE prerequisites: fix residual branding in `achievements/page.tsx:91` and proceed with single-worker production launch.
 
 ## Open questions for the user
-- Guest Flow barqarorlashtirildi. USER FLOW Discovery & Audit bosqichiga o'tishni tasdiqlaysizmi?
+- Final Production Readiness Gate hisoboti `docs/FINAL_PRODUCTION_READINESS_GATE.md` da e'lon qilindi (Qaror: CONDITIONAL RELEASE). `achievements/page.tsx` dagi eski "MediaPlus" yozuvini tuzatishga va deployga ruxsat berasizmi?
 
 ## Last verification & check results (Terminal Evidence)
-- **Backend Tests:** `tests/audit2/test_guest_flow_repair.py` + `backend/tests/test_filter_collections_item_count.py` -> 3 passed.
-- **Bot Tests:** `bot/tests/` -> 98 passed in 7.63s (100% green).
-- **Website Playwright Tests:** `website/tests/` -> 6 passed in 1.6s (100% green).
-- **TypeScript Compile:** `website` and `admin-panel` (`tsc --noEmit`) -> 0 errors.
+- **Production Readiness Audit Suite:** `tests/audit2/` -> 20 passed in 6.80s (0 warnings).
+- **Next.js Website Build:** `npx next build --no-lint` -> 26/26 static/dynamic routes compiled cleanly (0 errors).
+- **Alembic Migration Clean DB Test:** `alembic upgrade head` (`base` -> `b2c3d4e5f6a7`) -> 15 migrations executed cleanly (0 errors).
+- **Backend Endpoints vs Frontend Contract:** 204 backend endpoints, 168 frontend fetchApi calls, 113 unique operations -> 100% contract match.
+- **Collections Query Optimization:** Direct SQLAlchemy event hook log -> Exactly 3 queries for 5 collections (O(1)).
+- **Python Test Baseline:** 197 test files, 641 test functions across repo.
+- **Playwright Browser Coverage:** 12 tests, 3/25 website routes (12%), 2 admin routes.
+
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)
