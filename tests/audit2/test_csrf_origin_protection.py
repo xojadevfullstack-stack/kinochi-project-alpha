@@ -113,6 +113,15 @@ async def test_csrf_trusted_origin_allowed(test_db):
         assert resp.status_code == 200
         assert "access_token" in resp.json()
 
+        # Vercel deployment preview origin: https://kinochi-project-alpha-qoqf.vercel.app
+        resp_preview = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "csrf_admin@kinochi.uz", "password": "Pass123!"},
+            headers={"Origin": "https://kinochi-project-alpha-qoqf.vercel.app"},
+        )
+        assert resp_preview.status_code == 200
+        assert "access_token" in resp_preview.json()
+
 
 @pytest.mark.asyncio
 async def test_csrf_missing_origin_cookie_auth_handling(test_db):
