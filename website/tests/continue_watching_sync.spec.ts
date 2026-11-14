@@ -54,4 +54,49 @@ test.describe('BUG-010: ContinueWatching localStorage Desynchronization Fix', ()
     expect(items.length).toBe(1);
     expect(items[0].title).toBe('Guest Watching Movie');
   });
+
+  test('GUEST-ISSUE-005: unauthenticated guest user with no progress data must NOT have hardcoded 60% progress', async () => {
+    const mockStorage = {
+      getItem: (key: string) => {
+        if (key === 'mediaplus_continue_watching') {
+          return JSON.stringify([
+            { id: 101, title: 'Guest Watching Movie', code: '101' }
+          ]);
+        }
+        return null;
+      },
+      removeItem: () => {}
+    };
+
+    const items = await resolveContinueWatchingItems({
+      status: 'unauthenticated',
+      storage: mockStorage,
+    });
+
+    expect(items.length).toBe(1);
+    expect(items[0].progress).toBeUndefined();
+  });
+
+  test('GUEST-ISSUE-005: authenticated in_progress item with no progress data must NOT have hardcoded 55% or 65% progress', async () => {
+    const mockGetHistory = async () => ({
+      items: [
+        {
+          id: 1,
+          status: 'in_progress',
+          type: 'movie',
+          last_watched_at: new Date().toISOString(),
+          movie: { id: 10, title: 'Test Movie', code: 'TM1' }
+        }
+      ]
+    });
+
+    const items = await resolveContinueWatchingItems({
+      status: 'authenticated',
+      getHistoryFn: mockGetHistory,
+      storage: null,
+    });
+
+    expect(items.length).toBe(1);
+    expect(items[0].progress).toBeUndefined();
+  });
 });

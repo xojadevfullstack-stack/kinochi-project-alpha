@@ -58,7 +58,7 @@ export async function resolveContinueWatchingItems({
               release_year: h.episode.release_year || null,
               imdb_rating: h.episode.imdb_rating || null,
               genres: h.episode.genres || null,
-              progress: h.status === "completed" ? 100 : 55,
+              progress: h.status === "completed" ? 100 : (typeof (h as any).progress === "number" ? (h as any).progress : undefined),
               last_watched_at: h.last_watched_at,
             };
           }
@@ -71,7 +71,7 @@ export async function resolveContinueWatchingItems({
             release_year: h.movie?.release_year || null,
             imdb_rating: h.movie?.imdb_rating || null,
             genres: h.movie?.genres || null,
-            progress: h.status === "completed" ? 100 : 65,
+            progress: h.status === "completed" ? 100 : (typeof (h as any).progress === "number" ? (h as any).progress : undefined),
             last_watched_at: h.last_watched_at,
           };
         });
@@ -114,7 +114,7 @@ export async function resolveContinueWatchingItems({
                   release_year: item.release_year || null,
                   imdb_rating: item.imdb_rating || null,
                   genres: item.genres || null,
-                  progress: item.progress || 60,
+                  progress: typeof item.progress === "number" ? item.progress : undefined,
                   last_watched_at: item.last_watched_at,
                   is_18_plus: !!item.is_18_plus,
                 };
