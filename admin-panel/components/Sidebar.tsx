@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-
-const API_URL = "/api/v1";
+import { API_URL } from '@/lib/api';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -35,6 +34,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       // Even if request fails, redirect to login
     }
     localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push("/login");
   };

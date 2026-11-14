@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
-
-const API_URL = "/api/v1";
+import { API_URL } from "@/lib/api";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +42,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       // Ignore
     }
     localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push("/login");
   };

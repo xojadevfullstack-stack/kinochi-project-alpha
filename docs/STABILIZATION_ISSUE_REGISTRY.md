@@ -12,13 +12,13 @@
 |---|---|---|---|---|---|---|---|---|---|
 | **FLOW 1: GUEST** | 6 | 2 | 2 | 2 | 0 | 0 | 0 | 0 | 6 |
 | **FLOW 2: USER** | 4 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 4 |
-| **FLOW 3: ADMIN** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **FLOW 3: ADMIN** | 3 | 0 | 1 | 2 | 0 | 0 | 0 | 0 | 3 |
 | **FLOW 4: BOT** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 5: BACKEND** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 6: INTEGRATION** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 7: UI/UX** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 8: REGRESSION** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| **JAMI** | **10** | **2** | **4** | **4** | **0** | **0** | **0** | **0** | **10** |
+| **JAMI** | **13** | **2** | **5** | **6** | **0** | **0** | **0** | **0** | **13** |
 
 ---
 
@@ -176,4 +176,56 @@
 - **Test Reference:** `website/tests/profile_ux.spec.ts:15` (PASSED).
 - **Verification:** Empty state renders helpful Subscriptions explanation and navigation CTA without phantom button reference.
 - **Status:** `VERIFIED_FIX` (Commit `a5455bf`)
+
+---
+
+## 4. FLOW 3: ADMIN ISSUES
+
+### ADMIN-ISSUE-001 — Incomplete Admin Logout Session Leak (P1 Security)
+- **Flow:** Flow 3 (Admin)
+- **Modul:** Admin Shell & Sidebar Auth Lifecycle
+- **Fayl:** `admin-panel/components/AdminShell.tsx:45`, `admin-panel/components/Sidebar.tsx:37`
+- **Severity:** P1 High / Security
+- **Root Cause:** When an admin clicks "Chiqish", only `access_token` is removed from `localStorage` and cookie. `refresh_token` is left in `localStorage`. If `getOrRefreshToken()` in `lib/api.ts` is called afterwards, it uses `localStorage.getItem("refresh_token")` to call `POST /auth/refresh`, automatically issuing a new `access_token` and resurrecting the authenticated admin session. Also, both components hardcode `const API_URL = "/api/v1"` instead of importing `API_URL` from `@/lib/api`.
+- **Reproduction:** Admin logs in, clicks Logout. `localStorage.getItem("refresh_token")` still exists. Calling `fetchApi("/statistics/dashboard")` automatically re-authenticates without credentials.
+- **Evidence:** Inspection of `AdminShell.tsx` and `Sidebar.tsx` shows `localStorage.removeItem("refresh_token")` is missing.
+- **Fix Description:**
+  1. In both `AdminShell.tsx` and `Sidebar.tsx`, import `API_URL` from `@/lib/api`.
+  2. On logout, call `POST ${API_URL}/auth/logout` with `credentials: "include"`.
+  3. Remove both `access_token` and `refresh_token` from `localStorage`.
+  4. Explicitly delete cookie `access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`.
+- **Test Reference:** `website/tests/admin_panel.spec.ts:9` (PASSED in 17ms).
+- **Verification:** Both `localStorage.removeItem("refresh_token")` and `import { API_URL } from "@/lib/api"` verified in code and unit test.
+- **Status:** `VERIFIED_FIX`
+
+---
+
+### ADMIN-ISSUE-002 — Sources Router Trailing Slash Inconsistency causing 307 Redirects (P2 Functional)
+- **Flow:** Flow 3 (Admin)
+- **Modul:** Backend / Sources Router
+- **Fayl:** `backend/app/api/v1/sources.py:11, 19`
+- **Severity:** P2 Medium
+- **Root Cause:** `sources.py` declared `@router.get("/")` and `@router.post("/")` while included with prefix `/api/v1/sources`. All other routers use `""`. Requesting `GET /api/v1/sources` or `POST /api/v1/sources` from `admin-panel/app/sources/page.tsx:27, 92` triggered an HTTP 307 Temporary Redirect instead of returning directly.
+- **Reproduction:** `GET /api/v1/sources` returns HTTP 307 with `Location: /api/v1/sources/`.
+- **Evidence:** Terminal curl or test requesting `/api/v1/sources` returns status 307.
+- **Fix Description:** Add `@router.get("")` and `@router.post("")` routes in `sources.py` (with `/` as backward-compatible aliases) to eliminate unnecessary redirects.
+- **Test Reference:** `tests/audit2/test_admin_flow_repair.py:10` (PASSED in 2.11s).
+- **Verification:** `GET /api/v1/sources` and `POST /api/v1/sources` return 200/201 directly without 307 status code.
+- **Status:** `VERIFIED_FIX`
+
+---
+
+### ADMIN-ISSUE-003 — Legacy "MediaPlus" Branding in Admin Layout and Login (P2 Consistency)
+- **Flow:** Flow 3 (Admin)
+- **Modul:** Admin Panel Layout & Login
+- **Fayl:** `admin-panel/app/layout.tsx:10-11`, `admin-panel/app/login/page.tsx:72`
+- **Severity:** P2 Medium / Identity
+- **Root Cause:** Leftover "MediaPlus Admin Panel" metadata and "MediaPlus Admin" heading from previous generation violating Kinochi platform identity.
+- **Reproduction:** Inspect browser tab title on admin panel (`MediaPlus Admin Panel`) and login screen heading.
+- **Evidence:** `admin-panel/app/layout.tsx` metadata and `admin-panel/app/login/page.tsx` line 72.
+- **Fix Description:** Update metadata title to "Kinochi Admin Panel" and heading to "Kinochi Admin".
+- **Test Reference:** `website/tests/admin_panel.spec.ts:25` (PASSED in 5ms).
+- **Verification:** No occurrences of "MediaPlus" remain in layout or login headings; branded as "Kinochi Admin".
+- **Status:** `VERIFIED_FIX`
+
 

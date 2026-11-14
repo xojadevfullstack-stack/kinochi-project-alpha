@@ -1,9 +1,9 @@
 # KINOCHI STABILIZATION MASTER STATE
 
 **Loyiha:** Kinochi Full Ecosystem Autonomous Stabilization  
-**Oxirgi yangilanish vaqti:** 2026-11-14T06:31:00+05:00  
-**Hozirgi faol Flow:** FLOW 3 — ADMIN PANEL  
-**Oxirgi muvaffaqiyatli Checkpoint:** CHECKPOINT-02 (FLOW 2: USER to'liq yakunlandi va tasdiqlandi)  
+**Oxirgi yangilanish vaqti:** 2026-11-14T06:40:00+05:00  
+**Hozirgi faol Flow:** FLOW 4 — TELEGRAM BOT  
+**Oxirgi muvaffaqiyatli Checkpoint:** CHECKPOINT-03 (FLOW 3: ADMIN PANEL to'liq yakunlandi va tasdiqlandi)  
 
 ---
 
@@ -13,8 +13,8 @@
 |---|---|---|---|---|
 | **FLOW 1** | Guest (Mehmon oqimi) | **COMPLETED & VERIFIED** | 6 ta (GUEST-001..006) | 0 ta |
 | **FLOW 2** | User / Authenticated User | **COMPLETED & VERIFIED** | 4 ta (USER-001..004) | 0 ta |
-| **FLOW 3** | Admin Panel | **IN PROGRESS** (Discovery & Audit boshlanmoqda) | 0 ta | 0 ta |
-| **FLOW 4** | Telegram Bot | QUEUED | 0 ta | 0 ta |
+| **FLOW 3** | Admin Panel | **COMPLETED & VERIFIED** | 3 ta (ADMIN-001..003) | 0 ta |
+| **FLOW 4** | Telegram Bot | **IN PROGRESS** (Discovery & Audit boshlanmoqda) | 0 ta | 0 ta |
 | **FLOW 5** | Backend / API / Database | QUEUED | 0 ta | 0 ta |
 | **FLOW 6** | Cross-System Integration | QUEUED | 0 ta | 0 ta |
 | **FLOW 7** | UI/UX & Functional Completeness | QUEUED | 0 ta | 0 ta |
@@ -24,25 +24,26 @@
 
 ## 2. FAOL ISH VA O'ZGARISHLAR
 
-- **Hozirgi vazifa:** Flow 3 (Admin Panel) — Admin authentication, Movies/Series CRUD, Seasons & Episodes, Categories, Collections, Actors, Sources, Scraper, User Management, Reviews moderation, Reports, Content Requests, Audit logs, Broadcasts audit va stabilizatsiyasi.
+- **Hozirgi vazifa:** Flow 4 (Telegram Bot) — Aiogram 3 bot routerlari, callback handlerlar, inline query, majburiy obuna kanallari, video yuborish, kod orqali qidiruv va chuqur integratsiya audit va verifikatsiyasi.
 - **Oxirgi o'zgartirilgan fayllar:**
-  - `backend/app/api/v1/auth.py` (USER-ISSUE-001)
-  - `website/lib/auth/AuthProvider.tsx` (USER-ISSUE-001)
-  - `backend/app/api/v1/users.py` (USER-ISSUE-002)
-  - `website/app/profile/page.tsx` (USER-ISSUE-003, USER-ISSUE-004)
-  - `tests/audit2/test_user_flow_repair.py`
-  - `website/tests/profile_ux.spec.ts`
+  - `admin-panel/components/AdminShell.tsx` (ADMIN-ISSUE-001)
+  - `admin-panel/components/Sidebar.tsx` (ADMIN-ISSUE-001)
+  - `backend/app/api/v1/sources.py` (ADMIN-ISSUE-002)
+  - `admin-panel/app/layout.tsx` (ADMIN-ISSUE-003)
+  - `admin-panel/app/login/page.tsx` (ADMIN-ISSUE-003)
+  - `tests/audit2/test_admin_flow_repair.py`
+  - `website/tests/admin_panel.spec.ts`
 
 ---
 
 ## 3. TEST NATIJALARI (VERIFIED TERMINAL EVIDENCE)
 
 - **Backend Pytest Gate:**
-  - `tests/audit2/test_user_flow_repair.py` + `tests/audit2/test_guest_flow_repair.py` -> `4 passed in 2.35s` (100% green)
+  - `tests/audit2/` -> `14 passed in 7.07s` (100% green)
 - **Bot Pytest Gate:**
-  - `bot/tests/` -> `98 passed in 7.63s` (100% green)
+  - `bot/tests/` -> `98 passed in 7.88s` (100% green)
 - **Website Playwright Gate:**
-  - `website/tests/` -> `8 passed in 1.7s` (100% green)
+  - `website/tests/` -> `10 passed in 1.9s` (100% green)
 - **TypeScript Compile:**
   - `website` (`tsc --noEmit`) -> 0 errors
   - `admin-panel` (`tsc --noEmit`) -> 0 errors

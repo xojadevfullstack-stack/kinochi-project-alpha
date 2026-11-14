@@ -13,8 +13,8 @@
 |---|---|---|---|---|---|
 | **FLOW 1** | GUEST FLOW | **VERIFIED PASS** | 6 | 6 | 0 |
 | **FLOW 2** | USER / AUTH FLOW | **VERIFIED PASS** | 4 | 4 | 0 |
-| **FLOW 3** | ADMIN PANEL | **AUDIT IN PROGRESS** | — | — | — |
-| **FLOW 4** | TELEGRAM BOT | QUEUED | — | — | — |
+| **FLOW 3** | ADMIN PANEL | **VERIFIED PASS** | 3 | 3 | 0 |
+| **FLOW 4** | TELEGRAM BOT | **AUDIT IN PROGRESS** | — | — | — |
 | **FLOW 5** | BACKEND / API / DB | QUEUED | — | — | — |
 | **FLOW 6** | CROSS-INTEGRATION | QUEUED | — | — | — |
 | **FLOW 7** | UI/UX COMPLETENESS | QUEUED | — | — | — |
@@ -40,3 +40,14 @@
   - USER-ISSUE-004 (P2 UX): Sevimlilar tabida mavjud bo'lmagan `+ Sevimlilarga` tugmasiga havola berilishi.
 - **Natija:** Barcha 4 ta muammo TDD (RED -> GREEN) tamoyilida bartaraf etildi.
 - **Tekshiruv dalillari:** `tests/audit2/test_user_flow_repair.py` (2 passed), `website/tests/profile_ux.spec.ts` (2 passed), `npx playwright test` (8 passed).
+
+---
+
+## 4. FLOW 3: ADMIN PANEL XULOSASI
+- **Audit:** Admin autentifikatsiya, sessiya muddati, Movies/Series/Seasons/Episodes CRUD, Categories, Collections, Sources, Channels, Pages, Scraper, User Management, Reports, Requests, Broadcasts va Audit modullari auditdan o'tkazildi.
+- **Topilgan muammolar:** 3 ta (ADMIN-ISSUE-001..003).
+  - ADMIN-ISSUE-001 (P1 Security): Chiqishda `refresh_token` localStorage'dan tozalanmasligi sababli admin sessiyasining avtomatik qayta tiklanishi.
+  - ADMIN-ISSUE-002 (P2 Functional / API Contract): `/sources` routerida trailing slash nomutanosibligi tufayli HTTP 307 redirect yuzaga kelishi.
+  - ADMIN-ISSUE-003 (P2 Branding / Consistency): Admin layout metadata va login ekranida eskirgan "MediaPlus" yozuvining qolib ketishi.
+- **Natija:** Barcha 3 ta muammo TDD (RED -> GREEN) tamoyilida bartaraf etildi.
+- **Tekshiruv dalillari:** `tests/audit2/test_admin_flow_repair.py` (PASSED), `website/tests/admin_panel.spec.ts` (2 passed), `npx playwright test` (10 passed), `admin-panel` va `website` TypeScript typecheck (0 errors).

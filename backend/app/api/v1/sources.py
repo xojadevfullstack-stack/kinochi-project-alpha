@@ -8,7 +8,8 @@ from app.domain.series.source_entities import SourceResponse, SourceCreate, Sour
 
 router = APIRouter()
 
-@router.get("/", response_model=List[SourceResponse])
+@router.get("", response_model=List[SourceResponse])
+@router.get("/", response_model=List[SourceResponse], include_in_schema=False)
 async def get_sources(
     db: AsyncSession = Depends(get_db_session),
     admin=Depends(get_current_admin)
@@ -16,7 +17,8 @@ async def get_sources(
     repo = SourceRepository(db)
     return await repo.get_all_sources()
 
-@router.post("/", response_model=SourceResponse)
+@router.post("", response_model=SourceResponse, status_code=201)
+@router.post("/", response_model=SourceResponse, status_code=201, include_in_schema=False)
 async def create_source(
     data: SourceCreate,
     db: AsyncSession = Depends(get_db_session),
