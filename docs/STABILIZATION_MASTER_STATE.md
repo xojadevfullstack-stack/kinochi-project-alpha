@@ -1,9 +1,9 @@
 # KINOCHI STABILIZATION MASTER STATE
 
 **Loyiha:** Kinochi Full Ecosystem Autonomous Stabilization  
-**Oxirgi yangilanish vaqti:** 2026-11-14T06:43:00+05:00  
-**Hozirgi faol Flow:** FLOW 5 — BACKEND / API / DATABASE  
-**Oxirgi muvaffaqiyatli Checkpoint:** CHECKPOINT-04 (FLOW 4: TELEGRAM BOT to'liq yakunlandi va tasdiqlandi)  
+**Oxirgi yangilanish vaqti:** 2026-11-14T06:47:00+05:00  
+**Hozirgi faol Flow:** FLOW 6 — CROSS-SYSTEM INTEGRATION  
+**Oxirgi muvaffaqiyatli Checkpoint:** CHECKPOINT-05 (FLOW 5: BACKEND / API / DB to'liq yakunlandi va tasdiqlandi)  
 
 ---
 
@@ -15,8 +15,8 @@
 | **FLOW 2** | User / Authenticated User | **COMPLETED & VERIFIED** | 4 ta (USER-001..004) | 0 ta |
 | **FLOW 3** | Admin Panel | **COMPLETED & VERIFIED** | 3 ta (ADMIN-001..003) | 0 ta |
 | **FLOW 4** | Telegram Bot | **COMPLETED & VERIFIED** | 2 ta (BOT-001..002) | 0 ta |
-| **FLOW 5** | Backend / API / Database | **IN PROGRESS** (Discovery & Audit boshlanmoqda) | 0 ta | 0 ta |
-| **FLOW 6** | Cross-System Integration | QUEUED | 0 ta | 0 ta |
+| **FLOW 5** | Backend / API / Database | **COMPLETED & VERIFIED** | 1 ta (BACKEND-001) | 0 ta |
+| **FLOW 6** | Cross-System Integration | **IN PROGRESS** (Discovery & Audit boshlanmoqda) | 0 ta | 0 ta |
 | **FLOW 7** | UI/UX & Functional Completeness | QUEUED | 0 ta | 0 ta |
 | **FLOW 8** | Final Regression & Release Readiness | QUEUED | 0 ta | 0 ta |
 
@@ -24,19 +24,20 @@
 
 ## 2. FAOL ISH VA O'ZGARISHLAR
 
-- **Hozirgi vazifa:** Flow 5 (Backend / API / Database) — Barcha 24 ta FastAPI routerlari, contract validation, database transaction boundaries, Alembic migrations, Redis caching & fallback error handling audit va stabilizatsiyasi.
+- **Hozirgi vazifa:** Flow 6 (Cross-System Integration) — Bot <-> Backend, Web <-> Backend, Admin <-> Scraper, Telegram Forum Topics, WebApp Token Handshake, va Magic Login aloqalari integratsiyasini tekshirish va tasdiqlash.
 - **Oxirgi o'zgartirilgan fayllar:**
-  - `bot/handlers/start.py` (BOT-ISSUE-001)
-  - `bot/handlers/search.py` (BOT-ISSUE-002)
-  - `bot/handlers/recommendation.py` (BOT-ISSUE-002)
-  - `bot/tests/test_bot_flow_repair.py`
+  - `backend/app/main.py` (BACKEND-ISSUE-001)
+  - `backend/app/api/v1/reports.py` (BACKEND-ISSUE-001)
+  - `backend/app/api/v1/scraper.py` (BACKEND-ISSUE-001)
+  - `backend/app/core/cache.py` (BACKEND-ISSUE-001)
+  - `tests/audit2/test_backend_flow_repair.py`
 
 ---
 
 ## 3. TEST NATIJALARI (VERIFIED TERMINAL EVIDENCE)
 
 - **Backend Pytest Gate:**
-  - `tests/audit2/` -> `14 passed in 7.07s` (100% green)
+  - `tests/audit2/` -> `15 passed in 7.39s` (100% green)
 - **Bot Pytest Gate:**
   - `bot/tests/` -> `100 passed in 7.19s` (100% green)
 - **Website Playwright Gate:**

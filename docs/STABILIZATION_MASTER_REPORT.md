@@ -15,8 +15,8 @@
 | **FLOW 2** | USER / AUTH FLOW | **VERIFIED PASS** | 4 | 4 | 0 |
 | **FLOW 3** | ADMIN PANEL | **VERIFIED PASS** | 3 | 3 | 0 |
 | **FLOW 4** | TELEGRAM BOT | **VERIFIED PASS** | 2 | 2 | 0 |
-| **FLOW 5** | BACKEND / API / DB | **AUDIT IN PROGRESS** | — | — | — |
-| **FLOW 6** | CROSS-INTEGRATION | QUEUED | — | — | — |
+| **FLOW 5** | BACKEND / API / DB | **VERIFIED PASS** | 1 | 1 | 0 |
+| **FLOW 6** | CROSS-INTEGRATION | **AUDIT IN PROGRESS** | — | — | — |
 | **FLOW 7** | UI/UX COMPLETENESS | QUEUED | — | — | — |
 | **FLOW 8** | FINAL REGRESSION | QUEUED | — | — | — |
 
@@ -61,3 +61,12 @@
   - BOT-ISSUE-002 (P1 Functional / Placeholder): Tavsiya so'rovida mavjud tavsiya tizimiga ulanmasdan soxta "Tez kunda..." xabari berilishi.
 - **Natija:** Barcha 2 ta muammo TDD (RED -> GREEN) tamoyilida bartaraf etildi.
 - **Tekshiruv dalillari:** `bot/tests/test_bot_flow_repair.py` (2 passed in 4.04s), to'liq bot test to'plami (`100 passed in 7.19s`, 100% green).
+
+---
+
+## 6. FLOW 5: BACKEND / API / DATABASE XULOSASI
+- **Audit:** 24 ta FastAPI routerlari, dependency injection, tranzaksiya chegaralari (`get_db_session`), Alembic migratsiyalari (`b2c3d4e5f6a7 (head)`), sessiya havzasi va xato qayta ishlash auditdan o'tkazildi.
+- **Topilgan muammolar:** 1 ta (BACKEND-ISSUE-001).
+  - BACKEND-ISSUE-001 (P2 Quality): `reports.py`, `scraper.py`, `main.py` va `cache.py` dagi yashirin `except Exception: pass` bloklari.
+- **Natija:** Zero-swallowed-exceptions qoidasi bo'yicha barcha yashirin bloklar strukturalangan loglar bilan to'liq almashtirildi.
+- **Tekshiruv dalillari:** `tests/audit2/test_backend_flow_repair.py` (PASSED in 0.03s), barcha audit testlari (`15 passed in 7.39s`, 100% green).

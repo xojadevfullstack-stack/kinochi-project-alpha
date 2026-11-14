@@ -52,8 +52,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                     "ammo tashqi/remote bazaga (%s) ulanmoqda! Ma'lumotlar xavfsizligiga e'tibor bering.",
                     settings.APP_ENV, getattr(settings, "ENVIRONMENT", None), db_host
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug("Non-production database host check skipped: %s", e)
 
     async def keep_alive():
         url = os.getenv("RENDER_EXTERNAL_URL")

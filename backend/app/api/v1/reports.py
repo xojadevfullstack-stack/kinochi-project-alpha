@@ -510,8 +510,8 @@ async def delete_report(
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Shikoyat faylini o'chirishda xatolik (%s): %s", filepath, e)
 
     await db.delete(report)
     await db.commit()

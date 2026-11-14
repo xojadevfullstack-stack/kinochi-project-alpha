@@ -214,8 +214,8 @@ def get_scraper_state(admin=Depends(get_current_admin)):
     if SCRAPER_AVAILABLE and StateManager:
         try:
             return StateManager().get_state()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Scraper state olishda xatolik: %s", e)
     return {
         "uzmovi_current_page": 1,
         "uzmovi_total_pages": 1,

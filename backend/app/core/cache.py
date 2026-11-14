@@ -18,8 +18,8 @@ try:
     _redis_url = getattr(settings, "REDIS_URL", "")
     if "SIZNING_UPSTASH_PAROLINGIZ" in _redis_url or "parol" in _redis_url.lower():
         _redis_disabled = True
-except Exception:
-    pass
+except Exception as e:
+    logger.debug("Redis config check error: %s", e)
 
 
 def is_redis_available() -> bool:

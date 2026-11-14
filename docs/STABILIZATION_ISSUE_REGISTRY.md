@@ -14,11 +14,11 @@
 | **FLOW 2: USER** | 4 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 4 |
 | **FLOW 3: ADMIN** | 3 | 0 | 1 | 2 | 0 | 0 | 0 | 0 | 3 |
 | **FLOW 4: BOT** | 2 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
-| **FLOW 5: BACKEND** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **FLOW 5: BACKEND** | 1 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 1 |
 | **FLOW 6: INTEGRATION** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 7: UI/UX** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **FLOW 8: REGRESSION** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| **JAMI** | **15** | **2** | **6** | **7** | **0** | **0** | **0** | **0** | **15** |
+| **JAMI** | **16** | **2** | **6** | **8** | **0** | **0** | **0** | **0** | **16** |
 
 ---
 
@@ -259,6 +259,24 @@
 - **Test Reference:** `bot/tests/test_bot_flow_repair.py:29` (PASSED in 4.04s).
 - **Verification:** Actionable inline keyboard with real recommendation choices displayed; no placeholder text.
 - **Status:** `VERIFIED_FIX`
+
+---
+
+## 6. FLOW 5: BACKEND ISSUES
+
+### BACKEND-ISSUE-001 — Unlogged Swallowed Exceptions (P2 Quality)
+- **Flow:** Flow 5 (Backend / API / DB)
+- **Modul:** Core Error Handling
+- **Fayl:** `backend/app/api/v1/reports.py:513`, `backend/app/api/v1/scraper.py:217`, `backend/app/main.py:55`, `backend/app/core/cache.py:21`
+- **Severity:** P2 Medium / Quality
+- **Root Cause:** Bare `except Exception: pass` blocks without logging or tracking silently swallowed errors during file cleanup, config checks, and state retrieval, violating the project constitution's zero-swallowed-exceptions rule.
+- **Reproduction:** Inspection of backend code reveals 4 unlogged `except Exception: pass` statements.
+- **Evidence:** Code lines in `reports.py`, `scraper.py`, `main.py`, and `cache.py`.
+- **Fix Description:** Replace silent `pass` blocks with structured `logger.warning(...)` or `logger.debug(...)` calls.
+- **Test Reference:** `tests/audit2/test_backend_flow_repair.py:4` (PASSED in 0.03s).
+- **Verification:** Regex validation confirms 0 bare unlogged `except Exception: pass` blocks in target files.
+- **Status:** `VERIFIED_FIX`
+
 
 
 
