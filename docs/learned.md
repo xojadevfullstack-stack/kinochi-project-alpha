@@ -311,5 +311,10 @@
 - CORS restricts JavaScript in the browser from reading cross-origin responses, but does not stop the browser from executing credentialed state-changing requests triggered by third-party origins when cookies are set to SameSite=None.
 - Analogy: Restoran faqat o'z mijozlariga hisob-kitob chekini ko'rishga ruxsat beradi (CORS), lekin begona kishi soxta buyurtma qog'ozini oshxonaga tashlab ketsa, oshpaz uning kimdan kelganini tekshirmasdan ovqatni tayyorlab yuboraveradi (CSRF); shuning uchun buyurtmachi shaxsini va kelib chiqishini (Origin) har doim eshik oldida tekshirish shart.
 
+## Next.js Build Manifest Desync & Dev Server Chunk Invalidation
+- Modifying or clearing `.next` build artifacts on disk while a Next.js development server process is actively running desynchronizes its in-memory asset manifest, causing all client-side script chunks (`_next/static`) to return HTTP 404 and breaking client-side hydration.
+- Analogy: Kutubxona ochiq turgan paytda uning kitob javonlari va katalog kartalarini orqa tomondan almashtirib yuborish: o'quvchi qo'lidagi eski ro'yxat bo'yicha kitob qidiradi, lekin javonda u ko'rsatilgan kitob yo'qligi sababli "topilmadi" (404) javobini oladi; kutubxonani to'liq yopib, yangi katalog bilan qayta ochish kerak.
+
+
 
 

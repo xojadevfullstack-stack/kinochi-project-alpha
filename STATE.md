@@ -1,10 +1,10 @@
 # Project State (STATE.md)
 
 ## Current goal
-Kinochi Master Stabilization & Release — Successfully Synchronized with GitHub (`origin/main`).
+Kinochi Master Stabilization & Release — Admin Panel Stale Cache Recovered & Verified.
 
 ## In progress (slice, branch)
-- Slice: GitHub Push (`origin/main`) — COMPLETED (36 commits pushed, working tree 100% clean).
+- Slice: Admin Panel Server Error Diagnosis & Dev Server Recovery — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
@@ -14,11 +14,12 @@ Kinochi Master Stabilization & Release — Successfully Synchronized with GitHub
 - Final production deployment and live platform release.
 
 ## Open questions for the user
-- Barcha 36 ta commit GitHub repository'ga muvaffaqiyatli push qilindi (`main -> main`). Serverda (Render / Vercel) avtomatik deploy boshlanganini kuzatish yoki yakuniy release'ni qabul qilishni istaysizmi?
+- Admin panel to'liq tiklandi va brauzer orqali Dashboard real ma'lumotlar bilan tekshirildi (50 ta foydalanuvchi, 40 ta kino, 93 ta serial). Ushbu o'zgarishlarni ham GitHub'ga push qilaylikmi?
 
 ## Last verification & check results (Terminal Evidence)
+- **Admin Panel Live Browser UI Verification:** Next.js dev server qayta ishga tushirildi; barcha 7 ta script chunk 200 OK qaytardi; admin@kinochi.uz / admin123 bilan kirish muvaffaqiyatli amalga oshdi; dashboard `/statistics/dashboard` dan 50 foydalanuvchi, 40 kino, 93 serial bilan xatosiz yuklandi.
 - **CSRF Protection Suite:** `tests/audit2/test_csrf_origin_protection.py` -> 7 passed in 14.30s (0 warnings).
-- **Full Audit2 Regression Suite:** `tests/audit2/` -> 30 passed in 22.72s (100% green, 0 warnings).
+- **Full Audit2 Regression Suite:** `tests/audit2/` -> 30 passed in 19.95s (100% green, 0 warnings).
 - **Pre-Deploy Security Suite:** `tests/audit2/test_pre_deploy_jwt_csrf_audit.py` -> 3 passed in 3.43s (0 warnings).
 - **Admin-panel Isolated Next.js Build:** `admin-panel` -> TypeScript 0 errors, 21/21 static/dynamic pages compiled.
 - **Next.js Website Build:** `npx next build --no-lint` -> 26/26 static/dynamic routes compiled cleanly (0 errors).
