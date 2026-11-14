@@ -224,3 +224,24 @@ async def test_numeric_episode_code_is_resolved():
         assert result_prefixed is True
         mock_ep_code.assert_called_with("28831337")
         mock_send_ep.assert_called_once_with(bot, chat_id, fake_ep)
+
+
+@pytest.mark.asyncio
+async def test_compound_episode_fallback_when_episode_not_yet_ready():
+    """When an episode is in compound format s_1007_s1_ep1 and episode is not yet ready,
+    it falls back to showing series info with uploading notice.
+    """
+    bot = AsyncMock()
+    chat_id = 123456789
+    fake_series = {"id": 1007, "title": "Test Series"}
+
+    with patch("services.api_client.api_client.get_episode_by_code", new_callable=AsyncMock, return_value=None), \
+         patch("services.api_client.api_client.get_series_by_id", new_callable=AsyncMock, return_value=fake_series) as mock_series_id, \
+         patch("utils.code_resolver.send_series_info", new_callable=AsyncMock, return_value=True) as mock_send_series:
+
+        result = await resolve_and_send_content(bot, chat_id, "s_1007_s1_ep1")
+        assert result is True
+        mock_series_id.assert_called_with(1007)
+        mock_send_series.assert_called_once_with(bot, chat_id, fake_series)
+        assert bot.send_message.called
+        assert "yuklanmoqda" in bot.send_message.call_args[1]["text"]

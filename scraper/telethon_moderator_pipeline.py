@@ -1858,6 +1858,7 @@ class TelethonModeratorPipeline:
 
                     try:
                         await delete_cache_pattern("cache:series:*")
+                        await delete_cache_pattern("cache:episode:*")
                     except Exception:
                         pass
 
@@ -2500,6 +2501,7 @@ class TelethonModeratorPipeline:
                     page_ids=[1],
                     source_id=source.id if source else None,
                     status="ongoing",
+                    publish_status="published",
                     is_18_plus=bool(meta.get("is_18_plus", False))
                 )
                 pre_ok = await self._validate_and_pre_check(
@@ -2749,6 +2751,7 @@ class TelethonModeratorPipeline:
 
         try:
             await delete_cache_pattern("cache:series:*")
+            await delete_cache_pattern("cache:episode:*")
         except Exception:
             pass
 
@@ -3265,6 +3268,7 @@ class TelethonModeratorPipeline:
                     page_ids=[1],
                     source_id=source.id if source else None,
                     status="ongoing",
+                    publish_status="published",
                     is_18_plus=bool(meta.get("is_18_plus", False))
                 ))
                 series_id = created_series.id
@@ -3567,6 +3571,7 @@ class TelethonModeratorPipeline:
 
         try:
             await delete_cache_pattern("cache:series:*")
+            await delete_cache_pattern("cache:episode:*")
         except Exception:
             pass
 

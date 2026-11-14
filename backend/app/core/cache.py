@@ -151,11 +151,13 @@ async def invalidate_media_cache(media_type: str = "all") -> None:
         await delete_cache_pattern("cache:collections:*")
     elif media_type in ("series", "season", "episode"):
         await delete_cache_pattern("cache:series:*")
+        await delete_cache_pattern("cache:episode:*")
         await delete_cache_pattern("cache:search:*")
         await delete_cache_pattern("cache:collections:*")
     else:
         await delete_cache_pattern("cache:movies:*")
         await delete_cache_pattern("cache:series:*")
+        await delete_cache_pattern("cache:episode:*")
         await delete_cache_pattern("cache:search:*")
         await delete_cache_pattern("cache:collections:*")
         await delete_cache_pattern("cache:*")

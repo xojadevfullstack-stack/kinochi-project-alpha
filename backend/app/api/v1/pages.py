@@ -9,7 +9,7 @@ def slugify(text: str) -> str:
     text = re.sub(r'[^a-z0-9]+', '-', text)
     return text.strip('-')
 
-from app.api.deps import get_db_session, get_current_admin
+from app.api.deps import get_db_session, get_current_admin, resolve_publish_status
 from app.infrastructure.db.models.page import PageModel, page_movie_table, page_series_table
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import SeriesModel
@@ -151,6 +151,7 @@ async def list_pages(
 @router.get("/{page_id_or_slug}/content")
 async def get_page_content(
     page_id_or_slug: str,
+    publish_status: str | None = Depends(resolve_publish_status),
     session: AsyncSession = Depends(get_db_session)
 ):
     """Get all movies and series attached to a specific page."""
@@ -169,8 +170,10 @@ async def get_page_content(
         select(MovieModel)
         .join(page_movie_table, page_movie_table.c.movie_id == MovieModel.id)
         .where(page_movie_table.c.page_id == page.id)
-        .order_by(MovieModel.id.desc())
     )
+    if publish_status is not None:
+        movie_stmt = movie_stmt.where(MovieModel.publish_status == publish_status)
+    movie_stmt = movie_stmt.order_by(MovieModel.id.desc())
     movies_res = await session.execute(movie_stmt)
     movies = movies_res.scalars().all()
 
@@ -179,8 +182,10 @@ async def get_page_content(
         select(SeriesModel)
         .join(page_series_table, page_series_table.c.series_id == SeriesModel.id)
         .where(page_series_table.c.page_id == page.id)
-        .order_by(SeriesModel.id.desc())
     )
+    if publish_status is not None:
+        series_stmt = series_stmt.where(SeriesModel.publish_status == publish_status)
+    series_stmt = series_stmt.order_by(SeriesModel.id.desc())
     series_res = await session.execute(series_stmt)
     series_list = series_res.scalars().all()
 

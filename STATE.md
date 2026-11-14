@@ -1,33 +1,25 @@
 # Project State (STATE.md)
 
 ## Current goal
-Kinochi Master Stabilization & Release — Vercel Subdomain CORS & CSRF Defense Posture Live.
+Sync newly posted series, episodes, and anime between Website & Telegram bot; eliminate 5-minute "Bu qism topilmadi" delay.
 
 ## In progress (slice, branch)
-- Slice: Vercel Subdomain (`kinochi-project-alpha-qoqf.vercel.app`) CORS & CSRF Allowance — COMPLETED & DEPLOYED.
+- Slice: Sync published status across scraper, backend pages, and bot episode resolution — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
 - None.
 
 ## Next step (one task)
-- User live verification on Vercel deployment.
+- Monitor live production bot resolution and scraper pipeline.
 
 ## Open questions for the user
-- `kinochi-project-alpha-qoqf.vercel.app` da kirish sinovdan o'tkazildi va backend tomonidan 200 OK ruxsat berilmoqda. Brauzeringizda sahifani yangilab (Ctrl + F5 yoki yangi tabda) qayta kirib ko'rishingiz mumkin.
+- None.
 
 ## Last verification & check results (Terminal Evidence)
-- **Vercel Preview CORS & CSRF Live Production Test:** `POST https://kinochi-project-alpha-9g6j.onrender.com/api/v1/auth/login` with `Origin: https://kinochi-project-alpha-qoqf.vercel.app` -> Status 200 OK, `access-control-allow-origin: https://kinochi-project-alpha-qoqf.vercel.app`, `message: Tizimga kirildi`.
-- **CSRF Protection Suite:** `tests/audit2/test_csrf_origin_protection.py` -> 7 passed in 16.78s (0 warnings).
-- **Full Audit2 Regression Suite:** `tests/audit2/` -> 30 passed in 19.95s (100% green, 0 warnings).
-- **Pre-Deploy Security Suite:** `tests/audit2/test_pre_deploy_jwt_csrf_audit.py` -> 3 passed in 3.43s (0 warnings).
-- **Admin-panel Isolated Next.js Build:** `admin-panel` -> TypeScript 0 errors, 21/21 static/dynamic pages compiled.
-- **Next.js Website Build:** `npx next build --no-lint` -> 26/26 static/dynamic routes compiled cleanly (0 errors).
-- **Alembic Migration Clean DB Test:** `alembic upgrade head` (`base` -> `b2c3d4e5f6a7`) -> 15 migrations executed cleanly (0 errors).
-- **Backend Endpoints vs Frontend Contract:** 204 backend endpoints, 168 frontend fetchApi calls, 113 unique operations -> 100% contract match.
-- **Collections Query Optimization:** Direct SQLAlchemy event hook log -> Exactly 3 queries for 5 collections (O(1)).
-- **Python Test Baseline:** 197 test files, 641 test functions across repo.
-- **Playwright Browser Coverage:** 12 tests, 3/25 website routes (12%), 2 admin routes.
+- **Backend Cache & Pages Publish Suite:** `pytest backend/tests/test_pages_publish_status.py backend/tests/test_cache_flush.py backend/tests/test_admission_gate.py` -> 18 passed in 5.65s (100% green).
+- **Bot Episode Resolution & Missing Video Suite:** `pytest bot/tests/test_episode_uploading_ux.py bot/tests/test_code_resolver.py bot/tests/test_browsing_missing_video.py` -> 17 passed in 7.48s (100% green).
+- **Total Tests Passed:** 35 passed, 0 failures.
 
 
 ## Live Database Metrics (PostgreSQL Evidence)

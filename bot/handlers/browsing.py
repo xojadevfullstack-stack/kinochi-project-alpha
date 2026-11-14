@@ -56,7 +56,10 @@ async def handle_watch_episode(callback: CallbackQuery):
             return
 
         if not episode:
-            await callback.message.answer("⚠️ Bu qism topilmadi.")
+            await callback.message.answer(
+                "⚠️ Ushbu qism hozircha mavjud emas yoki serverga yuklanmoqda.\n\n"
+                "Iltimos, birozdan so'ng qayta tekshiring!"
+            )
             return
 
         if not episode.get("translations"):

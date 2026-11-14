@@ -192,6 +192,26 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
                     await send_series_info(bot, chat_id, series)
                     return True
             return True
+        else:
+            # Fallback 1: Agar compound format bo'lsa (s_1007_s1_ep1 yoki s1007_1_1)
+            compound_match = re.match(r"^s_?(\d+)[_\-]s?(\d+)[_\-](?:ch|e|ep|qism)?(\d+)$", cleaned_code, re.IGNORECASE)
+            if compound_match:
+                series_id = int(compound_match.group(1))
+                series = await api_client.get_series_by_id(series_id)
+                if series:
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text="⏳ <b>Ushbu qism videosi hozirda serverga yuklanmoqda.</b>\n\nQuyida serial ma'lumotlari keltirilgan:",
+                        parse_mode="HTML"
+                    )
+                    await send_series_info(bot, chat_id, series)
+                    return True
+            # Fallback 2: Agar ep_<numeric_id> bo'lib qism topilmagan bo'lsa
+            if cleaned_code.isdigit():
+                maybe_series = await api_client.get_series_by_id(int(cleaned_code))
+                if maybe_series:
+                    await send_series_info(bot, chat_id, maybe_series)
+                    return True
         return False
 
     # ── 4. Noaniq tur (hech qanday aniq prefiks ko'rsatilmagan) ──

@@ -577,7 +577,10 @@ async def create_episode(
         raise HTTPException(status_code=400, detail="Season ID mismatch")
         
     try:
-        return await service.create_episode(episode_in)
+        created_ep = await service.create_episode(episode_in)
+        await delete_cache_pattern("cache:series:*")
+        await delete_cache_pattern("cache:episode:*")
+        return created_ep
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -914,6 +917,7 @@ async def link_episode_video(
                 await db.commit()
 
         await delete_cache_pattern("cache:series:*")
+        await delete_cache_pattern("cache:episode:*")
         return episode
     except HTTPException:
         raise
