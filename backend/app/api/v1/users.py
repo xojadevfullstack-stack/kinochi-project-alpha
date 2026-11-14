@@ -148,8 +148,12 @@ async def get_my_history(
             }
         items.append(item_data)
         
-    return {"items": items, "total": len(items)}
-    # Accurate total requires a separate count query, simplified for now.
+    # Calculate true total count across all pages
+    count_stmt = select(func.count(WatchHistoryModel.id)).where(WatchHistoryModel.user_id == user_id)
+    total_res = await session.execute(count_stmt)
+    total = total_res.scalar_one() or 0
+
+    return {"items": items, "total": total}
 
 @router.delete("/me/history/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_history_item(
