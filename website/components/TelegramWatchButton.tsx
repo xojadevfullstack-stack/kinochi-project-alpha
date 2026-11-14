@@ -219,17 +219,17 @@ export default function TelegramWatchButton({
               <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
             </svg>
           </div>
-          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 border-2 border-[#121318] flex items-center justify-center shadow-md">
+          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#229ED9] border-2 border-[#121318] flex items-center justify-center shadow-md">
             <span className="material-symbols-outlined text-[16px] text-white font-bold">
-              check
+              open_in_new
             </span>
           </div>
         </div>
 
         {/* Status Chip */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold tracking-wide uppercase mb-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Muvaffaqiyatli yuborildi</span>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#229ED9]/15 border border-[#229ED9]/30 text-[#229ED9] text-xs font-bold tracking-wide uppercase mb-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#229ED9] animate-pulse" />
+          <span>Telegram bot ochilmoqda</span>
         </div>
 
         {/* Modal Title */}
@@ -237,12 +237,12 @@ export default function TelegramWatchButton({
           id="telegram-modal-title"
           className="font-display-hero text-xl sm:text-2xl font-black text-white mb-2 tracking-tight"
         >
-          {typeName} botdan yuborildi!
+          Telegram botda davom eting
         </h3>
 
         {/* Informational Message */}
         <p className="text-text-secondary text-xs sm:text-sm leading-relaxed mb-4 max-w-sm">
-          Telegram botingizga video fayl va tomosha qilish havolasi yuborildi. Botga o&apos;tib videoni yuklab olishingiz yoki to&apos;g&apos;ridan-to&apos;g&apos;ri ko&apos;rishingiz mumkin.
+          {mediaTitle ? `«${mediaTitle}» videosini` : "Videoni"} tomosha qilish uchun Telegram botga havola ochildi. Botda «Start» yoki «Boshlash» tugmasini bosing.
         </p>
 
         {/* Media Preview Box */}
