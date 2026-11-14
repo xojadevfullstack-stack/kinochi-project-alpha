@@ -307,4 +307,9 @@
 - Pure stateless JWT tokens avoid database roundtrips on every request, but cannot be immediately revoked server-side on logout without an in-memory or Redis-backed blocklist.
 - Analogy: Poyezdga sotib olingan qog'oz chipta: agar yo'lovchi safardan voz kechib chiptani o'z hamyonidan yirtib tashlasa ham, chiptada yozilgan jo'nash vaqti tugamaguncha konduktor uning yaroqliligini bilmaydi; shuning uchun xavfsizlikni oshirish uchun chiptaning amal qilish vaqti (TTL) juda qisqa qilib belgilanadi.
 
+## CORS vs CSRF Boundary & SameSite=None Posture
+- CORS restricts JavaScript in the browser from reading cross-origin responses, but does not stop the browser from executing credentialed state-changing requests triggered by third-party origins when cookies are set to SameSite=None.
+- Analogy: Restoran faqat o'z mijozlariga hisob-kitob chekini ko'rishga ruxsat beradi (CORS), lekin begona kishi soxta buyurtma qog'ozini oshxonaga tashlab ketsa, oshpaz uning kimdan kelganini tekshirmasdan ovqatni tayyorlab yuboraveradi (CSRF); shuning uchun buyurtmachi shaxsini va kelib chiqishini (Origin) har doim eshik oldida tekshirish shart.
+
+
 
