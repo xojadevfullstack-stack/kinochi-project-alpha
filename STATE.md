@@ -1,24 +1,24 @@
 # Project State (STATE.md)
 
 ## Current goal
-Kinochi Master Stabilization & Release — Successfully Synchronized with GitHub (`origin/main`).
+Kinochi Master Stabilization & Release — Vercel Subdomain CORS & CSRF Defense Posture Live.
 
 ## In progress (slice, branch)
-- Slice: GitHub Push (`origin/main`) — COMPLETED (`a1a3c35..5fa02d6` pushed, working tree 100% clean).
+- Slice: Vercel Subdomain (`kinochi-project-alpha-qoqf.vercel.app`) CORS & CSRF Allowance — COMPLETED & DEPLOYED.
 - Branch: `main`.
 
 ## Blocked
 - None.
 
 ## Next step (one task)
-- Final production deployment and live platform release monitoring.
+- User live verification on Vercel deployment.
 
 ## Open questions for the user
-- Barcha yangi commitlar GitHub repository'ga muvaffaqiyatli push qilindi (`main -> main`). Vercel va Render'dagi build holatini tekshirishni istaysizmi?
+- `kinochi-project-alpha-qoqf.vercel.app` da kirish sinovdan o'tkazildi va backend tomonidan 200 OK ruxsat berilmoqda. Brauzeringizda sahifani yangilab (Ctrl + F5 yoki yangi tabda) qayta kirib ko'rishingiz mumkin.
 
 ## Last verification & check results (Terminal Evidence)
-- **Admin Panel Live Browser UI Verification:** Next.js dev server qayta ishga tushirildi; barcha 7 ta script chunk 200 OK qaytardi; admin@kinochi.uz / admin123 bilan kirish muvaffaqiyatli amalga oshdi; dashboard `/statistics/dashboard` dan 50 foydalanuvchi, 40 kino, 93 serial bilan xatosiz yuklandi.
-- **CSRF Protection Suite:** `tests/audit2/test_csrf_origin_protection.py` -> 7 passed in 14.30s (0 warnings).
+- **Vercel Preview CORS & CSRF Live Production Test:** `POST https://kinochi-project-alpha-9g6j.onrender.com/api/v1/auth/login` with `Origin: https://kinochi-project-alpha-qoqf.vercel.app` -> Status 200 OK, `access-control-allow-origin: https://kinochi-project-alpha-qoqf.vercel.app`, `message: Tizimga kirildi`.
+- **CSRF Protection Suite:** `tests/audit2/test_csrf_origin_protection.py` -> 7 passed in 16.78s (0 warnings).
 - **Full Audit2 Regression Suite:** `tests/audit2/` -> 30 passed in 19.95s (100% green, 0 warnings).
 - **Pre-Deploy Security Suite:** `tests/audit2/test_pre_deploy_jwt_csrf_audit.py` -> 3 passed in 3.43s (0 warnings).
 - **Admin-panel Isolated Next.js Build:** `admin-panel` -> TypeScript 0 errors, 21/21 static/dynamic pages compiled.
