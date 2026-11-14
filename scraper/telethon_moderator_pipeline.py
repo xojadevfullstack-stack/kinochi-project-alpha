@@ -34,7 +34,7 @@ if BASE_DIR not in sys.path:
 from telethon import TelegramClient, utils
 from telethon.sessions import MemorySession, StringSession
 from telethon.crypto import AuthKey
-from telethon.tl.functions.messages import CreateForumTopicRequest
+from telethon.tl.functions.messages import CreateForumTopicRequest, DeleteTopicHistoryRequest
 from telethon.tl.types import Message
 from telethon.errors import FloodWaitError
 from scraper.fast_telethon import fast_download, fast_upload
@@ -2426,6 +2426,7 @@ class TelethonModeratorPipeline:
         season_id = None
         thread_id = None
         existing_episodes_set = set()
+        target_season_num = extract_season_number_from_text(raw_title) or extract_season_number_from_text(card_text) or 1
 
         if existing_series_id:
             series_id = existing_series_id
@@ -2433,11 +2434,23 @@ class TelethonModeratorPipeline:
                 series_repo = SeriesRepository(session)
                 series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
                 s_obj = await series_service.get_series_by_id(series_id)
-                if s_obj and s_obj.seasons:
-                    season_id = s_obj.seasons[0].id
-                    existing_eps = await series_repo.get_episodes_by_season(season_id)
-                    existing_episodes_set = {ep.episode_number for ep in existing_eps}
-                    logger.info(f"🔄 Mavjud serial qayta tiklandi: ID={series_id}, bazadagi qismlar: {sorted(list(existing_episodes_set))}")
+                if s_obj:
+                    target_season = next((s for s in s_obj.seasons if s.season_number == target_season_num), None)
+                    if not target_season:
+                        created_sea = await series_service.create_season(SeasonCreate(
+                            series_id=series_id,
+                            season_number=target_season_num,
+                            title=f"{target_season_num}-fasl"
+                        ))
+                        season_id = created_sea.id
+                        existing_episodes_set = set()
+                        await session.commit()
+                        logger.info(f"🆕 [ANIMEELAR] Serialga yangi fasl yaratildi: S{target_season_num} (ID: {series_id})")
+                    else:
+                        season_id = target_season.id
+                        existing_eps = await series_repo.get_episodes_by_season(season_id)
+                        existing_episodes_set = {ep.episode_number for ep in existing_eps}
+                        logger.info(f"🔄 Mavjud serial qayta tiklandi: ID={series_id}, S{target_season_num} qismlar: {sorted(list(existing_episodes_set))}")
                     if s_obj.source_id:
                         src_obj = await session.get(SourceModel, s_obj.source_id)
                         if src_obj and src_obj.topic_id:
@@ -2520,6 +2533,11 @@ class TelethonModeratorPipeline:
                     item=item
                 )
                 if not pre_ok:
+                    if thread_id and AUTO_TOPIC_CHAT_ID:
+                        await self._delete_topic_safe(AUTO_TOPIC_CHAT_ID, thread_id)
+                    if source and source.id:
+                        await session.delete(source)
+                        await session.commit()
                     return False
 
                 created_series = await series_service.create_series(series_data)
@@ -2527,8 +2545,8 @@ class TelethonModeratorPipeline:
 
                 created_season = await series_service.create_season(SeasonCreate(
                     series_id=series_id,
-                    season_number=1,
-                    title="1-fasl"
+                    season_number=target_season_num,
+                    title=f"{target_season_num}-fasl"
                 ))
                 season_id = created_season.id
                 await session.commit()
@@ -2687,7 +2705,7 @@ class TelethonModeratorPipeline:
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
                     "language": ep_lang,
-                    "season_number": 1,
+                    "season_number": target_season_num,
                     "episode_number": current_ep,
                     "duration": extract_message_duration(storage_msg) or extract_message_duration(v_msg),
                 })
@@ -2718,7 +2736,7 @@ class TelethonModeratorPipeline:
                     await broadcast_new_episode_notification(
                         db=session,
                         series_id=series_id,
-                        season_number=1,
+                        season_number=target_season_num,
                         episode_number=current_ep,
                         display_code=getattr(ep_entity, "code", None) or ep_entity.display_code
                     )
@@ -2763,6 +2781,23 @@ class TelethonModeratorPipeline:
             await delete_cache_pattern("cache:episode:*")
         except Exception:
             pass
+
+        if downloaded_in_session == 0:
+            logger.warning(f"⚠️ [ANIMEELAR] Hech qanday qism yuklanmadi (0/{total_ep_count}). Topic va baza tozalanmoqda...")
+            if thread_id and AUTO_TOPIC_CHAT_ID and not existing_series_id:
+                await self._delete_topic_safe(AUTO_TOPIC_CHAT_ID, thread_id)
+            async with async_session_factory() as del_sess:
+                if series_id and not existing_series_id:
+                    s_to_del = await del_sess.get(SeriesModel, series_id)
+                    if s_to_del:
+                        await del_sess.delete(s_to_del)
+                if source and getattr(source, "id", None) and not existing_series_id:
+                    src_to_del = await del_sess.get(SourceModel, source.id)
+                    if src_to_del:
+                        await del_sess.delete(src_to_del)
+                await del_sess.commit()
+            QueueManager().update_status(item.id, "failed", reason="Hech qanday qism yuklanmadi (0 qism)")
+            return False
 
         final_status = "published" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
         QueueManager().update_status(
@@ -3186,6 +3221,7 @@ class TelethonModeratorPipeline:
         season_id = None
         thread_id = None
         existing_episodes_set = set()
+        target_season_num = extract_season_number_from_text(raw_title) or extract_season_number_from_text(card_text) or 1
 
         if existing_series_id:
             series_id = existing_series_id
@@ -3193,11 +3229,23 @@ class TelethonModeratorPipeline:
                 series_repo = SeriesRepository(session)
                 series_service = SeriesService(repository=series_repo, telegram_api=telegram_client)
                 s_obj = await series_service.get_series_by_id(series_id)
-                if s_obj and s_obj.seasons:
-                    season_id = s_obj.seasons[0].id
-                    existing_eps = await series_repo.get_episodes_by_season(season_id)
-                    existing_episodes_set = {ep.episode_number for ep in existing_eps}
-                    logger.info(f"🔄 Mavjud serial qayta tiklandi: ID={series_id}, bazadagi qismlar: {sorted(list(existing_episodes_set))}")
+                if s_obj:
+                    target_season = next((s for s in s_obj.seasons if s.season_number == target_season_num), None)
+                    if not target_season:
+                        created_sea = await series_service.create_season(SeasonCreate(
+                            series_id=series_id,
+                            season_number=target_season_num,
+                            title=f"{target_season_num}-fasl"
+                        ))
+                        season_id = created_sea.id
+                        existing_episodes_set = set()
+                        await session.commit()
+                        logger.info(f"🆕 [ANITOOB] Serialga yangi fasl yaratildi: S{target_season_num} (ID: {series_id})")
+                    else:
+                        season_id = target_season.id
+                        existing_eps = await series_repo.get_episodes_by_season(season_id)
+                        existing_episodes_set = {ep.episode_number for ep in existing_eps}
+                        logger.info(f"🔄 Mavjud serial qayta tiklandi: ID={series_id}, S{target_season_num} qismlar: {sorted(list(existing_episodes_set))}")
                     if s_obj.source_id:
                         src_obj = await session.get(SourceModel, s_obj.source_id)
                         if src_obj and src_obj.topic_id:
@@ -3261,6 +3309,11 @@ class TelethonModeratorPipeline:
                     item=item
                 )
                 if not pre_ok:
+                    if thread_id and AUTO_TOPIC_CHAT_ID:
+                        await self._delete_topic_safe(AUTO_TOPIC_CHAT_ID, thread_id)
+                    if source and source.id:
+                        await session.delete(source)
+                        await session.commit()
                     return False
 
                 created_series = await series_service.create_series(SeriesCreate(
@@ -3276,13 +3329,19 @@ class TelethonModeratorPipeline:
                     category_ids=anime_cat_ids,
                     page_ids=[1],
                     source_id=source.id if source else None,
-                    source_type="animeelar",
+                    source_type="anitoob",
                     status="ongoing",
                     publish_status="published",
                     is_18_plus=bool(meta.get("is_18_plus", False))
                 ))
                 series_id = created_series.id
-                s_season = await series_service.create_season(SeasonCreate(series_id=series_id, season_number=1, title="1-fasl"))
+                s_season = await series_service.create_season(SeasonCreate(
+                    series_id=series_id,
+                    season_number=target_season_num,
+                    title=f"{target_season_num}-fasl"
+                ))
+                season_id = s_season.id
+                await session.commit()
                 season_id = s_season.id
                 await session.commit()
 
@@ -3508,7 +3567,7 @@ class TelethonModeratorPipeline:
                     "telegram_file_id": ep_bot_file_id,
                     "storage_channel_message_id": storage_msg.id,
                     "language": ep_lang,
-                    "season_number": 1,
+                    "season_number": target_season_num,
                     "episode_number": current_ep,
                     "duration": extract_message_duration(storage_msg) or extract_message_duration(v_msg),
                 })
@@ -3539,7 +3598,7 @@ class TelethonModeratorPipeline:
                     await broadcast_new_episode_notification(
                         db=session,
                         series_id=series_id,
-                        season_number=1,
+                        season_number=target_season_num,
                         episode_number=current_ep,
                         display_code=getattr(ep_entity, "code", None) or ep_entity.display_code
                     )
@@ -3585,6 +3644,23 @@ class TelethonModeratorPipeline:
             await delete_cache_pattern("cache:episode:*")
         except Exception:
             pass
+
+        if downloaded_in_session == 0:
+            logger.warning(f"⚠️ [ANITOOB] Hech qanday qism yuklanmadi (0/{total_ep_count}). Topic va baza tozalanmoqda...")
+            if thread_id and AUTO_TOPIC_CHAT_ID and not existing_series_id:
+                await self._delete_topic_safe(AUTO_TOPIC_CHAT_ID, thread_id)
+            async with async_session_factory() as del_sess:
+                if series_id and not existing_series_id:
+                    s_to_del = await del_sess.get(SeriesModel, series_id)
+                    if s_to_del:
+                        await del_sess.delete(s_to_del)
+                if source and getattr(source, "id", None) and not existing_series_id:
+                    src_to_del = await del_sess.get(SourceModel, source.id)
+                    if src_to_del:
+                        await del_sess.delete(src_to_del)
+                await del_sess.commit()
+            QueueManager().update_status(item.id, "failed", reason="Hech qanday qism yuklanmadi (0 qism)")
+            return False
 
         final_status = "published" if (downloaded_in_session >= total_ep_count and not max_episodes) else "in_progress"
         QueueManager().update_status(
@@ -4138,9 +4214,8 @@ class TelethonModeratorPipeline:
         if not chat_id or not topic_id:
             return False
         try:
-            from telethon.tl.functions.channels import DeleteTopicHistoryRequest
             peer = await self.client.get_input_entity(chat_id)
-            await self.client(DeleteTopicHistoryRequest(channel=peer, top_msg_id=int(topic_id)))
+            await self.client(DeleteTopicHistoryRequest(peer=peer, top_msg_id=int(topic_id)))
             logger.info(f"🧹 Yaratilgan Topic (ID: {topic_id}) muvaffaqiyatli o'chirildi.")
             return True
         except Exception as e:

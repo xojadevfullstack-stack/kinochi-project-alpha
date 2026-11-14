@@ -1,4 +1,7 @@
-# Learned Concepts (docs/learned.md)
+## Dynamic Season Multiplexing & Orphan Cleanup
+- Extracting dynamic season numbers from media titles and routing episodes to their corresponding season models prevents multi-season corruption, while automated topic teardown on zero downloaded items prevents storage group spam.
+- Analogy: A postal sorting office with dedicated numbered pigeonholes for each apartment floor, automatically shredding unaddressed empty delivery slips so the mailroom never overflows with junk.
+
 
 ## PgBouncer Transaction Pooling & Prepared Statements
 - Connection poolers reuse backend connections across multiple clients, conflicting with persistent server-side prepared statements.

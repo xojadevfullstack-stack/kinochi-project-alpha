@@ -24,9 +24,21 @@ logger = logging.getLogger(__name__)
 
 # Mashhur o'zbekcha tarjima qilingan anime nomlari xaritasi (TMDb / Shikimori uchun)
 ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
-    "titanlar hujumi: so'nggi hujum": {"en": "Attack on Titan: The Last Attack", "orig": "Shingeki no Kyojin: The Last Attack", "tmdb_id": 1333100, "type": "movie"},
-    "titanlar hujumi songgi hujum": {"en": "Attack on Titan: The Last Attack", "orig": "Shingeki no Kyojin: The Last Attack", "tmdb_id": 1333100, "type": "movie"},
-    "titanlar hujumi": {"en": "Attack on Titan", "orig": "Shingeki no Kyojin", "ru": "Атака титанов", "type": "tv"},
+    "86: eighty six": {"en": "86", "orig": "86 -Eighty Six-", "ru": "Восемьдесят шесть", "uz": "86: Eighty Six", "tmdb_id": 100565, "type": "tv"},
+    "eighty six": {"en": "86", "orig": "86 -Eighty Six-", "ru": "Восемьдесят шесть", "uz": "86: Eighty Six", "tmdb_id": 100565, "type": "tv"},
+    "86": {"en": "86", "orig": "86 -Eighty Six-", "ru": "Восемьдесят шесть", "uz": "86: Eighty Six", "tmdb_id": 100565, "type": "tv"},
+    "naruto: shippuden": {"en": "Naruto Shippuden", "orig": "Naruto: Shippuuden", "ru": "Наруто: Ураганные хроники", "uz": "Naruto: Shippuden", "tmdb_id": 31910, "type": "tv"},
+    "naruto shippuden": {"en": "Naruto Shippuden", "orig": "Naruto: Shippuuden", "ru": "Наруто: Ураганные хроники", "uz": "Naruto: Shippuden", "tmdb_id": 31910, "type": "tv"},
+    "naruto 2-fasl": {"en": "Naruto Shippuden", "orig": "Naruto: Shippuuden", "ru": "Наруто: Ураганные хроники", "uz": "Naruto: Shippuden", "tmdb_id": 31910, "type": "tv"},
+    "naruto 2 fasl": {"en": "Naruto Shippuden", "orig": "Naruto: Shippuuden", "ru": "Наруто: Ураганные хроники", "uz": "Naruto: Shippuden", "tmdb_id": 31910, "type": "tv"},
+    "naruto": {"en": "Naruto", "orig": "Naruto", "ru": "Наруто", "uz": "Naruto", "tmdb_id": 46260, "type": "tv"},
+    "world's end harem": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
+    "shuumatsu no harem": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
+    "dunyo oxiridagi haram": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
+    "shu'lat oxiri haremasi": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
+    "titanlar hujumi: songgi film": {"en": "Attack on Titan: The Last Attack", "orig": "Shingeki no Kyojin: The Last Attack", "tmdb_id": 1333100, "type": "movie"},
+    "titanlar hujumi": {"en": "Attack on Titan", "orig": "Shingeki no Kyojin", "ru": "Атака титанов", "uz": "Titanlar hujumi (Attack on Titan)", "tmdb_id": 1429, "type": "tv"},
+    "attack on titan": {"en": "Attack on Titan", "orig": "Shingeki no Kyojin", "ru": "Атака титанов", "uz": "Titanlar hujumi (Attack on Titan)", "tmdb_id": 1429, "type": "tv"},
     "meni oyga olib ket": {"en": "Fly Me to the Moon", "orig": "Tonikaku Kawaii", "ru": "Унеси меня на Луну"},
     "iblislar qotili": {"en": "Demon Slayer: Kimetsu no Yaiba", "orig": "Kimetsu no Yaiba", "ru": "Клинок, рассекающий демонов", "uz": "Iblislar qotili (Demon Slayer)", "tmdb_id": 85937, "type": "tv"},
     "demon slayer": {"en": "Demon Slayer: Kimetsu no Yaiba", "orig": "Kimetsu no Yaiba", "ru": "Клинок, рассекающий демонов", "uz": "Iblislar qotili (Demon Slayer)", "tmdb_id": 85937, "type": "tv"},
@@ -516,8 +528,15 @@ def score_tmdb_candidate(
     if is_anime_source:
         if 16 in cand_genre_ids:
             score += 40.0
-        elif cand_genre_ids:
+        else:
             # Agar anime manbasi yoki anime qidiruvi bo'lsa va TMDb nomzodi animatsiya (16) bo'lmasa, uni darhol rad etamiz
+            return -200.0
+
+    # 5. Keraksiz / Fan-edit / Nostandart nusxalarni rad etish
+    cand_name = (candidate.get("title") or candidate.get("name") or "").lower()
+    junk_keywords = ["ocean cut", "fan edit", "fan-edit", "abridged", "recap"]
+    for jk in junk_keywords:
+        if jk in cand_name and jk not in query.lower():
             return -200.0
 
     return score
@@ -637,12 +656,12 @@ async def enrich_movie_smart(
 
     detected_type = "series" if (media_type in ("series", "dorama") or any(w in raw_title.lower() for w in ["serial", "dorama", "mavsum"])) else "movie"
 
-    # Anime nomini lug'atdan tekshirish
+    # Anime nomini lug'atdan tekshirish (uzunroq kalitlar birinchi tekshiriladi)
     norm_clean = clean_title.lower().strip()
     matched_anime_dict = None
-    for a_key, a_val in ANIME_TITLE_MAP.items():
-        if a_key in norm_clean or norm_clean in a_key:
-            matched_anime_dict = a_val
+    for a_key in sorted(ANIME_TITLE_MAP.keys(), key=len, reverse=True):
+        if a_key == norm_clean or a_key in norm_clean:
+            matched_anime_dict = ANIME_TITLE_MAP[a_key]
             break
 
     # Default description: if source_desc or caption contains full synopsis, clean it!
@@ -811,7 +830,9 @@ async def enrich_movie_smart(
             break
 
     # Faqat mos natija topilmagan bo'lsagina muqobil turdan qidiramiz
-    if not matched_tmdb or best_score < 60.0:
+    # Serial / Anime seriallar uchun film (movie) muqobil qidiruvi qilinmaydi (ziddiyatni oldini olish)
+    allow_alt_movie = not (default_tmdb_type == "tv" or media_type in ("series", "anime", "dorama"))
+    if (not matched_tmdb or best_score < 60.0) and allow_alt_movie:
         for query, ctype in search_queries:
             alt_type = "movie" if ctype == "tv" else "tv"
             try:

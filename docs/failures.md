@@ -48,6 +48,13 @@
 - **Fix:** Removed `page_ids.append(13)` in `telethon_moderator_pipeline.py`. Deleted Page 13 ("Seriallar") from `pages` table and unbound Flash from `page_series`. Added frontend duplicate protection in `website/app/page.tsx` filtering out `pagesData` with title or slug matching "Seriallar" or "Kinolar".
 - **Rule:** Primary media entities (`movies`, `series`) must not be given dummy subpage IDs matching their main entity names. Homepage dynamic page loops must filter out canonical sections to prevent row title duplication.
 
+## Failure 009: Telethon Topic Deletion Parameter & Multi-Season Bundling Flaw
+- **Mistake:** (1) In `_delete_topic_safe`, `DeleteTopicHistoryRequest` was imported from `telethon.tl.functions.channels` instead of `messages`, and passed `channel=peer` instead of `peer=peer`, causing silent failures on every forum topic deletion attempt. (2) AniToob and Animeelar pipelines hardcoded `season_number=1`, ignoring season tags in titles (e.g. "Naruto 2-fasl") and dumping multi-season episodes into Season 1 or creating duplicate series cards. (3) `smart_enricher` did not enforce strict animation genre (16) for anime, allowing non-animated archive broadcasts (Obs 86 Show) and fan edits (Naruto The Ocean Cut) to match.
+- **Impact:** Failed downloads left orphaned Telegram forum topics with "Qismlar yuklanmoqda...", Series cards had wrong posters and titles, and multi-season anime episodes were crammed into Season 1.
+- **Fix:** Corrected `DeleteTopicHistoryRequest(peer=peer, top_msg_id=topic_id)` in `telethon_moderator_pipeline.py`. Added dynamic season extraction (`extract_season_number_from_text`) and season creation. Added strict animation genre requirement and banned fan-edits in `smart_enricher.py`. Automated orphan topic cleanup on 0 downloaded episodes.
+- **Rule:** Always verify Telethon TL request signatures with `inspect.signature` before deployment. Never hardcode season numbers in media pipelines.
+
+
 ## Failure 009: Scraper Queue Endpoint Threadpool Loop Detachment
 - **Mistake:** The admin route `/api/v1/scraper/queue` was defined as a synchronous `def` function. FastAPI dispatched it into a worker thread where `_run_coro_sync` spawned a new event loop. When the coroutine queried the database, SQLAlchemy's `asyncpg` connection pool (bound to the main loop) threw `got Future attached to a different loop`. An exception handler swallowed the error and returned `{ "items": [], "total": 0 }`.
 - **Impact:** The Admin Panel top stats cards and tabs correctly displayed 99 queue items, but the table explorer below remained empty with "Hech qanday element topilmadi (0 ta)".
