@@ -287,3 +287,16 @@
 ## Incomplete Media Ingest Gate & Episodes Parity Assertion
 - When performing secondary duplicate detection post-enrichment, omitting candidate episode counts causes incomplete series in the database (e.g. 1 out of 58 episodes) to falsely match as complete duplicates and abort download; explicitly asserting `db_eps < candidate_ep_count` routes existing entities to resume appending missing episodes.
 - Analogy: Ko'p tomli entsiklopediyani to'ldirayotgan kutubxonachi tokchada faqat 1-jild turganini ko'rib, "bu kitob allaqachon kutubxonada bor" deb qolgan 57 ta jildni qabul qilishdan bosh tortmasligi; aksincha bor jild yoniga yetishmayotgan jildlarni terib qo'yishi.
+
+## Database Seeding for Empty State Elimination
+- Populating an empty feature database with high-interest, verified seed items prevents the cold-start problem, immediately providing users with interactive engagement instead of dead empty screens.
+- Analogy: Yangi ochilgan do'konga xaridorlar kirganda bo'sh peshtaxtalarga qarab qolmasligi uchun unga eng mashhur 15 ta namuna tovarini oldindan chiroyli terib qo'yish.
+
+## Hierarchical UI/State Tree Mapping
+- Deconstructing an entire platform ecosystem into an atomic tree of pages, sub-components, interactive buttons [Btn], and state modallers prevents blind development and reveals functional facades.
+- Analogy: Bino qurishdan oldin har bir xona, eshik tutqichi, rozetka va elektr kalitining joylashuvini ko'rsatuvchi to'liq me'moriy chizma.
+
+## SQL Window Function Batch Partitioning (row_number over partition by)
+- Fetching top-N related child records across multiple parent entities in a single database round-trip via window functions eliminates N+1 query loops and network latency bottlenecks.
+- Analogy: Maktabdagi 10 ta sinf rahbariga bittalab borib "har bir sinfdan 3 tadan a'lochi o'quvchini olib kel" deb 10 marta yugurmasdan, barcha sinflar jurnali bo'yicha bitta umumiy ro'yxatdan har bir sinfning dastlabki 3 ta o'quvchisini bitta buyruq bilan saralab olish.
+

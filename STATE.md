@@ -1,34 +1,31 @@
 # Project State (STATE.md)
 
 ## Current goal
-Demon Slayer va Qora klever kabi chala yuklangan seriallarni aniqlash, noto'g'ri "KINO" tasnifini bartaraf etish va qolgan qismlarini to'liq yuklab borishni ta'minlash.
+Kinochi barqarorlashtirish loyihasi (KINOCHI STABILIZATION PROJECT) — Role-Based Vertical Stabilization (Guest -> User -> Admin).
 
 ## In progress (slice, branch)
-- Slice: C20 (Fix False Movie Classification for Anime Multi-Season Bundles & Demon Slayer Queue Resolution).
+- Slice: Guest Flow Complete Repair (GUEST-ISSUE-001..006) — COMPLETED.
 - Branch: `main`.
 
 ## Blocked
-- None (Barcha testlar 100% yashil, Demon Slayer (anitoob_41) serial sifatida to'g'rilandi, media_type='series', episodes_count=58).
+- None (Barcha 6 ta Guest Flow muammosi to'liq bartaraf etildi va testlar bilan tasdiqlandi).
 
 ## Next step (one task)
-- Demon Slayer va Qora klever seriallarining keyingi qismlarini scraper orqali yakuniga yetkazish.
+- USER FLOW bosqichini boshlash: Discovery, Audit va Stabilization (Ro'yxatdan o'tgan foydalanuvchi funksiyalari: Sevimlilar, Tarix, Baholash, So'rov berish, Profil).
 
 ## Open questions for the user
-- None.
+- Guest Flow barqarorlashtirildi. USER FLOW Discovery & Audit bosqichiga o'tishni tasdiqlaysizmi?
 
 ## Last verification & check results (Terminal Evidence)
-- **Pytest Gate:** 17 passed in 2.23s across anime catalog, auth and queue tests.
-- **Anime Classifier Assertion:**
-  - `resolve_anitoob_item("41")`: `title='Iblislar qotili (Demon Slayer)'`, `media_type='series'`, `episodes_count=58`.
-  - `is_anitoob_film("Iblislar qotili fanart film")`: `True` (film sifatida saqlandi).
-  - `is_anitoob_film("Iblislar qotili s1, ... 2 film")`: `False` (serial sifatida tanildi).
-  - `is_anitoob_film("Qilich sanati online ... 1 film")`: `False` (serial sifatida tanildi).
-  - DB item 987: `title='Iblislar qotili (Demon Slayer)'`, `media_type='series'`, `episodes_count=58`, `status='queued'`.
-- **Git Diff:** 5 files, 105 insertions, 17 deletions (122 lines <= 200 lines atomic slice).
+- **Backend Tests:** `tests/audit2/test_guest_flow_repair.py` + `backend/tests/test_filter_collections_item_count.py` -> 3 passed.
+- **Bot Tests:** `bot/tests/` -> 98 passed in 7.63s (100% green).
+- **Website Playwright Tests:** `website/tests/` -> 6 passed in 1.6s (100% green).
+- **TypeScript Compile:** `website` and `admin-panel` (`tsc --noEmit`) -> 0 errors.
 
 ## Live Database Metrics (PostgreSQL Evidence)
 - **Movies (Kinolar):** 31 ta (100% sog'lom)
-- **Series (Seriallar):** 35 ta (100% sog'lom, 34 ta published, 1 ta Jodugarlar Jangi Page 1 ga biriktirildi)
+- **Series (Seriallar):** 35 ta (100% sog'lom)
+- **Content Requests (So'rovlar):** 15 ta (100% boyitilgan, faol TOP-15 tavsiya ro'yxati)
 - **Catalog Default View:** Barcha kinolar va seriallar birlashtirilib reyting / sana / ID bo'yicha to'liq ko'rsatilmoqda.
 
 ---
