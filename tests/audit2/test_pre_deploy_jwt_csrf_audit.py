@@ -128,15 +128,15 @@ async def test_admin_login_logout_token_lifecycle(test_db):
         assert me_resp.status_code == 200
         assert me_resp.json()["email"] == "predeploy_audit@kinochi.uz"
 
-        # Step 3: Logout
-        logout_resp = await client.post("/api/v1/auth/logout")
+        # Step 3: Logout with legitimate Origin
+        logout_resp = await client.post("/api/v1/auth/logout", headers={"Origin": "https://kinochi-admin.vercel.app"})
         assert logout_resp.status_code == 200
 
-        # Step 4: Refresh endpoint with stolen/retained refresh token AFTER logout
+        # Step 4: Refresh endpoint with stolen/retained refresh token AFTER logout (with valid Origin)
         # Because JWT is stateless and has no blacklist, the retained refresh token STILL WORKS!
         client.cookies.clear()
         client.cookies.set("refresh_token", stolen_refresh_token)
-        refresh_resp = await client.post("/api/v1/auth/refresh")
+        refresh_resp = await client.post("/api/v1/auth/refresh", headers={"Origin": "https://kinochi-admin.vercel.app"})
         assert refresh_resp.status_code == 200
         refreshed_data = refresh_resp.json()
         assert "access_token" in refreshed_data
@@ -146,7 +146,7 @@ async def test_admin_login_logout_token_lifecycle(test_db):
         # Using the SAME old refresh token a second time:
         client.cookies.clear()
         client.cookies.set("refresh_token", stolen_refresh_token)
-        replay_resp = await client.post("/api/v1/auth/refresh")
+        replay_resp = await client.post("/api/v1/auth/refresh", headers={"Origin": "https://kinochi-admin.vercel.app"})
         # In a strict rotation system, this must fail with 401 or trigger breach detection.
         # But in Kinochi's stateless MVP, it succeeds again:
         assert replay_resp.status_code == 200, "Stateless token replay succeeds because no revocation list exists"

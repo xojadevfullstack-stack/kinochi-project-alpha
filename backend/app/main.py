@@ -139,14 +139,108 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 def is_origin_allowed(origin: str | None) -> bool:
-    """Check if an origin is permitted under strict CORS rules."""
+    """Check if an origin is permitted under strict CORS & CSRF rules."""
     if not origin:
         return False
-    if origin in settings.CORS_ORIGINS:
+    origin_clean = origin.rstrip("/")
+    # Exact match in CORS_ORIGINS
+    if origin_clean in [o.rstrip("/") for o in settings.CORS_ORIGINS]:
         return True
-    if settings.CORS_ORIGIN_REGEX and re.match(settings.CORS_ORIGIN_REGEX, origin):
+    # Regex match for preview / vercel branches
+    if settings.CORS_ORIGIN_REGEX and re.match(settings.CORS_ORIGIN_REGEX, origin_clean):
         return True
+    # Local development origins
+    if not settings.is_production:
+        dev_allowed = {
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:8000",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "http://127.0.0.1:8000",
+            "http://test",
+        }
+        if origin_clean in dev_allowed:
+            return True
     return False
+
+
+AUTH_COOKIE_NAMES = {"access_token", "user_access_token", "refresh_token"}
+SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+@app.middleware("http")
+async def csrf_origin_protection_middleware(request: Request, call_next):
+    """
+    CSRF Defense: Strict Origin & Referer Verification for State-Changing Requests.
+    1. Safe HTTP methods (GET, HEAD, OPTIONS) bypass CSRF checks.
+    2. Any state-changing request (POST, PUT, PATCH, DELETE) with an Origin header
+       must match trusted origins (CORS allowed list or same-origin).
+    3. If Origin header is absent:
+       - If authenticated via ambient auth cookies (access_token, user_access_token, refresh_token):
+         Must carry a valid Referer header matching trusted origins; otherwise rejected (403).
+       - If no auth cookies present (e.g. Bot with X-Bot-Secret or API with Bearer token):
+         Proceeds to router-level authentication.
+    """
+    if request.method in SAFE_METHODS:
+        return await call_next(request)
+
+    origin = request.headers.get("origin")
+    referer = request.headers.get("referer")
+
+    request_origin = f"{request.url.scheme}://{request.url.netloc}"
+    base_origin = str(request.base_url).rstrip("/")
+
+    # 1. Validate Origin header if present
+    if origin:
+        origin_clean = origin.rstrip("/")
+        if not (is_origin_allowed(origin_clean) or origin_clean == request_origin or origin_clean == base_origin):
+            logging.warning(
+                "CSRF blocked: untrusted Origin '%s' on %s %s",
+                origin, request.method, request.url.path
+            )
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "CSRF himoyasi: Ruxsat etilmagan Origin (Forbidden Origin)."},
+            )
+        return await call_next(request)
+
+    # 2. Origin is absent: check for ambient authentication cookies
+    has_auth_cookie = any(cookie_name in request.cookies for cookie_name in AUTH_COOKIE_NAMES)
+    if has_auth_cookie:
+        if referer:
+            try:
+                from urllib.parse import urlparse
+                parsed_ref = urlparse(referer)
+                referer_origin = f"{parsed_ref.scheme}://{parsed_ref.netloc}"
+                if not (is_origin_allowed(referer_origin) or referer_origin == request_origin or referer_origin == base_origin):
+                    logging.warning(
+                        "CSRF blocked: untrusted Referer '%s' on %s %s",
+                        referer, request.method, request.url.path
+                    )
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content={"detail": "CSRF himoyasi: Ruxsat etilmagan Referer (Forbidden Referer)."},
+                    )
+            except Exception:
+                logging.warning("CSRF blocked: malformed Referer '%s'", referer)
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={"detail": "CSRF himoyasi: Noto'g'ri Referer (Malformed Referer)."},
+                )
+        else:
+            # Cookie-authenticated state-changing request with neither Origin nor Referer
+            logging.warning(
+                "CSRF blocked: missing Origin and Referer on cookie-authenticated %s %s",
+                request.method, request.url.path
+            )
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"detail": "CSRF himoyasi: Origin yoki Referer sarlavhasi talab qilinadi."},
+            )
+
+    return await call_next(request)
+
 
 
 @app.exception_handler(Exception)

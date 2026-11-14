@@ -9,9 +9,9 @@ async def test_user_issue_001_logout_clears_user_access_token_cookie():
     """
     app = main_module.app
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        # User has an active user_access_token cookie
+        # User has an active user_access_token cookie, logging out from trusted website origin
         ac.cookies.set("user_access_token", "fake_user_jwt_token")
-        resp = await ac.post("/api/v1/auth/logout")
+        resp = await ac.post("/api/v1/auth/logout", headers={"Origin": "https://kinochi.uz"})
         assert resp.status_code == 200
 
         # Assert user_access_token cookie was instructed to be deleted (Max-Age=0 or absent)
