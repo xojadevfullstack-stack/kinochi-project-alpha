@@ -83,7 +83,7 @@ export default function Dashboard() {
             <span className="material-symbols-outlined text-[18px] sm:text-[20px]">
               calendar_today
             </span>
-            <span className="font-sans">
+            <span className="font-sans" suppressHydrationWarning>
               {new Date().toLocaleDateString("uz-UZ", {
                 month: "short",
                 day: "numeric",
