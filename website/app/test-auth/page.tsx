@@ -1,7 +1,12 @@
 "use client";
+import { notFound } from "next/navigation";
 import { useAuth } from "../../lib/auth/AuthProvider";
 
 export default function TestAuthPage() {
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
+
   const { status, user, token, environment } = useAuth();
   
   return (
