@@ -127,6 +127,10 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "kiki": {"en": "Kiki's Delivery Service", "orig": "Majo no Takkyuubin", "ru": "Ведьмина служба доставки", "tmdb_id": 16859, "type": "movie", "uz": "Kiki: Eltuv xizmati"},
     "aka-uka grimm ertaklari": {"en": "Grimm's Fairy Tale Classics", "orig": "Grimm Meisaku Gekijou", "ru": "Сказки братьев Гримм", "tmdb_id": 9892, "type": "tv", "uz": "Aka-uka Grimm ertaklari"},
     "aka uka grimm ertaklari": {"en": "Grimm's Fairy Tale Classics", "orig": "Grimm Meisaku Gekijou", "ru": "Сказки братьев Гримм", "tmdb_id": 9892, "type": "tv", "uz": "Aka-uka Grimm ertaklari"},
+    "aura: koga maryuining so'ngi jangi": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
+    "aura: koga maryuining songi jangi": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
+    "aura koga": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
+    "aura: koga": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
 }
 
 
@@ -397,7 +401,8 @@ def score_tmdb_candidate(
     query: str,
     target_year: Optional[int] = None,
     expected_original_title: Optional[str] = None,
-    media_type: Optional[str] = None
+    media_type: Optional[str] = None,
+    source: Optional[str] = None
 ) -> float:
     """
     TMDb nomzodini baholaydi (yuqori ball = aniq moslik).
@@ -507,13 +512,13 @@ def score_tmdb_candidate(
 
     # 4. Janr mosligi (Anime / Animatsiya filtri)
     cand_genre_ids = candidate.get("genre_ids") or []
-    is_anime_multfilm = (media_type in ("anime", "multfilm")) or any(w in query.lower() for w in ["anime", "multfilm", "animatsiya"])
-    if is_anime_multfilm:
+    is_anime_source = (source in ("anitoob", "animeelar")) or (media_type in ("anime", "multfilm")) or any(w in query.lower() for w in ["anime", "multfilm", "animatsiya"])
+    if is_anime_source:
         if 16 in cand_genre_ids:
             score += 40.0
         elif cand_genre_ids:
-            # Agar bu anime bo'lsa va TMDb da animatsiya (16) bo'lmasa (masalan kosmik b-movie), jazo beriladi
-            score -= 80.0
+            # Agar anime manbasi yoki anime qidiruvi bo'lsa va TMDb nomzodi animatsiya (16) bo'lmasa, uni darhol rad etamiz
+            return -200.0
 
     return score
 
@@ -604,6 +609,7 @@ async def enrich_movie_smart(
     media_type: str = "movie",
     item_url: Optional[str] = None,
     original_title: Optional[str] = None,
+    source: Optional[str] = None,
     **kwargs: Any
 ) -> Dict[str, Any]:
     """
@@ -611,6 +617,14 @@ async def enrich_movie_smart(
     rejissyor, aktyorlar va kategoriyalar bilan to'ldirish.
     Xatolik va begona kinolarga almashtirilib ketishining oldi olingan.
     """
+    if not source:
+        source = kwargs.get("source")
+        if not source and item_url:
+            if "anitoob" in item_url.lower():
+                source = "anitoob"
+            elif "animeelar" in item_url.lower():
+                source = "animeelar"
+
     clean_title = clean_movie_title(raw_title)
 
     # Normalize source_poster URL - AniToob img_proxy linklari ishlamaydi (HTML 340KB qaytaradi)
@@ -731,6 +745,11 @@ async def enrich_movie_smart(
         base_part = sub_parts[0].strip()
         if base_part and len(base_part) >= 4 and base_part not in [q[0] for q in search_queries]:
             search_queries.append((base_part, default_tmdb_type))
+        sub_words = sub_parts[1].strip().split()
+        if sub_words:
+            comb = f"{base_part} {sub_words[0]}".strip()
+            if comb and len(comb) >= 4 and comb not in [q[0] for q in search_queries]:
+                search_queries.append((comb, default_tmdb_type))
 
     # 2. O'zbekcha-Lotin yozilishidan xalqaro inglizcha nomga fonetik transliteratsiya
     # Masalan: Kroft -> Croft, Kler -> Claire, Jon -> John
@@ -778,7 +797,8 @@ async def enrich_movie_smart(
                         query=query,
                         target_year=target_year,
                         expected_original_title=expected_orig,
-                        media_type=media_type
+                        media_type=media_type,
+                        source=source
                     )
                     if score > best_score:
                         best_score = score
