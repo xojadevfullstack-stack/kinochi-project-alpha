@@ -35,6 +35,25 @@ interface RequestItem {
   vote_count: number;
   status: string;
   created_at: string;
+  admin_notes?: string | null;
+}
+
+const CATEGORIES = ["Barchasi", "Anime", "Dorama", "Kino", "Serial", "Multfilm"];
+
+function getRequestCategory(req: RequestItem): string {
+  if (req.admin_notes) {
+    if (req.admin_notes.includes("Kategoriya: Anime")) return "Anime";
+    if (req.admin_notes.includes("Kategoriya: Dorama")) return "Dorama";
+    if (req.admin_notes.includes("Kategoriya: Kino")) return "Kino";
+    if (req.admin_notes.includes("Kategoriya: Serial")) return "Serial";
+    if (req.admin_notes.includes("Kategoriya: Multfilm")) return "Multfilm";
+  }
+  const t = (req.title || "").toLowerCase();
+  if (t.includes("jujutsu") || t.includes("solo leveling") || t.includes("demon slayer") || t.includes("iblislar")) return "Anime";
+  if (t.includes("true beauty") || t.includes("business proposal") || t.includes("queen of tears") || t.includes("go'zallik")) return "Dorama";
+  if (t.includes("zootopia") || t.includes("inside out") || t.includes("kung fu panda") || t.includes("boshqotirma")) return "Multfilm";
+  if (req.media_type === "series") return "Serial";
+  return "Kino";
 }
 
 interface ExternalResult {
@@ -63,6 +82,7 @@ export default function RequestsPage() {
 
   const [topRequests, setTopRequests] = useState<RequestItem[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Barchasi");
 
   const [selectedTarget, setSelectedTarget] = useState<RequestTargetItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -417,12 +437,44 @@ export default function RequestsPage() {
         {/* Tab 2: Leaderboard of Requests */}
         {(activeTab === "leaderboard" || (activeTab === "search" && searchResults.length === 0 && !isSearching)) && (
           <div>
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                 <span className="w-1.5 h-5 bg-primary rounded-full"></span>
                 <span>Eng ko&apos;p kutilayotgan kinolar</span>
               </h3>
               <span className="text-xs text-text-secondary">Ovozlar bo&apos;yicha saralangan</span>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-5 hide-scrollbar">
+              {CATEGORIES.map((cat) => {
+                const isSelected = selectedCategory === cat;
+                const count =
+                  cat === "Barchasi"
+                    ? topRequests.length
+                    : topRequests.filter((r) => getRequestCategory(r) === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 active:scale-95 border cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-primary text-white border-primary font-bold shadow-md shadow-primary/25"
+                        : "bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isSelected ? "bg-white/20 text-white" : "bg-white/5 text-text-secondary"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {loadingRequests ? (
@@ -440,7 +492,9 @@ export default function RequestsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-12">
-                {topRequests.map((req) => {
+                {topRequests
+                  .filter((req) => (selectedCategory === "Barchasi" ? true : getRequestCategory(req) === selectedCategory))
+                  .map((req) => {
                   const hasVoted = votedIds.has(req.id);
                   const isPending = pendingVoteIds.has(req.id);
                   return (
@@ -466,13 +520,13 @@ export default function RequestsPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-text-secondary uppercase">
-                            {req.media_type === "series" ? "Serial" : "Kino"}
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-primary uppercase">
+                            {getRequestCategory(req)}
                           </span>
                           {req.release_year && (
                             <span className="text-[11px] text-text-secondary">{req.release_year}</span>
                           )}
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold uppercase">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-text-secondary font-bold uppercase">
                             {req.preferred_language?.toUpperCase() || "UZ"}
                           </span>
                         </div>
