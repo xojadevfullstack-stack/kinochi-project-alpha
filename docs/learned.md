@@ -47,7 +47,10 @@
 - Overly verbose headings on mobile screens cause awkward line breaks that push actual media content below the fold. Shortening titles and ensuring touch targets are at least 44x44px preserves screen real estate and makes navigation effortless on touchscreens.
 - Analogy: Highway road signs that use concise, punchy text ("Aeroport 2 km") instead of lengthy paragraphs, allowing drivers to read instantly without slowing down.
 
-## Fast-Fail Flood Wait & Rate-Limit Circuit Breaking
+## End-to-End Handshake Contracts & Strict Palette Boundaries
+- Verifying cross-system token exchanges and enforcing single-palette rules across frontend components guarantees that thin clients, web portals, and microservices communicate without auth drift or visual confusion.
+- Analogy: An international customs checkpoint where entry visas, cryptographic signatures, and official stamp colors must strictly match protocol, ensuring secure access and zero visual ambiguity.
+
 
 ## False Keyword Heuristics in Media Classification
 - Relying on substring keyword checks (e.g. `film` inside `s1, s2, s3, va 2 film`) without structural token validation falsely categorizes complex multi-season bundles.
