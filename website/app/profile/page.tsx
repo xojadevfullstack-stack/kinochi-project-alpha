@@ -64,6 +64,24 @@ function ProfileContent() {
   const [userSubscriptions, setUserSubscriptions] = useState<ProfileSubscriptionItem[]>([]);
   const [recommendations, setRecommendations] = useState<CollectionRecommendation[]>([]);
   const [unsubscribingId, setUnsubscribingId] = useState<number | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("kinochi_notifications_enabled");
+      if (saved !== null) {
+        setNotificationsEnabled(saved === "true");
+      }
+    }
+  }, []);
+
+  const toggleNotifications = () => {
+    const nextVal = !notificationsEnabled;
+    setNotificationsEnabled(nextVal);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("kinochi_notifications_enabled", String(nextVal));
+    }
+  };
 
   // Load subscriptions from backend API
   const loadSubscriptions = useCallback(async () => {
@@ -459,12 +477,22 @@ function ProfileContent() {
                   <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">favorite</span>
                   <h3 className="text-base font-bold text-white mb-1">Sevimlilar ro'yxati bo'sh</h3>
                   <p className="text-xs text-text-secondary max-w-sm mx-auto mb-4">
-                    O'zingizga yoqqan kinolarni "+ Sevimlilarga" tugmasi orqali saqlab qo'yishingiz mumkin.
+                    Kino yoki serial sahifasida «Obuna bo'lish» tugmasini bossangiz, ular avtomatik tarzda ushbu bo'limda va Telegram botingizda saqlanadi.
                   </p>
-                  <Link href="/catalog" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 text-xs font-bold text-white rounded-xl border border-white/10 transition">
-                    <span>Katalogga o'tish</span>
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </Link>
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("subscriptions")}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary/20 hover:bg-primary/30 text-xs font-bold text-primary border border-primary/30 rounded-xl transition cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">notifications</span>
+                      <span>Obunalarni ko'rish</span>
+                    </button>
+                    <Link href="/catalog" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/15 text-xs font-bold text-white rounded-xl border border-white/10 transition">
+                      <span>Katalogga o'tish</span>
+                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -708,7 +736,18 @@ function ProfileContent() {
                   <div className="text-xs font-bold text-white">Bildirishnomalar</div>
                   <div className="text-[11px] text-text-secondary">Yangi kinolar va seriallar haqida xabar olish</div>
                 </div>
-                <span className="text-xs text-emerald-400 font-bold">Yoqilgan</span>
+                <button
+                  type="button"
+                  onClick={toggleNotifications}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                    notificationsEnabled
+                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30"
+                      : "bg-white/10 text-text-secondary border-white/10 hover:bg-white/15"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${notificationsEnabled ? "bg-emerald-400 animate-pulse" : "bg-text-secondary"}`} />
+                  <span>{notificationsEnabled ? "Yoqilgan" : "O'chirilgan"}</span>
+                </button>
               </div>
             </div>
           )}
