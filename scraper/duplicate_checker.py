@@ -6,6 +6,7 @@ preventing duplicate downloads, duplicate topic creation, and duplicate indexing
 
 import re
 import time
+import asyncio
 import logging
 from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass
@@ -267,8 +268,8 @@ class DuplicateChecker:
         self._series_slug_map: Dict[str, Dict[str, Any]] = {}
 
     async def get_connection(self) -> Optional[asyncpg.Connection]:
-        if not self.db_url:
-            logger.warning("[DUPLICATE_CHECKER] DATABASE_URL sozlanmagan!")
+        if not self.db_url or not (self.db_url.startswith("postgresql://") or self.db_url.startswith("postgres://")):
+            logger.warning("[DUPLICATE_CHECKER] DATABASE_URL sozlanmagan yoki PostgreSQL emas!")
             return None
         for attempt in range(3):
             try:

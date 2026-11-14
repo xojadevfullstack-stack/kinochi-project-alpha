@@ -2165,6 +2165,7 @@ class TelethonModeratorPipeline:
             source_poster=item.poster_url,
             caption=card_text,
             media_type="movie" if ep_count == 1 else "series",
+            source="animeelar",
             tmdb_id=getattr(item, "tmdb_id", None)
         )
         title = meta.get("title") or raw_title
@@ -2909,6 +2910,7 @@ class TelethonModeratorPipeline:
             source_poster=item.poster_url,
             caption=card_text,
             media_type="movie" if ep_count == 1 else "series",
+            source="anitoob",
             tmdb_id=getattr(item, "tmdb_id", None)
         )
         title = meta.get("title") or raw_title

@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 from sqlalchemy import select
 from app.infrastructure.db.models import MovieModel, SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel
-from scraper.smart_enricher import ANIME_TITLE_MAP
+from scraper.smart_enricher import ANIME_TITLE_MAP, score_tmdb_candidate
 
 
 def test_anime_title_map_canonical_entries():
@@ -88,6 +88,13 @@ def test_anime_title_map_canonical_entries():
     assert demon.get("tmdb_id") == 85937
     assert demon.get("type") == "tv"
     assert demon.get("uz") == "Iblislar qotili (Demon Slayer)"
+
+    # 10. Aura: Koga Maryuin's Last War (AniToob code 94)
+    aura = ANIME_TITLE_MAP.get("aura koga")
+    assert aura is not None
+    assert aura.get("tmdb_id") == 225086
+    assert aura.get("type") == "movie"
+    assert "Aura" in aura.get("uz")
 
 
 @pytest.mark.asyncio
@@ -246,3 +253,40 @@ def test_anitoob_title_is_not_falsely_classified_as_movie():
     assert is_anitoob_film("Qilich sanati online ... 1 film") is False
     assert is_anitoob_film("Jonli sana s1, ... + film") is False
 
+
+
+def test_score_tmdb_candidate_anime_disqualifies_live_action():
+    """Anime manbasidan kelganda live-action film (animatsiya janri bo'lmagan) rad etilishini tasdiqlaydi."""
+    # Vengriya badiiy filmi (Aura 2014, Sci-Fi/Mystery)
+    hungarian_live_action = {
+        "id": 280109,
+        "title": "Aura",
+        "original_title": "Aura",
+        "release_date": "2014-02-15",
+        "genre_ids": [878, 9648],
+        "vote_average": 3.3
+    }
+    score_live = score_tmdb_candidate(
+        candidate=hungarian_live_action,
+        query="Aura",
+        source="anitoob",
+        media_type="movie"
+    )
+    assert score_live <= -100.0, f"Live action movie should be disqualified, got {score_live}"
+
+    # Haqiqiy Yaponiya animesi (Aura 2013, Animation ID: 16)
+    anime_candidate = {
+        "id": 225086,
+        "title": "Aura: Koga Maryuin's Last War",
+        "original_title": "AURA ～魔竜院光牙最後の闘い～",
+        "release_date": "2013-04-13",
+        "genre_ids": [16, 35, 18, 14, 10749],
+        "vote_average": 6.7
+    }
+    score_anime = score_tmdb_candidate(
+        candidate=anime_candidate,
+        query="Aura Koga",
+        source="anitoob",
+        media_type="movie"
+    )
+    assert score_anime > 50.0, f"Anime candidate should have high score, got {score_anime}"
