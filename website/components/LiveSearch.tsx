@@ -553,7 +553,7 @@ export default function LiveSearch({
                             <button
                               type="button"
                               onClick={() => handleOpenRequest(ext)}
-                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-rating-gold/20 hover:bg-rating-gold text-rating-gold hover:text-background-obsidian border border-rating-gold/40 transition-all flex items-center gap-1 active:scale-95 shadow"
+                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-primary/20 hover:bg-primary text-primary hover:text-white border border-primary/40 transition-all flex items-center gap-1 active:scale-95 shadow"
                             >
                               <span className="material-symbols-outlined text-[14px]">add_circle</span>
                               <span>So&apos;rash</span>
@@ -609,7 +609,7 @@ export default function LiveSearch({
                     });
                     setIsModalOpen(true);
                   }}
-                  className="w-full py-2 px-3 rounded-xl bg-rating-gold text-background-obsidian font-bold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow"
+                  className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/30"
                 >
                   <span className="material-symbols-outlined text-sm">add_circle</span>
                   <span>Shu kinoni qo&apos;shishni so&apos;rash</span>

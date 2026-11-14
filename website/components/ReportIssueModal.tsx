@@ -199,7 +199,7 @@ export default function ReportIssueModal({
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-white/10 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shrink-0">
               <span className="material-symbols-outlined text-2xl">warning</span>
             </div>
             <div>
@@ -246,13 +246,13 @@ export default function ReportIssueModal({
                       onClick={() => setSelectedIssue(opt.id)}
                       className={`px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium border text-left transition-all flex items-center justify-between ${
                         isSelected
-                          ? "bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm shadow-amber-500/20 font-bold"
+                          ? "bg-primary/20 border-primary text-white shadow-sm shadow-primary/20 font-bold"
                           : "bg-surface-container-lowest border-white/5 text-text-secondary hover:text-white hover:bg-white/5"
                       }`}
                     >
                       <span className="truncate">{opt.label}</span>
                       {isSelected && (
-                        <span className="material-symbols-outlined text-xs text-amber-400 shrink-0 ml-1">
+                        <span className="material-symbols-outlined text-xs text-primary shrink-0 ml-1">
                           check
                         </span>
                       )}
@@ -272,7 +272,7 @@ export default function ReportIssueModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="1-qism 12-daqiqasida ovoz yo'qolib qolyapti yoki video boshqa kinoga tegishli..."
-                className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
               />
             </div>
 
@@ -305,11 +305,11 @@ export default function ReportIssueModal({
                   onClick={() => fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-xl p-4 sm:p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 ${
                     isDragging
-                      ? "border-amber-500 bg-amber-500/10"
+                      ? "border-primary bg-primary/10"
                       : "border-white/15 bg-surface-container-lowest hover:border-white/30 hover:bg-white/5"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-3xl text-amber-400/80">
+                  <span className="material-symbols-outlined text-3xl text-primary/80">
                     add_photo_alternate
                   </span>
                   <p className="text-xs sm:text-sm text-text-primary font-medium">
@@ -330,7 +330,7 @@ export default function ReportIssueModal({
                       />
                     ) : (
                       <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-2xl text-amber-400">
+                        <span className="material-symbols-outlined text-2xl text-primary">
                           videocam
                         </span>
                       </div>
@@ -369,7 +369,7 @@ export default function ReportIssueModal({
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 active:scale-[0.99] disabled:opacity-50 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition-all shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-primary-hover active:scale-[0.99] disabled:opacity-50 text-white font-bold py-3.5 px-6 rounded-xl text-sm transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
