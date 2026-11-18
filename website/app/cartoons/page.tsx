@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function CartoonsListPage({
   searchParams
 }: {
-  searchParams: { genre?: string; year?: string; search?: string }
+  searchParams: { genre?: string; year?: string; search?: string; sort?: string }
 }) {
   let cartoons: CatalogItem[] = [];
   let total = 0;
@@ -35,6 +35,9 @@ export default async function CartoonsListPage({
     }
     if (searchParams.search) {
       query += `&search=${encodeURIComponent(searchParams.search)}`;
+    }
+    if (searchParams.sort) {
+      query += `&sort=${encodeURIComponent(searchParams.sort)}`;
     }
 
     const [moviesData, seriesData, categoriesData] = await Promise.all([
@@ -94,6 +97,7 @@ export default async function CartoonsListPage({
               types={DEFAULT_MEDIA_TYPES}
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
+              selectedSort={searchParams.sort}
               baseUrl="/cartoons"
               totalItems={total}
             />
@@ -126,6 +130,7 @@ export default async function CartoonsListPage({
             genre={selectedGenre}
             year={selectedYear}
             search={searchParams.search}
+            sort={searchParams.sort}
             emptyMessage="Ushbu mezon bo'yicha hozircha multfilmlar topilmadi."
           />
         </div>

@@ -100,6 +100,38 @@ export default async function FullCatalogPage({
   if (searchParams.sort) paramParts.push(`sort=${encodeURIComponent(searchParams.sort)}`);
   const commonParams = paramParts.length > 0 ? `&${paramParts.join("&")}` : "";
 
+  const sortCatalogItems = (items: CatalogItem[]): CatalogItem[] => {
+    const sort = searchParams.sort;
+    if (sort === "rating" || sort === "imdb") {
+      return [...items].sort((a, b) => {
+        const rA = Number(a.imdb_rating ?? 0);
+        const rB = Number(b.imdb_rating ?? 0);
+        if (rB !== rA) return rB - rA;
+        const yA = Number(a.release_year ?? 0);
+        const yB = Number(b.release_year ?? 0);
+        if (yB !== yA) return yB - yA;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+    } else if (sort === "latest" || sort === "year") {
+      return [...items].sort((a, b) => {
+        const yA = Number(a.release_year ?? 0);
+        const yB = Number(b.release_year ?? 0);
+        if (yB !== yA) return yB - yA;
+        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (tB !== tA) return tB - tA;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+    } else {
+      return [...items].sort((a, b) => {
+        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (tB !== tA) return tB - tA;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+    }
+  };
+
   try {
     if (isMovie) {
       const [moviesData, categoriesData] = await Promise.all([
@@ -125,7 +157,7 @@ export default async function FullCatalogPage({
       ]);
       const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
       const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
-      movies = [...seriesItems, ...movieItems];
+      movies = sortCatalogItems([...seriesItems, ...movieItems]);
       total = (seriesData?.total || 0) + (moviesData?.total || 0);
       categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     } else if (isCartoon) {
@@ -136,7 +168,7 @@ export default async function FullCatalogPage({
       ]);
       const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
       const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-      movies = [...movieItems, ...seriesItems];
+      movies = sortCatalogItems([...movieItems, ...seriesItems]);
       total = (moviesData?.total || 0) + (seriesData?.total || 0);
       categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     } else if (isDorama) {
@@ -147,7 +179,7 @@ export default async function FullCatalogPage({
       ]);
       const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
       const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
-      movies = [...seriesItems, ...movieItems];
+      movies = sortCatalogItems([...seriesItems, ...movieItems]);
       total = (seriesData?.total || 0) + (moviesData?.total || 0);
       categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     } else {
@@ -160,22 +192,7 @@ export default async function FullCatalogPage({
 
       const movieItems = (moviesData?.items || []).map((m: any) => ({ ...m, is_series: false }));
       const seriesItems = (seriesData?.items || []).map((s: any) => ({ ...s, is_series: true }));
-      const combined = [...movieItems, ...seriesItems];
-
-      if (searchParams.sort === "rating" || searchParams.sort === "imdb") {
-        combined.sort((a, b) => Number(b.imdb_rating || b.rating || 0) - Number(a.imdb_rating || a.rating || 0));
-      } else if (searchParams.sort === "year") {
-        combined.sort((a, b) => Number(b.release_year || b.year || 0) - Number(a.release_year || a.year || 0));
-      } else {
-        combined.sort((a, b) => {
-          const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
-          if (tB !== tA) return tB - tA;
-          return Number(b.id || 0) - Number(a.id || 0);
-        });
-      }
-
-      movies = combined;
+      movies = sortCatalogItems([...movieItems, ...seriesItems]);
       total = (moviesData?.total || 0) + (seriesData?.total || 0);
       categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.items || []);
     }

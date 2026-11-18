@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function DoramasListPage({
   searchParams
 }: {
-  searchParams: { genre?: string; year?: string; search?: string }
+  searchParams: { genre?: string; year?: string; search?: string; sort?: string }
 }) {
   let doramas: CatalogItem[] = [];
   let total = 0;
@@ -29,13 +29,14 @@ export default async function DoramasListPage({
     const genreParam = searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : "";
     const yearParam = searchParams.year ? `&year=${searchParams.year}` : "";
     const searchParam = searchParams.search ? `&search=${encodeURIComponent(searchParams.search)}` : "";
+    const sortParam = searchParams.sort ? `&sort=${encodeURIComponent(searchParams.sort)}` : "";
 
     const [seriesData, moviesData, categoriesData] = await Promise.all([
-      fetchApi(`/series?limit=${pageSize}&category_id=40${genreParam}${yearParam}${searchParam}`).catch((e) => {
+      fetchApi(`/series?limit=${pageSize}&category_id=40${genreParam}${yearParam}${searchParam}${sortParam}`).catch((e) => {
         console.error("fetch doramas series failed:", e);
         return { items: [], total: 0 };
       }),
-      fetchApi(`/movies?limit=12&category_id=40${genreParam}${yearParam}${searchParam}`).catch((e) => {
+      fetchApi(`/movies?limit=12&category_id=40${genreParam}${yearParam}${searchParam}${sortParam}`).catch((e) => {
         console.error("fetch doramas movies failed:", e);
         return { items: [], total: 0 };
       }),
@@ -90,6 +91,7 @@ export default async function DoramasListPage({
               types={DEFAULT_MEDIA_TYPES}
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
+              selectedSort={searchParams.sort}
               baseUrl="/doramas"
               totalItems={total}
             />
@@ -122,6 +124,7 @@ export default async function DoramasListPage({
             genre={selectedGenre}
             year={selectedYear}
             search={searchParams.search}
+            sort={searchParams.sort}
             emptyMessage="Ushbu mezon bo'yicha hozircha doramalar topilmadi."
           />
         </div>

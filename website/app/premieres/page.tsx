@@ -30,6 +30,7 @@ export default async function PremieresPage({
     search?: string;
     type?: string;
     page_id?: string;
+    sort?: string;
   };
 }) {
   let items: CatalogItem[] = [];
@@ -53,6 +54,9 @@ export default async function PremieresPage({
     }
     if (searchParams.search) {
       query += `&search=${encodeURIComponent(searchParams.search)}`;
+    }
+    if (searchParams.sort) {
+      query += `&sort=${encodeURIComponent(searchParams.sort)}`;
     }
 
     const [contentData, categoriesData] = await Promise.all([
@@ -121,6 +125,7 @@ export default async function PremieresPage({
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
               selectedType={selectedType}
+              selectedSort={searchParams.sort}
               baseUrl="/premieres"
               totalItems={total}
             />
@@ -159,6 +164,7 @@ export default async function PremieresPage({
             genre={selectedGenre}
             categoryId={selectedCategory}
             search={searchParams.search}
+            sort={searchParams.sort}
             emptyMessage="Premyeralar hozircha mavjud emas"
           />
         </div>

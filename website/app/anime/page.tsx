@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function AnimeListPage({
   searchParams
 }: {
-  searchParams: { genre?: string; year?: string; search?: string }
+  searchParams: { genre?: string; year?: string; search?: string; sort?: string }
 }) {
   let animes: CatalogItem[] = [];
   let total = 0;
@@ -29,10 +29,11 @@ export default async function AnimeListPage({
     const genreParam = searchParams.genre ? `&genre=${encodeURIComponent(searchParams.genre)}` : "";
     const yearParam = searchParams.year ? `&year=${searchParams.year}` : "";
     const searchParam = searchParams.search ? `&search=${encodeURIComponent(searchParams.search)}` : "";
+    const sortParam = searchParams.sort ? `&sort=${encodeURIComponent(searchParams.sort)}` : "";
 
     const [seriesData, moviesData, categoriesData] = await Promise.all([
-      fetchApi(`/series?limit=${pageSize}&category_id=2${genreParam}${yearParam}${searchParam}`).catch(() => ({ items: [], total: 0 })),
-      fetchApi(`/movies?limit=12&category_id=2${genreParam}${yearParam}${searchParam}`).catch(() => ({ items: [], total: 0 })),
+      fetchApi(`/series?limit=${pageSize}&category_id=2${genreParam}${yearParam}${searchParam}${sortParam}`).catch(() => ({ items: [], total: 0 })),
+      fetchApi(`/movies?limit=12&category_id=2${genreParam}${yearParam}${searchParam}${sortParam}`).catch(() => ({ items: [], total: 0 })),
       fetchApi("/categories").catch(() => []),
     ]);
 
@@ -84,6 +85,7 @@ export default async function AnimeListPage({
               types={DEFAULT_MEDIA_TYPES}
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
+              selectedSort={searchParams.sort}
               baseUrl="/anime"
               totalItems={total}
             />
@@ -116,6 +118,7 @@ export default async function AnimeListPage({
             genre={selectedGenre}
             year={selectedYear}
             search={searchParams.search}
+            sort={searchParams.sort}
             emptyMessage="Ushbu mezon bo'yicha hozircha animelar topilmadi."
           />
         </div>

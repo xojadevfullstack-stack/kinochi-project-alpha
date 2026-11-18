@@ -123,11 +123,9 @@ export default async function MoviesListPage({
         <section className="relative z-20 space-y-3">
           <Suspense fallback={<div className="h-14 w-full bg-white/5 animate-pulse rounded-2xl" />}>
             <UnifiedFilterBar
-              categories={categories}
               genres={DEFAULT_GENRES}
               years={DEFAULT_YEARS}
               types={DEFAULT_MEDIA_TYPES}
-              selectedCategory={selectedCategory}
               selectedGenre={selectedGenre}
               selectedYear={selectedYear}
               selectedType={selectedType}
@@ -163,14 +161,14 @@ export default async function MoviesListPage({
           </div>
 
           <CatalogGrid 
-            key={`movies-${selectedCategory || 'all'}-${selectedGenre || 'all'}-${selectedYear || 'all'}-${searchParams.search || ''}`}
+            key={`movies-${selectedGenre || 'all'}-${selectedYear || 'all'}-${searchParams.search || ''}-${searchParams.sort || 'all'}`}
             initialItems={movies}
             total={total}
             type="movies"
-            categoryId={selectedCategory}
             genre={selectedGenre}
             year={selectedYear}
             search={searchParams.search}
+            sort={searchParams.sort}
             pageSize={pageSize}
             emptyMessage="Ushbu mezon bo'yicha hozircha kinolar topilmadi."
           />
