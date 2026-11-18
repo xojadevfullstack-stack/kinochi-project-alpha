@@ -90,20 +90,17 @@ export default async function DynamicPage({
           if (yB !== yA) return yB - yA;
           return Number(b.id || 0) - Number(a.id || 0);
         });
-      } else if (searchParams.sort === "latest" || searchParams.sort === "year") {
+      } else if (searchParams.sort === "latest") {
         combinedItems = unsorted.sort((a, b) => {
-          const yA = Number(a.release_year ?? 0);
-          const yB = Number(b.release_year ?? 0);
-          if (yB !== yA) return yB - yA;
-          const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          const tA = new Date(a.updated_at || a.created_at || 0).getTime();
+          const tB = new Date(b.updated_at || b.created_at || 0).getTime();
           if (tB !== tA) return tB - tA;
           return Number(b.id || 0) - Number(a.id || 0);
         });
       } else {
         combinedItems = unsorted.sort((a, b) => {
-          const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          const tA = new Date(a.updated_at || a.created_at || 0).getTime();
+          const tB = new Date(b.updated_at || b.created_at || 0).getTime();
           if (tB !== tA) return tB - tA;
           return Number(b.id || 0) - Number(a.id || 0);
         });

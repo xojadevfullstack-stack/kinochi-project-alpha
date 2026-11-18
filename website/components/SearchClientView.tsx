@@ -395,9 +395,12 @@ export default function SearchClientView({
                   if (sortOrder === "rating") {
                     return Number(b.imdb_rating || b.tmdb_rating || 0) - Number(a.imdb_rating || a.tmdb_rating || 0);
                   }
-                  if (sortOrder === "latest") {
-                    return Number(b.release_year || 0) - Number(a.release_year || 0);
-                  }
+                  if (sortOrder === "latest") {
+                    const tA = new Date(a.updated_at || a.created_at || 0).getTime();
+                    const tB = new Date(b.updated_at || b.created_at || 0).getTime();
+                    if (tB !== tA) return tB - tA;
+                    return Number(b.id || 0) - Number(a.id || 0);
+                  }
                   return 0;
                 });
 

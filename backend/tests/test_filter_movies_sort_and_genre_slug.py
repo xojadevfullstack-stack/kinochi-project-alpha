@@ -73,13 +73,13 @@ async def test_filter_movies_sort_and_genre_slug_translation(engine, db_session:
                 f"Expected rating sort [m3({m3.id}), m2({m2.id}), m1({m1.id})], got {rating_ids}"
             )
 
-            # 2. Assert Sort by Latest Year DESC
+            # 2. Assert Sort by Latest (created_at DESC, id DESC - newest additions first)
             resp_latest = await client.get("/api/v1/movies?sort=latest")
             assert resp_latest.status_code == 200, resp_latest.text
             items_latest = resp_latest.json()["items"]
             latest_ids = [m["id"] for m in items_latest if m["id"] in target_ids]
-            assert latest_ids == [m1.id, m2.id, m3.id], (
-                f"Expected latest sort [m1({m1.id}), m2({m2.id}), m3({m3.id})], got {latest_ids}"
+            assert latest_ids == [m3.id, m2.id, m1.id], (
+                f"Expected latest sort [m3({m3.id}), m2({m2.id}), m1({m1.id})], got {latest_ids}"
             )
 
             # 3. Assert English genre slug 'action' matches 'Jangari'

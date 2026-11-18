@@ -112,20 +112,17 @@ export default async function FullCatalogPage({
         if (yB !== yA) return yB - yA;
         return Number(b.id || 0) - Number(a.id || 0);
       });
-    } else if (sort === "latest" || sort === "year") {
+    } else if (sort === "latest") {
       return [...items].sort((a, b) => {
-        const yA = Number(a.release_year ?? 0);
-        const yB = Number(b.release_year ?? 0);
-        if (yB !== yA) return yB - yA;
-        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const tA = new Date(a.updated_at || a.created_at || 0).getTime();
+        const tB = new Date(b.updated_at || b.created_at || 0).getTime();
         if (tB !== tA) return tB - tA;
         return Number(b.id || 0) - Number(a.id || 0);
       });
     } else {
       return [...items].sort((a, b) => {
-        const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        const tA = new Date(a.updated_at || a.created_at || 0).getTime();
+        const tB = new Date(b.updated_at || b.created_at || 0).getTime();
         if (tB !== tA) return tB - tA;
         return Number(b.id || 0) - Number(a.id || 0);
       });
@@ -272,63 +269,6 @@ export default async function FullCatalogPage({
             />
           </Suspense>
         </section>
-
-        {/* 2. 6 TA ASOSIY KATALOG BO'LIMLARI (Faqat filtr faol bo'lmaganda ko'rinadi) */}
-        {!hasFilterActive && (
-          <section className="space-y-4 pt-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg sm:text-xl font-black text-white font-headline-md flex items-center gap-2">
-                  <span className="w-1.5 h-5 bg-primary rounded-full block" />
-                  <span>Katalog bo&apos;limlari</span>
-                </h2>
-                <p className="text-xs text-text-secondary mt-0.5">
-                  O&apos;zingizga yoqqan yo&apos;nalishni tanlang: Top 100, kinolar, seriallar, doramalar, anime va multfilmlar.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              {CATALOG_CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={cat.href}
-                  className="group relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col justify-between border transition-all duration-300 min-h-[120px] sm:min-h-[140px] cursor-pointer bg-white/[0.03] hover:bg-white/[0.07] border-white/10 hover:border-primary/60 active:border-primary"
-                >
-                  {/* Subtle corner colored glow */}
-                  <div
-                    className={`absolute -right-6 -top-6 w-24 h-24 rounded-full bg-gradient-to-br ${cat.accent} blur-xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`}
-                  />
-
-                  {/* Top: Icon + Arrow */}
-                  <div className="flex items-center justify-between mb-3 relative z-10">
-                    <div
-                      className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center transition-all ${cat.iconColor} group-hover:bg-primary/20 group-hover:text-primary group-hover:border-primary/30`}
-                    >
-                      <span className="material-symbols-outlined text-[22px]">
-                        {cat.icon}
-                      </span>
-                    </div>
-
-                    <span className="material-symbols-outlined text-sm text-white/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all">
-                      arrow_forward
-                    </span>
-                  </div>
-
-                  {/* Bottom: Title & Subtitle */}
-                  <div className="relative z-10">
-                    <h3 className="font-black text-sm sm:text-base leading-tight transition-colors text-white group-hover:text-primary">
-                      {cat.name}
-                    </h3>
-                    <p className="text-[11px] text-text-secondary mt-0.5 line-clamp-1">
-                      {cat.subtitle}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* 3. KATALOG GRID NATIJALARI (Filtr tanlanganda darhol yuqoriga ko'tariladi) */}
         <div className="relative z-10 pt-2 border-t border-white/10">

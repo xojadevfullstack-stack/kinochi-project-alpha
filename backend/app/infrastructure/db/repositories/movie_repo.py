@@ -314,7 +314,7 @@ class MovieRepositoryImpl(IMovieRepository):
         if sort == "rating":
             order_clause = [MovieModel.imdb_rating.desc().nullslast(), MovieModel.id.desc()]
         elif sort == "latest":
-            order_clause = [MovieModel.release_year.desc().nullslast(), MovieModel.id.desc()]
+            order_clause = [MovieModel.created_at.desc().nullslast(), MovieModel.id.desc()]
         elif sort in ("popular", "views"):
             order_clause = [MovieModel.view_count.desc().nullslast(), MovieModel.id.desc()]
         elif sort == "az":

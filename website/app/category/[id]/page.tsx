@@ -97,32 +97,6 @@ export default async function CategoryPage({
             <p className="text-text-secondary font-body-lg text-body-lg">Bizning katta kino kolleksiyamiz bilan tanishing.</p>
           </div>
           
-          {/* Category Horizontal Quick Selector (Cinematic Red) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 hide-scrollbar scroll-smooth mb-4">
-            <Link 
-              href="/movies" 
-              className="px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
-            >
-              Barchasi
-            </Link>
-            {categories.map(cat => {
-              const isActive = String(cat.id) === params.id;
-              return (
-                <Link 
-                  key={cat.id} 
-                  href={`/category/${cat.id}`}
-                  className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 border ${
-                    isActive 
-                      ? "bg-primary text-white border-primary shadow-lg shadow-primary/25 font-bold" 
-                      : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
-                  }`}
-                >
-                  {cat.name}
-                </Link>
-              );
-            })}
-          </div>
-
           {/* Unified Filter Bar */}
           <div className="pt-2">
             <UnifiedFilterBar

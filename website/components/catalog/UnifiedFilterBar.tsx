@@ -41,6 +41,7 @@ interface FilterDropdownProps {
   onToggle: () => void;
   onClose: () => void;
   onSelect: (value: string | null) => void;
+  showAllOption?: boolean;
 }
 
 function FilterDropdown({
@@ -51,6 +52,7 @@ function FilterDropdown({
   onToggle,
   onClose,
   onSelect,
+  showAllOption = true,
 }: FilterDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +90,7 @@ function FilterDropdown({
           isOpen
             ? "border-white/30 text-white ring-1 ring-white/20 shadow-lg"
             : selectedValue
-            ? "border-primary-container text-white bg-primary-container/10 font-bold"
+            ? "border-primary text-white bg-primary/10 font-bold"
             : "border-white/10 text-text-secondary hover:text-white"
         }`}
       >
@@ -107,24 +109,26 @@ function FilterDropdown({
       {/* ── Popover Option List ── */}
       {isOpen && (
         <div className="absolute left-0 top-full mt-1.5 z-30 min-w-full sm:min-w-[190px] max-h-64 overflow-y-auto hide-scrollbar bg-[#161822] border border-white/15 rounded-xl p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in duration-150">
-          {/* Reset / Barchasi item */}
-          <button
-            type="button"
-            onClick={() => {
-              onSelect(null);
-              onClose();
-            }}
-            className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
-              !selectedValue || selectedValue === "all"
-                ? "bg-primary-container text-white font-bold"
-                : "text-zinc-300 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <span>Barchasi</span>
-            {(!selectedValue || selectedValue === "all") && (
-              <span className="material-symbols-outlined text-[15px]">check</span>
-            )}
-          </button>
+          {/* Reset / Barchasi item (Only if showAllOption is enabled) */}
+          {showAllOption && (
+            <button
+              type="button"
+              onClick={() => {
+                onSelect(null);
+                onClose();
+              }}
+              className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
+                !selectedValue || selectedValue === "all"
+                  ? "bg-primary text-white font-bold"
+                  : "text-zinc-300 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <span>Barchasi</span>
+              {(!selectedValue || selectedValue === "all") && (
+                <span className="material-symbols-outlined text-[15px]">check</span>
+              )}
+            </button>
+          )}
 
           {/* Options (exclude any duplicate 'all' or 'barchasi') */}
           {options
@@ -141,7 +145,7 @@ function FilterDropdown({
                 }}
                 className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
                   isSelected
-                    ? "bg-primary-container text-white font-bold"
+                    ? "bg-primary text-white font-bold"
                     : "text-zinc-300 hover:bg-white/10 hover:text-white"
                 }`}
               >
@@ -298,6 +302,7 @@ export default function UnifiedFilterBar({
           label="Saralash"
           options={SORT_OPTIONS}
           selectedValue={selectedSort}
+          showAllOption={false}
           isOpen={openDropdown === "sort"}
           onToggle={() =>
             setOpenDropdown((cur) => (cur === "sort" ? null : "sort"))

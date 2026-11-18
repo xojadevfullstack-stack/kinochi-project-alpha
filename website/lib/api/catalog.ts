@@ -22,6 +22,7 @@ export type CatalogItem = {
   is_series?: boolean;
   is_18_plus?: boolean;
   created_at?: string;
+  updated_at?: string;
   categories?: { id: number; name: string }[];
   source_type?: string;
   custom_source_name?: string | null;
