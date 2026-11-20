@@ -26,6 +26,7 @@ from app.infrastructure.db.models.rejected_item import RejectedItemModel
 from app.infrastructure.db.models.seed_candidate import SeedCandidateModel
 from app.infrastructure.db.models.content_request import ContentRequestModel
 from app.infrastructure.db.models.ingest_item import IngestItemModel
+from app.infrastructure.db.models.smm import SmmClipJobModel, SmmSettingsModel
 
 __all__ = [
     "CategoryModel",
@@ -58,4 +59,6 @@ __all__ = [
     "SeedCandidateModel",
     "ContentRequestModel",
     "IngestItemModel",
+    "SmmClipJobModel",
+    "SmmSettingsModel",
 ]

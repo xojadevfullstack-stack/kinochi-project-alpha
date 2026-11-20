@@ -1,0 +1,222 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from scraper.smm_publishers.dispatcher import MultiPlatformDispatcher
+from scraper.smm_publishers.meta_pub import FacebookReelsPublisher, InstagramReelsPublisher
+from scraper.smm_publishers.youtube_tiktok_pub import TikTokPublisher, YouTubeShortsPublisher
+
+
+def _mock_async_client(responses):
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=responses)
+    client.put = AsyncMock(side_effect=responses)
+    return client
+
+
+@pytest.mark.asyncio
+async def test_instagram_reels_publisher_creates_and_publishes_container(tmp_path):
+    vid = tmp_path / "clip.mp4"
+    vid.write_bytes(b"mp4")
+    r_create = MagicMock(status_code=200)
+    r_create.json.return_value = {"id": "ig_container_1"}
+    r_status = MagicMock(status_code=200)
+    r_status.json.return_value = {"status_code": "FINISHED"}
+    r_pub = MagicMock(status_code=200)
+    r_pub.json.return_value = {"id": "ig_media_99"}
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=[r_create, r_pub])
+    client.get = AsyncMock(return_value=r_status)
+
+    pub = InstagramReelsPublisher(ig_user_id="17841", access_token="meta_tok")
+    with patch("scraper.smm_publishers.meta_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889", video_url="https://cdn.example/clip.mp4")
+
+    assert res.success is True
+    assert res.platform == "instagram"
+    assert res.post_id == "ig_media_99"
+
+
+@pytest.mark.asyncio
+async def test_instagram_reels_publisher_resumable_upload_from_local_file(tmp_path):
+    vid = tmp_path / "clip.mp4"
+    vid.write_bytes(b"ig-mp4-bytes")
+    r_create = MagicMock(status_code=200)
+    r_create.json.return_value = {"id": "ig_c_2", "uri": "https://rupload.facebook.com/ig-api-upload/v21.0/ig_c_2"}
+    r_up = MagicMock(status_code=200)
+    r_status = MagicMock(status_code=200)
+    r_status.json.return_value = {"status_code": "FINISHED"}
+    r_pub = MagicMock(status_code=200)
+    r_pub.json.return_value = {"id": "ig_media_200"}
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=[r_create, r_up, r_pub])
+    client.get = AsyncMock(return_value=r_status)
+
+    pub = InstagramReelsPublisher(ig_user_id="17841", access_token="meta_tok")
+    with patch("scraper.smm_publishers.meta_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #5064", movie_code="5064")
+
+    assert res.success is True
+    assert res.post_id == "ig_media_200"
+
+
+@pytest.mark.asyncio
+async def test_facebook_reels_publisher_start_upload_finish(tmp_path):
+    vid = tmp_path / "clip.mp4"
+    vid.write_bytes(b"fb-mp4-bytes")
+    r_start = MagicMock(status_code=200)
+    r_start.json.return_value = {"video_id": "fb_vid_1", "upload_url": "https://rupload.facebook.com/video/1"}
+    r_up = MagicMock(status_code=200)
+    r_up.json.return_value = {"success": True}
+    r_fin = MagicMock(status_code=200)
+    r_fin.json.return_value = {"success": True, "post_id": "fb_post_77"}
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.get = AsyncMock(return_value=MagicMock(status_code=200, json=lambda: {"access_token": "fb_page_tok"}))
+    client.post = AsyncMock(side_effect=[r_start, r_up, r_fin])
+
+    pub = FacebookReelsPublisher(page_id="page_1", access_token="meta_tok")
+    with patch("scraper.smm_publishers.meta_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889")
+
+    assert res.success is True
+    assert res.platform == "facebook"
+    assert res.post_id == "fb_vid_1"
+    assert client.post.call_args_list[0].kwargs["data"]["access_token"] == "fb_page_tok"
+
+
+def test_facebook_reels_publisher_prefers_facebook_access_token_env(monkeypatch):
+    monkeypatch.setenv("META_ACCESS_TOKEN", "ig_tok")
+    monkeypatch.setenv("FACEBOOK_ACCESS_TOKEN", "fb_page_tok")
+    pub = FacebookReelsPublisher(page_id="page_1")
+    assert pub.access_token == "fb_page_tok"
+    monkeypatch.delenv("FACEBOOK_ACCESS_TOKEN")
+    pub2 = FacebookReelsPublisher(page_id="page_1")
+    assert pub2.access_token == "ig_tok"
+
+
+@pytest.mark.asyncio
+async def test_youtube_shorts_publisher_refreshes_token_and_uploads(tmp_path):
+    vid = tmp_path / "short.mp4"
+    vid.write_bytes(b"yt-bytes")
+    r_tok = MagicMock(status_code=200)
+    r_tok.json.return_value = {"access_token": "yt_access"}
+    r_init = MagicMock(status_code=200, headers={"location": "https://upload.youtube.com/session/1"})
+    r_put = MagicMock(status_code=200)
+    r_put.json.return_value = {"id": "yt_short_abc"}
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=[r_tok, r_init])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = YouTubeShortsPublisher(client_id="cid", client_secret="csec", refresh_token="rtok")
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889")
+
+    assert res.success is True
+    assert res.platform == "youtube"
+    assert res.post_id == "yt_short_abc"
+    assert res.post_url == "https://youtube.com/shorts/yt_short_abc"
+
+
+@pytest.mark.asyncio
+async def test_tiktok_publisher_init_and_put_upload(tmp_path):
+    vid = tmp_path / "tt.mp4"
+    vid.write_bytes(b"tiktok-bytes")
+    r_init = MagicMock(status_code=200)
+    r_init.json.return_value = {"data": {"publish_id": "tt_pub_55", "upload_url": "https://upload.tiktok.com/1"}}
+    r_put = MagicMock(status_code=201)
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(return_value=r_init)
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = TikTokPublisher(access_token="tt_tok")
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889")
+
+    assert res.success is True
+    assert res.platform == "tiktok"
+    assert res.post_id == "tt_pub_55"
+
+
+@pytest.mark.asyncio
+async def test_tiktok_publisher_refreshes_token_when_refresh_creds_given(tmp_path):
+    vid = tmp_path / "tt2.mp4"
+    vid.write_bytes(b"tiktok-bytes")
+    r_tok = MagicMock(status_code=200)
+    r_tok.json.return_value = {"access_token": "tt_fresh_tok"}
+    r_init = MagicMock(status_code=200)
+    r_init.json.return_value = {"data": {"publish_id": "tt_pub_99", "upload_url": "https://upload.tiktok.com/2"}}
+    r_put = MagicMock(status_code=201)
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=[r_tok, r_init])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = TikTokPublisher(client_key="ck", client_secret="csec", refresh_token="rtok", privacy_level="SELF_ONLY")
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889")
+
+    assert res.success is True
+    assert res.post_id == "tt_pub_99"
+    assert client.post.call_args_list[1].kwargs["json"]["post_info"]["privacy_level"] == "SELF_ONLY"
+
+
+@pytest.mark.asyncio
+async def test_multi_platform_dispatcher_isolates_failures(tmp_path):
+    vid = tmp_path / "clip.mp4"
+    vid.write_bytes(b"x")
+
+    ok_pub = MagicMock()
+    ok_pub.publish = AsyncMock(return_value=MagicMock(platform="telegram", success=True, post_id="10", error=None))
+    bad_pub = MagicMock()
+    bad_pub.publish = AsyncMock(side_effect=RuntimeError("TikTok timeout"))
+
+    dispatcher = MultiPlatformDispatcher(publishers={"telegram": ok_pub, "tiktok": bad_pub})
+    results = await dispatcher.publish_all(str(vid), caption="Kod: <b>#889</b>", movie_code="889", platforms=["telegram", "tiktok"])
+
+    assert results["telegram"].success is True
+    assert results["tiktok"].success is False
+    assert "TikTok timeout" in (results["tiktok"].error or "")
+    # Telegram keeps HTML <b>, external platforms receive plain text
+    assert "<b>" in ok_pub.publish.call_args.args[1]
+    assert "<b>" not in bad_pub.publish.call_args.args[1]
+
+
+@pytest.mark.asyncio
+async def test_tiktok_publisher_falls_back_to_inbox_when_unaudited(tmp_path):
+    vid = tmp_path / "tt_inbox.mp4"
+    vid.write_bytes(b"tiktok-bytes")
+    r_direct_403 = MagicMock(
+        status_code=403,
+        text='{"error":{"code":"unaudited_client_can_only_post_to_private_accounts"}}',
+    )
+    r_inbox_init = MagicMock(status_code=200)
+    r_inbox_init.json.return_value = {
+        "data": {"publish_id": "v_inbox_file~v2.123", "upload_url": "https://upload.tiktok.com/inbox/1"}
+    }
+    r_put = MagicMock(status_code=201)
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=[r_direct_403, r_inbox_init])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = TikTokPublisher(access_token="tt_tok")
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889")
+
+    assert res.success is True
+    assert res.post_id == "v_inbox_file~v2.123"
+    assert "/inbox/video/init/" in client.post.call_args_list[1].args[0]
+    assert "post_info" not in client.post.call_args_list[1].kwargs["json"]

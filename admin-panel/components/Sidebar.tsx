@@ -71,6 +71,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       title: "Avtomatizatsiya",
       items: [
         { name: "Parser & Grabber", href: "/scraper", icon: "smart_toy" },
+        { name: "SMM Studio", href: "/smm", icon: "movie_edit" },
         { name: "Doner Kanallar", href: "/channels", icon: "hub" },
         { name: "Manbalar", href: "/sources", icon: "source" },
       ],
