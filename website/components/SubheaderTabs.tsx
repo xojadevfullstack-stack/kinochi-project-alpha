@@ -42,8 +42,8 @@ export default function SubheaderTabs() {
                 href={tab.href}
                 className={`nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium shrink-0 border transition-all duration-200 ${
                   isActive
-                    ? "bg-[#D20A13] dark:bg-[#E50914] border-[#D20A13] dark:border-[#E50914] text-white shadow-md shadow-primary/25 font-semibold"
-                    : "bg-white/85 dark:bg-[#1A1C24]/90 border-slate-300/80 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-[#B80710] dark:hover:bg-[#E50914] hover:border-[#B80710] dark:hover:border-[#E50914] hover:text-white"
+                    ? "active-red-pill bg-[#D20A13] dark:bg-[#E50914] border-[#D20A13] dark:border-[#E50914] text-white shadow-md shadow-primary/25 font-semibold"
+                    : "bg-white/95 dark:bg-[#1A1C24]/90 border-slate-300/80 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:bg-[#B80710] dark:hover:bg-[#E50914] hover:border-[#B80710] dark:hover:border-[#E50914] hover:text-white"
                 }`}
               >
                 <span className="material-symbols-outlined text-[15px]">

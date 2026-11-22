@@ -177,8 +177,8 @@ export default function CastCrewSection({
                   disabled={!canScrollLeft}
                   className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
                     canScrollLeft
-                      ? "bg-white/10 hover:bg-white/20 border-white/20 text-white cursor-pointer active:scale-95"
-                      : "bg-white/5 border-white/5 text-white/20 cursor-not-allowed opacity-40"
+                      ? "bg-white hover:bg-[#B80710] dark:bg-white/10 dark:hover:bg-[#E50914] border-slate-300 dark:border-white/20 text-slate-800 dark:text-white hover:text-white hover:border-[#B80710] dark:hover:border-[#E50914] cursor-pointer active:scale-95"
+                      : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-400 dark:text-white/25 cursor-not-allowed opacity-60"
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg">chevron_left</span>
@@ -190,8 +190,8 @@ export default function CastCrewSection({
                   disabled={!canScrollRight}
                   className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
                     canScrollRight
-                      ? "bg-white/10 hover:bg-white/20 border-white/20 text-white cursor-pointer active:scale-95"
-                      : "bg-white/5 border-white/5 text-white/20 cursor-not-allowed opacity-40"
+                      ? "bg-white hover:bg-[#B80710] dark:bg-white/10 dark:hover:bg-[#E50914] border-slate-300 dark:border-white/20 text-slate-800 dark:text-white hover:text-white hover:border-[#B80710] dark:hover:border-[#E50914] cursor-pointer active:scale-95"
+                      : "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5 text-slate-400 dark:text-white/25 cursor-not-allowed opacity-60"
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg">chevron_right</span>
@@ -237,7 +237,7 @@ export default function CastCrewSection({
                   </div>
 
                   {/* Person Name */}
-                  <span className="text-[11px] sm:text-xs font-semibold text-white/95 text-center line-clamp-2 mt-2 leading-tight max-w-[80px] sm:max-w-[92px] group-hover:text-primary transition-colors">
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-900 dark:text-white/95 text-center line-clamp-2 mt-2 leading-tight max-w-[80px] sm:max-w-[92px] group-hover:text-primary transition-colors">
                     {person.name}
                   </span>
 
