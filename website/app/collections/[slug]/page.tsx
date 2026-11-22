@@ -1,10 +1,8 @@
 import { fetchApi } from "@/lib/api";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { Metadata } from "next";
 import CollectionTimelineView from "@/components/CollectionTimelineView";
-import BackButton from "@/components/BackButton";
 import SubscribeButton from "@/components/SubscribeButton";
 
 type Props = {
@@ -43,77 +41,70 @@ export default async function CollectionDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-900 dark:text-text-primary pt-20 sm:pt-24 md:pt-28 pb-20">
-      {/* Hero Showcase Banner */}
-      <div className="hero-stage preserve-white relative w-full overflow-hidden mb-8 sm:mb-12 border-b border-slate-200 dark:border-white/10 bg-[#08090C]">
-        <div className="absolute inset-0 bg-[#08090C]">
-          {collection.banner_url || collection.poster_url ? (
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-30 blur-md scale-105"
-              style={{
-                backgroundImage: `url('${collection.banner_url || collection.poster_url}')`,
-              }}
-            ></div>
-          ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#08090C] via-[#08090C]/80 to-transparent"></div>
-        </div>
-
-        <div className="relative z-10 max-w-container-max mx-auto px-gutter py-8 sm:py-12 md:py-16 flex flex-col gap-6">
-          <div className="self-start">
-            <BackButton fallbackUrl="/collections" />
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
-            {/* Poster Card */}
-          {collection.poster_url && (
-            <div className="w-36 sm:w-44 md:w-56 aspect-[2/3] rounded-2xl bg-surface-container-high overflow-hidden shadow-2xl border border-white/15 relative shrink-0">
+    <div className="min-h-screen bg-transparent text-slate-900 dark:text-text-primary pt-3 sm:pt-4 pb-20">
+      {/* Hero Showcase Banner (Framed Hero Method matching HeroCarousel & Cinema Island) */}
+      <div className="max-w-container-max mx-auto px-gutter mb-8 sm:mb-10">
+        <div className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] shadow-xl">
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            {collection.banner_url || collection.poster_url ? (
               <Image
-                src={collection.poster_url}
+                src={collection.banner_url || collection.poster_url}
                 alt={collection.name}
                 fill
                 priority
-                sizes="(max-width: 768px) 180px, 224px"
                 unoptimized
-                className="object-cover"
+                className="object-cover opacity-65"
+                style={{ objectPosition: "center 20%" }}
               />
+            ) : null}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0E0F13]/75 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0E0F13]/85 via-[#0E0F13]/50 to-transparent" />
+          </div>
+
+          <div className="relative z-10 px-5 py-6 sm:px-10 sm:py-9 md:px-12 md:py-10 flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
+            {/* Poster Card */}
+            {collection.poster_url && (
+              <div className="w-36 sm:w-44 md:w-52 aspect-[2/3] rounded-2xl bg-surface-container-high overflow-hidden shadow-2xl border border-white/15 relative shrink-0">
+                <Image
+                  src={collection.poster_url}
+                  alt={collection.name}
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 176px, 208px"
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+            )}
+
+            {/* Info Details */}
+            <div className="flex-1 text-center md:text-left min-w-0">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 mb-3">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#E50914]/25 px-3 py-1.5 rounded-xl border border-[#E50914]/45">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E50914]" />
+                  <span>{collection.items?.length || 0} ta qism</span>
+                </span>
+
+                <SubscribeButton
+                  targetType="collection"
+                  targetId={collection.id}
+                  title={collection.name}
+                  className="px-3.5 py-1.5 rounded-xl text-xs"
+                />
+              </div>
+
+              <h1 className="font-display-hero text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
+                {collection.name}
+              </h1>
+
+              <p className="text-slate-200 text-sm sm:text-base max-w-3xl leading-relaxed">
+                {collection.description ||
+                  "Ushbu koinotdagi barcha filmlar va ularning o'zaro bog'liqligi."}
+              </p>
             </div>
-          )}
-
-          {/* Info Details */}
-          <div className="flex-1 text-center md:text-left">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
-              <Link
-                href="/collections"
-                className="inline-flex items-center gap-1 text-xs text-text-secondary hover:text-white bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[14px]">arrow_back</span>
-                <span>Barcha Xronologiyalar</span>
-              </Link>
-
-              <span className="text-xs font-bold text-primary-container bg-primary-container/20 px-2.5 py-1 rounded-lg border border-primary-container/30">
-                {collection.items?.length || 0} ta qism
-              </span>
-
-              <SubscribeButton
-                targetType="collection"
-                targetId={collection.id}
-                title={collection.name}
-                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all cursor-pointer shadow-sm"
-              />
-            </div>
-
-            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
-              {collection.name}
-            </h1>
-
-            <p className="text-text-secondary text-sm sm:text-base max-w-3xl leading-relaxed">
-              {collection.description ||
-                "Ushbu koinotdagi barcha filmlar va ularning o'zaro bog'liqligi."}
-            </p>
           </div>
         </div>
       </div>
-    </div>
 
       {/* Main Timeline View with Dual Toggle */}
       <div className="max-w-container-max mx-auto px-gutter">

@@ -208,21 +208,21 @@ export default function CollectionTimelineView({
   return (
     <div className="w-full">
       {/* Top Controls & Mode Switcher Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-surface-container-lowest/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-5 mb-8 shadow-xl">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-white dark:bg-[#0E1117]/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm dark:shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-container/20 border border-primary-container/40 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-primary-container text-2xl">
+          <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-[#E50914]/15 border border-red-200 dark:border-[#E50914]/35 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[#D20A13] dark:text-[#E50914] text-2xl">
               {viewMode === "map" ? "explore" : "view_timeline"}
             </span>
           </div>
           <div>
-            <h3 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">
+            <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
               <span>{collectionName || "Koinot Xronologiyasi"}</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-text-secondary border border-white/5">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10">
                 {sortedItems.length} ta film
               </span>
             </h3>
-            <p className="text-xs text-text-secondary">
+            <p className="text-xs text-slate-600 dark:text-text-secondary">
               {viewMode === "map"
                 ? "Interaktiv Voqealar Xaritasi: Koinot yo'nalishini siljiting va kattalashtiring"
                 : sortMode === "chronological"
@@ -239,10 +239,10 @@ export default function CollectionTimelineView({
               data-tour="timeline-sub-btn"
               onClick={handleToggleSub}
               disabled={subLoading}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer ${
+              className={`preserve-white flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer ${
                 isSubscribed
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30"
-                  : "bg-primary-container text-white hover:bg-inverse-primary shadow-primary-container/20"
+                  ? "bg-emerald-600 dark:bg-emerald-500/20 text-white dark:text-emerald-400 border border-emerald-500/40 hover:bg-emerald-700"
+                  : "bg-[#D20A13] dark:bg-[#E50914] text-white hover:bg-[#B80710] shadow-primary/20"
               }`}
               title={isSubscribed ? "Obunani bekor qilish" : "Yangi film chiqsa Telegram orqali xabar olish"}
             >
@@ -254,13 +254,13 @@ export default function CollectionTimelineView({
           )}
 
           {/* View Mode Toggle: List vs Map */}
-          <div data-tour="timeline-view-toggle" className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
+          <div data-tour="timeline-view-toggle" className="flex items-center bg-slate-100 dark:bg-black/60 p-1 rounded-xl border border-slate-200 dark:border-white/10">
             <button
               onClick={() => setViewMode("list")}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "list"
-                  ? "bg-primary-container text-white shadow-md shadow-primary-container/20"
-                  : "text-text-secondary hover:text-white"
+                  ? "active-red-pill bg-[#D20A13] dark:bg-[#E50914] text-white shadow-sm"
+                  : "text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-white/75 dark:hover:bg-white/10"
               }`}
               title="Klassik ro'yxat ko'rinishi (Low-end va Telegram TMA uchun)"
             >
@@ -272,8 +272,8 @@ export default function CollectionTimelineView({
               onClick={() => setViewMode("map")}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "map"
-                  ? "bg-primary-container text-white shadow-md shadow-primary-container/20"
-                  : "text-text-secondary hover:text-white"
+                  ? "active-red-pill bg-[#D20A13] dark:bg-[#E50914] text-white shadow-sm"
+                  : "text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-white/75 dark:hover:bg-white/10"
               }`}
               title="Dinamik Voqealar Xaritasi (Canvas/Universe Explorer)"
             >
@@ -283,13 +283,13 @@ export default function CollectionTimelineView({
           </div>
 
           {/* Sort Mode Toggle: Chronological vs Release */}
-          <div data-tour="timeline-sort-toggle" className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
+          <div data-tour="timeline-sort-toggle" className="flex items-center bg-slate-100 dark:bg-black/60 p-1 rounded-xl border border-slate-200 dark:border-white/10">
             <button
               onClick={() => setSortMode("chronological")}
               className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 sortMode === "chronological"
-                  ? "bg-white/15 text-white"
-                  : "text-text-secondary hover:text-white"
+                  ? "bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10"
               }`}
               title="Voqealar xronologiyasi bo'yicha"
             >
@@ -300,8 +300,8 @@ export default function CollectionTimelineView({
               onClick={() => setSortMode("release")}
               className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 sortMode === "release"
-                  ? "bg-white/15 text-white"
-                  : "text-text-secondary hover:text-white"
+                  ? "bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10"
               }`}
               title="Premyera yili bo'yicha"
             >
@@ -313,26 +313,26 @@ export default function CollectionTimelineView({
 
       {/* VIEW 1: DYNAMIC INTERACTIVE UNIVERSE MAP */}
       {viewMode === "map" && (
-        <div className="relative w-full h-[620px] rounded-3xl overflow-hidden border border-white/10 bg-[#070b14] shadow-2xl select-none">
+        <div className="preserve-white relative w-full h-[620px] rounded-3xl overflow-hidden border border-slate-300/60 dark:border-white/10 bg-[#070b14] shadow-2xl select-none text-white">
           {/* Map Controls Floating Overlay */}
-          <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 bg-black/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl">
+          <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 bg-black/75 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 shadow-xl">
             <button
               onClick={() => setZoom((z) => Math.min(z * 1.2, 2.2))}
-              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 text-white flex items-center justify-center transition-all cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-[#E50914] text-white flex items-center justify-center transition-all cursor-pointer"
               title="Kattalashtirish (+)"
             >
               <span className="material-symbols-outlined text-lg">zoom_in</span>
             </button>
             <button
               onClick={() => setZoom((z) => Math.max(z * 0.8, 0.4))}
-              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 text-white flex items-center justify-center transition-all cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-[#E50914] text-white flex items-center justify-center transition-all cursor-pointer"
               title="Kichiklashtirish (-)"
             >
               <span className="material-symbols-outlined text-lg">zoom_out</span>
             </button>
             <button
               onClick={handleResetMap}
-              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 text-white flex items-center justify-center transition-all cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-[#E50914] text-white flex items-center justify-center transition-all cursor-pointer"
               title="Markazga qaytarish"
             >
               <span className="material-symbols-outlined text-lg">restart_alt</span>
@@ -340,9 +340,9 @@ export default function CollectionTimelineView({
           </div>
 
           {/* Interactive Legend & Guide Banner */}
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/10 text-xs text-text-secondary pointer-events-none">
-            <span className="material-symbols-outlined text-primary-container text-sm">touch_app</span>
-            <span>Xaritani barmog'ingiz yoki sichqoncha bilan suring, kattalashtiring yoki tugunlarni bosing</span>
+          <div className="preserve-white absolute top-4 left-4 right-16 sm:right-auto z-20 flex items-center gap-2 bg-black/75 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15 text-xs text-slate-200 pointer-events-none">
+            <span className="material-symbols-outlined text-[#E50914] text-sm shrink-0">touch_app</span>
+            <span className="text-slate-100">Xaritani barmog&apos;ingiz yoki sichqoncha bilan suring, kattalashtiring yoki tugunlarni bosing</span>
           </div>
 
           {/* Universe Interactive Canvas Area */}
@@ -558,31 +558,31 @@ export default function CollectionTimelineView({
             return (
               <div
                 key={item.id}
-                className="group flex flex-col md:flex-row items-stretch bg-surface-container-lowest/80 hover:bg-surface-container-low border border-white/10 hover:border-primary-container/40 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary-container/5 relative"
+                className="group flex flex-col md:flex-row items-stretch bg-white dark:bg-surface-container-lowest/80 hover:bg-slate-50 dark:hover:bg-surface-container-low border border-slate-200 dark:border-white/10 hover:border-[#E50914]/50 rounded-2xl overflow-hidden transition-all duration-300 shadow-sm dark:shadow-none hover:shadow-xl hover:shadow-primary-container/5 relative"
               >
                 {/* Order Number Badge Column */}
-                <div className="md:w-20 bg-white/[0.02] md:border-r border-b md:border-b-0 border-white/5 flex items-center justify-between md:justify-center px-4 py-3 md:p-0 shrink-0">
+                <div className="md:w-20 bg-slate-50 dark:bg-white/[0.02] md:border-r border-b md:border-b-0 border-slate-200 dark:border-white/5 flex items-center justify-between md:justify-center px-4 py-3 md:p-0 shrink-0">
                   <div className="flex md:flex-col items-center gap-1.5 md:gap-0.5">
-                    <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest md:hidden">
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-text-secondary uppercase tracking-widest md:hidden">
                       Tartib:
                     </span>
-                    <span className="font-display-hero text-2xl md:text-3xl font-black text-primary-container group-hover:scale-110 transition-transform">
+                    <span className="font-display-hero text-2xl md:text-3xl font-black text-[#D20A13] dark:text-[#E50914] group-hover:scale-110 transition-transform">
                       {activeOrder}
                     </span>
-                    <span className="text-[9px] text-text-secondary uppercase tracking-wider hidden md:block">
+                    <span className="text-[9px] text-slate-500 dark:text-text-secondary uppercase tracking-wider hidden md:block">
                       Qism
                     </span>
                   </div>
 
                   {content?.release_year && (
-                    <span className="text-xs text-text-secondary font-semibold md:hidden">
+                    <span className="text-xs text-slate-600 dark:text-text-secondary font-semibold md:hidden">
                       {content.release_year}-yil
                     </span>
                   )}
                 </div>
 
                 {/* Poster Thumbnail */}
-                <div className="relative w-full md:w-36 h-48 md:h-auto shrink-0 bg-surface-container overflow-hidden">
+                <div className="relative w-full md:w-36 h-48 md:h-auto shrink-0 bg-slate-200 dark:bg-surface-container overflow-hidden">
                   {content?.poster_url ? (
                     <Image
                       src={content.poster_url}
@@ -593,44 +593,44 @@ export default function CollectionTimelineView({
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white/20">
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-white/20">
                       <span className="material-symbols-outlined text-4xl">movie</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-transparent to-transparent opacity-60"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/70 via-transparent to-transparent opacity-50"></div>
                 </div>
 
                 {/* Body Content */}
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                   <div>
                     {sortMode === "chronological" && item.timeline_event_desc && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary-container/15 border border-primary-container/30 text-white font-semibold text-xs mb-2.5">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-red-50 dark:bg-[#E50914]/15 border border-red-200 dark:border-[#E50914]/30 text-[#D20A13] dark:text-white font-semibold text-xs mb-2.5">
                         <span className="material-symbols-outlined text-[14px]">history</span>
                         <span>{item.timeline_event_desc}</span>
                       </div>
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <h4 className="font-bold text-base sm:text-xl text-white group-hover:text-primary-container transition-colors">
+                      <h4 className="font-bold text-base sm:text-xl text-slate-900 dark:text-white group-hover:text-[#D20A13] dark:group-hover:text-[#E50914] transition-colors">
                         {content?.title || "Noma'lum film"}
                       </h4>
                       {movie?.original_title && (
-                        <span className="text-xs text-text-secondary italic">
+                        <span className="text-xs text-slate-500 dark:text-text-secondary italic">
                           ({movie.original_title})
                         </span>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5 text-xs text-text-secondary my-2">
+                    <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-600 dark:text-text-secondary my-2">
                       {content?.release_year && (
-                        <span className="hidden md:inline-flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                        <span className="hidden md:inline-flex items-center gap-1 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded border border-slate-200 dark:border-white/10">
                           <span className="material-symbols-outlined text-[13px]">calendar_today</span>
                           <span>{content.release_year}</span>
                         </span>
                       )}
 
                       {movie?.imdb_rating && (
-                        <span className="inline-flex items-center gap-1 bg-black/50 text-rating-gold px-2 py-0.5 rounded border border-white/10 font-bold">
+                        <span className="preserve-white inline-flex items-center gap-1 bg-slate-900 dark:bg-black/60 text-rating-gold px-2 py-0.5 rounded border border-slate-800 dark:border-white/10 font-bold">
                           <span
                             className="material-symbols-outlined text-[13px]"
                             style={{ fontVariationSettings: "'FILL' 1" }}
@@ -642,12 +642,12 @@ export default function CollectionTimelineView({
                       )}
 
                       {movie?.code && (
-                        <span className="font-mono text-[11px] bg-white/5 px-2 py-0.5 rounded text-white/60">
+                        <span className="font-mono text-[11px] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded text-slate-700 dark:text-white/60">
                           #{movie.code}
                         </span>
                       )}
 
-                      <span className="text-[11px] text-text-secondary/70">
+                      <span className="text-[11px] text-slate-500 dark:text-text-secondary/70">
                         {sortMode === "chronological"
                           ? `(Chiqarilgan tartibi: #${item.release_order})`
                           : `(Voqealar tartibi: #${item.chronological_order})`}
@@ -656,10 +656,10 @@ export default function CollectionTimelineView({
                   </div>
 
                   {/* Bottom Action Button */}
-                  <div className="pt-3 border-t border-white/5 flex items-center justify-end">
+                  <div className="pt-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-end">
                     <Link
                       href={targetUrl}
-                      className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary-container hover:bg-inverse-primary text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95 shadow-md shadow-primary-container/20 cursor-pointer"
+                      className="preserve-white inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#D20A13] dark:bg-[#E50914] hover:bg-[#B80710] text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95 shadow-md shadow-primary/20 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-base">play_circle</span>
                       <span>Tomosha qilish</span>

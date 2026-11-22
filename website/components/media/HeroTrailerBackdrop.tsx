@@ -111,19 +111,20 @@ export default function HeroTrailerBackdrop({
   }, [hasVideo, restoreDetails, startDimTimer]);
 
   return (
-    <div className="hero-stage preserve-white relative mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-3 rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-[82svh] md:min-h-[760px] flex flex-col justify-start md:justify-center items-center pt-6 sm:pt-10 md:pt-12 pb-10 sm:pb-12 overflow-hidden bg-[#08090C] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
+    <div className="hero-stage preserve-white relative mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-3 rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-[82svh] md:min-h-[760px] flex flex-col justify-start md:justify-center items-center pt-6 sm:pt-10 md:pt-12 pb-10 sm:pb-12 overflow-hidden bg-[#0E0F13] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
       {/* Background Media Layer: Full-bleed Ambient Trailer inside Cinema Island (both Light & Dark Mode) */}
       <div className="block absolute inset-0 top-0 overflow-hidden pointer-events-none">
-        {/* Base Layer: Instant LCP Poster Image with fill */}
+        {/* Base Layer: Instant LCP Poster Image matching HeroCarousel crisp #0E0F13 method */}
         {posterUrl ? (
           <AdultHeroBackground
             src={posterUrl}
             alt={title}
             is18Plus={is18Plus}
             isDetailPage={true}
+            sharp={true}
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-b from-[#121317] to-[#08090C]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121317] to-[#0E0F13]" />
         )}
 
         {/* Ambient / Clear Video Layer: True object-cover fill for YouTube */}
@@ -171,20 +172,15 @@ export default function HeroTrailerBackdrop({
           </div>
         )}
 
-        {/* Vignette Gradients: soften when dimmed so the trailer is in 1st priority focus */}
+        {/* Vignette Gradients: crisp HeroCarousel scrims matching #0E0F13, softening when trailer plays */}
         <div
-          className={`absolute inset-0 bg-gradient-to-t from-[#08090C] via-[#08090C]/70 to-transparent pointer-events-none transition-opacity duration-1000 ${
-            isDimmed ? "opacity-30" : "opacity-90"
+          className={`absolute inset-0 bg-gradient-to-t from-[#0E0F13]/75 via-transparent to-transparent pointer-events-none transition-opacity duration-1000 ${
+            isDimmed ? "opacity-25" : "opacity-100"
           }`}
         />
         <div
-          className={`absolute inset-0 bg-gradient-to-r from-[#08090C] via-[#08090C]/75 md:via-[#08090C]/60 to-transparent/20 pointer-events-none transition-opacity duration-1000 ${
-            isDimmed ? "opacity-25" : "opacity-90"
-          }`}
-        />
-        <div
-          className={`absolute inset-0 bg-black/25 pointer-events-none transition-opacity duration-1000 ${
-            isDimmed ? "opacity-10" : "opacity-100"
+          className={`absolute inset-0 bg-gradient-to-r from-[#0E0F13]/85 via-[#0E0F13]/45 to-transparent pointer-events-none transition-opacity duration-1000 ${
+            isDimmed ? "opacity-20" : "opacity-100"
           }`}
         />
       </div>

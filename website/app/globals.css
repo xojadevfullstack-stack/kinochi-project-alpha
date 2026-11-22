@@ -207,7 +207,18 @@ body.light-theme main .bg-primary-container * {
   body.light-theme .master-subheader-bar a.nav-tab:hover *,
   body.light-theme .master-subheader-bar button:hover,
   body.light-theme .master-subheader-bar button:hover * {
+    background-color: #B80710 !important;
+    border-color: #B80710 !important;
     color: #FFFFFF !important;
+  }
+  body.light-theme .master-subheader-bar a.nav-tab:hover *,
+  body.light-theme .master-subheader-bar button:hover * {
+    background-color: transparent !important;
+    border-color: transparent !important;
+  }
+  /* Prevent white-on-white invisible hover text on light pills/buttons that lack red/dark hover backgrounds */
+  body.light-theme main .hover\:text-white:hover:not(.hero-stage *):not(.preserve-white *):not(.nav-tab):not(.back-btn):not(.episode-card):not([class*="hover:bg-[#B80710]"]):not([class*="hover:bg-[#E50914]"]):not([class*="hover:bg-[#D20A13]"]):not([class*="hover:bg-primary"]):not([class*="hover:bg-red-"]):not([class*="bg-[#E50914]"]):not([class*="bg-[#D20A13]"]):not(.bg-primary):not(.bg-primary-container) {
+    color: #0F172A !important;
   }
 }
 body.light-theme .hero-stage p,
