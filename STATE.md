@@ -1,17 +1,17 @@
 # Project State (STATE.md)
 
 ## Current goal
-Render Free Tier (`512 MB RAM`, `0.1 CPU`) uchun xavfsiz `SMM-S5-RenderSafe` (`720x1280` `low_ram=True`, `asyncio.to_thread`, `supervised_run_smm_worker`) hamda alohida 2-Telegram sessiya generatorini (`scripts/smm_telegram_login.py`) `feat/smm-autopilot` va `main` ga chiqarib deploy qilish.
+Render Free Tier (`512 MB RAM`, `0.1 CPU`) uchun xavfsiz `SMM-S5-RenderSafe` (`720x1280` `low_ram=True`, `asyncio.to_thread`, `safe_run_smm_worker`) hamda `movies.short_code` (`1001+`, `@MediaPlusOfficialBot`, `/go` sahifasi) ni jonli Render va Vercel muhitida tasdiqlash.
 
 ## In progress (slice, branch)
-- Slice: `SMM-S5-RenderSafe` (`run.py`, `scraper/smm_clipper.py`, `scraper/smm_pipeline.py`, `scraper/smm_scene_scorer.py`, `scraper/smm_worker.py`, `scripts/smm_telegram_login.py`, `@MediaPlusOfficialBot` publisher sinxronizatsiyasi).
+- Slice: `SMM-ShortCode-UX` (`3457e37`, `d21261f`) + `SMM-S5-RenderSafe` (`5cdb1e6`); Supabase da `d4e5f6a7b8c9` migratsiyasi qo'llandi (`90/90` kino -> `'1001'..'1090'`, `smm_settings.bot_username = '@MediaPlusOfficialBot'`).
 - Branch: `feat/smm-autopilot` -> `main`.
 
 ## Blocked
-- Yo'q (Render Environment'ga `SMM_TELEGRAM_STRING_SESSION`, `SMM_LOW_RAM=true`, `SMM_AUTOPILOT_ENABLED=true`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` foydalanuvchi tomonidan kiritilgan / tekshirilmoqda).
+- Yo'q.
 
 ## Next step (one task)
-- Render deploy logs orqali `supervised_run_smm_worker` va `/health` holatini jonli tasdiqlash.
+- Render deploy (`main`) tugagach `/smm` dan 1 ta klippni jonli generatsiya qilib `#1090` / `@MediaPlusOfficialBot` chiqishini tasdiqlash.
 
 ## Last verification & check results (Terminal Evidence)
 - **Alembic Heads (`backend`):** `d4e5f6a7b8c9 (head)` (linear).
