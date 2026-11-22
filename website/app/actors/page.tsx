@@ -216,7 +216,7 @@ export default function ActorsPage() {
             compact
           />
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 sm:gap-4">
             {actors.map((actor) => (
               <ActorCard
                 key={actor.id}

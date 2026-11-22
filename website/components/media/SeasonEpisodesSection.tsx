@@ -67,16 +67,21 @@ export default function SeasonEpisodesSection({
   );
 
   return (
-    <section data-tour="series-episodes" className="max-w-container-max mx-auto px-gutter py-6 sm:py-8 border-t border-slate-200 dark:border-white/5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-text-primary flex items-center gap-2.5">
-          <span className="w-1.5 h-6 bg-primary rounded-full block"></span>
-          Fasllar va Qismlar
-        </h2>
+    <section data-tour="series-episodes" className="max-w-container-max mx-auto px-gutter py-4 sm:py-6">
+      <div className="bg-white dark:bg-[#0E1117]/90 rounded-3xl border border-slate-200 dark:border-white/10 p-4 sm:p-6 shadow-sm dark:shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200 dark:border-white/10">
+          <h2 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-1.5 h-5 bg-[#E50914] rounded-full block"></span>
+            <span>Fasllar va Qismlar</span>
+          </h2>
+          <span className="text-xs text-slate-500 dark:text-gray-400">
+            {activeSeason?.title || `${activeSeason?.season_number}-Mavsum`} • Jami <strong className="text-slate-900 dark:text-white font-mono">{episodes.length}</strong> ta qism
+          </span>
+        </div>
 
         {/* Season Selector Tabs */}
         {sortedSeasons.length > 1 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto hide-scrollbar pb-3 mb-3">
             {sortedSeasons.map((season) => {
               const isActive = season.id === activeSeason?.id;
               return (
@@ -86,77 +91,67 @@ export default function SeasonEpisodesSection({
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                     isActive
                       ? "bg-[#D20A13] dark:bg-[#E50914] text-white border-[#D20A13] dark:border-[#E50914] shadow-md shadow-primary/25"
-                      : "bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-white/10"
+                      : "bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-white/10"
                   }`}
                 >
-                  {season.season_number}-Mavsum
+                  {season.season_number}-Mavsum ({season.episodes?.length || 0})
                 </button>
               );
             })}
           </div>
         )}
-      </div>
 
-      {/* Active Season Info Bar */}
-      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-text-secondary mb-3 px-1">
-        <span className="font-semibold text-slate-800 dark:text-white/80">
-          {activeSeason?.title || `${activeSeason?.season_number}-Mavsum`}
-        </span>
-        <span>
-          Jami: <strong className="text-slate-900 dark:text-white font-mono">{episodes.length}</strong> ta qism
-        </span>
-      </div>
-
-      {/* Episodes Grid: Compact, touch-friendly, ergonomic */}
-      {episodes.length === 0 ? (
-        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-xl p-6 text-center text-slate-500 dark:text-text-secondary text-xs sm:text-sm">
-          Bu faslga hozircha qismlar kiritilmagan.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-2.5">
-          {episodes.map((episode) => {
-            const episodeCode = episode.code || episode.display_code || String(episode.id);
-            const episodeLink = `https://t.me/${targetBotUser}?start=ep_${episodeCode}`;
-            return (
-              <TelegramWatchButton
-                key={episode.id}
-                url={episodeLink}
-                mediaTitle={`${series.title} (${episode.episode_number}-qism)`}
-                mediaCode={episodeCode}
-                mediaId={episode.id}
-                seriesId={series.id}
-                mediaType="episode"
-                posterUrl={activeSeason?.poster_url || series.poster_url || ""}
-                releaseYear={series.release_year}
-                imdbRating={series.imdb_rating || series.tmdb_rating}
-                genres={series.categories?.[0]?.name || "Serial"}
-                className="episode-card group relative flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-slate-100/90 hover:bg-[#D20A13] dark:bg-white/[0.04] dark:hover:bg-[#E50914] border border-slate-200 dark:border-white/10 hover:border-[#D20A13] dark:hover:border-[#E50914] hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 cursor-pointer overflow-hidden text-left"
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors font-mono">
-                    {episode.episode_number}
-                  </span>
-                  <span className="material-symbols-outlined text-slate-400 dark:text-white/40 group-hover:text-white group-hover:scale-110 transition-all text-lg">
-                    play_circle
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-text-secondary group-hover:text-white/90 w-full">
-                  <span className="truncate group-hover:text-white transition-colors">
-                    {episode.title && episode.title !== `${episode.episode_number}-qism`
-                      ? episode.title
-                      : `${episode.episode_number}-qism`}
-                  </span>
-                  {episode.duration && (
-                    <span className="text-[10px] text-slate-400 dark:text-white/40 group-hover:text-white/80 shrink-0 ml-1 font-mono">
-                      {episode.duration}m
+        {/* Episodes Grid: Prototype 4-column mobile layout */}
+        {episodes.length === 0 ? (
+          <div className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-xl p-6 text-center text-slate-500 dark:text-text-secondary text-xs sm:text-sm">
+            Bu faslga hozircha qismlar kiritilmagan.
+          </div>
+        ) : (
+          <div id="episodesGrid" className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-1.5 sm:gap-2.5">
+            {episodes.map((episode) => {
+              const episodeCode = episode.code || episode.display_code || String(episode.id);
+              const episodeLink = `https://t.me/${targetBotUser}?start=ep_${episodeCode}`;
+              return (
+                <TelegramWatchButton
+                  key={episode.id}
+                  url={episodeLink}
+                  mediaTitle={`${series.title} (${episode.episode_number}-qism)`}
+                  mediaCode={episodeCode}
+                  mediaId={episode.id}
+                  seriesId={series.id}
+                  mediaType="episode"
+                  posterUrl={activeSeason?.poster_url || series.poster_url || ""}
+                  releaseYear={series.release_year}
+                  imdbRating={series.imdb_rating || series.tmdb_rating}
+                  genres={series.categories?.[0]?.name || "Serial"}
+                  className="episode-card group relative flex flex-col justify-between p-1.5 sm:p-2.5 rounded-xl bg-slate-100/90 hover:bg-[#D20A13] dark:bg-white/[0.04] dark:hover:bg-[#E50914] border border-slate-200 dark:border-white/10 hover:border-[#D20A13] dark:hover:border-[#E50914] hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 cursor-pointer overflow-hidden text-left"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors font-mono">
+                      {episode.episode_number}
                     </span>
-                  )}
-                </div>
-              </TelegramWatchButton>
-            );
-          })}
-        </div>
-      )}
+                    <span className="material-symbols-outlined text-slate-400 dark:text-white/35 group-hover:text-white group-hover:scale-110 transition-all text-[15px] sm:text-lg">
+                      play_circle
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[9px] sm:text-[11px] text-slate-600 dark:text-text-secondary group-hover:text-white/90 w-full">
+                    <span className="truncate group-hover:text-white transition-colors">
+                      {episode.title && episode.title !== `${episode.episode_number}-qism`
+                        ? episode.title
+                        : `${episode.episode_number}-qism`}
+                    </span>
+                    {episode.duration && (
+                      <span className="hidden sm:inline text-[10px] text-slate-400 dark:text-white/40 group-hover:text-white/80 shrink-0 ml-1 font-mono">
+                        {episode.duration}m
+                      </span>
+                    )}
+                  </div>
+                </TelegramWatchButton>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

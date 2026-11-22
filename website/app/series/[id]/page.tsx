@@ -262,8 +262,8 @@ export default async function SeriesDetailsPage({ params }: Props) {
               {series.description || "Ushbu serial haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-center justify-center md:justify-start w-full sm:w-auto">
+            {/* Action Buttons (Mobile 2-col grid matching prototype, Desktop flex row) */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 items-stretch sm:items-center justify-center md:justify-start w-full">
               <TelegramWatchButton 
                 url={telegramDeepLink}
                 mediaTitle={series.title}
@@ -274,7 +274,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 releaseYear={series.release_year}
                 imdbRating={series.imdb_rating || series.tmdb_rating}
                 genres={series.categories?.[0]?.name || "Serial"}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-primary-container text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest hover:bg-inverse-primary hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-black/40 hover:shadow-black/60 transition-all duration-200 group font-bold cursor-pointer"
+                className="col-span-2 sm:col-span-1 sm:w-auto flex items-center justify-center gap-2 bg-[#E50914] text-white px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider hover:bg-[#B80710] hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-primary/30 transition-all duration-200 group font-bold cursor-pointer"
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -294,19 +294,19 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 url={`/series/${series.id}`}
                 code={`s_${series.id}`}
                 botUsername={botUsername}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 px-3 sm:px-6 py-3 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer"
               />
-                            <SubscribeButton
+              <SubscribeButton
                 targetType="series"
                 targetId={series.id}
                 title={series.title}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                className="col-span-1 sm:w-auto px-3 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm"
               />
               <ReportIssueButton
                 mediaType="series"
                 seriesId={series.id}
                 mediaTitle={series.title}
-                className="w-full sm:w-auto"
+                className="col-span-2 sm:col-span-1 sm:w-auto py-3 sm:py-3.5"
               />
             </div>
           </div>

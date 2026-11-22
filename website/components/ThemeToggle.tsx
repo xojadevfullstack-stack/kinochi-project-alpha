@@ -44,7 +44,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
 
   if (!mounted) {
     return (
-      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/5 border border-white/10 ${className}`} />
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 border border-white/10 shrink-0 ${className}`} />
     );
   }
 
@@ -52,11 +52,11 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
     <button
       type="button"
       onClick={toggleTheme}
-      className={`header-icon-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 text-slate-700 dark:text-text-secondary hover:bg-[#B80710] dark:hover:bg-[#E50914] hover:border-[#B80710] dark:hover:border-[#E50914] hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer group active:scale-95 ${className}`}
+      className={`header-icon-btn relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 text-slate-700 dark:text-text-secondary hover:bg-[#B80710] dark:hover:bg-[#E50914] hover:border-[#B80710] dark:hover:border-[#E50914] hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer group active:scale-95 shrink-0 ${className}`}
       aria-label="Rejimni almashtirish"
       title={theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
     >
-      <span className="material-symbols-outlined text-[20px] sm:text-[22px] transition-transform duration-300 group-hover:rotate-45 group-hover:text-white">
+      <span className="material-symbols-outlined text-[18px] sm:text-[22px] transition-transform duration-300 group-hover:rotate-45 group-hover:text-white">
         {theme === "dark" ? "light_mode" : "dark_mode"}
       </span>
     </button>

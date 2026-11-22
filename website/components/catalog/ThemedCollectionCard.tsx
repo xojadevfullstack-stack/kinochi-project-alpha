@@ -37,13 +37,13 @@ export default function ThemedCollectionCard({
   return (
     <Link
       href={href}
-      className="group relative flex flex-col justify-between bg-white hover:bg-slate-50 dark:bg-[#121317] dark:hover:bg-[#161820] border border-slate-200 dark:border-white/10 hover:border-[#E50914] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-black/60 cursor-pointer overflow-hidden shadow-sm"
+      className="group relative flex flex-col justify-between bg-white hover:bg-slate-50 dark:bg-[#121317] dark:hover:bg-[#161820] border border-slate-200 dark:border-white/10 hover:border-[#E50914] rounded-2xl p-3 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-black/60 cursor-pointer overflow-hidden shadow-sm"
     >
-      {/* 3D Fanned 3-Poster Showcase Deck (Iconic Asilmedia Style) */}
-      <div className="relative w-full h-44 sm:h-48 mb-4 flex items-center justify-center perspective-1000 select-none">
+      {/* 3D Fanned 3-Poster Showcase Deck */}
+      <div className="relative w-full h-32 sm:h-44 mb-3 sm:mb-4 flex items-center justify-center perspective-1000 select-none">
         
         {/* Left Angled Poster */}
-        <div className="absolute w-24 sm:w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-white/10 transform -rotate-12 -translate-x-8 sm:-translate-x-10 scale-90 opacity-75 group-hover:-rotate-[16deg] group-hover:-translate-x-12 sm:group-hover:-translate-x-14 transition-all duration-300 bg-surface-container">
+        <div className="absolute w-16 sm:w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-white/10 transform -rotate-12 -translate-x-6 sm:-translate-x-10 scale-90 opacity-75 group-hover:-rotate-[16deg] group-hover:-translate-x-8 sm:group-hover:-translate-x-14 transition-all duration-300 bg-surface-container">
           <Image
             src={src1}
             alt=""
@@ -56,7 +56,7 @@ export default function ThemedCollectionCard({
         </div>
 
         {/* Right Angled Poster */}
-        <div className="absolute w-24 sm:w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-white/10 transform rotate-12 translate-x-8 sm:translate-x-10 scale-90 opacity-75 group-hover:rotate-[16deg] group-hover:translate-x-12 sm:group-hover:translate-x-14 transition-all duration-300 bg-surface-container">
+        <div className="absolute w-16 sm:w-28 aspect-[2/3] rounded-xl overflow-hidden shadow-xl border border-white/10 transform rotate-12 translate-x-6 sm:translate-x-10 scale-90 opacity-75 group-hover:rotate-[16deg] group-hover:translate-x-8 sm:group-hover:translate-x-14 transition-all duration-300 bg-surface-container">
           <Image
             src={src3}
             alt=""
@@ -69,7 +69,7 @@ export default function ThemedCollectionCard({
         </div>
 
         {/* Center Dominant Poster */}
-        <div className="relative z-10 w-28 sm:w-32 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 transform scale-100 group-hover:scale-105 transition-transform duration-300 bg-surface-container-high">
+        <div className="relative z-10 w-20 sm:w-32 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 transform scale-100 group-hover:scale-105 transition-transform duration-300 bg-surface-container-high">
           <Image
             src={src2}
             alt={title}

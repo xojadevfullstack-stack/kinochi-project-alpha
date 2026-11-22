@@ -225,34 +225,34 @@ export default function NotificationsPage() {
         <div className="flex gap-2 pb-4 mb-6 overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab("all")}
-            className={`h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
+            className={`h-9 sm:h-10 px-4 sm:px-5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
               activeTab === "all"
-                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
-                : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
+                ? "bg-[#D20A13] dark:bg-[#E50914] text-white border-[#D20A13] dark:border-[#E50914] shadow-md font-bold"
+                : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
             }`}
           >
             <span>Barchasi ({notifications.length})</span>
           </button>
           <button
             onClick={() => setActiveTab("personal")}
-            className={`h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
+            className={`h-9 sm:h-10 px-4 sm:px-5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
               activeTab === "personal"
-                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
-                : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
+                ? "bg-[#D20A13] dark:bg-[#E50914] text-white border-[#D20A13] dark:border-[#E50914] shadow-md font-bold"
+                : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-[18px] text-sky-400">person</span>
+            <span className={`material-symbols-outlined text-[18px] ${activeTab === "personal" ? "text-white" : "text-sky-500"}`}>person</span>
             <span>Shaxsiy tavsiyalar ({notifications.filter((n) => n.type === "personal").length})</span>
           </button>
           <button
             onClick={() => setActiveTab("system")}
-            className={`h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
+            className={`h-9 sm:h-10 px-4 sm:px-5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
               activeTab === "system"
-                ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
-                : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
+                ? "bg-[#D20A13] dark:bg-[#E50914] text-white border-[#D20A13] dark:border-[#E50914] shadow-md font-bold"
+                : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-[18px] text-primary">campaign</span>
+            <span className={`material-symbols-outlined text-[18px] ${activeTab === "system" ? "text-white" : "text-[#E50914]"}`}>campaign</span>
             <span>Tizim yangiliklari ({notifications.filter((n) => n.type === "system").length})</span>
           </button>
         </div>

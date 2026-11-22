@@ -168,7 +168,7 @@ export default function SubscriptionsPage() {
                 <span className="w-1.5 h-4 bg-primary-container rounded-full block"></span>
                 Kuzatilayotgan Seriallar ({seriesList.length})
               </h2>
-              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
                 {seriesList.map((series) => (
                   <div
                     key={`series-${series.id}`}

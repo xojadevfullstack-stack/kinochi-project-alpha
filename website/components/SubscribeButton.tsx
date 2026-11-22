@@ -106,17 +106,15 @@ export default function SubscribeButton({
   return (
     <>
       <button
+        type="button"
         onClick={handleToggle}
         disabled={loading}
         title={isSubscribed ? "Obunani bekor qilish" : "Yangi qismlarga obuna bo'lish"}
-        className={
-          className ||
-          `inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-200 cursor-pointer shadow-md active:scale-95 ${
-            isSubscribed
-              ? "bg-white/10 hover:bg-red-500/20 text-white hover:text-red-300 border border-white/20 hover:border-red-500/40"
-              : "bg-red-600 hover:bg-red-700 text-white hover:scale-[1.02] shadow-red-950/50"
-          }`
-        }
+        className={`inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider font-bold transition-all duration-200 cursor-pointer shadow-md active:scale-95 border ${
+          isSubscribed
+            ? "bg-[#E50914]/20 hover:bg-[#E50914]/30 text-white border-[#E50914]/50"
+            : "bg-white/10 hover:bg-white/15 text-white border-white/15 hover:border-white/30"
+        } ${className}`}
       >
         <span
           className="material-symbols-outlined text-[18px]"

@@ -474,11 +474,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             : "bg-white/75 dark:bg-[#0c0e14]/65 backdrop-blur-md border-slate-900/5 dark:border-white/5 py-3.5"
         }`}
       >
-        <div className="max-w-container-max mx-auto px-gutter flex items-center justify-between gap-3 sm:gap-4 relative">
+        <div className="max-w-container-max mx-auto px-2.5 sm:px-gutter flex items-center justify-between gap-1.5 sm:gap-4 relative">
           
           {/* Left: Back (on inner pages) + Hamburger Menu Button + Logo */}
           <div
-            className={`flex items-center gap-2 sm:gap-3 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            className={`flex items-center gap-1 sm:gap-2.5 shrink-0 min-w-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isMobileSearchOpen
                 ? "opacity-0 -translate-x-4 pointer-events-none scale-95 sm:opacity-100 sm:translate-x-0 sm:pointer-events-auto sm:scale-100"
                 : "opacity-100 translate-x-0 scale-100"
@@ -499,11 +499,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                     router.push("/");
                   }
                 }}
-                className="back-btn header-icon-btn w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group"
+                className="back-btn header-icon-btn w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group shrink-0"
                 title="Orqaga"
                 aria-label="Orqaga qaytish"
               >
-                <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
+                <span className="material-symbols-outlined text-[18px] sm:text-[22px] group-hover:text-white">
                   arrow_back
                 </span>
               </button>
@@ -517,22 +517,22 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   openSidebarSmoothly();
                 }
               }}
-              className="header-icon-btn w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group"
+              className="header-icon-btn w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group shrink-0"
               title="Menyu"
               aria-label="Menyuni ochish"
             >
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
+              <span className="material-symbols-outlined text-[18px] sm:text-[22px] group-hover:text-white">
                 {sidebarOpen ? "close" : "menu"}
               </span>
             </button>
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group min-w-0">
               <img
                 src="/logo-mediaplus-icon.png"
                 alt="MediaPlus"
                 decoding="async"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-cover shrink-0 shadow-lg shadow-brand-red/30"
+                className="w-6 h-6 sm:w-9 sm:h-9 rounded-lg object-cover shrink-0 shadow-lg shadow-brand-red/30"
               />
-              <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-slate-900 dark:text-white group-hover:opacity-95 transition-opacity">
+              <span className="font-display-hero text-base xs:text-lg sm:text-3xl font-black tracking-wide sm:tracking-wider text-slate-900 dark:text-white group-hover:opacity-95 transition-opacity truncate">
                 MEDIA<span className="text-primary-container">PLUS</span>
               </span>
             </Link>
@@ -548,7 +548,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
           {/* Right Corner Controls: [Search (Mobile only), 1. Theme, 2. Notifications, 3. Profile] */}
           <div
-            className={`flex items-center gap-2 sm:gap-3 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            className={`flex items-center gap-1 sm:gap-2.5 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isMobileSearchOpen
                 ? "opacity-0 translate-x-4 pointer-events-none scale-95 sm:opacity-100 sm:translate-x-0 sm:pointer-events-auto sm:scale-100"
                 : "opacity-100 translate-x-0 scale-100"
@@ -558,11 +558,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen(true)}
-              className="header-icon-btn sm:hidden w-9 h-9 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95"
+              className="header-icon-btn sm:hidden w-8 h-8 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95 shrink-0"
               aria-label="Qidiruv"
               title="Qidiruvni ochish"
             >
-              <span className="material-symbols-outlined text-[20px] group-hover:text-white">
+              <span className="material-symbols-outlined text-[18px] group-hover:text-white">
                 search
               </span>
             </button>
@@ -573,22 +573,22 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             {/* 2. Notifications Button */}
             <Link
               href="/notifications"
-              className="header-icon-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95"
+              className="header-icon-btn relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95 shrink-0"
               aria-label="Bildirishnomalar"
               title="Bildirishnomalar"
             >
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
+              <span className="material-symbols-outlined text-[18px] sm:text-[22px] group-hover:text-white">
                 notifications
               </span>
               {hasUnread && (
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container group-hover:bg-white rounded-full animate-pulse shadow-sm shadow-primary-container" />
+                <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-container group-hover:bg-white rounded-full animate-pulse shadow-sm shadow-primary-container" />
               )}
             </Link>
 
             {/* 3. Profile Avatar / Button */}
             <Link
               href="/profile"
-              className="header-icon-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95 overflow-hidden"
+              className="header-icon-btn relative w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95 overflow-hidden shrink-0"
               aria-label="Mening Profilim"
               title="Profil sahifasi"
             >
@@ -597,7 +597,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   {user.first_name.charAt(0)}
                 </span>
               ) : (
-                <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
+                <span className="material-symbols-outlined text-[18px] sm:text-[22px] group-hover:text-white">
                   person
                 </span>
               )}
