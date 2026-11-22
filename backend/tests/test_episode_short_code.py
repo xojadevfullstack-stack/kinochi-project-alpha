@@ -80,3 +80,8 @@ async def test_episode_code_endpoint_resolves_short_code(client, db_session):
     assert body["id"] == ep.id
     assert body["short_code"] == ep.short_code
     assert body["series_id"] == ser.id
+
+    live = client.get(f"/api/v1/search/live?q={ep.short_code}")
+    assert live.status_code == 200
+    items = live.json()["results"]
+    assert any(it["type"] == "series" and it["id"] == ser.id and it.get("short_code") == ep.short_code for it in items)

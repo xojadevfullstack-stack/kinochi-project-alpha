@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db_session
 from app.api.limiter import limiter
 from app.infrastructure.db.models.movie import MovieModel
-from app.infrastructure.db.models.series import SeriesModel
+from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.collection import CollectionModel
 from app.infrastructure.db.query_filters import published_only
 from app.core.cache import get_cache, set_cache
@@ -81,7 +81,7 @@ async def live_search(
     )
 
     if is_potential_code:
-        # Check movie code or short_code first, then numeric ID fallback
+        # 1a. Check exact movie code or short_code first
         movie_code_stmt = published_only(
             select(MovieModel).where(
                 or_(MovieModel.code.ilike(code_query), MovieModel.short_code == code_query)
@@ -89,7 +89,43 @@ async def live_search(
             MovieModel,
         )
         movie_by_code = (await db.execute(movie_code_stmt)).scalar_one_or_none()
-        if not movie_by_code and code_query.isdigit() and len(code_query) <= 9:
+
+        # 1b. Check exact episode short_code or code BEFORE any numeric ID fallback
+        ep_match = None
+        if not movie_by_code:
+            ep_stmt = (
+                select(EpisodeModel, SeasonModel, SeriesModel)
+                .join(SeasonModel, EpisodeModel.season_id == SeasonModel.id)
+                .join(SeriesModel, SeasonModel.series_id == SeriesModel.id)
+                .where(
+                    SeriesModel.publish_status == "published",
+                    or_(
+                        EpisodeModel.short_code == code_query,
+                        func.lower(EpisodeModel.code) == func.lower(code_query),
+                    ),
+                )
+                .limit(1)
+            )
+            ep_match = (await db.execute(ep_stmt)).first()
+
+        if ep_match:
+            ep_row, ep_season, ep_series = ep_match
+            results.append(
+                LiveSearchResultItem(
+                    id=ep_series.id,
+                    title=f"{ep_series.title} ({ep_season.season_number}-mavsum, {ep_row.episode_number}-qism)",
+                    original_title=None,
+                    code=ep_row.code,
+                    short_code=ep_row.short_code,
+                    year=ep_series.release_year,
+                    poster_url=ep_series.poster_url,
+                    imdb_rating=ep_series.imdb_rating,
+                    type="series",
+                    extra="Qism kodi bo'yicha topildi",
+                )
+            )
+
+        if not movie_by_code and not ep_match and code_query.isdigit() and len(code_query) <= 9:
             num_id = int(code_query)
             if 0 < num_id <= 2_147_483_647:
                 movie_by_code = (
@@ -113,7 +149,7 @@ async def live_search(
                 )
             )
 
-        if series_id_target:
+        if series_id_target and (code_query.lower().startswith("s_") or (not movie_by_code and not ep_match)):
             series_by_id_stmt = published_only(
                 select(SeriesModel).where(SeriesModel.id == series_id_target).limit(1), SeriesModel
             )

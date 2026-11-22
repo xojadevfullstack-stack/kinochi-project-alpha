@@ -77,6 +77,14 @@ export default function QuickCodePage() {
         router.push(`/movie/${encodeURIComponent(movie.short_code || movie.code)}`);
         return;
       }
+      const epRes = await fetch(`${API_URL}/series/episodes/code/${encodeURIComponent(cleanedCode)}`);
+      if (epRes.ok) {
+        const ep = await epRes.json();
+        if (ep?.series_id) {
+          router.push(`/series/${ep.series_id}`);
+          return;
+        }
+      }
       if (match) {
         if (match.type === "series") {
           router.push(`/series/${match.id}`);

@@ -218,18 +218,25 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
     if " " in cleaned_code or len(cleaned_code) > 64 or not re.match(r"^[a-zA-Z0-9_\-]+$", cleaned_code):
         return False
 
-    # Faqat raqamdan iborat so'rovlar (masalan: "30", "123", yoki "28831337"):
+    # Faqat raqamdan iborat so'rovlar (masalan: "1001" kino, "1091" qism, yoki "28831337"):
     if cleaned_code.isdigit():
-        # 1. Avval kino kodi sifatida tekshiramiz (kino kodi raqamli bo'lishi mumkin)
+        # 1. Avval aniq kino kodi/short_code bo'yicha tekshiramiz
         movie = await api_client.get_movie_by_code(cleaned_code)
-        if movie:
+        if movie and (
+            str(movie.get("short_code") or "") == cleaned_code
+            or str(movie.get("code") or "").lower() == cleaned_code.lower()
+        ):
             await send_movie_info(bot, chat_id, movie)
             return True
 
-        # 2. Agar 6-8 raqamli bo'lsa, bu unikal qism kodi bo'lishi mumkin (masalan: 28831337 - Taxtlar o'yini 1-qismi)
-        if len(cleaned_code) >= 6:
+        # 2. Qism short_code (4+ xona) / numeric code bo'yicha tekshiramiz
+        if len(cleaned_code) >= 4:
             episode = await api_client.get_episode_by_code(cleaned_code)
-            if episode and (episode.get("code") == cleaned_code or str(episode.get("id")) == cleaned_code):
+            if episode and (
+                str(episode.get("short_code") or "") == cleaned_code
+                or str(episode.get("code") or "") == cleaned_code
+                or str(episode.get("id") or "") == cleaned_code
+            ):
                 success = await send_episode_to_user(bot, chat_id, episode)
                 if not success and episode.get("series_id"):
                     series = await api_client.get_series_by_id(episode["series_id"])
@@ -237,6 +244,11 @@ async def resolve_and_send_content(bot: Bot, chat_id: int, query: str) -> bool:
                         await send_series_info(bot, chat_id, series)
                         return True
                 return True
+
+        # 3. Agar qism topilmasa, eski movie ID fallback ishlatiladi
+        if movie:
+            await send_movie_info(bot, chat_id, movie)
+            return True
 
         logger.info(f"Numeric-only query '{cleaned_code}' bo'yicha film/qism topilmadi va noaniq ID qidiruvi rad etildi.")
         return False
