@@ -302,12 +302,24 @@ export default async function SeriesDetailsPage({ params }: Props) {
                 title={series.title}
                 className="col-span-1 sm:w-auto px-3 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm"
               />
-              <ReportIssueButton
-                mediaType="series"
-                seriesId={series.id}
-                mediaTitle={series.title}
-                className="col-span-2 sm:col-span-1 sm:w-auto py-3 sm:py-3.5"
-              />
+              {(() => {
+                const hasTrailer = Boolean(
+                  series.trailer_url &&
+                    series.trailer_url !== "" &&
+                    series.trailer_url !== "null" &&
+                    series.trailer_url !== "undefined"
+                );
+                const secondaryCount = (hasTrailer ? 1 : 0) + 3; // Share + Subscribe + Report
+                const isEvenGrid = secondaryCount % 2 === 0;
+                return (
+                  <ReportIssueButton
+                    mediaType="series"
+                    seriesId={series.id}
+                    mediaTitle={series.title}
+                    className={`${isEvenGrid ? "col-span-1" : "col-span-2"} sm:col-span-1 sm:w-auto`}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>

@@ -118,7 +118,7 @@ export default async function DynamicPage({
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian">
+    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-background-obsidian">
       <div className="max-w-container-max mx-auto">
         
         {/* Smart Back Navigation */}

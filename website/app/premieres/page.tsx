@@ -90,7 +90,7 @@ export default async function PremieresPage({
   const activeGenreName = DEFAULT_GENRES.find((g) => g.id === selectedGenre)?.name;
 
   return (
-    <div className="min-h-screen pt-24 sm:pt-28 pb-28 xl:pb-16 px-4 md:px-8 bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian text-text-primary">
+    <div className="min-h-screen pt-24 sm:pt-28 pb-28 xl:pb-16 px-4 md:px-8 bg-background-obsidian text-text-primary">
       <div className="max-w-container-max mx-auto space-y-6">
         {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/10">

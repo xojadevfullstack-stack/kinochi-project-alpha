@@ -293,12 +293,25 @@ export default async function MovieDetailsPage({ params }: Props) {
                   className="col-span-1 sm:w-auto px-3 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm"
                 />
               )}
-              <ReportIssueButton
-                mediaType="movie"
-                movieId={movie.id}
-                mediaTitle={movie.title}
-                className="col-span-2 sm:col-span-1 sm:w-auto py-3 sm:py-3.5"
-              />
+              {(() => {
+                const hasTrailer = Boolean(
+                  movie.trailer_url &&
+                    movie.trailer_url !== "" &&
+                    movie.trailer_url !== "null" &&
+                    movie.trailer_url !== "undefined"
+                );
+                const hasSubscribe = Boolean(franchiseContext);
+                const secondaryCount = (hasTrailer ? 1 : 0) + 1 + (hasSubscribe ? 1 : 0) + 1;
+                const isEvenGrid = secondaryCount % 2 === 0;
+                return (
+                  <ReportIssueButton
+                    mediaType="movie"
+                    movieId={movie.id}
+                    mediaTitle={movie.title}
+                    className={`${isEvenGrid ? "col-span-1" : "col-span-2"} sm:col-span-1 sm:w-auto`}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>

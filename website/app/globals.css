@@ -304,12 +304,25 @@ body.light-theme #mainSidebar .border-white\/10 {
   border-color: #E2E8F0 !important;
 }
 
-body.light-theme input:not([type="checkbox"]):not([type="radio"]),
+body.light-theme input:not([type="checkbox"]):not([type="radio"]):not(.search-pill-input),
 body.light-theme select,
 body.light-theme textarea {
   background-color: #FFFFFF !important;
   color: #0F172A !important;
   border-color: #CBD5E1 !important;
+}
+
+body.light-theme .site-top-nav input,
+body.light-theme input.search-pill-input {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #0F172A !important;
+}
+body.light-theme .site-top-nav input::placeholder,
+body.light-theme input.search-pill-input::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
 }
 
 /* Seamless Subheader & Universal Breadcrumb Transparency */

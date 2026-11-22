@@ -8,6 +8,7 @@ interface AdultHeroBackgroundProps {
   alt: string;
   is18Plus?: boolean;
   isDetailPage?: boolean;
+  sharp?: boolean;
 }
 
 export default function AdultHeroBackground({
@@ -15,6 +16,7 @@ export default function AdultHeroBackground({
   alt,
   is18Plus = false,
   isDetailPage = false,
+  sharp = false,
 }: AdultHeroBackgroundProps) {
   const { isMounted, isVerified } = useAgeVerification();
   const shouldBlur = is18Plus && (!isDetailPage ? true : (!isMounted || !isVerified));
@@ -29,6 +31,8 @@ export default function AdultHeroBackground({
       className={`object-cover transition-all duration-700 ease-out ${
         shouldBlur
           ? "opacity-20 scale-125 blur-3xl"
+          : sharp
+          ? "opacity-65"
           : "opacity-50 sm:opacity-40 scale-105 blur-sm sm:blur-md"
       }`}
       style={{ objectPosition: "center 20%" }}

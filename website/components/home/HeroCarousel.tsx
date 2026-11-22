@@ -50,7 +50,7 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
           id="heroSlide"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
-          className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#08090C] min-h-[235px] sm:min-h-[290px] md:min-h-[340px] flex items-center shadow-xl"
+          className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] min-h-[235px] sm:min-h-[290px] md:min-h-[340px] flex items-center shadow-xl"
         >
           {/* Backdrop */}
           <div className="absolute inset-0 z-0 pointer-events-none">
@@ -59,10 +59,11 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
                 src={current.poster_url}
                 alt={current.title}
                 is18Plus={is18Plus}
+                sharp={true}
               />
             ) : null}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#08090C]/85 via-[#08090C]/25 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#08090C]/90 via-[#08090C]/55 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0E0F13]/70 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0E0F13]/80 via-[#0E0F13]/45 to-transparent" />
           </div>
 
           {/* Carousel Controls */}

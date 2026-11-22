@@ -328,9 +328,9 @@ export default function LiveSearch({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <form onSubmit={handleSubmit} className="w-full relative">
-        <div className="flex items-center w-full bg-white/5 hover:bg-white/10 rounded-full px-3.5 py-1.5 xl:px-4 xl:py-2 border border-white/10 focus-within:border-primary-container focus-within:bg-white/10 transition-all">
+        <div className="flex items-center w-full bg-slate-200/75 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full px-3.5 py-1.5 xl:px-4 xl:py-2 border border-slate-300/80 dark:border-white/10 focus-within:border-[#E50914] dark:focus-within:border-primary-container focus-within:bg-white/95 dark:focus-within:bg-white/10 transition-all">
           <span
-            className="material-symbols-outlined text-text-secondary mr-2 text-[18px] xl:text-[20px] shrink-0"
+            className="material-symbols-outlined text-slate-500 dark:text-text-secondary mr-2 text-[18px] xl:text-[20px] shrink-0"
             style={{ fontVariationSettings: "'FILL' 0" }}
           >
             search
@@ -349,7 +349,7 @@ export default function LiveSearch({
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className={`bg-transparent border-none focus:ring-0 text-text-primary text-sm placeholder:text-text-secondary outline-none w-full ${inputClassName}`}
+            className={`search-pill-input bg-transparent border-none focus:ring-0 text-slate-900 dark:text-text-primary text-sm placeholder:text-slate-500 dark:placeholder:text-text-secondary outline-none w-full ${inputClassName}`}
           />
           {isLoading ? (
             <div className="w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin shrink-0 ml-1"></div>
