@@ -363,13 +363,13 @@ main > .universal-breadcrumb + div[class*="pt-16"] {
 body.pure-minimal section:has(.animate-marquee-left) {
   display: none !important;
 }
-body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
-body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]) {
+body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(.preserve-white):not(.preserve-white *):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(.preserve-white):not(.preserve-white *):not(button):not(select):not(input):not(.aspect-\[2\/3\]) {
   background-color: rgba(16, 19, 28, 0.88);
   border-color: rgba(255, 255, 255, 0.08);
 }
-body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
-body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]) {
+body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(.preserve-white):not(.preserve-white *):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(.preserve-white):not(.preserve-white *):not(button):not(select):not(input):not(.aspect-\[2\/3\]) {
   background-color: #FFFFFF;
   border-color: rgba(15, 23, 42, 0.09);
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);

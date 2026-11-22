@@ -111,9 +111,9 @@ export default function HeroTrailerBackdrop({
   }, [hasVideo, restoreDetails, startDimTimer]);
 
   return (
-    <div className="hero-stage preserve-white relative mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-3 rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-[82svh] md:min-h-[760px] flex flex-col justify-start md:justify-center items-center pt-6 sm:pt-10 md:pt-12 pb-10 sm:pb-12 overflow-hidden bg-[#0E0F13] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
+    <div className="hero-stage preserve-white relative isolate mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-3 rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-[82svh] md:min-h-[760px] flex flex-col justify-start md:justify-center items-center pt-6 sm:pt-10 md:pt-12 pb-10 sm:pb-12 overflow-hidden bg-[#0E0F13] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
       {/* Background Media Layer: Full-bleed Ambient Trailer inside Cinema Island (both Light & Dark Mode) */}
-      <div className="block absolute inset-0 top-0 overflow-hidden pointer-events-none">
+      <div className="block absolute inset-0 top-0 z-0 overflow-hidden pointer-events-none">
         {/* Base Layer: Instant LCP Poster Image matching HeroCarousel crisp #0E0F13 method */}
         {posterUrl ? (
           <AdultHeroBackground

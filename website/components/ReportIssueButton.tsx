@@ -61,10 +61,10 @@ export default function ReportIssueButton({
           type="button"
           onClick={() => setIsOpen(true)}
           title="Xatolik haqida xabar berish"
-          className={`flex items-center justify-center gap-1.5 px-3 sm:px-6 py-3 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider font-bold bg-white/10 hover:bg-[#E50914]/15 text-white border border-white/15 hover:border-[#E50914]/50 shadow-md shadow-black/20 transition-all duration-200 active:scale-95 cursor-pointer ${className}`}
+          className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-6 py-3 sm:py-3.5 rounded-xl font-label-caps text-[11px] sm:text-sm uppercase tracking-normal sm:tracking-wider font-bold bg-white/10 hover:bg-[#E50914]/15 text-white border border-white/15 hover:border-[#E50914]/50 shadow-md shadow-black/20 transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap ${className}`}
         >
-          <span className="material-symbols-outlined text-[18px] text-[#E50914] shrink-0">report_problem</span>
-          <span className="truncate">Xatolik haqida</span>
+          <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#E50914] shrink-0">report_problem</span>
+          <span>Xatolik haqida</span>
         </button>
       )}
 
