@@ -51,6 +51,13 @@ type SmmProgressSnapshot = {
     failed: number;
     active_jobs: { id: number; media_type: string; movie_code: string; title: string; status: string; progress_pct: number; progress_stage: string }[];
   };
+  worker?: {
+    enabled?: boolean;
+    running?: boolean;
+    has_smm_session?: boolean;
+    last_tick_at?: string | null;
+    last_error?: string | null;
+  };
 };
 
 const ALL_PLATFORMS = ["telegram", "instagram", "facebook", "youtube", "tiktok"] as const;
@@ -195,10 +202,19 @@ export default function SmmStudioPage() {
       {progress && (
         <div className="glass-panel rounded-2xl p-4 space-y-3 border border-white/10">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#E50914] animate-pulse" />
-              Jonli Progress (1-sikl Autopilot &amp; 2-sikl SMM Worker)
-            </h2>
+            <div className="space-y-0.5">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#E50914] animate-pulse" />
+                Jonli Progress (1-sikl Autopilot &amp; 2-sikl SMM Worker)
+              </h2>
+              {progress.worker && (
+                <div className="text-[11px] text-text-secondary">
+                  Render Worker: <b className={progress.worker.enabled && progress.worker.running ? "text-emerald-400" : "text-[#E50914]"}>{progress.worker.enabled ? (progress.worker.running ? "Faol" : "To'xtagan") : "O'chiq (SMM_AUTOPILOT_ENABLED != true)"}</b>
+                  {" | "}SMM Session: <b className="text-white">{progress.worker.has_smm_session ? "Bor" : "Yo'q"}</b>
+                  {progress.worker.last_error ? ` | Xato: ${progress.worker.last_error}` : ""}
+                </div>
+              )}
+            </div>
             <button onClick={() => loadAll(filter)} className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white">
               Yangilash
             </button>
@@ -385,11 +401,26 @@ export default function SmmStudioPage() {
             <div className="text-xs text-text-secondary">Vaqt: {job.start_sec}s (+{job.duration_sec}s)</div>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(job.platforms_status || {}).map(([plat, st]) => (
-                <span key={plat} className={`text-[10px] px-2 py-0.5 rounded-full border ${st.status === "published" ? "border-emerald-500 text-emerald-400" : st.status === "failed" ? "border-[#E50914] text-red-400" : "border-white/15 text-text-secondary"}`}>
+                <span
+                  key={plat}
+                  title={st.error || st.status}
+                  className={`text-[10px] px-2 py-0.5 rounded-full border ${st.status === "published" ? "border-emerald-500 text-emerald-400" : st.status === "failed" ? "border-[#E50914] text-red-400" : "border-white/15 text-text-secondary"}`}
+                >
                   {plat}: {st.status}
                 </span>
               ))}
             </div>
+            {Object.entries(job.platforms_status || {}).some(([, st]) => st.status === "failed" && st.error) && (
+              <div className="rounded-lg bg-black/40 border border-[#E50914]/40 px-2.5 py-2 space-y-1 text-[11px] text-red-300">
+                {Object.entries(job.platforms_status || {}).map(([plat, st]) =>
+                  st.status === "failed" && st.error ? (
+                    <div key={plat} className="break-words">
+                      <b className="uppercase">{plat}:</b> {st.error}
+                    </div>
+                  ) : null
+                )}
+              </div>
+            )}
             <div className="flex gap-2">
               <input placeholder="Yangi soniya" value={recutStart[job.id] ?? String(job.start_sec)} onChange={(e) => setRecutStart({ ...recutStart, [job.id]: e.target.value })} className="w-24 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" />
               <button onClick={() => runAction(job.id, "recut", { start_sec: Number(recutStart[job.id] ?? job.start_sec), duration_sec: job.duration_sec })} className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white">Qayta kesish</button>

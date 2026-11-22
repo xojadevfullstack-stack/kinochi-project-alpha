@@ -8,17 +8,17 @@
 - Branch: `feat/smm-autopilot` -> `main`.
 
 ## Blocked
-- Render jonli serverida `smm_clip_jobs #2` va `#3` ishga tushmagan (foydalanuvchi Render Logs da `"SMM worker started: enabled=..."` qatorini hamda `SMM_AUTOPILOT_ENABLED=true` / `SMM_TELEGRAM_STRING_SESSION` borligini tekshirishi kerak).
+- Render jonli serverida `FACEBOOK_ACCESS_TOKEN` / `META_ACCESS_TOKEN` muddati tugagan (`20-Nov-26 PST`) va `SMM_AUTOPILOT_ENABLED` dublikat qatori o'chirilib asl qatori `true` ekanligi tekshirilishi kerak.
 
 ## Next step (one task)
-- Tuzatishlarni commit va `origin/main` ga push qilish, Render Env Vars/Logs ni tekshirish va `/smm` sahifasida `#3955` (`clip_2.mp4`) hamda `#3956` (`clip_3.mp4`) kliplarini ko'rib tasdiqlash.
+- Tuzatishlarni commit va `origin/main` ga push qilib Render deploy yakunlanganidan so'ng `/api/v1/smm/progress` hamda `#2`/`#3` jonli holatini tekshirish va foydalanuvchiga Meta tokenlarini yangilash bo'yicha yo'riqnoma berish.
 
 ## Last verification & check results (Terminal Evidence)
 - **Live Cycle 1 E2E (`asilmedia_18451` — `Ouk Strit ko'chasining oxiri`):** TMDb `1101383` (`The End of Oak Street`, `2026`, `IMDb 7.0`) bilan topildi, Forum Topic `#9811` ochildi, `Movie #914` (`short_code='3956'`, `code='WPZ79R'`) `published` holatiga o'tdi va `smm_clip_jobs #3` yaratildi.
 - **Live Cycle 2 E2E (`run_smm_worker_cycle`):**
   - `smm_clip_jobs #2` (`#3955`, `Yulduzlar sari mashaqqatli yo‘l`) -> `waiting_approval`, `uploads/smm/clip_2.mp4` (`5,071,423` bayt, `720x1280`, AI chap-yuqori watermark blur).
   - `smm_clip_jobs #3` (`#3956`, `Ouk Strit ko‘chasining oxiri`) -> `waiting_approval`, `uploads/smm/clip_3.mp4` (`9,124,325` bayt, `720x1280`, `45.0s`, AI chap-yuqori watermark blur, `Janr: Ilmiy fantastika • Sirli • Triller`).
-- **Autopost & Telegram Inline Admin Fix:** `InstagramReelsPublisher` da `FACEBOOK_ACCESS_TOKEN` fallback, `process_publish_job()` da `/api/v1/smm/jobs/{id}/video` + Telegram Storage tiklash hamda `smm_admin.py` / `smm.py` da `smm_settings.admin_telegram_id` orqali Telegram tugma avtorizatsiyasi qo'shildi (`ruff` `All checks passed!`, SMM backend `56 passed, 2 warnings in 14.46s`, bot `108 passed in 8.56s`).
+- **Immediate Publish & Idempotent Retry Fix:** `approve_smm_job` / `bot_approve_smm_job` (`publish_now=true`) uchun FastAPI `BackgroundTasks` darhol publish, `process_publish_job()` da allaqachon `published` bo'lgan tarmoqlarni qayta chiqarmaslik, TikTok `PUT upload_url` `TransportError` qayta urinishi, `/api/v1/smm/progress` da `worker` holati va `/smm` sahifasida har bir xato tarmoq xabari qo'shildi (`ruff` `All checks passed!`, backend SMM+enricher `63 passed, 2 warnings in 10.21s`, bot `108 passed in 5.95s`, admin-panel `7 passed, 0 failed`, `tsc --noEmit` Exit 0, `next build` `22/22` Exit 0).
 - **Ruff Lint (o'zgartirilgan SMM + test fayllari):** `All checks passed!` (Exit code 0). (`backend bot` umumiy lintida avvaldan mavjud 429 xato bor).
 - **Alembic Heads:** `f6a7b8c9d0e1 (head)` (Supabase'da faol).
 - **Backend Filtered Suite (`SMM + Enricher + Movie + Public routes`):** `66 passed, 2 warnings in 11.39s`.

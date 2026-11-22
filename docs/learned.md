@@ -74,3 +74,7 @@
 
 - Concept: **MP4 `stco/co64` Index-Bounded Sparse Windowing** — Katta videodan kichik qism kesishda `moov` mundarijasidan klipning ham bosh, ham oxirgi sekundlari joylashgan bayt chegarasini hisoblab oqimli yuklash (RAM tejash va VBR sahna uzilib qolmasligi uchun).
 - Analogy: Qalin kitobdan bitta sahna olishda taxminan 25 varaq sanab kesmasdan, mundarijadan bobning aniq boshlanish va tugash betini ko'rib o'sha oraliqni to'liq olish.
+
+## Idempotent Per-Platform Retry & In-Process Immediate Dispatch
+- Concept: **Idempotent Retry + BackgroundTasks Fallback** — Qayta urinishda avval muvaffaqiyatli chiqqan (`published`) tarmoqlarni o'tkazib yuborish dublikat postlarni oldini oladi; `publish_now` bosilganda esa fon worker kutmasdan `BackgroundTasks` orqali darhol ishga tushirish tez reaksiya beradi.
+- Analogy: 5 ta do'konga posilka yuborganda 2 tasi allaqachon qabul qilgan bo'lsa, qayta jo'natishda faqat yetib bormagan 3 tasiga yuborish va kuryerni kechki mashinani kutmasdan hoziroq yo'lga chiqarish.
