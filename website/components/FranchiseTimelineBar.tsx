@@ -88,7 +88,7 @@ export default function FranchiseTimelineBar({
         {/* Timeline lore badge & toggle */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
           {context.timeline_event_desc && (
-            <span className="text-xs text-amber-300/90 font-medium bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20 max-w-[280px] sm:max-w-[340px] truncate">
+            <span className="text-xs text-red-200 font-medium bg-[#E50914]/15 px-3 py-1 rounded-lg border border-[#E50914]/30 max-w-[280px] sm:max-w-[340px] truncate">
               ⏳ {context.timeline_event_desc}
             </span>
           )}

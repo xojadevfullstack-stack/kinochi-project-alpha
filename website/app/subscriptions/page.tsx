@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import BackButton from "@/components/BackButton";
 import SubscribeButton from "@/components/SubscribeButton";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { fetchApi } from "@/lib/api";
+import MediaLoader from "@/components/ui/MediaLoader";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface SubscribedSeries {
   id: number;
@@ -79,19 +80,16 @@ export default function SubscriptionsPage() {
     <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6 max-w-container-max mx-auto text-text-primary">
       {/* 1. Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <BackButton fallbackUrl="/" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] sm:text-xs font-bold tracking-wider uppercase border border-primary/30">
-                Mening Obunalarim
-              </span>
-              <span className="text-text-secondary text-xs">Kuzatuv ro&apos;yxati</span>
-            </div>
-            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mt-0.5">
-              Obunalar
-            </h1>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] sm:text-xs font-bold tracking-wider uppercase border border-primary/30">
+              Mening Obunalarim
+            </span>
+            <span className="text-text-secondary text-xs">Kuzatuv ro&apos;yxati</span>
           </div>
+          <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mt-0.5">
+            Obunalar
+          </h1>
         </div>
 
         {/* Filter Tabs */}
@@ -149,30 +147,17 @@ export default function SubscriptionsPage() {
 
       {/* Loading State */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="aspect-[2/3] rounded-2xl bg-white/5 animate-pulse" />
-          ))}
-        </div>
+        <MediaLoader variant="cardGrid" count={10} label="Obunalar yuklanmoqda..." />
       ) : totalCount === 0 ? (
         /* Empty State */
-        <div className="rounded-3xl bg-white/[0.02] border border-white/5 p-12 sm:p-16 text-center flex flex-col items-center justify-center max-w-xl mx-auto my-8">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 text-white/40">
-            <span className="material-symbols-outlined text-3xl">bookmark_border</span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
-            Hozircha obunalar yo&apos;q
-          </h2>
-          <p className="text-xs sm:text-sm text-text-secondary max-w-md leading-relaxed mb-6">
-            O&apos;zingizga yoqqan serial yoki film franshizasi sahifasiga kirib &quot;Obuna bo&apos;lish&quot; tugmasini bosing. Yangi qismlar chiqqanda xabardor bo&apos;lasiz!
-          </p>
-          <Link
-            href="/catalog"
-            className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs sm:text-sm font-bold transition-all hover:scale-[1.02] active:scale-95"
-          >
-            Katalogga o&apos;tish
-          </Link>
-        </div>
+        <EmptyState
+          icon="bookmark_border"
+          title="Hozircha obunalar yo'q"
+          description={'O\'zingizga yoqqan serial yoki film franshizasi sahifasiga kirib "Obuna bo\'lish" tugmasini bosing. Yangi qismlar chiqqanda xabardor bo\'lasiz!'}
+          actionLabel="Katalogga o'tish"
+          actionHref="/catalog"
+          className="max-w-xl mx-auto my-8"
+        />
       ) : (
         /* Subscriptions Grid */
         <div className="space-y-8">

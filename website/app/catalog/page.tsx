@@ -4,7 +4,6 @@ import { Metadata } from "next";
 import Link from "next/link";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
-import BackButton from "@/components/BackButton";
 import LiveSearch from "@/components/LiveSearch";
 import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
 import { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES } from "@/lib/filterConstants";
@@ -233,17 +232,14 @@ export default async function FullCatalogPage({
         
         {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <BackButton fallbackUrl="/" />
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-2xl">category</span>
-                <span>Katalog</span>
-              </h1>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Kinolar, seriallar, doramalar, anime va multfilmlar bo&apos;limi.
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-2xl">category</span>
+              <span>Katalog</span>
+            </h1>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Kinolar, seriallar, doramalar, anime va multfilmlar bo&apos;limi.
+            </p>
           </div>
 
           <div className="w-full md:w-80">

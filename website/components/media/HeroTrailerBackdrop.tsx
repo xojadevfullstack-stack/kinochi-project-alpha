@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
+import { isLowEndDevice } from "@/lib/lowEnd";
 
 interface HeroTrailerBackdropProps {
   posterUrl?: string | null;
@@ -19,6 +20,7 @@ export default function HeroTrailerBackdrop({
   children,
 }: HeroTrailerBackdropProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [allowAmbientVideo, setAllowAmbientVideo] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [isDimmed, setIsDimmed] = useState(false);
 
@@ -38,7 +40,7 @@ export default function HeroTrailerBackdrop({
   const isYoutube = cleanUrl.includes("youtube.com") || cleanUrl.includes("youtu.be");
   const youtubeId = isYoutube ? getYoutubeId(cleanUrl) : null;
   const isDirectMp4 = cleanUrl.endsWith(".mp4") || cleanUrl.includes(".mp4?");
-  const hasVideo = Boolean(youtubeId || isDirectMp4);
+  const hasVideo = allowAmbientVideo && Boolean(youtubeId || isDirectMp4);
   const TOP_SCROLL_THRESHOLD = 50;
 
   // Timer to dim metadata after a few seconds of initial reading
@@ -71,6 +73,7 @@ export default function HeroTrailerBackdrop({
 
   useEffect(() => {
     setIsMounted(true);
+    setAllowAmbientVideo(!isLowEndDevice());
   }, []);
 
   useEffect(() => {
@@ -108,9 +111,9 @@ export default function HeroTrailerBackdrop({
   }, [hasVideo, restoreDetails, startDimTimer]);
 
   return (
-    <div className="relative w-full min-h-[100svh] md:min-h-[800px] flex flex-col justify-start md:justify-center items-center pt-24 sm:pt-28 md:pt-32 pb-12 overflow-hidden">
-      {/* Background Media Layer: Seamless full-bleed fill from y=0 behind fixed navbar */}
-      <div className="absolute inset-0 top-0 overflow-hidden pointer-events-none">
+    <div className="hero-stage preserve-white relative mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-3 rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-[82svh] md:min-h-[760px] flex flex-col justify-start md:justify-center items-center pt-6 sm:pt-10 md:pt-12 pb-10 sm:pb-12 overflow-hidden bg-[#08090C] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
+      {/* Background Media Layer: Full-bleed Ambient Trailer inside Cinema Island (both Light & Dark Mode) */}
+      <div className="block absolute inset-0 top-0 overflow-hidden pointer-events-none">
         {/* Base Layer: Instant LCP Poster Image with fill */}
         {posterUrl ? (
           <AdultHeroBackground
@@ -120,7 +123,7 @@ export default function HeroTrailerBackdrop({
             isDetailPage={true}
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-b from-surface-container to-background-obsidian" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121317] to-[#08090C]" />
         )}
 
         {/* Ambient / Clear Video Layer: True object-cover fill for YouTube */}
@@ -170,12 +173,12 @@ export default function HeroTrailerBackdrop({
 
         {/* Vignette Gradients: soften when dimmed so the trailer is in 1st priority focus */}
         <div
-          className={`absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/[0.70] to-transparent pointer-events-none transition-opacity duration-1000 ${
+          className={`absolute inset-0 bg-gradient-to-t from-[#08090C] via-[#08090C]/70 to-transparent pointer-events-none transition-opacity duration-1000 ${
             isDimmed ? "opacity-30" : "opacity-90"
           }`}
         />
         <div
-          className={`absolute inset-0 bg-gradient-to-r from-background-obsidian via-background-obsidian/[0.75] md:via-background-obsidian/[0.60] to-transparent/20 pointer-events-none transition-opacity duration-1000 ${
+          className={`absolute inset-0 bg-gradient-to-r from-[#08090C] via-[#08090C]/75 md:via-[#08090C]/60 to-transparent/20 pointer-events-none transition-opacity duration-1000 ${
             isDimmed ? "opacity-25" : "opacity-90"
           }`}
         />

@@ -312,7 +312,7 @@ export default function ContinueWatchingSection() {
         </div>
       ) : (
         /* Scrollable List of In-Progress Cards */
-        <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-4 pt-1">
+        <div className="flex gap-2 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-4 pt-1">
           {items.map((item) => {
             const cleanCode = item.code && !String(item.code).startsWith("http") && String(item.code) !== "0" ? String(item.code) : "";
             const cleanId = item.id && !String(item.id).startsWith("http") && String(item.id) !== "0" ? String(item.id) : "";
@@ -337,7 +337,7 @@ export default function ContinueWatchingSection() {
             return (
               <div
                 key={`cw-${item.id}-${item.code || ""}`}
-                className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 snap-start"
+                className="w-[calc((100%-16px)/3)] sm:w-[170px] md:w-[200px] shrink-0 snap-start"
               >
                 <MovieCard item={catalogItem} statusBadge="in_progress" href={targetHref} />
               </div>

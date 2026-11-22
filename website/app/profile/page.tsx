@@ -10,6 +10,7 @@ import { useSearchParams } from "next/navigation";
 import TelegramLoginWidget from "@/components/auth/TelegramLoginWidget";
 import BackButton from "@/components/BackButton";
 import SubscribeButton from "@/components/SubscribeButton";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface UnifiedHistoryItem {
   id: string | number;
@@ -64,6 +65,7 @@ function ProfileContent() {
   const [userSubscriptions, setUserSubscriptions] = useState<ProfileSubscriptionItem[]>([]);
   const [recommendations, setRecommendations] = useState<CollectionRecommendation[]>([]);
   const [unsubscribingId, setUnsubscribingId] = useState<number | null>(null);
+  const [subError, setSubError] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
   useEffect(() => {
@@ -196,6 +198,7 @@ function ProfileContent() {
   const handleUnsubscribe = async (sub: ProfileSubscriptionItem) => {
     if (!user?.telegram_id) return;
     setUnsubscribingId(sub.id);
+    setSubError(null);
     try {
       const endpoint = sub.type === "series"
         ? `/series/${sub.id}/subscribe`
@@ -209,7 +212,7 @@ function ProfileContent() {
       setUserSubscriptions(prev => prev.filter(x => !(x.id === sub.id && x.type === sub.type)));
       window.dispatchEvent(new Event("subscription:change"));
     } catch (e: any) {
-      alert("Obunani bekor qilishda xatolik: " + e.message);
+      setSubError("Obunani bekor qilishda xatolik: " + (e?.message || "Noma'lum xato"));
     } finally {
       setUnsubscribingId(null);
     }
@@ -398,17 +401,14 @@ function ProfileContent() {
               </div>
 
               {historyItems.length === 0 ? (
-                <div className="py-12 text-center bg-white/5 border border-white/10 rounded-2xl p-6">
-                  <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">history</span>
-                  <h3 className="text-base font-bold text-white mb-1">Tomosha tarixi bo'sh</h3>
-                  <p className="text-xs text-text-secondary max-w-sm mx-auto mb-4">
-                    Siz hali hech qanday film yoki serialni tomosha qilmadingiz. Sevimli filmlaringizni katalogdan toping.
-                  </p>
-                  <Link href="/catalog" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 text-xs font-bold text-white rounded-xl border border-white/10 transition">
-                    <span>Katalogdan film topish</span>
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </Link>
-                </div>
+                <EmptyState
+                  icon="history"
+                  title="Tomosha tarixi bo'sh"
+                  description="Siz hali hech qanday film yoki serialni tomosha qilmadingiz. Sevimli filmlaringizni katalogdan toping."
+                  actionLabel="Katalogdan film topish"
+                  actionHref="/catalog"
+                  compact
+                />
               ) : (
                 <div className="space-y-2.5">
                   {historyItems.map((item) => (
@@ -473,27 +473,14 @@ function ProfileContent() {
                 Saqlab qo'yilgan filmlar va seriallar
               </h2>
               {favorites.length === 0 ? (
-                <div className="py-12 text-center bg-white/5 border border-white/10 rounded-2xl p-6">
-                  <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">favorite</span>
-                  <h3 className="text-base font-bold text-white mb-1">Sevimlilar ro'yxati bo'sh</h3>
-                  <p className="text-xs text-text-secondary max-w-sm mx-auto mb-4">
-                    Kino yoki serial sahifasida «Obuna bo'lish» tugmasini bossangiz, ular avtomatik tarzda ushbu bo'limda va Telegram botingizda saqlanadi.
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("subscriptions")}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary/20 hover:bg-primary/30 text-xs font-bold text-primary border border-primary/30 rounded-xl transition cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-sm">notifications</span>
-                      <span>Obunalarni ko'rish</span>
-                    </button>
-                    <Link href="/catalog" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/15 text-xs font-bold text-white rounded-xl border border-white/10 transition">
-                      <span>Katalogga o'tish</span>
-                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                    </Link>
-                  </div>
-                </div>
+                <EmptyState
+                  icon="favorite"
+                  title="Sevimlilar ro'yxati bo'sh"
+                  description="Kino yoki serial sahifasida «Obuna bo'lish» tugmasini bossangiz, ular avtomatik tarzda ushbu bo'limda va Telegram botingizda saqlanadi."
+                  actionLabel="Katalogga o'tish"
+                  actionHref="/catalog"
+                  compact
+                />
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {favorites.map((fav, idx) => (
@@ -561,6 +548,12 @@ function ProfileContent() {
               </div>
 
               {/* Active Subscriptions List */}
+              {subError && (
+                <div className="px-4 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-medium flex items-center justify-between gap-2">
+                  <span>{subError}</span>
+                  <button type="button" onClick={() => setSubError(null)} className="text-red-200 hover:text-white cursor-pointer">×</button>
+                </div>
+              )}
               {status !== "authenticated" ? (
                 <div className="py-8 text-center bg-white/5 border border-white/10 rounded-2xl p-6 space-y-3">
                   <span className="material-symbols-outlined text-4xl text-primary">account_circle</span>

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 
 import { API_URL } from "@/lib/api";
+import { useOverlayBackClose } from "@/lib/hooks/useOverlayBackClose";
 
 export interface RequestTargetItem {
   tmdb_id?: number | null;
@@ -41,6 +42,8 @@ export default function RequestMovieModal({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useOverlayBackClose(Boolean(isOpen && item), onClose);
 
   useEffect(() => {
     if (isOpen) {
@@ -161,7 +164,7 @@ export default function RequestMovieModal({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-[10px] font-bold uppercase">
+                  <span className="px-2 py-0.5 bg-[#E50914]/20 text-red-400 rounded text-[10px] font-bold uppercase">
                     {item.media_type === "series" ? "Serial" : "Kino"}
                   </span>
                   {item.release_year && (

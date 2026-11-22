@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jonli TV va Efirlar - MediaPlus</title>
+  <link rel="icon" type="image/png" href="public/logo-mediaplus-icon.png"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              red: '#E50914',
+              redHover: '#B80710',
+              gold: '#F5C518',
+              cardBg: '#121620'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            outfit: ['"Outfit"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    
+    
+    
+    
+    /* Light Theme (Variant 1: Titanium Slate Canvas #F1F5F9 + Deep Velvet Crimson #D20A13) */
+    body.light-theme {
+      background-color: #F1F5F9 !important;
+      color: #0F172A !important;
+    }
+    body.light-theme header,
+    body.light-theme footer,
+    body.light-theme #mainSidebar,
+    body.light-theme nav.fixed,
+    body.light-theme .bg-\[\#09090B\],
+    body.light-theme .bg-\[\#09090B\]\/95,
+    body.light-theme .bg-\[\#08090C\],
+    body.light-theme .bg-\[\#08090C\]\/95,
+    body.light-theme .bg-\[\#0A0D14\],
+    body.light-theme .bg-\[\#0A0D14\]\/95,
+    body.light-theme .bg-\[\#0A0D14\]\/70 {
+      background-color: #FFFFFF !important;
+      border-color: #E2E8F0 !important;
+      color: #0F172A !important;
+    }
+    body.light-theme .bg-\[\#0E0F13\],
+    body.light-theme .bg-\[\#0E1117\],
+    body.light-theme .bg-\[\#0B0D12\] {
+      background-color: #F8FAFC !important;
+      border-color: #E2E8F0 !important;
+    }
+    body.light-theme .bg-\[\#121317\],
+    body.light-theme .bg-\[\#121620\],
+    body.light-theme .bg-\[\#141722\],
+    body.light-theme .bg-\[\#0A1015\],
+    body.light-theme .bg-\[\#0B0E14\],
+    body.light-theme .bg-\[\#0D1017\],
+    body.light-theme .bg-\[\#111827\],
+    body.light-theme .bg-\[\#1F2937\],
+    body.light-theme .bg-\[\#0E1117\]\/60 {
+      background-color: #FFFFFF !important;
+      border-color: #E2E8F0 !important;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      color: #0F172A !important;
+    }
+    body.light-theme .hover\:bg-\[\#121622\]:hover,
+    body.light-theme .hover\:bg-\[\#141824\]:hover,
+    body.light-theme .hover\:bg-\[\#121317\]:hover {
+      background-color: #F8FAFC !important;
+    }
+    body.light-theme .bg-\[\#1A1C24\],
+    body.light-theme .bg-white\/5,
+    body.light-theme .bg-white\/10 {
+      background-color: #EDF2F7 !important;
+      color: #1E293B !important;
+      border-color: #CBD5E1 !important;
+    }
+    body.light-theme .border-white\/5,
+    body.light-theme .border-white\/10,
+    body.light-theme .border-white\/20 {
+      border-color: #E2E8F0 !important;
+    }
+    body.light-theme .text-white { color: #0F172A !important; }
+    body.light-theme .text-gray-200 { color: #1E293B !important; }
+    body.light-theme .text-gray-300 { color: #334155 !important; }
+    body.light-theme .text-gray-400 { color: #475569 !important; }
+    body.light-theme .text-gray-500 { color: #64748B !important; }
+    body.light-theme select,
+    body.light-theme input,
+    body.light-theme textarea {
+      background-color: #FFFFFF !important;
+      color: #0F172A !important;
+      border-color: #CBD5E1 !important;
+    }
+    /* Brand Red in Light Mode -> Deep Velvet Crimson #D20A13 */
+    body.light-theme .bg-brand-red,
+    body.light-theme .bg-\[\#E50914\] {
+      background-color: #D20A13 !important;
+      color: #FFFFFF !important;
+    }
+    body.light-theme .hover\:bg-brand-red:hover {
+      background-color: #B80710 !important;
+      color: #FFFFFF !important;
+    }
+    body.light-theme .text-brand-red,
+    body.light-theme .text-\[\#E50914\] {
+      color: #D20A13 !important;
+    }
+    body.light-theme .border-brand-red {
+      border-color: #D20A13 !important;
+    }
+    body.light-theme .bg-brand-red *,
+    body.light-theme .bg-\[\#E50914\] *,
+    body.light-theme a.bg-brand-red,
+    body.light-theme a.bg-brand-red * {
+      color: #FFFFFF !important;
+    }
+
+    /* 1. 18+ Ogohlantirish: Crisp red tint (NO muddy brown!) */
+    .ogohlantirish-18,
+    .bg-red-950\/60,
+    .bg-red-950\/40 {
+      background-color: rgba(229, 9, 20, 0.15) !important;
+      border-color: rgba(229, 9, 20, 0.35) !important;
+      color: #EF4444 !important;
+    }
+    body.light-theme .ogohlantirish-18,
+    body.light-theme .bg-red-950\/60,
+    body.light-theme .bg-red-950\/40 {
+      background-color: #FEE2E2 !important;
+      border-color: #FECACA !important;
+      color: #DC2626 !important;
+    }
+
+    /* 2. Telegram Blue CTA: Always pure white text in all themes! */
+    body.light-theme .bg-\[\#0088CC\],
+    body.light-theme .bg-\[\#0088CC\] *,
+    body.light-theme a.telegram-cta *, body.light-theme .telegram-btn * {
+      color: #FFFFFF !important;
+    }
+
+    /* 3. Universal Breadcrumbs Light Theme */
+    body.light-theme .universal-breadcrumb {
+      background-color: #FFFFFF !important;
+      border-color: #E2E8F0 !important;
+    }
+    body.light-theme .universal-breadcrumb a {
+      color: #64748B !important;
+    }
+    body.light-theme .universal-breadcrumb a:hover {
+      color: #D20A13 !important;
+    }
+    body.light-theme .universal-breadcrumb span.text-white {
+      color: #0F172A !important;
+    }
+
+    /* 4. Cinema Stage & Media Detail Hero: Absolute Clean Light Canvas & Solid Dark Stage */
+    .cinema-stage,
+    .hero-stage,
+    .franchise-banner,
+    .backdrop-banner,
+    #heroSlide {
+      background-color: #08090C !important;
+      background-image: none !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .cinema-stage h1, .cinema-stage h2, .cinema-stage h3, .cinema-stage #movieTitle,
+    .hero-stage h1, .hero-stage h2, .hero-stage h3, .hero-stage #heroTitle,
+    .franchise-banner h1, .franchise-banner #universeTitle,
+    .backdrop-banner h1,
+    #heroSlide h1, #heroSlide #heroTitle {
+      color: #FFFFFF !important;
+      text-shadow: none !important;
+    }
+    .cinema-stage p,
+    .cinema-stage .text-gray-300,
+    .cinema-stage .text-gray-400,
+    .hero-stage p,
+    .hero-stage #heroDescription,
+    .hero-stage .text-gray-300,
+    .hero-stage .text-gray-400,
+    .franchise-banner p,
+    .backdrop-banner p,
+    #heroSlide p, #heroSlide #heroDescription {
+      color: #E2E8F0 !important;
+      text-shadow: none !important;
+    }
+
+    /* Light Theme: 100% Crisp White Background, Zero Gradients, Zero Ambient Mud */
+    body.light-theme .cinema-stage,
+    body.light-theme .hero-stage,
+    body.light-theme .franchise-banner,
+    body.light-theme .backdrop-banner,
+    body.light-theme #heroSlide {
+      background-color: #FFFFFF !important;
+      background-image: none !important;
+      border-color: #E2E8F0 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    body.light-theme .cinema-stage h1,
+    body.light-theme .cinema-stage h2,
+    body.light-theme .cinema-stage h3,
+    body.light-theme .cinema-stage #movieTitle,
+    body.light-theme .hero-stage h1,
+    body.light-theme .hero-stage h2,
+    body.light-theme .hero-stage h3,
+    body.light-theme .hero-stage #heroTitle,
+    body.light-theme .franchise-banner h1,
+    body.light-theme .franchise-banner #universeTitle,
+    body.light-theme .backdrop-banner h1,
+    body.light-theme #heroSlide h1,
+    body.light-theme #heroSlide #heroTitle {
+      color: #0F172A !important;
+      text-shadow: none !important;
+    }
+    body.light-theme .hero-stage button.rounded-full {
+      background-color: #F1F5F9 !important;
+      border-color: #CBD5E1 !important;
+      color: #0F172A !important;
+    }
+    body.light-theme .hero-stage button.rounded-full:hover {
+      background-color: #D20A13 !important;
+      color: #FFFFFF !important;
+    }
+    body.light-theme .cinema-stage p,
+    body.light-theme .cinema-stage .text-gray-300,
+    body.light-theme .cinema-stage .text-gray-400,
+    body.light-theme .hero-stage p,
+    body.light-theme .hero-stage #heroDescription,
+    body.light-theme .hero-stage .text-gray-300,
+    body.light-theme .hero-stage .text-gray-400,
+    body.light-theme .franchise-banner p,
+    body.light-theme .backdrop-banner p,
+    body.light-theme #heroSlide p,
+    body.light-theme #heroSlide #heroDescription {
+      color: #475569 !important;
+      text-shadow: none !important;
+    }
+    body.light-theme .cinema-stage .telegram-code-box,
+    body.light-theme .cinema-stage .bg-\[\#0E1117\],
+    body.light-theme .cinema-stage .bg-white\/5,
+    body.light-theme .hero-stage .bg-white\/5,
+    body.light-theme .franchise-banner .bg-white\/5,
+    body.light-theme .franchise-banner .bg-white\/10 {
+      background-color: #F8FAFC !important;
+      border-color: #E2E8F0 !important;
+      color: #334155 !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+    body.light-theme .cinema-stage .telegram-code-box span:first-child,
+    body.light-theme .cinema-stage .bg-\[\#0E1117\] span:first-child {
+      color: #64748B !important;
+    }
+    body.light-theme .cinema-stage .telegram-code-box .text-brand-red,
+    body.light-theme .cinema-stage .bg-\[\#0E1117\] .text-brand-red {
+      color: #D20A13 !important;
+    }
+    /* Media detail badges in light mode: clean pill styling */
+    body.light-theme .cinema-stage .bg-black\/70,
+    body.light-theme .cinema-stage .bg-black\/60,
+    body.light-theme .cinema-stage .bg-black\/50,
+    body.light-theme .cinema-stage .bg-white\/5,
+    body.light-theme .cinema-stage .bg-white\/10 {
+      background-color: #F1F5F9 !important;
+      border-color: #CBD5E1 !important;
+      color: #0F172A !important;
+    }
+    body.light-theme .cinema-stage .bg-brand-red\/15 {
+      background-color: #FEE2E2 !important;
+      border-color: #FECACA !important;
+      color: #991B1B !important;
+    }
+    body.light-theme .cinema-stage .bg-brand-red\/15 span:last-child {
+      color: #B91C1C !important;
+    }
+    body.light-theme .cinema-stage .bg-emerald-500\/10,
+    body.light-theme .cinema-stage .bg-green-500\/10 {
+      background-color: #DCFCE7 !important;
+      border-color: #BBF7D0 !important;
+      color: #15803D !important;
+    }
+    body.light-theme .cinema-stage .bg-blue-500\/10,
+    body.light-theme .cinema-stage .bg-blue-600\/10,
+    body.light-theme .cinema-stage .bg-sky-500\/10 {
+      background-color: #E0F2FE !important;
+      border-color: #BAE6FD !important;
+      color: #0369A1 !important;
+    }
+    body.light-theme .cinema-stage .bg-purple-500\/10,
+    body.light-theme .cinema-stage .bg-indigo-500\/10 {
+      background-color: #F3E8FF !important;
+      border-color: #E9D5FF !important;
+      color: #7E22CE !important;
+    }
+
+    /* 5. TOP 10 Marquee Gradients */
+    body.light-theme .marquee-container .from-\[\#0A0D14\],
+    body.light-theme .marquee-container .from-\[\#08090C\],
+    body.light-theme .marquee-container .from-\[\#09090B\] {
+      --tw-gradient-from: #FFFFFF !important;
+      --tw-gradient-to: rgba(255, 255, 255, 0) !important;
+      --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+    }
+
+    /* 18+ Ogohlantirish Badge: Clean Red Tint (NO muddy brown!) */
+    .badge-18plus,
+    .ogohlantirish-18,
+    .bg-red-950\/60,
+    .bg-red-950\/40 {
+      background-color: rgba(229, 9, 20, 0.12) !important;
+      border: 1px solid rgba(229, 9, 20, 0.3) !important;
+      color: #EF4444 !important;
+    }
+    body.light-theme .badge-18plus,
+    body.light-theme .ogohlantirish-18,
+    body.light-theme .bg-red-950\/60,
+    body.light-theme .bg-red-950\/40 {
+      background-color: #FEE2E2 !important;
+      border: 1px solid #FECACA !important;
+      color: #DC2626 !important;
+    }
+
+  
+    /* Cinema TV Player Light Mode: Crisp Slate Stage (NO dark black hole & unreadable text!) */
+    body.light-theme .aspect-video {
+      background-color: #F8FAFC !important;
+      border: 1px solid #E2E8F0 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) inset !important;
+    }
+    body.light-theme .aspect-video h2,
+    body.light-theme .aspect-video #activeName {
+      color: #0F172A !important;
+      text-shadow: none !important;
+    }
+    body.light-theme .aspect-video p,
+    body.light-theme .aspect-video #activeDesc {
+      color: #475569 !important;
+      text-shadow: none !important;
+    }
+    body.light-theme #activeLogo {
+      background-color: #FFFFFF !important;
+      color: #0F172A !important;
+      border-color: #CBD5E1 !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    }
+    body.light-theme .aspect-video .absolute.top-4.left-4 span.px-2\.5 {
+      background-color: #FFFFFF !important;
+      border-color: #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    body.light-theme .aspect-video .absolute.top-4.left-4 span.text-gray-300 {
+      color: #475569 !important;
+    }
+    body.light-theme .aspect-video button[onclick*="showToast"] {
+      background-color: #FFFFFF !important;
+      border-color: #CBD5E1 !important;
+      color: #334155 !important;
+    }
+    body.light-theme .aspect-video button[onclick*="showToast"]:hover {
+      background-color: #F1F5F9 !important;
+      color: #0F172A !important;
+    }
+    body.light-theme .aspect-video .bg-gradient-to-t {
+      display: none !important;
+    }
+  
+  
+    /* =======================================================
+       UNIVERSAL CALLOUT & BANNER LIGHT MODE REFINEMENT
+       Callout cards, requests, and contact boxes become clean
+       white cards in Light Mode (NO dark muddy patches!)
+       ======================================================= */
+    body.light-theme .callout-card,
+    body.light-theme .from-brand-red\/10,
+    body.light-theme .from-red-950\/40 {
+      background: #FFFFFF !important;
+      border-color: #E2E8F0 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    body.light-theme .callout-card h3,
+    body.light-theme .callout-card h4,
+    body.light-theme .from-brand-red\/10 h3,
+    body.light-theme .from-brand-red\/10 h4,
+    body.light-theme .from-red-950\/40 h3,
+    body.light-theme .from-red-950\/40 h4 {
+      color: #0F172A !important;
+      text-shadow: none !important;
+    }
+    body.light-theme .callout-card p,
+    body.light-theme .from-brand-red\/10 p,
+    body.light-theme .from-red-950\/40 p {
+      color: #475569 !important;
+      text-shadow: none !important;
+    }
+
+    /* All Header Action Icons: Uniform Solid Red Hover (Matches Image 2) */
+    @media (hover: hover) {
+      header button:hover,
+      header a.w-8:hover,
+      header a[title]:hover,
+      header a[href*="mockup_profile"]:hover {
+        background-color: #E50914 !important;
+        border-color: #E50914 !important;
+        color: #FFFFFF !important;
+      }
+      body.light-theme header button:hover,
+      body.light-theme header a.w-8:hover,
+      body.light-theme header a[title]:hover,
+      body.light-theme header a[href*="mockup_profile"]:hover {
+        background-color: #B80710 !important;
+        border-color: #B80710 !important;
+        color: #FFFFFF !important;
+      }
+      header button:hover *,
+      header a.w-8:hover *,
+      header a[title]:hover *,
+      header a[href*="mockup_profile"]:hover *,
+      body.light-theme header button:hover *,
+      body.light-theme header a.w-8:hover *,
+      body.light-theme header a[title]:hover *,
+      body.light-theme header a[href*="mockup_profile"]:hover * {
+        color: #FFFFFF !important;
+      }
+}
+
+  
+    /* =======================================================
+       UNIFIED HEADER & BACK BUTTON ICON DESIGN SYSTEM
+       Matches all other header icons (theme, bell, search, menu)
+       ======================================================= */
+    header .back-btn,
+    header button[onclick*="handleSmartBack"],
+    header a[onclick*="handleSmartBack"],
+    header button[title="Orqaga"],
+    header a[title="Orqaga"] {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #D1D5DB !important;
+      box-shadow: none !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    header .back-btn span,
+    header button[onclick*="handleSmartBack"] span,
+    header a[onclick*="handleSmartBack"] span,
+    header button[title="Orqaga"] span,
+    header a[title="Orqaga"] span {
+      color: #D1D5DB !important;
+      transition: color 0.2s ease-in-out !important;
+    }
+    div.fixed.bottom-20 .back-btn {
+      background-color: rgba(14, 17, 23, 0.9) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #E2E8F0 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    div.fixed.bottom-20 .back-btn span {
+      color: #E2E8F0 !important;
+    }
+    body.light-theme header .back-btn,
+    body.light-theme header button[onclick*="handleSmartBack"],
+    body.light-theme header a[onclick*="handleSmartBack"],
+    body.light-theme header button[title="Orqaga"] {
+      background-color: #F1F5F9 !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #334155 !important;
+      box-shadow: none !important;
+    }
+    body.light-theme header .back-btn span,
+    body.light-theme header button[onclick*="handleSmartBack"] span,
+    body.light-theme header a[onclick*="handleSmartBack"] span,
+    body.light-theme header button[title="Orqaga"] span {
+      color: #334155 !important;
+    }
+    body.light-theme div.fixed.bottom-20 .back-btn {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #1E293B !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12) !important;
+    }
+    body.light-theme div.fixed.bottom-20 .back-btn span {
+      color: #1E293B !important;
+    }
+    @media (hover: hover) {
+    .back-btn:hover,
+        header button[onclick*="handleSmartBack"]:hover,
+        header a[onclick*="handleSmartBack"]:hover,
+        header button[title="Orqaga"]:hover,
+        div.fixed.bottom-20 .back-btn:hover,
+        body.light-theme .back-btn:hover,
+        body.light-theme header button[onclick*="handleSmartBack"]:hover,
+        body.light-theme header a[onclick*="handleSmartBack"]:hover,
+        body.light-theme header button[title="Orqaga"]:hover,
+        body.light-theme div.fixed.bottom-20 .back-btn:hover {
+          background-color: #E50914 !important;
+          border-color: #E50914 !important;
+          color: #FFFFFF !important;
+        }
+        .back-btn:hover span,
+        header button[onclick*="handleSmartBack"]:hover span,
+        header a[onclick*="handleSmartBack"]:hover span,
+        header button[title="Orqaga"]:hover span,
+        div.fixed.bottom-20 .back-btn:hover span,
+        body.light-theme .back-btn:hover span,
+        body.light-theme header button[onclick*="handleSmartBack"]:hover span,
+        body.light-theme header a[onclick*="handleSmartBack"]:hover span,
+        body.light-theme header button[title="Orqaga"]:hover span,
+        body.light-theme div.fixed.bottom-20 .back-btn:hover span {
+          color: #FFFFFF !important;
+        }
+    }
+
+    
+    /* =======================================================
+       UNIVERSAL HERO & BACKDROP IN LIGHT MODE (ZERO BLUR, ZERO WHITE WASH)
+       ======================================================= */
+    body.light-theme .cinema-stage,
+    body.light-theme .hero-stage:not(:has(.absolute.inset-0.z-0 img)) {
+      background-color: #FFFFFF !important;
+      background-image: none !important;
+      border-color: #CBD5E1 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+    body.light-theme .cinema-stage h1,
+    body.light-theme .cinema-stage #movieTitle,
+    body.light-theme .hero-stage:not(:has(.absolute.inset-0.z-0 img)) h1 {
+      color: #0F172A !important;
+      text-shadow: none !important;
+    }
+    body.light-theme .cinema-stage p,
+    body.light-theme .hero-stage:not(:has(.absolute.inset-0.z-0 img)) p {
+      color: #334155 !important;
+      text-shadow: none !important;
+    }
+
+    /* Photographic Hero Banners (Homepage, Franchise, Premieres): Crisp Unblurred Image, No White Wash */
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img),
+    body.light-theme #heroSlide,
+    body.light-theme .franchise-banner,
+    body.light-theme .backdrop-banner {
+      background-color: #0E0F13 !important;
+      background-image: none !important;
+      border-color: rgba(15, 23, 42, 0.15) !important;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12) !important;
+    }
+    body.light-theme .hero-stage .absolute.inset-0.z-0 img,
+    body.light-theme .hero-stage img#heroBgImage,
+    body.light-theme .franchise-banner .absolute.inset-0.z-0 img,
+    body.light-theme .backdrop-banner .absolute.inset-0.z-0 img,
+    body.light-theme #heroSlide .absolute.inset-0.z-0 img {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 0.65 !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      transform: none !important;
+      object-fit: cover !important;
+    }
+    body.light-theme .hero-stage .absolute.inset-0.z-0 [class*="bg-gradient-to-"],
+    body.light-theme .franchise-banner .absolute.inset-0.z-0 [class*="bg-gradient-to-"],
+    body.light-theme .backdrop-banner .absolute.inset-0.z-0 [class*="bg-gradient-to-"],
+    body.light-theme #heroSlide .absolute.inset-0.z-0 [class*="bg-gradient-to-"] {
+      display: none !important;
+      background: none !important;
+      background-image: none !important;
+    }
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) h1,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) h2,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) h3,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) #heroTitle,
+    body.light-theme #heroSlide h1,
+    body.light-theme #heroSlide #heroTitle {
+      color: #FFFFFF !important;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65) !important;
+    }
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) p,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) #heroDescription,
+    body.light-theme #heroSlide p {
+      color: #E2E8F0 !important;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55) !important;
+    }
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) #heroYear,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) #heroGenre,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) .text-gray-400,
+    body.light-theme #heroSlide .text-gray-400 {
+      color: #CBD5E1 !important;
+    }
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) .bg-white\/15,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) button[onclick*="shareActiveHero"],
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) button[onclick*="openTrailerModal"] {
+      background-color: rgba(255, 255, 255, 0.14) !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+      color: #FFFFFF !important;
+    }
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) .bg-white\/15 *,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) button[onclick*="shareActiveHero"] span,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) button[onclick*="openTrailerModal"] span {
+      color: #FFFFFF !important;
+    }
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) button[onclick*="shareActiveHero"]:hover,
+    body.light-theme .hero-stage:has(.absolute.inset-0.z-0 img) button[onclick*="openTrailerModal"]:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+    }
+
+    /* Hero Next/Prev Carousel Buttons in Light Mode */
+    body.light-theme .hero-stage button.rounded-full,
+    body.light-theme #heroSlide button.rounded-full {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+    }
+    body.light-theme .hero-stage button.rounded-full span,
+    body.light-theme #heroSlide button.rounded-full span {
+      color: #0F172A !important;
+    }
+    body.light-theme .hero-stage button.rounded-full:hover,
+    body.light-theme #heroSlide button.rounded-full:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+    }
+    body.light-theme .hero-stage button.rounded-full:hover span,
+    body.light-theme #heroSlide button.rounded-full:hover span {
+      color: #FFFFFF !important;
+    }
+
+    /* =======================================================
+       MASTER SUBHEADER & BREADCRUMBS SEAMLESS TRANSPARENCY
+       ======================================================= */
+    .master-subheader-bar,
+    .universal-breadcrumb,
+    body.light-theme .master-subheader-bar,
+    body.light-theme .universal-breadcrumb {
+      background-color: transparent !important;
+      background: transparent !important;
+      border: none !important;
+      border-top: none !important;
+      border-bottom: none !important;
+    }
+    body.light-theme .universal-breadcrumb a {
+      color: #475569 !important;
+    }
+    body.light-theme .universal-breadcrumb a:hover {
+      color: #E50914 !important;
+    }
+    body.light-theme .universal-breadcrumb span.text-white {
+      color: #0F172A !important;
+    }
+
+    /* =======================================================
+       FOOTER SOCIAL & TELEGRAM BUTTONS CONTRAST
+       ======================================================= */
+    .footer-social-btn {
+      background-color: #141722 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #FFFFFF !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    .footer-social-btn span {
+      color: #FFFFFF !important;
+    }
+    .footer-social-btn:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3) !important;
+    }
+    .footer-social-btn:hover span {
+      color: #FFFFFF !important;
+    }
+    body.light-theme .footer-social-btn {
+      background-color: #F1F5F9 !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    body.light-theme .footer-social-btn span {
+      color: #0F172A !important;
+    }
+    body.light-theme .footer-social-btn:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 4px 12px rgba(229, 9, 20, 0.25) !important;
+    }
+    body.light-theme .footer-social-btn:hover span {
+      color: #FFFFFF !important;
+    }
+
+    /* =======================================================
+       EPISODE CARDS CONTRAST IN LIGHT MODE
+       ======================================================= */
+    body.light-theme .episode-card {
+      background-color: #F1F5F9 !important;
+      border: 1px solid #CBD5E1 !important;
+    }
+    body.light-theme .episode-card * {
+      color: #0F172A !important;
+    }
+    body.light-theme .episode-card .text-gray-400,
+    body.light-theme .episode-card .truncate {
+      color: #475569 !important;
+    }
+    body.light-theme .episode-card .text-gray-500 {
+      color: #64748B !important;
+    }
+    body.light-theme .episode-card .material-symbols-outlined {
+      color: #64748B !important;
+    }
+    body.light-theme .episode-card:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+    }
+    body.light-theme .episode-card:hover * {
+      color: #FFFFFF !important;
+    }
+
+    /* =======================================================
+       BACK BUTTON EXACT PALETTE STANDARD
+       ======================================================= */
+    header .back-btn,
+    header button[onclick*="handleSmartBack"],
+    header a[onclick*="handleSmartBack"],
+    header button[title="Orqaga"] {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #FFFFFF !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    header .back-btn span,
+    header button[onclick*="handleSmartBack"] span,
+    header a[onclick*="handleSmartBack"] span,
+    header button[title="Orqaga"] span {
+      color: #FFFFFF !important;
+    }
+    div.fixed.bottom-20 .back-btn {
+      background-color: rgba(14, 17, 23, 0.92) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    div.fixed.bottom-20 .back-btn span {
+      color: #FFFFFF !important;
+    }
+    body.light-theme header .back-btn,
+    body.light-theme header button[onclick*="handleSmartBack"],
+    body.light-theme header a[onclick*="handleSmartBack"],
+    body.light-theme header button[title="Orqaga"] {
+      background-color: #F1F5F9 !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: none !important;
+    }
+    body.light-theme header .back-btn span,
+    body.light-theme header button[onclick*="handleSmartBack"] span,
+    body.light-theme header a[onclick*="handleSmartBack"] span,
+    body.light-theme header button[title="Orqaga"] span {
+      color: #0F172A !important;
+    }
+    body.light-theme div.fixed.bottom-20 .back-btn {
+      background-color: #FFFFFF !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12) !important;
+    }
+    body.light-theme div.fixed.bottom-20 .back-btn span {
+      color: #0F172A !important;
+    }
+    header .back-btn:hover,
+    header button[onclick*="handleSmartBack"]:hover,
+    header a[onclick*="handleSmartBack"]:hover,
+    header button[title="Orqaga"]:hover,
+    div.fixed.bottom-20 .back-btn:hover,
+    body.light-theme header .back-btn:hover,
+    body.light-theme header button[onclick*="handleSmartBack"]:hover,
+    body.light-theme header a[onclick*="handleSmartBack"]:hover,
+    body.light-theme header button[title="Orqaga"]:hover,
+    body.light-theme div.fixed.bottom-20 .back-btn:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+    }
+    header .back-btn:hover span,
+    header button[onclick*="handleSmartBack"]:hover span,
+    header a[onclick*="handleSmartBack"]:hover span,
+    header button[title="Orqaga"]:hover span,
+    div.fixed.bottom-20 .back-btn:hover span,
+    body.light-theme header .back-btn:hover span,
+    body.light-theme header button[onclick*="handleSmartBack"]:hover span,
+    body.light-theme header a[onclick*="handleSmartBack"]:hover span,
+    body.light-theme header button[title="Orqaga"]:hover span,
+    body.light-theme div.fixed.bottom-20 .back-btn:hover span {
+      color: #FFFFFF !important;
+    }
+
+    
+    /* =======================================================
+       CARD BADGES & CAROUSEL NEXT/PREV BUTTONS IN LIGHT MODE
+       ======================================================= */
+    body.light-theme span[class*="bg-black/"],
+    body.light-theme div:not(.fixed):not(.inset-0)[class*="bg-black/"] {
+      background-color: rgba(255, 255, 255, 0.94) !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14) !important;
+    }
+    body.light-theme span[class*="bg-black/"].text-brand-gold,
+    body.light-theme div:not(.fixed):not(.inset-0)[class*="bg-black/"].text-brand-gold,
+    body.light-theme div:not(.fixed):not(.inset-0)[class*="bg-black/"] .text-brand-gold {
+      color: #D97706 !important;
+    }
+    body.light-theme div:not(.fixed):not(.inset-0)[class*="bg-black/"] span:not(.text-brand-gold):not(.text-brand-red) {
+      color: #0F172A !important;
+    }
+
+    /* All Circular Next/Prev Slider & Carousel Buttons (Hero + TOP 10 + Sliders) */
+    body.light-theme .hero-stage button.rounded-full,
+    body.light-theme #heroSlide button.rounded-full,
+    body.light-theme section button[onclick*="scrollRow"].rounded-full,
+    body.light-theme button[onclick*="scrollRow"].rounded-full,
+    body.light-theme button[onclick*="prevSlide"].rounded-full,
+    body.light-theme button[onclick*="nextSlide"].rounded-full {
+      background-color: rgba(255, 255, 255, 0.96) !important;
+      border: 1px solid #CBD5E1 !important;
+      color: #0F172A !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+    body.light-theme .hero-stage button.rounded-full span,
+    body.light-theme #heroSlide button.rounded-full span,
+    body.light-theme section button[onclick*="scrollRow"].rounded-full span,
+    body.light-theme button[onclick*="scrollRow"].rounded-full span,
+    body.light-theme button[onclick*="prevSlide"].rounded-full span,
+    body.light-theme button[onclick*="nextSlide"].rounded-full span {
+      color: #0F172A !important;
+    }
+    body.light-theme .hero-stage button.rounded-full:hover,
+    body.light-theme #heroSlide button.rounded-full:hover,
+    body.light-theme section button[onclick*="scrollRow"].rounded-full:hover,
+    body.light-theme button[onclick*="scrollRow"].rounded-full:hover,
+    body.light-theme button[onclick*="prevSlide"].rounded-full:hover,
+    body.light-theme button[onclick*="nextSlide"].rounded-full:hover,
+    body.light-theme button[onclick*="scrollRow"]:hover,
+    body.light-theme button[onclick*="scrollNavTabs"]:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 4px 14px rgba(229, 9, 20, 0.35) !important;
+    }
+    body.light-theme .hero-stage button.rounded-full:hover span,
+    body.light-theme #heroSlide button.rounded-full:hover span,
+    body.light-theme section button[onclick*="scrollRow"].rounded-full:hover span,
+    body.light-theme button[onclick*="scrollRow"].rounded-full:hover span,
+    body.light-theme button[onclick*="prevSlide"].rounded-full:hover span,
+    body.light-theme button[onclick*="nextSlide"].rounded-full:hover span,
+    body.light-theme button[onclick*="scrollRow"]:hover span,
+    body.light-theme button[onclick*="scrollNavTabs"]:hover span {
+      color: #FFFFFF !important;
+    }
+  </style>
+<style id="apple-glass-system">
+
+    /* 0. Sticky-Safe Horizontal Overflow Clip (Mobile Responsive Guard) */
+    html, body {
+      overflow-x: clip !important;
+      max-width: 100% !important;
+    }
+    /* ==========================================================================
+       APPLE HIG INSPIRED SQUIRCLE + FROSTED GLASSMORPHISM SYSTEM (DARK & LIGHT)
+       ========================================================================== */
+
+    /* 1. Seamless Canvas Protection (Body-matched bars stay 100% transparent & borderless) */
+    .master-subheader-bar,
+    .quick-filter-bar,
+    .universal-breadcrumb,
+    body.light-theme .master-subheader-bar,
+    body.light-theme .quick-filter-bar,
+    body.light-theme .universal-breadcrumb {
+      background: transparent !important;
+      background-color: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* 2. Frosted Translucent Sticky Header & Mobile Bottom Nav */
+    header {
+      background-color: rgba(12, 14, 20, 0.72) !important;
+      backdrop-filter: blur(22px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
+    }
+    body.light-theme header {
+      background-color: rgba(255, 255, 255, 0.76) !important;
+      backdrop-filter: blur(22px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+    }
+    nav.fixed {
+      left: 12px !important;
+      right: 12px !important;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+      width: auto !important;
+      max-width: 440px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      border-radius: 26px !important;
+      padding: 6px 8px !important;
+      background-color: rgba(18, 20, 28, 0.78) !important;
+      backdrop-filter: blur(26px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(190%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 14px 38px rgba(0, 0, 0, 0.55) !important;
+    }
+    nav.fixed > a {
+      border-radius: 18px !important;
+      padding: 4px 10px !important;
+      transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    }
+    body.light-theme nav.fixed {
+      background-color: rgba(255, 255, 255, 0.84) !important;
+      backdrop-filter: blur(26px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(190%) !important;
+      border: 1px solid rgba(15, 23, 42, 0.08) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 12px 32px rgba(15, 23, 42, 0.12) !important;
+    }
+    div.fixed.bottom-20 {
+      bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* 3. Frosted Sidebar Drawer */
+    #mainSidebar {
+      background-color: rgba(14, 16, 23, 0.84) !important;
+      backdrop-filter: blur(26px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* 9. Mobile Sidebar Scroll Lock & Independent Drawer Scroll */
+    #mainSidebar {
+      z-index: 70 !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-y !important;
+    }
+    #sidebarBackdrop {
+      z-index: 60 !important;
+      overscroll-behavior: none !important;
+      touch-action: none !important;
+    }
+    html.sidebar-open,
+    body.sidebar-open {
+      overflow: hidden !important;
+      overscroll-behavior: none !important;
+    }
+    body.light-theme #mainSidebar {
+      background-color: rgba(255, 255, 255, 0.86) !important;
+      backdrop-filter: blur(26px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
+      border-right: 1px solid rgba(15, 23, 42, 0.08) !important;
+    }
+
+    /* 4. Generous Apple Squircle Radius for Cards, Posters & Hero Banners */
+    .hero-stage,
+    #heroSlide,
+    .notice-item,
+    .top-media-card,
+    .aspect-video {
+      border-radius: 22px !important;
+    }
+    .aspect-\[2\/3\] {
+      border-radius: 16px !important;
+    }
+
+    /* 5. Universal Frosted Glass Cards (All Content & Feature Cards across 23 Mockups) */
+    body:not(.light-theme) main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body:not(.light-theme) main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body:not(.light-theme) section [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body:not(.light-theme) section [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body:not(.light-theme) .notice-item,
+    body:not(.light-theme) .top-media-card,
+    body:not(.light-theme) .episode-card,
+    body:not(.light-theme) [id*="Modal"] > div {
+      background-color: rgba(20, 24, 36, 0.62) !important;
+      backdrop-filter: blur(18px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 18px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+    }
+    body.light-theme main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.light-theme main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.light-theme section [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.light-theme section [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.light-theme .notice-item,
+    body.light-theme .top-media-card,
+    body.light-theme .episode-card,
+    body.light-theme [id*="Modal"] > div {
+      background-color: rgba(255, 255, 255, 0.78) !important;
+      backdrop-filter: blur(18px) saturate(170%) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(170%) !important;
+      border-color: rgba(203, 213, 225, 0.75) !important;
+      border-radius: 18px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 18px rgba(15, 23, 42, 0.05) !important;
+    }
+
+    /* 6. Frosted Pill Tabs, Header Icon Squicles & Footer Action Pills */
+    header a[title],
+    header button,
+    div.fixed.bottom-20 .back-btn,
+    .footer-social-btn,
+    .nav-tab,
+    .notice-filter-tab {
+      backdrop-filter: blur(14px) saturate(170%) !important;
+      -webkit-backdrop-filter: blur(14px) saturate(170%) !important;
+      transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    }
+    header a[title],
+    header button:not([class*="rounded-full"]),
+    .footer-social-btn {
+      border-radius: 12px !important;
+    }
+    div.fixed.bottom-20 .back-btn {
+      border-radius: 14px !important;
+    }
+    body:not(.light-theme) .nav-tab:not(.bg-brand-red) {
+      background-color: rgba(26, 28, 38, 0.65) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    }
+    body.light-theme .nav-tab:not(.bg-brand-red) {
+      background-color: rgba(255, 255, 255, 0.76) !important;
+      border-color: rgba(203, 213, 225, 0.85) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    /* 7. Frosted Glass Carousel Circles & Poster Badges */
+    body:not(.light-theme) .hero-stage button.rounded-full,
+    body:not(.light-theme) section button[onclick*="scrollRow"].rounded-full,
+    body:not(.light-theme) section button[onclick*="prevSlide"].rounded-full,
+    body:not(.light-theme) section button[onclick*="nextSlide"].rounded-full {
+      background-color: rgba(20, 22, 30, 0.58) !important;
+      backdrop-filter: blur(16px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    }
+    body.light-theme .hero-stage button.rounded-full,
+    body.light-theme section button[onclick*="scrollRow"].rounded-full,
+    body.light-theme section button[onclick*="prevSlide"].rounded-full,
+    body.light-theme section button[onclick*="nextSlide"].rounded-full {
+      background-color: rgba(255, 255, 255, 0.78) !important;
+      backdrop-filter: blur(16px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.92) !important;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12) !important;
+    }
+    body:not(.light-theme) span[class*="bg-black/"],
+    body:not(.light-theme) div:not(.fixed):not(.inset-0)[class*="bg-black/"] {
+      background-color: rgba(12, 14, 20, 0.65) !important;
+      backdrop-filter: blur(12px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      border-radius: 8px !important;
+    }
+    body.light-theme span[class*="bg-black/"],
+    body.light-theme div:not(.fixed):not(.inset-0)[class*="bg-black/"] {
+      background-color: rgba(255, 255, 255, 0.80) !important;
+      backdrop-filter: blur(12px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.9) !important;
+      border-radius: 8px !important;
+    }
+
+    /* 8. Squircle Inputs, Selects (solid options for OS popup legibility) & Glossy Red CTAs */
+    input[type="text"],
+    input[type="search"],
+    textarea,
+    select {
+      border-radius: 12px !important;
+    }
+    .bg-brand-red,
+    .bg-\[\#E50914\] {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 4px 14px rgba(229, 9, 20, 0.28) !important;
+    }
+
+    /* 9. Apple Pill Segmented Controls, Active Red Preservation, Default Hovers & Round Chevrons */
+    div[class~="p-0.5"]:has(> button + button),
+    div[class~="p-1"]:has(> button + button, > button + a, > a + button),
+    div[class~="p-1.5"]:has(> button + button, > button + a),
+    .top-cat-filter-wrap,
+    div[class~="p-0.5"] > button,
+    div[class~="p-0.5"] > a,
+    div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button,
+    div[class~="p-1"]:has(> button + button, > button + a, > a + button) > a,
+    div[class~="p-1.5"]:has(> button + button, > button + a) > button,
+    .top-cat-filter-wrap > button,
+    div.hide-scrollbar > button,
+    div.hide-scrollbar > a.nav-tab,
+    button[onclick*="setQuery"],
+    button[onclick*="filterType"],
+    button[onclick*="selectUniverse"],
+    button[onclick*="applySample"],
+    button[onclick*="scrollNavTabs"],
+    button[onclick*="scrollRow"],
+    .notice-filter-tab,
+    .filter-chip {
+      border-radius: 9999px !important;
+    }
+    main button.rounded-lg:not([class*="p-0"]):not([class*="w-8"]),
+    section button.rounded-lg:not([class*="p-0"]),
+    main a.rounded-lg,
+    #mainSidebar a,
+    #mainSidebar button {
+      border-radius: 12px !important;
+    }
+    main button.w-8.h-8.rounded-lg,
+    main button[onclick*="setQuery"],
+    main button[onclick*="filterType"],
+    main button[onclick*="selectUniverse"],
+    div.hide-scrollbar > button {
+      border-radius: 9999px !important;
+    }
+
+    /* Segmented Track Inactive Items: Clean Transparent Inside Capsule (No Extra Borders) */
+    body:not(.light-theme) div[class~="p-0.5"] > button:not(.bg-brand-red),
+    body:not(.light-theme) div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button:not(.bg-brand-red),
+    body:not(.light-theme) div[class~="p-1"]:has(> button + button, > button + a, > a + button) > a:not(.bg-brand-red),
+    body:not(.light-theme) div[class~="p-1.5"]:has(> button + button) > button:not(.bg-brand-red),
+    body:not(.light-theme) .top-cat-filter-wrap > button:not(.bg-brand-red) {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+      color: #9CA3AF !important;
+    }
+    body.light-theme div[class~="p-0.5"] > button:not(.bg-brand-red),
+    body.light-theme div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button:not(.bg-brand-red),
+    body.light-theme div[class~="p-1"]:has(> button + button, > button + a, > a + button) > a:not(.bg-brand-red),
+    body.light-theme div[class~="p-1.5"]:has(> button + button) > button:not(.bg-brand-red),
+    body.light-theme .top-cat-filter-wrap > button:not(.bg-brand-red) {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+      color: #475569 !important;
+    }
+
+    /* Active .bg-brand-red Pills: Original Solid Primary Red in Both Dark & Light Mode */
+    body:not(.light-theme) section button.bg-brand-red,
+    body:not(.light-theme) main button.bg-brand-red,
+    body:not(.light-theme) section a.bg-brand-red,
+    body:not(.light-theme) div[class~="p-0.5"] > button.bg-brand-red,
+    body:not(.light-theme) div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button.bg-brand-red,
+    body:not(.light-theme) div[class~="p-1.5"]:has(> button + button) > button.bg-brand-red,
+    body:not(.light-theme) .top-cat-filter-wrap > button.bg-brand-red,
+    body:not(.light-theme) div.hide-scrollbar > button.bg-brand-red {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 4px 12px rgba(229, 9, 20, 0.32) !important;
+    }
+    body.light-theme section button.bg-brand-red,
+    body.light-theme main button.bg-brand-red,
+    body.light-theme section a.bg-brand-red,
+    body.light-theme div[class~="p-0.5"] > button.bg-brand-red,
+    body.light-theme div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button.bg-brand-red,
+    body.light-theme div[class~="p-1.5"]:has(> button + button) > button.bg-brand-red,
+    body.light-theme .top-cat-filter-wrap > button.bg-brand-red,
+    body.light-theme div.hide-scrollbar > button.bg-brand-red,
+    body.light-theme .nav-tab.bg-brand-red {
+      background-color: #D20A13 !important;
+      border-color: #D20A13 !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 4px 12px rgba(210, 10, 19, 0.28) !important;
+    }
+    body:not(.light-theme) section button.bg-brand-red *,
+    body.light-theme section button.bg-brand-red *,
+    body.light-theme main button.bg-brand-red *,
+    body.light-theme .nav-tab.bg-brand-red * {
+      color: #FFFFFF !important;
+    }
+
+    /* Segmented Tabs: Preserve Original Subtle Default Hover (No Forced Red Hover) */
+    @media (hover: hover) {
+      body:not(.light-theme) div[class~="p-0.5"] > button:not(.bg-brand-red):hover,
+      body:not(.light-theme) div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button:not(.bg-brand-red):hover,
+      body:not(.light-theme) div[class~="p-1"]:has(> button + button, > button + a, > a + button) > a:not(.bg-brand-red):hover,
+      body:not(.light-theme) div[class~="p-1.5"]:has(> button + button) > button:not(.bg-brand-red):hover,
+      body:not(.light-theme) .top-cat-filter-wrap > button:not(.bg-brand-red):hover {
+        background-color: rgba(255, 255, 255, 0.06) !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        color: #FFFFFF !important;
+      }
+      body.light-theme div[class~="p-0.5"] > button:not(.bg-brand-red):hover,
+      body.light-theme div[class~="p-1"]:has(> button + button, > button + a, > a + button) > button:not(.bg-brand-red):hover,
+      body.light-theme div[class~="p-1"]:has(> button + button, > button + a, > a + button) > a:not(.bg-brand-red):hover,
+      body.light-theme div[class~="p-1.5"]:has(> button + button) > button:not(.bg-brand-red):hover,
+      body.light-theme .top-cat-filter-wrap > button:not(.bg-brand-red):hover {
+        background-color: rgba(15, 23, 42, 0.06) !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        color: #0F172A !important;
+      }
+    }
+
+    /* Touch-Safe Hover Only (@media (hover: hover)) -> Prevents sticky-red tap lock on mobile */
+    @media (hover: hover) {
+      header a[title]:hover,
+      header a.w-8:hover,
+      header a[href*="mockup_profile"]:hover,
+      header button:hover,
+      body.light-theme header a[title]:hover,
+      body.light-theme header a.w-8:hover,
+      body.light-theme header a[href*="mockup_profile"]:hover,
+      body.light-theme header button:hover,
+      div.fixed.bottom-20 .back-btn:hover,
+      .footer-social-btn:hover,
+      .hero-stage button.rounded-full:hover,
+      section button[onclick*="scrollRow"]:hover,
+      section button[onclick*="scrollNavTabs"]:hover,
+      section button[onclick*="prevSlide"]:hover,
+      section button[onclick*="nextSlide"]:hover,
+      body.light-theme .hero-stage button.rounded-full:hover,
+      body.light-theme section button[onclick*="scrollRow"]:hover,
+      body.light-theme section button[onclick*="scrollNavTabs"]:hover,
+      body.light-theme section button[onclick*="prevSlide"]:hover,
+      body.light-theme section button[onclick*="nextSlide"]:hover,
+      body.light-theme .episode-card:hover {
+        background-color: #E50914 !important;
+        border-color: #E50914 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 6px 18px rgba(229, 9, 20, 0.35) !important;
+      }
+      header a[title]:hover *,
+      header a.w-8:hover *,
+      header a[href*="mockup_profile"]:hover *,
+      header button:hover *,
+      body.light-theme header a[title]:hover *,
+      body.light-theme header a.w-8:hover *,
+      body.light-theme header a[href*="mockup_profile"]:hover *,
+      body.light-theme header button:hover *,
+      div.fixed.bottom-20 .back-btn:hover *,
+      .footer-social-btn:hover *,
+      .hero-stage button.rounded-full:hover *,
+      section button[onclick*="scrollRow"]:hover *,
+      section button[onclick*="scrollNavTabs"]:hover *,
+      section button[onclick*="prevSlide"]:hover *,
+      section button[onclick*="nextSlide"]:hover *,
+      body.light-theme .episode-card:hover * {
+        color: #FFFFFF !important;
+      }
+      body.light-theme header a[title]:hover,
+      body.light-theme header a.w-8:hover,
+      body.light-theme header a[href*="mockup_profile"]:hover,
+      body.light-theme header button:hover {
+        background-color: #B80710 !important;
+        border-color: #B80710 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 6px 18px rgba(184, 7, 16, 0.35) !important;
+      }
+      header a[href*="notifications"]:hover span.rounded-full,
+      body.light-theme header a[href*="notifications"]:hover span.rounded-full {
+        background-color: #FFFFFF !important;
+      }
+    }
+  </style>
+<style id="apple-pure-minimal">
+    /* ==========================================================================
+       VARIANT 2: APPLE TV+ / CINEMA PURE MINIMAL (Toggle via body.pure-minimal)
+       Reversible anytime: removing .pure-minimal from <body> restores full layout
+       ========================================================================== */
+
+    /* 1. Above-the-Fold Purity: Hide redundant 6-select Tezkor Saralash bar & 3-row Marquee */
+    body.pure-minimal .quick-filter-bar,
+    body.pure-minimal section:has(.animate-marquee-left) {
+      display: none !important;
+    }
+
+    /* 2. Responsive End-of-Row Dashed CTA Cards (Restored for Dark & Light Mode, scaled per device) */
+    body.pure-minimal:not(.light-theme) #rowResume a.border-dashed,
+    body.pure-minimal:not(.light-theme) #rowCollections a.border-dashed,
+    body.pure-minimal:not(.light-theme) #rowMovies a.border-dashed,
+    body.pure-minimal:not(.light-theme) #rowSeries a.border-dashed,
+    body.pure-minimal:not(.light-theme) #rowAnime a.border-dashed,
+    body.pure-minimal:not(.light-theme) #rowDorama a.border-dashed,
+    body.pure-minimal:not(.light-theme) #rowCartoons a.border-dashed {
+      background-color: rgba(16, 19, 28, 0.88) !important;
+      border-color: rgba(229, 9, 20, 0.35) !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+    }
+    body.pure-minimal.light-theme #rowResume a.border-dashed,
+    body.pure-minimal.light-theme #rowCollections a.border-dashed,
+    body.pure-minimal.light-theme #rowMovies a.border-dashed,
+    body.pure-minimal.light-theme #rowSeries a.border-dashed,
+    body.pure-minimal.light-theme #rowAnime a.border-dashed,
+    body.pure-minimal.light-theme #rowDorama a.border-dashed,
+    body.pure-minimal.light-theme #rowCartoons a.border-dashed {
+      background-color: #FFFFFF !important;
+      border-color: rgba(15, 23, 42, 0.14) !important;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+    }
+    body.pure-minimal #rowResume a.border-dashed:hover,
+    body.pure-minimal #rowCollections a.border-dashed:hover,
+    body.pure-minimal #rowMovies a.border-dashed:hover,
+    body.pure-minimal #rowSeries a.border-dashed:hover,
+    body.pure-minimal #rowAnime a.border-dashed:hover,
+    body.pure-minimal #rowDorama a.border-dashed:hover,
+    body.pure-minimal #rowCartoons a.border-dashed:hover {
+      border-color: #E50914 !important;
+    }
+
+    /* 3. Clean Matte Surface for Content Cards (Glass reserved strictly for floating chrome) */
+    body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal:not(.light-theme) section [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal:not(.light-theme) section [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal:not(.light-theme) .notice-item:not(:hover),
+    body.pure-minimal:not(.light-theme) .top-media-card:not(:hover),
+    body.pure-minimal:not(.light-theme) .episode-card:not(:hover) {
+      background-color: rgba(16, 19, 28, 0.88) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+      box-shadow: none !important;
+    }
+    body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal.light-theme section [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal.light-theme section [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
+    body.pure-minimal.light-theme .notice-item:not(:hover),
+    body.pure-minimal.light-theme .top-media-card:not(:hover),
+    body.pure-minimal.light-theme .episode-card:not(:hover) {
+      background-color: #FFFFFF !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-color: rgba(15, 23, 42, 0.08) !important;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03) !important;
+    }
+
+    /* 4. Calm Poster Frames & Hide Secondary Year/Genre Subtext in Content Rows */
+    body.pure-minimal .aspect-\[2\/3\] {
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16) !important;
+      border-color: rgba(255, 255, 255, 0.07) !important;
+    }
+    body.pure-minimal.light-theme .aspect-\[2\/3\] {
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+      border-color: rgba(15, 23, 42, 0.08) !important;
+    }
+    body.pure-minimal #rowMovies p.text-gray-500,
+    body.pure-minimal #rowSeries p.text-gray-500,
+    body.pure-minimal #rowAnime p.text-gray-500,
+    body.pure-minimal #rowDorama p.text-gray-500,
+    body.pure-minimal #rowCartoons p.text-gray-500 {
+      display: none !important;
+    }
+
+    /* 5. Whisper-Quiet Category Pills & Subtle Spacing */
+    body.pure-minimal:not(.light-theme) .nav-tab:not(.bg-brand-red) {
+      box-shadow: none !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+    }
+    body.pure-minimal.light-theme .nav-tab:not(.bg-brand-red) {
+      box-shadow: none !important;
+      border-color: rgba(15, 23, 42, 0.08) !important;
+    }
+    body.pure-minimal section {
+      margin-top: 1.75rem !important;
+      margin-bottom: 1.75rem !important;
+    }
+  </style>
+  <style id="tv-player-light-fix">
+    body.light-theme div.aspect-video.bg-black h2,
+    body.light-theme div.aspect-video.bg-black .text-white {
+      color: #FFFFFF !important;
+    }
+    body.light-theme div.aspect-video.bg-black p,
+    body.light-theme div.aspect-video.bg-black .text-gray-400 {
+      color: #CBD5E1 !important;
+    }
+    body.light-theme div.aspect-video.bg-black #activeLogo,
+    body.light-theme div.aspect-video.bg-black button.bg-white\/10 {
+      background-color: rgba(255, 255, 255, 0.14) !important;
+      border-color: rgba(255, 255, 255, 0.22) !important;
+      color: #FFFFFF !important;
+    }
+    body.light-theme div.aspect-video.bg-black button.bg-white\/10:hover {
+      background-color: #E50914 !important;
+      border-color: #E50914 !important;
+      color: #FFFFFF !important;
+    }
+  </style>
+</head>
+<body class="pure-minimal bg-[#0A0D14] text-white font-sans antialiased min-h-screen pb-24 sm:pb-12 transition-colors duration-200">
+
+  
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#121620] text-white border border-brand-red/50 px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-medium -translate-y-20 opacity-0 pointer-events-none transition-all duration-300">
+    <span class="material-symbols-outlined text-brand-red text-base">check_circle</span>
+    <span id="toastMsg">Xabar</span>
+  </div>
+
+  <!-- Asosiy Konteyner -->
+  <div id="appContainer" class="w-full transition-all duration-300 mx-auto">
+
+    <!-- Header & Logo -->
+    <!-- ==========================================
+         MASTER HEADER (100% UNIFIED ACROSS ALL PAGES)
+         ========================================== -->
+    <header class="w-full bg-[#09090B]/95 backdrop-blur-md border-b border-white/5 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+        <!-- Chap taraf: Orqaga (Smart Back) & Rasmiy Logo -->
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <button onclick="handleSmartBack()" class="back-btn w-8 h-8 rounded-xl bg-white/5 hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center border border-white/5 transition cursor-pointer" title="Orqaga">
+            <span class="material-symbols-outlined text-[19px] text-white">arrow_back</span>
+          </button>
+          <a href="mockup_homepage_v2.html" class="flex items-center gap-2 group">
+            <img src="public/logo-mediaplus-icon.png" alt="MediaPlus" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 object-cover shadow-md shadow-brand-red/30" decoding="async"/>
+            <span class="font-outfit font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-brand-red transition">MEDIA<span class="text-brand-red">PLUS</span></span>
+          </a>
+        </div>
+
+        <!-- O'rta: Global Desktop Qidiruv Inputi -->
+        <div class="hidden md:flex flex-1 max-w-md mx-4 relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+          <input type="text" onkeydown="if(event.key==='Enter') window.location.href='mockup_search.html?q='+encodeURIComponent(this.value)" placeholder="Kino, serial yoki aktyor qidirish..." class="w-full bg-[#121317] border border-white/10 rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-red transition"/>
+        </div>
+
+        <!-- O'ng taraf: Rejim, Bildirishnoma, Qidiruv, Gamburger Menyu, Profil -->
+        <div class="flex items-center gap-2">
+          <!-- Yorug' / Qorong'i Rejim -->
+          <button onclick="toggleTheme()" class="theme-toggle-btn w-8 h-8 rounded-xl bg-white/5 hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center border border-white/5 transition cursor-pointer" title="Mavzuni almashtirish">
+            <span class="material-symbols-outlined text-[17px] theme-toggle-icon">light_mode</span>
+          </button>
+
+          <!-- Bildirishnomalar markazi -->
+          <a href="mockup_notifications.html" class="relative w-8 h-8 rounded-xl bg-white/5 hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center border border-white/5 transition" title="Bildirishnomalar">
+            <span class="material-symbols-outlined text-[17px]">notifications</span>
+            <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-brand-red"></span>
+          </a>
+
+          <!-- Qidiruv (Mobilda doim mavjud!) -->
+          <a href="mockup_search.html" class="md:hidden w-8 h-8 rounded-xl bg-white/5 hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center border border-white/5 transition" title="Qidiruv">
+            <span class="material-symbols-outlined text-[18px]">search</span>
+          </a>
+
+          <!-- Gamburger Menyu -->
+          <button onclick="toggleSidebar()" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center border border-white/5 transition cursor-pointer" title="Menyu">
+            <span class="material-symbols-outlined text-[19px]">menu</span>
+          </button>
+
+          <!-- Desktop Profil -->
+          <a href="mockup_profile.html" class="hidden lg:flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-gray-200 px-2.5 py-1.5 rounded-xl border border-white/5 text-xs font-medium transition">
+            <span class="material-symbols-outlined text-[17px]">account_circle</span>
+            <span>Profil</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+        <!-- SIDEBAR DRAWER (Barcha Sahifalarda Bir Xil Ishlaydi!) -->
+    <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden transition-opacity"></div>
+    <aside id="mainSidebar" class="fixed top-0 left-0 h-full w-64 bg-[#0E0F13] border-r border-white/10 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between p-4 shadow-2xl">
+      <div>
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-white/10">
+          <div class="flex items-center gap-2">
+            <img src="public/logo-mediaplus-icon.png" alt="MediaPlus" class="w-7 h-7 rounded-lg shrink-0 object-cover shadow-md shadow-brand-red/30" decoding="async"/>
+            <span class="font-outfit font-bold text-white text-base">Bo'limlar</span>
+          </div>
+          <button onclick="toggleSidebar()" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-brand-red text-gray-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+
+        <nav class="space-y-1 text-xs font-medium">
+          <a href="mockup_homepage_v2.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">home</span><span>Bosh sahifa</span></a>
+          <a href="mockup_catalog.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">apps</span><span>Barchasi (Katalog)</span></a>
+          <a href="mockup_catalog.html?type=movies" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">movie</span><span>Kinolar</span></a>
+          <a href="mockup_catalog.html?type=series" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">tv</span><span>Seriallar</span></a>
+          <a href="mockup_catalog.html?type=anime" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">animation</span><span>Anime</span></a>
+          <a href="mockup_catalog.html?type=doramas" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">theater_comedy</span><span>Doramalar</span></a>
+          <a href="mockup_catalog.html?type=cartoons" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">child_care</span><span>Multfilmlar</span></a>
+          <a href="mockup_tv.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-brand-red text-white transition"><span class="material-symbols-outlined text-[17px]">live_tv</span><span>Jonli TV</span></a>
+          <a href="mockup_premieres.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">theaters</span><span>Premyeralar</span></a>
+          <a href="mockup_collections.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">auto_awesome_motion</span><span>To'plamlar</span></a>
+          <a href="mockup_timelines.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">timeline</span><span>Xronologiyalar</span></a>
+          <a href="mockup_category.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">category</span><span>Janrlar & Bo'limlar</span></a>
+          <a href="mockup_subscriptions.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">bookmark</span><span>Obunalar (Sevimlilar)</span></a>
+          <a href="mockup_requests.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">add_box</span><span>Buyurtma berish</span></a>
+          <div class="pt-2 my-2 border-t border-white/10"></div>
+          <a href="mockup_notifications.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">notifications</span><span>Bildirishnomalar</span><span class="ml-auto w-2 h-2 rounded-full bg-brand-red"></span></a>
+          <a href="mockup_profile.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition"><span class="material-symbols-outlined text-[17px]">account_circle</span><span>Mening profilim</span></a>
+          <button onclick="toggleTheme()" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition cursor-pointer">
+            <span class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[17px] theme-toggle-icon">light_mode</span><span>Mavzuni almashtirish</span></span>
+            <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded font-mono">Oq / Qora</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="pt-3 border-t border-white/10 text-center">
+        <a href="https://t.me/MediaPlusOfficialBot" target="_blank" class="w-full bg-brand-red hover:bg-brand-redHover text-white py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow">
+          <span class="material-symbols-outlined text-[15px]">send</span>
+          <span>Telegram Botimiz</span>
+        </a>
+      </div>
+    </aside>
+
+            <!-- MASTER HUB (Barcha Bo'limlar + Xronologiya + Desktopda < va > O'NG tarafda!) -->
+        <!-- ==========================================
+         MASTER SUBHEADER (14 TA TO'LIQ BO'LIM)
+         ========================================== -->
+    <div class="master-subheader-bar w-full bg-transparent border-b-0 py-2">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-2">
+
+        <!-- Tezkor Sahifa Menyu (9 ta asosiy bo'lim) -->
+        <div id="mainTabsNav" class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar scroll-smooth flex-1 py-0.5">
+          <a href="mockup_catalog.html?type=movies" data-type="movies" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">movie</span>
+            <span>Kinolar</span>
+          </a>
+          <a href="mockup_catalog.html?type=series" data-type="series" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">tv</span>
+            <span>Seriallar</span>
+          </a>
+          <a href="mockup_catalog.html?type=anime" data-type="anime" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">animation</span>
+            <span>Animelar</span>
+          </a>
+          <a href="mockup_catalog.html?type=doramas" data-type="doramas" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">theater_comedy</span>
+            <span>Doramalar</span>
+          </a>
+          <a href="mockup_catalog.html?type=cartoons" data-type="cartoons" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">child_care</span>
+            <span>Multfilmlar</span>
+          </a>
+          <a href="mockup_category.html" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">category</span>
+            <span>Bo'limlar</span>
+          </a>
+          <a href="mockup_requests.html" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">add_box</span>
+            <span>Buyurtma berish</span>
+          </a>
+          <a href="mockup_timelines.html" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#1A1C24] hover:bg-white/10 text-gray-300 hover:text-white shrink-0 border border-white/5 transition">
+            <span class="material-symbols-outlined text-[15px]">timeline</span>
+            <span>Xronologiyalar</span>
+          </a>
+          <a href="mockup_tv.html" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-brand-red text-white shrink-0 shadow-md">
+            <span class="material-symbols-outlined text-[15px]">live_tv</span>
+            <span>Jonli TV</span>
+          </a>
+        </div>
+
+        <!-- Desktopda O'ng Tarafda < va > siljitish tugmalari -->
+        <div class="hidden lg:flex items-center gap-1 shrink-0 pl-2">
+          <button onclick="scrollNavTabs(-1)" class="w-7 h-7 rounded-lg bg-[#141722] hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center transition border border-white/5 cursor-pointer" title="Chapga">
+            <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+          </button>
+          <button onclick="scrollNavTabs(1)" class="w-7 h-7 rounded-lg bg-[#141722] hover:bg-brand-red text-gray-300 hover:text-white flex items-center justify-center transition border border-white/5 cursor-pointer" title="O'ngga">
+            <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==========================================
+         UNIVERSAL BREADCRUMB NAVIGATION
+         ========================================== -->
+    <div class="universal-breadcrumb w-full bg-transparent border-b-0 py-1.5 px-4 sm:px-6">
+      <div class="max-w-7xl mx-auto flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-400 font-medium">
+        <a href="mockup_homepage_v2.html" class="hover:text-brand-red flex items-center gap-1 transition shrink-0">
+          <span class="material-symbols-outlined text-[14px]">home</span>
+          <span>Bosh sahifa</span>
+        </a>
+        <span class="text-gray-600 select-none">/</span>
+        <span class="text-white dark:text-white font-semibold truncate max-w-[220px]">Jonli TV & Efirlar</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+      <!-- Header & Category Filters -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          
+          <div>
+            <h1 class="text-xl sm:text-2xl font-black font-outfit text-white tracking-tight flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-brand-red animate-pulse"></span>
+              <span>Jonli TV va Efirlar</span>
+            </h1>
+            <p class="text-xs text-gray-400 mt-0.5">O'zbekiston milliy va jahon telekanallarini to'g'ridan-to'g'ri tomosha qiling</p>
+          </div>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-1.5 bg-[#121620] p-1 rounded-xl border border-white/10 overflow-x-auto hide-scrollbar self-start sm:self-auto">
+          <button onclick="filterCategory('all')" id="tabAll" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-red text-white transition shrink-0">
+            Barchasi
+          </button>
+          <button onclick="filterCategory('milliy')" id="tabMilliy" class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition shrink-0">
+            Milliy TV
+          </button>
+          <button onclick="filterCategory('kino')" id="tabKino" class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition shrink-0">
+            Kino & Serial
+          </button>
+          <button onclick="filterCategory('sport')" id="tabSport" class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition shrink-0">
+            Sport
+          </button>
+          <button onclick="filterCategory('yangiliklar')" id="tabYangiliklar" class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition shrink-0">
+            Yangiliklar
+          </button>
+        </div>
+      </div>
+
+      <!-- Live TV Showcase Frame (Real Code Faithful) -->
+      <div class="bg-[#121620] border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-4 sm:p-6 space-y-4">
+        <div class="aspect-video w-full rounded-xl bg-black relative flex flex-col items-center justify-center border border-white/10 overflow-hidden shadow-inner">
+          
+          <!-- Jonli Efir Badji -->
+          <div class="absolute top-4 left-4 flex items-center gap-2 z-10">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-red animate-pulse"></span>
+            <span class="px-2.5 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider border border-white/10 flex items-center gap-1.5">
+              <span>JONLI EFIR</span>
+              <span class="text-brand-red">•</span>
+              <span class="text-gray-300 font-mono">1080p HD</span>
+            </span>
+          </div>
+
+          <!-- Active Channel Info -->
+          <div class="text-center space-y-3 p-6 z-10 max-w-lg">
+            <div id="activeLogo" class="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center font-black font-outfit text-2xl text-white mx-auto shadow-xl">
+              MTV
+            </div>
+            <div>
+              <h2 id="activeName" class="text-xl sm:text-2xl font-black font-outfit text-white">Milliy TV</h2>
+              <p id="activeDesc" class="text-xs text-gray-400 mt-1">Eng sara o'zbek musiqalari, ko'ngilochar shoular va premyera seriallar.</p>
+            </div>
+            
+            <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
+              <a href="https://t.me/MediaPlusOfficialBot?start=tv_milliy" target="_blank" class="bg-brand-red hover:bg-brand-redHover text-white font-outfit font-extrabold text-xs uppercase px-5 py-2.5 rounded-xl shadow-lg shadow-brand-red/30 flex items-center gap-2 transition cursor-pointer">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                <span>Telegram Botda Tomosha Qilish</span>
+              </a>
+              <button onclick="showToast('Jonli oqim serveri ulanmoqda...')" class="bg-white/10 hover:bg-white/20 text-white font-medium text-xs px-4 py-2.5 rounded-xl border border-white/10 flex items-center gap-1.5 transition cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">refresh</span>
+                <span>Signalni yangilash</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Gradient Ambient Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 pointer-events-none"></div>
+        </div>
+
+        <!-- Tele-Dastur Jadvali Snippet -->
+        <div class="bg-[#0A0D14] p-3 sm:p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-brand-red text-[18px]">schedule</span>
+            <span class="text-gray-400">Hozir efirda:</span>
+            <span id="currentProgram" class="font-bold text-white">12:30 - "Xontaxta" musiqiy shousi</span>
+          </div>
+          <div class="flex items-center gap-2 text-gray-400">
+            <span>Keyingisi:</span>
+            <span id="nextProgram" class="text-gray-300 font-medium">13:45 - Milliy serial "Sabr"</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Grid -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-brand-red rounded-full block"></span>
+            <h3 class="font-outfit text-sm sm:text-base font-bold text-white uppercase tracking-wider">
+              Barcha Telekanallar (<span id="channelCount">7</span> ta)
+            </h3>
+          </div>
+          <span class="text-xs text-gray-400">Kanalni tanlang</span>
+        </div>
+
+        <div id="channelGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Dinamik tarzda JS orqali yaratiladi -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Mobile Nav -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0D14]/95 backdrop-blur-xl border-t border-white/10 py-2 px-3 sm:hidden flex items-center justify-around">
+      <a href="mockup_homepage_v2.html" class="flex flex-col items-center gap-0.5 text-gray-400">
+        <span class="material-symbols-outlined text-[20px]">home</span>
+        <span class="text-[9px] font-medium">Asosiy</span>
+      </a>
+      <a href="mockup_catalog.html" class="flex flex-col items-center gap-0.5 text-gray-400">
+        <span class="material-symbols-outlined text-[20px]">apps</span>
+        <span class="text-[9px] font-medium">Barchasi</span>
+      </a>
+      <a href="mockup_tv.html" class="flex flex-col items-center gap-0.5 text-brand-red">
+        <span class="material-symbols-outlined text-[20px]">live_tv</span>
+        <span class="text-[9px] font-bold">Jonli TV</span>
+      </a>
+      <a href="mockup_collections.html" class="flex flex-col items-center gap-0.5 text-gray-400">
+        <span class="material-symbols-outlined text-[20px]">auto_awesome_motion</span>
+        <span class="text-[9px] font-medium">To'plamlar</span>
+      </a>
+      <a href="mockup_profile.html" class="flex flex-col items-center gap-0.5 text-gray-400">
+        <span class="material-symbols-outlined text-[20px]">person</span>
+        <span class="text-[9px] font-medium">Profil</span>
+      </a>
+    </nav>
+
+        <!-- SUB-PAGE: O'ng qo'l boshqaruvchi suzuvchi Orqaga tugmasi (Dark Titanium Glassy) -->
+    
+
+  <script>
+    const CHANNELS = [
+      {
+        id: "milliy-tv",
+        name: "Milliy TV",
+        category: "milliy",
+        description: "Eng sara o'zbek musiqalari, ko'ngilochar shoular va seriallar.",
+        logoText: "MTV",
+        currentProg: "12:30 - 'Xontaxta' musiqiy shousi",
+        nextProg: "13:45 - Milliy serial 'Sabr'",
+        isLive: true
+      },
+      {
+        id: "sevimli-tv",
+        name: "Sevimli TV",
+        category: "milliy",
+        description: "Oilaviy telekanal: seriallar, kinolar va qiziqarli ko'rsatuvlar.",
+        logoText: "STV",
+        currentProg: "12:00 - 'Zirapcha' realiti shou",
+        nextProg: "13:30 - Badiiy film",
+        isLive: true
+      },
+      {
+        id: "zor-tv",
+        name: "Zo'r TV",
+        category: "milliy",
+        description: "Zamonaviy madaniyat, mega-shoular va premyeralar.",
+        logoText: "ZOR",
+        currentProg: "12:15 - 'Boriga Baraka' shousi",
+        nextProg: "14:00 - Premyera serial",
+        isLive: true
+      },
+      {
+        id: "my5-tv",
+        name: "My5 (Mening Yurtim)",
+        category: "milliy",
+        description: "Yoshlar telekanali: musiqiy loyihalar va qiziqarli dasturlar.",
+        logoText: "MY5",
+        currentProg: "12:00 - 'Musiqa oqshomi'",
+        nextProg: "13:00 - Yoshlar dasturi",
+        isLive: true
+      },
+      {
+        id: "sport-tv",
+        name: "Sport TV",
+        category: "sport",
+        description: "Futbol, UFC, boks va jahon sport musobaqalari jonli efirda.",
+        logoText: "SPORT",
+        currentProg: "12:00 - UEFA Champions League Sharhi",
+        nextProg: "14:30 - Jonli Futbol: Superliga",
+        isLive: true
+      },
+      {
+        id: "uzbekistan-24",
+        name: "O'zbekiston 24",
+        category: "yangiliklar",
+        description: "Mamlakat va dunyo bo'ylab eng dolzarb tezkor yangiliklar.",
+        logoText: "UZB24",
+        currentProg: "12:00 - 'Axborot 24' yangiliklar dasturi",
+        nextProg: "13:00 - Maxsus reportaj",
+        isLive: true
+      },
+      {
+        id: "kinohit-hd",
+        name: "Kinohit HD",
+        category: "kino",
+        description: "Dunyoning eng mashhur blokbasterlari va premyera filmlari.",
+        logoText: "KINO",
+        currentProg: "11:30 - Dyuna: Ikkinchi qism (2024)",
+        nextProg: "14:15 - O'rgimchak odam: Uyga yo'l yo'q",
+        isLive: true
+      }
+    ];
+
+    let currentCategory = "all";
+    let activeChannel = CHANNELS[0];
+
+    function renderChannels() {
+      const grid = document.getElementById("channelGrid");
+      const filtered = CHANNELS.filter(ch => currentCategory === "all" || ch.category === currentCategory);
+      document.getElementById("channelCount").innerText = filtered.length;
+
+      grid.innerHTML = filtered.map(ch => {
+        const isActive = activeChannel.id === ch.id;
+        return `
+          <div onclick="selectChannel('${ch.id}')" class="p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+            isActive
+              ? 'bg-brand-red/15 border-brand-red/50 shadow-lg text-white'
+              : 'bg-[#121620] border-white/10 text-gray-300 hover:text-white hover:bg-white/5 hover:border-white/20'
+          }">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg ${isActive ? 'bg-brand-red text-white' : 'bg-white/10 text-gray-200'} border border-white/10 flex items-center justify-center font-bold text-xs shrink-0 font-outfit shadow-sm">
+                ${ch.logoText}
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-white line-clamp-1">${ch.name}</h4>
+                <span class="text-[10px] text-gray-400 capitalize">${ch.category}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Jonli</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectChannel(id) {
+      const found = CHANNELS.find(ch => ch.id === id);
+      if (found) {
+        activeChannel = found;
+        document.getElementById("activeLogo").innerText = found.logoText;
+        document.getElementById("activeName").innerText = found.name;
+        document.getElementById("activeDesc").innerText = found.description;
+        document.getElementById("currentProgram").innerText = found.currentProg;
+        document.getElementById("nextProgram").innerText = found.nextProg;
+        renderChannels();
+        showToast(`${found.name} jonli efiri tanlandi`);
+      }
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      const tabs = ["all", "milliy", "kino", "sport", "yangiliklar"];
+      tabs.forEach(t => {
+        const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
+        if (el) {
+          if (t === cat) {
+            el.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-red text-white transition shrink-0";
+          } else {
+            el.className = "px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition shrink-0";
+          }
+        }
+      });
+      renderChannels();
+    }
+
+    function handleSmartBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = 'mockup_homepage_v2.html';
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMsg');
+      if (toast && toastMsg) {
+        toastMsg.innerText = msg;
+        toast.classList.remove('-translate-y-20', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(() => {
+          toast.classList.add('-translate-y-20', 'opacity-0', 'pointer-events-none');
+          toast.classList.remove('translate-y-0', 'opacity-100');
+        }, 2200);
+      }
+    }
+
+    let isMobileSim = false;
+    
+
+    let isLight = false;
+    function toggleTheme() {
+      isLight = !isLight;
+      const body = document.body;
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeText');
+      if (isLight) {
+        body.classList.add('light-theme');
+        icon.innerText = 'dark_mode';
+        text.innerText = 'Tungi';
+      } else {
+        body.classList.remove('light-theme');
+        icon.innerText = 'light_mode';
+        text.innerText = 'Kunduzgi';
+      }
+    }
+
+    // Initialize
+    renderChannels();
+  </script>
+<script>
+    function scrollNavTabs(direction) {
+      const nav = document.getElementById('mainTabsNav');
+      if (nav) {
+        nav.scrollBy({ left: direction * 280, behavior: 'smooth' });
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('mainSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (!sidebar || !backdrop) return;
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+      if (isOpen) {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+        document.documentElement.classList.remove('sidebar-open');
+        document.body.classList.remove('sidebar-open');
+      } else {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+        document.documentElement.classList.add('sidebar-open');
+        document.body.classList.add('sidebar-open');
+      }
+    }
+</script>
+
+    <!-- Ergonomik Suzuvchi Orqaga Tugmasi (Mobil uchun o'ng pastki burchak - Thumb Zone) -->
+    <div class="fixed bottom-20 right-4 z-40 sm:hidden">
+      <button onclick="handleSmartBack()" class="back-btn w-11 h-11 rounded-xl bg-[#0E1117]/90 text-gray-200 border border-white/10 hover:bg-brand-red hover:text-white hover:border-brand-red flex items-center justify-center transition-all duration-200 shadow-xl shadow-black/60 cursor-pointer active:scale-95" title="Orqaga" aria-label="Orqaga qaytish">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+      </button>
+    </div>
+
+
+  <script>
+    function initTheme() {
+      const saved = localStorage.getItem('kinochi_theme');
+      if (saved === 'light') {
+        document.body.classList.add('light-theme');
+        document.documentElement.classList.remove('dark');
+        updateThemeIcons(true);
+      } else {
+        document.body.classList.remove('light-theme');
+        document.documentElement.classList.add('dark');
+        updateThemeIcons(false);
+      }
+    }
+
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-theme');
+      document.documentElement.classList.toggle('dark', !isLight);
+      localStorage.setItem('kinochi_theme', isLight ? 'light' : 'dark');
+      updateThemeIcons(isLight);
+    }
+
+    function updateThemeIcons(isLight) {
+      document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
+        icon.innerText = isLight ? 'dark_mode' : 'light_mode';
+      });
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.title = isLight ? "Qorong'i rejimga o'tish" : "Yorug' rejimga o'tish";
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initTheme);
+    initTheme();
+  </script>
+
+  <script src="mockup_state.js"></script>
+</body>
+</html>

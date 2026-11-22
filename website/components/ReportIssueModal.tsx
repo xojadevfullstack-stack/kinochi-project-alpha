@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, ChangeEvent, DragEvent } from "react";
 import { createPortal } from "react-dom";
 import { API_URL } from "@/lib/api";
+import { useOverlayBackClose } from "@/lib/hooks/useOverlayBackClose";
 
 interface ReportIssueModalProps {
   isOpen: boolean;
@@ -63,6 +64,8 @@ export default function ReportIssueModal({
       };
     }
   }, [isOpen]);
+
+  useOverlayBackClose(isOpen, onClose);
 
   // Close on Escape key
   useEffect(() => {

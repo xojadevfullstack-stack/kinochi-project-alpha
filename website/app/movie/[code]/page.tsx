@@ -31,10 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const movie = await fetchApi(`/movies/code/${params.code}`);
     
     return {
-      title: `${movie.title} - Kinochi`,
+      title: `${movie.title} - MediaPlus`,
       description: movie.description || `${movie.title} filmini bepul tomosha qiling.`,
       openGraph: {
-        title: `${movie.title} - Kinochi`,
+        title: `${movie.title} - MediaPlus`,
         description: movie.description || `${movie.title} filmini bepul tomosha qiling.`,
         url: `https://kinochi-project-alpha.vercel.app/movie/${params.code}`,
         images: movie.poster_url ? [
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (error) {
     return {
-      title: "Kino topilmadi - Kinochi"
+      title: "Kino topilmadi - MediaPlus"
     };
   }
 }
@@ -78,7 +78,7 @@ export default async function MovieDetailsPage({ params }: Props) {
     creditsData = await fetchApi(`/movies/${movie.code || movie.id}/credits`);
   } catch {}
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
   const telegramDeepLink = `https://t.me/${botUsername}?start=${movie.code}`;
   const is18Plus = isAdultContent(movie);
 
@@ -142,7 +142,7 @@ export default async function MovieDetailsPage({ params }: Props) {
           
           {/* Right: Movie Info */}
           <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-text-primary mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-white mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
               {movie.title}
             </h1>
             
@@ -247,7 +247,7 @@ export default async function MovieDetailsPage({ params }: Props) {
             )}
 
             {/* Description */}
-            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-text-secondary mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
+            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-slate-200 mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
               {movie.description || "Ushbu kino haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             

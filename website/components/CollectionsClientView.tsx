@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import ThemedCollectionCard from "@/components/catalog/ThemedCollectionCard";
 import { CURATED_CATALOG_THEMES, CatalogTheme } from "@/lib/catalogThemes";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Collection {
   id: number;
@@ -85,17 +86,17 @@ export default function CollectionsClientView({
   return (
     <div className="space-y-6">
       {/* Header Description & Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white/5 border border-white/10 p-4 sm:p-5 rounded-2xl shadow-xl">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4 sm:p-5 rounded-2xl shadow-sm dark:shadow-xl">
         {/* Categories Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat.id
-                  ? "bg-white/15 text-white font-bold border border-white/20 shadow-sm"
-                  : "bg-white/5 text-text-secondary hover:text-white hover:bg-white/10 border border-white/5"
+                  ? "bg-[#D20A13] dark:bg-[#E50914] text-white font-bold border border-[#D20A13] dark:border-[#E50914] shadow-sm"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/5"
               }`}
             >
               {cat.label}
@@ -105,7 +106,7 @@ export default function CollectionsClientView({
 
         {/* Live Search */}
         <div className="relative min-w-[240px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg pointer-events-none">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-secondary text-lg pointer-events-none">
             search
           </span>
           <input
@@ -113,22 +114,24 @@ export default function CollectionsClientView({
             placeholder="To'plam yoki mavzuni qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white text-xs outline-none focus:border-white/20 transition-colors"
+            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl pl-10 pr-4 py-2 text-slate-900 dark:text-white text-xs outline-none focus:border-[#E50914] transition-colors"
           />
         </div>
       </div>
 
       {/* Grid of Themed Collections with Fanned 3-Poster Decks (Iconic Asilmedia Layout) */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white/5 border border-white/10 rounded-3xl p-8">
-          <span className="material-symbols-outlined text-4xl text-text-secondary mb-3">
-            folder_off
-          </span>
-          <h3 className="text-white font-bold text-base mb-1">Hech qanday to'plam topilmadi</h3>
-          <p className="text-text-secondary text-xs">
-            Qidiruv so'rovingizni o'zgartirib ko'ring yoki boshqa toifani tanlang.
-          </p>
-        </div>
+        <EmptyState
+          icon="folder_off"
+          title="Hech qanday to'plam topilmadi"
+          description="Qidiruv so'rovingizni o'zgartirib ko'ring yoki boshqa toifani tanlang."
+          actionLabel="Barchasini ko'rsatish"
+          onAction={() => {
+            setSearchQuery("");
+            setSelectedCategory("all");
+          }}
+          compact
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filtered.map((item) => (

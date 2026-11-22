@@ -37,7 +37,7 @@ export default function ThemedCollectionCard({
   return (
     <Link
       href={href}
-      className="group relative flex flex-col justify-between bg-[#121317] hover:bg-[#161820] border border-white/10 hover:border-white/20 rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/60 cursor-pointer overflow-hidden"
+      className="group relative flex flex-col justify-between bg-white hover:bg-slate-50 dark:bg-[#121317] dark:hover:bg-[#161820] border border-slate-200 dark:border-white/10 hover:border-[#E50914] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-black/60 cursor-pointer overflow-hidden shadow-sm"
     >
       {/* 3D Fanned 3-Poster Showcase Deck (Iconic Asilmedia Style) */}
       <div className="relative w-full h-44 sm:h-48 mb-4 flex items-center justify-center perspective-1000 select-none">
@@ -90,21 +90,21 @@ export default function ThemedCollectionCard({
 
       {/* Title & Item Count */}
       <div className="mt-auto space-y-1">
-        <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-white transition-colors line-clamp-2 leading-snug">
+        <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-[#D20A13] dark:group-hover:text-white transition-colors line-clamp-2 leading-snug">
           {title}
         </h3>
         
         {description && (
-          <p className="text-xs text-text-secondary line-clamp-1 leading-normal">
+          <p className="text-xs text-slate-600 dark:text-text-secondary line-clamp-1 leading-normal">
             {description}
           </p>
         )}
 
-        <div className="pt-1 flex items-center justify-between text-xs text-text-secondary">
-          <span className="font-medium text-zinc-400">
+        <div className="pt-1 flex items-center justify-between text-xs text-slate-500 dark:text-text-secondary">
+          <span className="font-medium text-slate-500 dark:text-zinc-400">
             {displayCount}
           </span>
-          <span className="material-symbols-outlined text-[16px] text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all">
+          <span className="material-symbols-outlined text-[16px] text-slate-400 dark:text-zinc-500 group-hover:text-[#D20A13] dark:group-hover:text-white group-hover:translate-x-0.5 transition-all">
             arrow_forward
           </span>
         </div>

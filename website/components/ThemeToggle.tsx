@@ -2,6 +2,21 @@
 
 import { useEffect, useState } from "react";
 
+function applyThemeClasses(theme: "dark" | "light") {
+  if (typeof document === "undefined") return;
+  const html = document.documentElement;
+  const body = document.body;
+  if (theme === "light") {
+    html.classList.remove("dark");
+    html.classList.add("light");
+    body?.classList.add("light-theme");
+  } else {
+    html.classList.add("dark");
+    html.classList.remove("light");
+    body?.classList.remove("light-theme");
+  }
+}
+
 export default function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mounted, setMounted] = useState(false);
@@ -10,35 +25,21 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
     setMounted(true);
     try {
       const saved = localStorage.getItem("kinochi_theme") as "dark" | "light" | null;
-      if (saved) {
-        setTheme(saved);
-        if (saved === "light") {
-          document.documentElement.classList.remove("dark");
-          document.documentElement.classList.add("light");
-        } else {
-          document.documentElement.classList.add("dark");
-          document.documentElement.classList.remove("light");
-        }
-      } else {
-        // Default to dark
-        document.documentElement.classList.add("dark");
-      }
-    } catch {}
+      const resolved: "dark" | "light" = saved === "light" ? "light" : "dark";
+      setTheme(resolved);
+      applyThemeClasses(resolved);
+    } catch {
+      applyThemeClasses("dark");
+    }
   }, []);
 
   const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
+    const nextTheme: "dark" | "light" = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     try {
       localStorage.setItem("kinochi_theme", nextTheme);
-      if (nextTheme === "light") {
-        document.documentElement.classList.remove("dark");
-        document.documentElement.classList.add("light");
-      } else {
-        document.documentElement.classList.add("dark");
-        document.documentElement.classList.remove("light");
-      }
     } catch {}
+    applyThemeClasses(nextTheme);
   };
 
   if (!mounted) {
@@ -49,12 +50,13 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
 
   return (
     <button
+      type="button"
       onClick={toggleTheme}
-      className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-primary-container hover:text-primary-container transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary cursor-pointer group active:scale-95 ${className}`}
+      className={`header-icon-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 text-slate-700 dark:text-text-secondary hover:bg-[#B80710] dark:hover:bg-[#E50914] hover:border-[#B80710] dark:hover:border-[#E50914] hover:text-white flex items-center justify-center transition-all duration-200 cursor-pointer group active:scale-95 ${className}`}
       aria-label="Rejimni almashtirish"
       title={theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
     >
-      <span className="material-symbols-outlined text-[20px] sm:text-[22px] text-text-secondary group-hover:text-primary-container transition-transform duration-300 group-hover:rotate-45">
+      <span className="material-symbols-outlined text-[20px] sm:text-[22px] transition-transform duration-300 group-hover:rotate-45 group-hover:text-white">
         {theme === "dark" ? "light_mode" : "dark_mode"}
       </span>
     </button>

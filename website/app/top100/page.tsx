@@ -3,7 +3,6 @@ import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
-import BackButton from "@/components/BackButton";
 import LiveSearch from "@/components/LiveSearch";
 import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
 import { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES } from "@/lib/filterConstants";
@@ -62,17 +61,14 @@ export default async function Top100Page({
         
         {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <BackButton fallbackUrl="/catalog" />
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
-                <span className="material-symbols-outlined text-rating-gold text-3xl">emoji_events</span>
-                <span>Top 100 Sara Filmlar va Seriallar</span>
-              </h1>
-              <p className="text-xs text-text-secondary mt-0.5">
-                IMDb va tomoshabinlar e&apos;tirofiga sazovor bo&apos;lgan eng yuqori reytingli 100 ta asar.
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
+              <span className="material-symbols-outlined text-rating-gold text-3xl">emoji_events</span>
+              <span>Top 100 Sara Filmlar va Seriallar</span>
+            </h1>
+            <p className="text-xs text-text-secondary mt-0.5">
+              IMDb va tomoshabinlar e&apos;tirofiga sazovor bo&apos;lgan eng yuqori reytingli 100 ta asar.
+            </p>
           </div>
 
           <div className="w-full md:w-80">

@@ -32,7 +32,7 @@ export default function SourceBadge({
       title="Kontent manbasi"
     >
       {sourceType === "asilmedia" ? (
-        <span className="text-amber-400 font-bold flex items-center gap-1.5">
+        <span className="text-white font-bold flex items-center gap-1.5">
           {!imgError && (
             <img
               src="https://asilmedia.org/favicon.svg"

@@ -35,7 +35,7 @@ export default function SeasonEpisodesSection({
   series,
   botUsername,
 }: SeasonEpisodesSectionProps) {
-  const targetBotUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+  const targetBotUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
   const sortedSeasons = [...(seasons || [])].sort(
     (a, b) => a.season_number - b.season_number
   );
@@ -49,12 +49,12 @@ export default function SeasonEpisodesSection({
 
   if (!sortedSeasons || sortedSeasons.length === 0) {
     return (
-      <section className="max-w-container-max mx-auto px-gutter py-6 sm:py-8 border-t border-white/5">
-        <h2 className="text-xl sm:text-2xl font-bold text-text-primary mb-4 flex items-center gap-2.5">
+      <section className="max-w-container-max mx-auto px-gutter py-6 sm:py-8 border-t border-slate-200 dark:border-white/5">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-text-primary mb-4 flex items-center gap-2.5">
           <span className="w-1.5 h-6 bg-primary rounded-full block"></span>
           Fasllar va Qismlar
         </h2>
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-8 sm:p-12 text-center text-text-secondary flex flex-col items-center justify-center">
+        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-2xl p-8 sm:p-12 text-center text-slate-500 dark:text-text-secondary flex flex-col items-center justify-center">
           <span className="material-symbols-outlined text-3xl mb-2 opacity-40">hourglass_empty</span>
           <p className="text-sm sm:text-base">Hozircha qismlar yuklanmagan.</p>
         </div>
@@ -67,9 +67,9 @@ export default function SeasonEpisodesSection({
   );
 
   return (
-    <section className="max-w-container-max mx-auto px-gutter py-6 sm:py-8 border-t border-white/5">
+    <section data-tour="series-episodes" className="max-w-container-max mx-auto px-gutter py-6 sm:py-8 border-t border-slate-200 dark:border-white/5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-text-primary flex items-center gap-2.5">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-text-primary flex items-center gap-2.5">
           <span className="w-1.5 h-6 bg-primary rounded-full block"></span>
           Fasllar va Qismlar
         </h2>
@@ -83,10 +83,10 @@ export default function SeasonEpisodesSection({
                 <button
                   key={season.id}
                   onClick={() => setActiveSeasonId(season.id)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
                     isActive
-                      ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
-                      : "bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border-white/5"
+                      ? "bg-[#D20A13] dark:bg-[#E50914] text-white border-[#D20A13] dark:border-[#E50914] shadow-md shadow-primary/25"
+                      : "bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-white/10"
                   }`}
                 >
                   {season.season_number}-Mavsum
@@ -98,18 +98,18 @@ export default function SeasonEpisodesSection({
       </div>
 
       {/* Active Season Info Bar */}
-      <div className="flex items-center justify-between text-xs text-text-secondary mb-3 px-1">
-        <span className="font-medium text-white/80">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-text-secondary mb-3 px-1">
+        <span className="font-semibold text-slate-800 dark:text-white/80">
           {activeSeason?.title || `${activeSeason?.season_number}-Mavsum`}
         </span>
         <span>
-          Jami: <strong className="text-white font-mono">{episodes.length}</strong> ta qism
+          Jami: <strong className="text-slate-900 dark:text-white font-mono">{episodes.length}</strong> ta qism
         </span>
       </div>
 
       {/* Episodes Grid: Compact, touch-friendly, ergonomic */}
       {episodes.length === 0 ? (
-        <div className="bg-white/[0.03] border border-white/5 rounded-xl p-6 text-center text-text-secondary text-xs sm:text-sm">
+        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-xl p-6 text-center text-slate-500 dark:text-text-secondary text-xs sm:text-sm">
           Bu faslga hozircha qismlar kiritilmagan.
         </div>
       ) : (
@@ -130,24 +130,24 @@ export default function SeasonEpisodesSection({
                 releaseYear={series.release_year}
                 imdbRating={series.imdb_rating || series.tmdb_rating}
                 genres={series.categories?.[0]?.name || "Serial"}
-                className="group relative flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-200 cursor-pointer overflow-hidden text-left"
+                className="episode-card group relative flex flex-col justify-between p-2.5 sm:p-3 rounded-xl bg-slate-100/90 hover:bg-[#D20A13] dark:bg-white/[0.04] dark:hover:bg-[#E50914] border border-slate-200 dark:border-white/10 hover:border-[#D20A13] dark:hover:border-[#E50914] hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 cursor-pointer overflow-hidden text-left"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-base sm:text-lg font-bold text-white group-hover:text-primary transition-colors font-mono">
+                  <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors font-mono">
                     {episode.episode_number}
                   </span>
-                  <span className="material-symbols-outlined text-white/30 group-hover:text-primary group-hover:scale-110 transition-all text-lg">
+                  <span className="material-symbols-outlined text-slate-400 dark:text-white/40 group-hover:text-white group-hover:scale-110 transition-all text-lg">
                     play_circle
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-text-secondary w-full">
+                <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-text-secondary group-hover:text-white/90 w-full">
                   <span className="truncate group-hover:text-white transition-colors">
                     {episode.title && episode.title !== `${episode.episode_number}-qism`
                       ? episode.title
                       : `${episode.episode_number}-qism`}
                   </span>
                   {episode.duration && (
-                    <span className="text-[10px] text-white/40 shrink-0 ml-1 font-mono">
+                    <span className="text-[10px] text-slate-400 dark:text-white/40 group-hover:text-white/80 shrink-0 ml-1 font-mono">
                       {episode.duration}m
                     </span>
                   )}

@@ -3,7 +3,6 @@ import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
-import BackButton from "@/components/BackButton";
 import LiveSearch from "@/components/LiveSearch";
 import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
 import { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES } from "@/lib/filterConstants";
@@ -100,18 +99,15 @@ export default async function MoviesListPage({
     <div className="min-h-screen pt-24 sm:pt-28 pb-28 xl:pb-16 px-4 md:px-8 bg-gradient-to-b from-primary-container/[0.10] via-background-obsidian to-background-obsidian text-text-primary">
       <div className="max-w-container-max mx-auto space-y-6">
         
-        {/* Smart Back Navigation & Header */}
+        {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <BackButton fallbackUrl="/" />
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-text-primary font-headline-md tracking-tight">
-                Kinolar
-              </h1>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-text-primary font-headline-md tracking-tight">
+              Kinolar
+            </h1>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Bizning katta kinolar, seriallar va sara to&apos;plamlar kolleksiyamiz bilan tanishing.
+            </p>
           </div>
 
           <div className="w-full md:w-80">

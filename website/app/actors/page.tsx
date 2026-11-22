@@ -5,6 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import BackButton from "@/components/BackButton";
 import { fetchApi } from "@/lib/api";
+import MediaLoader from "@/components/ui/MediaLoader";
+import EmptyState from "@/components/ui/EmptyState";
+import { useOverlayBackClose } from "@/lib/hooks/useOverlayBackClose";
 
 interface Actor {
   id: number;
@@ -88,6 +91,7 @@ export default function ActorsPage() {
 
   // Modal / Filmography state
   const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
+  useOverlayBackClose(Boolean(selectedActor), () => setSelectedActor(null));
   const [filmography, setFilmography] = useState<FilmographyItem[]>([]);
   const [loadingFilms, setLoadingFilms] = useState(false);
   const [requestedIds, setRequestedIds] = useState<Record<number, boolean>>({});
@@ -201,16 +205,16 @@ export default function ActorsPage() {
 
         {/* Actors Grid: Compact 3-col on mobile, 4 on sm, 5 on md, 6 on lg */}
         {loading ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
-              <div key={i} className="h-36 sm:h-44 rounded-xl sm:rounded-2xl bg-white/5 animate-pulse" />
-            ))}
-          </div>
+          <MediaLoader variant="spinner" label="Aktyorlar yuklanmoqda..." />
         ) : actors.length === 0 ? (
-          <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-3xl">
-            <span className="material-symbols-outlined text-4xl text-text-secondary mb-2 opacity-40">person_search</span>
-            <p className="text-sm text-text-secondary">Aktyor topilmadi. Boshqa ism bilan qidirib ko&apos;ring.</p>
-          </div>
+          <EmptyState
+            icon="person_search"
+            title="Aktyor topilmadi"
+            description="Boshqa ism bilan qidirib ko'ring."
+            actionLabel="Barcha aktyorlar"
+            onAction={() => setSearchQuery("")}
+            compact
+          />
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4 md:gap-5">
             {actors.map((actor) => (
@@ -266,15 +270,14 @@ export default function ActorsPage() {
             {/* Modal Body */}
             <div className="p-4 sm:p-6 overflow-y-auto flex-1">
               {loadingFilms ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
-                  ))}
-                </div>
+                <MediaLoader variant="spinner" label="Filmografiya yuklanmoqda..." />
               ) : filmography.length === 0 ? (
-                <div className="text-center py-12 text-text-secondary text-sm">
-                  Ushbu aktyor ishtirokidagi filmlar topilmadi.
-                </div>
+                <EmptyState
+                  icon="movie_off"
+                  title="Filmlar topilmadi"
+                  description="Ushbu aktyor ishtirokidagi filmlar topilmadi."
+                  compact
+                />
               ) : (
                 <div className="space-y-2.5">
                   {filmography.map((movie) => {

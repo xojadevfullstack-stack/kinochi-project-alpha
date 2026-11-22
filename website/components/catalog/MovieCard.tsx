@@ -6,6 +6,7 @@ import { CatalogItem } from "@/lib/api/catalog";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import SourceBadge from "@/components/SourceBadge";
+import { isLowEndDevice } from "@/lib/lowEnd";
 
 export default function MovieCard({
   item,
@@ -70,7 +71,7 @@ export default function MovieCard({
   }, [isHoverPreview]);
 
   const handleMouseEnter = () => {
-    if (!hasTrailer) return;
+    if (!hasTrailer || isLowEndDevice()) return;
     hoverTimerRef.current = setTimeout(() => {
       setIsHoverPreview(true);
     }, 450);
@@ -81,7 +82,7 @@ export default function MovieCard({
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!hasTrailer) return;
+    if (!hasTrailer || isLowEndDevice()) return;
     holdTriggeredRef.current = false;
     if (e.touches && e.touches[0]) {
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -136,7 +137,7 @@ export default function MovieCard({
       className="group relative flex flex-col cursor-pointer transition-all duration-300"
     >
       {/* 1. Poster Container with rounded-2xl */}
-      <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-surface-container shadow-md ring-1 ring-white/10 group-hover:ring-white/30 group-hover:shadow-2xl transition-all duration-300">
+      <div className="preserve-white relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-surface-container shadow-md ring-1 ring-slate-900/10 dark:ring-white/10 group-hover:ring-[#E50914] group-hover:shadow-2xl transition-all duration-300">
         {item.poster_url ? (
           <AdultPoster
             src={item.poster_url}
@@ -269,8 +270,8 @@ export default function MovieCard({
       </div>
 
       {/* 2. Content underneath the poster */}
-      <div className="pt-2 px-0.5 flex flex-col">
-        <h3 className="font-bold text-sm sm:text-[15px] text-white leading-snug line-clamp-1 group-hover:text-primary transition-colors">
+      <div className="pt-2 px-0.5 flex flex-col min-w-0">
+        <h3 className="font-bold text-xs sm:text-[15px] text-slate-900 dark:text-white leading-snug truncate group-hover:text-primary transition-colors">
           {item.title}
         </h3>
       </div>

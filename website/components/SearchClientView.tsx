@@ -5,7 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import BackButton from "@/components/BackButton";
 import ExternalSearchSection from "@/components/ExternalSearchSection";
-import { fetchApi } from "@/lib/api";
+import { fetchApi } from "@/lib/api";
+import EmptyState from "@/components/ui/EmptyState";
+import MediaLoader from "@/components/ui/MediaLoader";
 
 const POPULAR_SEARCH_TAGS = [
   "Jangari",
@@ -451,22 +453,16 @@ export default function SearchClientView({
 
             {/* If neither local nor external results found */}
             {results.length === 0 && externalResults.length === 0 && !isLoading && (
-              <div className="text-center py-16 px-6 bg-white/[0.03] rounded-3xl border border-white/10 max-w-xl mx-auto mb-12">
-                <span className="material-symbols-outlined text-6xl text-text-secondary mb-3 opacity-60">
-                  search_off
-                </span>
-                <h3 className="text-xl font-bold text-white mb-2">Hech narsa topilmadi</h3>
-                <p className="text-sm text-text-secondary leading-relaxed mb-6">
-                  &ldquo;{query}&rdquo; so&apos;rovi bo&apos;yicha film topilmadi. Uni adminlarimizga buyurtma qilishingiz mumkin!
-                </p>
-                <Link
-                  href="/requests"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-2xl hover:bg-inverse-primary active:scale-95 transition-all text-sm shadow-lg"
-                >
-                  <span className="material-symbols-outlined text-[20px]">add_to_queue</span>
-                  <span>Kino qo&apos;shishni so&apos;rash</span>
-                </Link>
-              </div>
+              <EmptyState
+                icon="search_off"
+                title="Hech narsa topilmadi"
+                description={`"${query}" so'rovi bo'yicha film topilmadi. Uni adminlarimizga buyurtma qilishingiz mumkin!`}
+                actionLabel="Kino qo'shishni so'rash"
+                actionHref="/requests"
+                secondaryLabel="Katalogni ko'rish"
+                secondaryHref="/catalog"
+                className="max-w-xl mx-auto mb-12"
+              />
             )}
 
             {/* Suggestions below empty state */}
@@ -504,10 +500,7 @@ export default function SearchClientView({
                 {defaultItems.map((item, idx) => renderCard(item, idx))}
               </div>
             ) : (
-              <div className="text-center py-20 text-text-secondary">
-                <span className="material-symbols-outlined text-5xl mb-2 opacity-30">movie</span>
-                <p>Kinolar yuklanmoqda...</p>
-              </div>
+              <MediaLoader variant="spinner" label="Kinolar yuklanmoqda..." />
             )}
           </div>
         )}

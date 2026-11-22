@@ -266,7 +266,7 @@ export default function TelegramWatchButton({
                 {mediaTitle}
               </div>
               {mediaCode && (
-                <div className="inline-block mt-1 px-2 py-0.5 rounded-md bg-white/10 text-[11px] font-mono font-bold text-amber-400 border border-white/5">
+                <div className="inline-block mt-1 px-2 py-0.5 rounded-md bg-[#E50914]/15 text-[11px] font-mono font-bold text-[#E50914] border border-[#E50914]/25">
                   #{mediaCode}
                 </div>
               )}

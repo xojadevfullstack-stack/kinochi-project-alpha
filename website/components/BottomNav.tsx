@@ -28,10 +28,10 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-background-obsidian/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.85)] pb-[env(safe-area-inset-bottom,0.5rem)]"
+      className="xl:hidden fixed bottom-[calc(12px+env(safe-area-inset-bottom,0px))] left-3 right-3 max-w-[440px] mx-auto z-40 rounded-[26px] bg-white/85 dark:bg-[#12141C]/80 backdrop-blur-2xl backdrop-saturate-[180%] border border-slate-900/10 dark:border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_32px_rgba(15,23,42,0.12)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_14px_38px_rgba(0,0,0,0.55)] px-2 py-1.5"
       aria-label="Mobil pastki navigatsiya"
     >
-      <div className="max-w-md mx-auto px-2 sm:px-4 py-2 flex items-center justify-between">
+      <div className="w-full flex items-center justify-between gap-1">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"

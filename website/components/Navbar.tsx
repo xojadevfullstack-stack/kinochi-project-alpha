@@ -7,6 +7,7 @@ import { useAuth } from "../lib/auth/AuthProvider";
 import LiveSearch from "./LiveSearch";
 import ThemeToggle from "./ThemeToggle";
 import { fetchApi } from "../lib/api";
+import { useOverlayBackClose } from "@/lib/hooks/useOverlayBackClose";
 
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
@@ -108,7 +109,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -203,6 +204,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
     setSidebarOpen(false);
   }, []);
 
+  // Native OS Back (popstate) closes unpinned drawer or mobile search bar first
+  useOverlayBackClose(sidebarOpen && !isPinned, closeSidebarImmediate);
+  useOverlayBackClose(isMobileSearchOpen, () => setIsMobileSearchOpen(false));
+
   const togglePin = useCallback(() => {
     setIsPinned(prev => {
       const next = !prev;
@@ -210,6 +215,23 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       return next;
     });
   }, []);
+
+  // Lock background page scroll on mobile/tablet when overlay sidebar is open
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const shouldLock = sidebarOpen && !isPinned && window.innerWidth < 1280;
+    if (shouldLock) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen, isPinned]);
 
   // Proximity detection: if cursor approaches within 20px of left edge on desktop, open smoothly
   useEffect(() => {
@@ -244,19 +266,26 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
           2. MINIMALIST DYNAMIC DESKTOP SIDEBAR
       ======================================================== */}
       <aside
+        id="mainSidebar"
         onMouseEnter={openSidebarSmoothly}
         onMouseLeave={closeSidebarSmoothly}
-        className={`flex fixed top-0 left-0 bottom-0 w-72 z-[60] bg-[#0c0d10]/98 backdrop-blur-2xl border-r border-white/10 ${
-          isPinned ? "shadow-none" : "shadow-[20px_0_50px_rgba(0,0,0,0.85)]"
+        className={`flex fixed top-0 left-0 bottom-0 h-[100dvh] overscroll-contain w-72 z-[60] bg-white/95 dark:bg-[#0c0d10]/95 backdrop-blur-2xl border-r border-slate-900/10 dark:border-white/10 ${
+          isPinned ? "shadow-none" : "shadow-[20px_0_50px_rgba(0,0,0,0.22)] dark:shadow-[20px_0_50px_rgba(0,0,0,0.85)]"
         } flex-col justify-between select-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           (sidebarOpen || isPinned) ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 space-y-4 overflow-y-auto hide-scrollbar flex-1">
+        <div className="p-4 space-y-4 overflow-y-auto overscroll-contain touch-pan-y hide-scrollbar flex-1">
           {/* Sidebar Top Header & Pin Action */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="font-heading font-black text-sm tracking-wider text-white">
+              <img
+                src="/logo-mediaplus-icon.png"
+                alt="MediaPlus"
+                decoding="async"
+                className="w-7 h-7 rounded-lg object-cover shrink-0 shadow-md shadow-brand-red/30"
+              />
+              <span className="font-heading font-black text-sm tracking-wider text-slate-900 dark:text-white">
                 MEDIA<span className="text-primary-container">PLUS</span>
               </span>
             </Link>
@@ -266,8 +295,8 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 onClick={togglePin}
                 className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
                   isPinned
-                    ? "bg-white/15 text-white border border-white/20"
-                    : "text-text-secondary hover:text-white hover:bg-white/5"
+                    ? "bg-primary-container text-white border border-primary-container"
+                    : "text-slate-600 dark:text-text-secondary hover:text-white hover:bg-[#B80710] dark:hover:bg-[#E50914]"
                 }`}
                 title={isPinned ? "Mahkamlangan (Yonma-yon)" : "Ekranga mahkamlash (Yonma-yon)"}
               >
@@ -280,7 +309,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               </button>
               <button
                 onClick={closeSidebarImmediate}
-                className="w-7 h-7 rounded-lg text-text-secondary hover:text-white flex items-center justify-center hover:bg-white/5 transition-colors"
+                className="w-7 h-7 rounded-lg text-slate-600 dark:text-text-secondary hover:text-white flex items-center justify-center hover:bg-[#B80710] dark:hover:bg-[#E50914] transition-colors"
                 title="Yopish"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
@@ -435,10 +464,26 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             </Link>          </nav>
         </div>
 
-        {/* Sidebar Bottom: Bog'lanish / Yordam (No duplicate dark/light toggle!) */}
-        <div className="p-3 border-t border-white/10 text-xs text-text-secondary">
+        {/* Sidebar Bottom: Qo'llanma & Bog'lanish / Yordam */}
+        <div className="p-3 border-t border-white/10 text-xs text-text-secondary space-y-1">
+          {(pathname === "/" ||
+            pathname === "/requests" ||
+            pathname.startsWith("/series/") ||
+            pathname.startsWith("/collections/")) && (
+            <button
+              type="button"
+              onClick={() => {
+                closeSidebarImmediate();
+                window.dispatchEvent(new Event("mediaplus:start_onboarding"));
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-all cursor-pointer text-left"
+            >
+              <span className="material-symbols-outlined text-[18px] text-primary-container">auto_awesome</span>
+              <span>Qo&apos;llanma (Qanday ishlaydi?)</span>
+            </button>
+          )}
           <a
-            href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot"}`}
+            href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot"}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-all cursor-pointer"
@@ -453,7 +498,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       {sidebarOpen && !isPinned && (
         <div
           onClick={closeSidebarImmediate}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] transition-opacity duration-300 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] touch-none overscroll-none transition-opacity duration-300 cursor-pointer"
           aria-hidden="true"
         />
       )}
@@ -465,13 +510,13 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
       <nav
         className={`site-top-nav fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-b ${
           isScrolled
-            ? "bg-black/60 backdrop-blur-xl border-white/10 shadow-2xl shadow-black/80 py-3"
-            : "bg-black/20 backdrop-blur-md border-white/5 py-4"
+            ? "bg-white/80 dark:bg-[#0c0e14]/75 backdrop-blur-xl border-slate-900/10 dark:border-white/10 shadow-lg shadow-slate-900/5 dark:shadow-2xl dark:shadow-black/80 py-3"
+            : "bg-white/75 dark:bg-[#0c0e14]/65 backdrop-blur-md border-slate-900/5 dark:border-white/5 py-3.5"
         }`}
       >
         <div className="max-w-container-max mx-auto px-gutter flex items-center justify-between gap-3 sm:gap-4 relative">
           
-          {/* Left: Hamburger Menu Button + Logo (Animates smoothly out on mobile when search opens) */}
+          {/* Left: Back (on inner pages) + Hamburger Menu Button + Logo */}
           <div
             className={`flex items-center gap-2 sm:gap-3 shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isMobileSearchOpen
@@ -479,6 +524,30 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 : "opacity-100 translate-x-0 scale-100"
             }`}
           >
+            {pathname && pathname !== "/" && (
+              <button
+                type="button"
+                onClick={() => {
+                  const hasHistory =
+                    typeof window !== "undefined" &&
+                    window.history.length > 1 &&
+                    ((window.history.state && window.history.state.idx > 0) ||
+                      (document.referrer && document.referrer.includes(window.location.host)));
+                  if (hasHistory) {
+                    router.back();
+                  } else {
+                    router.push("/");
+                  }
+                }}
+                className="back-btn header-icon-btn w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group"
+                title="Orqaga"
+                aria-label="Orqaga qaytish"
+              >
+                <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
+                  arrow_back
+                </span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -488,17 +557,23 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   openSidebarSmoothly();
                 }
               }}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 flex items-center justify-center text-text-secondary hover:text-white transition-all cursor-pointer"
+              className="header-icon-btn w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group"
               title="Menyu"
               aria-label="Menyuni ochish"
             >
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
+              <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
                 {sidebarOpen ? "close" : "menu"}
               </span>
             </button>
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-white group-hover:opacity-95 transition-opacity">
-                Media<span className="text-primary-container">Plus</span>
+              <img
+                src="/logo-mediaplus-icon.png"
+                alt="MediaPlus"
+                decoding="async"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-cover shrink-0 shadow-lg shadow-brand-red/30"
+              />
+              <span className="font-display-hero text-2xl sm:text-3xl font-black tracking-wider text-slate-900 dark:text-white group-hover:opacity-95 transition-opacity">
+                MEDIA<span className="text-primary-container">PLUS</span>
               </span>
             </Link>
           </div>
@@ -523,11 +598,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen(true)}
-              className="sm:hidden w-9 h-9 rounded-full border border-white/10 hover:border-white/20 transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary hover:text-white cursor-pointer active:scale-95"
+              className="header-icon-btn sm:hidden w-9 h-9 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95"
               aria-label="Qidiruv"
               title="Qidiruvni ochish"
             >
-              <span className="material-symbols-outlined text-[20px]">
+              <span className="material-symbols-outlined text-[20px] group-hover:text-white">
                 search
               </span>
             </button>
@@ -538,31 +613,31 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             {/* 2. Notifications Button */}
             <Link
               href="/notifications"
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-white/20 transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary hover:text-white cursor-pointer group active:scale-95"
+              className="header-icon-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95"
               aria-label="Bildirishnomalar"
               title="Bildirishnomalar"
             >
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
+              <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
                 notifications
               </span>
               {hasUnread && (
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container rounded-full animate-pulse shadow-sm shadow-primary-container" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-container group-hover:bg-white rounded-full animate-pulse shadow-sm shadow-primary-container" />
               )}
             </Link>
 
             {/* 3. Profile Avatar / Button */}
             <Link
               href="/profile"
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 hover:border-white/20 transition-all duration-200 bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-secondary hover:text-white cursor-pointer group active:scale-95 overflow-hidden"
+              className="header-icon-btn relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] transition-all duration-200 bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white cursor-pointer group active:scale-95 overflow-hidden"
               aria-label="Mening Profilim"
               title="Profil sahifasi"
             >
               {status === "authenticated" && user?.first_name ? (
-                <span className="font-bold text-xs sm:text-sm text-text-primary">
+                <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-text-primary group-hover:text-white">
                   {user.first_name.charAt(0)}
                 </span>
               ) : (
-                <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
+                <span className="material-symbols-outlined text-[20px] sm:text-[22px] group-hover:text-white">
                   person
                 </span>
               )}
@@ -584,11 +659,11 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen(false)}
-              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 flex items-center justify-center text-text-secondary hover:text-white transition-all shrink-0 cursor-pointer active:scale-95"
+              className="header-icon-btn w-9 h-9 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all shrink-0 cursor-pointer group"
               aria-label="Qidiruvni yopish"
               title="Qidiruvni yopish"
             >
-              <span className="material-symbols-outlined text-[20px]">
+              <span className="material-symbols-outlined text-[20px] group-hover:text-white">
                 arrow_back
               </span>
             </button>

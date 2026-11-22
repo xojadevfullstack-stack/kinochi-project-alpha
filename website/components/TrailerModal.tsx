@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import MediaLoader from "@/components/ui/MediaLoader";
+import { useOverlayBackClose } from "@/lib/hooks/useOverlayBackClose";
 
 interface TrailerModalProps {
   trailerUrl: string;
@@ -20,10 +22,18 @@ export default function TrailerModal({
 }: TrailerModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [playerLoading, setPlayerLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setPlayerLoading(true);
+    const timer = setTimeout(() => setPlayerLoading(false), 4000);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,6 +44,8 @@ export default function TrailerModal({
       };
     }
   }, [isOpen]);
+
+  useOverlayBackClose(isOpen, () => setIsOpen(false));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,6 +77,7 @@ export default function TrailerModal({
         <iframe
           className="w-full h-full rounded-xl"
           src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+          onLoad={() => setPlayerLoading(false)}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         ></iframe>
@@ -73,7 +86,7 @@ export default function TrailerModal({
     
     if (isDirectMp4) {
       return (
-        <video controls autoPlay className="w-full h-full rounded-xl bg-black">
+        <video controls autoPlay onCanPlay={() => setPlayerLoading(false)} className="w-full h-full rounded-xl bg-black">
           <source src={trailerUrl} type="video/mp4" />
           Sizning brauzeringiz video teglarni qo'llab-quvvatlamaydi.
         </video>
@@ -86,6 +99,7 @@ export default function TrailerModal({
         <iframe
           className="w-full h-full rounded-xl bg-black"
           src={tgUrl}
+          onLoad={() => setPlayerLoading(false)}
           allow="autoplay; fullscreen"
           allowFullScreen
         ></iframe>
@@ -161,7 +175,12 @@ export default function TrailerModal({
             </button>
             
             {/* Player Container */}
-            <div className="w-full h-full rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              {playerLoading && (youtubeId || isDirectMp4 || isTelegram) && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0B0D14]/90 pointer-events-none">
+                  <MediaLoader variant="spinner" label="Treyler yuklanmoqda..." />
+                </div>
+              )}
               {renderPlayer()}
             </div>
           </div>

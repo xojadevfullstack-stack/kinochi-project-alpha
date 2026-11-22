@@ -439,7 +439,7 @@ export default function LiveSearch({
                               </span>
                             )}
                             {item.type === "collection" && (
-                              <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px] uppercase">
+                              <span className="px-1.5 py-0.5 rounded bg-[#E50914]/20 text-red-400 font-bold text-[10px] uppercase">
                                 Xronologiya
                               </span>
                             )}
@@ -534,7 +534,7 @@ export default function LiveSearch({
                               )}
 
                               {reqCount > 0 && (
-                                <span className="text-[11px] text-amber-400 font-semibold">
+                                <span className="text-[11px] text-[#E50914] font-semibold">
                                   🔥 {reqCount} so&apos;rov
                                 </span>
                               )}

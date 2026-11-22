@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import MovieCard from "./MovieCard";
 import { CatalogItem, getPageContent } from "@/lib/api/catalog";
 import { fetchApi } from "@/lib/api";
+import EmptyState from "@/components/ui/EmptyState";
+import MediaLoader from "@/components/ui/MediaLoader";
 
 export type CatalogGridProps = {
   initialItems: CatalogItem[];
@@ -142,10 +144,15 @@ export default function CatalogGrid({
 
   if (!items || items.length === 0) {
     return (
-      <div className="text-center py-20 text-text-secondary bg-surface-container/20 rounded-2xl border border-white/5">
-        <span className="material-symbols-outlined text-6xl mb-4 opacity-50">movie</span>
-        <p className="font-body-lg">{emptyMessage}</p>
-      </div>
+      <EmptyState
+        icon="movie_off"
+        title="Kontent topilmadi"
+        description={emptyMessage}
+        actionLabel="Bosh sahifaga qaytish"
+        actionHref="/"
+        secondaryLabel="Buyurtma berish"
+        secondaryHref="/requests"
+      />
     );
   }
 
@@ -168,7 +175,7 @@ export default function CatalogGrid({
             className="flex items-center justify-center gap-2 h-12 px-8 bg-white/10 hover:bg-white/15 border border-white/15 hover:border-white/30 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold text-white shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 cursor-pointer"
           >
             {loading ? (
-              <span className="w-5 h-5 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span>
+              <MediaLoader variant="inline" label="" />
             ) : (
               <span className="material-symbols-outlined text-[18px]">expand_more</span>
             )}

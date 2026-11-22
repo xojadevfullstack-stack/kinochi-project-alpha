@@ -108,7 +108,7 @@ export default function MediaMarqueeSection({ items }: MediaMarqueeSectionProps)
   };
 
   return (
-    <section className="max-w-container-max mx-auto px-gutter my-12 sm:my-16 overflow-hidden relative z-20">
+    <section className="max-w-container-max mx-auto px-gutter my-12 sm:my-16 overflow-hidden relative z-20 cv-auto">
       {/* Header: "Kinolar va seriallar" (without "mozaikasi") */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-headline-md text-lg sm:text-xl md:text-2xl text-text-primary flex items-center gap-2 font-bold">

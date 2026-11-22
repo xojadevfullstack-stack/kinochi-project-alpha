@@ -1,5 +1,6 @@
 import { fetchApi } from "@/lib/api";
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
@@ -15,12 +16,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   try {
     const page = await fetchApi(`/pages/${params.slug}`);
     return {
-      title: `${page.title} - Kinochi`,
+      title: `${page.title} - MediaPlus`,
       description: `${page.title} turidagi barcha kino va seriallar.`,
     };
   } catch (error) {
     return {
-      title: "Sahifa - Kinochi",
+      title: "Sahifa - MediaPlus",
     };
   }
 }
@@ -113,11 +114,7 @@ export default async function DynamicPage({
   }
 
   if (!page) {
-    return (
-      <div className="min-h-screen pt-32 pb-margin-desktop px-gutter flex items-center justify-center">
-        <h1 className="text-3xl font-bold text-text-primary">Sahifa topilmadi</h1>
-      </div>
-    );
+    notFound();
   }
 
   return (

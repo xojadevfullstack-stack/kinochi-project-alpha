@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPlus — Portal Maketlari Nazorat Markazi (Preview Hub)</title>
+  <link rel="icon" type="image/png" href="public/logo-mediaplus-icon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              red: '#E50914',
+              redHover: '#B80710',
+              gold: '#F5C518'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            outfit: ['"Outfit"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .device-frame {
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="bg-[#08090C] text-white font-sans antialiased h-screen flex flex-col overflow-hidden">
+
+  <!-- ==========================================
+       TOP CONTROL BAR
+       ========================================== -->
+  <header class="h-16 bg-[#09090B] border-b border-white/10 px-4 flex items-center justify-between shrink-0 z-50">
+    
+    <!-- Chap: Logo & Loyiha Holati -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <img src="public/logo-mediaplus-icon.png" alt="MediaPlus" class="w-8 h-8 rounded-lg shrink-0 object-cover shadow-md shadow-brand-red/30"/>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-outfit font-black text-base text-white tracking-tight">MEDIA<span class="text-brand-red">PLUS</span></span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              22/22 TAYYOR
+            </span>
+          </div>
+          <p class="text-[10px] text-gray-400 -mt-0.5">Teskari Dizayn Nazorat Markazi (Preview Hub)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- O'rta: Sahifani Tanlash Dropdowni -->
+    <div class="flex items-center gap-2 max-w-md w-full mx-4">
+      <span class="material-symbols-outlined text-gray-400 text-[18px]">web</span>
+      <select id="pageSelect" onchange="loadPage(this.value)" class="w-full bg-[#121620] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-brand-red cursor-pointer">
+        <optgroup label="🌟 Asosiy Oqim & Katalog">
+          <option value="mockup_homepage_v2.html" selected>1. Bosh Sahifa (mockup_homepage_v2.html)</option>
+          <option value="mockup_catalog.html">2. Barcha Media Katalogi (mockup_catalog.html)</option>
+          <option value="mockup_media_detail.html">3. Film Sahifasi (mockup_media_detail.html)</option>
+          <option value="mockup_series_detail.html">4. Serial Sahifasi (mockup_series_detail.html)</option>
+          <option value="mockup_premieres.html">5. Premyeralar va Relizlar (mockup_premieres.html)</option>
+        </optgroup>
+        <optgroup label="🎬 To'plamlar & Koinotlar">
+          <option value="mockup_collections.html">6. To'plamlar Katalogi (mockup_collections.html)</option>
+          <option value="mockup_collection_detail.html">7. To'plam Ichi (mockup_collection_detail.html)</option>
+          <option value="mockup_franchise_detail.html">8. Franshiza Ichi (mockup_franchise_detail.html)</option>
+                    <option value="mockup_timelines.html">9. Xronologiyalar Katalogi (mockup_timelines.html)</option>
+          <option value="mockup_timeline_detail.html">10. Voqealar Xronologiyasi (2 xil uslub) (mockup_timeline_detail.html)</option>
+        </optgroup>
+        <optgroup label="👤 Shaxsiy Profil & Jamiyat">
+          <option value="mockup_subscriptions.html">11. Obunalar & Sevimlilar (mockup_subscriptions.html)</option>
+          <option value="mockup_history.html">12. Ko'rish Tarixi (mockup_history.html)</option>
+          <option value="mockup_achievements.html">13. Yutuqlar va Darajalar (mockup_achievements.html)</option>
+          <option value="mockup_requests.html">14. Buyurtma Qilish (mockup_requests.html)</option>
+          <option value="mockup_notifications.html">15. Bildirishnomalar (mockup_notifications.html)</option>
+          <option value="mockup_profile.html">16. Foydalanuvchi Profili (mockup_profile.html)</option>
+        </optgroup>
+        <optgroup label="🧭 Qidiruv, TV & Qo'shimcha">
+          <option value="mockup_search.html">17. Jonli Qidiruv (mockup_search.html)</option>
+          <option value="mockup_category.html">18. Janrlar & Bo'limlar (mockup_category.html)</option>
+          <option value="mockup_top100.html">19. TOP 100 Reyting (mockup_top100.html)</option>
+          <option value="mockup_actors.html">20. Aktyorlar Katalogi (mockup_actors.html)</option>
+          <option value="mockup_tv.html">21. Jonli TV & Efirlar (mockup_tv.html)</option>
+          <option value="mockup_static_page.html">22. Qoidalar va DMCA (mockup_static_page.html)</option>
+          <option value="mockup_theme_comparison.html">🧪 Rejimlar Solishtiruvi (mockup_theme_comparison.html)</option>
+        </optgroup>
+        <optgroup label="⏳ Tizim Holatlari: Loading, 404 & Empty">
+          <option value="mockup_loading.html">23. Loading &amp; Skeletons (mockup_loading.html)</option>
+          <option value="mockup_404.html">24. 404 — Sahifa topilmadi (mockup_404.html)</option>
+          <option value="mockup_empty.html">25. Bo'sh Holatlar — Empty States (mockup_empty.html)</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <!-- O'ng: Qurilma O'lchami va Rejim Boshqaruvi -->
+    <div class="flex items-center gap-2">
+      
+      <!-- Qurilma Simulyatori Tugmalari -->
+      <div class="flex items-center bg-[#121620] border border-white/10 rounded-xl p-1 text-xs">
+        <button onclick="setViewport('mobile')" id="btnMobile" class="flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-white bg-brand-red transition">
+          <span class="material-symbols-outlined text-[16px]">smartphone</span>
+          <span class="hidden sm:inline">Mobil (390px)</span>
+        </button>
+        <button onclick="setViewport('tablet')" id="btnTablet" class="flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition">
+          <span class="material-symbols-outlined text-[16px]">tablet</span>
+          <span class="hidden sm:inline">Planshet (768px)</span>
+        </button>
+        <button onclick="setViewport('desktop')" id="btnDesktop" class="flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition">
+          <span class="material-symbols-outlined text-[16px]">desktop_windows</span>
+          <span class="hidden sm:inline">Desktop (100%)</span>
+        </button>
+      </div>
+
+      <!-- Kunduzgi / Tungi Rejim Switcheri -->
+      <button onclick="togglePreviewTheme()" id="themeBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-xs font-semibold transition cursor-pointer" title="Iframe rejimini o'zgartirish">
+        <span class="material-symbols-outlined text-[17px]" id="themeIcon">light_mode</span>
+        <span class="hidden md:inline" id="themeText">Kunduzgi (Variant 1)</span>
+      </button>
+
+      <!-- Minimal / Klassik Darhol Qaytish Switcheri -->
+      <button onclick="togglePureMinimal()" id="minimalBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red text-white border border-brand-red text-xs font-bold transition cursor-pointer shadow" title="Apple Pure Minimal vs Eski holatni solishtirish">
+        <span class="material-symbols-outlined text-[16px]" id="minimalIcon">auto_awesome</span>
+        <span class="hidden lg:inline" id="minimalText">Pure Minimal: ON</span>
+      </button>
+
+      <!-- Yangi oynada ochish -->
+      <a id="externalLink" href="mockup_homepage_v2.html" target="_blank" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-brand-red text-gray-300 hover:text-white border border-white/10 flex items-center justify-center transition" title="Alohida oynada to'liq ochish">
+        <span class="material-symbols-outlined text-[17px]">open_in_new</span>
+      </a>
+
+    </div>
+  </header>
+
+  <!-- ==========================================
+       PREVIEW WORKSPACE (IFRAME CONTAINER)
+       ========================================== -->
+  <main class="flex-1 bg-[#050608] flex items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+    
+    <!-- Iframe Wrapper -->
+    <div id="deviceWrapper" class="device-frame h-full w-[390px] max-w-full rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-[#09090B] relative flex flex-col">
+      
+      <!-- Top Device Header Bar (Faqat mobil va planshetda ko'rinadi) -->
+      <div id="deviceStatusBar" class="h-6 bg-[#0E0F13] border-b border-white/5 px-4 flex items-center justify-between text-[10px] text-gray-400 select-none">
+        <span id="deviceTime">09:41</span>
+        <div class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[12px]">signal_cellular_alt</span>
+          <span class="material-symbols-outlined text-[12px]">wifi</span>
+          <span class="material-symbols-outlined text-[12px]">battery_full</span>
+        </div>
+      </div>
+
+      <!-- Asosiy Preview Iframe -->
+      <iframe id="previewIframe" src="mockup_homepage_v2.html" class="w-full flex-1 border-0 bg-transparent"></iframe>
+
+    </div>
+
+  </main>
+
+  <script>
+    let currentViewport = 'mobile';
+    let isLightMode = false;
+    let isPureMinimal = true;
+
+    function setViewport(mode) {
+      currentViewport = mode;
+      const wrapper = document.getElementById('deviceWrapper');
+      const statusBar = document.getElementById('deviceStatusBar');
+      const btnMobile = document.getElementById('btnMobile');
+      const btnTablet = document.getElementById('btnTablet');
+      const btnDesktop = document.getElementById('btnDesktop');
+
+      btnMobile.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition";
+      btnTablet.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition";
+      btnDesktop.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium text-gray-400 hover:text-white transition";
+
+      if (mode === 'mobile') {
+        wrapper.style.width = '390px';
+        wrapper.classList.remove('rounded-none', 'border-0');
+        wrapper.classList.add('rounded-2xl', 'border', 'border-white/15');
+        statusBar.classList.remove('hidden');
+        btnMobile.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-white bg-brand-red transition";
+      } else if (mode === 'tablet') {
+        wrapper.style.width = '768px';
+        wrapper.classList.remove('rounded-none', 'border-0');
+        wrapper.classList.add('rounded-2xl', 'border', 'border-white/15');
+        statusBar.classList.remove('hidden');
+        btnTablet.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-white bg-brand-red transition";
+      } else {
+        wrapper.style.width = '100%';
+        wrapper.classList.add('rounded-none', 'border-0');
+        wrapper.classList.remove('rounded-2xl', 'border', 'border-white/15');
+        statusBar.classList.add('hidden');
+        btnDesktop.className = "flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-white bg-brand-red transition";
+      }
+    }
+
+    function loadPage(url) {
+      const iframe = document.getElementById('previewIframe');
+      const extLink = document.getElementById('externalLink');
+      iframe.src = url;
+      extLink.href = url;
+
+      // Agar light mode yoqilgan bo'lsa, yuklangandan so'ng unga ham qo'llaymiz
+      iframe.onload = () => {
+        applyThemeToIframe();
+        setTimeout(applyThemeToIframe, 50);
+        setTimeout(applyThemeToIframe, 200);
+      };
+    }
+
+    function togglePreviewTheme() {
+      isLightMode = !isLightMode;
+      const themeIcon = document.getElementById('themeIcon');
+      const themeText = document.getElementById('themeText');
+
+      if (isLightMode) {
+        themeIcon.innerText = 'dark_mode';
+        themeText.innerText = 'Tungi (Dark)';
+      } else {
+        themeIcon.innerText = 'light_mode';
+        themeText.innerText = 'Kunduzgi (Variant 1)';
+      }
+
+      applyThemeToIframe();
+    }
+
+    function togglePureMinimal() {
+      isPureMinimal = !isPureMinimal;
+      const minimalBtn = document.getElementById('minimalBtn');
+      const minimalText = document.getElementById('minimalText');
+      if (minimalBtn && minimalText) {
+        if (isPureMinimal) {
+          minimalBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-red text-white border border-brand-red text-xs font-bold transition cursor-pointer shadow";
+          minimalText.innerText = "Pure Minimal: ON";
+        } else {
+          minimalBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-xs font-semibold transition cursor-pointer";
+          minimalText.innerText = "Eski Holat (OFF)";
+        }
+      }
+      applyThemeToIframe();
+    }
+
+    function applyThemeToIframe() {
+      const iframe = document.getElementById('previewIframe');
+      const deviceWrapper = document.getElementById('deviceWrapper');
+      if (deviceWrapper) {
+        if (isLightMode) {
+          deviceWrapper.classList.remove('bg-[#09090B]');
+          deviceWrapper.classList.add('bg-white');
+        } else {
+          deviceWrapper.classList.remove('bg-white');
+          deviceWrapper.classList.add('bg-[#09090B]');
+        }
+      }
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        if (iframeDoc) {
+          if (isLightMode) {
+            iframeDoc.body?.classList.add('light-theme');
+            iframeDoc.documentElement?.classList.remove('dark');
+            try { iframeDoc.defaultView?.localStorage?.setItem('kinochi_theme', 'light'); } catch (err) {}
+            try { if (typeof iframeDoc.defaultView?.updateThemeIcons === 'function') iframeDoc.defaultView.updateThemeIcons(true); } catch (err) {}
+          } else {
+            iframeDoc.body?.classList.remove('light-theme');
+            iframeDoc.documentElement?.classList.add('dark');
+            try { iframeDoc.defaultView?.localStorage?.setItem('kinochi_theme', 'dark'); } catch (err) {}
+            try { if (typeof iframeDoc.defaultView?.updateThemeIcons === 'function') iframeDoc.defaultView.updateThemeIcons(false); } catch (err) {}
+          }
+          if (iframeDoc.body) {
+            iframeDoc.body.classList.toggle('pure-minimal', isPureMinimal);
+          }
+        }
+      } catch (e) {
+        // Cross-origin fallback
+      }
+    }
+
+    // Real time update
+    setInterval(() => {
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('deviceTime');
+      if (el) el.innerText = timeStr;
+    }, 1000);
+
+    // URL query param (?page=mockup_loading.html | mockup_404.html | mockup_empty.html)
+    (function initRequestedPage() {
+      try {
+        const req = new URLSearchParams(window.location.search).get('page');
+        const sel = document.getElementById('pageSelect');
+        if (req && sel && Array.from(sel.options).some(o => o.value === req)) {
+          sel.value = req;
+          loadPage(req);
+        }
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>

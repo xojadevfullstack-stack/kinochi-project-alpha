@@ -5,8 +5,33 @@ import Image from "next/image";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import RequestMovieModal, { RequestTargetItem } from "@/components/RequestMovieModal";
+import OnboardingSpotlight, { TourStep } from "@/components/OnboardingSpotlight";
 
 import { API_URL } from "@/lib/api";
+
+const REQUESTS_TOUR_STEPS: TourStep[] = [
+  {
+    badge: "Jonli tekshiruv",
+    title: "Avval nomini yozib bazani tekshiring",
+    description:
+      "Kino nomini kiriting — agar u saytimizda allaqachon mavjud bo'lsa, kutmasdan darhol «Ko'rish» tugmasi chiqadi.",
+    selectors: ['[data-tour="req-search"]'],
+  },
+  {
+    badge: "Buyurtma yuborish",
+    title: "Topilmasa ariza qoldiring",
+    description:
+      "Bazada yo'q filmlar ro'yxatida «So'rash» tugmasini bosing, til va sifat istagingizni belgilab adminlarga yuboring.",
+    selectors: ['[data-tour="req-submit"]', '[data-tour="req-search"]'],
+  },
+  {
+    badge: "Ovoz berish",
+    title: "Top so'rovlarga ovoz bering",
+    description:
+      "Boshqalar so'ragan kinolarga ovoz bering — eng ko'p ovoz to'plagan buyurtmalar birinchi navbatda qo'shiladi!",
+    selectors: ['[data-tour="req-leaderboard"]'],
+  },
+];
 
 function getClientVoterId(): string {
   if (typeof window === "undefined") return "client_web";
@@ -266,6 +291,7 @@ export default function RequestsPage() {
               <span>Yangi kino so&apos;rash</span>
             </button>
             <button
+              data-tour="req-leaderboard"
               onClick={() => setActiveTab("leaderboard")}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "leaderboard"
@@ -297,6 +323,7 @@ export default function RequestsPage() {
                     search
                   </span>
                   <input
+                    data-tour="req-search"
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearchInputChange(e.target.value)}
@@ -305,6 +332,7 @@ export default function RequestsPage() {
                   />
                 </div>
                 <button
+                  data-tour="req-submit"
                   type="submit"
                   disabled={isSearching || searchQuery.trim().length < 2}
                   className="px-6 py-3.5 bg-primary text-white font-bold rounded-2xl hover:bg-inverse-primary active:scale-95 transition-all text-sm flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
@@ -575,6 +603,10 @@ export default function RequestsPage() {
           onSuccess={() => {
             fetchTopRequests();
           }}
+        />
+        <OnboardingSpotlight
+          storageKey="mediaplus_tour_requests_v1"
+          steps={REQUESTS_TOUR_STEPS}
         />
 
       </div>

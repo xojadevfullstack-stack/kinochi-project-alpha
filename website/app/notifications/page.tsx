@@ -117,7 +117,7 @@ export default function NotificationsPage() {
           list.push({
             id,
             type: "system",
-            title: "Kinochi platformasiga xush kelibsiz!",
+            title: "MediaPlus platformasiga xush kelibsiz!",
             message: "Eng sara kinolar, seriallar, anime va doramalarni eng yuqori sifatda tomosha qiling.",
             target_url: "/",
             created_at: new Date().toISOString(),
@@ -225,7 +225,7 @@ export default function NotificationsPage() {
         <div className="flex gap-2 pb-4 mb-6 overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab("all")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
+            className={`h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
               activeTab === "all"
                 ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
@@ -235,7 +235,7 @@ export default function NotificationsPage() {
           </button>
           <button
             onClick={() => setActiveTab("personal")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
+            className={`h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
               activeTab === "personal"
                 ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"
@@ -246,7 +246,7 @@ export default function NotificationsPage() {
           </button>
           <button
             onClick={() => setActiveTab("system")}
-            className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 flex items-center gap-2 border cursor-pointer ${
+            className={`h-10 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shrink-0 whitespace-nowrap flex items-center gap-2 border cursor-pointer ${
               activeTab === "system"
                 ? "bg-white/20 text-white border-white/30 shadow-lg shadow-black/20 font-bold backdrop-blur-md"
                 : "bg-white/5 border-white/10 text-text-secondary hover:text-text-primary hover:bg-white/10"

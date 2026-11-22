@@ -6,6 +6,31 @@ import Link from "next/link";
 import { useAuth } from "../lib/auth/AuthProvider";
 import { fetchApi } from "../lib/api";
 import { openTelegramUrl } from "@/lib/telegram";
+import OnboardingSpotlight, { TourStep } from "./OnboardingSpotlight";
+
+const TIMELINE_TOUR_STEPS: TourStep[] = [
+  {
+    badge: "Ko'rinish",
+    title: "Ro'yxat yoki Xarita 3D ko'rinishini tanlang",
+    description:
+      "Filmlar ketma-ketligini qulay Ro'yxatda yoki interaktiv 3D Xaritada (yaqinlashtirish/surish bilan) ko'rishingiz mumkin.",
+    selectors: ['[data-tour="timeline-view-toggle"]'],
+  },
+  {
+    badge: "Tartib",
+    title: "Voqealar xronologiyasi vs Chiqish yili",
+    description:
+      "Koinot filmlarini kino chiqqan yili bo'yicha emas, balki hikoya rivoji (Voqealar xronologiyasi) tartibida ko'ring!",
+    selectors: ['[data-tour="timeline-sort-toggle"]'],
+  },
+  {
+    badge: "Obuna",
+    title: "Yangi qism qo'shilsa xabar oling",
+    description:
+      "To'plamga obuna bo'ling — bu koinotga yangi film chiqishi bilan Telegram bot orqali xabardor qilinadi.",
+    selectors: ['[data-tour="timeline-sub-btn"]'],
+  },
+];
 
 interface CollectionItem {
   id: number;
@@ -70,7 +95,7 @@ export default function CollectionTimelineView({
   const handleToggleSub = async () => {
     if (!collectionId) return;
     if (!user?.telegram_id) {
-      const botUser = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+      const botUser = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
       openTelegramUrl(`https://t.me/${botUser}?start=col_${collectionId}`);
       return;
     }
@@ -211,6 +236,7 @@ export default function CollectionTimelineView({
           {/* Subscription Button */}
           {collectionId && (
             <button
+              data-tour="timeline-sub-btn"
               onClick={handleToggleSub}
               disabled={subLoading}
               className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer ${
@@ -228,7 +254,7 @@ export default function CollectionTimelineView({
           )}
 
           {/* View Mode Toggle: List vs Map */}
-          <div className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
+          <div data-tour="timeline-view-toggle" className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
             <button
               onClick={() => setViewMode("list")}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -257,7 +283,7 @@ export default function CollectionTimelineView({
           </div>
 
           {/* Sort Mode Toggle: Chronological vs Release */}
-          <div className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
+          <div data-tour="timeline-sort-toggle" className="flex items-center bg-black/60 p-1 rounded-xl border border-white/10">
             <button
               onClick={() => setSortMode("chronological")}
               className={`px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -442,7 +468,7 @@ export default function CollectionTimelineView({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
-                            Kinochi
+                            MediaPlus
                           </div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -645,6 +671,10 @@ export default function CollectionTimelineView({
           })}
         </div>
       )}
+      <OnboardingSpotlight
+        storageKey="mediaplus_tour_timeline_v1"
+        steps={TIMELINE_TOUR_STEPS}
+      />
     </div>
   );
 }

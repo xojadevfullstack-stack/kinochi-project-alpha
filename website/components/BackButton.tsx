@@ -9,6 +9,7 @@ interface BackButtonProps {
   size?: "sm" | "md" | "lg";
   ariaLabel?: string;
   title?: string;
+  inline?: boolean;
 }
 
 export default function BackButton({
@@ -17,8 +18,14 @@ export default function BackButton({
   size = "md",
   ariaLabel = "Orqaga qaytish",
   title = "Orqaga",
+  inline = false,
 }: BackButtonProps) {
   const router = useRouter();
+
+  // Dual Back Parity: Unified top header Back lives in Navbar.tsx and floating bottom-right in FloatingBackButton.tsx
+  if (!inline) {
+    return null;
+  }
 
   const handleBack = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -63,16 +70,16 @@ export default function BackButton({
     <button
       type="button"
       onClick={handleBack}
-      className={`group relative inline-flex items-center justify-center rounded-full bg-white/[0.08] hover:bg-white/[0.16] active:scale-90 border border-white/20 hover:border-white/40 shadow-lg shadow-black/40 backdrop-blur-xl transition-all duration-200 cursor-pointer text-white focus:outline-none focus:ring-2 focus:ring-primary-container/40 ${sizeClasses[size]} ${className}`}
+      className={`group relative inline-flex items-center justify-center rounded-xl bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 hover:bg-primary hover:border-primary hover:text-white dark:hover:bg-primary dark:hover:border-primary dark:hover:text-white active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40 ${sizeClasses[size]} ${className}`}
       aria-label={ariaLabel}
       title={title}
     >
       <svg
-        className={`${iconSizes[size]} -translate-x-0.5 text-white transition-transform duration-200 group-hover:-translate-x-1`}
+        className={`${iconSizes[size]} -translate-x-0.5 text-slate-700 dark:text-gray-300 group-hover:text-white transition-colors duration-200`}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2.4"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       >

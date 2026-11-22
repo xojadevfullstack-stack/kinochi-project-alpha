@@ -43,10 +43,10 @@ export default async function CollectionDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-background-obsidian text-text-primary pt-20 sm:pt-24 md:pt-28 pb-20">
+    <div className="min-h-screen bg-transparent text-slate-900 dark:text-text-primary pt-20 sm:pt-24 md:pt-28 pb-20">
       {/* Hero Showcase Banner */}
-      <div className="relative w-full overflow-hidden mb-8 sm:mb-12 border-b border-white/10">
-        <div className="absolute inset-0 bg-background-obsidian">
+      <div className="hero-stage preserve-white relative w-full overflow-hidden mb-8 sm:mb-12 border-b border-slate-200 dark:border-white/10 bg-[#08090C]">
+        <div className="absolute inset-0 bg-[#08090C]">
           {collection.banner_url || collection.poster_url ? (
             <div
               className="absolute inset-0 bg-cover bg-center opacity-30 blur-md scale-105"
@@ -55,7 +55,7 @@ export default async function CollectionDetailPage({ params }: Props) {
               }}
             ></div>
           ) : null}
-          <div className="absolute inset-0 bg-gradient-to-t from-background-obsidian via-background-obsidian/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#08090C] via-[#08090C]/80 to-transparent"></div>
         </div>
 
         <div className="relative z-10 max-w-container-max mx-auto px-gutter py-8 sm:py-12 md:py-16 flex flex-col gap-6">

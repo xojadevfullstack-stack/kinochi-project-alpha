@@ -179,7 +179,7 @@ export default function ExternalSearchSection({
                       <span>Mavjud</span>
                     </span>
                   ) : currentCount > 0 ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/90 text-background-obsidian backdrop-blur-sm shadow flex items-center gap-0.5">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#E50914]/90 text-white backdrop-blur-sm shadow flex items-center gap-0.5">
                       <span>🔥 {currentCount} so&apos;rov</span>
                     </span>
                   ) : (

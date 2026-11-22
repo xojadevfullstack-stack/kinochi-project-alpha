@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const category = categories.find(c => String(c.id) === params.id);
     if (category) {
       return {
-        title: `${category.name} kinolar - Kinochi`,
+        title: `${category.name} kinolar - MediaPlus`,
         description: `${category.name} janridagi eng sara kinolar to'plami.`,
       };
     }
@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
   
   return {
-    title: "Kategoriya - Kinochi",
-    description: "Kinochi - Kategoriya bo'yicha kinolar",
+    title: "Kategoriya - MediaPlus",
+    description: "MediaPlus - Kategoriya bo'yicha kinolar",
   };
 }
 

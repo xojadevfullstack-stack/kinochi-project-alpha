@@ -100,7 +100,7 @@ export default function SubscribeButton({
     }
   };
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
   const botDeepLink = `https://t.me/${botUsername}?start=sub_${targetType === "series" ? "series" : "col"}_${targetId}`;
 
   return (

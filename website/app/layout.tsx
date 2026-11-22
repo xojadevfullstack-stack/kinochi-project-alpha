@@ -3,9 +3,13 @@ import { Inter, Outfit, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
+import FloatingBackButton from "@/components/FloatingBackButton";
+import SubheaderTabs from "@/components/SubheaderTabs";
+import Breadcrumb from "@/components/Breadcrumb";
 import TelegramInit from "@/components/TelegramInit";
 import { fetchApi } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
+import TopRouteLoader from "@/components/TopRouteLoader";
 import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: '--font-inter' });
@@ -50,23 +54,37 @@ export default async function RootLayout({
   return (
     <html lang="uz" className="dark" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=document.documentElement,n=navigator,c=n.connection||n.mozConnection||n.webkitConnection,m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if((c&&c.saveData)||(typeof n.deviceMemory==='number'&&n.deviceMemory<=2)||(typeof n.hardwareConcurrency==='number'&&n.hardwareConcurrency<=2)||m){d.classList.add('low-end-device');}var t=localStorage.getItem('kinochi_theme');if(t==='light'){d.classList.remove('dark');d.classList.add('light');}else{d.classList.add('dark');d.classList.remove('light');}}catch(e){}})();`,
+          }}
+        />
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} pure-minimal bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`} suppressHydrationWarning>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(document.documentElement.classList.contains('light')){document.body.classList.add('light-theme');}}catch(e){}})();`,
+          }}
+        />
         <AuthProvider>
+          <TopRouteLoader />
           <TelegramInit />
           <Navbar pages={pages} />
 
           <main className="min-h-screen pb-20 xl:pb-0">
+            <SubheaderTabs />
+            <Breadcrumb />
             {children}
           </main>
           
           <BottomNav />
+          <FloatingBackButton />
 
           {/* Simple Footer */}
-          <footer className="border-t border-white/10 mt-12 py-8 pb-28 xl:pb-8 text-center text-text-secondary text-sm">
-            <p>© {new Date().getFullYear()} Kinochi. Barcha huquqlar himoyalangan.</p>
+          <footer className="cv-auto border-t border-slate-200 dark:border-white/10 mt-12 py-8 pb-28 xl:pb-8 text-center text-slate-500 dark:text-text-secondary text-sm">
+            <p>© {new Date().getFullYear()} MediaPlus. Barcha huquqlar himoyalangan.</p>
           </footer>
         </AuthProvider>
       </body>

@@ -3,11 +3,13 @@ import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
 import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
 import ContinueWatchingSection from "@/components/home/ContinueWatchingSection";
+import Top10PodiumSection from "@/components/home/Top10PodiumSection";
 import MediaMarqueeSection from "@/components/home/MediaMarqueeSection";
 import MovieCard from "@/components/catalog/MovieCard";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
+import OnboardingSpotlight from "@/components/OnboardingSpotlight";
 
 export const revalidate = 60; // 60s ISR kesh
 
@@ -68,15 +70,17 @@ const MovieRow = ({
 }) => {
   if (!items || items.length === 0) return null;
 
+  const viewAllHref = isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies");
+
   return (
-    <section className="max-w-container-max mx-auto px-gutter mb-14 sm:mb-16">
+    <section className="max-w-container-max mx-auto px-gutter mb-14 sm:mb-16 cv-auto">
       <div className="mb-stack-md flex items-center justify-between">
         <h2 className="font-headline-md text-headline-md text-text-primary flex items-center gap-2">
           <span className="w-1 h-6 bg-primary rounded-full block" />
           <span>{title}</span>
         </h2>
         <Link
-          href={isDynamicPage ? `/p/${pageSlug}` : (isSeries ? "/series" : "/movies")}
+          href={viewAllHref}
           className="text-text-secondary hover:text-text-primary text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1 group"
         >
           <span>Barchasi</span>
@@ -85,8 +89,8 @@ const MovieRow = ({
           </span>
         </Link>
       </div>
-      <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-6 pt-2">
-        {items.map((item) => {
+      <div className="flex gap-2 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-6 pt-2">
+        {items.map((item, idx) => {
           const itemIsSeries = isDynamicPage ? !!item.is_series : isSeries;
           const normalizedItem = {
             ...item,
@@ -95,19 +99,35 @@ const MovieRow = ({
           return (
             <div
               key={itemIsSeries ? `s-${item.id}` : `m-${item.code || item.id}`}
-              className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 snap-start"
+              className={`${idx >= 6 ? "hidden sm:block " : ""}w-[calc((100%-16px)/3)] sm:w-[170px] md:w-[200px] shrink-0 snap-start`}
             >
               <MovieCard item={normalizedItem} />
             </div>
           );
         })}
+        <Link
+          href={viewAllHref}
+          className="w-[calc((100%-16px)/3)] sm:w-[170px] md:w-[200px] aspect-[2/3] shrink-0 snap-start rounded-2xl border-2 border-dashed border-slate-300 dark:border-primary/35 hover:border-primary bg-white/95 dark:bg-[#0E1117]/75 hover:bg-slate-50 dark:hover:bg-[#141824] p-2.5 sm:p-4 flex flex-col items-center justify-center text-center transition-all duration-300 group shadow-sm hover:shadow-lg"
+        >
+          <span className="material-symbols-outlined text-primary text-3xl sm:text-4xl mb-1.5 group-hover:scale-110 transition-transform">
+            grid_view
+          </span>
+          <span className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-gray-300 line-clamp-1 mb-2">
+            {title}
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-bold text-primary group-hover:underline">
+            <span className="sm:hidden">Barchasi</span>
+            <span className="hidden sm:inline">Barchasini ko&apos;rish</span>
+            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          </span>
+        </Link>
       </div>
     </section>
   );
 };
 
 export default async function Home() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
   let latestMovies: Movie[] = [];
   let latestSeries: Series[] = [];
   let globalMovies: Movie[] = [];
@@ -163,7 +183,7 @@ export default async function Home() {
         ];
 
         combined.sort(
-          (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          (a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()
         );
 
         return {
@@ -197,8 +217,8 @@ export default async function Home() {
   }
 
   allRecentItems.sort((a, b) => {
-    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+    const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
     if (timeB !== timeA) {
       return timeB - timeA;
     }
@@ -216,9 +236,9 @@ export default async function Home() {
     <>
       {/* 1. HERO PREMIERE BANNER */}
       {heroItem && (
-        <section className="relative w-full pt-20 pb-6 md:pt-28 md:pb-16 md:min-h-[80vh] md:flex md:items-center overflow-hidden">
+        <section className="hero-stage preserve-white relative w-full pt-4 pb-6 md:pt-8 md:pb-16 md:min-h-[80vh] md:flex md:items-center overflow-hidden bg-[#08090C]">
           {/* Main Background Image */}
-          <div className="absolute inset-0 w-full h-full bg-background-obsidian pointer-events-none">
+          <div className="absolute inset-0 w-full h-full bg-[#08090C] pointer-events-none">
             {heroItem.poster_url && (
               <AdultHeroBackground
                 src={heroItem.poster_url}
@@ -318,6 +338,9 @@ export default async function Home() {
         </section>
       )}
 
+      {/* 1.5 TOP 10 EDITORIAL PODIUM */}
+      <Top10PodiumSection items={allRecentItems} />
+
       {/* ========================================================
           2. YAGONA BIRLASHTIRILGAN PREMYERALAR VA YANGILIKLAR SLIDERI
           (Hero banner ostida, ixcham va minimalist kartochkalar)
@@ -331,7 +354,7 @@ export default async function Home() {
             </h2>
             <Link
               href="/catalog"
-              className="text-text-secondary hover:text-white text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1 group shrink-0"
+              className="text-text-secondary hover:text-primary text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1 group shrink-0"
             >
               <span className="hidden sm:inline">Barchasi (Katalogda)</span>
               <span className="sm:hidden">Barchasi</span>
@@ -342,15 +365,31 @@ export default async function Home() {
           </div>
 
           {/* Ixcham Scroll Slayder */}
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-4 pt-1">
-            {unifiedRecentItems.map((item) => (
+          <div className="flex gap-2 sm:gap-4 overflow-x-auto snap-x hide-scrollbar pb-4 pt-1">
+            {unifiedRecentItems.map((item, idx) => (
               <div
                 key={item.is_series ? `rec-s-${item.id}` : `rec-m-${item.code || item.id}`}
-                className="w-[140px] sm:w-[170px] md:w-[200px] shrink-0 snap-start"
+                className={`${idx >= 6 ? "hidden sm:block " : ""}w-[calc((100%-16px)/3)] sm:w-[170px] md:w-[200px] shrink-0 snap-start`}
               >
                 <MovieCard item={item} />
               </div>
             ))}
+            <Link
+              href="/catalog"
+              className="w-[calc((100%-16px)/3)] sm:w-[170px] md:w-[200px] aspect-[2/3] shrink-0 snap-start rounded-2xl border-2 border-dashed border-slate-300 dark:border-primary/35 hover:border-primary bg-white/95 dark:bg-[#0E1117]/75 hover:bg-slate-50 dark:hover:bg-[#141824] p-2.5 sm:p-4 flex flex-col items-center justify-center text-center transition-all duration-300 group shadow-sm hover:shadow-lg"
+            >
+              <span className="material-symbols-outlined text-primary text-3xl sm:text-4xl mb-1.5 group-hover:scale-110 transition-transform">
+                movie_filter
+              </span>
+              <span className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-gray-300 mb-2">
+                Katalog
+              </span>
+              <span className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-bold text-primary group-hover:underline">
+                <span className="sm:hidden">Barchasi</span>
+                <span className="hidden sm:inline">Barchasini ko&apos;rish</span>
+                <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+              </span>
+            </Link>
           </div>
         </section>
       )}
@@ -365,7 +404,7 @@ export default async function Home() {
 
 
       {/* Horizontal Scrolling Rows for Bo'limlar */}
-      <div className="space-y-margin-desktop py-4 relative z-20 bg-background-obsidian">
+      <div className="space-y-margin-desktop py-4 relative z-20 bg-transparent">
         <MovieRow title="Kinolar" items={latestMovies} />
         <MovieRow title="Seriallar" items={latestSeries} isSeries={true} />
 
@@ -379,6 +418,8 @@ export default async function Home() {
           />
         ))}
       </div>
+      {/* Interactive First-Time Spotlight Onboarding */}
+      <OnboardingSpotlight />
     </>
   );
 }

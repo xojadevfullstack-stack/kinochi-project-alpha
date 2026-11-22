@@ -17,6 +17,31 @@ import AdultPoster from "@/components/AdultPoster";
 import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
 import BackButton from "@/components/BackButton";
 import SourceBadge from "@/components/SourceBadge";
+import OnboardingSpotlight, { TourStep } from "@/components/OnboardingSpotlight";
+
+const SERIES_TOUR_STEPS: TourStep[] = [
+  {
+    badge: "Telegram Bot",
+    title: "@MediaPlusOfficialBot da tomosha qiling",
+    description:
+      "Tugmani bossangiz, ushbu serial rasmiy Telegram botimizda HD/4K sifatda va reklamasiz ochiladi.",
+    selectors: ['a[href*="t.me/"]'],
+  },
+  {
+    badge: "Fasllar va Qismlar",
+    title: "To'g'ridan-to'g'ri kerakli qismga o'ting",
+    description:
+      "Fasl va qism raqamini tanlang — har bir tugma botda aynan o'sha qismni darhol ochib beradi.",
+    selectors: ['[data-tour="series-episodes"]'],
+  },
+  {
+    badge: "Obuna",
+    title: "Yangi qismlardan birinchi bo'lib xabar oling",
+    description:
+      "Serialga obuna bo'lib qo'ying — yangi qism yuklanishi bilan Telegram orqali xabarnoma keladi.",
+    selectors: ['button[title*="Obuna"], button[aria-label*="Obuna"]'],
+  },
+];
 
 type Props = {
   params: { id: string };
@@ -54,10 +79,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     
     return {
-      title: `${series.title} - Kinochi`,
+      title: `${series.title} - MediaPlus`,
       description: series.description || `${series.title} serialini bepul tomosha qiling.`,
       openGraph: {
-        title: `${series.title} - Kinochi`,
+        title: `${series.title} - MediaPlus`,
         description: series.description || `${series.title} serialini bepul tomosha qiling.`,
         url: `https://kinochi-project-alpha.vercel.app/series/${params.id}`,
         images: series.poster_url ? [
@@ -72,7 +97,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (error) {
     return {
-      title: "Serial topilmadi - Kinochi"
+      title: "Serial topilmadi - MediaPlus"
     };
   }
 }
@@ -94,7 +119,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
     creditsData = await fetchApi(`/series/${series.id}/credits`);
   } catch {}
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "kinochi_mvp_bot";
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
   // Fallback direct link to bot
   const telegramDeepLink = `https://t.me/${botUsername}?start=s_${series.id}`;
   const is18Plus = isAdultContent(series);
@@ -161,7 +186,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
           
           {/* Right: Movie Info */}
           <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-text-primary mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-white mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
               {series.title}
             </h1>
             
@@ -233,7 +258,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
             </div>
             
             {/* Description */}
-            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-text-secondary mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
+            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-slate-200 mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
               {series.description || "Ushbu serial haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             
@@ -311,6 +336,10 @@ export default async function SeriesDetailsPage({ params }: Props) {
         imdbRating={series.imdb_rating}
         initialKinochiRating={series.kinochi_rating}
         initialVotesCount={series.kinochi_votes_count || 0}
+      />
+      <OnboardingSpotlight
+        storageKey="mediaplus_tour_series_v1"
+        steps={SERIES_TOUR_STEPS}
       />
     </>
   );

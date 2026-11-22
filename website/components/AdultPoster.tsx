@@ -49,6 +49,8 @@ export default function AdultPoster({
         alt={alt}
         fill={fill}
         priority={priority}
+        loading={priority ? undefined : "lazy"}
+        decoding="async"
         sizes={sizes}
         unoptimized
         className={imageClassName || className}
@@ -69,6 +71,8 @@ export default function AdultPoster({
         alt={alt}
         fill={fill}
         priority={priority}
+        loading={priority ? undefined : "lazy"}
+        decoding="async"
         sizes={sizes}
         unoptimized
         className={`${imageClassName || className} transition-all duration-700 ease-out ${
