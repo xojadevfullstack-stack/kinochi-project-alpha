@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import RequestMovieModal, { RequestTargetItem } from "./RequestMovieModal";
 import { API_URL } from "@/lib/api";
 
@@ -119,6 +119,7 @@ export default function LiveSearch({
   onClose,
 }: LiveSearchProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [externalResults, setExternalResults] = useState<ExternalResultItem[]>([]);
@@ -133,6 +134,14 @@ export default function LiveSearch({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suppressPopupRef = useRef(false);
+
+  // Close quick-search popup immediately whenever route changes (e.g. navigating to /search)
+  useEffect(() => {
+    suppressPopupRef.current = true;
+    setIsOpen(false);
+    setIsKeyboardNavigating(false);
+  }, [pathname]);
 
   // Auto focus input when autoFocus prop is enabled
   useEffect(() => {
@@ -201,7 +210,9 @@ export default function LiveSearch({
           setExternalResults([]);
         }
 
-        setIsOpen(true);
+        if (!suppressPopupRef.current) {
+          setIsOpen(true);
+        }
       } catch {
         setResults([]);
         setExternalResults([]);
@@ -225,6 +236,8 @@ export default function LiveSearch({
   }, []);
 
   const handleSelect = (item: SearchResultItem) => {
+    suppressPopupRef.current = true;
+    inputRef.current?.blur();
     setIsOpen(false);
     setQuery("");
     onNavigate?.();
@@ -284,6 +297,10 @@ export default function LiveSearch({
   const handleFullSearch = (e?: React.MouseEvent | React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanQ = query.trim();
+    suppressPopupRef.current = true;
+    setIsOpen(false);
+    setIsKeyboardNavigating(false);
+    inputRef.current?.blur();
     if (cleanQ) {
       setIsOpen(false);
       onNavigate?.();
@@ -340,12 +357,13 @@ export default function LiveSearch({
             type="text"
             value={query}
             onChange={(e) => {
+              suppressPopupRef.current = false;
               setQuery(e.target.value);
               setSelectedIndex(-1);
               setIsKeyboardNavigating(false);
             }}
             onFocus={() => {
-              if (hasAnyResults) setIsOpen(true);
+              if (!suppressPopupRef.current && hasAnyResults) setIsOpen(true);
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
@@ -375,7 +393,7 @@ export default function LiveSearch({
       {/* Live Dropdown Results Popover */}
       {isOpen && (
         <div
-          className={`bg-background-obsidian/95 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden transition-all flex flex-col ${
+          className={`bg-white/95 dark:bg-[#121318]/95 backdrop-blur-2xl border border-slate-200 dark:border-white/15 rounded-2xl shadow-2xl shadow-slate-900/15 dark:shadow-black/80 overflow-hidden transition-all flex flex-col ${
             isMobileBar
               ? "fixed left-2 right-2 top-16 max-h-[72vh] z-[70]"
               : isMobileDrawer
@@ -384,13 +402,13 @@ export default function LiveSearch({
           }`}
         >
           {hasAnyResults ? (
-            <div className="overflow-y-auto divide-y divide-white/5 p-1.5">
+            <div className="overflow-y-auto divide-y divide-slate-200/70 dark:divide-white/5 p-1.5">
               {/* Section 1: Local Internal Results */}
               {results.length > 0 && (
                 <div className="mb-2">
-                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center justify-between">
+                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-text-secondary flex items-center justify-between">
                     <span>Bazamizdagi natijalar</span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">{results.length} ta mavjud</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">{results.length} ta mavjud</span>
                   </div>
                   {results.map((item, idx) => {
                     const isSelected = isKeyboardNavigating && idx === selectedIndex;
@@ -403,43 +421,43 @@ export default function LiveSearch({
                           setIsKeyboardNavigating(false);
                           setSelectedIndex(idx);
                         }}
-                        className={`w-full text-left flex items-center gap-3 p-2 rounded-xl transition-all ${
+                        className={`w-full text-left flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-white/15 text-white"
-                            : "hover:bg-white/10 text-text-primary"
+                            ? "bg-red-50 dark:bg-white/15 text-slate-900 dark:text-white"
+                            : "hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-text-primary"
                         }`}
                       >
                         {/* Poster Thumbnail */}
-                        <div className="w-10 h-14 rounded-lg bg-surface-container-high overflow-hidden shrink-0 relative border border-white/10">
+                        <div className="w-10 h-14 rounded-lg bg-slate-200 dark:bg-surface-container-high overflow-hidden shrink-0 relative border border-slate-200 dark:border-white/10">
                           <SearchPoster item={item} />
                         </div>
 
                         {/* Metadata */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-bold text-sm text-text-primary truncate">
+                            <span className="font-bold text-sm text-slate-900 dark:text-text-primary truncate">
                               {item.title}
                             </span>
                             {item.year && (
-                              <span className="text-[11px] text-text-secondary shrink-0">
+                              <span className="text-[11px] text-slate-500 dark:text-text-secondary shrink-0">
                                 ({item.year})
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-xs text-text-secondary">
+                          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-text-secondary">
                             {item.type === "movie" && (
-                              <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-bold text-[10px] uppercase">
+                              <span className="px-1.5 py-0.5 rounded bg-red-500/10 dark:bg-red-500/20 text-[#D20A13] dark:text-red-400 font-bold text-[10px] uppercase">
                                 Kino
                               </span>
                             )}
                             {item.type === "series" && (
-                              <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-bold text-[10px] uppercase">
+                              <span className="px-1.5 py-0.5 rounded bg-sky-500/10 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400 font-bold text-[10px] uppercase">
                                 Serial
                               </span>
                             )}
                             {item.type === "collection" && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#E50914]/20 text-red-400 font-bold text-[10px] uppercase">
+                              <span className="px-1.5 py-0.5 rounded bg-red-500/10 dark:bg-[#E50914]/20 text-[#D20A13] dark:text-red-400 font-bold text-[10px] uppercase">
                                 Xronologiya
                               </span>
                             )}
@@ -457,13 +475,13 @@ export default function LiveSearch({
                             )}
 
                             {item.code && (
-                              <span className="font-mono text-[11px] text-white/50">
+                              <span className="font-mono text-[11px] text-slate-500 dark:text-white/50">
                                 #{item.code}
                               </span>
                             )}
 
                             {item.extra && (
-                              <span className="text-[10px] text-primary-container truncate">
+                              <span className="text-[10px] text-[#D20A13] dark:text-primary-container truncate">
                                 {item.extra}
                               </span>
                             )}
@@ -478,12 +496,12 @@ export default function LiveSearch({
               {/* Section 2: External TMDB Results (Bazada yo'q) */}
               {externalResults.length > 0 && (
                 <div className="pt-1.5">
-                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center justify-between bg-cyan-500/10 rounded-xl mb-1.5 border border-cyan-500/20">
+                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-400 flex items-center justify-between bg-cyan-500/10 rounded-xl mb-1.5 border border-cyan-500/25">
                     <span className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[15px]">travel_explore</span>
                       <span>TMDB Jahon katalogidan</span>
                     </span>
-                    <span className="text-[10px] text-cyan-300 font-normal">Bazada yo&apos;q</span>
+                    <span className="text-[10px] text-cyan-600 dark:text-cyan-300 font-normal">Bazada yo&apos;q</span>
                   </div>
 
                   {externalResults.map((ext) => {
@@ -495,29 +513,29 @@ export default function LiveSearch({
                       <div
                         key={`ext-drop-${ext.tmdb_id || ext.kinopoisk_id || ext.title}`}
                         onClick={() => handleOpenRequest(ext)}
-                        className="w-full flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-white/10 transition-all cursor-pointer group"
+                        className="w-full flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer group"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           {/* Poster Thumbnail */}
-                          <div className="w-10 h-14 rounded-lg bg-surface-container-high overflow-hidden shrink-0 relative border border-white/10">
+                          <div className="w-10 h-14 rounded-lg bg-slate-200 dark:bg-surface-container-high overflow-hidden shrink-0 relative border border-slate-200 dark:border-white/10">
                             <ExternalPoster item={ext} />
                           </div>
 
                           {/* Info */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 mb-0.5">
-                              <h4 className="font-bold text-sm text-text-primary truncate group-hover:text-cyan-300 transition-colors">
+                              <h4 className="font-bold text-sm text-slate-900 dark:text-text-primary truncate group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors">
                                 {ext.title}
                               </h4>
                               {ext.release_year && (
-                                <span className="text-[11px] text-text-secondary shrink-0">
+                                <span className="text-[11px] text-slate-500 dark:text-text-secondary shrink-0">
                                   ({ext.release_year})
                                 </span>
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2 text-xs text-text-secondary">
-                              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/70 font-bold text-[10px] uppercase">
+                            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-text-secondary">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 font-bold text-[10px] uppercase">
                                 {ext.media_type === "series" ? "Serial" : "Kino"}
                               </span>
 
@@ -545,7 +563,7 @@ export default function LiveSearch({
                         {/* Action Button */}
                         <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                           {isReq ? (
-                            <span className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            <span className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                               <span className="material-symbols-outlined text-[13px]">check</span>
                               <span>So&apos;ralgan</span>
                             </span>
@@ -553,7 +571,7 @@ export default function LiveSearch({
                             <button
                               type="button"
                               onClick={() => handleOpenRequest(ext)}
-                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-primary/20 hover:bg-primary text-primary hover:text-white border border-primary/40 transition-all flex items-center gap-1 active:scale-95 shadow"
+                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#D20A13]/10 dark:bg-primary/20 hover:bg-[#D20A13] dark:hover:bg-primary text-[#D20A13] dark:text-primary hover:text-white border border-[#D20A13]/30 dark:border-primary/40 transition-all flex items-center gap-1 active:scale-95 shadow cursor-pointer"
                             >
                               <span className="material-symbols-outlined text-[14px]">add_circle</span>
                               <span>So&apos;rash</span>
@@ -567,11 +585,11 @@ export default function LiveSearch({
               )}
 
               {/* View all button - ALWAYS goes to /search?q=... */}
-              <div className="pt-2 pb-1 px-1 border-t border-white/10 mt-1 flex flex-col gap-1.5">
+              <div className="pt-2 pb-1 px-1 border-t border-slate-200 dark:border-white/10 mt-1 flex flex-col gap-1.5">
                 <button
                   type="button"
                   onClick={handleFullSearch}
-                  className="w-full py-2.5 px-3 text-center text-xs font-bold text-white bg-white/10 hover:bg-white/20 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow"
+                  className="w-full py-2.5 px-3 text-center text-xs font-bold text-slate-900 dark:text-white bg-slate-100 hover:bg-[#D20A13] hover:text-white dark:bg-white/10 dark:hover:bg-[#E50914] border border-slate-200 dark:border-white/10 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <span>&ldquo;{query}&rdquo; bo&apos;yicha to&apos;liq qidirish (barcha variantlar)</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -579,10 +597,11 @@ export default function LiveSearch({
                 <Link
                   href="/requests"
                   onClick={() => {
+                    suppressPopupRef.current = true;
                     setIsOpen(false);
                     onNavigate?.();
                   }}
-                  className="w-full py-1.5 px-3 text-center text-xs font-medium text-text-secondary hover:text-primary transition-colors flex items-center justify-center gap-1"
+                  className="w-full py-1.5 px-3 text-center text-xs font-medium text-slate-600 dark:text-text-secondary hover:text-[#D20A13] dark:hover:text-primary transition-colors flex items-center justify-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[14px]">format_list_bulleted</span>
                   <span>Barcha buyurtmalar ro&apos;yxati</span>
@@ -591,17 +610,18 @@ export default function LiveSearch({
             </div>
           ) : !isLoading && query.trim() ? (
             /* Case 3: Empty State (Neither in DB nor TMDB) */
-            <div className="p-6 text-center text-text-secondary">
+            <div className="p-6 text-center text-slate-600 dark:text-text-secondary">
               <span className="material-symbols-outlined text-3xl opacity-40 mb-1">
                 search_off
               </span>
-              <p className="text-xs mb-3 text-white/80">
+              <p className="text-xs mb-3 text-slate-700 dark:text-white/80">
                 &ldquo;{query}&rdquo; bo&apos;yicha hech qanday film yoki serial topilmadi
               </p>
               <div className="flex flex-col gap-2 max-w-[280px] mx-auto">
                 <button
                   type="button"
                   onClick={() => {
+                    suppressPopupRef.current = true;
                     setIsOpen(false);
                     setSelectedRequestItem({
                       title: query.trim(),
@@ -609,7 +629,7 @@ export default function LiveSearch({
                     });
                     setIsModalOpen(true);
                   }}
-                  className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/30"
+                  className="w-full py-2 px-3 rounded-xl bg-[#E50914] hover:bg-[#B80710] text-white font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/30 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">add_circle</span>
                   <span>Shu kinoni qo&apos;shishni so&apos;rash</span>
@@ -617,7 +637,7 @@ export default function LiveSearch({
                 <button
                   type="button"
                   onClick={handleFullSearch}
-                  className="w-full py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-medium transition-all"
+                  className="w-full py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white text-xs font-medium transition-all cursor-pointer"
                 >
                   To&apos;liq qidiruv sahifasiga o&apos;tish
                 </button>

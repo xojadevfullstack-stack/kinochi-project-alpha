@@ -114,14 +114,14 @@ export default function HeroTrailerBackdrop({
     <div className="hero-stage preserve-white relative isolate mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-3 rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-[82svh] md:min-h-[760px] flex flex-col justify-start md:justify-center items-center pt-6 sm:pt-10 md:pt-12 pb-10 sm:pb-12 overflow-hidden bg-[#0E0F13] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
       {/* Background Media Layer: Full-bleed Ambient Trailer inside Cinema Island (both Light & Dark Mode) */}
       <div className="block absolute inset-0 top-0 z-0 overflow-hidden pointer-events-none">
-        {/* Base Layer: Instant LCP Poster Image matching HeroCarousel crisp #0E0F13 method */}
+        {/* Layer 2: Softly blurred static poster behind metadata; fades out cleanly when Layer 3 trailer is ready */}
         {posterUrl ? (
           <AdultHeroBackground
             src={posterUrl}
             alt={title}
             is18Plus={is18Plus}
             isDetailPage={true}
-            sharp={true}
+            hidden={Boolean(hasVideo && videoReady && !is18Plus)}
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-b from-[#121317] to-[#0E0F13]" />

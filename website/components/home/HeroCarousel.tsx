@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AdultPoster from "@/components/AdultPoster";
 import AdultHeroBackground from "@/components/AdultHeroBackground";
@@ -17,6 +17,7 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
   const slides = Array.isArray(items) ? items.filter(Boolean).slice(0, 6) : [];
   const [activeIdx, setActiveIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const touchStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (slides.length <= 1 || paused || isLowEndDevice()) return;
@@ -50,7 +51,22 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
           id="heroSlide"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
-          className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] min-h-[235px] sm:min-h-[290px] md:min-h-[340px] flex items-center shadow-xl"
+          onTouchStart={(e) => {
+            touchStartXRef.current = e.touches[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            if (touchStartXRef.current === null || slides.length <= 1) return;
+            const endX = e.changedTouches[0]?.clientX;
+            if (typeof endX === "number") {
+              const delta = endX - touchStartXRef.current;
+              if (Math.abs(delta) > 40) {
+                if (delta < 0) goNext();
+                else goPrev();
+              }
+            }
+            touchStartXRef.current = null;
+          }}
+          className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] min-h-[235px] sm:min-h-[290px] md:min-h-[340px] flex items-center shadow-xl touch-pan-y"
         >
           {/* Backdrop */}
           <div className="absolute inset-0 z-0 pointer-events-none">
@@ -66,30 +82,30 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
             <div className="absolute inset-0 bg-gradient-to-r from-[#0E0F13]/80 via-[#0E0F13]/45 to-transparent" />
           </div>
 
-          {/* Carousel Controls */}
+          {/* Carousel Controls (Visible on both Mobile & Desktop + Touch Swipe) */}
           {slides.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={goPrev}
                 aria-label="Oldingi slayd"
-                className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-[#E50914] text-white items-center justify-center transition border border-white/15 cursor-pointer"
+                className="flex absolute left-1.5 sm:left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/50 sm:bg-black/60 hover:bg-[#E50914] text-white items-center justify-center transition border border-white/15 cursor-pointer backdrop-blur-sm"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                <span className="material-symbols-outlined text-[17px] sm:text-[18px]">chevron_left</span>
               </button>
               <button
                 type="button"
                 onClick={goNext}
                 aria-label="Keyingi slayd"
-                className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-[#E50914] text-white items-center justify-center transition border border-white/15 cursor-pointer"
+                className="flex absolute right-1.5 sm:right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/50 sm:bg-black/60 hover:bg-[#E50914] text-white items-center justify-center transition border border-white/15 cursor-pointer backdrop-blur-sm"
               >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                <span className="material-symbols-outlined text-[17px] sm:text-[18px]">chevron_right</span>
               </button>
             </>
           )}
 
           {/* Foreground Slide Content */}
-          <div className="relative z-10 w-full px-5 py-5 sm:px-14 sm:py-7 md:px-16 md:py-8 flex items-center justify-between gap-4 sm:gap-8">
+          <div className="relative z-10 w-full px-10 py-5 sm:px-14 sm:py-7 md:px-16 md:py-8 flex items-center justify-between gap-4 sm:gap-8">
             <div className="flex-1 max-w-lg min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1.5 text-xs">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-bold uppercase tracking-wider text-white">
