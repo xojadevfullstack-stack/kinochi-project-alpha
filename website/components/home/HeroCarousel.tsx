@@ -141,7 +141,8 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
                   url={href}
                   code={shareCode}
                   botUsername={botUsername}
-                  className="w-9 h-9 rounded-xl bg-white/10 hover:bg-[#E50914] text-white flex items-center justify-center border border-white/15 hover:border-[#E50914] transition cursor-pointer"
+                  iconOnly={true}
+                  className="w-9 h-9 rounded-xl bg-white/10 hover:bg-[#E50914] text-white flex items-center justify-center border border-white/15 hover:border-[#E50914] transition cursor-pointer shrink-0"
                 />
               </div>
             </div>

@@ -352,120 +352,80 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             </div>
           </Link>
 
-          {/* Minimalist & Clean Navigation Links */}
-          <nav className="space-y-1 text-xs">
-            {/* 1. Bosh Sahifa */}
+          {/* Full Prototype Navigation Links */}
+          <nav className="space-y-1 text-xs font-medium">
+            {[
+              { label: "Bosh sahifa", href: "/", icon: "home", exact: true },
+              { label: "Barchasi (Katalog)", href: "/catalog", icon: "apps" },
+              { label: "Kinolar", href: "/movies", icon: "movie" },
+              { label: "Seriallar", href: "/series", icon: "tv" },
+              { label: "Animelar", href: "/anime", icon: "animation" },
+              { label: "Doramalar", href: "/doramas", icon: "theater_comedy" },
+              { label: "Multfilmlar", href: "/cartoons", icon: "child_care" },
+              { label: "Jonli TV", href: "/tv", icon: "live_tv" },
+              { label: "Premyeralar", href: "/premieres", icon: "theaters" },
+              { label: "To'plamlar & Xronologiyalar", href: "/collections", icon: "auto_awesome_motion" },
+              { label: "Aktyorlar", href: "/actors", icon: "groups" },
+              { label: "TOP 100", href: "/top100", icon: "emoji_events" },
+              { label: "Obunalar (Sevimlilar)", href: "/subscriptions", icon: "bookmark" },
+              { label: "Ko'rish tarixi", href: "/history", icon: "history" },
+              { label: "Buyurtma berish", href: "/requests", icon: "add_box" },
+            ].map((item) => {
+              const active = item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all ${
+                    active
+                      ? "bg-[#D20A13] dark:bg-[#E50914] text-white font-semibold shadow-sm"
+                      : "text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span
+                    className="material-symbols-outlined text-[17px]"
+                    style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+
+            <div className="pt-2 my-2 border-t border-slate-200 dark:border-white/10" />
+
             <Link
-              href="/"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/"
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              href="/notifications"
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all ${
+                pathname.startsWith("/notifications")
+                  ? "bg-[#D20A13] dark:bg-[#E50914] text-white font-semibold shadow-sm"
+                  : "text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <span
-                className="material-symbols-outlined text-[18px]"
-                style={{ fontVariationSettings: pathname === "/" ? "'FILL' 1" : "'FILL' 0" }}
-              >
-                home
-              </span>
-              <span>Bosh Sahifa</span>
+              <span className="material-symbols-outlined text-[17px]">notifications</span>
+              <span>Bildirishnomalar</span>
+              {hasUnread && <span className="ml-auto w-2 h-2 rounded-full bg-[#E50914]" />}
             </Link>
 
-            {/* 2. Katalog */}
             <Link
-              href="/catalog"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname.startsWith("/catalog")
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
+              href="/profile"
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all ${
+                pathname.startsWith("/profile")
+                  ? "bg-[#D20A13] dark:bg-[#E50914] text-white font-semibold shadow-sm"
+                  : "text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]">grid_view</span>
-              <span>Katalog</span>
+              <span className="material-symbols-outlined text-[17px]">account_circle</span>
+              <span>Mening profilim</span>
             </Link>
-
-            {/* 3. Seriallar */}
-            <Link
-              href="/series"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname.startsWith("/series")
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">live_tv</span>
-              <span>Seriallar</span>
-            </Link>
-
-            {/* 4. Franshizalar & To'plamlar */}
-            <Link
-              href="/collections"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname.startsWith("/collections")
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">explore</span>
-              <span>Franshizalar & To'plamlar</span>
-            </Link>
-
-            {/* 5. Premyeralar */}
-            <Link
-              href="/premieres"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/premieres"
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">theaters</span>
-              <span>Premyeralar</span>
-            </Link>
-
-            {/* 6. Aktyorlar */}
-            <Link
-              href="/actors"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/actors"
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">groups</span>
-              <span>Aktyorlar</span>
-            </Link>
-
-            {/* 7. Obunalar */}
-            <Link
-              href="/subscriptions"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname.startsWith("/subscriptions")
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">loyalty</span>
-              <span>Obunalar</span>
-            </Link>
-
-            {/* 8. Kino buyurtma qilish */}
-            <Link
-              href="/requests"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                pathname === "/requests"
-                  ? "bg-white/15 text-white font-bold border-l-2 border-primary-container"
-                  : "text-text-secondary hover:bg-white/5 hover:text-white font-medium"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[18px]">add_to_queue</span>
-              <span>Kino buyurtma qilish</span>
-            </Link>          </nav>
+          </nav>
         </div>
 
-        {/* Sidebar Bottom: Qo'llanma & Bog'lanish / Yordam */}
-        <div className="p-3 border-t border-white/10 text-xs text-text-secondary space-y-1">
+        {/* Sidebar Bottom: Qo'llanma & Telegram Bot CTA */}
+        <div className="p-3 border-t border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-text-secondary space-y-2">
           {(pathname === "/" ||
             pathname === "/requests" ||
             pathname.startsWith("/series/") ||
@@ -476,9 +436,9 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 closeSidebarImmediate();
                 window.dispatchEvent(new Event("mediaplus:start_onboarding"));
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-all cursor-pointer text-left"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer text-left"
             >
-              <span className="material-symbols-outlined text-[18px] text-primary-container">auto_awesome</span>
+              <span className="material-symbols-outlined text-[17px] text-[#E50914]">auto_awesome</span>
               <span>Qo&apos;llanma (Qanday ishlaydi?)</span>
             </button>
           )}
@@ -486,10 +446,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot"}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-white transition-all cursor-pointer"
+            className="w-full bg-[#D20A13] dark:bg-[#E50914] hover:bg-[#B80710] text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow"
           >
-            <span className="material-symbols-outlined text-[18px]">help_outline</span>
-            <span>Bog'lanish / Yordam</span>
+            <span className="material-symbols-outlined text-[15px]">send</span>
+            <span>Telegram Botimiz</span>
           </a>
         </div>
       </aside>

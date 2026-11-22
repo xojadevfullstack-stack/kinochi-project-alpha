@@ -10,9 +10,10 @@ interface ShareButtonProps {
   botUsername?: string;
   className?: string;
   buttonText?: string;
+  iconOnly?: boolean;
 }
 
-export default function ShareButton({ title, text: _text, url = "", code, botUsername, className, buttonText }: ShareButtonProps) {
+export default function ShareButton({ title, text: _text, url = "", code, botUsername, className, buttonText, iconOnly = false }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   // Determine site base URL (prefer real window.location, fallback to Vercel production URL)
@@ -109,13 +110,16 @@ export default function ShareButton({ title, text: _text, url = "", code, botUse
   if (className) {
     return (
       <button 
+        type="button"
         onClick={handleShare}
+        aria-label={copied ? "Nusxalandi!" : label}
+        title={copied ? "Nusxalandi!" : label}
         className={`${className} ${copied ? "!bg-emerald-500/20 !border-emerald-500/50 !text-emerald-400" : ""}`}
       >
-        <span className={`material-symbols-outlined text-[20px] transition-transform ${copied ? "text-emerald-400 scale-110" : ""}`}>
+        <span className={`material-symbols-outlined ${iconOnly ? "text-[17px]" : "text-[20px]"} transition-transform ${copied ? "text-emerald-400 scale-110" : ""}`}>
           {copied ? "check_circle" : "share"}
         </span>
-        <span>{copied ? "Nusxalandi!" : label}</span>
+        {!iconOnly && <span>{copied ? "Nusxalandi!" : label}</span>}
       </button>
     );
   }
