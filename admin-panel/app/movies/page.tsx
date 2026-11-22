@@ -72,6 +72,7 @@ export default function MoviesPage() {
   const [openingTopicId, setOpeningTopicId] = useState<number | null>(null);
   const [titleVariants, setTitleVariants] = useState<{
     uz?: string;
+    en?: string;
     orig?: string;
     ru?: string;
   } | null>(null);
@@ -263,6 +264,7 @@ export default function MoviesPage() {
 
         setTitleVariants({
           uz: details.uz_title || details.title,
+          en: details.en_title || details.title_en,
           orig: details.original_title,
           ru: details.raw_title,
         });
@@ -273,6 +275,8 @@ export default function MoviesPage() {
             {
               title: details.title || movieItem.title || prev.title,
               description: details.description || prev.description,
+              isTitleTranslated: details.is_title_translated,
+              isDescriptionTranslated: details.is_translated,
               tmdb_id: details.tmdb_id || movieItem.id,
               poster_url: details.poster_url || prev.poster_url,
               trailer_url: details.trailer_url || prev.trailer_url,
@@ -301,6 +305,12 @@ export default function MoviesPage() {
             { fillEmptyOnly: Boolean(editingId && fillEmptyOnly) }
           )
         );
+
+        if (details.is_translated === false || details.is_title_translated === false) {
+          setErrorMsg(
+            "TMDb ma'lumotlari yuklandi, lekin tarjima xizmati javob bermagani uchun mavjud matnlar saqlab qolindi."
+          );
+        }
 
         // Duplicate check (excluding the movie currently being edited)
         try {
@@ -798,7 +808,7 @@ export default function MoviesPage() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Kino nomi..."
             />
-            {titleVariants && (titleVariants.orig || titleVariants.ru) && (
+            {titleVariants && (titleVariants.en || titleVariants.orig || titleVariants.ru) && (
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 <span className="text-[11px] text-text-secondary">Sarlavha variantlari:</span>
                 {titleVariants.uz && (
@@ -814,6 +824,21 @@ export default function MoviesPage() {
                     🇺🇿 O'zbekcha: {titleVariants.uz}
                   </button>
                 )}
+                {titleVariants.en &&
+                  titleVariants.en !== titleVariants.uz &&
+                  titleVariants.en !== titleVariants.orig && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, title: titleVariants.en! }))}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-medium transition-all ${
+                        form.title === titleVariants.en
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                          : "bg-surface-container-high/60 text-text-secondary hover:text-text-primary border border-white/5"
+                      }`}
+                    >
+                      🇬🇧 Inglizcha: {titleVariants.en}
+                    </button>
+                  )}
                 {titleVariants.orig && titleVariants.orig !== titleVariants.uz && (
                   <button
                     type="button"

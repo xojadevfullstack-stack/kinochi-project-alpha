@@ -96,4 +96,18 @@ test("mergeTmdbDetails overwrites by default and preserves non-empty fields when
   assert.equal(fullResult.title, "Muqaddima");
   assert.equal(fullResult.poster_url, "https://image.tmdb.org/t/p/w500/inc.jpg");
   assert.equal(fullResult.release_year, 2010);
+
+  const untranslatedResult = mergeTmdbDetails(
+    { ...prev, description: "Mavjud o'zbekcha ta'rif" },
+    {
+      ...incoming,
+      title: "星河入梦",
+      description: "В будущем...",
+      isTitleTranslated: false,
+      isDescriptionTranslated: false,
+    },
+    { fillEmptyOnly: false }
+  );
+  assert.equal(untranslatedResult.title, "Maxsus O'zbekcha Nom");
+  assert.equal(untranslatedResult.description, "Mavjud o'zbekcha ta'rif");
 });

@@ -66,3 +66,8 @@
 ## Route-Keyed Context Override (Zero-Fetch Server-to-Layout Title Propagation)
 - Next.js App Router'da `layout.tsx` ichida turgan umumiy client UI (`Breadcrumb`) dinamik Server Component sahifalardan (`movie/[code]`, `series/[id]`) ma'lumot olishi uchun qayta `fetch()` qilish o'rniga `pathname` ga bog'langan Context va unmount da tozalanadigan `<BreadcrumbTitle />` ishlatish tarmoq yukini nolga tushiradi va eski nom qolib ketishini (stale label) oldini oladi.
 - Analogy: Binoning qabulxona taxtachasi (layout) har bir xona eshigidan kelgan tayyor ism yozilgan qog'ozchani ko'rsatib turishi — qabulxonachi har safar arxivga qaytib so'rov yubormaydi, mehmon xonadan chiqqanda esa yozuv darhol yig'ishtiriladi.
+
+
+## Script-Aware Translation Fallback (Never Transliterate Source Prose)
+- Tarjima API lari (`Gemini`, `Google Translate`) vaqtincha ishlamay qolganda ruscha ta'rifni `cyrillic_to_latin` bilan harfma-harf lotinga o'girib `is_translated=True` qaytarish o'qib bo'lmaydigan matn (`V budushem...`) yaratadi va mavjud yaxshi matnni buzadi; faqat o'zbek kirill harflari (`ў, қ, ғ, ҳ`) bor matn transliteratsiya qilinishi, aks holda esa `(original, False)` qaytarilib UI da mavjud matn himoyalanishi kerak.
+- Analogy: Tarjimon kelmay qolganda ruscha kitobni o'zbek alifbosidagi harflar bilan ko'chirib "tarjima tayyor" deb bermaslik — buning o'rniga zaxira tarjimonni chaqirish yoki asl matn hali tarjima qilinmaganini ochiq aytish.

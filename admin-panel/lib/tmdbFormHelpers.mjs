@@ -60,6 +60,16 @@ export function mergeTmdbDetails(prev, incoming, options = {}) {
     if (!(field in prev)) continue;
     const prevText = String(prev[field] ?? "").trim();
     if (fillEmptyOnly && prevText.length > 0) continue;
+    if (field === "title" && incoming.isTitleTranslated === false && prevText.length > 0) {
+      continue;
+    }
+    if (
+      field === "description" &&
+      incoming.isDescriptionTranslated === false &&
+      prevText.length > 0
+    ) {
+      continue;
+    }
     if (incoming[field]) {
       next[field] = incoming[field];
     }

@@ -247,6 +247,7 @@ class TMDbClient:
                                 "overview": d.get("overview") or "",
                                 "vote_average": d.get("tmdb_rating") or 0.0,
                                 "adult": bool(d.get("adult", False)),
+                                "genre_ids": [g["id"] for g in d.get("genres", []) if isinstance(g, dict) and "id" in g] or d.get("genre_ids") or [],
                             })
             except Exception as e:
                 logger.warning(f"To'g'ridan-to'g'ri TMDb ID qidiruvi xatoligi ({clean_query}): {e}")
@@ -267,8 +268,8 @@ class TMDbClient:
             )
             results = (data_en or {}).get("results", [])
 
-        # Fallback to the other endpoint (e.g. search TV if Movie was empty, or vice-versa)
-        if not results:
+        # Fallback to the other endpoint ONLY if content_type was not explicitly series/tv
+        if not results and not is_tv_pref:
             data_other = await self._request_with_retry(
                 f"search/{other_endpoint}",
                 params={"query": clean_query, "language": "ru-RU", "include_adult": "true"},
@@ -311,6 +312,7 @@ class TMDbClient:
                 "overview": item.get("overview") or "",
                 "vote_average": round(item.get("vote_average", 0.0), 1),
                 "adult": bool(item.get("adult", False)),
+                "genre_ids": item.get("genre_ids") or [],
             })
 
         if items:
@@ -439,7 +441,11 @@ class TMDbClient:
         # Translations extraction
         trans_list = data.get("translations", {}).get("translations", [])
         title_ru = title
-        title_en = orig_title
+        title_en = (
+            (en_data.get("title") if endpoint_type == "movie" else en_data.get("name"))
+            if en_data
+            else None
+        )
         title_uz = None
         for tr in trans_list:
             iso = tr.get("iso_639_1")
@@ -453,6 +459,8 @@ class TMDbClient:
                 title_en = cand_title
             elif iso == "uz":
                 title_uz = cand_title
+        if not title_en and orig_title and all(ord(ch) < 128 for ch in orig_title):
+            title_en = orig_title
 
         # External IDs extraction
         ext_ids = data.get("external_ids") or {}
