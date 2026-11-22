@@ -31,7 +31,8 @@ class InstagramReelsPublisher(BaseSocialPublisher):
 
     def __init__(self, ig_user_id: Optional[str] = None, access_token: Optional[str] = None):
         self.ig_user_id = (ig_user_id if ig_user_id is not None else os.getenv("INSTAGRAM_IG_USER_ID", "")).strip()
-        self.access_token = (access_token if access_token is not None else os.getenv("META_ACCESS_TOKEN", "")).strip()
+        env_tok = os.getenv("META_ACCESS_TOKEN") or os.getenv("FACEBOOK_ACCESS_TOKEN", "")
+        self.access_token = (access_token if access_token is not None else env_tok).strip()
 
     async def publish(self, video_path: str, caption: str, movie_code: str, **kwargs) -> PublishResult:
         video_url = (kwargs.get("video_url") or "").strip()

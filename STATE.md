@@ -18,7 +18,7 @@
 - **Live Cycle 2 E2E (`run_smm_worker_cycle`):**
   - `smm_clip_jobs #2` (`#3955`, `Yulduzlar sari mashaqqatli yo‘l`) -> `waiting_approval`, `uploads/smm/clip_2.mp4` (`5,071,423` bayt, `720x1280`, AI chap-yuqori watermark blur).
   - `smm_clip_jobs #3` (`#3956`, `Ouk Strit ko‘chasining oxiri`) -> `waiting_approval`, `uploads/smm/clip_3.mp4` (`9,124,325` bayt, `720x1280`, `45.0s`, AI chap-yuqori watermark blur, `Janr: Ilmiy fantastika • Sirli • Triller`).
-- **Live Browser QA (`https://kinochi-project-alpha-qoqf.vercel.app/smm`) & Yakuniy Tuzatishlar:** Tab almashishdagi poyga sharti (`isLatestRequest`), `recut` tezkor UI yangilanishi va Telegram Storage orqali doimiy klipp zaxirasi (`clip_storage_message_id` -> `GET /api/v1/smm/jobs/{id}/video`, `clip_2.mp4` `#5067` va `clip_3.mp4` `#5068` saqlandi) qo'shildi.
+- **Autopost & External Publishers Fixes:** `InstagramReelsPublisher` da `FACEBOOK_ACCESS_TOKEN` fallback va `process_publish_job()` da `/api/v1/smm/jobs/{id}/video` + Telegram Storage tiklash ulandi (`ruff` `All checks passed!`, backend SMM+Enricher `60 passed in 7.80s`, bot `107 passed in 5.83s`).
 - **Ruff Lint (o'zgartirilgan SMM + test fayllari):** `All checks passed!` (Exit code 0). (`backend bot` umumiy lintida avvaldan mavjud 429 xato bor).
 - **Alembic Heads:** `f6a7b8c9d0e1 (head)` (Supabase'da faol).
 - **Backend Filtered Suite (`SMM + Enricher + Movie + Public routes`):** `66 passed, 2 warnings in 11.39s`.

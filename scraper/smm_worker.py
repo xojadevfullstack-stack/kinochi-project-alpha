@@ -272,10 +272,22 @@ async def process_publish_job(
     cfg: SmmSettingsModel,
     dispatcher: Optional[MultiPlatformDispatcher] = None,
     base_public_url: str = "",
+    tg_client: Any = None,
+    storage_chat_id: int | str = 0,
 ) -> SmmClipJobModel:
     """Publish rendered clip across enabled platforms and save per-platform results."""
     bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
     display_code, _, _, _ = await _resolve_job_media(db, job)
+
+    target_path = (job.clip_path or f"uploads/smm/clip_{job.id}.mp4").strip()
+    if not os.path.exists(target_path) and getattr(job, "clip_storage_message_id", None) and tg_client and storage_chat_id:
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
+            msg = await tg_client.get_messages(storage_chat_id, ids=int(job.clip_storage_message_id))
+            if msg and getattr(msg, "media", None):
+                await tg_client.download_media(msg, file=target_path)
+        except Exception as exc:
+            logger.warning("SMM clip restore before publish failed for job #%s: %s", job.id, exc)
 
     if not dispatcher:
         dispatcher = MultiPlatformDispatcher()
@@ -284,9 +296,9 @@ async def process_publish_job(
                 channel_id=cfg.telegram_channel_id, bot_username=bot_handle
             )
 
-    video_url = f"{base_public_url.rstrip('/')}/{job.clip_path}" if base_public_url and job.clip_path else ""
+    video_url = f"{base_public_url.rstrip('/')}/api/v1/smm/jobs/{job.id}/video" if base_public_url and job.id else ""
     results = await dispatcher.publish_all(
-        video_path=job.clip_path or "", caption=job.caption or "",
+        video_path=target_path, caption=job.caption or "",
         movie_code=display_code, platforms=cfg.enabled_platforms, video_url=video_url,
         bot_username=bot_handle,
     )
@@ -338,7 +350,14 @@ async def run_smm_worker_tick(
             pub_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "scheduled").order_by(SmmClipJobModel.id.asc()).limit(1))).scalar_one_or_none()
 
     if pub_job:
-        await process_publish_job(db, pub_job, cfg, base_public_url=base_public_url)
+        await process_publish_job(
+            db,
+            pub_job,
+            cfg,
+            base_public_url=base_public_url,
+            tg_client=tg_client,
+            storage_chat_id=storage_chat_id,
+        )
         published = 1
     return {"generated": generated, "published": published}
 

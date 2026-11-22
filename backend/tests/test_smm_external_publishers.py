@@ -40,6 +40,15 @@ async def test_instagram_reels_publisher_creates_and_publishes_container(tmp_pat
     assert res.post_id == "ig_media_99"
 
 
+def test_instagram_reels_publisher_falls_back_to_facebook_access_token(monkeypatch):
+    monkeypatch.setenv("INSTAGRAM_IG_USER_ID", "17841")
+    monkeypatch.delenv("META_ACCESS_TOKEN", raising=False)
+    monkeypatch.setenv("FACEBOOK_ACCESS_TOKEN", "fb_fallback_tok")
+
+    pub = InstagramReelsPublisher()
+    assert pub.access_token == "fb_fallback_tok"
+
+
 @pytest.mark.asyncio
 async def test_instagram_reels_publisher_resumable_upload_from_local_file(tmp_path):
     vid = tmp_path / "clip.mp4"

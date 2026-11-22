@@ -338,3 +338,52 @@ async def test_process_generating_job_persists_clip_storage_message_id(db_sessio
 
     assert updated.clip_storage_message_id == 9991
     tg_client.send_file.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_publish_job_uses_api_video_url_and_restores_missing_file(db_session, tmp_path):
+    movie = MovieModel(title="Restore Pub Kino", code="RPB1", short_code="3963", imdb_rating=8.3)
+    db_session.add(movie)
+    await db_session.flush()
+    cfg = SmmSettingsModel(id=1, mode="FULL_AUTO", enabled_platforms=["telegram"], telegram_channel_id="-100123")
+    cfg = await db_session.merge(cfg)
+
+    missing_path = str(tmp_path / "clip_restore.mp4")
+    job = SmmClipJobModel(
+        media_type="movie",
+        media_id=movie.id,
+        movie_code="RPB1",
+        title="Restore Pub Kino",
+        clip_path=missing_path,
+        clip_storage_message_id=5067,
+        caption="Test",
+        status="publishing",
+    )
+    db_session.add(job)
+    await db_session.commit()
+    await db_session.refresh(job)
+
+    async def fake_download(msg, file):
+        with open(file, "wb") as f:
+            f.write(b"restored-mp4")
+        return file
+
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=5067, media=MagicMock()))
+    tg_client.download_media = AsyncMock(side_effect=fake_download)
+
+    mock_disp = MagicMock()
+    mock_disp.publish_all = AsyncMock(return_value={"telegram": PublishResult("telegram", True, post_id="77")})
+    res = await process_publish_job(
+        db_session,
+        job,
+        cfg,
+        dispatcher=mock_disp,
+        base_public_url="https://api.example.com",
+        tg_client=tg_client,
+        storage_chat_id=-100999,
+    )
+
+    assert res.status == "completed"
+    assert mock_disp.publish_all.await_args.kwargs["video_url"] == f"https://api.example.com/api/v1/smm/jobs/{job.id}/video"
+    tg_client.download_media.assert_awaited_once()
