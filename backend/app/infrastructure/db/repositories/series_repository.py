@@ -201,8 +201,10 @@ class SeriesRepository:
             if found:
                 return found
 
-        # Fallback: check if clean_code matches an Episode code
-        stmt_ep = select(SeasonModel.series_id).join(EpisodeModel, EpisodeModel.season_id == SeasonModel.id).where(EpisodeModel.code == clean_code)
+        # Fallback: check if clean_code matches an Episode code or short_code
+        stmt_ep = select(SeasonModel.series_id).join(EpisodeModel, EpisodeModel.season_id == SeasonModel.id).where(
+            or_(EpisodeModel.code == clean_code, EpisodeModel.short_code == clean_code)
+        )
         ep_series_id = (await self.session.execute(stmt_ep)).scalar_one_or_none()
         if ep_series_id is not None:
             return await self.get_series_by_id(ep_series_id, publish_status=publish_status)
@@ -431,6 +433,7 @@ class SeriesRepository:
         
         where_conditions = [
             func.lower(EpisodeModel.code) == func.lower(clean_code),
+            EpisodeModel.short_code == clean_code,
             func.lower(EpisodeModel.display_code) == func.lower(clean_code),
             db_norm == norm_code
         ]
@@ -453,11 +456,11 @@ class SeriesRepository:
         """
         clean_code = str(code).strip()
         
-        # 1. Tezkor yo'l: Unikal kod bo'yicha to'g'ridan-to'g'ri indeksli qidiruv
+        # 1. Tezkor yo'l: Unikal kod yoki short_code bo'yicha to'g'ridan-to'g'ri indeksli qidiruv
         stmt_exact = (
             select(EpisodeModel)
             .options(selectinload(EpisodeModel.translations))
-            .where(EpisodeModel.code == clean_code)
+            .where(or_(EpisodeModel.code == clean_code, EpisodeModel.short_code == clean_code))
         )
         res_exact = await self.session.execute(stmt_exact)
         episode = res_exact.scalars().first()
@@ -563,6 +566,10 @@ class SeriesRepository:
             return existing
 
         try:
+            if not episode_data.get("short_code"):
+                from app.infrastructure.db.short_code_alloc import next_global_short_code
+
+                episode_data["short_code"] = await next_global_short_code(self.session)
             episode = EpisodeModel(**episode_data)
             self.session.add(episode)
             await self.session.flush()

@@ -107,6 +107,7 @@ class EpisodeModel(Base):
     
     # Internal unique short code (like movies code)
     code: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
+    short_code: Mapped[str | None] = mapped_column(String(16), nullable=True, unique=True, index=True)
     # Human-readable format S1-CH1
     display_code: Mapped[str] = mapped_column(String(50), nullable=False)
     

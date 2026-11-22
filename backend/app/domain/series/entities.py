@@ -24,6 +24,7 @@ class EpisodeUpdate(BaseModel):
 class Episode(EpisodeBase):
     id: int
     code: str
+    short_code: str | None = None
     display_code: str
     created_at: datetime
     translations: list['EpisodeTranslation'] = Field(default_factory=list)

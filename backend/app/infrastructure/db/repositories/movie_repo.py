@@ -26,28 +26,10 @@ class MovieRepositoryImpl(IMovieRepository):
         return Movie.model_validate(model)
 
     async def _next_short_code(self) -> str:
-        """Return the next unused numeric short_code starting from 1001."""
-        res_short = await self.session.execute(
-            select(MovieModel.short_code).where(MovieModel.short_code.isnot(None))
-        )
-        nums = [
-            int(s)
-            for s in res_short.scalars().all()
-            if s and s.isdigit() and int(s) < 1_000_000
-        ]
-        candidate = max(nums, default=1000) + 1
-        while True:
-            conflict = await self.session.execute(
-                select(MovieModel.id).where(
-                    or_(
-                        MovieModel.short_code == str(candidate),
-                        MovieModel.code == str(candidate),
-                    )
-                ).limit(1)
-            )
-            if conflict.scalar_one_or_none() is None:
-                return str(candidate)
-            candidate += 1
+        """Return the next unused global numeric short_code."""
+        from app.infrastructure.db.short_code_alloc import next_global_short_code
+
+        return await next_global_short_code(self.session)
 
     async def create(self, movie: Movie, category_ids: list[int] | None = None, page_ids: list[int] | None = None) -> Movie:
         model = MovieModel(**movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations", "pages"}, exclude_unset=True))
@@ -149,6 +131,18 @@ class MovieRepositoryImpl(IMovieRepository):
             return self._to_domain(model)
 
         if clean_code.isdigit() and len(clean_code) <= 9:
+            from app.infrastructure.db.models.series import EpisodeModel
+
+            ep_claim = (
+                await self.session.execute(
+                    select(EpisodeModel.id)
+                    .where(or_(EpisodeModel.short_code == clean_code, EpisodeModel.code == clean_code))
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if ep_claim is not None:
+                return None
+
             num_id = int(clean_code)
             if 0 < num_id <= 2_147_483_647:
                 stmt_id = _base_stmt().where(MovieModel.id == num_id)
