@@ -221,8 +221,12 @@ export default function SmmStudioPage() {
               <span className="text-xs text-text-secondary uppercase">{job.status}</span>
             </div>
             <h3 className="text-sm font-semibold text-white truncate">{job.title}</h3>
-            {job.clip_path && (
+            {job.clip_path ? (
               <video src={`${baseHost}/${job.clip_path}`} controls className="w-full max-h-72 rounded-xl bg-black object-contain" />
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-text-secondary">
+                Video klip Render worker tomonidan kesilishi kutilmoqda...
+              </div>
             )}
             <div className="text-xs text-text-secondary">Vaqt: {job.start_sec}s (+{job.duration_sec}s)</div>
             <div className="flex flex-wrap gap-1.5">
@@ -237,8 +241,8 @@ export default function SmmStudioPage() {
               <button onClick={() => runAction(job.id, "recut", { start_sec: Number(recutStart[job.id] ?? job.start_sec), duration_sec: job.duration_sec })} className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white">Qayta kesish</button>
             </div>
             <div className="grid grid-cols-3 gap-2 pt-1">
-              <button onClick={() => runAction(job.id, "approve", { publish_now: false })} className="py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs text-white font-medium">Tasdiqlash</button>
-              <button onClick={() => runAction(job.id, "approve", { publish_now: true })} className="py-1.5 rounded-lg bg-[#E50914] hover:bg-red-700 text-xs text-white font-semibold">Hozir chiqar</button>
+              <button disabled={!job.clip_path} onClick={() => runAction(job.id, "approve", { publish_now: false })} className="py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-medium">Tasdiqlash</button>
+              <button disabled={!job.clip_path} onClick={() => runAction(job.id, "approve", { publish_now: true })} className="py-1.5 rounded-lg bg-[#E50914] hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-white font-semibold">Hozir chiqar</button>
               <button onClick={() => runAction(job.id, "reject")} className="py-1.5 rounded-lg bg-black/40 hover:bg-white/10 text-xs text-text-secondary">Rad etish</button>
             </div>
           </div>

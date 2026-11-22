@@ -303,6 +303,14 @@ async def supervised_run_smm_worker() -> None:
     interval = max(30, int(os.getenv("SMM_WORKER_INTERVAL_SEC", "180")))
     tg_client = None
     session_disabled = False
+    logger.info(
+        "SMM worker started: enabled=%s has_smm_session=%s has_api_id=%s has_storage_id=%s interval=%ss",
+        os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
+        bool(resolve_smm_session_string()),
+        os.getenv("TELEGRAM_API_ID", "").strip().isdigit(),
+        bool(os.getenv("STORAGE_CHANNEL_ID", "").strip()),
+        interval,
+    )
 
     while True:
         try:
@@ -312,11 +320,23 @@ async def supervised_run_smm_worker() -> None:
                 api_id = os.getenv("TELEGRAM_API_ID", "").strip()
                 api_hash = os.getenv("TELEGRAM_API_HASH", "").strip()
                 if sess and api_id.isdigit() and api_hash and tg_client is None:
-                    from telethon import TelegramClient
-                    from telethon.sessions import StringSession
-                    tg_client = TelegramClient(StringSession(sess), int(api_id), api_hash)
-                    await tg_client.connect()
-                await run_smm_worker_cycle(tg_client=tg_client)
+                    try:
+                        from telethon import TelegramClient
+                        from telethon.sessions import StringSession
+
+                        candidate = TelegramClient(StringSession(sess), int(api_id), api_hash)
+                        await asyncio.wait_for(candidate.connect(), timeout=20.0)
+                        tg_client = candidate
+                    except (KeyboardInterrupt, asyncio.CancelledError):
+                        raise
+                    except Exception as tg_exc:
+                        tg_client = None
+                        if "AuthKeyDuplicated" in type(tg_exc).__name__ or "AuthKeyDuplicated" in str(tg_exc):
+                            session_disabled = True
+                        logger.warning("SMM Telethon connect error (publish still active): %s", tg_exc)
+                res = await run_smm_worker_cycle(tg_client=tg_client)
+                if res.get("generated") or res.get("published"):
+                    logger.info("SMM worker cycle: %s", res)
         except (KeyboardInterrupt, asyncio.CancelledError):
             if tg_client:
                 try:

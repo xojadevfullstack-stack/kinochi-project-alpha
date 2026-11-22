@@ -219,3 +219,31 @@ async def test_smm_worker_supports_episode_short_code_and_storage_video(db_sessi
     mock_disp.publish_all = AsyncMock(return_value={"telegram": PublishResult("telegram", True, post_id="2")})
     await process_publish_job(db_session, updated, cfg, dispatcher=mock_disp)
     assert mock_disp.publish_all.await_args.kwargs["movie_code"] == "1091"
+
+
+@pytest.mark.asyncio
+async def test_supervised_smm_worker_logs_status_and_survives_connect_timeout(monkeypatch, caplog):
+    import asyncio
+    from scraper.smm_worker import supervised_run_smm_worker
+
+    monkeypatch.setenv("SMM_AUTOPILOT_ENABLED", "true")
+    monkeypatch.setenv("SMM_TELEGRAM_STRING_SESSION", "sess_test_123")
+    monkeypatch.setenv("TELEGRAM_API_ID", "12345")
+    monkeypatch.setenv("TELEGRAM_API_HASH", "hash_abc")
+
+    fake_tg = MagicMock()
+    fake_tg.connect = AsyncMock(side_effect=asyncio.TimeoutError("connect timed out"))
+    mock_cycle = AsyncMock(return_value={"generated": 0, "published": 0})
+
+    with (
+        caplog.at_level("INFO", logger="scraper.smm_worker"),
+        patch("telethon.TelegramClient", return_value=fake_tg),
+        patch("telethon.sessions.StringSession", return_value="str_sess"),
+        patch("scraper.smm_worker.run_smm_worker_cycle", mock_cycle),
+        patch("scraper.smm_worker.asyncio.sleep", new=AsyncMock(side_effect=asyncio.CancelledError)),
+    ):
+        with pytest.raises(asyncio.CancelledError):
+            await supervised_run_smm_worker()
+
+    mock_cycle.assert_awaited_once_with(tg_client=None)
+    assert any("SMM worker" in rec.message for rec in caplog.records)
