@@ -7,7 +7,7 @@ import { useAuth } from "../lib/auth/AuthProvider";
 import LiveSearch from "./LiveSearch";
 import ThemeToggle from "./ThemeToggle";
 import { fetchApi } from "../lib/api";
-import { useOverlayBackClose } from "@/lib/hooks/useOverlayBackClose";
+import { useOverlayBackClose, suppressOverlayHistoryBack } from "@/lib/hooks/useOverlayBackClose";
 
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
@@ -115,6 +115,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
 
   // Close dynamic sidebar and mobile search on route change
   useEffect(() => {
+    suppressOverlayHistoryBack();
     if (!isPinned) {
       setSidebarOpen(false);
     }
@@ -636,7 +637,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 className="w-full"
                 placeholder="Film, serial, aktyor yoki #kod..."
                 onClose={() => setIsMobileSearchOpen(false)}
-                onNavigate={() => setIsMobileSearchOpen(false)}
+                onNavigate={() => {
+                  suppressOverlayHistoryBack();
+                  setIsMobileSearchOpen(false);
+                }}
               />
             </div>
           </div>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import RequestMovieModal, { RequestTargetItem } from "./RequestMovieModal";
 import { API_URL } from "@/lib/api";
+import { suppressOverlayHistoryBack } from "@/lib/hooks/useOverlayBackClose";
 
 interface SearchResultItem {
   id: number;
@@ -236,6 +237,7 @@ export default function LiveSearch({
   }, []);
 
   const handleSelect = (item: SearchResultItem) => {
+    suppressOverlayHistoryBack();
     suppressPopupRef.current = true;
     inputRef.current?.blur();
     setIsOpen(false);
@@ -297,6 +299,7 @@ export default function LiveSearch({
   const handleFullSearch = (e?: React.MouseEvent | React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanQ = query.trim();
+    suppressOverlayHistoryBack();
     suppressPopupRef.current = true;
     setIsOpen(false);
     setIsKeyboardNavigating(false);
@@ -597,6 +600,7 @@ export default function LiveSearch({
                 <Link
                   href="/requests"
                   onClick={() => {
+                    suppressOverlayHistoryBack();
                     suppressPopupRef.current = true;
                     setIsOpen(false);
                     onNavigate?.();
