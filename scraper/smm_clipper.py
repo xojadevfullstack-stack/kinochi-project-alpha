@@ -65,9 +65,9 @@ def _build_fg_blur_chain(blur_watermark: bool, blur_bottom_ad: bool) -> Tuple[st
     """Build parameterized split+crop+boxblur+overlay filter chain for foreground zones."""
     zones = []
     if blur_watermark:
-        zones.append(("0.22", "0.14", "0.77", "0.02", "18:4"))
+        zones.append(("0.22", "0.14", "0.77", "0.02", "10:4:5:2"))
     if blur_bottom_ad:
-        zones.append(("0.56", "0.22", "0.22", "0.76", "28:6"))
+        zones.append(("0.56", "0.22", "0.22", "0.76", "16:5:8:3"))
     if not zones:
         return "", "fg0"
     chain, cur = [], "fg0"
@@ -88,14 +88,15 @@ def build_cinematic_filter_complex(
     imdb_rating: Optional[float] = None,
     year: Optional[int] = None,
     bot_name: str = "Mediaplusbot",
-    bot_username: str = "@kinochi_mvp_bot",
+    bot_username: str = "@MediaPlusOfficialBot",
     font_path: Optional[str] = None,
     copyright_shield: bool = False,
     show_title: bool = False,
     blur_watermark: bool = True,
     blur_bottom_ad: bool = False,
+    low_ram: bool = False,
 ) -> Tuple[str, str]:
-    """Build 1080x1920 Cinematic Red FFmpeg filter_complex and audio filter (hides title by default)."""
+    """Build 9:16 Cinematic Red FFmpeg filter_complex (1080x1920 standard or 720x1280 low_ram)."""
     font_file = resolve_font_file(font_path)
     font_opt = f"fontfile='{font_file.replace(chr(92), '/').replace(':', chr(92) + ':')}':" if font_file else ""
     if show_title and title:
@@ -107,29 +108,43 @@ def build_cinematic_filter_complex(
     safe_code = escape_drawtext(f"KINO KODI: #{movie_code}")
     safe_bot = escape_drawtext(f"Telegram bot: {bot_username}")
 
+    w, h = (720, 1280) if low_ram else (1080, 1920)
+    bg_step = (
+        "[0:v]scale=270:480:force_original_aspect_ratio=increase,"
+        "crop=270:480,boxblur=6:2,eq=brightness=-0.28,scale=720:1280:flags=bilinear[bg];"
+        if low_ram
+        else "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+        "crop=1080:1920,boxblur=20:5,eq=brightness=-0.28[bg];"
+    )
+    h_fs, r_fs, c_fs, b_fs = (36, 26, 35, 23) if low_ram else (54, 38, 52, 34)
+    y_h, y_r, box_spec, y_c, y_b = (
+        (146, 214, "x=80:y=912:w=560:h=78", 934, 1010)
+        if low_ram
+        else (220, 320, "x=120:y=1370:w=840:h=116", 1402, 1515)
+    )
+
     rating_filter = ""
     if imdb_rating is not None and imdb_rating > 0:
         safe_rating = escape_drawtext(f"IMDb: {imdb_rating:.1f} / 10")
         rating_filter = (
-            f",drawtext={font_opt}text='{safe_rating}':fontsize=38:"
-            "fontcolor=#F5C518:x=(w-text_w)/2:y=320:shadowcolor=black@0.8:shadowx=2:shadowy=2"
+            f",drawtext={font_opt}text='{safe_rating}':fontsize={r_fs}:"
+            f"fontcolor=#F5C518:x=(w-text_w)/2:y={y_r}:shadowcolor=black@0.8:shadowx=2:shadowy=2"
         )
 
     blur_chain, fg_label = _build_fg_blur_chain(blur_watermark, blur_bottom_ad)
     vf = (
-        "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
-        "crop=1080:1920,boxblur=20:5,eq=brightness=-0.28[bg];"
-        "[0:v]scale=1080:-2:force_original_aspect_ratio=decrease[fg0];"
+        f"{bg_step}"
+        f"[0:v]scale={w}:-2:force_original_aspect_ratio=decrease[fg0];"
         f"{blur_chain}"
         f"[bg][{fg_label}]overlay=(W-w)/2:(H-h)/2"
-        f",drawtext={font_opt}text='{safe_header}':fontsize=54:"
-        "fontcolor=white:x=(w-text_w)/2:y=220:line_spacing=12:shadowcolor=black@0.85:shadowx=3:shadowy=3"
+        f",drawtext={font_opt}text='{safe_header}':fontsize={h_fs}:"
+        f"fontcolor=white:x=(w-text_w)/2:y={y_h}:line_spacing=12:shadowcolor=black@0.85:shadowx=3:shadowy=3"
         f"{rating_filter}"
-        ",drawbox=x=120:y=1370:w=840:h=116:color=#E50914@0.95:t=fill"
-        f",drawtext={font_opt}text='{safe_code}':fontsize=52:"
-        "fontcolor=white:x=(w-text_w)/2:y=1402:shadowcolor=black@0.4:shadowx=2:shadowy=2"
-        f",drawtext={font_opt}text='{safe_bot}':fontsize=34:"
-        "fontcolor=#E5E7EB:x=(w-text_w)/2:y=1515:shadowcolor=black@0.8:shadowx=2:shadowy=2"
+        f",drawbox={box_spec}:color=#E50914@0.95:t=fill"
+        f",drawtext={font_opt}text='{safe_code}':fontsize={c_fs}:"
+        f"fontcolor=white:x=(w-text_w)/2:y={y_c}:shadowcolor=black@0.4:shadowx=2:shadowy=2"
+        f",drawtext={font_opt}text='{safe_bot}':fontsize={b_fs}:"
+        f"fontcolor=#E5E7EB:x=(w-text_w)/2:y={y_b}:shadowcolor=black@0.8:shadowx=2:shadowy=2"
         "[vout]"
     )
     return vf, ("atempo=1.02" if copyright_shield else "anull")
@@ -145,13 +160,14 @@ def render_vertical_clip(
     imdb_rating: Optional[float] = None,
     year: Optional[int] = None,
     bot_name: str = "Mediaplusbot",
-    bot_username: str = "@kinochi_mvp_bot",
+    bot_username: str = "@MediaPlusOfficialBot",
     copyright_shield: bool = False,
     show_title: bool = False,
     blur_watermark: bool = True,
     blur_bottom_ad: bool = False,
+    low_ram: bool = False,
 ) -> str:
-    """Cut segment from input_path and render 1080x1920 vertical MP4 to output_path."""
+    """Cut segment from input_path and render 9:16 vertical MP4 to output_path."""
     ffmpeg = resolve_ffmpeg_bin()
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     vf, af = build_cinematic_filter_complex(
@@ -159,11 +175,17 @@ def render_vertical_clip(
         year=year, bot_name=bot_name, bot_username=bot_username,
         copyright_shield=copyright_shield, show_title=show_title,
         blur_watermark=blur_watermark, blur_bottom_ad=blur_bottom_ad,
+        low_ram=low_ram,
+    )
+    encode_opts = (
+        ["-threads", "1", "-filter_threads", "1", "-filter_complex_threads", "1", "-preset", "superfast", "-crf", "26"]
+        if low_ram
+        else ["-preset", "veryfast", "-crf", "23"]
     )
     cmd = [
         ffmpeg, "-y", "-ss", str(start_sec), "-t", str(duration_sec), "-i", input_path,
         "-filter_complex", vf, "-map", "[vout]", "-map", "0:a?", "-af", af,
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p",
+        "-c:v", "libx264", *encode_opts, "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output_path,
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)

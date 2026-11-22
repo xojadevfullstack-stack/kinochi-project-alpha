@@ -1,6 +1,7 @@
 """End-to-end smart clip generation pipeline (Sparse Download -> Scene Scorer -> 9:16 Render)."""
 from __future__ import annotations
 
+import asyncio
 import os
 import tempfile
 from typing import Any, Dict, Optional
@@ -21,6 +22,7 @@ async def create_smart_smm_clip(
     check_vision: bool = True,
     blur_watermark: bool = True,
     copyright_shield: bool = False,
+    bot_username: str = "@MediaPlusOfficialBot",
 ) -> Dict[str, Any]:
     """Download targeted sparse chunk, score cleanest moment, and render 9:16 clip."""
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
@@ -49,16 +51,20 @@ async def create_smart_smm_clip(
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=score_meta["start_sec"])
 
         blur_ad = bool(score_meta.get("has_ad_banner", False))
-        render_vertical_clip(
+        low_ram = os.getenv("SMM_LOW_RAM", "true").strip().lower() in {"1", "true", "yes", "on"}
+        await asyncio.to_thread(
+            render_vertical_clip,
             input_path=raw_path,
             output_path=output_path,
             movie_code=movie_code,
             start_sec=chosen_start,
             duration_sec=clip_dur,
             imdb_rating=imdb_rating,
+            bot_username=bot_username,
             copyright_shield=copyright_shield,
             blur_watermark=blur_watermark,
             blur_bottom_ad=blur_ad,
+            low_ram=low_ram,
         )
         return {
             "output_path": output_path,

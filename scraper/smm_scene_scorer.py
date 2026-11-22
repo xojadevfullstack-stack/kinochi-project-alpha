@@ -1,6 +1,7 @@
 """Smart Scene Scorer & Gemini Vision Ad/NSFW Filter for SMM Clips (Slice 1.5)."""
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
@@ -131,8 +132,8 @@ async def select_best_scene_start(
 
     curr = scan_start_sec
     while curr <= scan_start_sec + usable_span + 0.01 and len(candidates) < 6:
-        vis_score, frames_b64 = _sample_window_visuals(video_path, curr, clip_duration)
-        mean_db, _ = _measure_audio_db(ffmpeg, video_path, curr, min(clip_duration, 10.0))
+        vis_score, frames_b64 = await asyncio.to_thread(_sample_window_visuals, video_path, curr, clip_duration)
+        mean_db, _ = await asyncio.to_thread(_measure_audio_db, ffmpeg, video_path, curr, min(clip_duration, 10.0))
         audio_score = max(0.0, min(50.0, (mean_db + 60.0)))
         candidates.append({"start_sec": round(curr, 2), "score": round(vis_score + audio_score, 2), "mean_volume_db": mean_db, "frames": frames_b64})
         curr += step

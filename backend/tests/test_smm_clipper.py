@@ -58,7 +58,7 @@ def test_build_cinematic_filter_complex_hides_movie_title_and_uses_mediaplusbot(
     assert "Otamga" not in vf
     assert "2014" not in vf
     assert "Mediaplusbot" in vf or "MEDIAPLUSBOT" in vf
-    assert "@kinochi_mvp_bot" in vf
+    assert "@MediaPlusOfficialBot" in vf
     assert "atempo=1.02" in af
     # Bottom CTA must stay above 9:16 Reels/Shorts/TikTok bottom danger zone
     import re
@@ -154,3 +154,35 @@ def test_render_vertical_clip_with_watermark_and_ad_blur(tmp_path):
         blur_watermark=True, blur_bottom_ad=True,
     )
     assert os.path.exists(res) and os.path.getsize(res) > 10_000
+
+
+def test_low_ram_720p_profile_builds_270x480_blur_and_renders_720x1280(tmp_path):
+    vf, _ = build_cinematic_filter_complex(movie_code="5064", imdb_rating=7.5, low_ram=True)
+    assert "scale=270:480" in vf
+    assert "scale=720:1280" in vf
+    assert "drawbox=x=80:y=912:w=560:h=78" in vf
+
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "sample_lowram.mp4"
+    out = tmp_path / "out_720p.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "testsrc=duration=2:size=1280x720:rate=24",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    res = render_vertical_clip(
+        str(src), str(out), movie_code="5064",
+        start_sec=0.0, duration_sec=1.5, low_ram=True,
+    )
+    import cv2
+    cap = cv2.VideoCapture(res)
+    w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    cap.release()
+    assert (w, h) == (720, 1280)
