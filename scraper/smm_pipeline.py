@@ -51,6 +51,7 @@ async def create_smart_smm_clip(
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=score_meta["start_sec"])
 
         blur_ad = bool(score_meta.get("has_ad_banner", False))
+        ai_boxes = score_meta.get("blur_boxes") if score_meta.get("vision_used") else None
         low_ram = os.getenv("SMM_LOW_RAM", "true").strip().lower() in {"1", "true", "yes", "on"}
         await asyncio.to_thread(
             render_vertical_clip,
@@ -65,12 +66,14 @@ async def create_smart_smm_clip(
             blur_watermark=blur_watermark,
             blur_bottom_ad=blur_ad,
             low_ram=low_ram,
+            blur_boxes=ai_boxes,
         )
         return {
             "output_path": output_path,
             "start_sec": chosen_start,
             "duration_sec": clip_dur,
             "blur_bottom_ad": blur_ad,
+            "blur_boxes": ai_boxes or [],
             "scene_score": score_meta.get("score", 0.0),
             "reason": score_meta.get("reason", ""),
         }

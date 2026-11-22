@@ -6,7 +6,7 @@ import shutil
 import struct
 import subprocess
 import textwrap
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 DEFAULT_FONT_CANDIDATES = (
     r"C:\Windows\Fonts\segoeuib.ttf",
@@ -61,13 +61,36 @@ def compute_clip_window(
     return round(start_sec, 2), round(min(duration_sec, max(1.0, total_duration_sec - start_sec)), 2)
 
 
-def _build_fg_blur_chain(blur_watermark: bool, blur_bottom_ad: bool) -> Tuple[str, str]:
-    """Build parameterized split+crop+boxblur+overlay filter chain for foreground zones."""
+def _build_fg_blur_chain(
+    blur_watermark: bool,
+    blur_bottom_ad: bool,
+    blur_boxes: Optional[List[Dict[str, Any]]] = None,
+) -> Tuple[str, str]:
+    """Build parameterized split+crop+boxblur+overlay filter chain for AI-detected or fallback zones."""
     zones = []
-    if blur_watermark:
-        zones.append(("0.22", "0.14", "0.77", "0.02", "10:4:5:2"))
-    if blur_bottom_ad:
-        zones.append(("0.56", "0.22", "0.22", "0.76", "16:5:8:3"))
+    if blur_boxes is not None:
+        for b in blur_boxes[:4]:
+            if not isinstance(b, dict):
+                continue
+            try:
+                x = max(0.0, min(0.95, float(b.get("x", 0.0))))
+                y = max(0.0, min(0.95, float(b.get("y", 0.0))))
+                w_v = min(float(b.get("w", 0.0)), 0.85, 1.0 - x)
+                h_v = min(float(b.get("h", 0.0)), 0.45, 1.0 - y)
+            except (TypeError, ValueError):
+                continue
+            if w_v >= 0.04 and h_v >= 0.04:
+                c_rad = max(1, min(5, int(min(h_v, w_v) * 45)))
+                l_rad = min(14, c_rad * 2 + 2)
+                zones.append((f"{w_v:.3f}", f"{h_v:.3f}", f"{x:.3f}", f"{y:.3f}", f"{l_rad}:4:{c_rad}:2"))
+        if not zones and blur_bottom_ad:
+            zones.append(("0.56", "0.22", "0.22", "0.76", "16:5:8:3"))
+    else:
+        if blur_watermark:
+            zones.append(("0.22", "0.14", "0.77", "0.02", "10:4:5:2"))
+            zones.append(("0.24", "0.22", "0.01", "0.02", "12:4:5:2"))
+        if blur_bottom_ad:
+            zones.append(("0.56", "0.22", "0.22", "0.76", "16:5:8:3"))
     if not zones:
         return "", "fg0"
     chain, cur = [], "fg0"
@@ -95,6 +118,7 @@ def build_cinematic_filter_complex(
     blur_watermark: bool = True,
     blur_bottom_ad: bool = False,
     low_ram: bool = False,
+    blur_boxes: Optional[List[Dict[str, Any]]] = None,
 ) -> Tuple[str, str]:
     """Build 9:16 Cinematic Red FFmpeg filter_complex (1080x1920 standard or 720x1280 low_ram)."""
     font_file = resolve_font_file(font_path)
@@ -131,7 +155,7 @@ def build_cinematic_filter_complex(
             f"fontcolor=#F5C518:x=(w-text_w)/2:y={y_r}:shadowcolor=black@0.8:shadowx=2:shadowy=2"
         )
 
-    blur_chain, fg_label = _build_fg_blur_chain(blur_watermark, blur_bottom_ad)
+    blur_chain, fg_label = _build_fg_blur_chain(blur_watermark, blur_bottom_ad, blur_boxes=blur_boxes)
     vf = (
         f"{bg_step}"
         f"[0:v]scale={w}:-2:force_original_aspect_ratio=decrease[fg0];"
@@ -166,6 +190,7 @@ def render_vertical_clip(
     blur_watermark: bool = True,
     blur_bottom_ad: bool = False,
     low_ram: bool = False,
+    blur_boxes: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Cut segment from input_path and render 9:16 vertical MP4 to output_path."""
     ffmpeg = resolve_ffmpeg_bin()
@@ -175,7 +200,7 @@ def render_vertical_clip(
         year=year, bot_name=bot_name, bot_username=bot_username,
         copyright_shield=copyright_shield, show_title=show_title,
         blur_watermark=blur_watermark, blur_bottom_ad=blur_bottom_ad,
-        low_ram=low_ram,
+        low_ram=low_ram, blur_boxes=blur_boxes,
     )
     encode_opts = (
         ["-threads", "1", "-filter_threads", "1", "-filter_complex_threads", "1", "-preset", "superfast", "-crf", "26"]

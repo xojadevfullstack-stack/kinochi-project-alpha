@@ -88,3 +88,36 @@ async def test_select_best_scene_start_skips_vision_ad_banner(tmp_path):
         best = await select_best_scene_start(str(src), clip_duration=2.0, check_vision=True)
         assert best["has_ad_banner"] is False
         assert best["reason"] == "Clean action"
+
+
+def test_parse_scene_vision_response_clamps_dynamic_blur_boxes():
+    raw = """```json
+    {
+      "is_clean": true,
+      "has_ad_banner": false,
+      "is_nsfw_or_gore": false,
+      "is_credits": false,
+      "excitement_score": 8,
+      "blur_boxes": [
+        {"x": 0.01, "y": 0.02, "w": 0.21, "h": 0.07, "kind": "watermark"},
+        {"x": 0.85, "y": 0.90, "w": 0.40, "h": 0.25, "kind": "ad"},
+        {"x": -0.5, "y": -0.5, "w": 0.01, "h": 0.01}
+      ],
+      "reason": "Asilmedia logo top-left"
+    }
+    ```"""
+    res = parse_scene_vision_response(raw)
+    assert res["vision_used"] is True
+    boxes = res["blur_boxes"]
+    assert len(boxes) == 2
+    assert boxes[0]["x"] == pytest.approx(0.01)
+    assert boxes[0]["w"] == pytest.approx(0.21)
+    assert boxes[1]["x"] + boxes[1]["w"] <= 1.0
+    assert boxes[1]["y"] + boxes[1]["h"] <= 1.0
+
+    # Even if Gemini flags is_clean=false solely due to a watermark box, unsafe_scene is False so scene stays clean
+    raw_wm_false = """{"is_clean": false, "has_ad_banner": false, "is_nsfw_or_gore": false, "is_credits": false,
+      "blur_boxes": [{"x": 0.01, "y": 0.02, "w": 0.21, "h": 0.09, "kind": "watermark"}], "reason": "WM"}"""
+    res_wm = parse_scene_vision_response(raw_wm_false)
+    assert res_wm["is_clean"] is True
+    assert len(res_wm["blur_boxes"]) == 1

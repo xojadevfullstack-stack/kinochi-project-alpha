@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 import os
 import re
 import subprocess
@@ -16,12 +17,39 @@ import numpy as np
 from scraper.smm_clipper import resolve_ffmpeg_bin
 from scraper.video_verifier import is_frame_valid
 
+logger = logging.getLogger(__name__)
+
 
 def parse_volumedetect_output(stderr_text: str) -> Tuple[float, float]:
     """Parse FFmpeg volumedetect stderr for (mean_volume_db, max_volume_db)."""
     mean_m = re.search(r"mean_volume:\s*([-\d.]+)\s*dB", stderr_text or "")
     max_m = re.search(r"max_volume:\s*([-\d.]+)\s*dB", stderr_text or "")
     return (float(mean_m.group(1)) if mean_m else -90.0), (float(max_m.group(1)) if max_m else -90.0)
+
+
+def _sanitize_blur_boxes(raw_boxes: Any) -> List[Dict[str, Any]]:
+    """Clamp Gemini Vision normalized blur boxes to safe foreground coordinates."""
+    if not isinstance(raw_boxes, list):
+        return []
+    safe: List[Dict[str, Any]] = []
+    for item in raw_boxes[:4]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            x = max(0.0, min(0.95, float(item.get("x", 0.0))))
+            y = max(0.0, min(0.95, float(item.get("y", 0.0))))
+            w = float(item.get("w", 0.0))
+            h = float(item.get("h", 0.0))
+        except (TypeError, ValueError):
+            continue
+        if w < 0.04 or h < 0.04:
+            continue
+        w = min(w, 0.85, 1.0 - x)
+        h = min(h, 0.45, 1.0 - y)
+        if w < 0.04 or h < 0.04:
+            continue
+        safe.append({"x": round(x, 3), "y": round(y, 3), "w": round(w, 3), "h": round(h, 3), "kind": str(item.get("kind", "watermark"))[:16]})
+    return safe
 
 
 def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
@@ -37,17 +65,26 @@ def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
         has_ad = bool(data.get("has_ad_banner", False))
         is_nsfw = bool(data.get("is_nsfw_or_gore", False))
         is_credits = bool(data.get("is_credits", False))
-        is_clean = bool(data.get("is_clean", not (has_ad or is_nsfw or is_credits)))
+        boxes = _sanitize_blur_boxes(data.get("blur_boxes"))
+        unsafe_scene = has_ad or is_nsfw or is_credits
+        # A corner source logo/watermark can be blurred out dynamically via blur_boxes without rejecting the scene
+        is_clean = True if (not unsafe_scene and boxes) else bool(data.get("is_clean", not unsafe_scene))
         return {
             "is_clean": is_clean,
             "has_ad_banner": has_ad,
             "is_nsfw_or_gore": is_nsfw,
             "is_credits": is_credits,
             "excitement_score": int(data.get("excitement_score", 5)),
+            "blur_boxes": boxes,
+            "vision_used": True,
             "reason": str(data.get("reason", "")),
         }
     except Exception:
-        return {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 5, "reason": "Fallback clean"}
+        return {
+            "is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False,
+            "is_credits": False, "excitement_score": 5, "blur_boxes": [],
+            "vision_used": False, "reason": "Fallback clean",
+        }
 
 
 def _measure_audio_db(ffmpeg: str, video_path: str, start_sec: float, probe_dur: float) -> Tuple[float, float]:
@@ -86,28 +123,46 @@ def _sample_window_visuals(video_path: str, start_sec: float, duration_sec: floa
 
 
 async def check_frames_for_ads_or_nsfw(frames_b64: List[str], api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Ask Gemini Flash Lite if frames contain gambling banners (Mostbet/1xBet), credits, or NSFW."""
+    """Ask Gemini Vision to inspect safety AND locate any gambling/source watermarks with normalized boxes."""
     key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not key or not frames_b64:
-        return {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 5, "reason": "Vision skipped"}
+        return {
+            "is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False,
+            "is_credits": False, "excitement_score": 5, "blur_boxes": [],
+            "vision_used": False, "reason": "Vision skipped",
+        }
 
     prompt = (
-        "Inspect these movie frames for social media (Reels/Shorts) safety. "
-        "Detect gambling/betting overlay ads (Mostbet, 1xBet, Melbet, Pin-Up, Linebet), end credits, or 18+ nudity/gore. "
-        'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "reason": "short"}'
+        "Inspect these movie frames for social media (Reels/Shorts) safety and watermark removal. "
+        "1) Detect gambling/betting overlay ads (Mostbet, 1xBet, Melbet, Pin-Up, Linebet, banners), end credits, or 18+ nudity/gore. Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (small corner watermarks like ASILMEDIA.NET/UZMOVI can be blurred safely). "
+        "2) Find EVERY overlaid source logo/watermark (e.g. ASILMEDIA.NET, UZMOVI, Kinochilar, @channel) OR overlaid ad banner anywhere in the frame (top-left, top-right, bottom, etc.), and return normalized [0.0-1.0] bounding boxes {x, y, w, h, kind:'watermark'|'ad'} with generous padding around text/logo so it can be blurred cleanly. Ignore subtitles and normal movie objects. "
+        'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "blur_boxes": [{"x": 0.0, "y": 0.0, "w": 0.2, "h": 0.1, "kind": "watermark"}], "reason": "short"}'
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
-    for model in ("gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.5-flash-lite"):
+    payload = {"contents": [{"parts": parts}], "generationConfig": {"responseMimeType": "application/json"}}
+    for model in ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-flash-latest"):
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(url, json={"contents": [{"parts": parts}]})
+                resp = await client.post(url, json=payload)
             if resp.status_code == 200:
                 text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                return parse_scene_vision_response(text)
-        except Exception:
+                parsed = parse_scene_vision_response(text)
+                if parsed.get("vision_used"):
+                    return parsed
+                logger.warning("Gemini Vision %s unparseable JSON: %s", model, text[:180])
+                continue
+            logger.warning("Gemini Vision %s HTTP %s: %s", model, resp.status_code, resp.text[:180])
+            if resp.status_code in (401, 403):
+                break
+        except Exception as exc:
+            logger.warning("Gemini Vision %s error: %s", model, type(exc).__name__)
             continue
-    return {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 5, "reason": "Vision API fallback"}
+    return {
+        "is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False,
+        "is_credits": False, "excitement_score": 5, "blur_boxes": [],
+        "vision_used": False, "reason": "Vision API fallback",
+    }
 
 
 async def select_best_scene_start(
@@ -139,12 +194,32 @@ async def select_best_scene_start(
         curr += step
 
     candidates.sort(key=lambda c: c["score"], reverse=True)
-    for cand in candidates:
+    top_v_res: Optional[Dict[str, Any]] = None
+    for idx, cand in enumerate(candidates):
         if not check_vision:
-            return {"start_sec": cand["start_sec"], "score": cand["score"], "mean_volume_db": cand["mean_volume_db"], "has_ad_banner": False, "reason": "Audio+Visual top score"}
+            return {"start_sec": cand["start_sec"], "score": cand["score"], "mean_volume_db": cand["mean_volume_db"], "has_ad_banner": False, "blur_boxes": [], "vision_used": False, "reason": "Audio+Visual top score"}
         v_res = await check_frames_for_ads_or_nsfw(cand["frames"], api_key=api_key)
+        if idx == 0:
+            top_v_res = v_res
         if v_res["is_clean"]:
-            return {"start_sec": cand["start_sec"], "score": cand["score"] + v_res["excitement_score"] * 3, "mean_volume_db": cand["mean_volume_db"], "has_ad_banner": False, "reason": v_res["reason"]}
+            return {
+                "start_sec": cand["start_sec"],
+                "score": cand["score"] + v_res["excitement_score"] * 3,
+                "mean_volume_db": cand["mean_volume_db"],
+                "has_ad_banner": bool(v_res.get("has_ad_banner", False)),
+                "blur_boxes": v_res.get("blur_boxes", []),
+                "vision_used": bool(v_res.get("vision_used", False)),
+                "reason": v_res["reason"],
+            }
 
     top = candidates[0] if candidates else {"start_sec": round(scan_start_sec, 2), "score": 0.0, "mean_volume_db": -90.0}
-    return {"start_sec": top["start_sec"], "score": top["score"], "mean_volume_db": top["mean_volume_db"], "has_ad_banner": True, "reason": "Fallback top window"}
+    top_v = top_v_res or {}
+    return {
+        "start_sec": top["start_sec"],
+        "score": top["score"],
+        "mean_volume_db": top["mean_volume_db"],
+        "has_ad_banner": True,
+        "blur_boxes": top_v.get("blur_boxes", []),
+        "vision_used": bool(top_v.get("vision_used", False)),
+        "reason": "Fallback top window",
+    }

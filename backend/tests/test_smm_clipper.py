@@ -186,3 +186,37 @@ def test_low_ram_720p_profile_builds_270x480_blur_and_renders_720x1280(tmp_path)
     w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
     assert (w, h) == (720, 1280)
+
+
+def test_dynamic_ai_blur_boxes_render_arbitrary_top_left_logo_safely(tmp_path):
+    boxes = [{"x": 0.01, "y": 0.02, "w": 0.22, "h": 0.06, "kind": "watermark"}]
+    vf, _ = build_cinematic_filter_complex(
+        movie_code="3955",
+        imdb_rating=8.1,
+        low_ram=True,
+        blur_watermark=True,
+        blur_boxes=boxes,
+    )
+    assert "crop=iw*0.220:ih*0.060:iw*0.010:ih*0.020" in vf
+    assert "crop=iw*0.22:ih*0.14:iw*0.77:ih*0.02" not in vf
+
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "sample_topleft.mp4"
+    out = tmp_path / "out_topleft_720p.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "testsrc2=duration=2:size=1280x720:rate=24",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    res = render_vertical_clip(
+        str(src), str(out), movie_code="3955",
+        start_sec=0.0, duration_sec=1.5, low_ram=True, blur_boxes=boxes,
+    )
+    assert os.path.exists(res) and os.path.getsize(res) > 10_000
