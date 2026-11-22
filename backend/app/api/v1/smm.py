@@ -1,13 +1,16 @@
 """API v1 — SMM Video Autopilot endpoints (Dual-Mode Settings & Clip Jobs)."""
+import hmac
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_db_session
+from app.core.config import settings
+from app.infrastructure.db.models.ingest_item import IngestItemModel
 from app.infrastructure.db.models.smm import SmmClipJobModel, SmmSettingsModel
 
 router = APIRouter(prefix="/smm", tags=["smm"])
@@ -23,6 +26,7 @@ class SmmSettingsUpdate(BaseModel):
     copyright_shield: bool | None = None
     bot_username: str | None = None
     telegram_channel_id: str | None = None
+    admin_telegram_id: str | None = None
 
 
 class SmmClipJobCreate(BaseModel):
@@ -34,6 +38,7 @@ class SmmClipJobCreate(BaseModel):
     duration_sec: float = 45.0
     clip_path: str | None = None
     caption: str | None = None
+    generate: bool = False
 
 
 class SmmApproveRequest(BaseModel):
@@ -95,6 +100,81 @@ async def list_smm_jobs(
     return (await db.execute(stmt)).scalars().all()
 
 
+@router.get("/progress")
+async def get_smm_progress(db: AsyncSession = Depends(get_db_session), _admin: dict = Depends(get_current_admin)):
+    """Return live Cycle 1 (Autopilot ingest) and Cycle 2 (SMM clip) progress snapshot."""
+    ingest_counts = dict(
+        (
+            await db.execute(
+                select(IngestItemModel.status, func.count()).group_by(IngestItemModel.status)
+            )
+        ).all()
+    )
+    active_ingest = (
+        await db.execute(
+            select(IngestItemModel)
+            .where(IngestItemModel.status == "in_progress")
+            .order_by(IngestItemModel.updated_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+    job_counts = dict(
+        (
+            await db.execute(
+                select(SmmClipJobModel.status, func.count()).group_by(SmmClipJobModel.status)
+            )
+        ).all()
+    )
+    active_jobs = (
+        await db.execute(
+            select(SmmClipJobModel)
+            .where(SmmClipJobModel.status.in_(("generating", "publishing")))
+            .order_by(SmmClipJobModel.id.asc())
+            .limit(10)
+        )
+    ).scalars().all()
+
+    return {
+        "cycle1": {
+            "in_progress": int(ingest_counts.get("in_progress", 0) or 0),
+            "queued": int(ingest_counts.get("queued", 0) or 0),
+            "published": int(ingest_counts.get("published", 0) or 0),
+            "needs_review": int(ingest_counts.get("needs_review", 0) or 0),
+            "current_item": (
+                {
+                    "id": active_ingest.id,
+                    "title": active_ingest.title,
+                    "source": active_ingest.source,
+                    "media_type": active_ingest.media_type,
+                }
+                if active_ingest
+                else None
+            ),
+        },
+        "cycle2": {
+            "generating": int(job_counts.get("generating", 0) or 0),
+            "waiting_approval": int(job_counts.get("waiting_approval", 0) or 0),
+            "scheduled": int(job_counts.get("scheduled", 0) or 0),
+            "publishing": int(job_counts.get("publishing", 0) or 0),
+            "completed": int(job_counts.get("completed", 0) or 0),
+            "failed": int(job_counts.get("failed", 0) or 0),
+            "active_jobs": [
+                {
+                    "id": j.id,
+                    "media_type": j.media_type,
+                    "movie_code": j.movie_code,
+                    "title": j.title,
+                    "status": j.status,
+                    "progress_pct": int(getattr(j, "progress_pct", 0) or 0),
+                    "progress_stage": getattr(j, "progress_stage", None) or "",
+                }
+                for j in active_jobs
+            ],
+        },
+    }
+
+
 @router.post("/jobs", status_code=status.HTTP_201_CREATED)
 async def create_smm_job(
     payload: SmmClipJobCreate,
@@ -102,13 +182,52 @@ async def create_smm_job(
     _admin: dict = Depends(get_current_admin),
 ):
     cfg = await _get_or_create_settings(db)
-    initial_status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
+    if payload.generate:
+        initial_status = "generating"
+        stage = "Navbatda (klipp kutilmoqda)"
+    else:
+        initial_status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
+        stage = None
     platforms = {p: {"enabled": True, "status": "pending", "post_id": None, "error": None} for p in cfg.enabled_platforms}
-    job = SmmClipJobModel(**payload.model_dump(), status=initial_status, platforms_status=platforms)
+    job = SmmClipJobModel(
+        **payload.model_dump(exclude={"generate"}),
+        status=initial_status,
+        progress_pct=0,
+        progress_stage=stage,
+        platforms_status=platforms,
+    )
     db.add(job)
     await db.flush()
     await db.refresh(job)
     return job
+
+
+async def _apply_approve(db: AsyncSession, job: SmmClipJobModel, req: SmmApproveRequest) -> SmmClipJobModel:
+    if req.caption is not None:
+        job.caption = req.caption
+    if req.scheduled_at is not None:
+        job.scheduled_at = req.scheduled_at
+    job.status = "publishing" if req.publish_now else "scheduled"
+    job.progress_pct = 100
+    job.progress_stage = "Kanalga yuborilmoqda" if req.publish_now else "Nashr navbatida"
+    await db.flush()
+    await db.refresh(job)
+    return job
+
+
+async def _apply_reject(db: AsyncSession, job: SmmClipJobModel) -> SmmClipJobModel:
+    job.status = "rejected"
+    job.progress_stage = "Rad etilgan"
+    await db.flush()
+    await db.refresh(job)
+    return job
+
+
+def _verify_bot_secret(x_bot_secret: str | None = Header(default=None, alias="X-Bot-Secret")) -> None:
+    if not x_bot_secret or not settings.BOT_API_SECRET or not hmac.compare_digest(
+        x_bot_secret.encode(), settings.BOT_API_SECRET.encode()
+    ):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Noto'g'ri bot kaliti")
 
 
 @router.post("/jobs/{job_id}/approve")
@@ -119,15 +238,7 @@ async def approve_smm_job(
     _admin: dict = Depends(get_current_admin),
 ):
     job = await _get_job_or_404(db, job_id)
-    req = payload or SmmApproveRequest()
-    if req.caption is not None:
-        job.caption = req.caption
-    if req.scheduled_at is not None:
-        job.scheduled_at = req.scheduled_at
-    job.status = "publishing" if req.publish_now else "scheduled"
-    await db.flush()
-    await db.refresh(job)
-    return job
+    return await _apply_approve(db, job, payload or SmmApproveRequest())
 
 
 @router.post("/jobs/{job_id}/recut")
@@ -141,6 +252,8 @@ async def recut_smm_job(
     job.start_sec = payload.start_sec
     job.duration_sec = payload.duration_sec
     job.status = "generating"
+    job.progress_pct = 0
+    job.progress_stage = "Qayta kesish kutilmoqda"
     await db.flush()
     await db.refresh(job)
     return job
@@ -153,7 +266,25 @@ async def reject_smm_job(
     _admin: dict = Depends(get_current_admin),
 ):
     job = await _get_job_or_404(db, job_id)
-    job.status = "rejected"
-    await db.flush()
-    await db.refresh(job)
-    return job
+    return await _apply_reject(db, job)
+
+
+@router.post("/bot/jobs/{job_id}/approve")
+async def bot_approve_smm_job(
+    job_id: int,
+    payload: SmmApproveRequest | None = None,
+    db: AsyncSession = Depends(get_db_session),
+    _: None = Depends(_verify_bot_secret),
+):
+    job = await _get_job_or_404(db, job_id)
+    return await _apply_approve(db, job, payload or SmmApproveRequest())
+
+
+@router.post("/bot/jobs/{job_id}/reject")
+async def bot_reject_smm_job(
+    job_id: int,
+    db: AsyncSession = Depends(get_db_session),
+    _: None = Depends(_verify_bot_secret),
+):
+    job = await _get_job_or_404(db, job_id)
+    return await _apply_reject(db, job)

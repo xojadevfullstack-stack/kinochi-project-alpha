@@ -21,6 +21,7 @@ class SmmSettingsModel(Base):
     copyright_shield: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     bot_username: Mapped[str] = mapped_column(String(100), default="@MediaPlusOfficialBot", server_default="@MediaPlusOfficialBot", nullable=False)
     telegram_channel_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    admin_telegram_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
@@ -40,6 +41,8 @@ class SmmClipJobModel(Base):
     clip_storage_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="waiting_approval", server_default="waiting_approval", nullable=False, index=True)
+    progress_pct: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    progress_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     platforms_status: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

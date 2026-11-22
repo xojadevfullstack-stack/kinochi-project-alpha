@@ -66,3 +66,60 @@ def test_smm_jobs_lifecycle_approve_recut_and_reject(admin_client):
     lst = admin_client.get("/api/v1/smm/jobs")
     assert lst.status_code == 200
     assert len(lst.json()) >= 2
+
+
+def test_smm_settings_admin_telegram_id_and_progress_endpoint(admin_client):
+    u = admin_client.put("/api/v1/smm/settings", json={"admin_telegram_id": "123456789"})
+    assert u.status_code == 200
+    assert u.json()["admin_telegram_id"] == "123456789"
+
+    gen = admin_client.post(
+        "/api/v1/smm/jobs",
+        json={"media_type": "movie", "movie_code": "3957", "title": "Progress Test", "generate": True},
+    )
+    assert gen.status_code == 201
+    assert gen.json()["status"] == "generating"
+    assert gen.json()["progress_pct"] == 0
+
+    prog = admin_client.get("/api/v1/smm/progress")
+    assert prog.status_code == 200
+    pdata = prog.json()
+    assert "cycle1" in pdata and "cycle2" in pdata
+    assert pdata["cycle2"]["generating"] >= 1
+    assert any(j["title"] == "Progress Test" for j in pdata["cycle2"]["active_jobs"])
+
+
+def test_smm_bot_secret_allows_approve_and_reject_from_telegram(client, monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "BOT_API_SECRET", "bot_secret_xyz")
+    app.dependency_overrides[get_current_admin] = lambda: {"id": 1, "username": "xojadevops", "role": "superadmin"}
+    try:
+        c = client.post(
+            "/api/v1/smm/jobs",
+            json={"media_type": "movie", "movie_code": "3958", "title": "Bot Inline Test"},
+        )
+        jid = c.json()["id"]
+    finally:
+        app.dependency_overrides.pop(get_current_admin, None)
+
+    # Unauthenticated without bot secret must be rejected
+    no_auth = client.post(f"/api/v1/smm/bot/jobs/{jid}/approve", json={"publish_now": True})
+    assert no_auth.status_code in (401, 403)
+
+    # Valid X-Bot-Secret approves -> publishing
+    ok_pub = client.post(
+        f"/api/v1/smm/bot/jobs/{jid}/approve",
+        json={"publish_now": True},
+        headers={"X-Bot-Secret": "bot_secret_xyz"},
+    )
+    assert ok_pub.status_code == 200
+    assert ok_pub.json()["status"] == "publishing"
+
+    # Valid X-Bot-Secret rejects
+    ok_rej = client.post(
+        f"/api/v1/smm/bot/jobs/{jid}/reject",
+        headers={"X-Bot-Secret": "bot_secret_xyz"},
+    )
+    assert ok_rej.status_code == 200
+    assert ok_rej.json()["status"] == "rejected"
