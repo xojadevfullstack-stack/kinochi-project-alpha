@@ -124,6 +124,9 @@ async def test_youtube_shorts_publisher_refreshes_token_and_uploads(tmp_path):
     assert res.platform == "youtube"
     assert res.post_id == "yt_short_abc"
     assert res.post_url == "https://youtube.com/shorts/yt_short_abc"
+    init_meta = client.post.call_args_list[1].kwargs["json"]["snippet"]
+    assert "@MediaPlusOfficialBot" in init_meta["title"]
+    assert "https://t.me/MediaPlusOfficialBot?start=889" in init_meta["description"]
 
 
 @pytest.mark.asyncio

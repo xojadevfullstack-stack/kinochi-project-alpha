@@ -19,7 +19,7 @@ class SmmSettingsModel(Base):
     enabled_platforms: Mapped[list] = mapped_column(JSON, default=lambda: ["telegram", "instagram", "facebook", "youtube", "tiktok"], nullable=False)
     auto_pick_from_catalog: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
     copyright_shield: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
-    bot_username: Mapped[str] = mapped_column(String(100), default="@kinochi_mvp_bot", server_default="@kinochi_mvp_bot", nullable=False)
+    bot_username: Mapped[str] = mapped_column(String(100), default="@MediaPlusOfficialBot", server_default="@MediaPlusOfficialBot", nullable=False)
     telegram_channel_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

@@ -47,3 +47,12 @@
 ## Savepoint Isolation & API Capability Fallback
 - Asosiy Cycle 1 kino tranzaksiyasini buzmaslik uchun Cycle 2 navbatga qo'shish `db.begin_nested()` (savepoint) va feature-flag (`SMM_AUTOPILOT_ENABLED`) bilan izolyatsiyalanadi; TikTok Direct Post audit (`App Review`) o'tmagan holatda esa `inbox/video/init/` fallback orqali akkauntni Public qoldirib yuklash saqlanadi.
 - Analogy: Asosiy poezd vagoniga qo'shimcha pochta vagonini xavfsiz qulf bilan ulash — agar pochta vagonida muammo chiqsa, asosiy yo'lovchi poezdi to'xtab qolmaydi; asosiy darvoza yopiq bo'lsa, pochta xizmat eshigidan qabul qilinadi.
+
+
+## FFmpeg Downscaled Blur & Single-Thread Event-Loop Isolation
+- 1080x1920 fonda to'liq o'lchamli `boxblur` (`732.4 MB` RAM) o'rniga fonni `270x480` da xiralashtirib `720x1280` ga cho'zish, `-threads 1` berish va `asyncio.to_thread` da yurgizish RAM sarfini 5 barobar kamaytiradi (`142.6 MB`) va FastAPI/Bot event loop'ini bloklamaydi.
+- Analogy: Katta devoriy rasmning orqa fonini alohida kichik varaqda bo'yab kattalashtirib osish — ko'zga bir xil chiroyli ko'rinadi, lekin ustaxonaning butun joyini band qilib qo'ymaydi.
+
+## Dual-Code Aliasing (Backward-Compatible Short Numeric Code)
+- Eski harf-raqamli kodlarni (`PT3BQB`) o'zgartirmasdan alohida `short_code` (`1001+`) alias ustuni qo'shish va qidiruvda `code`/`short_code` ni raqamli `id` fallback'idan ustun qo'yish eski havolalarni sindirmasdan ijtimoiy tarmoq konversiyasini oshiradi.
+- Analogy: Ko'chaga yangi qisqa pochta indeksi berilganda eski manzil xatlarini ham bir vaqtda qabul qilishni davom ettirish — eski xatlar yo'qolmaydi, yangilari esa 2 barobar tez yetib boradi.

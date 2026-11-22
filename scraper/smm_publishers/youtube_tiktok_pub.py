@@ -38,8 +38,12 @@ class YouTubeShortsPublisher(BaseSocialPublisher):
                 if t_resp.status_code != 200:
                     return PublishResult(self.platform, False, error=f"YouTube token HTTP {t_resp.status_code}")
                 tok = t_resp.json()["access_token"]
+                raw_bot = (kwargs.get("bot_username") or "@MediaPlusOfficialBot").strip()
+                bot_handle = raw_bot if raw_bot.startswith("@") else f"@{raw_bot}"
+                deep_link = f"https://t.me/{bot_handle.lstrip('@')}?start={movie_code}"
+                yt_desc = caption if deep_link in (caption or "") else f"{caption}\n\n🎬 Kinoni ko'rish: {deep_link}".strip()
                 meta = {
-                    "snippet": {"title": f"Kino kodi #{movie_code} | @kinochi_mvp_bot #Shorts", "description": caption, "categoryId": "24"},
+                    "snippet": {"title": f"Kino kodi #{movie_code} | {bot_handle} #Shorts", "description": yt_desc, "categoryId": "24"},
                     "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False},
                 }
                 i_resp = await client.post(

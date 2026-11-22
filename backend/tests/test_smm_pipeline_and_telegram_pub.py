@@ -13,7 +13,7 @@ from scraper.smm_publishers.telegram_pub import (
 def test_build_movie_caption_hides_title_and_includes_code_and_bot():
     caption = build_movie_caption(movie_code="5064", imdb_rating=8.4, genres="Fantastika, Jangari")
     assert "#5064" in caption or "5064" in caption
-    assert "@kinochi_mvp_bot" in caption
+    assert "@MediaPlusOfficialBot" in caption
     assert "8.4" in caption
     assert "#kino" in caption
 

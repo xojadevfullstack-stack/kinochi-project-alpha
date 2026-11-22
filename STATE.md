@@ -1,17 +1,17 @@
 # Project State (STATE.md)
 
 ## Current goal
-Foydalanuvchi tomonidan yuborilgan barcha vizual va funksional kamchiliklarni (Light mode da Hero/Stage bannerlari fon rasmlarini tiklash, 0-root sahifadan tashqari barcha sahifalarda Dual Back tugmalarini ta'minlash, Hero karusel Next/Prev tugmalari kontrasti, Bo'lim/Katalog tablarining faol holati, Subheader va Breadcrumbs qatlamlarini fon bilan bir xil shaffof qilish, Footer Telegram/Kanal tugmalari va Serial qismlari kontrasti) to'liq bartaraf etish va Preview Hub bilan sinxronlashtirish.
+Render Free Tier (`512 MB RAM`, `0.1 CPU`) uchun xavfsiz `SMM-S5-RenderSafe` (`720x1280` `low_ram=True`, `asyncio.to_thread`, `supervised_run_smm_worker`) hamda alohida 2-Telegram sessiya generatorini (`scripts/smm_telegram_login.py`) `feat/smm-autopilot` va `main` ga chiqarib deploy qilish.
 
 ## In progress (slice, branch)
-- Slice: SMM-ShortCode-UX (Slices 1–4): `movies.short_code` (`1001+` raqamli alias + `d4e5f6a7b8c9` Alembic migratsiyasi + `MovieRepositoryImpl.get_by_code` va `/search/live` ustuvorligi), SMM klipp/caption/Telegram/YouTube da `short_code` va `@MediaPlusOfficialBot` sinxronizatsiyasi, Telegram botda `short_code` ko'rsatish + topilmaganda qidiruv/katalog tugmalari, hamda saytda Instagram/TikTok Bio uchun `/go` tezkor kod sahifasi amalga oshirildi.
-- Branch: `feat/smm-autopilot`.
+- Slice: `SMM-S5-RenderSafe` (`run.py`, `scraper/smm_clipper.py`, `scraper/smm_pipeline.py`, `scraper/smm_scene_scorer.py`, `scraper/smm_worker.py`, `scripts/smm_telegram_login.py`, `@MediaPlusOfficialBot` publisher sinxronizatsiyasi).
+- Branch: `feat/smm-autopilot` -> `main`.
 
 ## Blocked
-- Render'da `SMM_TELEGRAM_STRING_SESSION` (2-chi Telegram akkaunt Storage kanaliga qo'shilgan holda) kiritilishi kutilmoqda.
+- Yo'q (Render Environment'ga `SMM_TELEGRAM_STRING_SESSION`, `SMM_LOW_RAM=true`, `SMM_AUTOPILOT_ENABLED=true`, `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` foydalanuvchi tomonidan kiritilgan / tekshirilmoqda).
 
 ## Next step (one task)
-- Foydalanuvchi tekshiruvidan so'ng `d4e5f6a7b8c9` migratsiyasini qo'llash va `feat/smm-autopilot` ni `main` ga push qilish.
+- Render deploy logs orqali `supervised_run_smm_worker` va `/health` holatini jonli tasdiqlash.
 
 ## Last verification & check results (Terminal Evidence)
 - **Alembic Heads (`backend`):** `d4e5f6a7b8c9 (head)` (linear).

@@ -14,10 +14,10 @@ def build_movie_caption(
     movie_code: str,
     imdb_rating: Optional[float] = None,
     genres: Optional[str] = None,
-    bot_username: str = "@kinochi_mvp_bot",
+    bot_username: str = "@MediaPlusOfficialBot",
 ) -> str:
     """Build mystery Uzbek SMM caption without revealing the movie title."""
-    raw_bot = (bot_username or "@kinochi_mvp_bot").strip()
+    raw_bot = (bot_username or "@MediaPlusOfficialBot").strip()
     clean_bot = raw_bot if raw_bot.startswith("@") else f"@{raw_bot}"
     lines = ["🎬 Bu qaysi kino ekanini topdingizmi?"]
     if imdb_rating:
@@ -39,7 +39,7 @@ class TelegramChannelPublisher(BaseSocialPublisher):
         self,
         bot_token: Optional[str] = None,
         channel_id: Optional[str | int] = None,
-        bot_username: str = "@kinochi_mvp_bot",
+        bot_username: str = "@MediaPlusOfficialBot",
     ):
         self.bot_token = (bot_token if bot_token is not None else os.getenv("BOT_TOKEN", "")).strip()
         raw_cid = channel_id if channel_id is not None else os.getenv("SMM_TELEGRAM_CHANNEL_ID", "")
