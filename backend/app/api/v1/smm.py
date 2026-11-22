@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -109,6 +109,42 @@ async def list_smm_jobs(
     return (await db.execute(stmt)).scalars().all()
 
 
+def _get_worker_state_safe() -> dict:
+    try:
+        from scraper.smm_worker import get_smm_worker_state
+        return get_smm_worker_state()
+    except Exception:
+        return {
+            "enabled": os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
+            "running": False,
+            "has_smm_session": bool(os.getenv("SMM_TELEGRAM_STRING_SESSION", "").strip()),
+            "last_error": None,
+        }
+
+
+async def _bg_publish_job(job_id: int) -> None:
+    """Run immediate non-blocking clip restore + multi-platform publish after HTTP response."""
+    if os.getenv("APP_ENV") == "testing":
+        return
+    try:
+        from app.infrastructure.db.session import async_session_factory
+        from scraper.smm_worker import process_publish_job
+
+        async with async_session_factory() as db:
+            cfg = await _get_or_create_settings(db)
+            job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.id == job_id))).scalar_one_or_none()
+            if not job:
+                return
+            target = (job.clip_path or f"uploads/smm/clip_{job.id}.mp4").strip()
+            if not os.path.exists(target) and getattr(job, "clip_storage_message_id", None):
+                await _restore_clip_from_telegram(target, int(job.clip_storage_message_id))
+            base_url = os.getenv("PUBLIC_API_BASE_URL", "https://kinochi-project-alpha-9g6j.onrender.com").strip()
+            await process_publish_job(db, job, cfg, base_public_url=base_url)
+            await db.commit()
+    except Exception as exc:
+        logger.warning("Background immediate publish failed for job #%s: %s", job_id, exc)
+
+
 @router.get("/progress")
 async def get_smm_progress(db: AsyncSession = Depends(get_db_session), _admin: dict = Depends(get_current_admin)):
     """Return live Cycle 1 (Autopilot ingest) and Cycle 2 (SMM clip) progress snapshot."""
@@ -181,6 +217,7 @@ async def get_smm_progress(db: AsyncSession = Depends(get_db_session), _admin: d
                 for j in active_jobs
             ],
         },
+        "worker": _get_worker_state_safe(),
     }
 
 
@@ -242,12 +279,18 @@ def _verify_bot_secret(x_bot_secret: str | None = Header(default=None, alias="X-
 @router.post("/jobs/{job_id}/approve")
 async def approve_smm_job(
     job_id: int,
+    background_tasks: BackgroundTasks,
     payload: SmmApproveRequest | None = None,
     db: AsyncSession = Depends(get_db_session),
     _admin: dict = Depends(get_current_admin),
 ):
+    req = payload or SmmApproveRequest()
     job = await _get_job_or_404(db, job_id)
-    return await _apply_approve(db, job, payload or SmmApproveRequest())
+    updated = await _apply_approve(db, job, req)
+    if req.publish_now:
+        await db.commit()
+        background_tasks.add_task(_bg_publish_job, updated.id)
+    return updated
 
 
 @router.post("/jobs/{job_id}/recut")
@@ -299,6 +342,7 @@ async def _verify_bot_admin_user(db: AsyncSession, telegram_user_id: int | None)
 @router.post("/bot/jobs/{job_id}/approve")
 async def bot_approve_smm_job(
     job_id: int,
+    background_tasks: BackgroundTasks,
     payload: SmmApproveRequest | None = None,
     db: AsyncSession = Depends(get_db_session),
     _: None = Depends(_verify_bot_secret),
@@ -306,7 +350,11 @@ async def bot_approve_smm_job(
     req = payload or SmmApproveRequest()
     await _verify_bot_admin_user(db, req.telegram_user_id)
     job = await _get_job_or_404(db, job_id)
-    return await _apply_approve(db, job, req)
+    updated = await _apply_approve(db, job, req)
+    if req.publish_now:
+        await db.commit()
+        background_tasks.add_task(_bg_publish_job, updated.id)
+    return updated
 
 
 @router.post("/bot/jobs/{job_id}/reject")

@@ -50,6 +50,33 @@ def test_instagram_reels_publisher_falls_back_to_facebook_access_token(monkeypat
 
 
 @pytest.mark.asyncio
+async def test_tiktok_publisher_retries_transient_connect_error_on_upload(tmp_path, monkeypatch):
+    import asyncio
+    import httpx
+
+    vid = tmp_path / "tk_clip.mp4"
+    vid.write_bytes(b"tk-mp4-bytes")
+    monkeypatch.setattr(asyncio, "sleep", AsyncMock())
+
+    r_init = MagicMock(status_code=200)
+    r_init.json.return_value = {"data": {"publish_id": "pub_123", "upload_url": "https://upload.tiktok.example/1"}}
+    r_up_ok = MagicMock(status_code=201)
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(return_value=r_init)
+    client.put = AsyncMock(side_effect=[httpx.ConnectError("transient"), r_up_ok])
+
+    pub = TikTokPublisher(access_token="tk_tok")
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #3955", movie_code="3955")
+
+    assert res.success is True
+    assert res.post_id == "pub_123"
+    assert client.put.await_count == 2
+
+
+@pytest.mark.asyncio
 async def test_instagram_reels_publisher_resumable_upload_from_local_file(tmp_path):
     vid = tmp_path / "clip.mp4"
     vid.write_bytes(b"ig-mp4-bytes")

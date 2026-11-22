@@ -387,3 +387,46 @@ async def test_process_publish_job_uses_api_video_url_and_restores_missing_file(
     assert res.status == "completed"
     assert mock_disp.publish_all.await_args.kwargs["video_url"] == f"https://api.example.com/api/v1/smm/jobs/{job.id}/video"
     tg_client.download_media.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_publish_job_skips_already_published_platforms(db_session, tmp_path):
+    movie = MovieModel(title="Retry Failed Only", code="RTF1", short_code="3964", imdb_rating=8.1)
+    db_session.add(movie)
+    await db_session.flush()
+    cfg = SmmSettingsModel(
+        id=1,
+        mode="SEMI_AUTO",
+        enabled_platforms=["telegram", "youtube", "tiktok"],
+        telegram_channel_id="-100123",
+    )
+    cfg = await db_session.merge(cfg)
+
+    vid = tmp_path / "clip_retry.mp4"
+    vid.write_bytes(b"mp4")
+    job = SmmClipJobModel(
+        media_type="movie",
+        media_id=movie.id,
+        movie_code="RTF1",
+        title="Retry Failed Only",
+        clip_path=str(vid),
+        caption="Test",
+        status="publishing",
+        platforms_status={
+            "telegram": {"enabled": True, "status": "published", "post_id": "3", "error": None},
+            "youtube": {"enabled": True, "status": "published", "post_id": "yt_1", "error": None},
+            "tiktok": {"enabled": True, "status": "failed", "post_id": None, "error": "ConnectError"},
+        },
+    )
+    db_session.add(job)
+    await db_session.commit()
+
+    mock_disp = MagicMock()
+    mock_disp.publish_all = AsyncMock(return_value={"tiktok": PublishResult("tiktok", True, post_id="tk_99")})
+    res = await process_publish_job(db_session, job, cfg, dispatcher=mock_disp)
+
+    assert list(mock_disp.publish_all.await_args.kwargs["platforms"]) == ["tiktok"]
+    assert res.status == "completed"
+    assert res.platforms_status["telegram"]["post_id"] == "3"
+    assert res.platforms_status["youtube"]["post_id"] == "yt_1"
+    assert res.platforms_status["tiktok"]["post_id"] == "tk_99"

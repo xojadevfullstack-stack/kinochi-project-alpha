@@ -1,6 +1,7 @@
 """YouTube Shorts (Data API v3) and TikTok (Content Posting API v2) publishers."""
 from __future__ import annotations
 
+import asyncio
 import os
 from typing import Optional
 
@@ -135,12 +136,21 @@ class TikTokPublisher(BaseSocialPublisher):
                     return PublishResult(self.platform, False, error=f"TikTok init HTTP {i_resp.status_code}: {i_resp.text[:160]}")
                 data = i_resp.json().get("data", {})
                 pub_id, up_url = data.get("publish_id"), data.get("upload_url")
-                u_resp = await client.put(
-                    up_url,
-                    headers={"Content-Type": "video/mp4", "Content-Range": f"bytes 0-{size - 1}/{size}"},
-                    content=raw,
-                )
-            if u_resp.status_code not in (200, 201, 204):
+                u_resp = None
+                for attempt in range(2):
+                    try:
+                        u_resp = await client.put(
+                            up_url,
+                            headers={"Content-Type": "video/mp4", "Content-Range": f"bytes 0-{size - 1}/{size}"},
+                            content=raw,
+                        )
+                        break
+                    except httpx.TransportError:
+                        if attempt == 0:
+                            await asyncio.sleep(1.5)
+                            continue
+                        raise
+            if u_resp is None or u_resp.status_code not in (200, 201, 204):
                 return PublishResult(self.platform, False, error=f"TikTok upload HTTP {u_resp.status_code}")
             return PublishResult(self.platform, True, post_id=str(pub_id or ""))
         except Exception as exc:

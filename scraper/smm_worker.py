@@ -25,6 +25,25 @@ from scraper.smm_publishers.telegram_pub import (
 
 logger = logging.getLogger(__name__)
 
+_WORKER_STATE: dict[str, Any] = {
+    "running": False,
+    "started_at": None,
+    "last_tick_at": None,
+    "last_error": None,
+    "last_result": None,
+}
+
+
+def get_smm_worker_state() -> dict[str, Any]:
+    """Return non-secret SMM background worker runtime state for /smm/progress diagnostics."""
+    return {
+        "enabled": os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
+        "has_smm_session": bool(resolve_smm_session_string()),
+        "has_api_id": os.getenv("TELEGRAM_API_ID", "").strip().isdigit(),
+        "has_storage_id": bool(os.getenv("STORAGE_CHANNEL_ID", "").strip()),
+        **dict(_WORKER_STATE),
+    }
+
 
 def is_schedule_due(
     schedule_hours: List[str],
@@ -297,19 +316,25 @@ async def process_publish_job(
             )
 
     video_url = f"{base_public_url.rstrip('/')}/api/v1/smm/jobs/{job.id}/video" if base_public_url and job.id else ""
-    results = await dispatcher.publish_all(
-        video_path=target_path, caption=job.caption or "",
-        movie_code=display_code, platforms=cfg.enabled_platforms, video_url=video_url,
-        bot_username=bot_handle,
-    )
     status_map = dict(job.platforms_status or {})
-    any_ok = False
-    for plat, res in results.items():
-        any_ok = any_ok or res.success
-        status_map[plat] = {"enabled": True, "status": "published" if res.success else "failed", "post_id": res.post_id, "error": res.error}
+    pending_platforms = [
+        p for p in (cfg.enabled_platforms or [])
+        if status_map.get(p, {}).get("status") != "published"
+    ]
+    if pending_platforms:
+        results = await dispatcher.publish_all(
+            video_path=target_path, caption=job.caption or "",
+            movie_code=display_code, platforms=pending_platforms, video_url=video_url,
+            bot_username=bot_handle,
+        )
+        for plat, res in results.items():
+            status_map[plat] = {"enabled": True, "status": "published" if res.success else "failed", "post_id": res.post_id, "error": res.error}
 
+    any_ok = any(st.get("status") == "published" for st in status_map.values() if isinstance(st, dict))
     job.platforms_status = status_map
     job.status = "completed" if any_ok else "failed"
+    job.progress_pct = 100
+    job.progress_stage = "Nashr qilindi" if any_ok else "Nashrda xatolik"
     await db.flush()
     await db.refresh(job)
     return job
@@ -399,6 +424,8 @@ async def supervised_run_smm_worker() -> None:
     interval = max(30, int(os.getenv("SMM_WORKER_INTERVAL_SEC", "180")))
     tg_client = None
     session_disabled = False
+    _WORKER_STATE["running"] = True
+    _WORKER_STATE["started_at"] = datetime.now(timezone.utc).isoformat()
     logger.info(
         "SMM worker started: enabled=%s has_smm_session=%s has_api_id=%s has_storage_id=%s interval=%ss",
         os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
@@ -410,6 +437,7 @@ async def supervised_run_smm_worker() -> None:
 
     while True:
         try:
+            _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
             enabled = os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
             if enabled:
                 sess = "" if session_disabled else resolve_smm_session_string()
@@ -429,11 +457,15 @@ async def supervised_run_smm_worker() -> None:
                         tg_client = None
                         if "AuthKeyDuplicated" in type(tg_exc).__name__ or "AuthKeyDuplicated" in str(tg_exc):
                             session_disabled = True
+                        _WORKER_STATE["last_error"] = f"Telethon connect: {tg_exc}"
                         logger.warning("SMM Telethon connect error (publish still active): %s", tg_exc)
                 res = await run_smm_worker_cycle(tg_client=tg_client)
+                _WORKER_STATE["last_result"] = res
+                _WORKER_STATE["last_error"] = None
                 if res.get("generated") or res.get("published"):
                     logger.info("SMM worker cycle: %s", res)
         except (KeyboardInterrupt, asyncio.CancelledError):
+            _WORKER_STATE["running"] = False
             if tg_client:
                 try:
                     await tg_client.disconnect()
@@ -444,5 +476,6 @@ async def supervised_run_smm_worker() -> None:
             if "AuthKeyDuplicated" in type(exc).__name__ or "AuthKeyDuplicated" in str(exc):
                 session_disabled = True
                 tg_client = None
+            _WORKER_STATE["last_error"] = str(exc)
             logger.warning("SMM worker tick error (API/Bot isolated): %s", exc)
         await asyncio.sleep(interval)

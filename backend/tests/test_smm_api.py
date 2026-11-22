@@ -87,6 +87,7 @@ def test_smm_settings_admin_telegram_id_and_progress_endpoint(admin_client):
     assert "cycle1" in pdata and "cycle2" in pdata
     assert pdata["cycle2"]["generating"] >= 1
     assert any(j["title"] == "Progress Test" for j in pdata["cycle2"]["active_jobs"])
+    assert "worker" in pdata and "enabled" in pdata["worker"]
 
 
 def test_smm_bot_secret_allows_approve_and_reject_from_telegram(client, monkeypatch):
