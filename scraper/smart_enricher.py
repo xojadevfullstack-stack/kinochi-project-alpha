@@ -5,6 +5,7 @@ import json
 import logging
 from typing import Optional, Dict, Any, List
 import httpx
+import asyncio
 from dotenv import load_dotenv
 
 BASE_DIR = os.path.abspath(".")
@@ -32,6 +33,9 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "naruto 2-fasl": {"en": "Naruto Shippuden", "orig": "Naruto: Shippuuden", "ru": "Наруто: Ураганные хроники", "uz": "Naruto: Shippuden", "tmdb_id": 31910, "type": "tv"},
     "naruto 2 fasl": {"en": "Naruto Shippuden", "orig": "Naruto: Shippuuden", "ru": "Наруто: Ураганные хроники", "uz": "Naruto: Shippuden", "tmdb_id": 31910, "type": "tv"},
     "naruto": {"en": "Naruto", "orig": "Naruto", "ru": "Наруто", "uz": "Naruto", "tmdb_id": 46260, "type": "tv"},
+    "shilliq sifatida qayta tug'ilganim haqida": {"en": "That Time I Got Reincarnated as a Slime", "orig": "Tensei Shitara Slime Datta Ken", "ru": "О моём перерождении в слизь", "uz": "Shilliq sifatida qayta tug'ilganim haqida", "tmdb_id": 82684, "type": "tv"},
+    "shilliq sifatida qayta tugilganim haqida": {"en": "That Time I Got Reincarnated as a Slime", "orig": "Tensei Shitara Slime Datta Ken", "ru": "О моём перерождении в слизь", "uz": "Shilliq sifatida qayta tug'ilganim haqida", "tmdb_id": 82684, "type": "tv"},
+    "tensei shitara slime datta ken": {"en": "That Time I Got Reincarnated as a Slime", "orig": "Tensei Shitara Slime Datta Ken", "ru": "О моём перерождении в слизь", "uz": "Shilliq sifatida qayta tug'ilganim haqida", "tmdb_id": 82684, "type": "tv"},
     "world's end harem": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
     "shuumatsu no harem": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
     "dunyo oxiridagi haram": {"en": "World's End Harem", "orig": "Shuumatsu no Harem", "ru": "Гарем конца света", "uz": "Dunyo oxiridagi haram (World's End Harem)", "tmdb_id": 103409, "type": "tv"},
@@ -63,6 +67,11 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "solo leveling": {"en": "Solo Leveling", "orig": "Ore dake Level Up na Ken", "ru": "Поднятие уровня в одиночку", "uz": "Yakkaxon daraja oshirish (Solo Leveling)", "tmdb_id": 127532, "type": "tv"},
     "tungi boyqush kuyi": {"en": "Call of the Night", "orig": "Yofukashi no Uta", "ru": "Песнь ночных сов"},
     "jahannam jannati": {"en": "Hell's Paradise", "orig": "Jigokuraku", "ru": "Адский рай"},
+    "hyouka": {"en": "Hyouka", "orig": "Hyouka", "ru": "Хёка", "uz": "Hyouka", "tmdb_id": 46195, "shikimori_id": 12189, "type": "tv"},
+    "oltin rangdagi vermil": {"en": "Vermeil in Gold", "orig": "Kinsou no Vermeil", "ru": "Вермейл в золотом", "uz": "Oltin rangdagi vermil", "tmdb_id": 198945, "shikimori_id": 51213, "type": "tv"},
+    "sening isming": {"en": "Your Name.", "orig": "Kimi no Na wa.", "ru": "Твоё имя", "uz": "Sening isming", "tmdb_id": 372058, "shikimori_id": 32281, "type": "movie"},
+    "tekken: qonli yo'l": {"en": "Tekken: Bloodline", "orig": "Tekken: Bloodline", "ru": "Теккен: Линия крови", "uz": "Tekken: Qonli Yo'l", "tmdb_id": 204541, "shikimori_id": 51981, "type": "tv"},
+    "tekken": {"en": "Tekken: Bloodline", "orig": "Tekken: Bloodline", "ru": "Теккен: Линия крови", "uz": "Tekken: Qonli Yo'l", "tmdb_id": 204541, "shikimori_id": 51981, "type": "tv"},
     "mushuk niqobi": {"en": "A Whisker Away", "orig": "Nakitai Watashi wa Neko wo Kaburu", "ru": "Сквозь слёзы я притворяюсь кошкой"},
     "soyada kotarilish": {"en": "The Eminence in Shadow", "orig": "Kage no Jitsuryokusha ni Naritakute!", "ru": "Восхождение в тени!"},
     "yulduz farzandlari": {"en": "Oshi no Ko", "orig": "Oshi no Ko", "ru": "Звёздное дитя"},
@@ -143,6 +152,8 @@ ANIME_TITLE_MAP: Dict[str, Dict[str, str]] = {
     "aura: koga maryuining songi jangi": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
     "aura koga": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
     "aura: koga": {"en": "Aura: Koga Maryuin's Last War", "orig": "AURA ～魔竜院光牙最後の闘い～", "ru": "Аура: Последняя битва Светлокрылого воина", "uz": "Aura: Koga Maryuinning so'nggi jangi", "tmdb_id": 225086, "type": "movie"},
+    "ishlayotgan yovuz qirol": {"en": "The Demon King Who Lost His Job", "orig": "失业魔王", "ru": "Безработный владыка демонов", "uz": "Ishlayotgan yovuz qirol (The Demon King Who Lost His Job)", "tmdb_id": 283322, "type": "tv"},
+    "ishsiz qolgan iblis qiroli": {"en": "The Demon King Who Lost His Job", "orig": "失业魔王", "ru": "Безработный владыка демонов", "uz": "Ishlayotgan yovuz qirol (The Demon King Who Lost His Job)", "tmdb_id": 283322, "type": "tv"},
 }
 
 
@@ -163,33 +174,71 @@ async def get_all_categories_map() -> Dict[str, int]:
     return cat_map
 
 
+def pick_canonical_uzbek_title(
+    existing_title: Optional[str],
+    translated_title: Optional[str],
+    is_translated: bool,
+    tmdb_title: Optional[str] = None,
+    tmdb_original: Optional[str] = None,
+) -> str:
+    """Keep verified Uzbek localized title when TMDb translation falls back untranslated."""
+    cur = (existing_title or "").strip()
+    cand = (translated_title or "").strip()
+    if not cand or len(cand) <= 1:
+        return cur
+    if is_translated:
+        return cand
+    # Translation failed / returned raw fallback: preserve existing non-CJK/non-Cyrillic Uzbek title
+    has_non_latin = any(
+        ("\u0400" <= ch <= "\u04FF") or ("\u4E00" <= ch <= "\u9FFF")
+        for ch in cur
+    )
+    if cur and not has_non_latin and cand.lower() in {(tmdb_title or "").strip().lower(), (tmdb_original or "").strip().lower()}:
+        return cur
+    return cand
+
+
 async def gemini_identify_movie(
     raw_title: str,
     year_hint: Optional[int] = None,
     caption: Optional[str] = None,
-    media_type: Optional[str] = None
+    media_type: Optional[str] = None,
+    video_frames_b64: Optional[List[str]] = None,
+    video_filename: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Gemini AI orqali film/serialning original nomi, yili va to'liq detallarini aniqlaydi."""
+    """Gemini AI (va agar video kadrlari berilgan bo'lsa Gemini Vision) orqali
+    film/serialning HAQIQIY original nomi, yili va to'liq detallarini aniqlaydi."""
     api_key = (settings.GEMINI_API_KEY or "").strip()
     if not api_key:
         return None
 
     type_hint_str = "Bu ko'p qismli serial yoki dorama." if media_type == "series" else "Bu film yoki serial."
     default_type = "series" if media_type == "series" else "movie"
+    has_frames = bool(video_frames_b64 and len(video_frames_b64) > 0)
+    vision_rule = (
+        "0. ENG MUHIM QOIDA (VISION): Senga videoning o'zidan olingan haqiqiy kadrlar (rasmlar) va fayl nomi berilgan! "
+        "Agar matndagi sarlavha ('raw_title') noto'g'ri tarjima qilingan yoki boshqa kino/anime nomi bo'lsa ham, "
+        "SEN BIRINCHI NAVBATDA VIDEODAGI KADRLARGA VA FAYL NOMIGA QARAB haqiqiy kino/serial/animeni aniqla! "
+        "(Masalan: matnda 'Kamol topdim xudo' yozilgan bo'lsa-yu, kadrda va fayl nomida 'Noragami / Uysiz ma'bud' bo'lsa -> Noragami deb aniqla; "
+        "matnda 'Akame ga kir' yozilgan bo'lsa-yu, kadrda 'Demon Slayer: Kimetsu no Yaiba' bo'lsa -> Demon Slayer deb aniqla!)."
+        if has_frames else ""
+    )
 
     prompt = f"""
-Senga o'zbek tilidagi film yoki serial nomi va qo'shimcha ma'lumot (caption/tavsif) beriladi. {type_hint_str}
+Senga o'zbek tilidagi film yoki serial nomi, fayl nomi, qo'shimcha ma'lumot (caption/tavsif) {"va videoning ichidan olingan haqiqiy kadrlar (rasmlar)" if has_frames else ""} beriladi. {type_hint_str}
 QAT'IY QOIDALAR:
-1. Agar qo'shimcha matnda (caption) haqiqiy syujet/tavsif yozilgan bo'lsa, uni O'ZGARTIRMA! Filmni boshqa mashhur Gollivud kinosi (masalan: Bad Boys, Agent X, Under Paris) deb o'ylab xato qilib yuborma!
-2. Agar bu Anime yoki Yaponiya/Koreya animatsiyasi bo'lsa (yoki o'zbekcha tarjima qilingan bo'lsa, masalan: "Meni oyga olib ket" -> "Tonikaku Kawaii", "Iblislar qotili" -> "Kimetsu no Yaiba", "Qahramon x" -> "To Be Hero X"), "original_title" ga rasmiy yaponcha Romaji nomini, "search_title_en" ga rasmiy inglizcha nomini, "search_title_ru" ga ruscha nomini yoz. Janrlariga albatta "Anime" qo'sh.
+{vision_rule}
+1. Agar videodan olingan kadrlar berilgan bo'lsa, kadrlardagi qahramonlar, sahna yoki yozuvlardan foydalanib aynan qaysi film/serial/anime ekanini 100% aniq top!
+2. Agar bu Anime yoki Yaponiya/Koreya animatsiyasi bo'lsa (yoki o'zbekcha tarjima qilingan bo'lsa, masalan: "Meni oyga olib ket" -> "Tonikaku Kawaii", "Iblislar qotili" -> "Kimetsu no Yaiba", "Uysiz ma'bud" -> "Noragami"), "original_title" ga rasmiy yaponcha Romaji nomini, "search_title_en" ga rasmiy inglizcha nomini, "search_title_ru" ga ruscha nomini yoz. Janrlariga albatta "Anime" qo'sh.
 3. Agar davlat (masalan: Qozog'iston, Hindiston, Rossiya, O'zbekiston, Ispaniya) ko'rsatilgan bo'lsa, o'sha davlat kinosi deb tahlil qil.
-4. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil yoki o'zbekcha nomini qoldir.
+4. Agar filmning original xorijiy nomi 100% aniq bo'lmasa, taxminiy noto'g'ri nom to'qish o'rniga original_title ni null qil; LEKIN har doim (hatto noma'lum bo'lsa ham) o'zbekcha nomni inglizcha va ruscha tabiiy tarjima/transliteratsiya qilib "search_title_en" (masalan: "Ouk Strit ko'chasining oxiri" -> "The End of Oak Street") va "search_title_ru" (masalan: "Конец Оук-Стрит") maydonlarini TMDb qidiruvi uchun ALBATTA to'ldir!
 5. "description" maydoniga albatta berilgan filmning HAQIQIY syujetini o'zbek tilida to'liq va ravon yoz.
-6. Agar ushbu kino/serial/anime 18+ (kattalar uchun, erotik, hentay, ecchi, jinsiy aloqa, zo'ravonlik yoki kattalar mavzusidagi) kontent bo'lsa, "is_18_plus": true, aks holda false qilib qaytar.
-7. Mashhur brend, xalqaro franshiza va anime nomlarini (masalan: Bleach, Naruto, Death Note, One Piece, Matrix, Inception, Avatar va b.) hech qachon lug'aviy so'zma-so'z kulgili qilib tarjima qilma (masalan: "Bleach" ni "Oqartiruvchi" deb EMAS, "Bleach" deb qoldir). clean_uz_title sifatida o'zbek tomoshabiniga tanish brend nomini qoldir!
+6. Agar ushbu kino/serial/anime 18+ (faqat haqiqiy kattalar uchun, erotik, hentay, jinsiy aloqa) kontent bo'lsa, "is_18_plus": true, aks holda (oddiy jangari anime/shonen bo'lsa) false qilib qaytar.
+7. Mashhur brend, xalqaro franshiza va anime nomlarini (masalan: Bleach, Naruto, Death Note, One Piece, Dragon Ball, Re:Zero, Noragami, Demon Slayer, Akame ga Kill) hech qachon lug'aviy so'zma-so'z kulgili qilib tarjima qilma. clean_uz_title sifatida o'zbek tomoshabiniga tushunarli toza nom + brend nomini yoz!
 
-Film/Serial nomi: '{raw_title}'
-Yil taxmini: {year_hint or 'Noma\'lum'}
+Matndagi dastlabki nom: '{raw_title}'
+Video fayl nomi: '{video_filename or "Noma'lum"}'
+Yil taxmini: {year_hint or "Noma'lum"}
 Qo'shimcha matn/caption:
 {caption or 'Mavjud emas'}
 
@@ -213,23 +262,52 @@ Faqat va faqat quyidagi JSON formatida javob ber:
 }}
 ```
 """
+    parts: List[Dict[str, Any]] = [{"text": prompt}]
+    if has_frames:
+        for fb in (video_frames_b64 or [])[:3]:
+            if fb:
+                parts.append({"inline_data": {"mime_type": "image/jpeg", "data": fb}})
+
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.1}
+        "contents": [{"parts": parts}],
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 600,
+            "responseMimeType": "application/json",
+        },
     }
 
-    for model in GEMINI_MODELS:
+    models_to_try = [
+        "gemini-3.5-flash-lite",
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.1-flash-lite",
+    ]
+    for model in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.post(url, json=payload)
-                if resp.status_code == 200:
-                    text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    json_m = re.search(r"\{.*\}", text, re.DOTALL)
-                    if json_m:
-                        return json.loads(json_m.group(0))
-        except Exception as e:
-            logger.warning(f"Gemini {model} identify error: {e}")
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=25.0) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                        json_m = re.search(r"\{.*\}", text, re.DOTALL)
+                        if json_m:
+                            return json.loads(json_m.group(0))
+                    elif resp.status_code in (429, 500, 502, 503, 504):
+                        wait_time = (attempt + 1) * 2
+                        logger.info(
+                            f"Gemini {model} identify hit {resp.status_code}, waiting {wait_time}s..."
+                        )
+                        await asyncio.sleep(wait_time)
+                        continue
+                    else:
+                        logger.warning(f"Gemini {model} identify status {resp.status_code}")
+                        break
+            except Exception as e:
+                logger.warning(f"Gemini {model} identify error: {e}")
+                await asyncio.sleep(2.0)
 
     return None
 
@@ -414,7 +492,9 @@ def score_tmdb_candidate(
     target_year: Optional[int] = None,
     expected_original_title: Optional[str] = None,
     media_type: Optional[str] = None,
-    source: Optional[str] = None
+    source: Optional[str] = None,
+    expected_en_title: Optional[str] = None,
+    expected_ru_title: Optional[str] = None,
 ) -> float:
     """
     TMDb nomzodini baholaydi (yuqori ball = aniq moslik).
@@ -424,64 +504,74 @@ def score_tmdb_candidate(
     cand_orig = candidate.get("original_title") or candidate.get("original_name") or ""
     cand_year = candidate.get("release_year") or candidate.get("year")
     poster_url = candidate.get("poster_url")
+    cand_ctype = str(candidate.get("content_type") or "").lower().strip()
 
-    # 1. Yil tekshiruvi: Agar target_year berilgan bo'lsa, oraliq 2 yildan oshmasligi shart (agar anime/original nom aniq ko'rsatilmagan bo'lsa)
+    # 0. Media turi mosligi: Agar serial/dorama/anime qidirilayotgan bo'lsa-yu, nomzod 'movie' bo'lsa — keskin jazo!
+    if media_type in ("series", "dorama", "anime") and cand_ctype == "movie":
+        return -150.0
+
+    # 1. Yil tekshiruvi: Agar target_year berilgan bo'lsa va farq > 3 yil bo'lsa (masalan 1999 vs 2023) -> rad etish!
     if target_year and cand_year:
         try:
             diff = abs(int(cand_year) - int(target_year))
-            if diff > 2 and not expected_original_title:
+            if diff > 5:
+                return -50.0
+            if diff > 2 and not (expected_original_title or expected_en_title or expected_ru_title):
                 return -1.0
         except (ValueError, TypeError):
             pass
 
-
-    # 2. Sarlavha o'xshashligi
+    # 2. Sarlavha o'xshashligi (query + original + en + ru)
     query_tokens = normalize_title_tokens(query)
     orig_tokens = normalize_title_tokens(expected_original_title)
+    en_tokens = normalize_title_tokens(expected_en_title)
+    ru_tokens = normalize_title_tokens(expected_ru_title)
     cand_tokens = normalize_title_tokens(cand_title) | normalize_title_tokens(cand_orig)
 
-    if not cand_tokens:
+    if not cand_tokens and not (cand_title or cand_orig):
         return -1.0
 
     match_found = False
     title_overlap = 0.0
-    for target_set in [orig_tokens, query_tokens]:
-        if not target_set:
+    for target_set in [orig_tokens, en_tokens, ru_tokens, query_tokens]:
+        if not target_set or not cand_tokens:
             continue
         overlap = target_set.intersection(cand_tokens)
         ratio = len(overlap) / len(target_set)
         dice_ratio = (2.0 * len(overlap)) / (len(target_set) + len(cand_tokens)) if (len(target_set) + len(cand_tokens)) > 0 else 0.0
-        if ratio >= 0.4 and (len(target_set) > 1 or dice_ratio >= 0.4):
+        if ratio >= 0.4 and dice_ratio >= 0.38:
             match_found = True
-            title_overlap = max(title_overlap, max(ratio, dice_ratio))
+            title_overlap = max(title_overlap, 0.5 * ratio + 0.5 * dice_ratio)
 
     # Substring / exact slug tekshiruvi (xavfsiz taqqoslash)
     q_clean = re.sub(r'[^\w]', '', query.lower())
     orig_clean = re.sub(r'[^\w]', '', (expected_original_title or '').lower())
+    en_clean = re.sub(r'[^\w]', '', (expected_en_title or '').lower())
+    ru_clean = re.sub(r'[^\w]', '', (expected_ru_title or '').lower())
     c_clean = re.sub(r'[^\w]', '', cand_title.lower())
     co_clean = re.sub(r'[^\w]', '', cand_orig.lower())
 
-    for t in [q_clean, orig_clean]:
-        if len(t) >= 4:
+    for t in [q_clean, orig_clean, en_clean, ru_clean]:
+        if len(t) >= 2:
             for cand in [c_clean, co_clean]:
-                if not cand or len(cand) < 4:
+                if not cand or len(cand) < 2:
                     continue
                 if t == cand:
                     match_found = True
                     title_overlap = max(title_overlap, 1.0)
-                elif (t in cand or cand in t) and (min(len(t), len(cand)) / max(len(t), len(cand)) >= 0.70):
+                elif len(t) >= 4 and len(cand) >= 4 and (t in cand or cand in t) and (min(len(t), len(cand)) / max(len(t), len(cand)) >= 0.70):
                     match_found = True
                     title_overlap = max(title_overlap, 0.8)
 
-    # Agar nomzod Kanji/Kirill bo'lsa, FAQAT expected_original_title berilgan va unda ham non-latin belgilar bo'lsa
-    if not match_found and expected_original_title:
-        exp_non_latin = any(ord(c) > 1200 or 0x4E00 <= ord(c) <= 0x9FFF for c in expected_original_title)
-        cand_non_latin = any(ord(c) > 1200 or 0x4E00 <= ord(c) <= 0x9FFF for c in cand_title + cand_orig)
-        if exp_non_latin and cand_non_latin and poster_url:
-            overlap = orig_tokens.intersection(cand_tokens)
-            if overlap or expected_original_title.strip().lower() in (cand_title + cand_orig).lower():
-                match_found = True
-                title_overlap = max(title_overlap, 0.75)
+    # Agar nomzod Kanji/Hangul/Kirill bo'lsa va expected_original_title / expected_ru_title bilan mos tushsa
+    if not match_found:
+        for exp_str in [expected_original_title, expected_ru_title]:
+            if exp_str and exp_str.strip():
+                exp_low = exp_str.strip().lower()
+                if exp_low in (cand_title + " " + cand_orig).lower():
+                    match_found = True
+                    title_overlap = max(title_overlap, 0.9)
+                    break
 
     if not match_found:
         return -1.0
@@ -532,11 +622,15 @@ def score_tmdb_candidate(
             # Agar anime manbasi yoki anime qidiruvi bo'lsa va TMDb nomzodi animatsiya (16) bo'lmasa, uni darhol rad etamiz
             return -200.0
 
-    # 5. Keraksiz / Fan-edit / Nostandart nusxalarni rad etish
+    # 5. Keraksiz / Fan-edit / Konsert / Nostandart nusxalarni rad etish
     cand_name = (candidate.get("title") or candidate.get("name") or "").lower()
-    junk_keywords = ["ocean cut", "fan edit", "fan-edit", "abridged", "recap"]
+    junk_keywords = [
+        "ocean cut", "fan edit", "fan-edit", "abridged", "recap",
+        "☆live", "live day", "live concert", "concert tour", "making of", "behind the scenes",
+    ]
+    q_and_exp = f"{query} {expected_original_title or ''}".lower()
     for jk in junk_keywords:
-        if jk in cand_name and jk not in query.lower():
+        if jk in cand_name and jk not in q_and_exp:
             return -200.0
 
     return score
@@ -699,8 +793,39 @@ async def enrich_movie_smart(
     if matched_anime_dict:
         matched_cat_names.add("anime")
 
-    # 1. Gemini orqali kinoni tanib olish
-    ai_info = await gemini_identify_movie(raw_title=clean_title, year_hint=year, caption=caption or source_desc, media_type=detected_type)
+    # 1. Gemini (va agar video kadrlari yoki vision_gate berilgan bo'lsa Gemini Vision) orqali kinoni tanib olish
+    vision_gate_data: Optional[Dict[str, Any]] = kwargs.get("vision_gate")
+    video_frames_b64 = kwargs.get("video_frames_b64") or (vision_gate_data.get("frames_b64") if isinstance(vision_gate_data, dict) else None)
+    video_filename = kwargs.get("video_filename") or (vision_gate_data.get("filename") if isinstance(vision_gate_data, dict) else None)
+
+    vg_det_title = None
+    vg_orig_title = None
+    vg_ru_title = None
+    vg_year = None
+    if isinstance(vision_gate_data, dict):
+        vg_conf = str(vision_gate_data.get("confidence") or "HIGH").upper()
+        raw_vg_title = (vision_gate_data.get("detected_title") or "").strip()
+        if raw_vg_title and vg_conf in ("HIGH", "MEDIUM") and raw_vg_title.lower() not in ("unknown", "none", "null", "n/a"):
+            vg_det_title = raw_vg_title
+        vg_orig_title = (vision_gate_data.get("detected_original_title") or "").strip() or None
+        vg_ru_title = (vision_gate_data.get("detected_ru_title") or "").strip() or None
+        if vision_gate_data.get("detected_year"):
+            try:
+                vg_year = int(vision_gate_data["detected_year"])
+            except (ValueError, TypeError):
+                pass
+        if vg_year and not year:
+            year = vg_year
+            metadata["release_year"] = vg_year
+
+    ai_info = await gemini_identify_movie(
+        raw_title=vg_det_title or clean_title,
+        year_hint=year,
+        caption=caption or source_desc,
+        media_type=detected_type,
+        video_frames_b64=video_frames_b64,
+        video_filename=video_filename,
+    )
     if ai_info:
         logger.info(f"🤖 Gemini tahlili: '{ai_info.get('search_title_en') or ai_info.get('clean_uz_title')}' ({ai_info.get('release_year')})")
         if ai_info.get("clean_uz_title"):
@@ -733,6 +858,9 @@ async def enrich_movie_smart(
     # 2. TMDb qidiruv ro'yxatini shakllantirish
     default_tmdb_type = "tv" if metadata["media_type"] == "series" else "movie"
     search_queries = []
+    for vg_q in [vg_orig_title, vg_det_title, vg_ru_title]:
+        if vg_q and (vg_q, default_tmdb_type) not in search_queries:
+            search_queries.append((vg_q, default_tmdb_type))
     if original_title and (original_title, default_tmdb_type) not in search_queries:
         search_queries.append((original_title, default_tmdb_type))
     if matched_anime_dict:
@@ -786,16 +914,44 @@ async def enrich_movie_smart(
     matched_tmdb = None
     best_score = 0.0
     target_year = metadata["release_year"] or year
-    expected_orig = ai_info.get("original_title") if ai_info else None
+    expected_orig = vg_orig_title or (ai_info.get("original_title") if ai_info else None) or (matched_anime_dict.get("orig") if matched_anime_dict else None)
+    expected_en = vg_det_title or (ai_info.get("search_title_en") if ai_info else None) or (matched_anime_dict.get("en") if matched_anime_dict else None)
+    expected_ru = vg_ru_title or (ai_info.get("search_title_ru") if ai_info else None) or (matched_anime_dict.get("ru") if matched_anime_dict else None)
 
-    # Agar aniq TMDB ID berilgan bo'lsa (masalan TmdbTopIngestor yoki navbatdan), darhol ulanamiz
+    # Agar aniq TMDB ID berilgan bo'lsa, avval uning sarlavhaga mosligini tekshiramiz (ko'r-ko'rona ishonmaymiz)
     explicit_tmdb_id = kwargs.get("tmdb_id")
     if explicit_tmdb_id:
-        matched_tmdb = {
-            "id": int(explicit_tmdb_id),
-            "content_type": default_tmdb_type
-        }
-        best_score = 100.0
+        try:
+            exp_details = await tmdb_client.get_details(int(explicit_tmdb_id), kind=default_tmdb_type)
+            if exp_details:
+                exp_cand = {
+                    "id": int(explicit_tmdb_id),
+                    "title": exp_details.get("title") or "",
+                    "original_title": exp_details.get("original_title") or "",
+                    "release_year": exp_details.get("release_year"),
+                    "poster_url": exp_details.get("poster_url"),
+                    "content_type": default_tmdb_type
+                }
+                exp_score = score_tmdb_candidate(
+                    candidate=exp_cand,
+                    query=clean_title or raw_title,
+                    target_year=target_year,
+                    expected_original_title=expected_orig,
+                    expected_en_title=expected_en,
+                    expected_ru_title=expected_ru,
+                    media_type=media_type,
+                    source=source
+                )
+                if exp_score >= 35.0:
+                    matched_tmdb = exp_cand
+                    best_score = exp_score
+                else:
+                    logger.warning(
+                        f"⚠️ Navbatdagi TMDb ID ({explicit_tmdb_id}: '{exp_details.get('title')}') "
+                        f"'{clean_title}' ga mos kelmadi (score={exp_score}). Qayta qidiriladi!"
+                    )
+        except Exception as exp_err:
+            logger.warning(f"Explicit TMDb check error: {exp_err}")
     elif matched_anime_dict and matched_anime_dict.get("tmdb_id"):
         matched_tmdb = {
             "id": matched_anime_dict["tmdb_id"],
@@ -816,6 +972,8 @@ async def enrich_movie_smart(
                         query=query,
                         target_year=target_year,
                         expected_original_title=expected_orig,
+                        expected_en_title=expected_en,
+                        expected_ru_title=expected_ru,
                         media_type=media_type,
                         source=source
                     )
@@ -844,6 +1002,8 @@ async def enrich_movie_smart(
                             query=query,
                             target_year=target_year,
                             expected_original_title=expected_orig,
+                            expected_en_title=expected_en,
+                            expected_ru_title=expected_ru,
                             media_type=media_type
                         )
                         if score > best_score:
@@ -895,12 +1055,19 @@ async def enrich_movie_smart(
                         metadata["title"] = matched_anime_dict["uz"]
                     else:
                         try:
-                            canon_t, _ = await translator_service.translate_title_to_uzbek(
+                            canon_t, canon_ok = await translator_service.translate_title_to_uzbek(
                                 title=details.get("title") or clean_title,
                                 original_title=tmdb_orig_title
                             )
-                            if canon_t and len(canon_t.strip()) > 1:
-                                metadata["title"] = canon_t.strip()
+                            picked_t = pick_canonical_uzbek_title(
+                                existing_title=metadata.get("title"),
+                                translated_title=canon_t,
+                                is_translated=canon_ok,
+                                tmdb_title=details.get("title"),
+                                tmdb_original=tmdb_orig_title,
+                            )
+                            if picked_t:
+                                metadata["title"] = picked_t
                         except Exception as t_err:
                             logger.debug(f"Title translation error: {t_err}")
 
@@ -969,8 +1136,12 @@ async def enrich_movie_smart(
         except Exception as e:
             logger.debug(f"Saytdan og:image olishda xatolik: {e}")
 
-    # 4.1 Agar poster hali ham yo'q bo'lsa, Shikimori Anime API orqali qidiramiz
-    if not metadata.get("poster_url"):
+    if matched_anime_dict and matched_anime_dict.get("shikimori_id") and not metadata.get("shikimori_id"):
+        metadata["shikimori_id"] = matched_anime_dict["shikimori_id"]
+
+    # 4.1 Shikimori Anime API orqali qidiramiz (poster yoki shikimori_id kerak bo'lsa)
+    is_anime_ctx = "anime" in str(metadata.get("genres", "")).lower() or matched_anime_dict or (ai_info and ai_info.get("is_anime")) or (source and source in ("anitoob", "animeelar"))
+    if is_anime_ctx and (not metadata.get("shikimori_id") or not metadata.get("poster_url")):
         shikimori_queries = []
         if matched_anime_dict:
             for k in ["orig", "en", "ru"]:
@@ -993,13 +1164,15 @@ async def enrich_movie_smart(
                     if shiki_resp.status_code == 200:
                         shiki_data = shiki_resp.json()
                         if shiki_data and isinstance(shiki_data, list) and len(shiki_data) > 0:
+                            if not metadata.get("shikimori_id") and shiki_data[0].get("id"):
+                                metadata["shikimori_id"] = shiki_data[0]["id"]
                             img_path = shiki_data[0].get("image", {}).get("original")
-                            if img_path:
+                            if img_path and not metadata.get("poster_url"):
                                 metadata["poster_url"] = f"https://shikimori.one{img_path}"
-                                if not metadata.get("original_title"):
-                                    metadata["original_title"] = shiki_data[0].get("name")
-                                logger.info(f"✅ Shikimori orqali anime posteri muvaffaqiyatli topildi ({sq}): {metadata['poster_url']}")
-                                break
+                            if not metadata.get("original_title"):
+                                metadata["original_title"] = shiki_data[0].get("name")
+                            logger.info(f"✅ Shikimori ma'lumotlari muvaffaqiyatli topildi ({sq}): ID={metadata.get('shikimori_id')}, Poster={metadata.get('poster_url')}")
+                            break
             except Exception as e:
                 logger.debug(f"Shikimori search error '{sq}': {e}")
 

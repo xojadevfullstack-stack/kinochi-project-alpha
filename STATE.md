@@ -1,24 +1,27 @@
 # Project State (STATE.md)
 
 ## Current goal
-Yagona global `short_code` tizimi (`movies`: `1001–1090`, `episodes`: `1091–3954`, `3955+` umumiy zaxira, `OVERLAP=0`) + `SMM-S5-RenderSafe` + Bot + `/go` sahifasini `main` ga chiqarish va Render/Vercel jonli deploy'ni tasdiqlash.
+1-sikl (`Autopilot` scraper -> TMDB -> Telegram Storage -> DB) va 2-sikl (`SMM Worker` -> Sparse MP4 -> Gemini Vision dynamic `blur_boxes` -> 9:16 klipp -> `waiting_approval`) ni jonli E2E sinovdan o'tkazish va aniqlangan kamchiliklarni tuzatib Render deployga chiqarish.
 
 ## In progress (slice, branch)
-- Slice: `TMDb-Translation-Fallback-Fix` (`backend` + `admin-panel`: `translator.py` dagi ruscha matnni lotin harflariga ko'chirib yuborish (`V budushem...`) va CJK sarlavhani (`星河入梦`) o'zbekcha deb qaytarish xatosi tuzatildi; `tmdb_client.py` `title_en` olishni to'g'irladi, qo'shimcha bepul tarjimon fallbacklari (`clients5`, `mymemory`) qo'shildi, `admin-panel` esa tarjima muvaffaqiyatsiz bo'lsa mavjud matnlarni saqlab qoladi).
+- Slice: `Autopilot-SMM-E2E-Fixes` (`scraper/smart_enricher.py`, `scraper/smm_clipper.py`, `scraper/smm_pipeline.py`, `scraper/smm_worker.py`, `scraper/smm_publishers/telegram_pub.py`).
 - Branch: `feat/smm-autopilot` -> `main`.
 
 ## Blocked
-- Yo'q.
+- Render jonli serverida `smm_clip_jobs #2` va `#3` ishga tushmagan (foydalanuvchi Render Logs da `"SMM worker started: enabled=..."` qatorini hamda `SMM_AUTOPILOT_ENABLED=true` / `SMM_TELEGRAM_STRING_SESSION` borligini tekshirishi kerak).
 
 ## Next step (one task)
-- Render va Vercel deploy yangilangach admin panelda `1359005` (`Per Aspera Ad Astra`) uchun `"To'ldirish"` ni qayta sinab ko'rish va saytdagi breadcrumb nomlarini tekshirish.
+- Tuzatishlarni commit va `origin/main` ga push qilish, Render Env Vars/Logs ni tekshirish va `/smm` sahifasida `#3955` (`clip_2.mp4`) hamda `#3956` (`clip_3.mp4`) kliplarini ko'rib tasdiqlash.
 
 ## Last verification & check results (Terminal Evidence)
-- **Backend Translation & TMDb Tests (`5` modul):** `backend\.venv\Scripts\python.exe -m pytest backend/tests/test_translation.py backend/tests/test_content_lookup_translate.py backend/tests/test_movie_service.py backend/tests/test_kinochilar_adapter_fixtures.py backend/tests/test_anime_matching_fixes.py -q` -> `25 passed` + `4 passed` (`29 passed`).
-- **Admin Panel Unit Tests (`node --test`):** `node --test admin-panel/tests/tmdbFormHelpers.test.mjs` -> `3 passed, 0 failed`.
-- **Admin Panel Typecheck & Production Build:** `.\admin-panel\node_modules\.bin\tsc.cmd -p admin-panel\tsconfig.json --noEmit` -> Exit code 0; `npm --prefix admin-panel run build` -> Exit code 0 (`22/22` routes).
-- **Website Unit Tests (`node --test`):** `node --test website/tests/breadcrumbHelpers.test.mjs` -> `3 passed, 0 failed`.
-- **Bot Full Test Suite:** `bot\.venv\Scripts\python.exe -m pytest bot/tests/ -q` -> `106 passed in 11.41s`.
+- **Live Cycle 1 E2E (`asilmedia_18451` — `Ouk Strit ko'chasining oxiri`):** TMDb `1101383` (`The End of Oak Street`, `2026`, `IMDb 7.0`) bilan topildi, Forum Topic `#9811` ochildi, `Movie #914` (`short_code='3956'`, `code='WPZ79R'`) `published` holatiga o'tdi va `smm_clip_jobs #3` yaratildi.
+- **Live Cycle 2 E2E (`run_smm_worker_cycle`):**
+  - `smm_clip_jobs #2` (`#3955`, `Yulduzlar sari mashaqqatli yo‘l`) -> `waiting_approval`, `uploads/smm/clip_2.mp4` (`5,071,423` bayt, `720x1280`, AI chap-yuqori watermark blur).
+  - `smm_clip_jobs #3` (`#3956`, `Ouk Strit ko‘chasining oxiri`) -> `waiting_approval`, `uploads/smm/clip_3.mp4` (`9,124,325` bayt, `720x1280`, `45.0s`, AI chap-yuqori watermark blur, `Janr: Ilmiy fantastika • Sirli • Triller`).
+- **Ruff Lint (o'zgartirilgan SMM + test fayllari):** `All checks passed!` (Exit code 0). (`backend bot` umumiy lintida avvaldan mavjud 429 xato bor).
+- **Alembic Heads:** `e5f6a7b8c9d0 (head)`.
+- **Backend Filtered Suite (`SMM + Enricher + Movie + Public routes`):** `59 passed, 2 warnings in 11.60s`.
+- **Bot Full Test Suite:** `106 passed in 6.45s`.
 - **Core User Reported Flaws Resolved (Batch 3):**
   1. **Light Mode-da Hero & Stage Bannerlarining Rasm Qatlami (Zero Blur + Zero White Wash) & Bosh Sahifa Bir Xil O'lchamli 3-Kartochkali Horizontal Row:** Barcha maketlarda fotografik hero bannerlardagi blur (`filter: none !important; transform: none !important;`) hamda oq fon/bo'yoq qatlami (`#FFFFFF` va `opacity: 0.40`) olib tashlandi. `mockup_homepage_v2.html` da `TOP 10` (`topSlider`, `items-start`, bir xil `pl-3 sm:pl-7` va `truncate` sarlavhali kartochkalar) hamda barcha row bo'limlari (`rowResume`, `rowMovies`, `rowSeries`, `rowAnime`, `rowDorama`, `rowCartoons`) gorizontal slayd (`overflow-x-auto`) tartibida saqlanib, mobilda defolt holatda **bir xil o'lchamli 3 ta kartochka** (`w-[calc((100%-16px)/3)]`) ko'rinadigan qilindi.
   2. **Dual Back Button Qoidasi (Root vs 21 ta Ichki Sahifa):** 0-darajali asosiy sahifada (`mockup_homepage_v2.html`) orqaga qaytish tugmalari yo'q. Qolgan barcha 21 ta ichki sahifada headerda qat'iy 1 ta (`header_back=1`) va mobil pastki o'ng burchakda qat'iy 1 ta (`floating_back=1`) tugma o'rnatildi (`mockup_catalog.html` dagi takroriy 2-chi tugmalar olib tashlandi).

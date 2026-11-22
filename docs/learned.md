@@ -71,3 +71,6 @@
 ## Script-Aware Translation Fallback (Never Transliterate Source Prose)
 - Tarjima API lari (`Gemini`, `Google Translate`) vaqtincha ishlamay qolganda ruscha ta'rifni `cyrillic_to_latin` bilan harfma-harf lotinga o'girib `is_translated=True` qaytarish o'qib bo'lmaydigan matn (`V budushem...`) yaratadi va mavjud yaxshi matnni buzadi; faqat o'zbek kirill harflari (`ў, қ, ғ, ҳ`) bor matn transliteratsiya qilinishi, aks holda esa `(original, False)` qaytarilib UI da mavjud matn himoyalanishi kerak.
 - Analogy: Tarjimon kelmay qolganda ruscha kitobni o'zbek alifbosidagi harflar bilan ko'chirib "tarjima tayyor" deb bermaslik — buning o'rniga zaxira tarjimonni chaqirish yoki asl matn hali tarjima qilinmaganini ochiq aytish.
+
+- Concept: **MP4 `stco/co64` Index-Bounded Sparse Windowing** — Katta videodan kichik qism kesishda `moov` mundarijasidan klipning ham bosh, ham oxirgi sekundlari joylashgan bayt chegarasini hisoblab oqimli yuklash (RAM tejash va VBR sahna uzilib qolmasligi uchun).
+- Analogy: Qalin kitobdan bitta sahna olishda taxminan 25 varaq sanab kesmasdan, mundarijadan bobning aniq boshlanish va tugash betini ko'rib o'sha oraliqni to'liq olish.
