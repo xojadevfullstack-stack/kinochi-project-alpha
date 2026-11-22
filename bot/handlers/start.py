@@ -82,7 +82,16 @@ async def cmd_start(message: Message, command: CommandObject):
         from utils.code_resolver import resolve_and_send_content
         found = await resolve_and_send_content(message.bot, message.from_user.id, raw_code)
         if not found:
-            await message.answer("❌ <b>Hech narsa topilmadi!</b>\n\nSiz yuborgan kod bo'yicha ma'lumot topilmadi. Kodni to'g'ri yozganingizga ishonch hosil qiling!", parse_mode="HTML")
+            fallback_kb = InlineKeyboardBuilder()
+            fallback_kb.button(text="🔍 Qidirish", switch_inline_query_current_chat="")
+            fallback_kb.button(text="📂 Katalog", callback_data="menu_catalog")
+            fallback_kb.adjust(2)
+            await message.answer(
+                "❌ <b>Hech narsa topilmadi!</b>\n\n"
+                "Siz yuborgan kod bo'yicha ma'lumot topilmadi. Kodni qayta tekshiring yoki quyidagi tugmalar orqali nomi bilan qidiring 👇",
+                parse_mode="HTML",
+                reply_markup=fallback_kb.as_markup(),
+            )
         return
     else:
         welcome_text = (

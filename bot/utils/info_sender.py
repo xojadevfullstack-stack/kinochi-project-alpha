@@ -15,13 +15,14 @@ async def send_movie_info(bot: Bot, chat_id: int, movie: dict, edit_message_id: 
     kinochi_votes = movie.get("kinochi_votes_count", 0)
     poster_url = movie.get("poster_url")
     code = movie.get("code")
+    display_code = movie.get("short_code") or code
     
     is_18 = bool(movie.get("is_18_plus"))
     caption = ""
     if is_18:
         caption += "🔞 <b>18+ Kattalar uchun</b>\n\n"
     caption += f"🎬 <b>{title}</b>\n\n"
-    if code: caption += f"🔑 <b>Kino kodi:</b> <code>{code}</code>\n"
+    if display_code: caption += f"🔑 <b>Kino kodi:</b> <code>{display_code}</code>\n"
     if year: caption += f"📅 <b>Yil:</b> {year}\n"
     if rating: 
         caption += f"⭐ <b>IMDb:</b> {rating} / 10\n"

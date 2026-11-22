@@ -30,6 +30,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   dmca: "Mualliflik huquqi (DMCA)",
   privacy: "Maxfiylik siyosati",
   about: "Reklama va hamkorlik",
+  go: "Tezkor kod",
   "test-auth": "Kirish",
 };
 
