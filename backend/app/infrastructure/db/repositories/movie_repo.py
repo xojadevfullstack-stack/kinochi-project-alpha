@@ -25,8 +25,34 @@ class MovieRepositoryImpl(IMovieRepository):
     def _to_domain(self, model: MovieModel) -> Movie:
         return Movie.model_validate(model)
 
+    async def _next_short_code(self) -> str:
+        """Return the next unused numeric short_code starting from 1001."""
+        res_short = await self.session.execute(
+            select(MovieModel.short_code).where(MovieModel.short_code.isnot(None))
+        )
+        nums = [
+            int(s)
+            for s in res_short.scalars().all()
+            if s and s.isdigit() and int(s) < 1_000_000
+        ]
+        candidate = max(nums, default=1000) + 1
+        while True:
+            conflict = await self.session.execute(
+                select(MovieModel.id).where(
+                    or_(
+                        MovieModel.short_code == str(candidate),
+                        MovieModel.code == str(candidate),
+                    )
+                ).limit(1)
+            )
+            if conflict.scalar_one_or_none() is None:
+                return str(candidate)
+            candidate += 1
+
     async def create(self, movie: Movie, category_ids: list[int] | None = None, page_ids: list[int] | None = None) -> Movie:
         model = MovieModel(**movie.model_dump(exclude={"id", "created_at", "updated_at", "categories", "translations", "pages"}, exclude_unset=True))
+        if not model.short_code:
+            model.short_code = await self._next_short_code()
         
         if category_ids:
             result = await self.session.execute(select(CategoryModel).where(CategoryModel.id.in_(category_ids)))
@@ -97,24 +123,40 @@ class MovieRepositoryImpl(IMovieRepository):
 
     async def get_by_code(self, code: str, publish_status: str | None = None) -> Movie | None:
         clean_code = code.strip()
-        where_conditions = [
-            func.lower(MovieModel.code) == func.lower(clean_code)
-        ]
-        if clean_code.isdigit():
-            where_conditions.append(MovieModel.id == int(clean_code))
+        if not clean_code:
+            return None
 
-        stmt = select(MovieModel).options(
-            selectinload(MovieModel.categories),
-            selectinload(MovieModel.translations),
-            selectinload(MovieModel.pages)
-        ).where(or_(*where_conditions))
-        if publish_status == "published":
-            stmt = published_only(stmt, MovieModel)
-        elif publish_status is not None and publish_status != "all":
-            stmt = stmt.where(MovieModel.publish_status == publish_status)
-        result = await self.session.execute(stmt)
-        model = result.scalars().first()
-        return self._to_domain(model) if model else None
+        def _base_stmt():
+            stmt = select(MovieModel).options(
+                selectinload(MovieModel.categories),
+                selectinload(MovieModel.translations),
+                selectinload(MovieModel.pages)
+            )
+            if publish_status == "published":
+                stmt = published_only(stmt, MovieModel)
+            elif publish_status is not None and publish_status != "all":
+                stmt = stmt.where(MovieModel.publish_status == publish_status)
+            return stmt
+
+        stmt_primary = _base_stmt().where(
+            or_(
+                func.lower(MovieModel.code) == func.lower(clean_code),
+                MovieModel.short_code == clean_code,
+            )
+        )
+        model = (await self.session.execute(stmt_primary)).scalars().first()
+        if model:
+            return self._to_domain(model)
+
+        if clean_code.isdigit() and len(clean_code) <= 9:
+            num_id = int(clean_code)
+            if 0 < num_id <= 2_147_483_647:
+                stmt_id = _base_stmt().where(MovieModel.id == num_id)
+                model = (await self.session.execute(stmt_id)).scalars().first()
+                if model:
+                    return self._to_domain(model)
+
+        return None
 
 
     async def get_by_source(self, chat_id: int, topic_id: int | None = None) -> Movie | None:

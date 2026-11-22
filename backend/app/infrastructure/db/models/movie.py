@@ -45,6 +45,7 @@ class MovieModel(Base):
     trailer_url: Mapped[str | None] = mapped_column(String(1024))
     
     code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True)
+    short_code: Mapped[str | None] = mapped_column(String(16), nullable=True, unique=True, index=True)
     publish_status: Mapped[str] = mapped_column(String(50), default="pending", server_default="pending", nullable=False, index=True)
     is_18_plus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     

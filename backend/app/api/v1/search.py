@@ -25,6 +25,7 @@ class LiveSearchResultItem(BaseModel):
     title: str
     original_title: str | None = None
     code: str
+    short_code: str | None = None
     year: int | None = None
     poster_url: str | None = None
     imdb_rating: float | None = None
@@ -80,15 +81,22 @@ async def live_search(
     )
 
     if is_potential_code:
-        # Check movie code or ID
-        movie_code_conditions = [MovieModel.code.ilike(code_query)]
-        if code_query.isdigit():
-            movie_code_conditions.append(MovieModel.id == int(code_query))
+        # Check movie code or short_code first, then numeric ID fallback
         movie_code_stmt = published_only(
-            select(MovieModel).where(or_(*movie_code_conditions)).limit(1), MovieModel
+            select(MovieModel).where(
+                or_(MovieModel.code.ilike(code_query), MovieModel.short_code == code_query)
+            ).limit(1),
+            MovieModel,
         )
-        movie_code_res = await db.execute(movie_code_stmt)
-        movie_by_code = movie_code_res.scalar_one_or_none()
+        movie_by_code = (await db.execute(movie_code_stmt)).scalar_one_or_none()
+        if not movie_by_code and code_query.isdigit() and len(code_query) <= 9:
+            num_id = int(code_query)
+            if 0 < num_id <= 2_147_483_647:
+                movie_by_code = (
+                    await db.execute(
+                        published_only(select(MovieModel).where(MovieModel.id == num_id).limit(1), MovieModel)
+                    )
+                ).scalar_one_or_none()
         if movie_by_code:
             results.append(
                 LiveSearchResultItem(
@@ -96,6 +104,7 @@ async def live_search(
                     title=movie_by_code.title,
                     original_title=movie_by_code.original_title,
                     code=movie_by_code.code,
+                    short_code=movie_by_code.short_code,
                     year=movie_by_code.release_year,
                     poster_url=movie_by_code.poster_url,
                     imdb_rating=movie_by_code.imdb_rating,
@@ -174,7 +183,8 @@ async def live_search(
 
     if is_potential_code:
         movie_conditions.append(MovieModel.code.ilike(f"%{code_query}%"))
-        if code_query.isdigit():
+        movie_conditions.append(MovieModel.short_code == code_query)
+        if code_query.isdigit() and len(code_query) <= 9:
             movie_conditions.append(MovieModel.id == int(code_query))
     movie_filter = or_(*movie_conditions)
 
@@ -200,6 +210,7 @@ async def live_search(
                     title=m.title,
                     original_title=m.original_title,
                     code=m.code,
+                    short_code=m.short_code,
                     year=m.release_year,
                     poster_url=m.poster_url,
                     imdb_rating=m.imdb_rating,

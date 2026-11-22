@@ -26,6 +26,7 @@ class Movie(BaseModel):
     poster_url: str | None = None
     trailer_url: str | None = None
     code: str = Field(..., min_length=1, max_length=50) # Unique code
+    short_code: str | None = Field(None, max_length=16) # Short numeric alias for SMM/social media
     publish_status: str = "pending"
     is_18_plus: bool = False
     

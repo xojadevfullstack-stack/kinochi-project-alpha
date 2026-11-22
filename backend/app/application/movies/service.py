@@ -47,14 +47,16 @@ class MovieService:
         custom_source_name: str | None = None,
         custom_source_logo: str | None = None,
         publish_status: str | None = None,
+        short_code: str | None = None,
         **kwargs
     ) -> Movie:
         if code is None:
             code = await self._generate_unique_code()
-            
+
         movie = Movie(
             title=title,
             code=code,
+            short_code=short_code,
             original_title=original_title,
             description=description,
             imdb_rating=imdb_rating,
