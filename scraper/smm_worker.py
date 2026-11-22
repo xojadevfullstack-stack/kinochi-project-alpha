@@ -7,12 +7,13 @@ import os
 from datetime import datetime, timezone
 from typing import Any, List, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models.movie import MovieModel
+from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.smm import SmmClipJobModel, SmmSettingsModel
-from app.infrastructure.db.models.translation import MovieTranslationModel
+from app.infrastructure.db.models.translation import EpisodeTranslationModel, MovieTranslationModel
 from scraper.smm_pipeline import create_smart_smm_clip
 from scraper.smm_publishers.dispatcher import MultiPlatformDispatcher
 from scraper.smm_publishers.telegram_pub import TelegramChannelPublisher, build_movie_caption
@@ -98,6 +99,65 @@ async def maybe_enqueue_smm_for_movie(
         return None
 
 
+async def _resolve_job_media(
+    db: AsyncSession,
+    job: SmmClipJobModel,
+) -> tuple[str, Optional[float], Optional[str], Optional[int]]:
+    """Resolve (display_code, imdb_rating, genres, storage_msg_id) for movie or episode jobs."""
+    if job.media_type == "episode":
+        ep_filter = (
+            EpisodeModel.id == job.media_id
+            if job.media_id
+            else or_(EpisodeModel.short_code == job.movie_code, EpisodeModel.code == job.movie_code)
+        )
+        ep = (await db.execute(select(EpisodeModel).where(ep_filter))).scalars().first()
+        series = None
+        trans = None
+        if ep:
+            season = (await db.execute(select(SeasonModel).where(SeasonModel.id == ep.season_id))).scalar_one_or_none()
+            if season:
+                series = (await db.execute(select(SeriesModel).where(SeriesModel.id == season.series_id))).scalar_one_or_none()
+            trans = (
+                await db.execute(
+                    select(EpisodeTranslationModel).where(
+                        EpisodeTranslationModel.episode_id == ep.id,
+                        EpisodeTranslationModel.storage_channel_message_id.isnot(None),
+                    )
+                )
+            ).scalars().first()
+        display_code = (getattr(ep, "short_code", None) if ep else None) or (getattr(ep, "code", None) if ep else None) or job.movie_code
+        return (
+            display_code,
+            getattr(series, "imdb_rating", None) if series else None,
+            getattr(series, "genres", None) if series else None,
+            trans.storage_channel_message_id if trans else None,
+        )
+
+    m_filter = (
+        MovieModel.id == job.media_id
+        if job.media_id
+        else or_(MovieModel.short_code == job.movie_code, MovieModel.code == job.movie_code)
+    )
+    movie = (await db.execute(select(MovieModel).where(m_filter))).scalars().first()
+    trans = None
+    if movie:
+        trans = (
+            await db.execute(
+                select(MovieTranslationModel).where(
+                    MovieTranslationModel.movie_id == movie.id,
+                    MovieTranslationModel.storage_channel_message_id.isnot(None),
+                )
+            )
+        ).scalars().first()
+    display_code = getattr(movie, "short_code", None) or job.movie_code
+    return (
+        display_code,
+        getattr(movie, "imdb_rating", None) if movie else None,
+        getattr(movie, "genres", None) if movie else None,
+        trans.storage_channel_message_id if trans else None,
+    )
+
+
 async def process_generating_job(
     db: AsyncSession,
     job: SmmClipJobModel,
@@ -107,27 +167,18 @@ async def process_generating_job(
     uploads_dir: str = "uploads/smm",
 ) -> SmmClipJobModel:
     """Fetch Storage video message, render 9:16 clip, and move job to waiting_approval/scheduled."""
-    movie = (await db.execute(select(MovieModel).where(MovieModel.id == job.media_id))).scalar_one_or_none() if job.media_id else None
-    trans = (
-        await db.execute(
-            select(MovieTranslationModel).where(
-                MovieTranslationModel.movie_id == job.media_id,
-                MovieTranslationModel.storage_channel_message_id.isnot(None),
-            )
-        )
-    ).scalars().first()
-    if not trans or not trans.storage_channel_message_id:
+    display_code, imdb_rating, genres, storage_msg_id = await _resolve_job_media(db, job)
+    if not storage_msg_id:
         job.status = "failed"
         await db.flush()
         return job
 
-    display_code = getattr(movie, "short_code", None) or job.movie_code
     bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
-    storage_msg = await tg_client.get_messages(storage_chat_id, ids=trans.storage_channel_message_id)
+    storage_msg = await tg_client.get_messages(storage_chat_id, ids=storage_msg_id)
     out_file = os.path.join(uploads_dir, f"clip_{job.id}.mp4")
     meta = await create_smart_smm_clip(
         client=tg_client, storage_msg=storage_msg, output_path=out_file,
-        movie_code=display_code, imdb_rating=getattr(movie, "imdb_rating", None),
+        movie_code=display_code, imdb_rating=imdb_rating,
         duration_sec=job.duration_sec or cfg.clip_duration_sec,
         start_sec=job.start_sec if job.start_sec > 0 else None,
         copyright_shield=cfg.copyright_shield,
@@ -137,8 +188,8 @@ async def process_generating_job(
     job.duration_sec = float(meta["duration_sec"])
     job.clip_path = f"uploads/smm/clip_{job.id}.mp4"
     job.caption = job.caption or build_movie_caption(
-        movie_code=display_code, imdb_rating=getattr(movie, "imdb_rating", None),
-        genres=getattr(movie, "genres", None), bot_username=bot_handle,
+        movie_code=display_code, imdb_rating=imdb_rating,
+        genres=genres, bot_username=bot_handle,
     )
     job.status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
     await db.flush()
@@ -155,8 +206,7 @@ async def process_publish_job(
 ) -> SmmClipJobModel:
     """Publish rendered clip across enabled platforms and save per-platform results."""
     bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
-    movie = (await db.execute(select(MovieModel).where(MovieModel.id == job.media_id))).scalar_one_or_none() if job.media_id else None
-    display_code = getattr(movie, "short_code", None) or job.movie_code
+    display_code, _, _, _ = await _resolve_job_media(db, job)
 
     if not dispatcher:
         dispatcher = MultiPlatformDispatcher()

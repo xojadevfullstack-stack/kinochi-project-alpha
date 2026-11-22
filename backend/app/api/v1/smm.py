@@ -26,7 +26,7 @@ class SmmSettingsUpdate(BaseModel):
 
 
 class SmmClipJobCreate(BaseModel):
-    media_type: Literal["movie", "series"] = "movie"
+    media_type: Literal["movie", "series", "episode"] = "movie"
     media_id: int | None = None
     movie_code: str
     title: str

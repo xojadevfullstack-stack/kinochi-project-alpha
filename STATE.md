@@ -1,17 +1,17 @@
 # Project State (STATE.md)
 
 ## Current goal
-Render Free Tier (`512 MB RAM`, `0.1 CPU`) uchun xavfsiz `SMM-S5-RenderSafe` (`720x1280` `low_ram=True`, `asyncio.to_thread`, `safe_run_smm_worker`) hamda `movies.short_code` (`1001+`, `@MediaPlusOfficialBot`, `/go` sahifasi) ni jonli Render va Vercel muhitida tasdiqlash.
+Yagona global `short_code` tizimi (`movies`: `1001–1090`, `episodes`: `1091–3954`, `3955+` umumiy zaxira, `OVERLAP=0`) + `SMM-S5-RenderSafe` + Bot + `/go` sahifasini `main` ga chiqarish va Render/Vercel jonli deploy'ni tasdiqlash.
 
 ## In progress (slice, branch)
-- Slice: `SMM-ShortCode-UX` (`3457e37`, `d21261f`) + `SMM-S5-RenderSafe` (`5cdb1e6`); Supabase da `d4e5f6a7b8c9` migratsiyasi qo'llandi (`90/90` kino -> `'1001'..'1090'`, `smm_settings.bot_username = '@MediaPlusOfficialBot'`).
+- Slice: `Episode-ShortCode-Unified` (`718e32d`, `11a7b93`, `SMM Worker episode` qo'llab-quvvatlovi + `e5f6a7b8c9d0` Alembic migratsiyasi Supabase'ga qo'llandi: `90/90` kino `1001–1090`, `2864/2864` qism `1091–3954`).
 - Branch: `feat/smm-autopilot` -> `main`.
 
 ## Blocked
 - Yo'q.
 
 ## Next step (one task)
-- Render deploy (`main`) tugagach `/smm` dan 1 ta klippni jonli generatsiya qilib `#1090` / `@MediaPlusOfficialBot` chiqishini tasdiqlash.
+- Render/Vercel deploy tugagach `SMM Studio` orqali kino (`#1090`) va qism (`#3954`) klipp generatsiyasini jonli tekshirish.
 
 ## Last verification & check results (Terminal Evidence)
 - **Alembic Heads (`backend`):** `d4e5f6a7b8c9 (head)` (linear).

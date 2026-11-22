@@ -161,3 +161,61 @@ async def test_smm_worker_prefers_movie_short_code_and_mediaplus_bot(db_session,
     )
     await process_publish_job(db_session, updated, cfg, dispatcher=mock_disp)
     assert mock_disp.publish_all.await_args.kwargs["movie_code"] == "1042"
+
+
+@pytest.mark.asyncio
+async def test_smm_worker_supports_episode_short_code_and_storage_video(db_session, tmp_path):
+    from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
+    from app.infrastructure.db.models.translation import EpisodeTranslationModel
+
+    ser = SeriesModel(title="Taxtlar Oyini", imdb_rating=9.2, publish_status="published")
+    db_session.add(ser)
+    await db_session.flush()
+    seas = SeasonModel(series_id=ser.id, season_number=2)
+    db_session.add(seas)
+    await db_session.flush()
+    ep = EpisodeModel(
+        season_id=seas.id,
+        episode_number=5,
+        code="EpAbCd12",
+        short_code="1091",
+        display_code="S2-CH5",
+        title="5-qism",
+    )
+    db_session.add(ep)
+    await db_session.flush()
+    db_session.add(EpisodeTranslationModel(episode_id=ep.id, language="O'zbekcha", storage_channel_message_id=8882))
+    cfg = SmmSettingsModel(
+        id=1,
+        mode="SEMI_AUTO",
+        enabled_platforms=["telegram"],
+        bot_username="@MediaPlusOfficialBot",
+        telegram_channel_id="-100999",
+    )
+    cfg = await db_session.merge(cfg)
+    await db_session.commit()
+
+    job = await enqueue_smm_clip_job(
+        db_session,
+        movie_code="EpAbCd12",
+        title="Taxtlar Oyini 2x5",
+        media_id=ep.id,
+        media_type="episode",
+    )
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=8882))
+    fake_clip = {"output_path": str(tmp_path / f"clip_{job.id}.mp4"), "start_sec": 42.0, "duration_sec": 45.0, "blur_bottom_ad": False}
+    (tmp_path / f"clip_{job.id}.mp4").write_bytes(b"mp4")
+
+    with patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(return_value=fake_clip)) as mock_clip:
+        updated = await process_generating_job(db_session, job, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
+
+    assert updated.status == "waiting_approval"
+    assert mock_clip.await_args.kwargs["movie_code"] == "1091"
+    assert mock_clip.await_args.kwargs["imdb_rating"] == 9.2
+    assert "#1091" in (updated.caption or "")
+
+    mock_disp = MagicMock()
+    mock_disp.publish_all = AsyncMock(return_value={"telegram": PublishResult("telegram", True, post_id="2")})
+    await process_publish_job(db_session, updated, cfg, dispatcher=mock_disp)
+    assert mock_disp.publish_all.await_args.kwargs["movie_code"] == "1091"
