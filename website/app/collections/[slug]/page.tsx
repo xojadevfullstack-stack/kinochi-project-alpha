@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Metadata } from "next";
 import CollectionTimelineView from "@/components/CollectionTimelineView";
 import SubscribeButton from "@/components/SubscribeButton";
+import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 
 type Props = {
   params: { slug: string };
@@ -42,6 +43,7 @@ export default async function CollectionDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-transparent text-slate-900 dark:text-text-primary pt-3 sm:pt-4 pb-20">
+      <BreadcrumbTitle path={`/collections/${params.slug}`} title={collection.name} />
       {/* Hero Showcase Banner (Framed Hero Method matching HeroCarousel & Cinema Island) */}
       <div className="max-w-container-max mx-auto px-gutter mb-8 sm:mb-10">
         <div className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] shadow-xl">

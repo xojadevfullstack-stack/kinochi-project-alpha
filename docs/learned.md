@@ -61,3 +61,8 @@
 ## Self-Exclusion Duplicate Filtering & Non-Destructive Edit Merge
 - Tahrirlash rejimida tashqi manbadan (TMDb) ma'lumot tortilganda dublikat tekshiruvi tahrirlanayotgan yozuvning o'zini (`editingId`) filtrlab tashlashi, shuningdek `fillEmptyOnly` opsiyasi bilan avval qo'lda kiritilgan maydonlarni tasodifan ustidan yozib yubormaslik kerak.
 - Analogy: Uy hujjatini yangilayotganda arxiv xodimi "bu manzilda allaqachon uy bor ekan" deb o'zingizning uyingizni o'zingizga raqobatchi qilib ko'rsatmasligi, va ustidan bo'yoq tortganda yangi devor bo'lsa eskisi saqlanib qolishi kabi.
+
+
+## Route-Keyed Context Override (Zero-Fetch Server-to-Layout Title Propagation)
+- Next.js App Router'da `layout.tsx` ichida turgan umumiy client UI (`Breadcrumb`) dinamik Server Component sahifalardan (`movie/[code]`, `series/[id]`) ma'lumot olishi uchun qayta `fetch()` qilish o'rniga `pathname` ga bog'langan Context va unmount da tozalanadigan `<BreadcrumbTitle />` ishlatish tarmoq yukini nolga tushiradi va eski nom qolib ketishini (stale label) oldini oladi.
+- Analogy: Binoning qabulxona taxtachasi (layout) har bir xona eshigidan kelgan tayyor ism yozilgan qog'ozchani ko'rsatib turishi — qabulxonachi har safar arxivga qaytib so'rov yubormaydi, mehmon xonadan chiqqanda esa yozuv darhol yig'ishtiriladi.

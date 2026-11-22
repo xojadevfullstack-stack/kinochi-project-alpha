@@ -5,6 +5,7 @@ import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
 import BackButton from "@/components/BackButton";
+import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES } from "@/lib/filterConstants";
 
 type Category = {
@@ -119,6 +120,7 @@ export default async function DynamicPage({
 
   return (
     <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-background-obsidian">
+      <BreadcrumbTitle path={`/p/${params.slug}`} title={page.title} />
       <div className="max-w-container-max mx-auto">
         
         {/* Smart Back Navigation */}

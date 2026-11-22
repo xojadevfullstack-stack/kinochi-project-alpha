@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Metadata } from "next";
 import CatalogGrid from "@/components/catalog/CatalogGrid";
 import { CatalogItem } from "@/lib/api/catalog";
-import BackButton from "@/components/BackButton";
+import BackButton from "@/components/BackButton";
+import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import UnifiedFilterBar from "@/components/catalog/UnifiedFilterBar";
 import { DEFAULT_GENRES, DEFAULT_YEARS, DEFAULT_MEDIA_TYPES } from "@/lib/filterConstants";
 
@@ -80,7 +81,8 @@ export default async function CategoryPage({
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-background-obsidian">
+    <div className="min-h-screen pt-32 pb-margin-desktop px-gutter bg-background-obsidian">
+      <BreadcrumbTitle path={`/category/${params.id}`} title={categoryName} />
       <div className="max-w-container-max mx-auto">
         
         {/* Smart Back Navigation */}

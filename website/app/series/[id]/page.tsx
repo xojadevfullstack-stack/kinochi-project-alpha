@@ -16,6 +16,7 @@ import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
 import BackButton from "@/components/BackButton";
+import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import SourceBadge from "@/components/SourceBadge";
 import OnboardingSpotlight, { TourStep } from "@/components/OnboardingSpotlight";
 
@@ -145,6 +146,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
 
   return (
     <>
+      <BreadcrumbTitle path={`/series/${params.id}`} title={series.title} />
       <AgeVerificationModal is18Plus={is18Plus} />
       <section className="relative w-full">
         {/* Background Ambient Trailer & Poster Overlay with Cinema Mode */}

@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import FloatingBackButton from "@/components/FloatingBackButton";
 import SubheaderTabs from "@/components/SubheaderTabs";
 import Breadcrumb from "@/components/Breadcrumb";
+import { BreadcrumbProvider } from "@/components/BreadcrumbContext";
 import Footer from "@/components/Footer";
 import TelegramInit from "@/components/TelegramInit";
 import { fetchApi } from "@/lib/api";
@@ -70,19 +71,21 @@ export default async function RootLayout({
           }}
         />
         <AuthProvider>
-          <TopRouteLoader />
-          <TelegramInit />
-          <Navbar pages={pages} />
+          <BreadcrumbProvider>
+            <TopRouteLoader />
+            <TelegramInit />
+            <Navbar pages={pages} />
 
-          <main className="min-h-screen pb-20 xl:pb-0">
-            <SubheaderTabs />
-            <Breadcrumb />
-            {children}
-          </main>
-          
-          <BottomNav />
-          <FloatingBackButton />
-          <Footer />
+            <main className="min-h-screen pb-20 xl:pb-0">
+              <SubheaderTabs />
+              <Breadcrumb />
+              {children}
+            </main>
+            
+            <BottomNav />
+            <FloatingBackButton />
+            <Footer />
+          </BreadcrumbProvider>
         </AuthProvider>
       </body>
     </html>
