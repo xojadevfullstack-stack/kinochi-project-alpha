@@ -1,6 +1,7 @@
 """SMM Background Worker: Dual-Mode Clip Generator & Multi-Platform Scheduler (Slice 3B)."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from datetime import datetime, timezone
@@ -120,21 +121,24 @@ async def process_generating_job(
         await db.flush()
         return job
 
+    display_code = getattr(movie, "short_code", None) or job.movie_code
+    bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
     storage_msg = await tg_client.get_messages(storage_chat_id, ids=trans.storage_channel_message_id)
     out_file = os.path.join(uploads_dir, f"clip_{job.id}.mp4")
     meta = await create_smart_smm_clip(
         client=tg_client, storage_msg=storage_msg, output_path=out_file,
-        movie_code=job.movie_code, imdb_rating=getattr(movie, "imdb_rating", None),
+        movie_code=display_code, imdb_rating=getattr(movie, "imdb_rating", None),
         duration_sec=job.duration_sec or cfg.clip_duration_sec,
         start_sec=job.start_sec if job.start_sec > 0 else None,
         copyright_shield=cfg.copyright_shield,
+        bot_username=bot_handle,
     )
     job.start_sec = float(meta["start_sec"])
     job.duration_sec = float(meta["duration_sec"])
     job.clip_path = f"uploads/smm/clip_{job.id}.mp4"
     job.caption = job.caption or build_movie_caption(
-        movie_code=job.movie_code, imdb_rating=getattr(movie, "imdb_rating", None),
-        genres=getattr(movie, "genres", None), bot_username=cfg.bot_username or "@kinochi_mvp_bot",
+        movie_code=display_code, imdb_rating=getattr(movie, "imdb_rating", None),
+        genres=getattr(movie, "genres", None), bot_username=bot_handle,
     )
     job.status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
     await db.flush()
@@ -150,17 +154,22 @@ async def process_publish_job(
     base_public_url: str = "",
 ) -> SmmClipJobModel:
     """Publish rendered clip across enabled platforms and save per-platform results."""
+    bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
+    movie = (await db.execute(select(MovieModel).where(MovieModel.id == job.media_id))).scalar_one_or_none() if job.media_id else None
+    display_code = getattr(movie, "short_code", None) or job.movie_code
+
     if not dispatcher:
         dispatcher = MultiPlatformDispatcher()
         if cfg.telegram_channel_id:
             dispatcher.publishers["telegram"] = TelegramChannelPublisher(
-                channel_id=cfg.telegram_channel_id, bot_username=cfg.bot_username
+                channel_id=cfg.telegram_channel_id, bot_username=bot_handle
             )
 
     video_url = f"{base_public_url.rstrip('/')}/{job.clip_path}" if base_public_url and job.clip_path else ""
     results = await dispatcher.publish_all(
         video_path=job.clip_path or "", caption=job.caption or "",
-        movie_code=job.movie_code, platforms=cfg.enabled_platforms, video_url=video_url,
+        movie_code=display_code, platforms=cfg.enabled_platforms, video_url=video_url,
+        bot_username=bot_handle,
     )
     status_map = dict(job.platforms_status or {})
     any_ok = False
@@ -205,3 +214,69 @@ async def run_smm_worker_tick(
         await process_publish_job(db, pub_job, cfg, base_public_url=base_public_url)
         published = 1
     return {"generated": generated, "published": published}
+
+
+def resolve_smm_session_string() -> str:
+    """Return dedicated SMM_TELEGRAM_STRING_SESSION; refuse shared scraper session unless explicitly allowed."""
+    dedicated = os.getenv("SMM_TELEGRAM_STRING_SESSION", "").strip()
+    if dedicated:
+        return dedicated
+    if os.getenv("SMM_ALLOW_SHARED_SESSION", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return os.getenv("TELEGRAM_STRING_SESSION", "").strip()
+    return ""
+
+
+async def run_smm_worker_cycle(
+    tg_client: Any = None,
+    session_factory: Any = None,
+) -> dict:
+    """Run one safe DB-committed SMM worker tick behind SMM_AUTOPILOT_ENABLED."""
+    if os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() not in {"1", "true", "yes", "on"}:
+        return {"generated": 0, "published": 0, "skipped": True}
+    if session_factory is None:
+        from app.infrastructure.db.session import async_session_factory
+        session_factory = async_session_factory
+    raw_chat = os.getenv("STORAGE_CHANNEL_ID", "0").strip()
+    storage_chat_id: int | str = int(raw_chat) if raw_chat.lstrip("-").isdigit() else raw_chat
+    base_public_url = os.getenv("PUBLIC_API_BASE_URL", "https://kinochi-project-alpha-9g6j.onrender.com").strip()
+
+    async with session_factory() as db:
+        res = await run_smm_worker_tick(
+            db, tg_client=tg_client, storage_chat_id=storage_chat_id, base_public_url=base_public_url
+        )
+        await db.commit()
+        return res
+
+
+async def supervised_run_smm_worker() -> None:
+    """Long-running background supervisor for Cycle 2 SMM rendering and publishing."""
+    interval = max(30, int(os.getenv("SMM_WORKER_INTERVAL_SEC", "180")))
+    tg_client = None
+    session_disabled = False
+
+    while True:
+        try:
+            enabled = os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+            if enabled:
+                sess = "" if session_disabled else resolve_smm_session_string()
+                api_id = os.getenv("TELEGRAM_API_ID", "").strip()
+                api_hash = os.getenv("TELEGRAM_API_HASH", "").strip()
+                if sess and api_id.isdigit() and api_hash and tg_client is None:
+                    from telethon import TelegramClient
+                    from telethon.sessions import StringSession
+                    tg_client = TelegramClient(StringSession(sess), int(api_id), api_hash)
+                    await tg_client.connect()
+                await run_smm_worker_cycle(tg_client=tg_client)
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            if tg_client:
+                try:
+                    await tg_client.disconnect()
+                except Exception:
+                    pass
+            raise
+        except Exception as exc:
+            if "AuthKeyDuplicated" in type(exc).__name__ or "AuthKeyDuplicated" in str(exc):
+                session_disabled = True
+                tg_client = None
+            logger.warning("SMM worker tick error (API/Bot isolated): %s", exc)
+        await asyncio.sleep(interval)

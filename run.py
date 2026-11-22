@@ -131,11 +131,14 @@ async def main():
     if "localhost" in backend_url or "127.0.0.1" in backend_url:
         os.environ["BACKEND_API_URL"] = f"http://127.0.0.1:{port}/api/v1"
     
-    # Run both concurrently without masking exceptions
-    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot()) chaqirilmoqda (no return_exceptions masking)")
+    # Run API, Bot, and SMM background worker concurrently
+    from scraper.smm_worker import supervised_run_smm_worker
+
+    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), supervised_run_smm_worker()) chaqirilmoqda")
     await asyncio.gather(
         run_api(),
         supervised_run_bot(),
+        supervised_run_smm_worker(),
     )
 
 if __name__ == "__main__":

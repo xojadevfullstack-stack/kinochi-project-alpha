@@ -14,6 +14,8 @@ from scraper.smm_worker import (
     maybe_enqueue_smm_for_movie,
     process_generating_job,
     process_publish_job,
+    resolve_smm_session_string,
+    run_smm_worker_cycle,
 )
 
 
@@ -94,3 +96,68 @@ async def test_maybe_enqueue_smm_for_movie_respects_env_guard_and_isolates_error
     await db_session.commit()
     persisted = (await db_session.execute(select(MovieModel).where(MovieModel.code == "777"))).scalar_one()
     assert persisted.id == movie.id
+
+
+def test_resolve_smm_session_string_avoids_sharing_scraper_session(monkeypatch):
+    monkeypatch.setenv("TELEGRAM_STRING_SESSION", "shared_scraper_sess")
+    monkeypatch.delenv("SMM_TELEGRAM_STRING_SESSION", raising=False)
+    monkeypatch.delenv("SMM_ALLOW_SHARED_SESSION", raising=False)
+    assert resolve_smm_session_string() == ""
+
+    monkeypatch.setenv("SMM_TELEGRAM_STRING_SESSION", "dedicated_smm_sess")
+    assert resolve_smm_session_string() == "dedicated_smm_sess"
+
+    monkeypatch.delenv("SMM_TELEGRAM_STRING_SESSION", raising=False)
+    monkeypatch.setenv("SMM_ALLOW_SHARED_SESSION", "true")
+    assert resolve_smm_session_string() == "shared_scraper_sess"
+
+
+@pytest.mark.asyncio
+async def test_run_smm_worker_cycle_skips_when_disabled(monkeypatch):
+    monkeypatch.delenv("SMM_AUTOPILOT_ENABLED", raising=False)
+    res = await run_smm_worker_cycle(tg_client=None)
+    assert res == {"generated": 0, "published": 0, "skipped": True}
+
+
+@pytest.mark.asyncio
+async def test_smm_worker_prefers_movie_short_code_and_mediaplus_bot(db_session, tmp_path):
+    movie = MovieModel(
+        title="Qisqa Kodli Film",
+        code="QSKD99",
+        short_code="1042",
+        imdb_rating=8.1,
+        genres="Jangari",
+    )
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbekcha", storage_channel_message_id=7771))
+    cfg = SmmSettingsModel(
+        id=1,
+        mode="SEMI_AUTO",
+        enabled_platforms=["telegram", "youtube"],
+        bot_username="@MediaPlusOfficialBot",
+        telegram_channel_id="-100999",
+    )
+    cfg = await db_session.merge(cfg)
+    await db_session.commit()
+
+    job = await enqueue_smm_clip_job(db_session, movie_code="QSKD99", title="Qisqa Kodli Film", media_id=movie.id)
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=7771))
+    fake_clip = {"output_path": str(tmp_path / f"clip_{job.id}.mp4"), "start_sec": 100.0, "duration_sec": 45.0, "blur_bottom_ad": False}
+    (tmp_path / f"clip_{job.id}.mp4").write_bytes(b"mp4")
+
+    with patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(return_value=fake_clip)) as mock_clip:
+        updated = await process_generating_job(db_session, job, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
+
+    assert mock_clip.await_args.kwargs["movie_code"] == "1042"
+    assert mock_clip.await_args.kwargs["bot_username"] == "@MediaPlusOfficialBot"
+    assert "#1042" in (updated.caption or "")
+    assert "@MediaPlusOfficialBot" in (updated.caption or "")
+
+    mock_disp = MagicMock()
+    mock_disp.publish_all = AsyncMock(
+        return_value={"telegram": PublishResult("telegram", True, post_id="1")}
+    )
+    await process_publish_job(db_session, updated, cfg, dispatcher=mock_disp)
+    assert mock_disp.publish_all.await_args.kwargs["movie_code"] == "1042"
