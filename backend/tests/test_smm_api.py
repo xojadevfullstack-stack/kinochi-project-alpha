@@ -177,3 +177,14 @@ def test_smm_bot_endpoint_authorizes_db_admin_telegram_id_when_env_empty(client,
     )
     assert r_ok.status_code == 200
     assert r_ok.json()["status"] == "publishing"
+
+
+def test_get_worker_state_safe_never_swallows_import_error_and_ensures_repo_path(monkeypatch):
+    import sys
+    from app.api.v1 import smm as smm_api
+
+    monkeypatch.setitem(sys.modules, "scraper.smm_worker", None)
+    state = smm_api._get_worker_state_safe()
+    assert state["running"] is False
+    assert state["last_error"] is not None
+    assert "ModuleNotFoundError" in state["last_error"]

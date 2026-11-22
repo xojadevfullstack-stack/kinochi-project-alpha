@@ -2,7 +2,9 @@
 import hmac
 import logging
 import os
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, status
@@ -109,16 +111,23 @@ async def list_smm_jobs(
     return (await db.execute(stmt)).scalars().all()
 
 
+def _ensure_repo_root_on_path() -> None:
+    repo_root = str(Path(__file__).resolve().parents[4])
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
+
 def _get_worker_state_safe() -> dict:
     try:
+        _ensure_repo_root_on_path()
         from scraper.smm_worker import get_smm_worker_state
         return get_smm_worker_state()
-    except Exception:
+    except Exception as exc:
         return {
             "enabled": os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
             "running": False,
             "has_smm_session": bool(os.getenv("SMM_TELEGRAM_STRING_SESSION", "").strip()),
-            "last_error": None,
+            "last_error": f"{type(exc).__name__}: {exc}",
         }
 
 
@@ -127,6 +136,7 @@ async def _bg_publish_job(job_id: int) -> None:
     if os.getenv("APP_ENV") == "testing":
         return
     try:
+        _ensure_repo_root_on_path()
         from app.infrastructure.db.session import async_session_factory
         from scraper.smm_worker import process_publish_job
 

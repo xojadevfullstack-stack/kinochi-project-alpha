@@ -430,3 +430,18 @@ async def test_process_publish_job_skips_already_published_platforms(db_session,
     assert res.platforms_status["telegram"]["post_id"] == "3"
     assert res.platforms_status["youtube"]["post_id"] == "yt_1"
     assert res.platforms_status["tiktok"]["post_id"] == "tk_99"
+
+
+def test_smm_worker_imports_gracefully_when_cv2_missing(monkeypatch):
+    import importlib
+    import sys
+
+    monkeypatch.setitem(sys.modules, "cv2", None)
+    for mod in ("scraper.video_verifier", "scraper.smm_scene_scorer", "scraper.smm_pipeline", "scraper.smm_worker"):
+        sys.modules.pop(mod, None)
+    worker_mod = importlib.import_module("scraper.smm_worker")
+    assert hasattr(worker_mod, "get_smm_worker_state")
+    assert hasattr(worker_mod, "process_publish_job")
+    state = worker_mod.get_smm_worker_state()
+    assert "started_at" in state
+    assert "last_tick_at" in state

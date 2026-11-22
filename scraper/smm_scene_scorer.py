@@ -10,7 +10,10 @@ import re
 import subprocess
 from typing import Any, Dict, List, Optional, Tuple
 
-import cv2
+try:
+    import cv2  # type: ignore
+except Exception:  # pragma: no cover - optional when OpenCV shared libs are unavailable
+    cv2 = None
 import httpx
 import numpy as np
 
@@ -94,6 +97,8 @@ def _measure_audio_db(ffmpeg: str, video_path: str, start_sec: float, probe_dur:
 
 
 def _sample_window_visuals(video_path: str, start_sec: float, duration_sec: float) -> Tuple[float, List[str]]:
+    if cv2 is None:
+        return 10.0, []
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
     if fps <= 0 or fps > 120:
@@ -175,10 +180,12 @@ async def select_best_scene_start(
 ) -> Dict[str, Any]:
     """Score candidate windows by visual quality, motion, audio RMS, and Gemini Vision ad filter."""
     ffmpeg = resolve_ffmpeg_bin()
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
-    total_dur = (cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps) if fps > 0 else 0.0
-    cap.release()
+    total_dur = 0.0
+    if cv2 is not None:
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
+        total_dur = (cap.get(cv2.CAP_PROP_FRAME_COUNT) / fps) if fps > 0 else 0.0
+        cap.release()
 
     end_limit = min(total_dur, scan_end_sec) if scan_end_sec else total_dur
     usable_span = max(0.0, end_limit - scan_start_sec - clip_duration)
