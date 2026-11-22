@@ -572,12 +572,15 @@ class APIClient:
         job_id: int,
         action: str = "approve",
         publish_now: bool = False,
+        telegram_user_id: Optional[int] = None,
     ) -> Optional[Dict[str, Any]]:
         """Execute approve/publish/reject on an SMM clip job via bot secret endpoint."""
         try:
             endpoint = f"/smm/bot/jobs/{job_id}/{'reject' if action == 'reject' else 'approve'}"
-            kwargs: Dict[str, Any] = {"json": {"publish_now": publish_now}} if action != "reject" else {}
-            resp = await self.client.post(endpoint, **kwargs)
+            body: Dict[str, Any] = {} if action == "reject" else {"publish_now": publish_now}
+            if telegram_user_id is not None:
+                body["telegram_user_id"] = int(telegram_user_id)
+            resp = await self.client.post(endpoint, json=body)
             if resp.status_code == 200:
                 return resp.json()
         except Exception as e:

@@ -24,7 +24,8 @@ def _is_smm_admin(user_id: int) -> bool:
         if part.strip()
     )
     allowed = {int(x.strip()) for x in raw.split(",") if x.strip().lstrip("-").isdigit()}
-    return user_id in allowed
+    # When env admin list is unset (e.g. configured via Admin Panel /smm DB), delegate check to backend smm_settings
+    return True if not allowed else user_id in allowed
 
 
 @router.callback_query(F.data.startswith(("smm_approve:", "smm_publish:", "smm_reject:")))
@@ -46,7 +47,12 @@ async def handle_smm_callback(callback: CallbackQuery) -> None:
         action = "reject" if prefix == "smm_reject" else "approve"
         publish_now = prefix == "smm_publish"
 
-        result = await api_client.act_on_smm_job(job_id, action=action, publish_now=publish_now)
+        result = await api_client.act_on_smm_job(
+            job_id,
+            action=action,
+            publish_now=publish_now,
+            telegram_user_id=int(user_id),
+        )
         if not result:
             await callback.answer("⚠️ Backend bilan bog'lanishda xato yuz berdi.", show_alert=True)
             return

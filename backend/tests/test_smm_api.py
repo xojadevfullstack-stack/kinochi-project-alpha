@@ -145,3 +145,34 @@ def test_smm_job_video_endpoint_serves_file_and_404_when_missing(admin_client, t
     )
     miss_resp = admin_client.get(f"/api/v1/smm/jobs/{missing.json()['id']}/video")
     assert miss_resp.status_code == 404
+
+
+def test_smm_bot_endpoint_authorizes_db_admin_telegram_id_when_env_empty(client, monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "BOT_API_SECRET", "bot_secret_db_auth")
+    monkeypatch.delenv("ADMIN_IDS", raising=False)
+    monkeypatch.delenv("SMM_ADMIN_TELEGRAM_ID", raising=False)
+
+    app.dependency_overrides[get_current_admin] = lambda: {"id": 1, "username": "xojadevops", "role": "superadmin"}
+    try:
+        client.put("/api/v1/smm/settings", json={"admin_telegram_id": "1990156236"})
+        c = client.post("/api/v1/smm/jobs", json={"media_type": "movie", "movie_code": "3965", "title": "DB Admin Auth"})
+        jid = c.json()["id"]
+    finally:
+        app.dependency_overrides.pop(get_current_admin, None)
+
+    r_bad = client.post(
+        f"/api/v1/smm/bot/jobs/{jid}/approve",
+        json={"publish_now": True, "telegram_user_id": 111111},
+        headers={"X-Bot-Secret": "bot_secret_db_auth"},
+    )
+    assert r_bad.status_code == 403
+
+    r_ok = client.post(
+        f"/api/v1/smm/bot/jobs/{jid}/approve",
+        json={"publish_now": True, "telegram_user_id": 1990156236},
+        headers={"X-Bot-Secret": "bot_secret_db_auth"},
+    )
+    assert r_ok.status_code == 200
+    assert r_ok.json()["status"] == "publishing"

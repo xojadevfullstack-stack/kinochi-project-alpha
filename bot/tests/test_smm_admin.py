@@ -33,6 +33,26 @@ async def test_smm_callback_requires_admin_and_executes_actions(monkeypatch):
         cb.message.reply = AsyncMock()
         with patch("handlers.smm_admin.api_client.act_on_smm_job", new=AsyncMock(return_value={"status": "ok"})) as mock_act:
             await handle_smm_callback(cb)
-        mock_act.assert_awaited_once_with(7, action=expected_action, publish_now=expected_pub)
+        mock_act.assert_awaited_once_with(7, action=expected_action, publish_now=expected_pub, telegram_user_id=111222)
         cb.message.edit_reply_markup.assert_awaited_once()
         cb.message.reply.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_smm_callback_falls_back_to_backend_db_admin_when_env_empty(monkeypatch):
+    monkeypatch.delenv("ADMIN_IDS", raising=False)
+    monkeypatch.delenv("SMM_ADMIN_TELEGRAM_ID", raising=False)
+
+    cb = MagicMock()
+    cb.from_user = MagicMock(id=1990156236)
+    cb.data = "smm_publish:3"
+    cb.answer = AsyncMock()
+    cb.message = MagicMock()
+    cb.message.edit_reply_markup = AsyncMock()
+    cb.message.reply = AsyncMock()
+
+    with patch("handlers.smm_admin.api_client.act_on_smm_job", new=AsyncMock(return_value={"status": "publishing"})) as mock_act:
+        await handle_smm_callback(cb)
+
+    mock_act.assert_awaited_once_with(3, action="approve", publish_now=True, telegram_user_id=1990156236)
+    cb.message.reply.assert_awaited_once()

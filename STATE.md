@@ -18,7 +18,7 @@
 - **Live Cycle 2 E2E (`run_smm_worker_cycle`):**
   - `smm_clip_jobs #2` (`#3955`, `Yulduzlar sari mashaqqatli yo‘l`) -> `waiting_approval`, `uploads/smm/clip_2.mp4` (`5,071,423` bayt, `720x1280`, AI chap-yuqori watermark blur).
   - `smm_clip_jobs #3` (`#3956`, `Ouk Strit ko‘chasining oxiri`) -> `waiting_approval`, `uploads/smm/clip_3.mp4` (`9,124,325` bayt, `720x1280`, `45.0s`, AI chap-yuqori watermark blur, `Janr: Ilmiy fantastika • Sirli • Triller`).
-- **Autopost & External Publishers Fixes:** `InstagramReelsPublisher` da `FACEBOOK_ACCESS_TOKEN` fallback va `process_publish_job()` da `/api/v1/smm/jobs/{id}/video` + Telegram Storage tiklash ulandi (`ruff` `All checks passed!`, backend SMM+Enricher `60 passed in 7.80s`, bot `107 passed in 5.83s`).
+- **Autopost & Telegram Inline Admin Fix:** `InstagramReelsPublisher` da `FACEBOOK_ACCESS_TOKEN` fallback, `process_publish_job()` da `/api/v1/smm/jobs/{id}/video` + Telegram Storage tiklash hamda `smm_admin.py` / `smm.py` da `smm_settings.admin_telegram_id` orqali Telegram tugma avtorizatsiyasi qo'shildi (`ruff` `All checks passed!`, SMM backend `56 passed, 2 warnings in 14.46s`, bot `108 passed in 8.56s`).
 - **Ruff Lint (o'zgartirilgan SMM + test fayllari):** `All checks passed!` (Exit code 0). (`backend bot` umumiy lintida avvaldan mavjud 429 xato bor).
 - **Alembic Heads:** `f6a7b8c9d0e1 (head)` (Supabase'da faol).
 - **Backend Filtered Suite (`SMM + Enricher + Movie + Public routes`):** `66 passed, 2 warnings in 11.39s`.

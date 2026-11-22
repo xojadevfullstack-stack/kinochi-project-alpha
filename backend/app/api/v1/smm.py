@@ -49,6 +49,11 @@ class SmmApproveRequest(BaseModel):
     publish_now: bool = False
     scheduled_at: datetime | None = None
     caption: str | None = None
+    telegram_user_id: int | None = None
+
+
+class SmmBotRejectRequest(BaseModel):
+    telegram_user_id: int | None = None
 
 
 class SmmRecutRequest(BaseModel):
@@ -273,6 +278,24 @@ async def reject_smm_job(
     return await _apply_reject(db, job)
 
 
+async def _verify_bot_admin_user(db: AsyncSession, telegram_user_id: int | None) -> None:
+    if telegram_user_id is None:
+        return
+    cfg = await _get_or_create_settings(db)
+    raw = ",".join(
+        p
+        for p in (
+            cfg.admin_telegram_id or "",
+            os.getenv("SMM_ADMIN_TELEGRAM_ID", ""),
+            os.getenv("ADMIN_IDS", ""),
+        )
+        if str(p).strip()
+    )
+    allowed = {int(x.strip()) for x in raw.split(",") if x.strip().lstrip("-").isdigit()}
+    if int(telegram_user_id) not in allowed:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ruxsat yo'q: bu tugma faqat admin uchun")
+
+
 @router.post("/bot/jobs/{job_id}/approve")
 async def bot_approve_smm_job(
     job_id: int,
@@ -280,16 +303,21 @@ async def bot_approve_smm_job(
     db: AsyncSession = Depends(get_db_session),
     _: None = Depends(_verify_bot_secret),
 ):
+    req = payload or SmmApproveRequest()
+    await _verify_bot_admin_user(db, req.telegram_user_id)
     job = await _get_job_or_404(db, job_id)
-    return await _apply_approve(db, job, payload or SmmApproveRequest())
+    return await _apply_approve(db, job, req)
 
 
 @router.post("/bot/jobs/{job_id}/reject")
 async def bot_reject_smm_job(
     job_id: int,
+    payload: SmmBotRejectRequest | None = None,
     db: AsyncSession = Depends(get_db_session),
     _: None = Depends(_verify_bot_secret),
 ):
+    req = payload or SmmBotRejectRequest()
+    await _verify_bot_admin_user(db, req.telegram_user_id)
     job = await _get_job_or_404(db, job_id)
     return await _apply_reject(db, job)
 
