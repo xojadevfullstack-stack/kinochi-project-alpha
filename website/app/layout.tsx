@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import FloatingBackButton from "@/components/FloatingBackButton";
 import SubheaderTabs from "@/components/SubheaderTabs";
 import Breadcrumb from "@/components/Breadcrumb";
+import Footer from "@/components/Footer";
 import TelegramInit from "@/components/TelegramInit";
 import { fetchApi } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
@@ -81,11 +82,7 @@ export default async function RootLayout({
           
           <BottomNav />
           <FloatingBackButton />
-
-          {/* Simple Footer */}
-          <footer className="cv-auto border-t border-slate-200 dark:border-white/10 mt-12 py-8 pb-28 xl:pb-8 text-center text-slate-500 dark:text-text-secondary text-sm">
-            <p>© {new Date().getFullYear()} MediaPlus. Barcha huquqlar himoyalangan.</p>
-          </footer>
+          <Footer />
         </AuthProvider>
       </body>
     </html>

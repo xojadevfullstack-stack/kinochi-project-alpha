@@ -222,12 +222,19 @@ body.light-theme main .bg-background-obsidian:not(.hero-stage):not(.preserve-whi
 }
 
 body.light-theme main .bg-white\/5:not(.hero-stage *):not(.preserve-white *),
+body.light-theme main .bg-white\/10:not(.hero-stage *):not(.preserve-white *),
+body.light-theme main .bg-white\/\[0\.02\]:not(.hero-stage *):not(.preserve-white *),
 body.light-theme main .bg-white\/\[0\.03\]:not(.hero-stage *):not(.preserve-white *),
 body.light-theme main .bg-white\/\[0\.04\]:not(.hero-stage *):not(.preserve-white *),
 body.light-theme main .bg-white\/\[0\.06\]:not(.hero-stage *):not(.preserve-white *) {
   background-color: rgba(255, 255, 255, 0.92) !important;
   border-color: #E2E8F0 !important;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+body.light-theme .callout-card {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05) !important;
 }
 
 body.light-theme main .text-white\/90:not(.hero-stage *):not(.preserve-white *),
@@ -284,7 +291,10 @@ main > .universal-breadcrumb + div[class*="pt-16"] {
   padding-top: 0.75rem !important;
 }
 
-/* Pure Minimal Surface Polish */
+/* Pure Minimal Surface Polish + Marquee Suppression (matches mockup_homepage_v2.html) */
+body.pure-minimal section:has(.animate-marquee-left) {
+  display: none !important;
+}
 body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#0"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]),
 body.pure-minimal:not(.light-theme) main [class*="rounded-"][class*="bg-[#1"]:not(.hero-stage):not(button):not(select):not(input):not(.aspect-\[2\/3\]) {
   background-color: rgba(16, 19, 28, 0.88);
@@ -295,6 +305,102 @@ body.pure-minimal.light-theme main [class*="rounded-"][class*="bg-[#1"]:not(.her
   background-color: #FFFFFF;
   border-color: rgba(15, 23, 42, 0.09);
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+/* 3D Fan Poster Stack (To'plamlar / Collections) */
+.fan-stack {
+  position: relative;
+  height: 120px;
+  width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  margin: 0 auto;
+}
+.fan-left {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-85%) rotate(-14deg);
+  width: 60px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1;
+}
+.fan-right {
+  position: absolute;
+  left: 50%;
+  transform: translateX(15%) rotate(14deg);
+  width: 60px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1;
+}
+.fan-center {
+  position: relative;
+  width: 72px;
+  height: 105px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  z-index: 2;
+}
+
+/* Footer Social / Telegram Buttons Contrast & Hover */
+.footer-social-btn {
+  background-color: #141722 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+.footer-social-btn span {
+  color: #FFFFFF !important;
+}
+.footer-social-btn:hover {
+  background-color: #E50914 !important;
+  border-color: #E50914 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3) !important;
+}
+.footer-social-btn:hover span {
+  color: #FFFFFF !important;
+}
+body.light-theme .footer-social-btn {
+  background-color: #F1F5F9 !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+body.light-theme .footer-social-btn span {
+  color: #0F172A !important;
+}
+body.light-theme .footer-social-btn:hover {
+  background-color: #E50914 !important;
+  border-color: #E50914 !important;
+  color: #FFFFFF !important;
+}
+body.light-theme .footer-social-btn:hover span {
+  color: #FFFFFF !important;
+}
+
+/* 18+ Warning Badge */
+.badge-18plus {
+  background-color: rgba(229, 9, 20, 0.12) !important;
+  border: 1px solid rgba(229, 9, 20, 0.35) !important;
+  color: #EF4444 !important;
+}
+body.light-theme .badge-18plus {
+  background-color: #FEE2E2 !important;
+  border-color: #FECACA !important;
+  color: #DC2626 !important;
 }
 
 /* Touch-Safe Unified Deep Red Hover on Header Icon Controls & Back Buttons */

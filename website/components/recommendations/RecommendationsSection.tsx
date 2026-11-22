@@ -70,7 +70,7 @@ export default function RecommendationsSection() {
                 <MovieCard item={catalogItem} />
                 <div className="mt-3 px-2">
                   <p className="text-[11px] md:text-xs text-text-secondary italic flex items-center gap-1.5 opacity-80">
-                    <span className="material-symbols-outlined text-[14px] text-rating-gold">auto_awesome</span>
+                    <span className="material-symbols-outlined text-[14px] text-primary">auto_awesome</span>
                     Sizga tavsiya qilingan
                   </p>
                 </div>

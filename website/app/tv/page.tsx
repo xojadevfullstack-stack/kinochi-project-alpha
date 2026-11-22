@@ -88,7 +88,7 @@ export default function TVPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-rating-gold text-2xl">live_tv</span>
+              <span className="material-symbols-outlined text-primary text-2xl">live_tv</span>
               <span>Onlayn TV va Jonli Efirlar</span>
             </h1>
             <p className="text-xs text-text-secondary mt-0.5">

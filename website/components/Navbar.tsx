@@ -333,7 +333,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   {status === "authenticated" && user ? `${user.first_name} ${user.last_name || ""}` : "Mehmon (Kiring)"}
                 </div>
                 <div className="text-[10px] text-text-secondary font-medium flex items-center gap-1 mt-0.5">
-                  <span className="material-symbols-outlined text-[12px] text-rating-gold">verified</span>
+                  <span className="material-symbols-outlined text-[12px] text-primary">verified</span>
                   <span>{status === "authenticated" ? "VIP Foydalanuvchi" : "Standart tarif"}</span>
                 </div>
               </div>

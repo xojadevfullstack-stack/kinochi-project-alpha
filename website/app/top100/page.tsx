@@ -63,7 +63,7 @@ export default async function Top100Page({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/10">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-rating-gold text-3xl">emoji_events</span>
+              <span className="material-symbols-outlined text-primary text-3xl">emoji_events</span>
               <span>Top 100 Sara Filmlar va Seriallar</span>
             </h1>
             <p className="text-xs text-text-secondary mt-0.5">

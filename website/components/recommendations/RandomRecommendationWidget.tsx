@@ -286,7 +286,7 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
                   disabled={isSpinning || filteredItems.length <= 1}
                   className="flex-1 sm:flex-initial h-12 sm:h-14 px-5 sm:px-6 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 hover:border-white/30 font-label-caps text-xs sm:text-sm uppercase tracking-widest font-bold shadow-md shadow-black/20 transition-all duration-200 hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:hover:scale-100 disabled:hover:translate-y-0"
                 >
-                  <span className={`material-symbols-outlined text-[18px] text-rating-gold ${isSpinning ? "animate-spin" : ""}`}>
+                  <span className={`material-symbols-outlined text-[18px] text-primary ${isSpinning ? "animate-spin" : ""}`}>
                     autorenew
                   </span>
                   <span>KEYINGI</span>

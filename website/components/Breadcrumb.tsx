@@ -25,6 +25,11 @@ const SEGMENT_LABELS: Record<string, string> = {
   achievements: "Yutuqlar",
   search: "Qidiruv",
   p: "Sahifa",
+  legal: "Ma'lumot",
+  rules: "Foydalanish qoidalari",
+  dmca: "Mualliflik huquqi (DMCA)",
+  privacy: "Maxfiylik siyosati",
+  about: "Reklama va hamkorlik",
   "test-auth": "Kirish",
 };
 
@@ -53,9 +58,13 @@ export default function Breadcrumb() {
 
   const crumbs = segments.map((seg, idx) => {
     const href = "/" + segments.slice(0, idx + 1).join("/");
-    // Avoid broken parent links for virtual prefixes (/movie/[code], /category/[id], /p/[slug])
+    // Avoid broken parent links for virtual prefixes (/movie/[code], /category/[id], /p/[slug], /legal/[doc])
     const resolvedHref =
-      seg === "movie" || seg === "category" || seg === "p" ? "/catalog" : href;
+      seg === "legal"
+        ? "/legal/rules"
+        : seg === "movie" || seg === "category" || seg === "p"
+        ? "/catalog"
+        : href;
     return {
       label: formatSegmentLabel(seg, segments[idx - 1]),
       href: resolvedHref,

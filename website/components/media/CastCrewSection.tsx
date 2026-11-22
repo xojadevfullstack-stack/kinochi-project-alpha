@@ -257,7 +257,7 @@ export default function CastCrewSection({
             <div className="border-t border-white/5" />
             <div>
               <h3 className="text-sm sm:text-base font-bold text-white/90 mb-3.5 flex items-center gap-2">
-                <span className="material-symbols-outlined text-rating-gold text-lg">info</span>
+                <span className="material-symbols-outlined text-primary text-lg">info</span>
                 {mediaType === "series" ? "Serial haqida ma'lumot" : "Film haqida ma'lumot"}
               </h3>
 

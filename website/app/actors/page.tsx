@@ -179,7 +179,7 @@ export default function ActorsPage() {
             <BackButton fallbackUrl="/" />
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-text-primary font-headline-md tracking-tight flex items-center gap-2">
-                <span className="material-symbols-outlined text-rating-gold text-2xl">groups</span>
+                <span className="material-symbols-outlined text-primary text-2xl">groups</span>
                 <span>Aktyorlar va Ijodkorlar</span>
               </h1>
               <p className="text-xs text-text-secondary mt-0.5">

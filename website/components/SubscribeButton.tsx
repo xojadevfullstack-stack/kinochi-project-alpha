@@ -138,7 +138,7 @@ export default function SubscribeButton({
       {/* Floating Feedback Toast */}
       {toastMessage && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl bg-neutral-900 border border-white/20 text-white text-xs sm:text-sm font-medium shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <span className="material-symbols-outlined text-rating-gold text-lg">info</span>
+          <span className="material-symbols-outlined text-primary text-lg">info</span>
           <span>{toastMessage}</span>
         </div>
       )}
