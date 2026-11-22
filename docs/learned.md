@@ -56,3 +56,8 @@
 ## Dual-Code Aliasing (Backward-Compatible Short Numeric Code)
 - Eski harf-raqamli kodlarni (`PT3BQB`) o'zgartirmasdan alohida `short_code` (`1001+`) alias ustuni qo'shish va qidiruvda `code`/`short_code` ni raqamli `id` fallback'idan ustun qo'yish eski havolalarni sindirmasdan ijtimoiy tarmoq konversiyasini oshiradi.
 - Analogy: Ko'chaga yangi qisqa pochta indeksi berilganda eski manzil xatlarini ham bir vaqtda qabul qilishni davom ettirish — eski xatlar yo'qolmaydi, yangilari esa 2 barobar tez yetib boradi.
+
+
+## Self-Exclusion Duplicate Filtering & Non-Destructive Edit Merge
+- Tahrirlash rejimida tashqi manbadan (TMDb) ma'lumot tortilganda dublikat tekshiruvi tahrirlanayotgan yozuvning o'zini (`editingId`) filtrlab tashlashi, shuningdek `fillEmptyOnly` opsiyasi bilan avval qo'lda kiritilgan maydonlarni tasodifan ustidan yozib yubormaslik kerak.
+- Analogy: Uy hujjatini yangilayotganda arxiv xodimi "bu manzilda allaqachon uy bor ekan" deb o'zingizning uyingizni o'zingizga raqobatchi qilib ko'rsatmasligi, va ustidan bo'yoq tortganda yangi devor bo'lsa eskisi saqlanib qolishi kabi.

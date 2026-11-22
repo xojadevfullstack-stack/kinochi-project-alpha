@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api";
+import {
+  normalizeTmdbId,
+  filterDuplicateResults,
+  mergeTmdbDetails,
+} from "@/lib/tmdbFormHelpers.mjs";
 import Link from "next/link";
 
 type Category = { id: number; name: string };
@@ -57,6 +62,7 @@ export default function SeriesListPage() {
   const [tmdbResults, setTmdbResults] = useState<any[]>([]);
   const [showTmdbResults, setShowTmdbResults] = useState(false);
   const [fetchingTmdbDetails, setFetchingTmdbDetails] = useState(false);
+  const [fillEmptyOnly, setFillEmptyOnly] = useState(false);
   const [tmdbSeasonsHint, setTmdbSeasonsHint] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<{
     exact: any[];
@@ -267,28 +273,32 @@ export default function SeriesListPage() {
           ru: details.raw_title,
         });
 
-        setForm((prev) => ({
-          ...prev,
-          title: details.title || tvItem.title || prev.title,
-          description: details.description || prev.description,
-          tmdb_id: details.tmdb_id || tvItem.id,
-          poster_url: details.poster_url || prev.poster_url,
-          trailer_url: details.trailer_url || prev.trailer_url,
-          director: details.director || prev.director,
-          cast: details.cast || prev.cast,
-          release_year: Number(details.release_year) || prev.release_year || new Date().getFullYear(),
-          imdb_rating:
-            details.tmdb_rating ??
-            details.vote_average ??
-            (tvItem.vote_average
-              ? Math.round(tvItem.vote_average * 10) / 10
-              : prev.imdb_rating),
-          category_ids: Array.from(
-            new Set([...prev.category_ids, ...matchedCategoryIds])
-          ),
-        }));
+        setForm((prev) =>
+          mergeTmdbDetails(
+            prev,
+            {
+              title: details.title || tvItem.title || prev.title,
+              description: details.description || prev.description,
+              tmdb_id: details.tmdb_id || tvItem.id,
+              poster_url: details.poster_url || prev.poster_url,
+              trailer_url: details.trailer_url || prev.trailer_url,
+              director: details.director || prev.director,
+              cast: details.cast || prev.cast,
+              release_year:
+                Number(details.release_year) || prev.release_year || new Date().getFullYear(),
+              imdb_rating:
+                details.tmdb_rating ??
+                details.vote_average ??
+                (tvItem.vote_average
+                  ? Math.round(tvItem.vote_average * 10) / 10
+                  : prev.imdb_rating),
+              category_ids: matchedCategoryIds,
+            },
+            { fillEmptyOnly: Boolean(editingId && fillEmptyOnly) }
+          )
+        );
 
-        // Duplicate check
+        // Duplicate check (excluding the series currently being edited)
         try {
           const dupRes = await fetchApi(
             `/content-lookup/duplicates?tmdb_id=${tvItem.id}&title=${encodeURIComponent(
@@ -297,12 +307,9 @@ export default function SeriesListPage() {
               details.original_title || ""
             )}&year=${details.release_year || ""}`
           );
-          if (
-            dupRes &&
-            ((dupRes.exact && dupRes.exact.length > 0) ||
-              (dupRes.similar && dupRes.similar.length > 0))
-          ) {
-            setDuplicateWarning(dupRes);
+          const filteredDup = filterDuplicateResults(dupRes, editingId, "series");
+          if (filteredDup) {
+            setDuplicateWarning(filteredDup);
           }
         } catch (dupErr) {
           console.error("Duplicate check error:", dupErr);
@@ -336,6 +343,7 @@ export default function SeriesListPage() {
 
       const payload = {
         ...form,
+        tmdb_id: normalizeTmdbId(form.tmdb_id),
         year: cleanYear,
         release_year: cleanYear,
         imdb_rating: parsedRating,
@@ -428,6 +436,7 @@ export default function SeriesListPage() {
 
   const handleEdit = (s: Series) => {
     setEditingId(s.id);
+    setFillEmptyOnly(false);
     setDuplicateWarning(null);
     setTmdbSeasonsHint(null);
     setTitleVariants(null);
@@ -460,6 +469,7 @@ export default function SeriesListPage() {
     setTmdbSearchQuery("");
     setTmdbResults([]);
     setShowTmdbResults(false);
+    setFillEmptyOnly(false);
     setDuplicateWarning(null);
     setTmdbSeasonsHint(null);
     setTitleVariants(null);
@@ -542,8 +552,7 @@ export default function SeriesListPage() {
         </h2>
 
         {/* TMDb TV Search & Auto-fill Block */}
-        {!editingId && (
-          <div className="mb-6 bg-surface-container-high/40 border border-primary-container/30 rounded-2xl p-4">
+        <div className="mb-6 bg-surface-container-high/40 border border-primary-container/30 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary-container text-xl">
@@ -557,6 +566,18 @@ export default function SeriesListPage() {
                 O'zbekcha tarjima bilan
               </span>
             </div>
+
+            {editingId && (
+              <label className="flex items-center gap-2 text-xs text-text-secondary mb-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={fillEmptyOnly}
+                  onChange={(e) => setFillEmptyOnly(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-white/10 bg-surface-container-lowest focus:ring-primary-container text-primary-container"
+                />
+                <span>Faqat bo'sh maydonlarni to'ldirish (mavjud yozuvlarni o'zgartirmaslik)</span>
+              </label>
+            )}
 
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -685,7 +706,6 @@ export default function SeriesListPage() {
               </div>
             )}
           </div>
-        )}
 
         {/* Duplicate Warnings */}
         {duplicateWarning && (
@@ -912,6 +932,34 @@ export default function SeriesListPage() {
               <option value="ongoing">Davom etmoqda</option>
               <option value="completed">Tugallangan</option>
             </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              TMDb ID (majburiy emas)
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="1"
+                placeholder="Masalan: 1396"
+                value={form.tmdb_id ?? ""}
+                onChange={(e) =>
+                  setForm({ ...form, tmdb_id: normalizeTmdbId(e.target.value) })
+                }
+                className="flex-1 min-w-0 bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => form.tmdb_id && handleSelectTmdbSeries({ id: form.tmdb_id })}
+                disabled={!form.tmdb_id || fetchingTmdbDetails}
+                className="bg-primary-container/20 hover:bg-primary-container text-primary hover:text-white disabled:opacity-50 border border-primary-container/30 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all shrink-0 flex items-center gap-1"
+                title="Ushbu TMDb ID bo'yicha ma'lumotlarni tortish"
+              >
+                <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                <span>{fetchingTmdbDetails ? "Yuklanmoqda..." : "To'ldirish"}</span>
+              </button>
+            </div>
           </div>
 
           {/* Telegram Auto Topic Option (For new series) */}
