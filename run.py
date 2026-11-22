@@ -120,6 +120,20 @@ async def supervised_run_bot():
             delay = min(delay * 2, max_delay)
     set_bot_status("degraded")
 
+async def safe_run_smm_worker():
+    """Run supervised SMM worker while isolating startup/import faults from API and Bot."""
+    try:
+        from scraper.smm_worker import supervised_run_smm_worker
+
+        await supervised_run_smm_worker()
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        raise
+    except Exception as exc:
+        logging.error(f"[SUPERVISOR] SMM worker ishga tushmadi (API/Bot faol qoladi): {exc}", exc_info=True)
+        while True:
+            await asyncio.sleep(3600)
+
+
 # ── Main Entrypoint ──────────────────────────────────────────────
 async def main():
     setup_global_logging()
@@ -131,14 +145,11 @@ async def main():
     if "localhost" in backend_url or "127.0.0.1" in backend_url:
         os.environ["BACKEND_API_URL"] = f"http://127.0.0.1:{port}/api/v1"
     
-    # Run API, Bot, and SMM background worker concurrently
-    from scraper.smm_worker import supervised_run_smm_worker
-
-    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), supervised_run_smm_worker()) chaqirilmoqda")
+    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), safe_run_smm_worker()) chaqirilmoqda")
     await asyncio.gather(
         run_api(),
         supervised_run_bot(),
-        supervised_run_smm_worker(),
+        safe_run_smm_worker(),
     )
 
 if __name__ == "__main__":
