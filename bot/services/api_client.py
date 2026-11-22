@@ -567,5 +567,22 @@ class APIClient:
             logger.warning(f"Error submitting content request: {e}")
         return {"success": False, "message": "Xatolik yuz berdi"}
 
+    async def act_on_smm_job(
+        self,
+        job_id: int,
+        action: str = "approve",
+        publish_now: bool = False,
+    ) -> Optional[Dict[str, Any]]:
+        """Execute approve/publish/reject on an SMM clip job via bot secret endpoint."""
+        try:
+            endpoint = f"/smm/bot/jobs/{job_id}/{'reject' if action == 'reject' else 'approve'}"
+            kwargs: Dict[str, Any] = {"json": {"publish_now": publish_now}} if action != "reject" else {}
+            resp = await self.client.post(endpoint, **kwargs)
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception as e:
+            logger.warning(f"Error acting on SMM job #{job_id} ({action}): {e}")
+        return None
+
 api_client = APIClient()
 

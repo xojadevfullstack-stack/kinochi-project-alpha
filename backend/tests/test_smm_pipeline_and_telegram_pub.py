@@ -100,3 +100,82 @@ async def test_create_smart_smm_clip_auto_enables_ad_blur_and_cleans_raw(tmp_pat
     assert meta["start_sec"] == 705.0
     assert mock_render.call_args.kwargs["blur_bottom_ad"] is True
     assert mock_render.call_args.kwargs["blur_watermark"] is True
+
+
+@pytest.mark.asyncio
+async def test_send_admin_smm_preview_sends_buttons_in_semi_auto_and_plain_in_full_auto(tmp_path):
+    from scraper.smm_publishers.telegram_pub import send_admin_smm_preview
+
+    video = tmp_path / "clip_7.mp4"
+    video.write_bytes(b"mp4-bytes")
+
+    mock_resp = MagicMock(status_code=200)
+    mock_resp.json.return_value = {"ok": True, "result": {"message_id": 55}}
+    mock_client = AsyncMock()
+    mock_client.__aenter__.return_value = mock_client
+    mock_client.post.return_value = mock_resp
+
+    with patch("scraper.smm_publishers.telegram_pub.httpx.AsyncClient", return_value=mock_client):
+        ok_semi = await send_admin_smm_preview(
+            job_id=7,
+            title="Ouk Strit",
+            movie_code="3956",
+            mode="SEMI_AUTO",
+            video_path=str(video),
+            caption="Test caption",
+            admin_telegram_id="99887766",
+            bot_token="123:BOT",
+        )
+        ok_auto = await send_admin_smm_preview(
+            job_id=8,
+            title="Matritsa",
+            movie_code="1001",
+            mode="FULL_AUTO",
+            video_path=str(video),
+            caption="Auto caption",
+            admin_telegram_id="99887766",
+            bot_token="123:BOT",
+        )
+
+    assert ok_semi is True and ok_auto is True
+    semi_data = mock_client.post.call_args_list[0].kwargs["data"]
+    assert semi_data["chat_id"] == "99887766"
+    kb = json.loads(semi_data["reply_markup"])["inline_keyboard"]
+    cb_datas = [btn.get("callback_data") for row in kb for btn in row]
+    assert "smm_approve:7" in cb_datas
+    assert "smm_publish:7" in cb_datas
+    assert "smm_reject:7" in cb_datas
+
+    auto_data = mock_client.post.call_args_list[1].kwargs["data"]
+    assert auto_data["chat_id"] == "99887766"
+    assert "reply_markup" not in auto_data
+
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_emits_progress_callbacks(tmp_path):
+    out_path = str(tmp_path / "prog.mp4")
+    events = []
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 1500.0
+
+    async def on_prog(pct, stage):
+        events.append((pct, stage))
+
+    with (
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value={"start_sec": 100.0, "has_ad_banner": False})),
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path),
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="3956",
+            progress_cb=on_prog,
+        )
+
+    pcts = [p for p, _ in events]
+    assert pcts == [15, 45, 70, 95]

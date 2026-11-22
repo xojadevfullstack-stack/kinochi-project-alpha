@@ -231,21 +231,85 @@ def find_mp4_chunk_offset_for_ratio(buf: bytes, ratio: float) -> Optional[int]:
     return None
 
 
+def compute_sparse_chunk_mb(
+    total_size: int,
+    total_duration: float,
+    clip_duration: float = 45.0,
+    headroom_sec: float = 45.0,
+    min_mb: int = 30,
+    max_mb: int = 65,
+) -> int:
+    """Estimate safe sparse download window (MB) so VBR 1080p clips never hit sparse zero holes."""
+    if total_size <= 0 or total_duration <= 0:
+        return min_mb
+    bytes_per_sec = float(total_size) / max(60.0, float(total_duration))
+    needed_bytes = bytes_per_sec * (max(15.0, float(clip_duration)) + max(15.0, float(headroom_sec))) * 1.65
+    est_mb = int((needed_bytes / (1024 * 1024)) + 4.0)
+    return max(min_mb, min(max_mb, est_mb))
+
+
+def compute_sparse_byte_range(
+    moov_source: bytes,
+    total_size: int,
+    total_duration: float,
+    target_ratio: float = 0.35,
+    clip_duration: float = 45.0,
+    headroom_sec: float = 45.0,
+    chunk_mb: Optional[int] = None,
+    head_len: int = 4 * 1024 * 1024,
+    max_mb: int = 75,
+) -> Tuple[int, int]:
+    """Compute (mid_offset, mid_bytes) using MP4 stco/co64 start & scan+clip end offsets."""
+    est_mb = chunk_mb if chunk_mb is not None else compute_sparse_chunk_mb(
+        total_size=total_size,
+        total_duration=total_duration,
+        clip_duration=clip_duration,
+        headroom_sec=headroom_sec,
+        max_mb=max_mb,
+    )
+    est_bytes = est_mb * 1024 * 1024
+    exact_start = find_mp4_chunk_offset_for_ratio(moov_source, target_ratio)
+    base_offset = (exact_start - 2 * 1024 * 1024) if exact_start else int(total_size * target_ratio)
+
+    need_bytes = est_bytes
+    if chunk_mb is None:
+        end_delta = (
+            (max(15.0, float(clip_duration)) + max(15.0, float(headroom_sec))) / float(total_duration)
+            if total_duration > 0
+            else 0.04
+        )
+        end_ratio = min(0.99, max(target_ratio + 0.01, target_ratio + end_delta))
+        exact_end = find_mp4_chunk_offset_for_ratio(moov_source, end_ratio)
+        if exact_end and exact_end > base_offset:
+            need_bytes = max(est_bytes, (exact_end - base_offset) + 2 * 1024 * 1024)
+        need_bytes = min(max_mb * 1024 * 1024, need_bytes)
+
+    mid_bytes = min(total_size, need_bytes)
+    mid_offset = max(head_len, min(max(0, total_size - mid_bytes), base_offset))
+    return mid_offset, mid_bytes
+
+
 async def download_sparse_clip_source(
     client: Any,
     storage_msg: Any,
     dest_path: str,
     target_ratio: float = 0.35,
-    chunk_mb: int = 30,
+    chunk_mb: Optional[int] = None,
+    clip_duration: float = 45.0,
 ) -> Tuple[str, float]:
-    """Download header + moov + exact stco-aligned mid chunk (~30MB) into a sparse file."""
+    """Download header + moov + exact stco-aligned mid chunk into a sparse file."""
     doc = getattr(getattr(storage_msg, "media", None), "document", None)
     if not doc:
         raise ValueError("Storage message has no document media")
 
     total_size = int(getattr(doc, "size", 0) or 0)
     total_duration = float(getattr(next((a for a in (doc.attributes or []) if hasattr(a, "duration")), None), "duration", 0.0) or 0.0)
-    if total_size <= chunk_mb * 1024 * 1024:
+    eff_chunk_mb = chunk_mb if chunk_mb is not None else compute_sparse_chunk_mb(
+        total_size=total_size,
+        total_duration=total_duration,
+        clip_duration=clip_duration,
+    )
+    if total_size <= eff_chunk_mb * 1024 * 1024:
         await client.download_media(storage_msg, file=dest_path)
         return dest_path, total_duration
 
@@ -264,11 +328,15 @@ async def download_sparse_clip_source(
         end_buf = await _fetch(end_offset, 10 * 1024 * 1024)
 
     moov_source = bytes(head_buf) if b"moov" in head_buf else bytes(end_buf)
-    exact_offset = find_mp4_chunk_offset_for_ratio(moov_source, target_ratio)
-    mid_bytes = chunk_mb * 1024 * 1024
-    base_offset = (exact_offset - 2 * 1024 * 1024) if exact_offset else int(total_size * target_ratio)
-    mid_offset = max(len(head_buf), min(total_size - mid_bytes, base_offset))
-    mid_buf = await _fetch(mid_offset, mid_bytes)
+    mid_offset, mid_bytes = compute_sparse_byte_range(
+        moov_source=moov_source,
+        total_size=total_size,
+        total_duration=total_duration,
+        target_ratio=target_ratio,
+        clip_duration=clip_duration,
+        chunk_mb=chunk_mb,
+        head_len=len(head_buf),
+    )
 
     os.makedirs(os.path.dirname(os.path.abspath(dest_path)), exist_ok=True)
     with open(dest_path, "wb") as f:
@@ -277,7 +345,12 @@ async def download_sparse_clip_source(
         subprocess.run(["fsutil", "sparse", "setflag", dest_path], capture_output=True)
     with open(dest_path, "r+b") as f:
         f.seek(mid_offset)
-        f.write(mid_buf)
+        written = 0
+        async for chunk in client.iter_download(storage_msg.media, offset=mid_offset, request_size=1024 * 1024):
+            f.write(chunk)
+            written += len(chunk)
+            if written >= mid_bytes:
+                break
         if end_buf:
             f.seek(end_offset)
             f.write(end_buf)

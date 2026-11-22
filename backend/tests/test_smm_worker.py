@@ -247,3 +247,66 @@ async def test_supervised_smm_worker_logs_status_and_survives_connect_timeout(mo
 
     mock_cycle.assert_awaited_once_with(tg_client=None)
     assert any("SMM worker" in rec.message for rec in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_process_generating_job_marks_failed_instead_of_poison_queue(db_session, tmp_path):
+    from sqlalchemy import delete
+    from scraper.smm_worker import run_smm_worker_tick
+
+    await db_session.execute(delete(SmmClipJobModel).where(SmmClipJobModel.status == "generating"))
+    movie = MovieModel(title="Ouk Strit", code="WPZ79R", short_code="3956", imdb_rating=7.0)
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbekcha", storage_channel_message_id=9811))
+    cfg = SmmSettingsModel(id=1, mode="SEMI_AUTO", enabled_platforms=["telegram"], telegram_channel_id="-100123")
+    cfg = await db_session.merge(cfg)
+    await db_session.commit()
+
+    job = await enqueue_smm_clip_job(db_session, movie_code="WPZ79R", title="Ouk Strit", media_id=movie.id)
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=9811))
+
+    with patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(side_effect=RuntimeError("FFmpeg render failed"))):
+        tick_res = await run_smm_worker_tick(db_session, tg_client=tg_client, storage_chat_id=-100999)
+
+    await db_session.refresh(job)
+    assert job.status == "failed"
+    assert tick_res["generated"] == 0
+
+
+@pytest.mark.asyncio
+async def test_process_generating_job_sends_admin_preview_in_both_modes(db_session, tmp_path):
+    movie = MovieModel(title="Preview Kino", code="PRV1", short_code="3959", imdb_rating=8.2)
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbekcha", storage_channel_message_id=9820))
+    cfg = SmmSettingsModel(
+        id=1,
+        mode="SEMI_AUTO",
+        enabled_platforms=["telegram"],
+        telegram_channel_id="-100123",
+        admin_telegram_id="777888999",
+    )
+    cfg = await db_session.merge(cfg)
+    await db_session.commit()
+
+    job = await enqueue_smm_clip_job(db_session, movie_code="PRV1", title="Preview Kino", media_id=movie.id)
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=9820))
+    fake_meta = {"output_path": str(tmp_path / f"clip_{job.id}.mp4"), "start_sec": 200.0, "duration_sec": 45.0}
+    (tmp_path / f"clip_{job.id}.mp4").write_bytes(b"mp4")
+
+    with (
+        patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(return_value=fake_meta)),
+        patch("scraper.smm_worker.send_admin_smm_preview", new=AsyncMock(return_value=True)) as mock_preview,
+    ):
+        res_semi = await process_generating_job(db_session, job, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
+        assert res_semi.progress_pct == 100
+        assert mock_preview.await_args.kwargs["mode"] == "SEMI_AUTO"
+        assert mock_preview.await_args.kwargs["admin_telegram_id"] == "777888999"
+
+        cfg.mode = "FULL_AUTO"
+        res_semi.status = "generating"
+        await process_generating_job(db_session, res_semi, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
+        assert mock_preview.await_args.kwargs["mode"] == "FULL_AUTO"

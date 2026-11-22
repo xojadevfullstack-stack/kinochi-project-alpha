@@ -2,12 +2,24 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import os
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from scraper.smm_clipper import compute_clip_window, download_sparse_clip_source, render_vertical_clip
 from scraper.smm_scene_scorer import select_best_scene_start
+
+
+async def _emit_progress(progress_cb: Optional[Callable[[int, str], Any]], pct: int, stage: str) -> None:
+    if not progress_cb:
+        return
+    try:
+        res = progress_cb(pct, stage)
+        if inspect.isawaitable(res):
+            await res
+    except Exception:
+        pass
 
 
 async def create_smart_smm_clip(
@@ -23,6 +35,7 @@ async def create_smart_smm_clip(
     blur_watermark: bool = True,
     copyright_shield: bool = False,
     bot_username: str = "@MediaPlusOfficialBot",
+    progress_cb: Optional[Callable[[int, str], Any]] = None,
 ) -> Dict[str, Any]:
     """Download targeted sparse chunk, score cleanest moment, and render 9:16 clip."""
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
@@ -30,10 +43,16 @@ async def create_smart_smm_clip(
     os.close(fd)
 
     try:
+        await _emit_progress(progress_cb, 15, "Video segment yuklanmoqda...")
         _, total_dur = await download_sparse_clip_source(
-            client, storage_msg, raw_path, target_ratio=target_ratio, chunk_mb=25
+            client,
+            storage_msg,
+            raw_path,
+            target_ratio=target_ratio,
+            chunk_mb=None,
         )
         effective_dur = total_dur or 120.0
+        await _emit_progress(progress_cb, 45, "AI sahna va reklama tahlili...")
         if start_sec is not None:
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=start_sec)
             score_meta = {"start_sec": chosen_start, "has_ad_banner": False, "score": 0.0, "reason": "Manual start"}
@@ -53,6 +72,7 @@ async def create_smart_smm_clip(
         blur_ad = bool(score_meta.get("has_ad_banner", False))
         ai_boxes = score_meta.get("blur_boxes") if score_meta.get("vision_used") else None
         low_ram = os.getenv("SMM_LOW_RAM", "true").strip().lower() in {"1", "true", "yes", "on"}
+        await _emit_progress(progress_cb, 70, "9:16 vertikal klipp render qilinmoqda...")
         await asyncio.to_thread(
             render_vertical_clip,
             input_path=raw_path,
@@ -68,6 +88,7 @@ async def create_smart_smm_clip(
             low_ram=low_ram,
             blur_boxes=ai_boxes,
         )
+        await _emit_progress(progress_cb, 95, "Telegram preview & bazaga saqlanmoqda...")
         return {
             "output_path": output_path,
             "start_sec": chosen_start,

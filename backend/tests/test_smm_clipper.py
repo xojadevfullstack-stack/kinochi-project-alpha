@@ -220,3 +220,45 @@ def test_dynamic_ai_blur_boxes_render_arbitrary_top_left_logo_safely(tmp_path):
         start_sec=0.0, duration_sec=1.5, low_ram=True, blur_boxes=boxes,
     )
     assert os.path.exists(res) and os.path.getsize(res) > 10_000
+
+
+def test_compute_sparse_chunk_mb_scales_for_large_1080p_movies():
+    from scraper.smm_clipper import compute_sparse_chunk_mb
+
+    # 1.75 GB 1080p ~94 min movie needs > 25 MB to cover 45s clip + 30s scan headroom
+    scaled = compute_sparse_chunk_mb(
+        total_size=1_754_000_000,
+        total_duration=5636.0,
+        clip_duration=45.0,
+    )
+    assert 45 <= scaled <= 65
+
+    # Small / short 480p file respects safe minimum
+    small = compute_sparse_chunk_mb(
+        total_size=300_000_000,
+        total_duration=5400.0,
+        clip_duration=45.0,
+    )
+    assert small == 30
+
+
+def test_compute_sparse_byte_range_covers_scan_plus_clip_tail_via_stco():
+    import struct
+    from scraper.smm_clipper import compute_sparse_byte_range
+
+    # Synthetic moov stco with 100 entries spanning 0 .. 1.75 GB where dense tail jumps 55 MB across scan+clip
+    offsets = [int(i * (1_754_000_000 / 100)) for i in range(100)]
+    # Make index 36 (close to target+scan+clip) jump extra 20 MB to simulate VBR dense action scene
+    for idx in range(36, 100):
+        offsets[idx] += 20_000_000
+    stco = b"stco\x00\x00\x00\x00" + struct.pack(">I", len(offsets)) + b"".join(struct.pack(">I", x) for x in offsets)
+
+    mid_offset, mid_bytes = compute_sparse_byte_range(
+        moov_source=stco,
+        total_size=1_754_000_000,
+        total_duration=5665.0,
+        target_ratio=0.35,
+    )
+    assert mid_offset <= offsets[35]
+    # Must cover past index 36 (+45s..90s VBR spike) with buffer
+    assert mid_offset + mid_bytes >= offsets[36] + 1_000_000

@@ -180,6 +180,9 @@ async def run_bot():
 
     from handlers.reports import router as reports_router
     dp.include_router(reports_router)
+
+    from handlers.smm_admin import router as smm_admin_router
+    dp.include_router(smm_admin_router)
     
 
     try:

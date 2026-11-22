@@ -16,7 +16,11 @@ from app.infrastructure.db.models.smm import SmmClipJobModel, SmmSettingsModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel, MovieTranslationModel
 from scraper.smm_pipeline import create_smart_smm_clip
 from scraper.smm_publishers.dispatcher import MultiPlatformDispatcher
-from scraper.smm_publishers.telegram_pub import TelegramChannelPublisher, build_movie_caption
+from scraper.smm_publishers.telegram_pub import (
+    TelegramChannelPublisher,
+    build_movie_caption,
+    send_admin_smm_preview,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -174,16 +178,36 @@ async def process_generating_job(
         return job
 
     bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
-    storage_msg = await tg_client.get_messages(storage_chat_id, ids=storage_msg_id)
     out_file = os.path.join(uploads_dir, f"clip_{job.id}.mp4")
-    meta = await create_smart_smm_clip(
-        client=tg_client, storage_msg=storage_msg, output_path=out_file,
-        movie_code=display_code, imdb_rating=imdb_rating,
-        duration_sec=job.duration_sec or cfg.clip_duration_sec,
-        start_sec=job.start_sec if job.start_sec > 0 else None,
-        copyright_shield=cfg.copyright_shield,
-        bot_username=bot_handle,
-    )
+
+    async def _on_progress(pct: int, stage: str) -> None:
+        job.progress_pct = pct
+        job.progress_stage = stage
+        await db.flush()
+        try:
+            await db.commit()
+        except Exception:
+            pass
+
+    try:
+        storage_msg = await tg_client.get_messages(storage_chat_id, ids=storage_msg_id)
+        meta = await create_smart_smm_clip(
+            client=tg_client, storage_msg=storage_msg, output_path=out_file,
+            movie_code=display_code, imdb_rating=imdb_rating,
+            duration_sec=job.duration_sec or cfg.clip_duration_sec,
+            start_sec=job.start_sec if job.start_sec > 0 else None,
+            copyright_shield=cfg.copyright_shield,
+            bot_username=bot_handle,
+            progress_cb=_on_progress,
+        )
+    except Exception as exc:
+        logger.warning("SMM clip generation failed for job #%s (%s): %s", job.id, job.movie_code, exc)
+        job.status = "failed"
+        job.progress_stage = "Xatolik yuz berdi"
+        await db.flush()
+        await db.refresh(job)
+        return job
+
     job.start_sec = float(meta["start_sec"])
     job.duration_sec = float(meta["duration_sec"])
     job.clip_path = f"uploads/smm/clip_{job.id}.mp4"
@@ -192,8 +216,24 @@ async def process_generating_job(
         genres=genres, bot_username=bot_handle,
     )
     job.status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
+    job.progress_pct = 100
+    job.progress_stage = "Nashr navbatida (Avto)" if cfg.mode == "FULL_AUTO" else "Tasdiq kutmoqda"
     await db.flush()
     await db.refresh(job)
+
+    try:
+        await send_admin_smm_preview(
+            job_id=job.id,
+            title=job.title,
+            movie_code=display_code,
+            mode=cfg.mode,
+            video_path=out_file,
+            caption=job.caption or "",
+            admin_telegram_id=getattr(cfg, "admin_telegram_id", None),
+            start_sec=job.start_sec,
+        )
+    except Exception as exc:
+        logger.warning("SMM admin Telegram preview skipped for job #%s: %s", job.id, exc)
     return job
 
 
@@ -246,10 +286,18 @@ async def run_smm_worker_tick(
         return {"generated": 0, "published": 0}
 
     generated, published = 0, 0
-    gen_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "generating").limit(1))).scalar_one_or_none()
+    gen_job = (
+        await db.execute(
+            select(SmmClipJobModel)
+            .where(SmmClipJobModel.status == "generating")
+            .order_by(SmmClipJobModel.id.asc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
     if gen_job and tg_client and storage_chat_id:
-        await process_generating_job(db, gen_job, cfg, tg_client, storage_chat_id)
-        generated = 1
+        updated_gen = await process_generating_job(db, gen_job, cfg, tg_client, storage_chat_id)
+        if updated_gen.status != "failed":
+            generated = 1
 
     pub_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "publishing").limit(1))).scalar_one_or_none()
     if not pub_job and cfg.mode == "FULL_AUTO":
