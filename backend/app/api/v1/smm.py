@@ -400,7 +400,10 @@ async def _restore_clip_from_telegram(dest_path: str, storage_msg_id: int) -> bo
             msg = await client.get_messages(storage_chat_id, ids=int(storage_msg_id))
             if not msg or not getattr(msg, "media", None):
                 return False
-            await client.download_media(msg, file=dest_path)
+            tmp_path = f"{dest_path}.tmp.{os.getpid()}"
+            await client.download_media(msg, file=tmp_path)
+            if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
+                os.replace(tmp_path, dest_path)
             return os.path.exists(dest_path) and os.path.getsize(dest_path) > 0
         finally:
             await client.disconnect()

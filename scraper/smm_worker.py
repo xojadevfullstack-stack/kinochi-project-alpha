@@ -304,7 +304,10 @@ async def process_publish_job(
             os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
             msg = await tg_client.get_messages(storage_chat_id, ids=int(job.clip_storage_message_id))
             if msg and getattr(msg, "media", None):
-                await tg_client.download_media(msg, file=target_path)
+                tmp_path = f"{target_path}.tmp.{os.getpid()}"
+                await tg_client.download_media(msg, file=tmp_path)
+                if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
+                    os.replace(tmp_path, target_path)
         except Exception as exc:
             logger.warning("SMM clip restore before publish failed for job #%s: %s", job.id, exc)
 

@@ -56,9 +56,10 @@ async def _post_telegram_video(
         data["reply_markup"] = json.dumps(reply_markup)
 
     try:
+        with open(video_path, "rb") as vf:
+            video_bytes = vf.read()
         async with httpx.AsyncClient(timeout=60.0) as client:
-            with open(video_path, "rb") as vf:
-                resp = await client.post(url, data=data, files={"video": ("clip.mp4", vf, "video/mp4")})
+            resp = await client.post(url, data=data, files={"video": ("clip.mp4", video_bytes, "video/mp4")})
         if resp.status_code != 200:
             return False, None, f"Telegram HTTP {resp.status_code}: {resp.text[:200]}"
         msg_id = str(resp.json().get("result", {}).get("message_id", ""))
