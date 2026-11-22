@@ -82,16 +82,16 @@ function FilterDropdown({
 
   return (
     <div ref={containerRef} className="relative flex-1 min-w-[120px] sm:min-w-[140px]">
-      {/* ── Dropdown Trigger Box (iTV style) ── */}
+      {/* ── Dropdown Trigger Box (iTV / Apple Glass style) ── */}
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full bg-[#13151b] hover:bg-[#191b24] border rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between gap-1.5 transition-all select-none cursor-pointer group ${
+        className={`w-full border rounded-xl px-3.5 py-2.5 text-left flex items-center justify-between gap-1.5 transition-all select-none cursor-pointer group ${
           isOpen
-            ? "border-white/30 text-white ring-1 ring-white/20 shadow-lg"
+            ? "bg-slate-50 dark:bg-[#191b24] border-slate-400 dark:border-white/30 text-slate-900 dark:text-white ring-1 ring-slate-300 dark:ring-white/20 shadow-lg"
             : selectedValue
-            ? "border-primary text-white bg-primary/10 font-bold"
-            : "border-white/10 text-text-secondary hover:text-white"
+            ? "border-[#D20A13] dark:border-primary text-[#D20A13] dark:text-white bg-red-50 dark:bg-primary/10 font-bold"
+            : "bg-white dark:bg-[#13151b] hover:bg-slate-50 dark:hover:bg-[#191b24] border-slate-200 dark:border-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white shadow-sm dark:shadow-none"
         }`}
       >
         <span className="text-xs sm:text-[13px] truncate">
@@ -99,7 +99,7 @@ function FilterDropdown({
         </span>
         <span
           className={`material-symbols-outlined text-[18px] opacity-70 transition-transform duration-200 shrink-0 ${
-            isOpen ? "rotate-180 text-white" : ""
+            isOpen ? "rotate-180 text-slate-900 dark:text-white" : ""
           }`}
         >
           expand_more
@@ -108,7 +108,7 @@ function FilterDropdown({
 
       {/* ── Popover Option List ── */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-30 min-w-full sm:min-w-[190px] max-h-64 overflow-y-auto hide-scrollbar bg-[#161822] border border-white/15 rounded-xl p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in duration-150">
+        <div className="absolute left-0 top-full mt-1.5 z-30 min-w-full sm:min-w-[190px] max-h-64 overflow-y-auto hide-scrollbar bg-white dark:bg-[#161822] border border-slate-200 dark:border-white/15 rounded-xl p-1.5 shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl animate-in fade-in duration-150">
           {/* Reset / Barchasi item (Only if showAllOption is enabled) */}
           {showAllOption && (
             <button
@@ -119,8 +119,8 @@ function FilterDropdown({
               }}
               className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
                 !selectedValue || selectedValue === "all"
-                  ? "bg-primary text-white font-bold"
-                  : "text-zinc-300 hover:bg-white/10 hover:text-white"
+                  ? "bg-[#D20A13] dark:bg-primary text-white font-bold"
+                  : "text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span>Barchasi</span>
@@ -145,8 +145,8 @@ function FilterDropdown({
                 }}
                 className={`w-full px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer text-left ${
                   isSelected
-                    ? "bg-primary text-white font-bold"
-                    : "text-zinc-300 hover:bg-white/10 hover:text-white"
+                    ? "bg-[#D20A13] dark:bg-primary text-white font-bold"
+                    : "text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 <span className="truncate">{opt.name}</span>

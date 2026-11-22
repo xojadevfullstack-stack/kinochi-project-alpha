@@ -172,46 +172,77 @@ body.light-theme .glass-panel {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 18px rgba(15, 23, 42, 0.05) !important;
 }
 
-/* Light Mode Typography & Surface Remapping (Preserving Hero/Cinema Island photographic zones) */
-body.light-theme main .text-white:not(.preserve-white):not(.bg-primary-container *):not(.bg-brand-red *),
-body.light-theme #mainSidebar .text-white,
-body.light-theme footer .text-white {
+/* Light Mode Typography & Surface Remapping (Low specificity + Strict Hero/CTA preservation) */
+body.light-theme :where(
+  main .text-white,
+  #mainSidebar .text-white,
+  footer .text-white
+):not(.preserve-white):not(.preserve-white *):not(.hero-stage):not(.hero-stage *):not(.bg-primary-container):not(.bg-primary-container *):not(.bg-brand-red):not(.bg-brand-red *):not(.bg-primary):not(.bg-primary *):not([class*="bg-[#D20A13]"]):not([class*="bg-[#D20A13]"] *):not([class*="bg-[#E50914]"]):not([class*="bg-[#E50914]"] *):not(.bg-red-600):not(.bg-red-600 *):not(.bg-emerald-500):not(.bg-emerald-500 *):not(.bg-sky-500):not(.bg-sky-500 *) {
   color: #0F172A !important;
 }
 body.light-theme .hero-stage h1,
 body.light-theme .hero-stage h2,
 body.light-theme .hero-stage h3,
 body.light-theme .hero-stage .text-white,
+body.light-theme .hero-stage span.font-bold,
 body.light-theme .preserve-white,
-body.light-theme .preserve-white * {
+body.light-theme .preserve-white .text-white,
+body.light-theme main [class*="bg-[#D20A13]"],
+body.light-theme main [class*="bg-[#D20A13]"] *,
+body.light-theme main [class*="bg-[#E50914]"],
+body.light-theme main [class*="bg-[#E50914]"] *,
+body.light-theme main .bg-primary,
+body.light-theme main .bg-primary *,
+body.light-theme main .bg-primary-container,
+body.light-theme main .bg-primary-container * {
   color: #FFFFFF !important;
 }
 body.light-theme .hero-stage p,
 body.light-theme .hero-stage .text-slate-300,
+body.light-theme .hero-stage .text-slate-200,
 body.light-theme .hero-stage .text-gray-300 {
   color: #E2E8F0 !important;
 }
-body.light-theme .text-text-secondary,
-body.light-theme .text-gray-400,
-body.light-theme .text-gray-300 {
+body.light-theme .hero-stage .text-rating-gold,
+body.light-theme .preserve-white .text-rating-gold {
+  color: #F59E0B !important;
+}
+body.light-theme .text-text-secondary:not(.hero-stage *):not(.preserve-white *),
+body.light-theme .text-gray-400:not(.hero-stage *):not(.preserve-white *),
+body.light-theme .text-gray-300:not(.hero-stage *):not(.preserve-white *) {
   color: #475569 !important;
 }
-body.light-theme .text-gray-500 {
+body.light-theme .text-gray-500:not(.hero-stage *):not(.preserve-white *) {
   color: #64748B !important;
 }
 
-body.light-theme main [class*="bg-[#09090B]"]:not(.hero-stage):not(.preserve-white),
-body.light-theme main [class*="bg-[#0c0d10]"]:not(.hero-stage):not(.preserve-white),
-body.light-theme main [class*="bg-[#0E1117]"]:not(.hero-stage):not(.preserve-white),
-body.light-theme main [class*="bg-[#121317]"]:not(.hero-stage):not(.preserve-white),
-body.light-theme main [class*="bg-[#141722]"]:not(.hero-stage):not(.preserve-white),
-body.light-theme main [class*="bg-[#181920]"]:not(.hero-stage):not(.preserve-white),
+/* Strip dark obsidian page gradients in Light Mode so canvas stays clean #F1F5F9 */
+body.light-theme main [class*="bg-gradient-to-"][class*="background-obsidian"]:not(.hero-stage):not(.preserve-white),
+body.light-theme main [class*="via-background-obsidian"]:not(.hero-stage):not(.preserve-white),
+body.light-theme main [class*="to-background-obsidian"]:not(.hero-stage):not(.preserve-white) {
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+body.light-theme main [class*="bg-[#09090B]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#0c0d10]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#0E0F13]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#0E1117]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#0B0D12]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#0A1015]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#121317]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#121620]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#13151b]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#141722]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#141824]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#161822]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
+body.light-theme main [class*="bg-[#181920]"]:not(.hero-stage):not(.preserve-white):not(.hero-stage *),
 body.light-theme [class*="bg-[#181920]"],
-body.light-theme main .bg-surface-container,
-body.light-theme main .bg-surface-container-low,
-body.light-theme main .bg-surface-container-high,
-body.light-theme main .bg-surface-container-lowest,
-body.light-theme main [class*="bg-surface-container"] {
+body.light-theme main .bg-surface-container:not(.hero-stage *):not(.preserve-white *),
+body.light-theme main .bg-surface-container-low:not(.hero-stage *):not(.preserve-white *),
+body.light-theme main .bg-surface-container-high:not(.hero-stage *):not(.preserve-white *),
+body.light-theme main .bg-surface-container-lowest:not(.hero-stage *):not(.preserve-white *),
+body.light-theme main [class*="bg-surface-container"]:not(.hero-stage *):not(.preserve-white *) {
   background-color: #FFFFFF !important;
   border-color: rgba(203, 213, 225, 0.85) !important;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
