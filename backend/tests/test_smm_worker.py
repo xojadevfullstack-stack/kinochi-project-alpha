@@ -310,3 +310,31 @@ async def test_process_generating_job_sends_admin_preview_in_both_modes(db_sessi
         res_semi.status = "generating"
         await process_generating_job(db_session, res_semi, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
         assert mock_preview.await_args.kwargs["mode"] == "FULL_AUTO"
+
+
+@pytest.mark.asyncio
+async def test_process_generating_job_persists_clip_storage_message_id(db_session, tmp_path, monkeypatch):
+    monkeypatch.delenv("BOT_TOKEN", raising=False)
+    movie = MovieModel(title="Storage Backup Kino", code="STRG1", short_code="3962", imdb_rating=8.0)
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbekcha", storage_channel_message_id=9850))
+    cfg = SmmSettingsModel(id=1, mode="SEMI_AUTO", enabled_platforms=["telegram"])
+    cfg = await db_session.merge(cfg)
+    await db_session.commit()
+
+    job = await enqueue_smm_clip_job(db_session, movie_code="STRG1", title="Storage Backup Kino", media_id=movie.id)
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=9850))
+    tg_client.send_file = AsyncMock(return_value=MagicMock(id=9991))
+    fake_meta = {"output_path": str(tmp_path / f"clip_{job.id}.mp4"), "start_sec": 100.0, "duration_sec": 45.0}
+    (tmp_path / f"clip_{job.id}.mp4").write_bytes(b"mp4-content")
+
+    with (
+        patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(return_value=fake_meta)),
+        patch("scraper.smm_worker.send_admin_smm_preview", new=AsyncMock(return_value=False)),
+    ):
+        updated = await process_generating_job(db_session, job, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
+
+    assert updated.clip_storage_message_id == 9991
+    tg_client.send_file.assert_awaited_once()

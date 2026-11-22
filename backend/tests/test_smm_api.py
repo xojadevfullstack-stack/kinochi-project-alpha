@@ -123,3 +123,25 @@ def test_smm_bot_secret_allows_approve_and_reject_from_telegram(client, monkeypa
     )
     assert ok_rej.status_code == 200
     assert ok_rej.json()["status"] == "rejected"
+
+
+def test_smm_job_video_endpoint_serves_file_and_404_when_missing(admin_client, tmp_path):
+    mp4 = tmp_path / "clip_sample.mp4"
+    mp4.write_bytes(b"\x00\x00\x00\x18ftypmp42")
+    created = admin_client.post(
+        "/api/v1/smm/jobs",
+        json={"media_type": "movie", "movie_code": "3960", "title": "Video Stream Test", "clip_path": str(mp4)},
+    )
+    assert created.status_code == 201
+    jid = created.json()["id"]
+
+    ok = admin_client.get(f"/api/v1/smm/jobs/{jid}/video")
+    assert ok.status_code == 200
+    assert ok.headers["content-type"].startswith("video/mp4")
+
+    missing = admin_client.post(
+        "/api/v1/smm/jobs",
+        json={"media_type": "movie", "movie_code": "3961", "title": "Missing Video", "clip_path": str(tmp_path / "missing.mp4")},
+    )
+    miss_resp = admin_client.get(f"/api/v1/smm/jobs/{missing.json()['id']}/video")
+    assert miss_resp.status_code == 404

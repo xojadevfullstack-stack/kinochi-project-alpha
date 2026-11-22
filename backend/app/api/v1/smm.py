@@ -1,9 +1,12 @@
 """API v1 — SMM Video Autopilot endpoints (Dual-Mode Settings & Clip Jobs)."""
 import hmac
+import logging
+import os
 from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +16,7 @@ from app.core.config import settings
 from app.infrastructure.db.models.ingest_item import IngestItemModel
 from app.infrastructure.db.models.smm import SmmClipJobModel, SmmSettingsModel
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/smm", tags=["smm"])
 
 
@@ -288,3 +292,47 @@ async def bot_reject_smm_job(
 ):
     job = await _get_job_or_404(db, job_id)
     return await _apply_reject(db, job)
+
+
+async def _restore_clip_from_telegram(dest_path: str, storage_msg_id: int) -> bool:
+    """Lazily restore rendered clip from Telegram Storage Channel when Render ephemeral disk resets."""
+    sess = (os.getenv("SMM_TELEGRAM_STRING_SESSION") or os.getenv("TELEGRAM_STRING_SESSION") or "").strip()
+    api_id = settings.TELEGRAM_API_ID
+    api_hash = (settings.TELEGRAM_API_HASH or "").strip()
+    raw_chat = str(settings.STORAGE_CHANNEL_ID or "").strip()
+    if not sess or not api_id or not api_hash or not raw_chat or not storage_msg_id:
+        return False
+    storage_chat_id: int | str = int(raw_chat) if raw_chat.lstrip("-").isdigit() else raw_chat
+    try:
+        from telethon import TelegramClient
+        from telethon.sessions import StringSession
+
+        os.makedirs(os.path.dirname(os.path.abspath(dest_path)), exist_ok=True)
+        client = TelegramClient(StringSession(sess), int(api_id), api_hash)
+        await client.connect()
+        try:
+            msg = await client.get_messages(storage_chat_id, ids=int(storage_msg_id))
+            if not msg or not getattr(msg, "media", None):
+                return False
+            await client.download_media(msg, file=dest_path)
+            return os.path.exists(dest_path) and os.path.getsize(dest_path) > 0
+        finally:
+            await client.disconnect()
+    except Exception as exc:
+        logger.warning("SMM clip restore from Telegram #%s failed: %s", storage_msg_id, exc)
+        return False
+
+
+@router.get("/jobs/{job_id}/video")
+async def stream_smm_job_video(
+    job_id: int,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Serve rendered 9:16 SMM preview MP4 (restoring from Telegram Storage if ephemeral disk cleared)."""
+    job = await _get_job_or_404(db, job_id)
+    target = (job.clip_path or f"uploads/smm/clip_{job.id}.mp4").strip()
+    if not os.path.exists(target) and getattr(job, "clip_storage_message_id", None):
+        await _restore_clip_from_telegram(target, int(job.clip_storage_message_id))
+    if not os.path.exists(target):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Klipp video fayli topilmadi")
+    return FileResponse(target, media_type="video/mp4", filename=f"clip_{job.id}.mp4")

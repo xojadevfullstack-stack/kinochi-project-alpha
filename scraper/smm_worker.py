@@ -18,6 +18,7 @@ from scraper.smm_pipeline import create_smart_smm_clip
 from scraper.smm_publishers.dispatcher import MultiPlatformDispatcher
 from scraper.smm_publishers.telegram_pub import (
     TelegramChannelPublisher,
+    _post_telegram_video,
     build_movie_caption,
     send_admin_smm_preview,
 )
@@ -211,6 +212,34 @@ async def process_generating_job(
     job.start_sec = float(meta["start_sec"])
     job.duration_sec = float(meta["duration_sec"])
     job.clip_path = f"uploads/smm/clip_{job.id}.mp4"
+
+    # Backup generated clip to Telegram Storage (prefer BOT_TOKEN since SMM userbot may be read-only member)
+    if storage_chat_id and os.path.exists(out_file):
+        try:
+            bot_token = os.getenv("BOT_TOKEN", "").strip()
+            cap_storage = f"🎬 SMM Clip #{job.id} (#{display_code})"
+            if bot_token:
+                ok_up, msg_id_str, _ = await _post_telegram_video(
+                    bot_token=bot_token,
+                    chat_id=str(storage_chat_id),
+                    video_path=out_file,
+                    caption=cap_storage,
+                )
+                if ok_up and msg_id_str and msg_id_str.isdigit():
+                    job.clip_storage_message_id = int(msg_id_str)
+            if not job.clip_storage_message_id and tg_client and hasattr(tg_client, "send_file"):
+                sent = await tg_client.send_file(
+                    storage_chat_id,
+                    out_file,
+                    caption=cap_storage,
+                    supports_streaming=True,
+                )
+                sent_id = getattr(sent, "id", None)
+                if isinstance(sent_id, int) and sent_id > 0:
+                    job.clip_storage_message_id = sent_id
+        except Exception as exc:
+            logger.warning("SMM clip storage backup skipped for job #%s: %s", job.id, exc)
+
     job.caption = job.caption or build_movie_caption(
         movie_code=display_code, imdb_rating=imdb_rating,
         genres=genres, bot_username=bot_handle,

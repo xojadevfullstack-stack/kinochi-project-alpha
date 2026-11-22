@@ -22,3 +22,7 @@ export function shouldPollProgress(progress, jobs) {
   if ((progress?.cycle2?.generating || 0) + (progress?.cycle2?.publishing || 0) > 0) return true;
   return Array.isArray(jobs) && jobs.some((j) => j?.status === "generating" || j?.status === "publishing");
 }
+
+export function isLatestRequest(reqSeq, latestSeq) {
+  return reqSeq === latestSeq;
+}

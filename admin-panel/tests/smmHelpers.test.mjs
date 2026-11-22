@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cleanMediaCode, formatSmmStatusLabel, shouldPollProgress } from "../lib/smmHelpers.mjs";
+import { cleanMediaCode, formatSmmStatusLabel, isLatestRequest, shouldPollProgress } from "../lib/smmHelpers.mjs";
+
+test("isLatestRequest discards stale tab-switch responses", () => {
+  assert.equal(isLatestRequest(2, 3), false);
+  assert.equal(isLatestRequest(3, 3), true);
+});
 
 test("cleanMediaCode strips leading hash and whitespace", () => {
   assert.equal(cleanMediaCode(" #3956 "), "3956");

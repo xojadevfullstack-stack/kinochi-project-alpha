@@ -18,10 +18,12 @@
 - **Live Cycle 2 E2E (`run_smm_worker_cycle`):**
   - `smm_clip_jobs #2` (`#3955`, `Yulduzlar sari mashaqqatli yo‘l`) -> `waiting_approval`, `uploads/smm/clip_2.mp4` (`5,071,423` bayt, `720x1280`, AI chap-yuqori watermark blur).
   - `smm_clip_jobs #3` (`#3956`, `Ouk Strit ko‘chasining oxiri`) -> `waiting_approval`, `uploads/smm/clip_3.mp4` (`9,124,325` bayt, `720x1280`, `45.0s`, AI chap-yuqori watermark blur, `Janr: Ilmiy fantastika • Sirli • Triller`).
+- **Live Browser QA (`https://kinochi-project-alpha-qoqf.vercel.app/smm`) & Yakuniy Tuzatishlar:** Tab almashishdagi poyga sharti (`isLatestRequest`), `recut` tezkor UI yangilanishi va Telegram Storage orqali doimiy klipp zaxirasi (`clip_storage_message_id` -> `GET /api/v1/smm/jobs/{id}/video`, `clip_2.mp4` `#5067` va `clip_3.mp4` `#5068` saqlandi) qo'shildi.
 - **Ruff Lint (o'zgartirilgan SMM + test fayllari):** `All checks passed!` (Exit code 0). (`backend bot` umumiy lintida avvaldan mavjud 429 xato bor).
-- **Alembic Heads:** `e5f6a7b8c9d0 (head)`.
-- **Backend Filtered Suite (`SMM + Enricher + Movie + Public routes`):** `59 passed, 2 warnings in 11.60s`.
-- **Bot Full Test Suite:** `106 passed in 6.45s`.
+- **Alembic Heads:** `f6a7b8c9d0e1 (head)` (Supabase'da faol).
+- **Backend Filtered Suite (`SMM + Enricher + Movie + Public routes`):** `66 passed, 2 warnings in 11.39s`.
+- **Bot Full Test Suite:** `107 passed in 6.51s`.
+- **Admin Panel Unit Tests & Build:** `node --test admin-panel/tests/*.mjs` -> `7 passed, 0 failed`; `tsc --noEmit` -> Exit 0; `npm --prefix admin-panel run build` -> `22/22` Exit 0.
 - **Core User Reported Flaws Resolved (Batch 3):**
   1. **Light Mode-da Hero & Stage Bannerlarining Rasm Qatlami (Zero Blur + Zero White Wash) & Bosh Sahifa Bir Xil O'lchamli 3-Kartochkali Horizontal Row:** Barcha maketlarda fotografik hero bannerlardagi blur (`filter: none !important; transform: none !important;`) hamda oq fon/bo'yoq qatlami (`#FFFFFF` va `opacity: 0.40`) olib tashlandi. `mockup_homepage_v2.html` da `TOP 10` (`topSlider`, `items-start`, bir xil `pl-3 sm:pl-7` va `truncate` sarlavhali kartochkalar) hamda barcha row bo'limlari (`rowResume`, `rowMovies`, `rowSeries`, `rowAnime`, `rowDorama`, `rowCartoons`) gorizontal slayd (`overflow-x-auto`) tartibida saqlanib, mobilda defolt holatda **bir xil o'lchamli 3 ta kartochka** (`w-[calc((100%-16px)/3)]`) ko'rinadigan qilindi.
   2. **Dual Back Button Qoidasi (Root vs 21 ta Ichki Sahifa):** 0-darajali asosiy sahifada (`mockup_homepage_v2.html`) orqaga qaytish tugmalari yo'q. Qolgan barcha 21 ta ichki sahifada headerda qat'iy 1 ta (`header_back=1`) va mobil pastki o'ng burchakda qat'iy 1 ta (`floating_back=1`) tugma o'rnatildi (`mockup_catalog.html` dagi takroriy 2-chi tugmalar olib tashlandi).

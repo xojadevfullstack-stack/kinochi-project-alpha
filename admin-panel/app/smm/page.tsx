@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_URL, fetchApi } from "@/lib/api";
-import { cleanMediaCode, formatSmmStatusLabel, shouldPollProgress } from "@/lib/smmHelpers.mjs";
+import { cleanMediaCode, formatSmmStatusLabel, isLatestRequest, shouldPollProgress } from "@/lib/smmHelpers.mjs";
 
 type SmmSettings = {
   mode: "SEMI_AUTO" | "FULL_AUTO";
@@ -64,24 +64,28 @@ export default function SmmStudioPage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [recutStart, setRecutStart] = useState<Record<number, string>>({});
+  const [brokenVideo, setBrokenVideo] = useState<Record<number, boolean>>({});
   const [newJob, setNewJob] = useState({ media_type: "movie" as "movie" | "episode", movie_code: "", title: "", start_sec: "300", duration_sec: "45" });
-
-  const baseHost = API_URL.replace(/\/api\/v1\/?$/, "");
+  const loadSeqRef = useRef(0);
 
   const loadAll = async (statusVal = filter) => {
+    const seq = ++loadSeqRef.current;
     try {
       const [cfg, list, prog] = await Promise.all([
         fetchApi("/smm/settings"),
         fetchApi(`/smm/jobs?status=${statusVal}`),
         fetchApi("/smm/progress").catch(() => null),
       ]);
+      if (!isLatestRequest(seq, loadSeqRef.current)) return;
       setSettings(cfg);
       setJobs(Array.isArray(list) ? list : []);
       if (prog) setProgress(prog);
     } catch (e: unknown) {
-      setNotice(e instanceof Error ? e.message : "Ma'lumotlarni yuklashda xatolik");
+      if (isLatestRequest(seq, loadSeqRef.current)) {
+        setNotice(e instanceof Error ? e.message : "Ma'lumotlarni yuklashda xatolik");
+      }
     } finally {
-      setLoading(false);
+      if (isLatestRequest(seq, loadSeqRef.current)) setLoading(false);
     }
   };
 
@@ -142,8 +146,12 @@ export default function SmmStudioPage() {
     }
   };
 
-  const runAction = async (id: number, action: "approve" | "reject" | "recut", body?: object) => {
+  const runAction = async (id: number, action: "approve" | "reject" | "recut", body?: { start_sec?: number; duration_sec?: number; publish_now?: boolean }) => {
     try {
+      if (action === "recut" && typeof body?.start_sec === "number") {
+        setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, start_sec: body.start_sec!, status: "generating", progress_pct: 0 } : j)));
+        setBrokenVideo((prev) => ({ ...prev, [id]: false }));
+      }
       await fetchApi(`/smm/jobs/${id}/${action}`, { method: "POST", body: body ? JSON.stringify(body) : undefined });
       setNotice(`Vazifa #${id} bo'yicha amal bajarildi`);
       await loadAll();
@@ -271,7 +279,7 @@ export default function SmmStudioPage() {
               Admin Telegram ID (preview)
               <input
                 type="text"
-                placeholder="123456789"
+                placeholder="123456789 (bo'sh = ADMIN_IDS)"
                 value={settings.admin_telegram_id || ""}
                 onChange={(e) => setSettings({ ...settings, admin_telegram_id: e.target.value })}
                 className="mt-1 w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white"
@@ -353,11 +361,20 @@ export default function SmmStudioPage() {
               <span className="text-xs text-text-secondary uppercase">{formatSmmStatusLabel(job.status)}</span>
             </div>
             <h3 className="text-sm font-semibold text-white truncate">{job.title}</h3>
-            {job.clip_path ? (
-              <video src={`${baseHost}/${job.clip_path}`} controls className="w-full max-h-72 rounded-xl bg-black object-contain" />
+            {job.clip_path && !brokenVideo[job.id] ? (
+              <video
+                src={`${API_URL}/smm/jobs/${job.id}/video`}
+                controls
+                onError={() => setBrokenVideo((prev) => ({ ...prev, [job.id]: true }))}
+                className="w-full max-h-72 rounded-xl bg-black object-contain"
+              />
             ) : (
               <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-text-secondary space-y-1.5">
-                <div>{job.progress_stage || "Video klip Render worker tomonidan kesilishi kutilmoqda..."}</div>
+                <div>
+                  {brokenVideo[job.id]
+                    ? "Video fayli serverda topilmadi — 'Qayta kesish' tugmasini bosing."
+                    : job.progress_stage || "Video klip Render worker tomonidan kesilishi kutilmoqda..."}
+                </div>
                 {job.status === "generating" && (
                   <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
                     <div className="h-full bg-[#E50914] transition-all" style={{ width: `${Math.max(5, job.progress_pct || 0)}%` }} />

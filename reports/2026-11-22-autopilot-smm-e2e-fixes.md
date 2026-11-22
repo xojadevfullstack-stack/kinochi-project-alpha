@@ -5,31 +5,26 @@
 2. `gemini_identify_movie()` (`503` qayta urinish + `gemini-3.5-flash` fallback + majburiy `search_title_en`/`search_title_ru`) hamda `pick_canonical_uzbek_title()` tuzatilib, `Ouk Strit ko'chasining oxiri` (`#3956`, TMDB `1101383`) muvaffaqiyatli nashr qilindi.
 3. `smm_clipper.py` / `smm_pipeline.py` da VBR 1080p fayllarda klip oxiri sparse nol baytlarga tushib qolishini bartaraf etuvchi `compute_sparse_byte_range()` (MP4 `stco/co64` bosh+oxir indeksi + oqimli faylga yozish) hamda `smm_worker.py` da xato vazifani `failed` ga ajratish qo'shilib, `clip_2.mp4` (`#3955`) va `clip_3.mp4` (`#3956`) kliplari muvaffaqiyatli yaratildi.
 
+4. Jonli Admin Panel QA (`https://kinochi-project-alpha-qoqf.vercel.app/smm`) natijasida topilgan tab almashish poyga sharti (`isLatestRequest`), `recut` UI yangilanish kechikishi va Render ephemer diskida `<video>` 404/ORB berish muammosi (`clip_storage_message_id` + `GET /api/v1/smm/jobs/{id}/video` + `BOT_TOKEN` kanal zaxirasi) tuzatildi (`clip_2.mp4` -> `msg_id=5067`, `clip_3.mp4` -> `msg_id=5068`).
+
 ## Changed files
-- `scraper/smart_enricher.py` - Gemini `503` retry/fallback, JSON mimeType, majburiy `search_title_en/ru` tarjima yo'riqnomasi va `pick_canonical_uzbek_title()`.
+- `scraper/smart_enricher.py` - Gemini `503` retry/fallback, JSON mimeType, majburiy `search_title_en/ru` va `pick_canonical_uzbek_title()`.
 - `scraper/smm_clipper.py` - `compute_sparse_chunk_mb()`, `compute_sparse_byte_range()` (MP4 `stco/co64` start/end offset + 1MB RAM oqimli yozish).
-- `scraper/smm_pipeline.py` - qat'iy `25 MB` o'rniga adaptiv sparse segment (`chunk_mb=None`).
-- `scraper/smm_worker.py` - `process_generating_job()` xato izolyatsiyasi (`failed`) va `.order_by(SmmClipJobModel.id.asc())`.
-- `scraper/smm_publishers/telegram_pub.py` - janrlarni ` • ` bilan toza formatlash.
-- `backend/tests/test_smm_clipper.py` - adaptiv chunk va `stco` end-bound byte range testlari.
-- `backend/tests/test_smm_worker.py` - xato vazifa navbatni to'sib qo'ymasligi testi.
-- `backend/tests/test_smart_enricher_regression.py` - `503` retry, `The End of Oak Street` score va o'zbekcha nomni saqlash testlari.
-- `STATE.md`, `docs/learned.md` - holat va o'rganilgan tushunchalar yangilandi.
+- `scraper/smm_pipeline.py` - adaptiv sparse segment (`chunk_mb=None`) va `progress_cb` bosqichlari.
+- `scraper/smm_worker.py` - xato izolyatsiyasi (`failed`), `clip_storage_message_id` (`BOT_TOKEN` + `send_file` fallback), va ikkala rejimda admin Telegram preview.
+- `scraper/smm_publishers/telegram_pub.py` - janrlarni ` • ` bilan formatlash, `send_admin_smm_preview()` (`SEMI_AUTO` tugmalari vs `FULL_AUTO` xabar).
+- `backend/app/infrastructure/db/models/smm.py`, `backend/alembic/versions/f6a7b8c9d0e1_add_smm_admin_tg_and_progress.py`, `backend/app/api/v1/smm.py` - `admin_telegram_id`, `progress_pct/progress_stage`, `/smm/progress`, `/smm/bot/jobs/{id}/*`, `/smm/jobs/{id}/video`.
+- `bot/handlers/smm_admin.py`, `bot/services/api_client.py`, `bot/main.py` - Telegram inline callback boshqaruvi.
+- `admin-panel/app/smm/page.tsx`, `admin-panel/lib/smmHelpers.mjs` - jonli Progress paneli, `Admin Telegram ID`, poyga himoyasi (`isLatestRequest`), `/video` pleyeri.
+- Testlar: `test_smm_api.py`, `test_smm_clipper.py`, `test_smm_pipeline_and_telegram_pub.py`, `test_smm_worker.py`, `test_smart_enricher_regression.py`, `bot/tests/test_smm_admin.py`, `admin-panel/tests/smmHelpers.test.mjs`.
 
 ## check output
 ```text
-Ruff (changed files):
-backend\.venv\Scripts\ruff.exe check scraper/smm_clipper.py scraper/smm_pipeline.py scraper/smm_worker.py scraper/smm_publishers/telegram_pub.py backend/tests/test_smm_clipper.py backend/tests/test_smm_worker.py backend/tests/test_smart_enricher_regression.py
--> All checks passed! (Exit code 0)
-
-Alembic:
-e5f6a7b8c9d0 (head)
-
-Pytest (SMM + Enricher + Movie + Public routes):
-59 passed, 2 warnings in 11.60s
-
-Pytest (Bot full suite):
-106 passed in 6.45s
+Ruff (changed files): All checks passed!
+Alembic: f6a7b8c9d0e1 (head)
+Pytest (SMM + Enricher + Movie + Public routes): 66 passed, 2 warnings in 11.39s
+Pytest (Bot full suite): 107 passed in 6.51s
+Admin Panel (node --test + tsc + next build): 7 passed, 0 failed; 22/22 routes Exit 0
 ```
 
 ## Risks and unknowns
