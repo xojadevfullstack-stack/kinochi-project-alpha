@@ -197,3 +197,19 @@ async def test_bot_login_success(monkeypatch):
         assert "access_token" in data
         assert data["message"] == "Login successful"
 
+
+@pytest.mark.asyncio
+async def test_public_config_returns_bot_username_and_stream_flag(monkeypatch):
+    monkeypatch.setattr(settings, "BOT_USERNAME", "@MediaPlusNewBot")
+    monkeypatch.setattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app/")
+    if hasattr(settings, "STREAM_SERVICE_URL"):
+        monkeypatch.setattr(settings, "STREAM_SERVICE_URL", "")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.get("/api/v1/auth/public-config")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["bot_username"] == "MediaPlusNewBot"
+        assert data["website_url"] == "https://kinochi-project-alpha.vercel.app"
+        assert data["stream_enabled"] is False
+

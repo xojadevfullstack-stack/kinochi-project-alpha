@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import TelegramWatchButton from "@/components/TelegramWatchButton";
+import { triggerTelegramHaptic } from "@/lib/telegram";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import {
+  getStreamableTranslations,
+  saveContinueWatching,
+} from "@/lib/streamHelpers.mjs";
+import WebVideoPlayerModal, {
+  StreamTranslationItem,
+} from "@/components/media/WebVideoPlayerModal";
 
 export type Episode = {
   id: number;
@@ -11,6 +20,7 @@ export type Episode = {
   duration: number | null;
   code: string;
   display_code?: string | null;
+  translations?: any[];
 };
 
 export type Season = {
@@ -28,14 +38,18 @@ interface SeasonEpisodesSectionProps {
   seasons: Season[];
   series: any;
   botUsername?: string;
+  streamEnabled?: boolean;
 }
 
 export default function SeasonEpisodesSection({
   seasons,
   series,
   botUsername,
+  streamEnabled,
 }: SeasonEpisodesSectionProps) {
-  const targetBotUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { botUsername: liveBotUsername, streamEnabled: liveStreamEnabled } = useAuth();
+  const targetBotUser = liveBotUsername || botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const isStreamActive = streamEnabled ?? liveStreamEnabled;
   const sortedSeasons = [...(seasons || [])].sort(
     (a, b) => a.season_number - b.season_number
   );
@@ -43,6 +57,11 @@ export default function SeasonEpisodesSection({
   const [activeSeasonId, setActiveSeasonId] = useState<number>(
     sortedSeasons[0]?.id || 0
   );
+  const [playerState, setPlayerState] = useState<{
+    title: string;
+    translations: StreamTranslationItem[];
+    telegramUrl: string;
+  } | null>(null);
 
   const activeSeason =
     sortedSeasons.find((s) => s.id === activeSeasonId) || sortedSeasons[0];
@@ -111,21 +130,12 @@ export default function SeasonEpisodesSection({
             {episodes.map((episode) => {
               const episodeCode = episode.code || episode.display_code || String(episode.id);
               const episodeLink = `https://t.me/${targetBotUser}?start=ep_${episodeCode}`;
-              return (
-                <TelegramWatchButton
-                  key={episode.id}
-                  url={episodeLink}
-                  mediaTitle={`${series.title} (${episode.episode_number}-qism)`}
-                  mediaCode={episodeCode}
-                  mediaId={episode.id}
-                  seriesId={series.id}
-                  mediaType="episode"
-                  posterUrl={activeSeason?.poster_url || series.poster_url || ""}
-                  releaseYear={series.release_year}
-                  imdbRating={series.imdb_rating || series.tmdb_rating}
-                  genres={series.categories?.[0]?.name || "Serial"}
-                  className="episode-card group relative flex flex-col justify-between p-1.5 sm:p-2.5 rounded-xl bg-slate-100/90 hover:bg-[#D20A13] dark:bg-white/[0.04] dark:hover:bg-[#E50914] border border-slate-200 dark:border-white/10 hover:border-[#D20A13] dark:hover:border-[#E50914] hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 cursor-pointer overflow-hidden text-left"
-                >
+              const streamable = isStreamActive ? getStreamableTranslations(episode.translations) : [];
+              const epTitle = `${series.title} (${episode.episode_number}-qism)`;
+              const cardClasses =
+                "episode-card group relative flex flex-col justify-between p-1.5 sm:p-2.5 rounded-xl bg-slate-100/90 hover:bg-[#D20A13] dark:bg-white/[0.04] dark:hover:bg-[#E50914] border border-slate-200 dark:border-white/10 hover:border-[#D20A13] dark:hover:border-[#E50914] hover:shadow-lg hover:shadow-primary/20 transition-all duration-200 cursor-pointer overflow-hidden text-left";
+              const cardInner = (
+                <>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-white transition-colors font-mono">
                       {episode.episode_number}
@@ -146,12 +156,71 @@ export default function SeasonEpisodesSection({
                       </span>
                     )}
                   </div>
+                </>
+              );
+
+              if (streamable.length > 0) {
+                return (
+                  <button
+                    key={episode.id}
+                    type="button"
+                    onClick={() => {
+                      triggerTelegramHaptic("medium");
+                      saveContinueWatching({
+                        id: series.id || episode.id,
+                        code: episodeCode,
+                        title: epTitle,
+                        poster_url: activeSeason?.poster_url || series.poster_url || null,
+                        is_series: true,
+                        release_year: series.release_year || null,
+                        imdb_rating: series.imdb_rating || series.tmdb_rating || null,
+                        genres: series.categories?.[0]?.name || "Serial",
+                        type: "episode",
+                      });
+                      setPlayerState({
+                        title: epTitle,
+                        translations: streamable,
+                        telegramUrl: episodeLink,
+                      });
+                    }}
+                    className={cardClasses}
+                  >
+                    {cardInner}
+                  </button>
+                );
+              }
+
+              return (
+                <TelegramWatchButton
+                  key={episode.id}
+                  url={episodeLink}
+                  mediaTitle={epTitle}
+                  mediaCode={episodeCode}
+                  mediaId={episode.id}
+                  seriesId={series.id}
+                  mediaType="episode"
+                  posterUrl={activeSeason?.poster_url || series.poster_url || ""}
+                  releaseYear={series.release_year}
+                  imdbRating={series.imdb_rating || series.tmdb_rating}
+                  genres={series.categories?.[0]?.name || "Serial"}
+                  className={cardClasses}
+                >
+                  {cardInner}
                 </TelegramWatchButton>
               );
             })}
           </div>
         )}
       </div>
+      <WebVideoPlayerModal
+        isOpen={Boolean(playerState)}
+        onClose={() => setPlayerState(null)}
+        mediaType="episode"
+        title={playerState?.title || ""}
+        posterUrl={activeSeason?.poster_url || series.poster_url || ""}
+        translations={playerState?.translations || []}
+        telegramUrl={playerState?.telegramUrl || `https://t.me/${targetBotUser}`}
+      />
     </section>
   );
 }

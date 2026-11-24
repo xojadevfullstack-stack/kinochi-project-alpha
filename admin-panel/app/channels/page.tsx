@@ -46,8 +46,20 @@ export default function ChannelsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const cleanedUsername = form.channel_username
+        .trim()
+        .replace(/^https?:\/\/(?:www\.)?(?:t\.me|telegram\.me)\//i, "")
+        .replace(/^@+/, "")
+        .replace(/\/+$/, "");
+
+      if (/bot$/i.test(cleanedUsername)) {
+        alert("Diqqat: Bu yerga bot username emas, faqat Telegram kanal @username (masalan: my_channel) kiritilishi kerak!");
+        return;
+      }
+
       const payload = {
         ...form,
+        channel_username: cleanedUsername,
         subscriber_limit: form.subscriber_limit ? Number(form.subscriber_limit) : null
       };
       if (editingId) {

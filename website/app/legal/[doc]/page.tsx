@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { getPublicConfig } from "@/lib/api";
 
 const LEGAL_DOCS: Record<
   string,
@@ -118,11 +119,11 @@ export async function generateMetadata({
   return { title: `${item.title} | MediaPlus` };
 }
 
-export default function LegalDocPage({ params }: { params: { doc: string } }) {
+export default async function LegalDocPage({ params }: { params: { doc: string } }) {
   const doc = LEGAL_DOCS[params.doc];
   if (!doc) notFound();
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { bot_username: botUsername } = await getPublicConfig();
 
   return (
     <div className="min-h-screen bg-transparent text-slate-900 dark:text-text-primary pt-4 pb-20 px-gutter">

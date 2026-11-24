@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_URL } from "@/lib/api";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { openTelegramUrl, triggerTelegramHaptic } from "@/lib/telegram";
 
 interface QuickMatch {
@@ -24,7 +25,7 @@ export default function QuickCodePage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [match, setMatch] = useState<QuickMatch | null>(null);
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { botUsername } = useAuth();
   const cleanedCode = rawCode.replace(/^[#№\s]+/, "").trim();
 
   useEffect(() => {

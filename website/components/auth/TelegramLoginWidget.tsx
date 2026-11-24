@@ -4,11 +4,22 @@ import React from "react";
 import { useAuth } from "../../lib/auth/AuthProvider";
 
 export default function TelegramLoginWidget() {
-  const { environment, status, resetAuthStatus } = useAuth();
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { environment, status, resetAuthStatus, triggerWebAppLogin, botUsername } = useAuth();
 
-  if (environment !== "browser") {
-    return null; // Do not show in WebApp
+  if (environment === "telegram_webapp") {
+    if (status === "error") {
+      return (
+        <button
+          type="button"
+          onClick={() => triggerWebAppLogin()}
+          className="w-full py-2 px-3 bg-[#E50914] hover:bg-[#B80710] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[15px]">refresh</span>
+          <span>Telegram profilni ulash</span>
+        </button>
+      );
+    }
+    return null;
   }
 
   const telegramBotLoginUrl = `https://t.me/${botUsername}?start=login`;

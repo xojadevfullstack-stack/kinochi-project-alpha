@@ -70,7 +70,7 @@ export default function CollectionTimelineView({
 }: CollectionTimelineViewProps) {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [sortMode, setSortMode] = useState<"chronological" | "release">("chronological");
-  const { user } = useAuth();
+  const { user, botUsername } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subLoading, setSubLoading] = useState(false);
 
@@ -95,7 +95,7 @@ export default function CollectionTimelineView({
   const handleToggleSub = async () => {
     if (!collectionId) return;
     if (!user?.telegram_id) {
-      const botUser = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+      const botUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
       openTelegramUrl(`https://t.me/${botUser}?start=col_${collectionId}`);
       return;
     }

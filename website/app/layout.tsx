@@ -9,7 +9,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import { BreadcrumbProvider } from "@/components/BreadcrumbContext";
 import Footer from "@/components/Footer";
 import TelegramInit from "@/components/TelegramInit";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getPublicConfig } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import TopRouteLoader from "@/components/TopRouteLoader";
 import Script from "next/script";
@@ -46,9 +46,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let pages: any[] = [];
+  let publicConfig = { bot_username: process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot", website_url: "https://kinochi-project-alpha.vercel.app", stream_enabled: false };
   try {
-    const data = await fetchApi("/pages/");
+    const [data, cfg] = await Promise.all([
+      fetchApi("/pages/").catch(() => ({ items: [] })),
+      getPublicConfig(),
+    ]);
     pages = data.items || data || [];
+    publicConfig = cfg;
   } catch (e) {
     console.error("Failed to fetch pages for layout:", e);
   }
@@ -58,7 +63,7 @@ export default async function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=document.documentElement,n=navigator,c=n.connection||n.mozConnection||n.webkitConnection,m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if((c&&c.saveData)||(typeof n.deviceMemory==='number'&&n.deviceMemory<=2)||(typeof n.hardwareConcurrency==='number'&&n.hardwareConcurrency<=2)||m){d.classList.add('low-end-device');}var t=localStorage.getItem('kinochi_theme');if(t==='light'){d.classList.remove('dark');d.classList.add('light');}else{d.classList.add('dark');d.classList.remove('light');}}catch(e){}})();`,
+            __html: `(function(){try{var d=document.documentElement,n=navigator,c=n.connection||n.mozConnection||n.webkitConnection,m=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if((c&&c.saveData)||(typeof n.deviceMemory==='number'&&n.deviceMemory<=2)||(typeof n.hardwareConcurrency==='number'&&n.hardwareConcurrency<=2)||m){d.classList.add('low-end-device');}var t=localStorage.getItem('kinochi_theme');var prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var isLight=(t==='light')||(t!=='dark'&&!prefersDark);if(isLight){d.classList.remove('dark');d.classList.add('light');}else{d.classList.add('dark');d.classList.remove('light');}}catch(e){}})();`,
           }}
         />
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
@@ -70,7 +75,7 @@ export default async function RootLayout({
             __html: `(function(){try{if(document.documentElement.classList.contains('light')){document.body.classList.add('light-theme');}}catch(e){}})();`,
           }}
         />
-        <AuthProvider>
+        <AuthProvider initialBotUsername={publicConfig.bot_username} initialStreamEnabled={publicConfig.stream_enabled}>
           <BreadcrumbProvider>
             <TopRouteLoader />
             <TelegramInit />
@@ -84,7 +89,7 @@ export default async function RootLayout({
             
             <BottomNav />
             <FloatingBackButton />
-            <Footer />
+            <Footer botUsername={publicConfig.bot_username} />
           </BreadcrumbProvider>
         </AuthProvider>
       </body>

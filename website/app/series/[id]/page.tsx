@@ -1,6 +1,6 @@
 import CastCrewSection from "@/components/media/CastCrewSection";
 import SeasonEpisodesSection from "@/components/media/SeasonEpisodesSection";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getPublicConfig } from "@/lib/api";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import ShareButton from "@/components/ShareButton";
@@ -15,7 +15,6 @@ import SubscribeButton from "@/components/SubscribeButton";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
-import BackButton from "@/components/BackButton";
 import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import SourceBadge from "@/components/SourceBadge";
 import OnboardingSpotlight, { TourStep } from "@/components/OnboardingSpotlight";
@@ -23,7 +22,7 @@ import OnboardingSpotlight, { TourStep } from "@/components/OnboardingSpotlight"
 const SERIES_TOUR_STEPS: TourStep[] = [
   {
     badge: "Telegram Bot",
-    title: "@MediaPlusOfficialBot da tomosha qiling",
+    title: "Telegram botda tomosha qiling",
     description:
       "Tugmani bossangiz, ushbu serial rasmiy Telegram botimizda HD/4K sifatda va reklamasiz ochiladi.",
     selectors: ['a[href*="t.me/"]'],
@@ -120,7 +119,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
     creditsData = await fetchApi(`/series/${series.id}/credits`);
   } catch {}
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { bot_username: botUsername, stream_enabled: streamEnabled } = await getPublicConfig();
   // Fallback direct link to bot
   const telegramDeepLink = `https://t.me/${botUsername}?start=s_${series.id}`;
   const is18Plus = isAdultContent(series);
@@ -157,15 +156,10 @@ export default async function SeriesDetailsPage({ params }: Props) {
           is18Plus={is18Plus}
         >
           {/* Content Container */}
-          <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
-          {/* Smart Back Navigation */}
-          <div className="flex items-center">
-            <BackButton fallbackUrl="/series" />
-          </div>
-
-          <div className="w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
+          <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-3 sm:gap-5">
+          <div className="w-full flex flex-col md:flex-row items-center md:items-end gap-3.5 sm:gap-5 md:gap-margin-desktop">
             {/* Left: Poster */}
-            <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
+            <div className="w-28 sm:w-44 md:w-1/3 lg:w-[360px] shrink-0 mt-1 sm:mt-2 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
             <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-black/80 relative bg-surface-container-high">
               {series.poster_url ? (
                 <AdultPoster 
@@ -188,12 +182,12 @@ export default async function SeriesDetailsPage({ params }: Props) {
           
           {/* Right: Movie Info */}
           <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-white mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+            <h1 className="font-display-hero text-xl sm:text-3xl md:text-display-hero text-white mb-1.5 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
               {series.title}
             </h1>
             
             {/* Badges Row */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-2.5 mb-3 sm:mb-stack-md">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 mb-2.5 sm:mb-stack-md">
               <div 
                 className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-sm font-medium text-xs" 
                 title="Rasmiy IMDb reytingi"
@@ -260,7 +254,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
             </div>
             
             {/* Description */}
-            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-slate-200 mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
+            <p className="font-body-lg text-xs sm:text-sm md:text-body-lg text-slate-200 mb-3 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-2 md:line-clamp-none">
               {series.description || "Ushbu serial haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             
@@ -334,7 +328,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
 
 
       {/* Seasons & Episodes Section */}
-      <SeasonEpisodesSection seasons={series.seasons} series={series} botUsername={botUsername} />
+      <SeasonEpisodesSection seasons={series.seasons} series={series} botUsername={botUsername} streamEnabled={streamEnabled} />
 
       {/* Suratga olish guruhi (TMDb) */}
       <CastCrewSection

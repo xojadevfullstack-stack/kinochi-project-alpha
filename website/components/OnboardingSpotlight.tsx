@@ -30,7 +30,7 @@ const TOUR_STEPS: TourStep[] = [
     badge: "Tomosha qilish",
     title: "Telegram botda HD/4K ko'ring",
     description:
-      "Yoqqan filmni tanlang va 'TOMOSHA QILISH' tugmasini bosing — video @MediaPlusOfficialBot orqali ochiladi.",
+      "Yoqqan filmni tanlang va 'TOMOSHA QILISH' tugmasini bosing — video rasmiy Telegram botimiz orqali ochiladi.",
     selectors: ['a[href*="/movie/"]', 'a[href*="/series/"]'],
   },
   {

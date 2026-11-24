@@ -4,7 +4,7 @@ import hashlib
 import time
 import logging
 from urllib.parse import parse_qsl
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -95,6 +95,19 @@ async def _upsert_telegram_user(
 
 
 # ── Endpoints ────────────────────────────────────────────────────
+@router.get("/public-config")
+async def get_public_config():
+    """Public non-secret bot and feature config consumed by the web frontend."""
+    bot_username = (getattr(settings, "BOT_USERNAME", "") or "kinochi_mvp_bot").strip().lstrip("@")
+    website_url = (getattr(settings, "WEBSITE_URL", "") or "https://kinochi-project-alpha.vercel.app").strip().rstrip("/")
+    stream_enabled = bool(str(getattr(settings, "STREAM_SERVICE_URL", "") or "").strip())
+    return {
+        "bot_username": bot_username,
+        "website_url": website_url,
+        "stream_enabled": stream_enabled,
+    }
+
+
 @router.post("/telegram-login")
 @limiter.limit("30/minute")
 async def telegram_login_widget(

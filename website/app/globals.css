@@ -125,6 +125,7 @@ html,
 body {
   overflow-x: clip;
   max-width: 100%;
+  overscroll-behavior-y: contain;
 }
 
 /* Skip offscreen layout & paint until close to viewport */

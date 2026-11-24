@@ -1,5 +1,5 @@
 import CastCrewSection from "@/components/media/CastCrewSection";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getPublicConfig } from "@/lib/api";
 import { notFound } from "next/navigation";
 
 import { Metadata } from "next";
@@ -17,9 +17,10 @@ import SubscribeButton from "@/components/SubscribeButton";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
 import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
-import BackButton from "@/components/BackButton";
 import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import SourceBadge from "@/components/SourceBadge";
+import MovieWatchButton from "@/components/media/MovieWatchButton";
+import { getStreamableTranslations } from "@/lib/streamHelpers.mjs";
 
 type Props = {
   params: { code: string };
@@ -79,9 +80,11 @@ export default async function MovieDetailsPage({ params }: Props) {
     creditsData = await fetchApi(`/movies/${movie.code || movie.id}/credits`);
   } catch {}
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { bot_username: botUsername, stream_enabled: streamEnabled } = await getPublicConfig();
   const telegramDeepLink = `https://t.me/${botUsername}?start=${movie.code}`;
   const is18Plus = isAdultContent(movie);
+  const streamableTranslations = getStreamableTranslations(movie.translations);
+  const canStream = streamEnabled && streamableTranslations.length > 0;
 
   // Sifat matnli yorlig'i (Quality badge)
   const qualityList = (movie.translations || [])
@@ -113,15 +116,10 @@ export default async function MovieDetailsPage({ params }: Props) {
           is18Plus={is18Plus}
         >
           {/* Content Container */}
-          <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-4 sm:gap-6">
-          {/* Smart Back Navigation */}
-          <div className="flex items-center">
-            <BackButton fallbackUrl="/movies" />
-          </div>
-
-          <div className="w-full flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-margin-desktop">
+          <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-3 sm:gap-5">
+          <div className="w-full flex flex-col md:flex-row items-center md:items-end gap-3.5 sm:gap-5 md:gap-margin-desktop">
             {/* Left: Poster */}
-            <div className="w-44 sm:w-52 md:w-1/3 lg:w-[380px] shrink-0 mt-2 sm:mt-4 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
+            <div className="w-28 sm:w-44 md:w-1/3 lg:w-[360px] shrink-0 mt-1 sm:mt-2 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
             <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-black/80 relative bg-surface-container-high">
               {movie.poster_url ? (
                 <AdultPoster 
@@ -144,12 +142,12 @@ export default async function MovieDetailsPage({ params }: Props) {
           
           {/* Right: Movie Info */}
           <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero text-2xl sm:text-4xl md:text-display-hero text-white mb-2 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+            <h1 className="font-display-hero text-xl sm:text-3xl md:text-display-hero text-white mb-1.5 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
               {movie.title}
             </h1>
             
             {/* Badges Row */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-2.5 mb-3 sm:mb-stack-md">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 mb-2.5 sm:mb-stack-md">
               <div 
                 className="inline-flex items-center gap-1.5 h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-sm font-medium text-xs" 
                 title="Rasmiy IMDb reytingi"
@@ -249,12 +247,25 @@ export default async function MovieDetailsPage({ params }: Props) {
             )}
 
             {/* Description */}
-            <p className="font-body-lg text-sm sm:text-base md:text-body-lg text-slate-200 mb-4 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-3 md:line-clamp-none">
+            <p className="font-body-lg text-xs sm:text-sm md:text-body-lg text-slate-200 mb-3 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-2 md:line-clamp-none">
               {movie.description || "Ushbu kino haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             
             {/* Action Buttons (Mobile 2-col grid matching prototype, Desktop flex row) */}
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 items-stretch sm:items-center justify-center md:justify-start w-full">
+              {canStream && (
+                <MovieWatchButton
+                  movieTitle={movie.title}
+                  movieCode={movie.code}
+                  movieId={movie.id}
+                  posterUrl={movie.poster_url || ""}
+                  releaseYear={movie.release_year}
+                  imdbRating={movie.imdb_rating || movie.tmdb_rating}
+                  genres={movie.genres?.split(",")?.[0]?.trim() || "Kino"}
+                  translations={streamableTranslations}
+                  telegramUrl={telegramDeepLink}
+                />
+              )}
               <TelegramWatchButton 
                 url={telegramDeepLink}
                 mediaTitle={movie.title}
@@ -265,7 +276,11 @@ export default async function MovieDetailsPage({ params }: Props) {
                 releaseYear={movie.release_year}
                 imdbRating={movie.imdb_rating || movie.tmdb_rating}
                 genres={movie.genres?.split(",")?.[0]?.trim() || "Kino"}
-                className="col-span-2 sm:col-span-1 sm:w-auto flex items-center justify-center gap-2 bg-[#E50914] text-white px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider hover:bg-[#B80710] hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-primary/30 transition-all duration-200 group font-bold cursor-pointer"
+                className={
+                  canStream
+                    ? "col-span-2 sm:col-span-1 sm:w-auto flex items-center justify-center gap-2 bg-white/10 hover:bg-[#E50914] text-white border border-white/15 hover:border-[#E50914] px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 group font-bold cursor-pointer"
+                    : "col-span-2 sm:col-span-1 sm:w-auto flex items-center justify-center gap-2 bg-[#E50914] text-white px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl font-label-caps text-xs sm:text-sm uppercase tracking-wider hover:bg-[#B80710] hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-primary/30 transition-all duration-200 group font-bold cursor-pointer"
+                }
               >
                 <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.896-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>

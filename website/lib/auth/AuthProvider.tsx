@@ -1,9 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { detectEnvironment, Environment } from "./environment";
 import { getToken, setToken, clearToken } from "./tokenStorage";
-import { fetchApi } from "../api";
+import { fetchApi, getPublicConfig } from "../api";
 
 export interface User {
   id: number;
@@ -22,19 +22,97 @@ interface AuthContextValue {
   status: "loading" | "authenticated" | "unauthenticated" | "error";
   logout: () => void;
   resetAuthStatus: () => void;
+  triggerWebAppLogin: () => Promise<boolean>;
   environment: Environment;
+  botUsername: string;
+  streamEnabled: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+const DEFAULT_BOT_USERNAME = (process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot")
+  .trim()
+  .replace(/^@+/, "");
+
+async function waitForTelegramInitData(maxWaitMs = 2000): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const started = Date.now();
+  while (Date.now() - started < maxWaitMs) {
+    const raw = window.Telegram?.WebApp?.initData;
+    if (raw && raw.trim() !== "") {
+      return raw;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  const finalRaw = window.Telegram?.WebApp?.initData;
+  return finalRaw && finalRaw.trim() !== "" ? finalRaw : null;
+}
+
+export function AuthProvider({
+  children,
+  initialBotUsername,
+  initialStreamEnabled = false,
+}: {
+  children: React.ReactNode;
+  initialBotUsername?: string;
+  initialStreamEnabled?: boolean;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setTokenState] = useState<string | null>(null);
   const [status, setStatus] = useState<AuthContextValue["status"]>("loading");
   const [environment, setEnvironment] = useState<Environment>("browser");
+  const [botUsername, setBotUsername] = useState<string>(
+    (initialBotUsername || DEFAULT_BOT_USERNAME).replace(/^@+/, "")
+  );
+  const [streamEnabled, setStreamEnabled] = useState<boolean>(initialStreamEnabled);
+
+  const attemptWebAppLogin = useCallback(async (initData: string): Promise<boolean> => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const authResponse = await fetchApi("/auth/telegram-webapp", {
+          method: "POST",
+          body: JSON.stringify({ initData }),
+        });
+
+        if (authResponse?.access_token) {
+          setToken(authResponse.access_token);
+          setTokenState(authResponse.access_token);
+          const userData = await fetchApi("/users/me");
+          setUser(userData);
+          setStatus("authenticated");
+          return true;
+        }
+      } catch (error) {
+        console.warn(`WebApp silent login attempt ${attempt + 1} failed:`, error);
+        if (attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
+      }
+    }
+    return false;
+  }, []);
+
+  const triggerWebAppLogin = useCallback(async (): Promise<boolean> => {
+    const initData = await waitForTelegramInitData(1200);
+    if (!initData) return false;
+    setEnvironment("telegram_webapp");
+    setStatus("loading");
+    const ok = await attemptWebAppLogin(initData);
+    if (!ok) setStatus("error");
+    return ok;
+  }, [attemptWebAppLogin]);
 
   useEffect(() => {
-    // Determine environment after mount to avoid hydration mismatch
+    let active = true;
+
+    // Sync live public config (active bot username & stream availability) from backend
+    getPublicConfig().then((cfg) => {
+      if (!active) return;
+      if (cfg.bot_username) setBotUsername(cfg.bot_username);
+      setStreamEnabled(Boolean(cfg.stream_enabled));
+    });
+
+    // Determine initial environment after mount
     const env = detectEnvironment();
     setEnvironment(env);
 
@@ -48,9 +126,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setToken(queryToken);
             setTokenState(queryToken);
             const userData = await fetchApi("/users/me");
+            if (!active) return;
             setUser(userData);
             setStatus("authenticated");
-            window.history.replaceState({}, document.title, window.location.pathname);
+            urlParams.delete("auth_token");
+            const nextQs = urlParams.toString();
+            const cleanUrl = nextQs ? `${window.location.pathname}?${nextQs}` : window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
             return;
           } catch (e) {
             console.error("URL auth_token verification failed:", e);
@@ -63,41 +145,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (savedToken) {
         try {
-          // Verify token by fetching user profile
           const userData = await fetchApi("/users/me");
+          if (!active) return;
           setTokenState(savedToken);
           setUser(userData);
           setStatus("authenticated");
-          return; // Session successfully restored
+          return;
         } catch (error) {
           console.error("Token verification failed:", error);
-          clearToken(); // Invalid or expired token
+          clearToken();
         }
       }
 
-      // If no valid token exists, handle based on environment
-      if (env === "telegram_webapp" && window.Telegram?.WebApp?.initData) {
-        try {
-          const initData = window.Telegram.WebApp.initData;
-          const authResponse = await fetchApi("/auth/telegram-webapp", {
-            method: "POST",
-            body: JSON.stringify({ initData }),
-          });
+      // 2. Telegram WebApp automatic seamless login (waits briefly for late Telegram SDK initData)
+      const immediateInitData = window.Telegram?.WebApp?.initData;
+      const inTgWebApp =
+        env === "telegram_webapp" ||
+        Boolean(immediateInitData) ||
+        Boolean(
+          typeof window !== "undefined" &&
+            window.Telegram?.WebApp?.platform &&
+            window.Telegram.WebApp.platform !== "unknown"
+        );
 
-          if (authResponse.access_token) {
-            setToken(authResponse.access_token);
-            setTokenState(authResponse.access_token);
-            // Fetch user
-            const userData = await fetchApi("/users/me");
-            setUser(userData);
-            setStatus("authenticated");
-          } else {
-            setStatus("unauthenticated");
-          }
-        } catch (error) {
-          console.error("WebApp silent login failed:", error);
-          setStatus("error"); // Use 'error' to show appropriate UI
-        }
+      const resolvedInitData = immediateInitData?.trim()
+        ? immediateInitData
+        : inTgWebApp
+        ? await waitForTelegramInitData(2200)
+        : null;
+
+      if (!active) return;
+
+      if (resolvedInitData) {
+        setEnvironment("telegram_webapp");
+        const ok = await attemptWebAppLogin(resolvedInitData);
+        if (!active) return;
+        if (!ok) setStatus("error");
       } else {
         setStatus("unauthenticated");
       }
@@ -106,19 +189,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     // Listen for unauthorized events from api.ts interceptor
-    const handleUnauthorized = () => {
+    const handleUnauthorized = async () => {
       setTokenState(null);
       setUser(null);
+      const tgData = window.Telegram?.WebApp?.initData;
+      if (tgData && tgData.trim() !== "") {
+        const ok = await attemptWebAppLogin(tgData);
+        if (ok) return;
+      }
       setStatus("unauthenticated");
     };
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     return () => {
+      active = false;
       window.removeEventListener("auth:unauthorized", handleUnauthorized);
     };
-  }, []);
+  }, [attemptWebAppLogin]);
 
   const resetAuthStatus = () => {
+    if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
+      triggerWebAppLogin();
+      return;
+    }
     setStatus("unauthenticated");
   };
 
@@ -138,7 +231,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, status, logout, resetAuthStatus, environment }}
+      value={{
+        user,
+        token,
+        status,
+        logout,
+        resetAuthStatus,
+        triggerWebAppLogin,
+        environment,
+        botUsername,
+        streamEnabled,
+      }}
     >
       {children}
     </AuthContext.Provider>

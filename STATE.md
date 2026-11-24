@@ -1,20 +1,25 @@
 # Project State (STATE.md)
 
 ## Current goal
-Alohida VPS MTProto Stream mikroservisi va sayt HTML5 playeri (Yondashuv 2A: Slice 1–4) kodlari to'liq yakunlandi; foydalanuvchi domen, VPS va bot tokenlarini sotib olib sozlagach `git push` va VPS deploy qilinadi.
+Vebsayt (`TelegramWatchButton`, TMA swipe qulfi, ixcham mobil media sahifa, OS qurilma Light/Dark mavzusi, jonli `/auth/public-config` + `stream_enabled` VPS darvozasi), Bot (kanal obunasi normallashtirish va WebApp auto-login) hamda Admin Panel tuzatishlari tayyorlanib tekshirilmoqda; VPS/domen olinmaguncha web stream tugmalari `STREAM_SERVICE_URL` bo'shligi sababli yopib qo'yildi.
 
 ## In progress (slice, branch)
-- Slice: `Stream-Slice-4` (`website/components/media/SeasonEpisodesSection.tsx`, `website/lib/streamHelpers.mjs`, `website/components/media/MovieWatchButton.tsx`, `website/components/media/WebVideoPlayerModal.tsx`, `website/tests/streamHelpers.test.mjs`, `streamer/docker-compose.yml`, `streamer/Caddyfile`, `streamer/.env.example`, `streamer/README.md`).
-- Branch: `feat/smm-autopilot` (push qilinmagan — foydalanuvchi tasdig'igacha kutiladi).
+- Slice: `TMA + Bot Subscription + Dynamic Bot Config + Device Theme + Compact Mobile Media` (`backend/app/api/v1/telegram_auth.py`, `bot/middlewares/subscription_check.py`, `bot/handlers/search.py`, `admin-panel/app/channels/page.tsx`, `website/`).
+- Branch: `feat/smm-autopilot` & `main`.
 
 ## Blocked
 - Render jonli serverida `FACEBOOK_ACCESS_TOKEN` / `META_ACCESS_TOKEN` muddati tugagan (`20-Nov-26 PST`) va `SMM_AUTOPILOT_ENABLED` dublikat qatori o'chirilib asl qatori `true` ekanligi tekshirilishi kerak.
-- Jonli stream uchun foydalanuvchi tomonidan domen, VPS (NL/DE/FI), 3–5 ta Telegram stream bot tokenlari va Render/VPS env kalitlari tayyorlanishi kutilmoqda.
+- Jonli web stream (`streamer/`) uchun foydalanuvchi tomonidan VPS/domen tayyorlanguncha `STREAM_SERVICE_URL` bo'sh qoldirilgan (`stream_enabled: false`).
 
 ## Next step (one task)
-- Foydalanuvchi domen + VPS + bot tokenlarini tayyorlagach `streamer/` ni VPS ga `docker compose up -d --build` bilan ko'tarish, Render env o'zgaruvchilarini kiritish va `git push` qilish.
+- Backend, bot, admin-panel va website tekshiruvlarini yakunlab GitHub'ga push qilish va Vercel/Render jonli saytini `browser` agent orqali tasdiqlash.
 
 ## Last verification & check results (Terminal Evidence)
+- **MediaPlus UX, Bot Config & TMA Auto-Login Batch (Verified):**
+  - Backend: `/api/v1/auth/public-config` endpointi qo'shildi (`bot_username`, `website_url`, `stream_enabled`). (`ruff check` `All checks passed!`, `backend/tests/test_telegram_auth.py` `8 passed, 4 warnings in 2.96s`).
+  - Bot: `SubscriptionCheckMiddleware` `@`/URL normallashtirish, `channel_id` fallback, `bot` bilan tugaydigan username ogohlantirishi, `20s` kesh, hamda sayt tugmalari `WebAppInfo` auto-login ga o'tkazildi. (`bot/tests/` `113 passed in 11.12s`).
+  - Admin Panel: `/channels` sahifasi `https://t.me/` / `@` tozalaydi va `...bot` username kiritishni bloklaydi (`npm --prefix admin-panel run build` -> `22/22` Exit 0).
+  - Website: `TelegramWatchButton` Apple Glass Light/Dark modal qayta dizayn qilindi, `tg.disableVerticalSwipes()` + `overscroll-behavior-y: contain` qo'shildi, mobil `movie/[code]` va `series/[id]` birinchi ekranda sig'adigan qilib ixchamlashtirildi, qurilma `prefers-color-scheme` avtomatik mavzusi ulandi, TMA silent auto-login mustahkamlandi va `stream_enabled` darvozasi bilan VPS'siz holatda web player yashirildi (`node --test` `7 passed`, `npx tsc --noEmit` Exit 0, `next build` -> `31/31` Exit 0).
 - **Bot Transfer & Legacy Redirect Bot (`bot/redirect_bot.py` + `run.py` + `website/components/Footer.tsx`):** Yangi `BOT_TOKEN` / `BOT_USERNAME` ga ko'chish va eski botni (`LEGACY_BOT_TOKEN`) `?start=<payload>` saqlagan holda yangi bot/kanalga yo'naltiruvchi (`🚀 Yangi botga o'tish` + ixtiyoriy `REDIRECT_CHANNEL_URL`) parallel bot sifatida qoldirish qo'shildi; `Footer.tsx` dagi kanal havolasi `NEXT_PUBLIC_CHANNEL_URL` env'ga bog'landi va `website` build (`31/31`, `tsc --noEmit` Exit 0, `node --test` `7 passed`) o'tdi. (`ruff` `All checks passed!`, `bot/tests/` `112 passed in 6.19s`, backend SMM+enricher+verifier `70 passed, 2 warnings in 12.11s`).
 - **Stream Slice 4 (Series Player + VPS Deploy Pack):** `node --test website/tests/streamHelpers.test.mjs website/tests/breadcrumbHelpers.test.mjs` (`7 passed, 0 failed`), `cd website; npx tsc --noEmit` (Exit 0), `npm run lint` (Exit 0, yangi/o'zgartirilgan fayllarda 0 ogohlantirish), `npm --prefix website run build` (`31/31` route, Exit 0), `.\backend\.venv\Scripts\python.exe -m pytest streamer/tests/test_streamer.py -v` (`3 passed in 0.56s`), `ruff check streamer/` (`All checks passed!`), `alembic heads` (`f6a7b8c9d0e1 (head)`), maqsadli backend testlar (`12 passed in 13.61s`), `bot/tests/` (`108 passed in 10.93s`).
 - **Stream Slice 3 (`website/` Movie Player UI):** `node --test website/tests/streamHelpers.test.mjs website/tests/breadcrumbHelpers.test.mjs` (`6 passed, 0 failed`), `cd website; npx tsc --noEmit` (Exit 0), `npm run lint` (Exit 0, yangi fayllarda 0 ogohlantirish).

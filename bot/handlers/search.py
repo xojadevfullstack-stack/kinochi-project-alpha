@@ -34,7 +34,18 @@ async def handle_search_query(message: Message):
         await message.answer(text, parse_mode="HTML", reply_markup=markup)
         return
     elif query == "🌐 Saytga o'tish":
-        await message.answer(f"🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\nBarcha filmlar, qulay izlash tizimi va premium dizayn bizning veb-sahifada:\n👉 <b>{settings.WEBSITE_URL}</b>\n\n<i>Kiring, tanlang va mazza qilib tomosha qiling!</i>", parse_mode="HTML")
+        from aiogram.utils.keyboard import InlineKeyboardBuilder
+        base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+        if not base_site or "localhost" in base_site or "127.0.0.1" in base_site:
+            base_site = "https://kinochi-project-alpha.vercel.app"
+        kb = InlineKeyboardBuilder()
+        kb.button(text="🌐 Saytga kirish (Avtomatik)", web_app=WebAppInfo(url=f"{base_site}/"))
+        await message.answer(
+            "🌐 <b>Katta ekraningiz — bizning sayt!</b>\n\n"
+            "Quyidagi tugma orqali kirsangiz Telegram profilingiz bilan avtomatik tizimga kirasiz 👇",
+            parse_mode="HTML",
+            reply_markup=kb.as_markup(),
+        )
         return
     elif query.lower() in ["katalog", "📂 katalog", "ortga", "◀️ ortga", "orqaga", "🔙 katalog", "🔙 katalogga qaytish"]:
         from handlers.catalog import send_catalog
@@ -553,11 +564,16 @@ async def handle_already_voted_callback(callback: CallbackQuery):
 
 @router.message(F.text.in_(["/request", "/sorash", "📥 Kino so'rash", "📥 Buyurtma berish"]))
 async def handle_request_command(message: Message):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
     base_site = getattr(settings, "WEBSITE_URL", "https://kinochi-project-alpha.vercel.app").rstrip("/")
+    if not base_site or "localhost" in base_site or "127.0.0.1" in base_site:
+        base_site = "https://kinochi-project-alpha.vercel.app"
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📥 Saytda buyurtma berish", web_app=WebAppInfo(url=f"{base_site}/requests"))
     await message.answer(
         "🎬 <b>Kino yoki serial qo'shishni so'rash</b>\n\n"
         "O'zingiz qidirgan filmni topa olmadingizmi? TMDB va Kinopoisk orqali butun jahon katalogidan topib, uni bizning bazaga yuklashimizni so'rashingiz mumkin!\n\n"
-        f"👉 <b>So'rov yuborish sahifasi:</b>\n{base_site}/requests\n\n"
-        "<i>Eng ko'p so'ralgan filmlar birinchi bo'lib platformamizga yuklanadi!</i>",
-        parse_mode="HTML"
+        "Quyidagi tugma orqali darhol avtomatik kirib so'rov yuboring 👇",
+        parse_mode="HTML",
+        reply_markup=kb.as_markup(),
     )

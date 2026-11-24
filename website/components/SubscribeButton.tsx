@@ -20,7 +20,7 @@ export default function SubscribeButton({
   className = "",
   showIconOnly = false,
 }: SubscribeButtonProps) {
-  const { user, status } = useAuth();
+  const { user, status, botUsername: liveBotUsername } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -100,7 +100,7 @@ export default function SubscribeButton({
     }
   };
 
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const botUsername = liveBotUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
   const botDeepLink = `https://t.me/${botUsername}?start=sub_${targetType === "series" ? "series" : "col"}_${targetId}`;
 
   return (

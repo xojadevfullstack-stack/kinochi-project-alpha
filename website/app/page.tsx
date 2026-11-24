@@ -1,4 +1,4 @@
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getPublicConfig } from "@/lib/api";
 import Link from "next/link";
 import RecommendationsSection from "@/components/recommendations/RecommendationsSection";
 import ContinueWatchingSection from "@/components/home/ContinueWatchingSection";
@@ -116,7 +116,7 @@ const MovieRow = ({
 };
 
 export default async function Home() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const { bot_username: botUsername } = await getPublicConfig();
   let latestMovies: Movie[] = [];
   let latestSeries: Series[] = [];
   let globalMovies: Movie[] = [];

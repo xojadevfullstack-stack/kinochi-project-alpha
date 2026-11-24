@@ -1,10 +1,10 @@
 import pytest
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
-from aiogram.types import Message, CallbackQuery, User, Chat
+from aiogram.types import Message, User, Chat
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
-from middlewares.subscription_check import SubscriptionMiddleware, _get_channels_cached
+from middlewares.subscription_check import SubscriptionMiddleware
 
 @pytest.mark.asyncio
 async def test_subscription_fail_open_on_bad_request(caplog):
@@ -115,3 +115,37 @@ async def test_subscription_blocks_when_actually_unsubscribed():
         # Obuna bo'lish so'ralgan xabar yuborilgan
         message.answer.assert_called_once()
         assert "obuna bo'ling" in message.answer.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_subscription_normalizes_tme_url_and_blocks():
+    """https://t.me/yangi_kanal ko'rinishidagi yozuv @yangi_kanal ga normallashib tekshirilishi kerak."""
+    middleware = SubscriptionMiddleware()
+    handler = AsyncMock()
+
+    user = User(id=22222, is_bot=False, first_name="Valijon")
+    chat = Chat(id=22222, type="private")
+    message = MagicMock(spec=Message)
+    message.from_user = user
+    message.chat = chat
+    message.answer = AsyncMock()
+
+    mock_bot = MagicMock()
+    mock_member = MagicMock()
+    mock_member.status = "left"
+    mock_bot.get_chat_member = AsyncMock(return_value=mock_member)
+
+    data = {"bot": mock_bot}
+    test_channels = [
+        {"id": 404, "channel_id": None, "channel_username": "https://t.me/yangi_kanal/", "channel_title": "Yangi Kanal"}
+    ]
+
+    with patch("middlewares.subscription_check._get_channels_cached", new_callable=AsyncMock) as mock_channels:
+        mock_channels.return_value = test_channels
+        await middleware(handler, message, data)
+
+        handler.assert_not_called()
+        mock_bot.get_chat_member.assert_awaited_once_with(chat_id="@yangi_kanal", user_id=22222)
+        message.answer.assert_called_once()
+        markup = message.answer.call_args.kwargs.get("reply_markup")
+        assert markup.inline_keyboard[0][0].url == "https://t.me/yangi_kanal"

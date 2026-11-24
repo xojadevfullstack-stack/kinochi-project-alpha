@@ -15,6 +15,39 @@ function resolveApiUrl(): string {
 export const API_URL = resolveApiUrl();
 import { getToken, clearToken } from "./auth/tokenStorage";
 
+export interface PublicConfig {
+  bot_username: string;
+  website_url: string;
+  stream_enabled: boolean;
+}
+
+const FALLBACK_BOT_USERNAME = (process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot")
+  .trim()
+  .replace(/^@+/, "");
+
+export async function getPublicConfig(): Promise<PublicConfig> {
+  const fallback: PublicConfig = {
+    bot_username: FALLBACK_BOT_USERNAME,
+    website_url: "https://kinochi-project-alpha.vercel.app",
+    stream_enabled: false,
+  };
+  try {
+    const res = await fetch(`${API_URL}/auth/public-config`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    const rawBot = typeof data?.bot_username === "string" ? data.bot_username.trim().replace(/^@+/, "") : "";
+    return {
+      bot_username: rawBot || fallback.bot_username,
+      website_url: typeof data?.website_url === "string" && data.website_url ? data.website_url : fallback.website_url,
+      stream_enabled: Boolean(data?.stream_enabled),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_URL}${endpoint}`;
   

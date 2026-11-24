@@ -1,7 +1,9 @@
 import Link from "next/link";
 
-export default function Footer() {
-  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+export default function Footer({ botUsername: propBotUsername }: { botUsername?: string } = {}) {
+  const botUsername = (propBotUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot")
+    .trim()
+    .replace(/^@+/, "");
   const channelUrl = process.env.NEXT_PUBLIC_CHANNEL_URL || "https://t.me/kinochilar_uz";
 
   return (

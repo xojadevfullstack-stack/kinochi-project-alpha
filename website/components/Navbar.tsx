@@ -12,7 +12,7 @@ import { useOverlayBackClose, suppressOverlayHistoryBack } from "@/lib/hooks/use
 export default function Navbar({ pages = [] }: { pages: any[] }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { status, user } = useAuth();
+  const { status, user, botUsername } = useAuth();
   
   // Navbar scroll background
   const [isScrolled, setIsScrolled] = useState(false);
@@ -444,7 +444,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             </button>
           )}
           <a
-            href={`https://t.me/${process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot"}`}
+            href={`https://t.me/${botUsername}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full bg-[#D20A13] dark:bg-[#E50914] hover:bg-[#B80710] text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow"

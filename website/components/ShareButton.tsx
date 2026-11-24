@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 interface ShareButtonProps {
   title: string;
@@ -14,6 +15,7 @@ interface ShareButtonProps {
 }
 
 export default function ShareButton({ title, text: _text, url = "", code, botUsername, className, buttonText, iconOnly = false }: ShareButtonProps) {
+  const { botUsername: liveBotUsername } = useAuth();
   const [copied, setCopied] = useState(false);
 
   // Determine site base URL (prefer real window.location, fallback to Vercel production URL)
@@ -48,7 +50,7 @@ export default function ShareButton({ title, text: _text, url = "", code, botUse
   const handleShare = async () => {
     const fullWebUrl = getFullWebUrl();
     const itemCode = getItemCode(fullWebUrl);
-    const botUser = botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+    const botUser = liveBotUsername || botUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
     const botLink = itemCode ? `https://t.me/${botUser}?start=${itemCode}` : `https://t.me/${botUser}`;
 
     // 1. Copy URL to clipboard immediately

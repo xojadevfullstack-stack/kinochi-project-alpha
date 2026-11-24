@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { syncTelegramThemeColors } from "@/lib/telegram";
+
+function resolveDeviceOrSavedTheme(): "dark" | "light" {
+  try {
+    const saved = localStorage.getItem("kinochi_theme");
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {}
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return "dark";
+}
 
 function applyThemeClasses(theme: "dark" | "light") {
   if (typeof document === "undefined") return;
@@ -15,6 +27,7 @@ function applyThemeClasses(theme: "dark" | "light") {
     html.classList.remove("light");
     body?.classList.remove("light-theme");
   }
+  syncTelegramThemeColors(theme);
 }
 
 export default function ThemeToggle({ className = "" }: { className?: string }) {
@@ -23,14 +36,23 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
 
   useEffect(() => {
     setMounted(true);
-    try {
-      const saved = localStorage.getItem("kinochi_theme") as "dark" | "light" | null;
-      const resolved: "dark" | "light" = saved === "light" ? "light" : "dark";
-      setTheme(resolved);
-      applyThemeClasses(resolved);
-    } catch {
-      applyThemeClasses("dark");
-    }
+    const initial = resolveDeviceOrSavedTheme();
+    setTheme(initial);
+    applyThemeClasses(initial);
+
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemChange = (e: MediaQueryListEvent) => {
+      try {
+        const saved = localStorage.getItem("kinochi_theme");
+        if (saved === "light" || saved === "dark") return;
+      } catch {}
+      const next: "dark" | "light" = e.matches ? "dark" : "light";
+      setTheme(next);
+      applyThemeClasses(next);
+    };
+    mq.addEventListener("change", handleSystemChange);
+    return () => mq.removeEventListener("change", handleSystemChange);
   }, []);
 
   const toggleTheme = () => {

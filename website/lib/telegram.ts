@@ -5,6 +5,20 @@ export function getTelegramWebApp() {
   return (window as any).Telegram?.WebApp || null;
 }
 
+export function syncTelegramThemeColors(theme: "dark" | "light") {
+  if (typeof window === "undefined") return;
+  const tg = (window as any).Telegram?.WebApp;
+  if (!tg) return;
+  try {
+    const isAtLeast61 = typeof tg.isVersionAtLeast === "function" ? tg.isVersionAtLeast("6.1") : false;
+    if (isAtLeast61) {
+      const hex = theme === "light" ? "#F1F5F9" : "#09090B";
+      if (typeof tg.setHeaderColor === "function") tg.setHeaderColor(hex);
+      if (typeof tg.setBackgroundColor === "function") tg.setBackgroundColor(hex);
+    }
+  } catch {}
+}
+
 export function initTelegram() {
   if (typeof window === "undefined") return;
   const tg = (window as any).Telegram?.WebApp;
@@ -16,16 +30,14 @@ export function initTelegram() {
       if (typeof tg.expand === "function") {
         tg.expand();
       }
-      // Set theme colors only if supported by Telegram WebApp version (>= 6.1)
-      const isAtLeast61 = typeof tg.isVersionAtLeast === "function" ? tg.isVersionAtLeast("6.1") : false;
-      if (isAtLeast61) {
-        if (typeof tg.setHeaderColor === "function") {
-          tg.setHeaderColor("#0d0d12");
-        }
-        if (typeof tg.setBackgroundColor === "function") {
-          tg.setBackgroundColor("#0d0d12");
-        }
+      // Prevent iOS/Android vertical swipe gesture from closing/collapsing Mini App while scrolling
+      if (typeof tg.disableVerticalSwipes === "function") {
+        tg.disableVerticalSwipes();
       }
+      const isLight =
+        document.documentElement.classList.contains("light") ||
+        document.body?.classList.contains("light-theme");
+      syncTelegramThemeColors(isLight ? "light" : "dark");
     } catch (e) {
       console.warn("Telegram WebApp initialization error:", e);
     }
