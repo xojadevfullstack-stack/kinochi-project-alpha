@@ -1,19 +1,25 @@
 # Project State (STATE.md)
 
 ## Current goal
-1-sikl (`Autopilot` scraper -> TMDB -> Telegram Storage -> DB) va 2-sikl (`SMM Worker` -> Sparse MP4 -> Gemini Vision dynamic `blur_boxes` -> 9:16 klipp -> `waiting_approval`) ni jonli E2E sinovdan o'tkazish va aniqlangan kamchiliklarni tuzatib Render deployga chiqarish.
+Alohida VPS MTProto Stream mikroservisi va sayt HTML5 playeri (Yondashuv 2A: Slice 1–4) kodlari to'liq yakunlandi; foydalanuvchi domen, VPS va bot tokenlarini sotib olib sozlagach `git push` va VPS deploy qilinadi.
 
 ## In progress (slice, branch)
-- Slice: `Autopilot-SMM-E2E-Fixes` (`scraper/smart_enricher.py`, `scraper/smm_clipper.py`, `scraper/smm_pipeline.py`, `scraper/smm_worker.py`, `scraper/smm_publishers/telegram_pub.py`).
-- Branch: `feat/smm-autopilot` -> `main`.
+- Slice: `Stream-Slice-4` (`website/components/media/SeasonEpisodesSection.tsx`, `website/lib/streamHelpers.mjs`, `website/components/media/MovieWatchButton.tsx`, `website/components/media/WebVideoPlayerModal.tsx`, `website/tests/streamHelpers.test.mjs`, `streamer/docker-compose.yml`, `streamer/Caddyfile`, `streamer/.env.example`, `streamer/README.md`).
+- Branch: `feat/smm-autopilot` (push qilinmagan — foydalanuvchi tasdig'igacha kutiladi).
 
 ## Blocked
 - Render jonli serverida `FACEBOOK_ACCESS_TOKEN` / `META_ACCESS_TOKEN` muddati tugagan (`20-Nov-26 PST`) va `SMM_AUTOPILOT_ENABLED` dublikat qatori o'chirilib asl qatori `true` ekanligi tekshirilishi kerak.
+- Jonli stream uchun foydalanuvchi tomonidan domen, VPS (NL/DE/FI), 3–5 ta Telegram stream bot tokenlari va Render/VPS env kalitlari tayyorlanishi kutilmoqda.
 
 ## Next step (one task)
-- Tuzatishlarni commit va `origin/main` ga push qilib Render deploy yakunlanganidan so'ng `/api/v1/smm/progress` hamda `#2`/`#3` jonli holatini tekshirish va foydalanuvchiga Meta tokenlarini yangilash bo'yicha yo'riqnoma berish.
+- Foydalanuvchi domen + VPS + bot tokenlarini tayyorlagach `streamer/` ni VPS ga `docker compose up -d --build` bilan ko'tarish, Render env o'zgaruvchilarini kiritish va `git push` qilish.
 
 ## Last verification & check results (Terminal Evidence)
+- **Bot Transfer & Legacy Redirect Bot (`bot/redirect_bot.py` + `run.py`):** Yangi `BOT_TOKEN` / `BOT_USERNAME` ga ko'chish va eski botni (`LEGACY_BOT_TOKEN`) `?start=<payload>` saqlagan holda yangi bot/kanalga yo'naltiruvchi (`🚀 Yangi botga o'tish` + ixtiyoriy `REDIRECT_CHANNEL_URL`) parallel bot sifatida qoldirish qo'shildi; `scraper/telethon_moderator_pipeline.py` va `scraper/smm_worker.py` dagi username fallback env bilan bog'landi (`ruff` `All checks passed!`, `bot/tests/` `112 passed in 6.19s`, backend SMM+enricher+verifier `70 passed, 2 warnings in 12.11s`).
+- **Stream Slice 4 (Series Player + VPS Deploy Pack):** `node --test website/tests/streamHelpers.test.mjs website/tests/breadcrumbHelpers.test.mjs` (`7 passed, 0 failed`), `cd website; npx tsc --noEmit` (Exit 0), `npm run lint` (Exit 0, yangi/o'zgartirilgan fayllarda 0 ogohlantirish), `npm --prefix website run build` (`31/31` route, Exit 0), `.\backend\.venv\Scripts\python.exe -m pytest streamer/tests/test_streamer.py -v` (`3 passed in 0.56s`), `ruff check streamer/` (`All checks passed!`), `alembic heads` (`f6a7b8c9d0e1 (head)`), maqsadli backend testlar (`12 passed in 13.61s`), `bot/tests/` (`108 passed in 10.93s`).
+- **Stream Slice 3 (`website/` Movie Player UI):** `node --test website/tests/streamHelpers.test.mjs website/tests/breadcrumbHelpers.test.mjs` (`6 passed, 0 failed`), `cd website; npx tsc --noEmit` (Exit 0), `npm run lint` (Exit 0, yangi fayllarda 0 ogohlantirish).
+- **Stream Slice 2 (`streamer/` VPS Multi-Bot MTProto Range Stream):** `.\backend\.venv\Scripts\python.exe -m pytest streamer/tests/test_streamer.py -v` (`3 passed in 0.36s`), `ruff check streamer/` (`All checks passed!`), `backend/tests/test_stream_signing.py` (`2 passed in 1.58s`), `alembic heads` (`f6a7b8c9d0e1 (head)`).
+- **Stream Slice 1 (`backend` HMAC signing + `/api/v1/stream/url`):** `backend/tests/test_stream_signing.py` (`2 passed in 1.61s`), maqsadli backend test to'plami (`test_stream_signing.py`, `test_auth_ratelimit.py`, `test_series_perf_c04.py`, `test_write_paths_gate.py`, `test_alembic.py`: `12 passed, 2 warnings in 14.48s`), `bot/tests/` (`108 passed in 8.48s`), `alembic heads` (`f6a7b8c9d0e1 (head)`), yangi fayllarda `ruff check` (`0` xato; `backend/app/main.py` da avvaldan mavjud 16 ta `E402`/`F401`). *(To'liq `backend/tests/` suite 694 testdan iborat bo'lib, `tests/` to'liq yugurishda 10–15% atrofida tashqi/uzoq testda to'xtab qolgani uchun maqsadli to'plam ishlatildi).*
 - **Live Cycle 1 E2E (`asilmedia_18451` — `Ouk Strit ko'chasining oxiri`):** TMDb `1101383` (`The End of Oak Street`, `2026`, `IMDb 7.0`) bilan topildi, Forum Topic `#9811` ochildi, `Movie #914` (`short_code='3956'`, `code='WPZ79R'`) `published` holatiga o'tdi va `smm_clip_jobs #3` yaratildi.
 - **Live Cycle 2 E2E (`run_smm_worker_cycle`):**
   - `smm_clip_jobs #2` (`#3955`, `Yulduzlar sari mashaqqatli yo‘l`) -> `waiting_approval`, `uploads/smm/clip_2.mp4` (`5,071,423` bayt, `720x1280`, AI chap-yuqori watermark blur).

@@ -78,3 +78,23 @@
 ## Idempotent Per-Platform Retry & In-Process Immediate Dispatch
 - Concept: **Idempotent Retry + BackgroundTasks Fallback** — Qayta urinishda avval muvaffaqiyatli chiqqan (`published`) tarmoqlarni o'tkazib yuborish dublikat postlarni oldini oladi; `publish_now` bosilganda esa fon worker kutmasdan `BackgroundTasks` orqali darhol ishga tushirish tez reaksiya beradi.
 - Analogy: 5 ta do'konga posilka yuborganda 2 tasi allaqachon qabul qilgan bo'lsa, qayta jo'natishda faqat yetib bormagan 3 tasiga yuborish va kuryerni kechki mashinani kutmasdan hoziroq yo'lga chiqarish.
+
+## Stateless HMAC Signed Stream Token
+- Concept: **Stateless HMAC-SHA256 Token** — Render backend video baytlarini tashimasdan va VPS'ga Supabase bazasini ochmasdan, faqat `chat_id`, `message_id` va `exp` ni umumiy maxfiy kalit bilan imzolab beradi; stream server esa `hmac.compare_digest` bilan imzoni tekshirib to'g'ridan-to'g'ri MTProto'dan uzatadi.
+- Analogy: Kassada maxsus muhr bosilgan va vaqti yozilgan kino chiptasi — eshikdagi nazoratchi markaziy bazaga qo'ng'iroq qilib tekshirmasdan, faqat muhr haqiqiyligi va chipta muddatini ko'rib zalga kiritadi.
+
+## 1 MiB MTProto Chunk Slicing & Multi-Bot Failover
+- Concept: **Chunk-to-Byte Range Mapping + Round-Robin Pool** — Pyrogram `stream_media` faqat 1 MiB bo'laklarda (`offset`/`limit`) o'qiydi, shuning uchun HTTP `Range: bytes=start-end` so'rovi kerakli 1 MiB bloklarga tarjima qilinib aniq baytgacha qirqiladi va `FloodWait` olgan bot vaqtincha chetlatilib keyingi botga uzatiladi.
+- Analogy: Ombordan mahsulot faqat 1 tonnalik konteynerda kelsa ham xaridorga aniq 600 gramm tortib berish, bitta yuk tashuvchi navbatda ushlanib qolsa darhol keyingi bo'sh tashuvchini ishga solish.
+
+## On-Demand Stream Signing + Codec Fallback
+- Concept: **Client-Side Token Fetch (`no-store`) + HTML5 `<video>` `onError` Fallback** — ISR keshlangan Next.js sahifasi ichiga eskiradigan stream tokenni yozmasdan, tugma bosilganda yangi imzolangan URL olish va brauzer kodekni (`MKV`/`HEVC`) ocholmaganda Telegram bot havolasini ko'rsatish.
+- Analogy: Mehmonxonada kalit kartani 1 kun oldin emas, mehmon eshik oldiga kelgan zahoti faollashtirib berish — agar eshik qulfi ishlamasa darhol qo'riqchi zaxira eshikni ochib beradi.
+
+## Zero-Buffer Reverse Proxy Streaming
+- Concept: **Unbuffered Reverse Proxy (`flush_interval -1`)** — Caddy/Nginx video baytlarini buferda ushlab qolmasdan har bir MTProto bo'lagini (`206 Partial Content`) darhol mijozga uzatishi shart, aks holda seeking kechikadi va proxy RAMi to'ladi.
+- Analogy: Suvni avval katta hovuzga yig'ib keyin ochmasdan, nasosdan kelgan oqimni to'g'ridan-to'g'ri shlang orqali uzatish — jo'mrakni ochgan zahoti suv keladi.
+
+## Dual-Bot Strangler Redirect (Deep-Link Payload Preservation)
+- Concept: **Dual-Bot Strangler Pattern (`LEGACY_BOT_TOKEN` + `BOT_TOKEN`)** — Bot username almashtirilganda eski botni darhol o'chirish o'rniga alohida engil dispatcherda `?start=<payload>` ni saqlab yangi botga inline tugma bilan yo'naltirish eski SMM va veb havolalarning yo'qolishini oldini oladi.
+- Analogy: Eski do'kon eshigini yopib tashlamasdan, kirgan xaridorni aynan qo'lidagi buyurtma cheki bilan yonidagi yangi do'kon peshtaxtasiga olib o'tadigan ko'rsatkich qo'yish.
