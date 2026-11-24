@@ -187,3 +187,57 @@ async def test_subscription_private_channel_id_blocks_and_rechecks_on_callback()
             cb.answer.assert_awaited_once()
     finally:
         _user_sub_verified_cache.pop(33333, None)
+
+
+@pytest.mark.asyncio
+async def test_subscription_fail_open_does_not_cache_and_start_bypasses_cache():
+    """Fail-open natija keshlanmaydi va /start har doim jonli tekshiradi."""
+    from middlewares.subscription_check import _user_sub_verified_cache
+
+    middleware = SubscriptionMiddleware()
+    handler = AsyncMock(return_value="ok")
+
+    user = User(id=44444, is_bot=False, first_name="Olim")
+    chat = Chat(id=44444, type="private")
+    msg_fail_open = MagicMock(spec=Message)
+    msg_fail_open.from_user = user
+    msg_fail_open.chat = chat
+    msg_fail_open.text = "kino"
+    msg_fail_open.answer = AsyncMock()
+
+    mock_bot = MagicMock()
+    mock_bot.get_chat_member = AsyncMock(
+        side_effect=TelegramBadRequest(method=MagicMock(), message="Chat not found")
+    )
+
+    test_channels = [
+        {"id": 606, "channel_id": -1009998887776, "channel_username": "MediaPlusOfficial", "channel_title": "Kanal"}
+    ]
+
+    try:
+        _user_sub_verified_cache.pop(44444, None)
+        with patch("middlewares.subscription_check._get_channels_cached", new_callable=AsyncMock) as mock_channels:
+            mock_channels.return_value = test_channels
+            await middleware(handler, msg_fail_open, {"bot": mock_bot})
+            assert 44444 not in _user_sub_verified_cache
+
+        # Keshlangan bo'lsa ham /start jonli tekshirib obunasiz userni bloklashi shart
+        _user_sub_verified_cache[44444] = 10**12
+        msg_start = MagicMock(spec=Message)
+        msg_start.from_user = user
+        msg_start.chat = chat
+        msg_start.text = "/start"
+        msg_start.answer = AsyncMock()
+
+        mock_member = MagicMock()
+        mock_member.status = "left"
+        mock_bot.get_chat_member = AsyncMock(return_value=mock_member)
+        handler.reset_mock()
+
+        with patch("middlewares.subscription_check._get_channels_cached", new_callable=AsyncMock) as mock_channels:
+            mock_channels.return_value = test_channels
+            await middleware(handler, msg_start, {"bot": mock_bot})
+            handler.assert_not_called()
+            msg_start.answer.assert_awaited_once()
+    finally:
+        _user_sub_verified_cache.pop(44444, None)
