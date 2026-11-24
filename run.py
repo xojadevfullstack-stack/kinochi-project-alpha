@@ -134,6 +134,20 @@ async def safe_run_smm_worker():
             await asyncio.sleep(3600)
 
 
+async def safe_run_redirect_bot():
+    """Run legacy redirect bot alongside the main bot while isolating any faults."""
+    try:
+        from redirect_bot import supervised_run_redirect_bot
+
+        await supervised_run_redirect_bot()
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        raise
+    except Exception as exc:
+        logging.error(f"[SUPERVISOR] Redirect bot ishga tushmadi (asosiy Bot/API faol qoladi): {exc}", exc_info=True)
+        while True:
+            await asyncio.sleep(3600)
+
+
 # ── Main Entrypoint ──────────────────────────────────────────────
 async def main():
     setup_global_logging()
@@ -145,11 +159,12 @@ async def main():
     if "localhost" in backend_url or "127.0.0.1" in backend_url:
         os.environ["BACKEND_API_URL"] = f"http://127.0.0.1:{port}/api/v1"
     
-    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), safe_run_smm_worker()) chaqirilmoqda")
+    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), safe_run_smm_worker(), safe_run_redirect_bot()) chaqirilmoqda")
     await asyncio.gather(
         run_api(),
         supervised_run_bot(),
         safe_run_smm_worker(),
+        safe_run_redirect_bot(),
     )
 
 if __name__ == "__main__":

@@ -197,7 +197,7 @@ async def process_generating_job(
         await db.flush()
         return job
 
-    bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
+    bot_handle = cfg.bot_username or os.getenv("BOT_USERNAME", "@MediaPlusOfficialBot")
     out_file = os.path.join(uploads_dir, f"clip_{job.id}.mp4")
 
     async def _on_progress(pct: int, stage: str) -> None:
@@ -295,7 +295,7 @@ async def process_publish_job(
     storage_chat_id: int | str = 0,
 ) -> SmmClipJobModel:
     """Publish rendered clip across enabled platforms and save per-platform results."""
-    bot_handle = cfg.bot_username or "@MediaPlusOfficialBot"
+    bot_handle = cfg.bot_username or os.getenv("BOT_USERNAME", "@MediaPlusOfficialBot")
     display_code, _, _, _ = await _resolve_job_media(db, job)
 
     target_path = (job.clip_path or f"uploads/smm/clip_{job.id}.mp4").strip()

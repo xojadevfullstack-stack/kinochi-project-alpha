@@ -1,12 +1,14 @@
 import os
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional, Union
+from typing import Union
 
 BOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Settings(BaseSettings):
     BOT_TOKEN: str = ""
+    LEGACY_BOT_TOKEN: str = ""
+    REDIRECT_CHANNEL_URL: str = ""
     BACKEND_API_URL: str = "http://127.0.0.1:8000/api/v1"
     STORAGE_CHANNEL_ID: Union[int, str, None] = None
     AUTO_TOPIC_CHAT_ID: Union[int, str, None] = None

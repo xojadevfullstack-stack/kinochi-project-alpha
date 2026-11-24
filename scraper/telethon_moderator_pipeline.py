@@ -2703,7 +2703,7 @@ class TelethonModeratorPipeline:
                 f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
                 f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n"
                 f"🇺🇿 <b>Tili:</b> O'zbek tilida\n\n"
-                f"🍿 @kinochi_mvp_bot orqali yuklandi."
+                f"🍿 @{os.getenv('BOT_USERNAME', 'kinochi_mvp_bot').lstrip('@')} orqali yuklandi."
             )
             topic_video_msg = await self._upload_video_to_chat(
                 video_msg=current_video_msg,
@@ -3706,7 +3706,7 @@ class TelethonModeratorPipeline:
                 f"🎭 <b>Janr:</b> {html.escape(meta.get('genres') or genres_text or 'Anime')}\n"
                 f"⭐ <b>Reyting:</b> {meta.get('imdb_rating') or meta.get('tmdb_rating') or '7.0'}/10\n"
                 f"🇺🇿 <b>Tili:</b> O'zbek tilida\n\n"
-                f"🍿 @kinochi_mvp_bot orqali yuklandi."
+                f"🍿 @{os.getenv('BOT_USERNAME', 'kinochi_mvp_bot').lstrip('@')} orqali yuklandi."
             )
             topic_video_msg = await self._upload_video_to_chat(
                 video_msg=current_video_msg,
