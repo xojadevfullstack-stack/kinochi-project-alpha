@@ -2,6 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
   const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot";
+  const channelUrl = process.env.NEXT_PUBLIC_CHANNEL_URL || "https://t.me/kinochilar_uz";
 
   return (
     <footer className="cv-auto w-full bg-white dark:bg-[#08090C] border-t border-slate-200 dark:border-white/10 pt-10 pb-28 xl:pb-10 mt-12">
@@ -34,7 +35,7 @@ export default function Footer() {
                 <span>Telegram Bot</span>
               </a>
               <a
-                href="https://t.me/kinochilar_uz"
+                href={channelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer-social-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer"
