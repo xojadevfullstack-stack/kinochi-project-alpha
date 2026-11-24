@@ -30,8 +30,13 @@ export function initTelegram() {
       if (typeof tg.expand === "function") {
         tg.expand();
       }
-      // Prevent iOS/Android vertical swipe gesture from closing/collapsing Mini App while scrolling
-      if (typeof tg.disableVerticalSwipes === "function") {
+      // Prevent iOS/Android vertical swipe gesture from closing/collapsing real Telegram Mini App (>= 7.7)
+      const isRealTma =
+        Boolean(tg.initData) ||
+        (typeof tg.platform === "string" && tg.platform !== "unknown");
+      const isAtLeast77 =
+        typeof tg.isVersionAtLeast === "function" ? tg.isVersionAtLeast("7.7") : false;
+      if (isRealTma && isAtLeast77 && typeof tg.disableVerticalSwipes === "function") {
         tg.disableVerticalSwipes();
       }
       const isLight =

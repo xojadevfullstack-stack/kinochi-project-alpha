@@ -124,8 +124,8 @@ input:-webkit-autofill:active{
 html,
 body {
   overflow-x: clip;
+  overflow-y: visible;
   max-width: 100%;
-  overscroll-behavior-y: contain;
 }
 
 /* Skip offscreen layout & paint until close to viewport */

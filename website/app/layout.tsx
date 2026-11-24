@@ -69,7 +69,7 @@ export default async function RootLayout({
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} pure-minimal bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-hidden`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} pure-minimal bg-background-obsidian text-text-primary font-body-md text-body-md antialiased overflow-x-clip`} suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{if(document.documentElement.classList.contains('light')){document.body.classList.add('light-theme');}}catch(e){}})();`,
