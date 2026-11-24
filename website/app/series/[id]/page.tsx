@@ -157,9 +157,9 @@ export default async function SeriesDetailsPage({ params }: Props) {
         >
           {/* Content Container */}
           <div className="max-w-container-max mx-auto px-gutter w-full flex flex-col gap-3 sm:gap-5">
-          <div className="w-full flex flex-col md:flex-row items-center md:items-end gap-3.5 sm:gap-5 md:gap-margin-desktop">
+          <div className="w-full flex flex-col md:flex-row items-center md:items-center gap-3.5 sm:gap-5 md:gap-8 lg:gap-10">
             {/* Left: Poster */}
-            <div className="w-28 sm:w-44 md:w-1/3 lg:w-[360px] shrink-0 mt-1 sm:mt-2 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
+            <div className="w-28 sm:w-44 md:w-[270px] lg:w-[330px] shrink-0 mt-1 sm:mt-2 md:mt-0 mx-auto md:mx-0 relative group perspective-1000">
             <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10 transition-transform duration-500 ease-out group-hover:scale-[1.02] group-hover:shadow-black/80 relative bg-surface-container-high">
               {series.poster_url ? (
                 <AdultPoster 
@@ -181,8 +181,8 @@ export default async function SeriesDetailsPage({ params }: Props) {
           </div>
           
           {/* Right: Movie Info */}
-          <div className="flex-1 flex flex-col w-full md:pb-stack-lg">
-            <h1 className="font-display-hero text-xl sm:text-3xl md:text-display-hero text-white mb-1.5 sm:mb-stack-sm drop-shadow-lg text-center md:text-left tracking-tighter leading-tight">
+          <div className="flex-1 flex flex-col w-full min-w-0">
+            <h1 className="font-display-hero text-xl sm:text-3xl md:text-4xl lg:text-[2.75rem] text-white mb-1.5 sm:mb-3 drop-shadow-lg text-center md:text-left tracking-tighter leading-tight line-clamp-2">
               {series.title}
             </h1>
             
@@ -254,7 +254,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
             </div>
             
             {/* Description */}
-            <p className="font-body-lg text-xs sm:text-sm md:text-body-lg text-slate-200 mb-3 sm:mb-stack-lg max-w-3xl text-center md:text-left leading-relaxed line-clamp-2 md:line-clamp-none">
+            <p className="font-body-lg text-xs sm:text-sm md:text-base text-slate-200 mb-3 sm:mb-5 max-w-3xl text-center md:text-left leading-relaxed line-clamp-2 sm:line-clamp-3 md:line-clamp-4">
               {series.description || "Ushbu serial haqida batafsil ma'lumot kiritilmagan. Lekin bu sizni ajoyib premyerani tomosha qilishdan to'xtatib qolmasligi kerak!"}
             </p>
             

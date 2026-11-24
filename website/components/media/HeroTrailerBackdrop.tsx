@@ -111,7 +111,7 @@ export default function HeroTrailerBackdrop({
   }, [hasVideo, restoreDetails, startDimTimer]);
 
   return (
-    <div className="hero-stage preserve-white relative isolate mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-2 sm:my-3 rounded-2xl sm:rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-0 md:min-h-[680px] flex flex-col justify-start md:justify-center items-center pt-3.5 sm:pt-8 md:pt-10 pb-5 sm:pb-10 overflow-hidden bg-[#0E0F13] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
+    <div className="hero-stage preserve-white relative isolate mx-3 sm:mx-6 xl:mx-auto max-w-7xl my-2 sm:my-3 rounded-2xl sm:rounded-3xl border border-slate-900/15 dark:border-white/[0.12] shadow-2xl dark:shadow-[0_22px_54px_rgba(0,0,0,0.72)] min-h-0 md:min-h-[480px] lg:min-h-[520px] flex flex-col justify-start md:justify-center items-center pt-3.5 sm:pt-6 md:pt-8 pb-5 sm:pb-8 overflow-hidden bg-[#0E0F13] text-white [&_h1]:!text-white [&_p]:!text-slate-200">
       {/* Background Media Layer: Full-bleed Ambient Trailer inside Cinema Island (both Light & Dark Mode) */}
       <div className="block absolute inset-0 top-0 z-0 overflow-hidden pointer-events-none">
         {/* Layer 2: Softly blurred static poster behind metadata; fades out cleanly when Layer 3 trailer is ready */}

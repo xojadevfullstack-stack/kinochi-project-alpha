@@ -20,6 +20,7 @@ export default function ChannelsPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [form, setForm] = useState({
+    channel_id: "",
     channel_username: "",
     channel_title: "",
     is_active: true,
@@ -57,9 +58,12 @@ export default function ChannelsPage() {
         return;
       }
 
+      const parsedChannelId = form.channel_id.trim();
       const payload = {
-        ...form,
+        channel_id: parsedChannelId && /^-?\d+$/.test(parsedChannelId) ? Number(parsedChannelId) : null,
         channel_username: cleanedUsername,
+        channel_title: form.channel_title,
+        is_active: form.is_active,
         subscriber_limit: form.subscriber_limit ? Number(form.subscriber_limit) : null
       };
       if (editingId) {
@@ -87,8 +91,9 @@ export default function ChannelsPage() {
   const handleEdit = (c: Channel) => {
     setEditingId(c.id);
     setForm({
-      channel_username: c.channel_username,
-      channel_title: c.channel_title,
+      channel_id: c.channel_id ? String(c.channel_id) : "",
+      channel_username: c.channel_username || "",
+      channel_title: c.channel_title || "",
       is_active: c.is_active,
       subscriber_limit: c.subscriber_limit || "",
     });
@@ -97,7 +102,7 @@ export default function ChannelsPage() {
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ channel_username: "", channel_title: "", is_active: true, subscriber_limit: "" });
+    setForm({ channel_id: "", channel_username: "", channel_title: "", is_active: true, subscriber_limit: "" });
   };
 
   if (loading) return <div className="p-8 text-center text-text-secondary">Yuklanmoqda...</div>;
@@ -133,6 +138,19 @@ export default function ChannelsPage() {
               value={form.channel_username} 
               onChange={e => setForm({...form, channel_username: e.target.value.replace('@', '')})} 
               placeholder="kinochi_rasmiy"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">
+              Kanal ID (yopiq kanal uchun ixtiyoriy, masalan: -1001234567890)
+            </label>
+            <input 
+              type="text" 
+              className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-text-primary focus:ring-2 focus:ring-primary-container focus:border-primary-container text-sm font-mono" 
+              value={form.channel_id} 
+              onChange={e => setForm({...form, channel_id: e.target.value})} 
+              placeholder="-1001234567890 (ochiq kanalda bo'sh qoldiring)"
             />
           </div>
 
@@ -222,6 +240,14 @@ export default function ChannelsPage() {
                       @{c.channel_username}
                       <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                     </a>
+                    {c.channel_id && (
+                      <div className="text-[11px] font-mono text-text-secondary mt-0.5">ID: {c.channel_id}</div>
+                    )}
+                    {/bot$/i.test(c.channel_username || "") && (
+                      <div className="text-[11px] text-red-400 font-semibold mt-0.5">
+                        ⚠️ Bot username kiritilgan — kanal @username kiriting
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-text-secondary">{c.channel_title}</td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-text-secondary font-mono text-xs">

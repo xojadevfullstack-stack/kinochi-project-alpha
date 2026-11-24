@@ -31,6 +31,7 @@ class ChannelService:
     async def update_channel(
         self,
         id: int,
+        channel_id: int | None = None,
         channel_username: str | None = None,
         channel_title: str | None = None,
         is_active: bool | None = None,
@@ -39,10 +40,16 @@ class ChannelService:
         channel = await self.channel_repo.get_by_id(id)
         if not channel:
             return None
-        if channel_username is not None: channel.channel_username = channel_username
-        if channel_title is not None: channel.channel_title = channel_title
-        if is_active is not None: channel.is_active = is_active
-        if subscriber_limit is not None: channel.subscriber_limit = subscriber_limit
+        if channel_id is not None:
+            channel.channel_id = channel_id
+        if channel_username is not None:
+            channel.channel_username = channel_username
+        if channel_title is not None:
+            channel.channel_title = channel_title
+        if is_active is not None:
+            channel.is_active = is_active
+        if subscriber_limit is not None:
+            channel.subscriber_limit = subscriber_limit
         return await self.channel_repo.update(channel)
 
     async def delete_channel(self, id: int) -> bool:

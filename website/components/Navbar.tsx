@@ -270,10 +270,10 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
         id="mainSidebar"
         onMouseEnter={openSidebarSmoothly}
         onMouseLeave={closeSidebarSmoothly}
-        className={`flex fixed top-0 left-0 bottom-0 h-[100dvh] overscroll-contain w-72 z-[60] bg-white/95 dark:bg-[#0c0d10]/95 backdrop-blur-2xl border-r border-slate-900/10 dark:border-white/10 ${
-          isPinned ? "shadow-none" : "shadow-[20px_0_50px_rgba(0,0,0,0.22)] dark:shadow-[20px_0_50px_rgba(0,0,0,0.85)]"
+        className={`flex fixed top-0 right-0 sm:right-auto sm:left-0 bottom-0 h-[100dvh] overscroll-contain w-72 z-[60] bg-white/95 dark:bg-[#0c0d10]/95 backdrop-blur-2xl border-l sm:border-l-0 sm:border-r border-slate-900/10 dark:border-white/10 ${
+          isPinned ? "shadow-none" : "shadow-[-20px_0_50px_rgba(0,0,0,0.22)] sm:shadow-[20px_0_50px_rgba(0,0,0,0.22)] dark:shadow-[-20px_0_50px_rgba(0,0,0,0.85)] sm:dark:shadow-[20px_0_50px_rgba(0,0,0,0.85)]"
         } flex-col justify-between select-none transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          (sidebarOpen || isPinned) ? "translate-x-0" : "-translate-x-full"
+          (sidebarOpen || isPinned) ? "translate-x-0" : "translate-x-full sm:-translate-x-full"
         }`}
       >
         <div className="p-4 space-y-4 overflow-y-auto overscroll-contain touch-pan-y hide-scrollbar flex-1">
@@ -294,7 +294,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
             <div className="flex items-center gap-1">
               <button
                 onClick={togglePin}
-                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                className={`hidden xl:flex w-7 h-7 rounded-lg items-center justify-center transition-colors ${
                   isPinned
                     ? "bg-primary-container text-white border border-primary-container"
                     : "text-slate-600 dark:text-text-secondary hover:text-white hover:bg-[#B80710] dark:hover:bg-[#E50914]"
@@ -518,7 +518,7 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                   openSidebarSmoothly();
                 }
               }}
-              className="header-icon-btn w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] flex items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group shrink-0"
+              className="hidden sm:flex header-icon-btn w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group shrink-0"
               title="Menyu"
               aria-label="Menyuni ochish"
             >
@@ -603,6 +603,25 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
                 </span>
               )}
             </Link>
+
+            {/* 4. Mobile Hamburger Menu Button (Right side for ergonomic thumb reach) */}
+            <button
+              type="button"
+              onClick={() => {
+                if (sidebarOpen) {
+                  closeSidebarImmediate();
+                } else {
+                  openSidebarSmoothly();
+                }
+              }}
+              className="header-icon-btn flex sm:hidden w-8 h-8 rounded-full bg-slate-100/80 dark:bg-white/5 hover:bg-[#B80710] dark:hover:bg-[#E50914] active:scale-95 border border-slate-300/80 dark:border-white/10 hover:border-[#B80710] dark:hover:border-[#E50914] items-center justify-center text-slate-700 dark:text-text-secondary hover:text-white transition-all cursor-pointer group shrink-0"
+              title="Menyu"
+              aria-label="Menyuni ochish"
+            >
+              <span className="material-symbols-outlined text-[18px] group-hover:text-white">
+                {sidebarOpen ? "close" : "menu"}
+              </span>
+            </button>
           </div>
 
           {/* ========================================================

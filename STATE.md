@@ -15,6 +15,7 @@ Vebsayt (`TelegramWatchButton`, TMA swipe qulfi, ixcham mobil media sahifa, OS q
 - Backend, bot, admin-panel va website tekshiruvlarini yakunlab GitHub'ga push qilish va Vercel/Render jonli saytini `browser` agent orqali tasdiqlash.
 
 ## Last verification & check results (Terminal Evidence)
+- **Detail Hero Alignment, HeroCarousel Lock, Right Mobile Menu & Channel ID Support:** `movie/[code]` & `series/[id]` (`md:items-center`, `md:line-clamp-4`, `HeroTrailerBackdrop` `md:min-h-[480px]`), `HeroCarousel` (`h-[236px] sm:h-[295px] md:h-[340px]`), `Navbar` (o'ng tarafdagi mobil hamburger tugma va o'ngdan chiquvchi drawer), `channels.py` + `admin-panel/app/channels/page.tsx` (`channel_id` yopiq kanal qo'llab-quvvatlashi) va `subscription_check.py` (`check_subscription` qayta tekshiruvi) yangilandi.
 - **MediaPlus Mobile Scroll Hotfix (`globals.css` + `layout.tsx` + `telegram.ts`):** `html, body` dagi `overscroll-behavior-y: contain` hamda `<body>` dagi `overflow-x-hidden` (ikkalasi birgalikda iOS/Androidda vertikal scrollni muzlatib qo'yayotgani) olib tashlandi; `overflow-x: clip; overflow-y: visible;` o'rnatildi va `tg.disableVerticalSwipes()` faqat real Telegram Mini App (`>= 7.7`) ga cheklandi.
 - **MediaPlus UX, Bot Config & TMA Auto-Login Batch (Verified):**
   - Backend: `/api/v1/auth/public-config` endpointi qo'shildi (`bot_username`, `website_url`, `stream_enabled`). (`ruff check` `All checks passed!`, `backend/tests/test_telegram_auth.py` `8 passed, 4 warnings in 2.96s`).

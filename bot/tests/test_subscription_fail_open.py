@@ -149,3 +149,41 @@ async def test_subscription_normalizes_tme_url_and_blocks():
         message.answer.assert_called_once()
         markup = message.answer.call_args.kwargs.get("reply_markup")
         assert markup.inline_keyboard[0][0].url == "https://t.me/yangi_kanal"
+
+
+@pytest.mark.asyncio
+async def test_subscription_private_channel_id_blocks_and_rechecks_on_callback():
+    """Yopiq kanal (+invite va channel_id) keshni chetlab check_subscription tugmasida ham bloklaydi."""
+    from aiogram.types import CallbackQuery
+    from middlewares.subscription_check import _user_sub_verified_cache
+
+    middleware = SubscriptionMiddleware()
+    handler = AsyncMock()
+
+    user = User(id=33333, is_bot=False, first_name="Hasan")
+    cb = MagicMock(spec=CallbackQuery)
+    cb.from_user = user
+    cb.data = "check_subscription"
+    cb.answer = AsyncMock()
+
+    _user_sub_verified_cache[33333] = 10**12  # oldin keshlangan bo'lsa ham check_subscription qayta tekshiradi
+
+    mock_bot = MagicMock()
+    mock_member = MagicMock()
+    mock_member.status = "left"
+    mock_bot.get_chat_member = AsyncMock(return_value=mock_member)
+
+    test_channels = [
+        {"id": 505, "channel_id": -1001234567890, "channel_username": "https://t.me/+SecretInvite", "channel_title": "Yopiq Kanal"}
+    ]
+
+    try:
+        with patch("middlewares.subscription_check._get_channels_cached", new_callable=AsyncMock) as mock_channels:
+            mock_channels.return_value = test_channels
+            await middleware(handler, cb, {"bot": mock_bot})
+
+            handler.assert_not_called()
+            mock_bot.get_chat_member.assert_awaited_once_with(chat_id=-1001234567890, user_id=33333)
+            cb.answer.assert_awaited_once()
+    finally:
+        _user_sub_verified_cache.pop(33333, None)

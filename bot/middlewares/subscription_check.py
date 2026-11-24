@@ -83,8 +83,9 @@ class SubscriptionMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         now = time.monotonic()
-        # Agar foydalanuvchi oxirgi 5 daqiqada tekshirilgan bo'lsa, qayta Telegram API chaqirmaymiz
-        if user_id in _user_sub_verified_cache and now < _user_sub_verified_cache[user_id]:
+        is_check_sub = isinstance(event, CallbackQuery) and event.data == "check_subscription"
+        # Agar foydalanuvchi oxirgi 5 daqiqada tekshirilgan bo'lsa (va Tekshirish tugmasini bosmayotgan bo'lsa)
+        if not is_check_sub and user_id in _user_sub_verified_cache and now < _user_sub_verified_cache[user_id]:
             return await handler(event, data)
 
         bot = data['bot']

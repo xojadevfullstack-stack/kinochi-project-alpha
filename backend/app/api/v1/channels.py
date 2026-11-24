@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
-from app.api.deps import get_channel_service, get_current_admin
+from app.api.deps import get_admin_or_bot, get_channel_service, get_current_admin
 from app.application.channels.service import ChannelService
 
 router = APIRouter(prefix="/channels", tags=["channels"])
@@ -16,6 +16,7 @@ class ChannelCreate(BaseModel):
     subscriber_limit: int | None = None
 
 class ChannelUpdate(BaseModel):
+    channel_id: int | None = None
     channel_username: str | None = None
     channel_title: str | None = None
     is_active: bool | None = None
@@ -99,8 +100,6 @@ async def delete_channel(
     success = await service.delete_channel(channel_id)
     if not success:
         raise HTTPException(status_code=404, detail="Channel not found")
-
-from app.api.deps import get_admin_or_bot
 
 class VerifySubscriberRequest(BaseModel):
     user_id: int

@@ -66,7 +66,7 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
             }
             touchStartXRef.current = null;
           }}
-          className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] min-h-[235px] sm:min-h-[290px] md:min-h-[340px] flex items-center shadow-xl touch-pan-y"
+          className="hero-stage preserve-white relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-900/15 dark:border-white/10 bg-[#0E0F13] h-[236px] sm:h-[295px] md:h-[340px] flex items-center shadow-xl touch-pan-y"
         >
           {/* Backdrop */}
           <div className="absolute inset-0 z-0 pointer-events-none">
@@ -105,36 +105,36 @@ export default function HeroCarousel({ items, botUsername }: HeroCarouselProps) 
           )}
 
           {/* Foreground Slide Content */}
-          <div className="relative z-10 w-full px-10 py-5 sm:px-14 sm:py-7 md:px-16 md:py-8 flex items-center justify-between gap-4 sm:gap-8">
+          <div className="relative z-10 w-full px-10 pt-4 pb-6 sm:px-14 sm:py-7 md:px-16 md:py-8 flex items-center justify-between gap-4 sm:gap-8">
             <div className="flex-1 max-w-lg min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1.5 text-xs">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-bold uppercase tracking-wider text-white">
+              <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2 mb-1.5 text-[11px] sm:text-xs overflow-hidden whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-bold uppercase tracking-wider text-white shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] animate-pulse" />
                   <span>{isSeries ? "Serial" : "Premyera"}</span>
                 </span>
                 {rating ? (
-                  <span className="text-rating-gold font-bold">★ {rating}</span>
+                  <span className="text-rating-gold font-bold shrink-0">★ {rating}</span>
                 ) : null}
                 {current.release_year && (
                   <>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-gray-300 font-medium">{current.release_year}</span>
+                    <span className="text-gray-400 shrink-0">•</span>
+                    <span className="text-gray-300 font-medium shrink-0">{current.release_year}</span>
                   </>
                 )}
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-300 font-medium truncate">{genreLabel}</span>
+                <span className="text-gray-400 shrink-0">•</span>
+                <span className="text-gray-300 font-medium truncate min-w-0">{genreLabel}</span>
                 {is18Plus && (
-                  <span className="px-1.5 py-0.5 rounded bg-red-600/80 text-white text-[10px] font-bold">
+                  <span className="px-1.5 py-0.5 rounded bg-red-600/80 text-white text-[10px] font-bold shrink-0">
                     18+
                   </span>
                 )}
               </div>
 
-              <h1 className="font-heading text-xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2 line-clamp-2">
+              <h1 className="font-heading text-lg sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-snug sm:leading-tight mb-1.5 sm:mb-2 line-clamp-1 sm:line-clamp-2">
                 {current.title}
               </h1>
 
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4 line-clamp-2 max-w-md">
+              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-3 sm:mb-4 line-clamp-2 max-w-md">
                 {current.description ||
                   "Telegram tarmog'idagi eng katta va qulay kino bazasi. Sevimli filmlaringizni bepul tomosha qiling."}
               </p>
