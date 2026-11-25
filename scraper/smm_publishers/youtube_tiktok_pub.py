@@ -149,7 +149,7 @@ class TikTokPublisher(BaseSocialPublisher):
                 "mediaItems": [{"type": "video", "url": pub_url}],
                 "platforms": [{"platform": "tiktok", "accountId": account_id}],
                 "tiktokSettings": {
-                    "privacyLevel": privacy or "PUBLIC_TO_EVERYONE",
+                    "privacyLevel": "PUBLIC_TO_EVERYONE" if (not privacy or privacy == "SELF_ONLY") else privacy,
                     "allowComment": True,
                     "allowDuet": True,
                     "allowStitch": True,

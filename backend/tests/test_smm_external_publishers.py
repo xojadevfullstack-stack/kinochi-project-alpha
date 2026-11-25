@@ -393,3 +393,34 @@ async def test_tiktok_publisher_reports_zernio_error_without_legacy_creds(tmp_pa
 
     assert res.success is False
     assert "Zernio" in (res.error or "")
+
+
+@pytest.mark.asyncio
+async def test_tiktok_publisher_zernio_upgrades_legacy_self_only_to_public(tmp_path, monkeypatch):
+    monkeypatch.setenv("ZERNIO_API_KEY", "z_key_abc")
+    monkeypatch.setenv("ZERNIO_TIKTOK_ACCOUNT_ID", "tt_acc_real")
+    monkeypatch.setenv("TIKTOK_PRIVACY_LEVEL", "SELF_ONLY")
+
+    vid = tmp_path / "tt_pub.mp4"
+    vid.write_bytes(b"mp4-bytes")
+
+    r_accs = MagicMock(status_code=200)
+    r_accs.json.return_value = {"accounts": [{"_id": "tt_acc_real", "platform": "tiktok"}]}
+    r_presign = MagicMock(status_code=200)
+    r_presign.json.return_value = {"uploadUrl": "https://cdn.example/up", "publicUrl": "https://cdn.example/clip.mp4"}
+    r_put = MagicMock(status_code=200)
+    r_post = MagicMock(status_code=201)
+    r_post.json.return_value = {"post": {"_id": "z_post_pub", "platforms": [{"platform": "tiktok", "status": "published"}]}}
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.get = AsyncMock(return_value=r_accs)
+    client.post = AsyncMock(side_effect=[r_presign, r_post])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = TikTokPublisher()
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #3957", movie_code="3957")
+
+    assert res.success is True
+    assert client.post.call_args_list[1].kwargs["json"]["tiktokSettings"]["privacyLevel"] == "PUBLIC_TO_EVERYONE"
