@@ -2,7 +2,7 @@ import httpx
 import logging
 import os
 import asyncio
-from typing import Tuple, Callable, Optional, AsyncIterator
+from typing import Tuple, Callable, Optional
 from fastapi import HTTPException
 from app.core.config import settings
 
@@ -577,22 +577,25 @@ class TelegramClient:
             text=text
         )
 
-    async def send_photo(
+    async def send_photo_with_result(
         self,
         chat_id: int | str,
         photo_bytes: bytes,
         filename: str = "screenshot.jpg",
         caption: Optional[str] = None,
         reply_markup: Optional[dict] = None,
-        parse_mode: str = "HTML"
-    ) -> bool:
-        """Telegram chatiga rasm / skrinshot yuboradi."""
+        parse_mode: str = "HTML",
+        message_thread_id: Optional[int] = None,
+    ) -> SendMessageResult:
+        """Telegram chat yoki forum topiciga rasm yuborib, file_id ni qaytaradi."""
         if not self.bot_token:
             logger.error("BOT_TOKEN is missing")
-            return False
+            return SendMessageResult(False, "BOT_TOKEN is missing")
 
         url = f"{self.base_url}/sendPhoto"
         data = {"chat_id": str(chat_id)}
+        if message_thread_id is not None:
+            data["message_thread_id"] = str(message_thread_id)
         if parse_mode:
             data["parse_mode"] = parse_mode
         if caption:
@@ -605,18 +608,74 @@ class TelegramClient:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(url, data=data, files=files)
-                if resp.status_code == 200 and resp.json().get("ok"):
-                    return True
+                if resp.status_code != 200 or not resp.json().get("ok"):
+                    if "can't parse entities" in resp.text.lower() and parse_mode:
+                        data.pop("parse_mode", None)
+                        resp = await client.post(url, data=data, files={"photo": (filename, photo_bytes)})
+                if resp.status_code == 200:
+                    body = resp.json()
+                    if body.get("ok"):
+                        photos = (body.get("result") or {}).get("photo") or []
+                        file_id = photos[-1].get("file_id") if photos else None
+                        return SendMessageResult(True, file_id=file_id)
                 logger.error(f"send_photo error ({resp.status_code}): {resp.text}")
-                # Fallback to plain text caption if HTML parse failed
-                if "can't parse entities" in resp.text.lower() and parse_mode:
-                    data.pop("parse_mode", None)
-                    resp_retry = await client.post(url, data=data, files={"photo": (filename, photo_bytes)})
-                    return resp_retry.status_code == 200 and resp_retry.json().get("ok")
-                return False
+                return SendMessageResult(False, resp.text)
         except Exception as e:
             logger.error(f"send_photo exception: {e}")
-            return False
+            return SendMessageResult(False, str(e))
+
+    async def send_photo(
+        self,
+        chat_id: int | str,
+        photo_bytes: bytes,
+        filename: str = "screenshot.jpg",
+        caption: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+        parse_mode: str = "HTML",
+        message_thread_id: Optional[int] = None,
+    ) -> bool:
+        """Telegram chatiga rasm / skrinshot yuboradi."""
+        res = await self.send_photo_with_result(
+            chat_id=chat_id,
+            photo_bytes=photo_bytes,
+            filename=filename,
+            caption=caption,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+            message_thread_id=message_thread_id,
+        )
+        return res.success
+
+    async def download_file_bytes(self, file_id: str) -> Optional[Tuple[bytes, str]]:
+        """Telegram file_id bo'yicha fayl baytlarini va MIME turini yuklab oladi."""
+        if not self.bot_token or not file_id:
+            return None
+        from app.core.cache import get_cache, set_cache
+
+        cache_key = f"cache:tg_file_path:{file_id}"
+        file_path: Optional[str] = await get_cache(cache_key)
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                if not file_path:
+                    meta_resp = await client.get(f"{self.base_url}/getFile", params={"file_id": file_id})
+                    if meta_resp.status_code != 200 or not meta_resp.json().get("ok"):
+                        logger.warning(f"Telegram getFile failed for {file_id}: {meta_resp.status_code}")
+                        return None
+                    file_path = (meta_resp.json().get("result") or {}).get("file_path")
+                    if not file_path:
+                        return None
+                    await set_cache(cache_key, file_path, ttl_seconds=2700)
+
+                dl_url = f"https://api.telegram.org/file/bot{self.bot_token}/{file_path.lstrip('/')}"
+                file_resp = await client.get(dl_url)
+                if file_resp.status_code != 200:
+                    logger.warning(f"Telegram file download failed ({file_resp.status_code}) for {file_id}")
+                    return None
+                mime = "image/png" if file_path.lower().endswith(".png") else "image/jpeg"
+                return file_resp.content, mime
+        except Exception as e:
+            logger.warning(f"download_file_bytes error for {file_id}: {e}")
+            return None
 
     async def send_video(
         self,

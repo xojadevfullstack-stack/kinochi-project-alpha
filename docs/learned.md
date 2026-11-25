@@ -114,3 +114,7 @@
 ## Runtime Public-Config Social Aggregation
 - Concept: **Single-Source Public Config (`GET /api/v1/auth/public-config` + `buildSocialItems`)** — Barcha ijtimoiy tarmoq linklarini frontendda tarqoq qattiq yozish o'rniga backend `/public-config` va yagona sanitizatsiya funksiyasi orqali berib, faqat `https://` tasdiqlangan va bo'sh bo'lmagan tugmalarni render qilish 404/soxta linklarni oldini oladi.
 - Analogy: Barcha filiallardagi e'lon taxtalariga manzillarni qo'lda yopishtirmasdan, bosh ofisdagi bitta rasmiy ro'yxatdan olib faqat ochiq turgan filiallarni ko'rsatish.
+
+## Textless-First Poster Localization & Telegram File-ID Proxy
+- Concept: **Textless-First + Vision/Inpaint Fallback + Immutable `file_id` Proxy (`/api/v1/posters/tg/{file_id}`)** — Tijoriy Image-to-Image AI lar mashhur aktyorlar yuzi/mualliflik huquqi sababli posterlarni bloklaganda, TMDb matnsiz posterini olib (yoki `cv2.inpaint` bilan tozalab) Pillow/TTF orqali o'zbekcha shrift chizish hamda Telegram'dagi eskiradigan `getFile` linki o'rniga proksi endpointdan doimiy URL berish.
+- Analogy: Mehmonxonada 1 soatda yaroqsiz bo'ladigan vaqtinchalik qog'oz ruxsatnoma tarqatmasdan, qabulxonada doimiy raqam bo'yicha arxivdan rasmni olib beradigan darcha ochish.

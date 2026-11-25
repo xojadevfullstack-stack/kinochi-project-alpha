@@ -6,7 +6,7 @@ import os
 import tempfile
 from datetime import datetime
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 from pydantic import BaseModel
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,6 +45,7 @@ router = APIRouter(prefix="/series", tags=["series"])
 async def create_series(
     request: Request,
     series_in: SeriesCreate,
+    background_tasks: BackgroundTasks,
     service: SeriesService = Depends(get_series_service),
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin)
@@ -81,6 +82,14 @@ async def create_series(
         raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
 
     series = await service.create_series(create_dict)
+    from app.api.v1.posters import schedule_poster_localization
+    schedule_poster_localization(
+        background_tasks,
+        "series",
+        getattr(series, "id", None),
+        tmdb_id=getattr(series, "tmdb_id", None),
+        poster_url=getattr(series, "poster_url", None),
+    )
     await delete_cache_pattern("cache:series:*")
     return series
 
@@ -364,6 +373,7 @@ async def get_series(
 async def update_series(
     series_id: int,
     series_in: SeriesUpdate,
+    background_tasks: BackgroundTasks,
     service: SeriesService = Depends(get_series_service),
     admin: dict = Depends(get_current_admin)
 ):
@@ -374,6 +384,15 @@ async def update_series(
     series = await service.update_series(series_id, update_dict)
     if not series:
         raise HTTPException(status_code=404, detail="Series not found")
+    if "tmdb_id" in update_dict or "poster_url" in update_dict:
+        from app.api.v1.posters import schedule_poster_localization
+        schedule_poster_localization(
+            background_tasks,
+            "series",
+            series.id,
+            tmdb_id=getattr(series, "tmdb_id", None),
+            poster_url=getattr(series, "poster_url", None),
+        )
     await delete_cache_pattern("cache:series:*")
     await delete_cache_pattern("cache:search:*")
     return series

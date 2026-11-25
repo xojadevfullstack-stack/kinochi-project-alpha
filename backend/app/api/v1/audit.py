@@ -4,7 +4,7 @@ Allows auditing, filtering, quick-editing and auto-fixing movies and series with
 """
 import logging
 from typing import Literal, Any
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_, not_
@@ -545,6 +545,7 @@ async def autofix_item_from_tmdb(
     request: Request,
     content_type: Literal["movie", "series"],
     item_id: int,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin),
 ):
@@ -633,6 +634,11 @@ async def autofix_item_from_tmdb(
                 fixed_fields.append("Kategoriyalar")
 
         await db.commit()
+        if "Poster" in fixed_fields or "TMDb ID" in fixed_fields:
+            from app.api.v1.posters import schedule_poster_localization
+            schedule_poster_localization(
+                background_tasks, "movie", movie.id, tmdb_id=movie.tmdb_id, poster_url=movie.poster_url
+            )
         await delete_cache_pattern("cache:movies:*")
 
         return {
@@ -705,6 +711,11 @@ async def autofix_item_from_tmdb(
                 fixed_fields.append("Kategoriyalar")
 
         await db.commit()
+        if "Poster" in fixed_fields or "TMDb ID" in fixed_fields:
+            from app.api.v1.posters import schedule_poster_localization
+            schedule_poster_localization(
+                background_tasks, "series", series.id, tmdb_id=series.tmdb_id, poster_url=series.poster_url
+            )
         await delete_cache_pattern("cache:series:*")
 
         return {
@@ -721,6 +732,7 @@ async def quick_update_audit_item(
     content_type: Literal["movie", "series"],
     item_id: int,
     payload: QuickUpdatePayload,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin),
 ):
@@ -744,6 +756,11 @@ async def quick_update_audit_item(
             movie.categories = list(cat_res.scalars().all())
 
         await db.commit()
+        if "tmdb_id" in update_data or "poster_url" in update_data:
+            from app.api.v1.posters import schedule_poster_localization
+            schedule_poster_localization(
+                background_tasks, "movie", movie.id, tmdb_id=movie.tmdb_id, poster_url=movie.poster_url
+            )
         await delete_cache_pattern("cache:movies:*")
         return {"success": True, "message": "Kino ma'lumotlari muvaffaqiyatli yangilandi"}
 
@@ -767,6 +784,11 @@ async def quick_update_audit_item(
             series.categories = list(cat_res.scalars().all())
 
         await db.commit()
+        if "tmdb_id" in update_data or "poster_url" in update_data:
+            from app.api.v1.posters import schedule_poster_localization
+            schedule_poster_localization(
+                background_tasks, "series", series.id, tmdb_id=series.tmdb_id, poster_url=series.poster_url
+            )
         await delete_cache_pattern("cache:series:*")
         return {"success": True, "message": "Serial ma'lumotlari muvaffaqiyatli yangilandi"}
 

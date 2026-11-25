@@ -24,4 +24,5 @@ filelock>=3.14.0
 python-dotenv>=1.0.0
 numpy>=1.26,<3.0
 opencv-python-headless>=4.10,<5.0
+pillow>=10.0,<12.0
 

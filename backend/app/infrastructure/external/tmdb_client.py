@@ -539,6 +539,39 @@ class TMDbClient:
         await set_cache(cache_key, result, ttl_seconds=86400)
         return result
 
+    async def get_textless_poster(self, tmdb_id: int, content_type: str = "movie") -> str | None:
+        """TMDb'dan matnsiz (iso_639_1=null/xx) eng sifatli posterni oladi."""
+        if not self.api_key or not tmdb_id:
+            return None
+        endpoint_type = "tv" if content_type in ("tv", "series") else "movie"
+        cache_key = f"tmdb:textless_poster:{endpoint_type}:{tmdb_id}"
+        cached = await get_cache(cache_key)
+        if cached is not None:
+            return cached or None
+
+        data = await self._request_with_retry(
+            f"{endpoint_type}/{tmdb_id}/images",
+            params={"include_image_language": "null,xx"},
+            timeout=6.0,
+        )
+        posters = (data or {}).get("posters") or []
+        textless = [p for p in posters if p.get("iso_639_1") in (None, "", "xx") and p.get("file_path")]
+        if not textless:
+            await set_cache(cache_key, "", ttl_seconds=43200)
+            return None
+
+        best = max(
+            textless,
+            key=lambda p: (
+                float(p.get("vote_average") or 0.0),
+                int(p.get("vote_count") or 0),
+                int(p.get("width") or 0),
+            ),
+        )
+        url = f"{TMDB_IMAGE_BASE}{best['file_path']}"
+        await set_cache(cache_key, url, ttl_seconds=86400)
+        return url
+
 
     async def get_credits_and_details(
         self,

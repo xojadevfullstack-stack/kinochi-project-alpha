@@ -1,6 +1,6 @@
 """API v1 — Movies endpoints.  Phase 1: CRUD + search."""
 from typing import Any, Sequence
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status, UploadFile, File, Form
 import logging
 import asyncio
 import os
@@ -207,6 +207,7 @@ class PaginatedMoviesResponse(BaseModel):
 async def create_movie(
     request: Request,
     movie_in: MovieCreate,
+    background_tasks: BackgroundTasks,
     service: MovieService = Depends(get_movie_service),
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin)
@@ -255,6 +256,14 @@ async def create_movie(
         raise HTTPException(status_code=400, detail={"message": "Admission gate pre-check xatosi", "defects": defects})
 
     movie = await service.create_movie(**data)
+    from app.api.v1.posters import schedule_poster_localization
+    schedule_poster_localization(
+        background_tasks,
+        "movie",
+        getattr(movie, "id", None),
+        tmdb_id=getattr(movie, "tmdb_id", None),
+        poster_url=getattr(movie, "poster_url", None),
+    )
     await delete_cache_pattern("cache:movies:*")
     return movie
 
@@ -510,6 +519,7 @@ async def update_movie(
     request: Request,
     movie_id: int,
     movie_in: MovieUpdate,
+    background_tasks: BackgroundTasks,
     service: MovieService = Depends(get_movie_service),
     db: AsyncSession = Depends(get_db_session),
     admin: dict = Depends(get_current_admin)
@@ -540,7 +550,17 @@ async def update_movie(
     updated_movie = await service.update_movie(movie_id, **data)
     if not updated_movie:
         raise HTTPException(status_code=404, detail="Movie not found")
-        
+
+    if "tmdb_id" in data or "poster_url" in data:
+        from app.api.v1.posters import schedule_poster_localization
+        schedule_poster_localization(
+            background_tasks,
+            "movie",
+            updated_movie.id,
+            tmdb_id=getattr(updated_movie, "tmdb_id", None),
+            poster_url=getattr(updated_movie, "poster_url", None),
+        )
+
     await delete_cache_pattern("cache:movies:*")
     await delete_cache_pattern("cache:search:*")
     return updated_movie
