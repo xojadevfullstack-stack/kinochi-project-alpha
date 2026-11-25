@@ -49,6 +49,10 @@ class UserCreateOrUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
 
+class UserSettingsUpdate(BaseModel):
+    show_adult_content: bool
+
+
 class UserResponse(BaseModel):
     id: int
     telegram_id: int
@@ -57,6 +61,7 @@ class UserResponse(BaseModel):
     last_name: str | None = None
     is_admin: bool
     is_banned: bool
+    show_adult_content: bool = False
     joined_at: datetime
     last_active_at: datetime
 
@@ -82,6 +87,22 @@ async def get_my_profile(
 ):
     """Get profile of the currently logged in user."""
     user = await service.get_by_telegram_id(user_data["telegram_id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+    return user
+
+
+@router.patch("/me/settings", response_model=UserResponse)
+async def update_my_settings(
+    settings_in: UserSettingsUpdate,
+    user_data: dict = Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
+):
+    """Update persistent preferences (such as 18+ content visibility) for the current user."""
+    user = await service.update_settings(
+        telegram_id=user_data["telegram_id"],
+        show_adult_content=settings_in.show_adult_content,
+    )
     if not user:
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
     return user

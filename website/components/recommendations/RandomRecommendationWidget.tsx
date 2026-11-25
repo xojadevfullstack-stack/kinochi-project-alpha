@@ -6,6 +6,7 @@ import Link from "next/link";
 import ShareButton from "@/components/ShareButton";
 import { isAdultContent } from "@/lib/adult";
 import AdultPoster from "@/components/AdultPoster";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 interface Item {
   id: number;
@@ -46,6 +47,7 @@ function getPageIcon(title: string): string {
 }
 
 export default function RandomRecommendationWidget({ movies = [], series = [], pages = [] }: Props) {
+  const { showAdultContent } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
@@ -107,8 +109,11 @@ export default function RandomRecommendationWidget({ movies = [], series = [], p
       }
     }
 
+    if (!showAdultContent) {
+      return list.filter((it) => !isAdultContent(it));
+    }
     return list;
-  }, [selectedCategory, movies, series, pages]);
+  }, [selectedCategory, movies, series, pages, showAdultContent]);
 
   const activeItem = filteredItems.length > 0 ? filteredItems[currentIndex % filteredItems.length] : null;
 

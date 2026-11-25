@@ -14,7 +14,7 @@ from app.api.limiter import limiter
 from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.collection import CollectionModel
-from app.infrastructure.db.query_filters import published_only
+from app.infrastructure.db.query_filters import exclude_adult_media, non_adult_condition, published_only
 from app.core.cache import get_cache, set_cache
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -45,6 +45,7 @@ async def live_search(
     request: Request,
     q: str = Query(..., min_length=1, description="Qidiruv matni yoki kod"),
     limit: int = Query(8, ge=1, le=20, description="Natijalar soni"),
+    include_adult: bool = Query(True, description="Include 18+ content"),
     db: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -55,7 +56,7 @@ async def live_search(
     if not clean_query:
         return LiveSearchResponse(query=q, total=0, results=[])
 
-    cache_key = f"cache:search:live:{clean_query.lower()}:{limit}"
+    cache_key = f"cache:search:live:{clean_query.lower()}:{limit}:{include_adult}"
     cached = await get_cache(cache_key)
     if cached:
         return cached
@@ -88,6 +89,8 @@ async def live_search(
             ).limit(1),
             MovieModel,
         )
+        if not include_adult:
+            movie_code_stmt = exclude_adult_media(movie_code_stmt, MovieModel)
         movie_by_code = (await db.execute(movie_code_stmt)).scalar_one_or_none()
 
         # 1b. Check exact episode short_code or code BEFORE any numeric ID fallback
@@ -106,6 +109,8 @@ async def live_search(
                 )
                 .limit(1)
             )
+            if not include_adult:
+                ep_stmt = ep_stmt.where(non_adult_condition(SeriesModel))
             ep_match = (await db.execute(ep_stmt)).first()
 
         if ep_match:
@@ -128,11 +133,10 @@ async def live_search(
         if not movie_by_code and not ep_match and code_query.isdigit() and len(code_query) <= 9:
             num_id = int(code_query)
             if 0 < num_id <= 2_147_483_647:
-                movie_by_code = (
-                    await db.execute(
-                        published_only(select(MovieModel).where(MovieModel.id == num_id).limit(1), MovieModel)
-                    )
-                ).scalar_one_or_none()
+                num_stmt = published_only(select(MovieModel).where(MovieModel.id == num_id).limit(1), MovieModel)
+                if not include_adult:
+                    num_stmt = exclude_adult_media(num_stmt, MovieModel)
+                movie_by_code = (await db.execute(num_stmt)).scalar_one_or_none()
         if movie_by_code:
             results.append(
                 LiveSearchResultItem(
@@ -153,6 +157,8 @@ async def live_search(
             series_by_id_stmt = published_only(
                 select(SeriesModel).where(SeriesModel.id == series_id_target).limit(1), SeriesModel
             )
+            if not include_adult:
+                series_by_id_stmt = exclude_adult_media(series_by_id_stmt, SeriesModel)
             series_by_id_res = await db.execute(series_by_id_stmt)
             series_by_id = series_by_id_res.scalar_one_or_none()
             if series_by_id and not any(r.id == series_by_id.id and r.type == "series" for r in results):
@@ -181,7 +187,7 @@ async def live_search(
     col_query = (
         select(CollectionModel)
         .where(
-            CollectionModel.is_active == True,
+            CollectionModel.is_active.is_(True),
             CollectionModel.items.any(),
             col_filter,
         )
@@ -237,6 +243,8 @@ async def live_search(
         .limit(limit)
     )
     movie_stmt = published_only(movie_stmt, MovieModel)
+    if not include_adult:
+        movie_stmt = exclude_adult_media(movie_stmt, MovieModel)
     movies_res = await db.execute(movie_stmt)
     for m in movies_res.scalars().all():
         if not any(r.id == m.id and r.type == "movie" for r in results):
@@ -273,6 +281,8 @@ async def live_search(
         .limit(limit)
     )
     series_stmt = published_only(series_stmt, SeriesModel)
+    if not include_adult:
+        series_stmt = exclude_adult_media(series_stmt, SeriesModel)
     series_res = await db.execute(series_stmt)
     for s in series_res.scalars().all():
         if not any(r.id == s.id and r.type == "series" for r in results):

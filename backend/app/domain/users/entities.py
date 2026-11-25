@@ -10,6 +10,7 @@ class User(BaseModel):
     last_name: str | None = None
     is_admin: bool = False
     is_banned: bool = False
+    show_adult_content: bool = False
     joined_at: datetime | None = None
     last_active_at: datetime | None = None
     

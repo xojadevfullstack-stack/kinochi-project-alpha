@@ -33,3 +33,6 @@ class UserService:
 
     async def list_users(self, skip: int = 0, limit: int = 20) -> tuple[Sequence[User], int]:
         return await self.user_repo.list_users(skip=skip, limit=limit)
+
+    async def update_settings(self, telegram_id: int, show_adult_content: bool) -> User | None:
+        return await self.user_repo.update_settings(telegram_id, show_adult_content=show_adult_content)

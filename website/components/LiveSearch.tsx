@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import RequestMovieModal, { RequestTargetItem } from "./RequestMovieModal";
-import { API_URL } from "@/lib/api";
+import { API_URL, readClientAdultPreference } from "@/lib/api";
 import { suppressOverlayHistoryBack } from "@/lib/hooks/useOverlayBackClose";
 
 interface SearchResultItem {
@@ -178,7 +178,10 @@ export default function LiveSearch({
     const handler = setTimeout(async () => {
       try {
         // 1. Fetch live local results
-        const res = await fetch(`${API_URL}/search/live?q=${encodeURIComponent(clean)}&limit=5`);
+        const includeAdult = readClientAdultPreference();
+        const res = await fetch(
+          `${API_URL}/search/live?q=${encodeURIComponent(clean)}&limit=5&include_adult=${includeAdult ? "true" : "false"}`
+        );
         let localItems: SearchResultItem[] = [];
         if (res.ok) {
           const data = await res.json();

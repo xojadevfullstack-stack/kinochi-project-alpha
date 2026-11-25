@@ -5,10 +5,13 @@ Presentation Layer: dependency functions injected into FastAPI route
 handlers via Depends().
 """
 from typing import AsyncGenerator
+import hmac
 
-from fastapi import Depends, HTTPException, Query, Request, status
+from fastapi import Depends, Header, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
+
+from app.core.config import settings
 
 import app.infrastructure.db.session as db_session_module
 from app.infrastructure.db.repositories.movie_repo import MovieRepositoryImpl
@@ -28,9 +31,30 @@ from app.infrastructure.db.repositories.series_repository import SeriesRepositor
 from app.application.series.series_service import SeriesService
 from app.infrastructure.telegram.telegram_client import telegram_client
 
+_user_adult_col_ensured = False
+
+
+async def _ensure_user_adult_column_once(session: AsyncSession) -> None:
+    global _user_adult_col_ensured
+    if _user_adult_col_ensured:
+        return
+    try:
+        bind = session.get_bind()
+        if bind and bind.dialect.name == "postgresql":
+            await session.execute(
+                text("ALTER TABLE users ADD COLUMN IF NOT EXISTS show_adult_content BOOLEAN NOT NULL DEFAULT FALSE")
+            )
+            await session.commit()
+    except Exception:
+        await session.rollback()
+    finally:
+        _user_adult_col_ensured = True
+
+
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to provide a DB session."""
     async with db_session_module.async_session_factory() as session:
+        await _ensure_user_adult_column_once(session)
         try:
             yield session
             await session.commit()
@@ -197,10 +221,6 @@ async def get_current_user_optional(
         return await get_current_user(request, session=session)
     except HTTPException:
         return None
-
-from fastapi import Header
-from app.core.config import settings
-import hmac
 
 async def get_admin_or_bot(
     request: Request,

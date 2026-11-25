@@ -14,6 +14,7 @@ export interface User {
   role: string;
   is_active: boolean;
   language_code?: string;
+  show_adult_content?: boolean;
 }
 
 interface AuthContextValue {
@@ -26,6 +27,8 @@ interface AuthContextValue {
   environment: Environment;
   botUsername: string;
   streamEnabled: boolean;
+  showAdultContent: boolean;
+  updateAdultContent: (enabled: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -65,6 +68,47 @@ export function AuthProvider({
     (initialBotUsername || DEFAULT_BOT_USERNAME).replace(/^@+/, "")
   );
   const [streamEnabled, setStreamEnabled] = useState<boolean>(initialStreamEnabled);
+  const [showAdultContent, setShowAdultContent] = useState<boolean>(false);
+
+  const persistAdultPreference = useCallback((enabled: boolean) => {
+    setShowAdultContent(enabled);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("kinochi_show_adult", enabled ? "1" : "0");
+      } catch {}
+      document.cookie = `kinochi_show_adult=${enabled ? "1" : "0"}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    }
+  }, []);
+
+  const syncUserSession = useCallback(
+    (userData: User) => {
+      setUser(userData);
+      setStatus("authenticated");
+      persistAdultPreference(Boolean(userData?.show_adult_content));
+    },
+    [persistAdultPreference]
+  );
+
+  const updateAdultContent = useCallback(
+    async (enabled: boolean) => {
+      persistAdultPreference(enabled);
+      if (getToken()) {
+        try {
+          const updated = await fetchApi("/users/me/settings", {
+            method: "PATCH",
+            body: JSON.stringify({ show_adult_content: enabled }),
+          });
+          if (updated) {
+            setUser(updated);
+            persistAdultPreference(Boolean(updated.show_adult_content));
+          }
+        } catch (err) {
+          console.error("Failed to persist 18+ preference to backend:", err);
+        }
+      }
+    },
+    [persistAdultPreference]
+  );
 
   const attemptWebAppLogin = useCallback(async (initData: string): Promise<boolean> => {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -78,8 +122,7 @@ export function AuthProvider({
           setToken(authResponse.access_token);
           setTokenState(authResponse.access_token);
           const userData = await fetchApi("/users/me");
-          setUser(userData);
-          setStatus("authenticated");
+          syncUserSession(userData);
           return true;
         }
       } catch (error) {
@@ -90,7 +133,7 @@ export function AuthProvider({
       }
     }
     return false;
-  }, []);
+  }, [syncUserSession]);
 
   const triggerWebAppLogin = useCallback(async (): Promise<boolean> => {
     const initData = await waitForTelegramInitData(1200);
@@ -112,9 +155,16 @@ export function AuthProvider({
       setStreamEnabled(Boolean(cfg.stream_enabled));
     });
 
-    // Determine initial environment after mount
+    // Determine initial environment & saved 18+ filter preference after mount
     const env = detectEnvironment();
     setEnvironment(env);
+    if (typeof window !== "undefined") {
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)kinochi_show_adult=([^;]*)/);
+        const cookieAdult = match ? match[1] === "1" : localStorage.getItem("kinochi_show_adult") === "1";
+        setShowAdultContent(cookieAdult);
+      } catch {}
+    }
 
     const initAuth = async () => {
       // 1. Check URL parameters for direct token login (e.g. ?auth_token=...)
@@ -127,8 +177,7 @@ export function AuthProvider({
             setTokenState(queryToken);
             const userData = await fetchApi("/users/me");
             if (!active) return;
-            setUser(userData);
-            setStatus("authenticated");
+            syncUserSession(userData);
             urlParams.delete("auth_token");
             const nextQs = urlParams.toString();
             const cleanUrl = nextQs ? `${window.location.pathname}?${nextQs}` : window.location.pathname;
@@ -148,8 +197,7 @@ export function AuthProvider({
           const userData = await fetchApi("/users/me");
           if (!active) return;
           setTokenState(savedToken);
-          setUser(userData);
-          setStatus("authenticated");
+          syncUserSession(userData);
           return;
         } catch (error) {
           console.error("Token verification failed:", error);
@@ -205,7 +253,7 @@ export function AuthProvider({
       active = false;
       window.removeEventListener("auth:unauthorized", handleUnauthorized);
     };
-  }, [attemptWebAppLogin]);
+  }, [attemptWebAppLogin, syncUserSession]);
 
   const resetAuthStatus = () => {
     if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
@@ -223,6 +271,7 @@ export function AuthProvider({
       document.cookie = "user_access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie = "access_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
+    persistAdultPreference(false);
     clearToken();
     setTokenState(null);
     setUser(null);
@@ -241,6 +290,8 @@ export function AuthProvider({
         environment,
         botUsername,
         streamEnabled,
+        showAdultContent,
+        updateAdultContent,
       }}
     >
       {children}

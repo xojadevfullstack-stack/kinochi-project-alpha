@@ -67,3 +67,14 @@ class UserRepositoryImpl(IUserRepository):
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount > 0
+
+    async def update_settings(self, telegram_id: int, show_adult_content: bool) -> User | None:
+        stmt = select(UserModel).where(UserModel.telegram_id == telegram_id)
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if not model:
+            return None
+        model.show_adult_content = bool(show_adult_content)
+        await self.session.commit()
+        await self.session.refresh(model)
+        return self._to_entity(model)

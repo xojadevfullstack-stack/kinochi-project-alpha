@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload, noload
 from app.infrastructure.db.models.series import SeriesModel, SeasonModel, EpisodeModel
 from app.infrastructure.db.models.category import CategoryModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel
-from app.infrastructure.db.query_filters import published_only
+from app.infrastructure.db.query_filters import exclude_adult_media, non_adult_condition, published_only
 from app.domain.series.entities import SeriesCreate, SeriesUpdate, SeasonCreate, SeasonUpdate, EpisodeCreate, EpisodeUpdate
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ class SeriesRepository:
         year: int | None = None,
         genre: str | None = None,
         sort: str | None = None,
+        include_adult: bool = True,
         **kwargs
     ) -> Tuple[List[SeriesModel], int]:
         stmt = select(SeriesModel).options(
@@ -41,6 +42,8 @@ class SeriesRepository:
             stmt = published_only(stmt, SeriesModel)
         elif publish_status is not None and publish_status != "all":
             stmt = stmt.filter(SeriesModel.publish_status == publish_status)
+        if not include_adult:
+            stmt = exclude_adult_media(stmt, SeriesModel)
         
         if category_id:
             if category_id == 40:
@@ -118,7 +121,7 @@ class SeriesRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total or 0
 
-    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100, publish_status: str | None = None) -> Tuple[List[SeriesModel], int]:
+    async def search_series(self, title_query: str, skip: int = 0, limit: int = 100, publish_status: str | None = None, include_adult: bool = True) -> Tuple[List[SeriesModel], int]:
         clean_q = str(title_query).strip()
         code_q = clean_q.lstrip("#").strip()
         words = [w for w in re.split(r"[\s\-_:]+", clean_q) if w]
@@ -146,6 +149,8 @@ class SeriesRepository:
             stmt_where = and_(stmt_where, SeriesModel.publish_status == "published")
         elif publish_status is not None and publish_status != "all":
             stmt_where = and_(stmt_where, SeriesModel.publish_status == publish_status)
+        if not include_adult:
+            stmt_where = and_(stmt_where, non_adult_condition(SeriesModel))
 
         total_stmt = select(func.count(SeriesModel.id)).where(stmt_where)
         total = await self.session.scalar(total_stmt)

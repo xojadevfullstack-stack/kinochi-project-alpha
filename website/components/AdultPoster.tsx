@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 import { useAgeVerification } from "@/hooks/useAgeVerification";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 interface AdultPosterProps {
   src: string;
@@ -31,6 +32,7 @@ export default function AdultPoster({
   showWarningBadge = true,
 }: AdultPosterProps) {
   const { isMounted, isVerified } = useAgeVerification();
+  const { showAdultContent } = useAuth();
   const [hasError, setHasError] = useState(false);
 
   if (hasError || !src) {
@@ -60,9 +62,9 @@ export default function AdultPoster({
   }
 
   // Adult content:
-  // On cards/listings (not detail page), ALWAYS keep blurred with 18+ indicator.
-  // On movie/series detail page, keep blurred until user explicitly confirms age for that page.
-  const shouldBlur = !isDetailPage ? true : (!isMounted || !isVerified);
+  // If user enabled 18+ in profile/cookie, render clearly everywhere.
+  // Otherwise cards stay blurred and detail pages wait for explicit confirmation.
+  const shouldBlur = showAdultContent ? false : !isDetailPage ? true : (!isMounted || !isVerified);
 
   return (
     <>

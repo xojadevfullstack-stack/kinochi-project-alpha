@@ -10,7 +10,7 @@ import { isAdultContent } from "@/lib/adult";
 import OnboardingSpotlight from "@/components/OnboardingSpotlight";
 import HeroCarousel from "@/components/home/HeroCarousel";
 
-export const revalidate = 60; // 60s ISR kesh
+export const dynamic = "force-dynamic";
 
 type Movie = {
   id: number;

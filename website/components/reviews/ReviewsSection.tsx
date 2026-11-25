@@ -155,42 +155,42 @@ export default function ReviewsSection({
             {/* 2-Column Responsive Score Cards */}
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full sm:w-auto">
               {/* IMDb Badge */}
-              <div className="flex items-center gap-2.5 sm:gap-3.5 bg-black/40 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-white/10 shadow-sm">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-amber-400 font-black text-[11px] sm:text-xs shrink-0 tracking-wider">
+              <div className="flex items-center gap-2.5 sm:gap-3.5 bg-white/95 dark:bg-black/40 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-400/15 border border-amber-200 dark:border-amber-400/25 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black text-[11px] sm:text-xs shrink-0 tracking-wider">
                   IMDb
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-rating-gold text-[15px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span className="material-symbols-outlined text-amber-500 dark:text-rating-gold text-[15px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                       star
                     </span>
-                    <span className="text-sm sm:text-lg font-bold text-white tracking-tight">
+                    <span className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                       {imdbRating ? `${imdbRating}` : "N/A"}
                     </span>
-                    <span className="text-[10px] sm:text-xs text-white/40">/10</span>
+                    <span className="text-[10px] sm:text-xs text-slate-400 dark:text-white/40">/10</span>
                   </div>
-                  <span className="text-[10px] sm:text-[11px] text-white/50 uppercase tracking-wider font-semibold block truncate">
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-white/50 uppercase tracking-wider font-semibold block truncate">
                     Rasmiy IMDb
                   </span>
                 </div>
               </div>
 
               {/* MediaPlus Community Badge */}
-              <div className="flex items-center gap-2.5 sm:gap-3.5 bg-sky-500/10 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-sky-500/20 shadow-sm shadow-sky-500/5">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 font-black text-[10px] sm:text-[11px] shrink-0 tracking-wider">
+              <div className="flex items-center gap-2.5 sm:gap-3.5 bg-sky-50 dark:bg-sky-500/10 backdrop-blur-md px-3 sm:px-4 py-3 rounded-2xl border border-sky-200 dark:border-sky-500/20 shadow-sm shadow-sky-500/5">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-sky-100 dark:bg-sky-500/20 border border-sky-200 dark:border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-black text-[10px] sm:text-[11px] shrink-0 tracking-wider">
                   MediaPlus
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sky-400 text-[15px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span className="material-symbols-outlined text-sky-500 dark:text-sky-400 text-[15px] sm:text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                       hotel_class
                     </span>
-                    <span className="text-sm sm:text-lg font-bold text-white tracking-tight truncate">
+                    <span className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
                       {kinochiRating !== null ? `${kinochiRating}` : "Yangi"}
                     </span>
-                    {kinochiRating !== null && <span className="text-[10px] sm:text-xs text-white/40">/10</span>}
+                    {kinochiRating !== null && <span className="text-[10px] sm:text-xs text-slate-400 dark:text-white/40">/10</span>}
                   </div>
-                  <span className="text-[10px] sm:text-[11px] text-sky-400/80 font-semibold block truncate">
+                  <span className="text-[10px] sm:text-[11px] text-sky-600 dark:text-sky-400/80 font-semibold block truncate">
                     {votesCount > 0 ? `${votesCount} ta ovoz` : "Baholanmagan"}
                   </span>
                 </div>
@@ -202,8 +202,8 @@ export default function ReviewsSection({
               onClick={() => setFormOpen(!formOpen)}
               className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm tracking-wide uppercase transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
                 formOpen
-                  ? "bg-white/15 hover:bg-white/20 text-white border border-white/20"
-                  : "bg-white hover:bg-white/90 text-slate-950 shadow-white/10"
+                  ? "bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-white/15 dark:hover:bg-white/20 dark:text-white border border-slate-300 dark:border-white/20"
+                  : "bg-[#E50914] hover:bg-[#B80710] text-white dark:bg-white dark:hover:bg-white/90 dark:text-slate-950 shadow-primary/20 dark:shadow-white/10"
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">

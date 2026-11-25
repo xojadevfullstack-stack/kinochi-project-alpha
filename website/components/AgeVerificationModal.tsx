@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 interface AgeVerificationModalProps {
   is18Plus?: boolean;
@@ -18,11 +19,12 @@ export default function AgeVerificationModal({
 }: AgeVerificationModalProps) {
   const router = useRouter();
   const { isMounted, isVerified, verifyAge } = useAgeVerification();
+  const { showAdultContent, updateAdultContent } = useAuth();
   const [manualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
-    onVerifiedChange?.(isVerified);
-  }, [isVerified, onVerifiedChange]);
+    onVerifiedChange?.(isVerified || showAdultContent);
+  }, [isVerified, showAdultContent, onVerifiedChange]);
 
   useEffect(() => {
     const handleOpenModal = () => {
@@ -36,10 +38,12 @@ export default function AgeVerificationModal({
     };
   }, []);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    await updateAdultContent(true);
     verifyAge();
     setManualOpen(false);
     onVerifiedChange?.(true);
+    router.refresh();
   };
 
   const handleDecline = () => {
@@ -60,8 +64,8 @@ export default function AgeVerificationModal({
     return null;
   }
 
-  // Open if manually requested OR if current page is 18+ and user is not verified on this page
-  const shouldShow = manualOpen || (is18Plus && !isVerified);
+  // Open if manually requested OR if current page is 18+ and user hasn't enabled 18+ content
+  const shouldShow = manualOpen || (is18Plus && !showAdultContent && !isVerified);
   if (!shouldShow || typeof document === "undefined") {
     return null;
   }
@@ -84,8 +88,8 @@ export default function AgeVerificationModal({
 
         {/* Subtitle / Notice */}
         <p className="text-text-secondary text-sm leading-relaxed mb-6">
-          Ushbu film/serial faqat <b>18 yoshdan katta</b> foydalanuvchilar uchun mo&apos;ljallangan. 
-          Davom etish orqali 18 yoshga to&apos;lganingizni tasdiqlaysiz.
+          Ushbu film/serial faqat <b>18 yoshdan katta</b> foydalanuvchilar uchun mo&apos;ljallangan (hozir profilingizda 18+ filtri yopiq).
+          Tasdiqlasangiz sozlama yoqiladi va keyingi safar qayta so&apos;ramaydi.
         </p>
 
         {/* Action Buttons */}
@@ -96,7 +100,7 @@ export default function AgeVerificationModal({
             className="flex-1 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-lg shadow-red-600/40 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">check_circle</span>
-            <span>Ha, 18 yoshdaman</span>
+            <span>Ha, 18 yoshdaman (Yoqish)</span>
           </button>
 
           <button

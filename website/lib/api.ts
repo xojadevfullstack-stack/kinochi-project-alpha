@@ -75,8 +75,44 @@ export async function getPublicConfig(): Promise<PublicConfig> {
   }
 }
 
+export function readClientAdultPreference(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const match = document.cookie.match(/(?:^|;\s*)kinochi_show_adult=([^;]*)/);
+    if (match) return match[1] === "1";
+    return localStorage.getItem("kinochi_show_adult") === "1";
+  } catch {
+    return false;
+  }
+}
+
+async function resolveAdultPreference(): Promise<boolean> {
+  if (typeof window !== "undefined") {
+    return readClientAdultPreference();
+  }
+  try {
+    const { cookies } = await import("next/headers");
+    return cookies().get("kinochi_show_adult")?.value === "1";
+  } catch {
+    return false;
+  }
+}
+
+function appendIncludeAdultParam(endpoint: string, includeAdult: boolean): string {
+  if (!/^\/(movies|series|search\/live)(\/search|\?|$)/.test(endpoint)) {
+    return endpoint;
+  }
+  if (endpoint.includes("include_adult=")) {
+    return endpoint;
+  }
+  const sep = endpoint.includes("?") ? "&" : "?";
+  return `${endpoint}${sep}include_adult=${includeAdult ? "true" : "false"}`;
+}
+
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_URL}${endpoint}`;
+  const includeAdult = await resolveAdultPreference();
+  const resolvedEndpoint = appendIncludeAdultParam(endpoint, includeAdult);
+  const url = `${API_URL}${resolvedEndpoint}`;
   
   // Get token and add to headers if exists
   const token = getToken();

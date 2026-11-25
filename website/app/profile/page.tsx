@@ -6,7 +6,7 @@ import { fetchApi } from "@/lib/api";
 import { getHistory, HistoryItem } from "@/lib/api/history";
 import Link from "next/link";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TelegramLoginWidget from "@/components/auth/TelegramLoginWidget";
 import BackButton from "@/components/BackButton";
 import SubscribeButton from "@/components/SubscribeButton";
@@ -45,10 +45,13 @@ interface CollectionRecommendation {
 }
 
 function ProfileContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as any) || "history";
 
-  const { status, user, logout } = useAuth();
+  const { status, user, logout, showAdultContent, updateAdultContent } = useAuth();
+  const [adultConfirmOpen, setAdultConfirmOpen] = useState(false);
+  const [adultSaving, setAdultSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"history" | "favorites" | "subscriptions" | "settings">(
     ["history", "favorites", "subscriptions", "settings"].includes(initialTab) ? initialTab : "history"
   );
@@ -741,6 +744,79 @@ function ProfileContent() {
                   <span className={`w-2 h-2 rounded-full ${notificationsEnabled ? "bg-emerald-400 animate-pulse" : "bg-text-secondary"}`} />
                   <span>{notificationsEnabled ? "Yoqilgan" : "O'chirilgan"}</span>
                 </button>
+              </div>
+
+              <div className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>18+ kontent (Kattalar uchun)</span>
+                    <span className="badge-18plus text-[10px] font-extrabold px-1.5 py-0.5 rounded-md">18+</span>
+                  </div>
+                  <div className="text-[11px] text-text-secondary">
+                    O&apos;chirilganda 18+ filmlar umuman ko&apos;rinmaydi; yoqilganda har sahifada qayta tasdiq so&apos;ramaydi
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={adultSaving}
+                  onClick={async () => {
+                    if (!showAdultContent) {
+                      setAdultConfirmOpen(true);
+                      return;
+                    }
+                    setAdultSaving(true);
+                    await updateAdultContent(false);
+                    setAdultSaving(false);
+                    router.refresh();
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shrink-0 ${
+                    showAdultContent
+                      ? "bg-[#E50914] text-white border-[#E50914] hover:bg-[#B80710]"
+                      : "bg-white/10 text-text-secondary border-white/10 hover:bg-white/15"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${showAdultContent ? "bg-white animate-pulse" : "bg-text-secondary"}`} />
+                  <span>{showAdultContent ? "Yoqilgan" : "O'chirilgan"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {adultConfirmOpen && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+              <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#12141D] border border-slate-200 dark:border-white/15 p-6 shadow-2xl text-center">
+                <div className="w-12 h-12 rounded-full bg-[#E50914]/15 border border-[#E50914]/35 flex items-center justify-center mx-auto mb-3 text-xl">
+                  🔞
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
+                  18 yoshga to&apos;lganmisiz?
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-gray-300 leading-relaxed mb-5">
+                  Yoqilgandan so&apos;ng 18+ film va seriallar katalogda ham ko&apos;rinadi va har sahifada qayta tasdiq so&apos;ralmaydi. Istalgan vaqtda bu yerda o&apos;chirishingiz mumkin.
+                </p>
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setAdultConfirmOpen(false)}
+                    className="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white cursor-pointer transition"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="button"
+                    disabled={adultSaving}
+                    onClick={async () => {
+                      setAdultSaving(true);
+                      await updateAdultContent(true);
+                      setAdultSaving(false);
+                      setAdultConfirmOpen(false);
+                      router.refresh();
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold bg-[#E50914] hover:bg-[#B80710] text-white cursor-pointer transition shadow-md shadow-primary/30"
+                  >
+                    Ha, 18 yoshdaman
+                  </button>
+                </div>
               </div>
             </div>
           )}
