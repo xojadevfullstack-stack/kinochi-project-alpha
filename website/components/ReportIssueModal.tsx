@@ -188,7 +188,7 @@ export default function ReportIssueModal({
 
   return createPortal(
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-900/55 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -196,20 +196,20 @@ export default function ReportIssueModal({
       }}
     >
       <div 
-        className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-surface-container-high border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl text-left custom-scrollbar"
+        className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-white/95 dark:bg-[#12141D] border border-slate-200 dark:border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl text-left custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-white/10 mb-5">
+        <div className="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-white/10 mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-primary/20 border border-red-200 dark:border-primary/30 flex items-center justify-center text-primary shrink-0">
               <span className="material-symbols-outlined text-2xl">warning</span>
             </div>
             <div>
-              <h2 className="font-display text-lg sm:text-xl font-bold text-white tracking-tight">
+              <h2 className="font-display text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                 Xatolik haqida xabar berish
               </h2>
-              <p className="text-xs text-text-secondary truncate max-w-xs sm:max-w-md">
+              <p className="text-xs text-slate-600 dark:text-text-secondary truncate max-w-xs sm:max-w-md">
                 {mediaTitle} {epContextText}
               </p>
             </div>
@@ -217,7 +217,7 @@ export default function ReportIssueModal({
           <button
             onClick={onClose}
             type="button"
-            className="p-1.5 text-text-secondary hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-text-secondary dark:hover:text-white rounded-lg dark:hover:bg-white/5 transition-colors cursor-pointer"
             aria-label="Yopish"
           >
             <span className="material-symbols-outlined text-xl">close</span>
@@ -227,16 +227,16 @@ export default function ReportIssueModal({
         {/* Success Notice */}
         {successMessage ? (
           <div className="py-8 text-center flex flex-col items-center justify-center space-y-3">
-            <span className="material-symbols-outlined text-5xl text-emerald-400 animate-bounce">
+            <span className="material-symbols-outlined text-5xl text-emerald-600 dark:text-emerald-400 animate-bounce">
               task_alt
             </span>
-            <p className="font-bold text-white text-base sm:text-lg">{successMessage}</p>
+            <p className="font-bold text-slate-900 dark:text-white text-base sm:text-lg">{successMessage}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 1. Issue Type Chips */}
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-white/90 mb-2.5">
+              <label className="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-white/90 mb-2.5">
                 Muammo turini tanlang:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -247,10 +247,10 @@ export default function ReportIssueModal({
                       key={opt.id}
                       type="button"
                       onClick={() => setSelectedIssue(opt.id)}
-                      className={`px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium border text-left transition-all flex items-center justify-between ${
+                      className={`px-3 py-2.5 rounded-xl text-xs sm:text-sm font-medium border text-left transition-all flex items-center justify-between cursor-pointer ${
                         isSelected
-                          ? "bg-primary/20 border-primary text-white shadow-sm shadow-primary/20 font-bold"
-                          : "bg-surface-container-lowest border-white/5 text-text-secondary hover:text-white hover:bg-white/5"
+                          ? "bg-red-50 dark:bg-primary/20 border-primary text-[#B80710] dark:text-white shadow-sm shadow-primary/20 font-bold"
+                          : "bg-slate-50 dark:bg-[#0B0D14] border-slate-200 dark:border-white/10 text-slate-700 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5"
                       }`}
                     >
                       <span className="truncate">{opt.label}</span>
@@ -267,7 +267,7 @@ export default function ReportIssueModal({
 
             {/* 2. Description Textarea */}
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-white/90 mb-1.5">
+              <label className="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-white/90 mb-1.5">
                 Xatolik haqida izoh yozing:
               </label>
               <textarea
@@ -275,15 +275,15 @@ export default function ReportIssueModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="1-qism 12-daqiqasida ovoz yo'qolib qolyapti yoki video boshqa kinoga tegishli..."
-                className="w-full bg-surface-container-lowest border border-white/10 rounded-xl p-3 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                className="w-full bg-white dark:bg-[#0B0D14] border border-slate-300 dark:border-white/10 rounded-xl p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
               />
             </div>
 
             {/* 3. File Upload Area */}
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-white/90 mb-1.5 flex items-center justify-between">
+              <label className="block text-xs sm:text-sm font-semibold text-slate-800 dark:text-white/90 mb-1.5 flex items-center justify-between">
                 <span>📎 Skrinshot yoki video biriktirish (ixtiyoriy):</span>
-                <span className="text-[11px] text-text-secondary font-normal">
+                <span className="text-[11px] text-slate-500 dark:text-text-secondary font-normal">
                   Rasm max 10MB • Video max 50MB
                 </span>
               </label>
@@ -309,40 +309,40 @@ export default function ReportIssueModal({
                   className={`border-2 border-dashed rounded-xl p-4 sm:p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5 ${
                     isDragging
                       ? "border-primary bg-primary/10"
-                      : "border-white/15 bg-surface-container-lowest hover:border-white/30 hover:bg-white/5"
+                      : "border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0B0D14] hover:border-slate-400 dark:hover:border-white/30 hover:bg-slate-100 dark:hover:bg-white/5"
                   }`}
                 >
                   <span className="material-symbols-outlined text-3xl text-primary/80">
                     add_photo_alternate
                   </span>
-                  <p className="text-xs sm:text-sm text-text-primary font-medium">
+                  <p className="text-xs sm:text-sm text-slate-900 dark:text-text-primary font-medium">
                     📸 Rasm (PNG, JPG) yoki 🎥 Video (MP4) yuklang
                   </p>
-                  <p className="text-[11px] text-text-secondary">
+                  <p className="text-[11px] text-slate-500 dark:text-text-secondary">
                     Faylni bu yerga tashlang yoki tanlash uchun bosing
                   </p>
                 </div>
               ) : (
-                <div className="bg-surface-container-lowest border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div className="bg-slate-50 dark:bg-[#0B0D14] border border-slate-200 dark:border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     {filePreview ? (
                       <img
                         src={filePreview}
                         alt="Preview"
-                        className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0"
+                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-white/10 shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-white/5 border border-slate-300 dark:border-white/10 flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-2xl text-primary">
                           videocam
                         </span>
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-semibold text-white truncate">
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate">
                         {file.name}
                       </p>
-                      <p className="text-[11px] text-text-secondary">
+                      <p className="text-[11px] text-slate-500 dark:text-text-secondary">
                         {(file.size / (1024 * 1024)).toFixed(1)} MB
                       </p>
                     </div>
@@ -351,7 +351,7 @@ export default function ReportIssueModal({
                   <button
                     type="button"
                     onClick={() => handleFileChange(null)}
-                    className="p-1.5 text-text-secondary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-500 dark:text-text-secondary hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                     title="Faylni o'chirish"
                   >
                     <span className="material-symbols-outlined text-lg">delete</span>
@@ -362,7 +362,7 @@ export default function ReportIssueModal({
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs sm:text-sm flex items-center gap-2">
+              <div className="p-3 bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 rounded-xl text-red-700 dark:text-red-300 text-xs sm:text-sm flex items-center gap-2">
                 <span className="material-symbols-outlined text-base">error</span>
                 <span>{errorMessage}</span>
               </div>

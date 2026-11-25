@@ -119,7 +119,7 @@ export default function ActorFilmographyModal({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/55 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto"
     >
       {/* Toast Alert */}
       {toastMessage && (
@@ -131,12 +131,12 @@ export default function ActorFilmographyModal({
 
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#181920] border border-white/15 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white/95 dark:bg-[#181920] border border-slate-200 dark:border-white/15 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Modal Header */}
-        <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-50/70 dark:bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden relative shrink-0 border border-white/20 bg-white/5 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full overflow-hidden relative shrink-0 border border-slate-200 dark:border-white/20 bg-slate-100 dark:bg-white/5 flex items-center justify-center">
               {actor.photo_url ? (
                 <Image
                   src={actor.photo_url}
@@ -146,21 +146,21 @@ export default function ActorFilmographyModal({
                   className="object-cover"
                 />
               ) : (
-                <span className="material-symbols-outlined text-2xl text-white/40">
+                <span className="material-symbols-outlined text-2xl text-slate-400 dark:text-white/40">
                   person
                 </span>
               )}
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>{actor.name}</span>
                 {actor.role && (
-                  <span className="text-[11px] font-normal text-white/50 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                  <span className="text-[11px] font-normal text-slate-600 dark:text-white/50 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/5">
                     {actor.role}
                   </span>
                 )}
               </h2>
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-slate-500 dark:text-text-secondary">
                 {actor.original_name ? `${actor.original_name} — ` : ""}
                 TMDb filmografiyasi
               </p>
@@ -170,7 +170,7 @@ export default function ActorFilmographyModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
+            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 flex items-center justify-center text-slate-700 dark:text-white transition-all cursor-pointer"
             aria-label="Yopish"
           >
             <span className="material-symbols-outlined text-lg">close</span>
@@ -196,10 +196,10 @@ export default function ActorFilmographyModal({
                 return (
                   <div
                     key={movie.tmdb_id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 transition-all"
+                    className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] border border-slate-200/80 dark:border-white/5 transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 bg-white/10">
+                      <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0 bg-slate-200 dark:bg-white/10">
                         {movie.poster_url ? (
                           <Image
                             src={movie.poster_url}
@@ -209,16 +209,16 @@ export default function ActorFilmographyModal({
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/30 text-[10px]">
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-white/30 text-[10px]">
                             Rasm
                           </div>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-xs sm:text-sm font-semibold text-white truncate">
+                        <h4 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white truncate">
                           {movie.title}
                         </h4>
-                        <p className="text-[11px] text-text-secondary truncate">
+                        <p className="text-[11px] text-slate-500 dark:text-text-secondary truncate">
                           {movie.release_year ? `${movie.release_year} y.` : ""}{" "}
                           {movie.character ? `• ${movie.character}` : ""}
                         </p>
@@ -234,7 +234,7 @@ export default function ActorFilmographyModal({
                               ? `/series/${movie.local_movie.id}`
                               : `/movie/${movie.local_movie.code}`
                           }
-                          className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black border border-emerald-500/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 hover:bg-emerald-600 dark:hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white dark:hover:text-black border border-emerald-200 dark:border-emerald-500/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-sm">
                             play_circle
@@ -248,8 +248,8 @@ export default function ActorFilmographyModal({
                           disabled={isRequested}
                           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
                             isRequested
-                              ? "bg-white/10 border-white/20 text-white/60 cursor-default"
-                              : "bg-white/5 hover:bg-primary/20 text-primary border-primary/30 hover:border-primary"
+                              ? "bg-slate-100 dark:bg-white/10 border-slate-200 dark:border-white/20 text-slate-500 dark:text-white/60 cursor-default"
+                              : "bg-white dark:bg-white/5 hover:bg-primary/15 dark:hover:bg-primary/20 text-primary border-primary/30 hover:border-primary"
                           }`}
                         >
                           <span className="material-symbols-outlined text-sm">

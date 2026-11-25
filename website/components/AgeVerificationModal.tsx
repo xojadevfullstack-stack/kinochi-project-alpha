@@ -71,23 +71,23 @@ export default function AgeVerificationModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="relative w-full max-w-md bg-surface-container-high/95 border border-red-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-red-950/50 text-center flex flex-col items-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/55 dark:bg-black/85 backdrop-blur-xl animate-in fade-in duration-300">
+      <div className="relative w-full max-w-md bg-white/95 dark:bg-[#12141D]/95 border border-slate-200 dark:border-red-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-slate-900/20 dark:shadow-red-950/50 text-center flex flex-col items-center">
         {/* Glow decoration */}
-        <div className="absolute -top-12 w-28 h-28 bg-red-600/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute -top-12 w-28 h-28 bg-red-500/15 dark:bg-red-600/20 rounded-full blur-2xl pointer-events-none"></div>
 
         {/* 18+ Icon */}
-        <div className="w-16 h-16 rounded-full bg-red-600/20 border-2 border-red-500/40 flex items-center justify-center mb-5 shadow-lg shadow-red-600/30 animate-pulse">
-          <span className="text-3xl font-black text-red-400">🔞</span>
+        <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-600/20 border-2 border-red-200 dark:border-red-500/40 flex items-center justify-center mb-5 shadow-lg shadow-red-500/10 dark:shadow-red-600/30 animate-pulse">
+          <span className="text-3xl font-black text-red-600 dark:text-red-400">🔞</span>
         </div>
 
         {/* Title */}
-        <h2 className="font-display text-xl sm:text-2xl font-bold text-white mb-2 tracking-tight">
+        <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
           18+ Yosh chegarasi
         </h2>
 
         {/* Subtitle / Notice */}
-        <p className="text-text-secondary text-sm leading-relaxed mb-6">
+        <p className="text-slate-600 dark:text-text-secondary text-sm leading-relaxed mb-6">
           Ushbu film/serial faqat <b>18 yoshdan katta</b> foydalanuvchilar uchun mo&apos;ljallangan (hozir profilingizda 18+ filtri yopiq).
           Tasdiqlasangiz sozlama yoqiladi va keyingi safar qayta so&apos;ramaydi.
         </p>
@@ -97,7 +97,7 @@ export default function AgeVerificationModal({
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-lg shadow-red-600/40 flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 bg-[#E50914] hover:bg-[#B80710] active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-lg shadow-[#E50914]/30 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">check_circle</span>
             <span>Ha, 18 yoshdaman (Yoqish)</span>
@@ -106,7 +106,7 @@ export default function AgeVerificationModal({
           <button
             type="button"
             onClick={handleDecline}
-            className="flex-1 bg-white/10 hover:bg-white/15 active:scale-95 text-white/80 hover:text-white font-medium py-3.5 px-4 rounded-xl text-sm border border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 active:scale-95 text-slate-800 dark:text-white/85 dark:hover:text-white font-medium py-3.5 px-4 rounded-xl text-sm border border-slate-200 dark:border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
             <span>Ortga qaytish</span>

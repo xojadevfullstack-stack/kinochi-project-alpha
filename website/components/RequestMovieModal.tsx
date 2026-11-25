@@ -107,15 +107,15 @@ export default function RequestMovieModal({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/55 dark:bg-black/80 backdrop-blur-md animate-fade-in">
       <div 
-        className="relative w-full max-w-lg bg-surface-container border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-6 text-text-primary"
+        className="relative w-full max-w-lg bg-white/95 dark:bg-[#12141D] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden p-6 text-slate-900 dark:text-text-primary"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-text-secondary hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-text-secondary dark:hover:text-white p-2 rounded-full dark:hover:bg-white/10 transition-colors cursor-pointer"
           title="Yopish"
         >
           <span className="material-symbols-outlined text-[20px]">close</span>
@@ -123,16 +123,16 @@ export default function RequestMovieModal({
 
         {successInfo ? (
           <div className="text-center py-6">
-            <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200 dark:border-emerald-500/30">
               <span className="material-symbols-outlined text-3xl">check_circle</span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">So&apos;rov qabul qilindi!</h3>
-            <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">So&apos;rov qabul qilindi!</h3>
+            <p className="text-sm text-slate-600 dark:text-text-secondary mb-6 leading-relaxed">
               {successInfo}
             </p>
             <button
               onClick={onClose}
-              className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-inverse-primary transition-all shadow-lg text-sm"
+              className="px-6 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-inverse-primary transition-all shadow-lg text-sm cursor-pointer"
             >
               Tushundim, rahmat!
             </button>
@@ -145,8 +145,8 @@ export default function RequestMovieModal({
             </div>
 
             {/* Media Preview Card */}
-            <div className="flex gap-4 p-3.5 bg-white/5 rounded-xl border border-white/10 mb-5">
-              <div className="relative w-16 h-24 rounded-lg overflow-hidden shrink-0 bg-white/10">
+            <div className="flex gap-4 p-3.5 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 mb-5">
+              <div className="relative w-16 h-24 rounded-lg overflow-hidden shrink-0 bg-slate-200 dark:bg-white/10">
                 {item.poster_url ? (
                   <Image
                     src={item.poster_url}
@@ -156,7 +156,7 @@ export default function RequestMovieModal({
                     className="object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary">
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-text-secondary">
                     <span className="material-symbols-outlined">movie</span>
                   </div>
                 )}
@@ -164,24 +164,24 @@ export default function RequestMovieModal({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-[#E50914]/20 text-red-400 rounded text-[10px] font-bold uppercase">
+                  <span className="px-2 py-0.5 bg-red-50 dark:bg-[#E50914]/20 text-red-700 dark:text-red-400 rounded text-[10px] font-bold uppercase">
                     {item.media_type === "series" ? "Serial" : "Kino"}
                   </span>
                   {item.release_year && (
-                    <span className="text-xs text-text-secondary">{item.release_year}</span>
+                    <span className="text-xs text-slate-500 dark:text-text-secondary">{item.release_year}</span>
                   )}
                   {item.vote_average ? (
-                    <span className="text-xs text-rating-gold font-bold flex items-center gap-0.5">
+                    <span className="text-xs text-amber-600 dark:text-rating-gold font-bold flex items-center gap-0.5">
                       ★ {item.vote_average.toFixed(1)}
                     </span>
                   ) : null}
                 </div>
-                <h4 className="font-bold text-base text-white truncate">{item.title}</h4>
+                <h4 className="font-bold text-base text-slate-900 dark:text-white truncate">{item.title}</h4>
                 {item.original_title && (
-                  <p className="text-xs text-text-secondary truncate">{item.original_title}</p>
+                  <p className="text-xs text-slate-500 dark:text-text-secondary truncate">{item.original_title}</p>
                 )}
                 {item.overview && (
-                  <p className="text-xs text-text-secondary line-clamp-2 mt-1 opacity-80">
+                  <p className="text-xs text-slate-600 dark:text-text-secondary line-clamp-2 mt-1 opacity-90">
                     {item.overview}
                   </p>
                 )}
@@ -190,14 +190,14 @@ export default function RequestMovieModal({
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+              <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-xs">
                 {errorMsg}
               </div>
             )}
 
             {/* Preferred Language */}
             <div className="mb-4">
-              <label className="block text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-600 dark:text-text-secondary mb-2 uppercase tracking-wider">
                 Qaysi tilda kutmoqdasiz?
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -211,14 +211,14 @@ export default function RequestMovieModal({
                     key={opt.id}
                     type="button"
                     onClick={() => setPreferredLang(opt.id)}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       preferredLang === opt.id
-                        ? "bg-primary/20 border-primary text-white shadow-sm"
-                        : "bg-white/5 border-white/10 text-text-secondary hover:bg-white/10"
+                        ? "bg-red-50 dark:bg-primary/20 border-primary text-slate-900 dark:text-white shadow-sm"
+                        : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-text-secondary hover:bg-slate-100 dark:hover:bg-white/10"
                     }`}
                   >
-                    <div className="font-semibold text-xs text-white">{opt.label}</div>
-                    <div className="text-[10px] text-text-secondary">{opt.desc}</div>
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white">{opt.label}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-text-secondary">{opt.desc}</div>
                   </button>
                 ))}
               </div>
@@ -226,10 +226,10 @@ export default function RequestMovieModal({
 
             {/* Optional Contact info */}
             <div className="mb-6">
-              <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-600 dark:text-text-secondary mb-1 uppercase tracking-wider">
                 Telegram @username yoki Telefon raqam (Ixtiyoriy)
               </label>
-              <p className="text-[11px] text-text-secondary/80 mb-2">
+              <p className="text-[11px] text-slate-500 dark:text-text-secondary/80 mb-2">
                 Kino joylanganda sizga birinchi bo&apos;lib xabar yuborishimiz uchun
               </p>
               <input
@@ -237,7 +237,7 @@ export default function RequestMovieModal({
                 value={userContact}
                 onChange={(e) => setUserContact(e.target.value)}
                 placeholder="@username yoki +998 90 123 45 67"
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-text-primary text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                className="w-full px-4 py-2.5 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl text-slate-900 dark:text-text-primary text-sm focus:outline-none focus:border-primary/50 transition-colors"
               />
             </div>
 
@@ -247,7 +247,7 @@ export default function RequestMovieModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-white/10 text-text-secondary hover:text-white hover:bg-white/5 transition-colors text-sm font-semibold"
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-text-secondary dark:hover:text-white dark:hover:bg-white/5 transition-colors text-sm font-semibold cursor-pointer"
               >
                 Bekor qilish
               </button>

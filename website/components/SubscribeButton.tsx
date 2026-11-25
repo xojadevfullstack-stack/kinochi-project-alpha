@@ -135,7 +135,7 @@ export default function SubscribeButton({
 
       {/* Floating Feedback Toast */}
       {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl bg-neutral-900 border border-white/20 text-white text-xs sm:text-sm font-medium shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="preserve-white fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl bg-slate-900 dark:bg-neutral-900 border border-slate-700 dark:border-white/20 text-white text-xs sm:text-sm font-medium shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
           <span className="material-symbols-outlined text-primary text-lg">info</span>
           <span>{toastMessage}</span>
         </div>
@@ -143,24 +143,24 @@ export default function SubscribeButton({
 
       {/* Login Prompt Modal for Guests */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface-container-high border border-white/15 rounded-2xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-slate-900/55 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white/95 dark:bg-[#12141D] border border-slate-200 dark:border-white/15 rounded-2xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl relative">
             <button
               onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 text-text-secondary hover:text-white p-1 rounded-lg hover:bg-white/10"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-text-secondary dark:hover:text-white p-1 rounded-lg dark:hover:bg-white/10 cursor-pointer"
             >
               <span className="material-symbols-outlined text-xl">close</span>
             </button>
 
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-red-50 dark:bg-red-600/20 border border-red-200 dark:border-red-500/30 flex items-center justify-center text-red-600 dark:text-red-400">
               <span className="material-symbols-outlined text-3xl">notifications_active</span>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {title ? `"${title}" yangilanishlariga obuna bo'lish` : "Yangi qismlarga obuna bo'ling"}
               </h3>
-              <p className="text-xs text-text-secondary leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-text-secondary leading-relaxed">
                 Yangi qism chiqqanda Telegram botingizga video va xabar darhol yetib borishi uchun
                 tizimga kiring yoki bot orqali 1-bosqichda obuna bo'ling.
               </p>
@@ -179,8 +179,8 @@ export default function SubscribeButton({
                 <span>Telegram Bot orqali obuna bo'lish</span>
               </a>
 
-              <div className="pt-2 border-t border-white/10">
-                <p className="text-[11px] text-text-secondary mb-2">Yoki saytdagi profilingizga kiring:</p>
+              <div className="pt-2 border-t border-slate-200 dark:border-white/10">
+                <p className="text-[11px] text-slate-500 dark:text-text-secondary mb-2">Yoki saytdagi profilingizga kiring:</p>
                 <div className="flex justify-center">
                   <TelegramLoginWidget />
                 </div>

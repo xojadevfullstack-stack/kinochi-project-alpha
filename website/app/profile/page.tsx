@@ -799,7 +799,7 @@ function ProfileContent() {
           )}
 
           {adultConfirmOpen && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/55 dark:bg-black/80 backdrop-blur-md">
               <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#12141D] border border-slate-200 dark:border-white/15 p-6 shadow-2xl text-center">
                 <div className="w-12 h-12 rounded-full bg-[#E50914]/15 border border-[#E50914]/35 flex items-center justify-center mx-auto mb-3 text-xl">
                   🔞
