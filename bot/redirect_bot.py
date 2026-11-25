@@ -7,7 +7,7 @@ import os
 import re
 from typing import Optional
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
@@ -52,12 +52,19 @@ def build_redirect_reply(
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def _is_private_message(message: Optional[Message]) -> bool:
+    chat_type = getattr(getattr(message, "chat", None), "type", None)
+    return not (isinstance(chat_type, str) and chat_type != "private")
+
+
 async def handle_legacy_start(
     message: Message,
     command: CommandObject,
     target_bot_username: str,
     channel_url: str = "",
 ) -> None:
+    if not _is_private_message(message):
+        return
     text, markup = build_redirect_reply(
         target_bot_username=target_bot_username,
         start_payload=getattr(command, "args", None),
@@ -71,6 +78,8 @@ async def handle_legacy_message(
     target_bot_username: str,
     channel_url: str = "",
 ) -> None:
+    if not _is_private_message(message):
+        return
     raw_text = getattr(message, "text", None)
     raw = raw_text.strip() if isinstance(raw_text, str) else ""
     payload = raw if raw and re.fullmatch(r"[A-Za-z0-9_-]{1,32}", raw) else None
@@ -87,9 +96,10 @@ async def handle_legacy_callback(
     target_bot_username: str,
     channel_url: str = "",
 ) -> None:
+    if not callback.message or not _is_private_message(callback.message):
+        return
     text, markup = build_redirect_reply(target_bot_username=target_bot_username, channel_url=channel_url)
-    if callback.message:
-        await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
+    await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     await callback.answer()
 
 
@@ -97,15 +107,15 @@ def create_redirect_dispatcher(target_bot_username: str, channel_url: str = "") 
     """Create minimal aiogram Dispatcher for the legacy redirect-only bot."""
     dp = Dispatcher()
 
-    @dp.message(CommandStart())
+    @dp.message(CommandStart(), F.chat.type == "private")
     async def _on_start(message: Message, command: CommandObject):
         await handle_legacy_start(message, command, target_bot_username, channel_url)
 
-    @dp.message()
+    @dp.message(F.chat.type == "private")
     async def _on_message(message: Message):
         await handle_legacy_message(message, target_bot_username, channel_url)
 
-    @dp.callback_query()
+    @dp.callback_query(F.message.chat.type == "private")
     async def _on_callback(callback: CallbackQuery):
         await handle_legacy_callback(callback, target_bot_username, channel_url)
 

@@ -65,6 +65,38 @@ async def test_redirect_handlers_reply_with_new_bot_link_for_start_text_and_call
 
 
 @pytest.mark.asyncio
+async def test_redirect_handlers_ignore_groups_supergroups_and_channels():
+    from redirect_bot import (
+        create_redirect_dispatcher,
+        handle_legacy_callback,
+        handle_legacy_message,
+        handle_legacy_start,
+    )
+
+    for chat_type in ("group", "supergroup", "channel"):
+        grp_msg = MagicMock()
+        grp_msg.chat = SimpleNamespace(type=chat_type, id=-100123456)
+        grp_msg.text = "Hello"
+        grp_msg.answer = AsyncMock()
+
+        await handle_legacy_start(grp_msg, SimpleNamespace(args="3956"), target_bot_username="@YangiKinoBot")
+        await handle_legacy_message(grp_msg, target_bot_username="@YangiKinoBot")
+        grp_msg.answer.assert_not_awaited()
+
+        cb = MagicMock()
+        cb.message = grp_msg
+        cb.answer = AsyncMock()
+        await handle_legacy_callback(cb, target_bot_username="@YangiKinoBot")
+        grp_msg.answer.assert_not_awaited()
+        cb.answer.assert_not_awaited()
+
+    dp = create_redirect_dispatcher(target_bot_username="@YangiKinoBot")
+    msg_handlers = dp.message.handlers
+    assert len(msg_handlers) == 2
+    assert all(len(h.filters) >= 1 for h in msg_handlers)
+
+
+@pytest.mark.asyncio
 async def test_supervised_run_redirect_bot_noops_when_legacy_token_empty(monkeypatch):
     from config import settings
     from redirect_bot import supervised_run_redirect_bot
