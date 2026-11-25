@@ -139,4 +139,9 @@
 - Concept: **Presigned CDN Upload + Account/Profile Auto-Resolution (`/v1/accounts`)** — Auditdan o'tmagan TikTok ilovasi videoni `inbox` ga tashlasa, auditdan o'tgan partner API (`Zernio`) ga `/v1/media/presign` bilan `.mp4` yuklab, foydalanuvchi `profileId` bergan bo'lsa ham `platform == "tiktok"` ning haqiqiy `_id` sini topib `Direct Post` yuborish qo'lda tasdiqlashni yo'qotadi.
 - Analogy: Yangi kuryer ombor darvozasidan kiritilmaganda, akkreditatsiyadan o'tgan bosh kuryer xizmatiga posilkani topshirib, uning bo'lim ID sini ro'yxatdan o'zi topib oladigan qilib qo'yish.
 
+## Quota-Safe FULL_AUTO Catalog Auto-Pick (`UTC+5`)
+- Concept: **Buffered Single-Clip Queue + Daily/Monthly Free-Tier Ceiling (`TASHKENT_TZ`)** — `auto_pick_from_catalog` bilan SMM navbati bo'shaganda faqat `1` ta klip kesib tayyorlab qo'yish hamda jadval soatlarini `UTC+5` da kuniga `3` ta / oyiga `90` ta (`SMM_MONTHLY_LIMIT`) ga cheklash `512MB` RAM crashini va `Make.com 1,000 op/oy` limiti oshib ketishini to'xtatadi.
+- Analogy: Oshxonada `1,000` ta likopcha bo'lsa, kuniga `3` porsiyadan ortiq pishirmaslik va bitta porsiya stolga chiqmaguncha ikkinchisini qozonga solmaslik.
+
+
 

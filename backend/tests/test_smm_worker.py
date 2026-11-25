@@ -475,3 +475,95 @@ async def test_supervised_run_smm_worker_waits_startup_delay_before_first_tick(m
 
     assert events[0] == ("sleep", 25)
     assert events[1][0] == "cycle"
+
+
+def test_is_schedule_due_enforces_monthly_limit_and_tashkent_tz():
+    from datetime import timedelta
+
+    tashkent = timezone(timedelta(hours=5))
+    now_local = datetime(2026, 11, 26, 11, 15, tzinfo=tashkent)
+    # 06:05 UTC is 11:05 Tashkent (same local hour)
+    last_utc = datetime(2026, 11, 26, 6, 5, tzinfo=timezone.utc)
+    assert is_schedule_due(["11:00", "16:00"], now_local, last_published_at=last_utc, daily_count=0, daily_limit=3, monthly_count=10, monthly_limit=90) is False
+    # Monthly quota reached blocks publishing even when daily_count < daily_limit
+    assert is_schedule_due(["11:00", "16:00"], now_local, last_published_at=None, daily_count=0, daily_limit=3, monthly_count=90, monthly_limit=90) is False
+    # Allowed when under both daily and monthly limit
+    assert is_schedule_due(["11:00", "16:00"], now_local, last_published_at=None, daily_count=1, daily_limit=3, monthly_count=89, monthly_limit=90) is True
+
+
+@pytest.mark.asyncio
+async def test_auto_pick_catalog_movie_selects_unused_published_movie_with_storage(db_session):
+    from scraper.smm_worker import auto_pick_catalog_movie
+
+    m_draft = MovieModel(title="Draft Kino", code="DRF1", short_code="9001", publish_status="pending")
+    m_used = MovieModel(title="Eski Kesilgan", code="USD2", short_code="9002", publish_status="published")
+    m_fresh = MovieModel(title="Yangi Tanlov", code="FRSH3", short_code="9003", publish_status="published")
+    db_session.add_all([m_draft, m_used, m_fresh])
+    await db_session.flush()
+    db_session.add_all([
+        MovieTranslationModel(movie_id=m_draft.id, language="O'zbekcha", storage_channel_message_id=101),
+        MovieTranslationModel(movie_id=m_used.id, language="O'zbekcha", storage_channel_message_id=102),
+        MovieTranslationModel(movie_id=m_fresh.id, language="O'zbekcha", storage_channel_message_id=103),
+    ])
+    await db_session.merge(
+        SmmSettingsModel(id=1, mode="FULL_AUTO", daily_limit=3, auto_pick_from_catalog=True, enabled_platforms=["telegram"])
+    )
+    db_session.add(
+        SmmClipJobModel(media_type="movie", media_id=m_used.id, movie_code="9002", title="Eski Kesilgan", status="completed")
+    )
+    await db_session.commit()
+
+    picked_job = await auto_pick_catalog_movie(db_session)
+    assert picked_job is not None
+    assert picked_job.media_id == m_fresh.id
+    assert picked_job.movie_code == "9003"
+    assert picked_job.status == "generating"
+
+
+@pytest.mark.asyncio
+async def test_run_smm_worker_tick_triggers_auto_pick_and_respects_monthly_cap(db_session, tmp_path, monkeypatch):
+    from sqlalchemy import delete
+    from scraper import smm_worker
+
+    await db_session.execute(delete(SmmClipJobModel))
+    movie = MovieModel(title="Avto Film", code="AVT1", short_code="9101", publish_status="published")
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbekcha", storage_channel_message_id=202))
+    await db_session.merge(
+        SmmSettingsModel(
+            id=1,
+            mode="FULL_AUTO",
+            daily_limit=3,
+            schedule_hours=["11:00", "16:00", "21:00"],
+            auto_pick_from_catalog=True,
+            enabled_platforms=["telegram"],
+        )
+    )
+    await db_session.commit()
+
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=202))
+
+    monkeypatch.setenv("SMM_MONTHLY_LIMIT", "1")
+    # Seed 1 completed job in current month -> monthly cap reached -> no auto-pick or publish
+    db_session.add(
+        SmmClipJobModel(
+            media_type="movie",
+            media_id=None,
+            movie_code="OLD01",
+            title="Old Completed",
+            status="completed",
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+    await db_session.commit()
+    res_capped = await smm_worker.run_smm_worker_tick(db_session, tg_client=tg_client, storage_chat_id=-1001)
+    assert res_capped == {"generated": 0, "published": 0}
+
+    # Increase monthly limit -> auto_pick creates and generates Avto Film job
+    monkeypatch.setenv("SMM_MONTHLY_LIMIT", "90")
+    fake_clip = {"output_path": str(tmp_path / "clip.mp4"), "start_sec": 50.0, "duration_sec": 45.0}
+    with patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(return_value=fake_clip)):
+        res_ok = await smm_worker.run_smm_worker_tick(db_session, tg_client=tg_client, storage_chat_id=-1001)
+    assert res_ok["generated"] == 1

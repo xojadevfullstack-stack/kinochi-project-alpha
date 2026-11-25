@@ -4,10 +4,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models.movie import MovieModel
@@ -45,24 +45,75 @@ def get_smm_worker_state() -> dict[str, Any]:
     }
 
 
+TASHKENT_TZ = timezone(timedelta(hours=5))
+
+
 def is_schedule_due(
     schedule_hours: List[str],
     now: datetime,
     last_published_at: Optional[datetime],
     daily_count: int,
     daily_limit: int,
+    monthly_count: int = 0,
+    monthly_limit: int = 90,
 ) -> bool:
-    """Return True when daily quota remains and current HH:00 slot has not yet published."""
-    if daily_count >= daily_limit or not schedule_hours:
+    """Return True when daily/monthly quota remains and current HH:00 slot has not yet published."""
+    if daily_count >= daily_limit or monthly_count >= monthly_limit or not schedule_hours:
         return False
     cur_hhmm = now.strftime("%H:%M")
     cur_hour = now.strftime("%H:")
     slot_match = any(s == cur_hhmm or s.startswith(cur_hour) for s in schedule_hours)
     if not slot_match:
         return False
-    if last_published_at and last_published_at.strftime("%Y-%m-%d %H") == now.strftime("%Y-%m-%d %H"):
-        return False
+    if last_published_at:
+        last_cmp = (
+            last_published_at.astimezone(now.tzinfo)
+            if (now.tzinfo and last_published_at.tzinfo)
+            else last_published_at
+        )
+        if last_cmp.strftime("%Y-%m-%d %H") == now.strftime("%Y-%m-%d %H"):
+            return False
     return True
+
+
+async def auto_pick_catalog_movie(db: AsyncSession) -> Optional[SmmClipJobModel]:
+    """Select one newest published movie with Storage video that has no SMM job yet."""
+    used_ids = select(SmmClipJobModel.media_id).where(
+        SmmClipJobModel.media_type == "movie",
+        SmmClipJobModel.media_id.isnot(None),
+    )
+    used_codes = select(SmmClipJobModel.movie_code)
+    has_storage = exists(
+        select(MovieTranslationModel.id).where(
+            MovieTranslationModel.movie_id == MovieModel.id,
+            MovieTranslationModel.storage_channel_message_id.isnot(None),
+        )
+    )
+    stmt = (
+        select(MovieModel)
+        .where(
+            MovieModel.publish_status == "published",
+            has_storage,
+            MovieModel.id.notin_(used_ids),
+            func.coalesce(MovieModel.short_code, MovieModel.code).notin_(used_codes),
+            MovieModel.code.notin_(used_codes),
+        )
+        .order_by(MovieModel.id.desc())
+        .limit(1)
+    )
+    movie = (await db.execute(stmt)).scalar_one_or_none()
+    if not movie:
+        return None
+    pick_code = (getattr(movie, "short_code", None) or movie.code or "").strip()
+    if not pick_code:
+        return None
+    return await enqueue_smm_clip_job(
+        db=db,
+        movie_code=pick_code,
+        title=movie.title,
+        media_id=movie.id,
+        media_type="movie",
+    )
 
 
 async def enqueue_smm_clip_job(
@@ -354,6 +405,15 @@ async def run_smm_worker_tick(
     if not cfg:
         return {"generated": 0, "published": 0}
 
+    now_local = datetime.now(TASHKENT_TZ)
+    day_start_utc = now_local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+    month_start_utc = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+    monthly_limit = max(1, int(os.getenv("SMM_MONTHLY_LIMIT", "90")))
+    daily_limit = max(1, int(cfg.daily_limit or 3))
+
+    daily_cnt = (await db.execute(select(func.count()).select_from(SmmClipJobModel).where(SmmClipJobModel.status == "completed", SmmClipJobModel.updated_at >= day_start_utc))).scalar() or 0
+    monthly_cnt = (await db.execute(select(func.count()).select_from(SmmClipJobModel).where(SmmClipJobModel.status == "completed", SmmClipJobModel.updated_at >= month_start_utc))).scalar() or 0
+
     generated, published = 0, 0
     gen_job = (
         await db.execute(
@@ -363,6 +423,23 @@ async def run_smm_worker_tick(
             .limit(1)
         )
     ).scalar_one_or_none()
+    if (
+        not gen_job
+        and getattr(cfg, "auto_pick_from_catalog", False)
+        and int(daily_cnt) < daily_limit
+        and int(monthly_cnt) < monthly_limit
+        and tg_client
+        and storage_chat_id
+    ):
+        buffered = (
+            await db.execute(
+                select(func.count())
+                .select_from(SmmClipJobModel)
+                .where(SmmClipJobModel.status.in_(("waiting_approval", "scheduled", "publishing")))
+            )
+        ).scalar() or 0
+        if int(buffered) == 0:
+            gen_job = await auto_pick_catalog_movie(db)
     if gen_job and tg_client and storage_chat_id:
         updated_gen = await process_generating_job(db, gen_job, cfg, tg_client, storage_chat_id)
         if updated_gen.status != "failed":
@@ -370,11 +447,16 @@ async def run_smm_worker_tick(
 
     pub_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "publishing").limit(1))).scalar_one_or_none()
     if not pub_job and cfg.mode == "FULL_AUTO":
-        now = datetime.now(timezone.utc)
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        daily_cnt = (await db.execute(select(func.count()).select_from(SmmClipJobModel).where(SmmClipJobModel.status == "completed", SmmClipJobModel.updated_at >= today_start))).scalar() or 0
         last_pub = (await db.execute(select(func.max(SmmClipJobModel.updated_at)).where(SmmClipJobModel.status == "completed"))).scalar()
-        if is_schedule_due(cfg.schedule_hours, now, last_pub, int(daily_cnt), cfg.daily_limit):
+        if is_schedule_due(
+            cfg.schedule_hours,
+            now_local,
+            last_pub,
+            int(daily_cnt),
+            daily_limit,
+            monthly_count=int(monthly_cnt),
+            monthly_limit=monthly_limit,
+        ):
             pub_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "scheduled").order_by(SmmClipJobModel.id.asc()).limit(1))).scalar_one_or_none()
 
     if pub_job:
