@@ -1,6 +1,7 @@
 """API v1 — Telegram Auth endpoints (Widget & WebApp)."""
 import hmac
 import hashlib
+import os
 import time
 import logging
 from urllib.parse import parse_qsl
@@ -95,6 +96,22 @@ async def _upsert_telegram_user(
 
 
 # ── Endpoints ────────────────────────────────────────────────────
+def _resolve_social_links(bot_username: str) -> dict[str, str]:
+    """Resolve official MediaPlus bot, channel, and social URLs from env with verified defaults."""
+    return {
+        "telegram_bot": f"https://t.me/{bot_username}",
+        "telegram_channel": (
+            os.getenv("TELEGRAM_CHANNEL_URL") or os.getenv("REDIRECT_CHANNEL_URL") or "https://t.me/MediaPlusOfficial"
+        ).strip(),
+        "instagram": (os.getenv("INSTAGRAM_URL") or "https://www.instagram.com/mediaplusofficialbot/").strip(),
+        "youtube": (
+            os.getenv("YOUTUBE_CHANNEL_URL") or os.getenv("YOUTUBE_URL") or "https://www.youtube.com/@MediaPlusOfficialbot"
+        ).strip(),
+        "facebook": (os.getenv("FACEBOOK_URL") or "https://www.facebook.com/profile.php?id=1321205927744639").strip(),
+        "tiktok": (os.getenv("TIKTOK_URL") or "").strip(),
+    }
+
+
 @router.get("/public-config")
 async def get_public_config():
     """Public non-secret bot and feature config consumed by the web frontend."""
@@ -105,6 +122,7 @@ async def get_public_config():
         "bot_username": bot_username,
         "website_url": website_url,
         "stream_enabled": stream_enabled,
+        "social_links": _resolve_social_links(bot_username),
     }
 
 

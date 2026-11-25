@@ -213,3 +213,28 @@ async def test_public_config_returns_bot_username_and_stream_flag(monkeypatch):
         assert data["website_url"] == "https://kinochi-project-alpha.vercel.app"
         assert data["stream_enabled"] is False
 
+
+@pytest.mark.asyncio
+async def test_public_config_includes_social_links_with_env_overrides(monkeypatch):
+    monkeypatch.setattr(settings, "BOT_USERNAME", "@MediaPlusOfficialBot")
+    monkeypatch.delenv("TELEGRAM_CHANNEL_URL", raising=False)
+    monkeypatch.delenv("REDIRECT_CHANNEL_URL", raising=False)
+    monkeypatch.delenv("TIKTOK_URL", raising=False)
+    monkeypatch.setenv("YOUTUBE_CHANNEL_URL", "https://www.youtube.com/@CustomMediaPlus")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp = await ac.get("/api/v1/auth/public-config")
+    assert resp.status_code == 200
+    links = resp.json()["social_links"]
+    assert links["telegram_bot"] == "https://t.me/MediaPlusOfficialBot"
+    assert links["telegram_channel"] == "https://t.me/MediaPlusOfficial"
+    assert links["instagram"] == "https://www.instagram.com/mediaplusofficialbot/"
+    assert links["youtube"] == "https://www.youtube.com/@CustomMediaPlus"
+    assert links["facebook"] == "https://www.facebook.com/profile.php?id=1321205927744639"
+    assert links["tiktok"] == ""
+
+    monkeypatch.setenv("TIKTOK_URL", "https://www.tiktok.com/@mediaplusofficial")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        resp2 = await ac.get("/api/v1/auth/public-config")
+    assert resp2.json()["social_links"]["tiktok"] == "https://www.tiktok.com/@mediaplusofficial"
+
