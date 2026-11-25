@@ -691,10 +691,17 @@ def resolve_page_ids(item: Any, meta: Dict[str, Any]) -> List[int]:
 
 
 class TelethonModeratorPipeline:
-    def __init__(self, client: TelegramClient, duplicate_checker: DuplicateChecker, notify_user: Optional[int] = None):
+    def __init__(
+        self,
+        client: TelegramClient,
+        duplicate_checker: DuplicateChecker,
+        notify_user: Optional[int] = None,
+        copy_only: bool = False,
+    ):
         self.client = client
         self.dup_checker = duplicate_checker
         self.notify_user = notify_user
+        self.copy_only = copy_only
         self.qm = QueueManager()
         self._last_card_msg: Optional[Message] = None
         self._last_chosen_quality: Optional[str] = None
@@ -5688,6 +5695,10 @@ class TelethonModeratorPipeline:
                     return sent_msg
             except Exception as copy_err:
                 logger.info(f"Server-side nusxalab bo'lmadi ({copy_err}), yuklab yuklash usuli bajarilmoqda...")
+
+            if self.copy_only:
+                logger.warning("⛔ copy_only rejimi faol: server-side nusxalash bajarilmadi, lokal yuklash bekor qilindi.")
+                return None
 
             # Yuklab yuklash (himoyalangan botlar uchun MTProto yo'li)
             downloads_dir = os.path.join(BASE_DIR, "scraper", "downloads")

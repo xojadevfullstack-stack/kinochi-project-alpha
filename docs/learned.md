@@ -143,5 +143,9 @@
 - Concept: **Buffered Single-Clip Queue + Daily/Monthly Free-Tier Ceiling (`TASHKENT_TZ`)** — `auto_pick_from_catalog` bilan SMM navbati bo'shaganda faqat `1` ta klip kesib tayyorlab qo'yish hamda jadval soatlarini `UTC+5` da kuniga `3` ta / oyiga `90` ta (`SMM_MONTHLY_LIMIT`) ga cheklash `512MB` RAM crashini va `Make.com 1,000 op/oy` limiti oshib ketishini to'xtatadi.
 - Analogy: Oshxonada `1,000` ta likopcha bo'lsa, kuniga `3` porsiyadan ortiq pishirmaslik va bitta porsiya stolga chiqmaguncha ikkinchisini qozonga solmaslik.
 
+## Hybrid Forward-Only Worker (`copy_only=True`)
+- Concept: **Server-Side Forward Capability Splitting** — Render'ning `512 MB` RAM konteynerida faqat `send_file` orqali ko'chiriladigan manbalarni (`uzmovi`, `asilmedia`) `copy_only=True` va kunlik limit (`4/kun`) bilan yurgizib, `fast_download` talab qiladigan `kinochilar` manbasini lokal kompyuterga qoldirish serverni RAM portlashidan saqlaydi.
+- Analogy: Do'kondagi kichik kuryer faqat tayyor pochta qutilarini manzilga uzatib turadi, og'ir yuk mashinasini esa faqat ombor (noutbuk) yoqilganda ishlatiladi.
+
 
 

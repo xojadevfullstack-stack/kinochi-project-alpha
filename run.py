@@ -148,6 +148,20 @@ async def safe_run_redirect_bot():
             await asyncio.sleep(3600)
 
 
+async def safe_run_catalog_worker():
+    """Run Render-safe forward-only catalog worker while isolating startup/runtime faults."""
+    try:
+        from scraper.catalog_worker import supervised_run_catalog_worker
+
+        await supervised_run_catalog_worker()
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        raise
+    except Exception as exc:
+        logging.error(f"[SUPERVISOR] Catalog worker ishga tushmadi (asosiy Bot/API faol qoladi): {exc}", exc_info=True)
+        while True:
+            await asyncio.sleep(3600)
+
+
 # ── Main Entrypoint ──────────────────────────────────────────────
 async def main():
     setup_global_logging()
@@ -159,12 +173,13 @@ async def main():
     if "localhost" in backend_url or "127.0.0.1" in backend_url:
         os.environ["BACKEND_API_URL"] = f"http://127.0.0.1:{port}/api/v1"
     
-    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), safe_run_smm_worker(), safe_run_redirect_bot()) chaqirilmoqda")
+    logging.info("CHECKPOINT 2: asyncio.gather(run_api(), supervised_run_bot(), safe_run_smm_worker(), safe_run_redirect_bot(), safe_run_catalog_worker()) chaqirilmoqda")
     await asyncio.gather(
         run_api(),
         supervised_run_bot(),
         safe_run_smm_worker(),
         safe_run_redirect_bot(),
+        safe_run_catalog_worker(),
     )
 
 if __name__ == "__main__":
