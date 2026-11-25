@@ -121,3 +121,39 @@ def test_parse_scene_vision_response_clamps_dynamic_blur_boxes():
     res_wm = parse_scene_vision_response(raw_wm_false)
     assert res_wm["is_clean"] is True
     assert len(res_wm["blur_boxes"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_select_best_scene_start_uses_ffmpeg_frame_fallback_when_cv2_empty(tmp_path):
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "fallback_src.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=24:d=4",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=4",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    seen_frames = []
+
+    async def fake_vision(frames_b64, api_key=None):
+        seen_frames.append(list(frames_b64))
+        return {
+            "is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False,
+            "is_credits": False, "excitement_score": 7, "blur_boxes": [], "vision_used": True, "reason": "OK",
+        }
+
+    with (
+        patch("scraper.smm_scene_scorer._sample_window_visuals", return_value=(10.0, [])),
+        patch("scraper.smm_scene_scorer.check_frames_for_ads_or_nsfw", side_effect=fake_vision),
+    ):
+        res = await select_best_scene_start(str(src), clip_duration=2.0, check_vision=True)
+
+    assert res["vision_used"] is True
+    assert len(seen_frames) >= 1 and len(seen_frames[0]) >= 1

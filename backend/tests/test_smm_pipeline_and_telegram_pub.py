@@ -179,3 +179,31 @@ async def test_create_smart_smm_clip_emits_progress_callbacks(tmp_path):
 
     pcts = [p for p, _ in events]
     assert pcts == [15, 45, 70, 95]
+
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_avoids_legacy_dual_corner_blur_when_vision_enabled(tmp_path):
+    out_path = str(tmp_path / "no_dual.mp4")
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 1500.0
+
+    with (
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch(
+            "scraper.smm_pipeline.select_best_scene_start",
+            new=AsyncMock(return_value={"start_sec": 120.0, "has_ad_banner": False, "vision_used": False, "blur_boxes": []}),
+        ),
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path) as mock_render,
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="3957",
+            check_vision=True,
+        )
+
+    assert mock_render.call_args.kwargs["blur_boxes"] == []

@@ -70,7 +70,7 @@ async def create_smart_smm_clip(
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=score_meta["start_sec"])
 
         blur_ad = bool(score_meta.get("has_ad_banner", False))
-        ai_boxes = score_meta.get("blur_boxes") if score_meta.get("vision_used") else None
+        ai_boxes = list(score_meta.get("blur_boxes") or []) if check_vision else None
         low_ram = os.getenv("SMM_LOW_RAM", "true").strip().lower() in {"1", "true", "yes", "on"}
         await _emit_progress(progress_cb, 70, "9:16 vertikal klipp render qilinmoqda...")
         await asyncio.to_thread(

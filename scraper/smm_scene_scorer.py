@@ -127,6 +127,25 @@ def _sample_window_visuals(video_path: str, start_sec: float, duration_sec: floa
     return visual_score, frames_b64
 
 
+def _extract_frames_ffmpeg_b64(ffmpeg: str, video_path: str, start_sec: float, duration_sec: float) -> List[str]:
+    """Extract up to 2 JPEG frames via ffmpeg when OpenCV sparse seeking returns no frames."""
+    frames: List[str] = []
+    for offset_ratio in (0.25, 0.7):
+        ts = max(0.0, float(start_sec) + max(1.0, float(duration_sec)) * offset_ratio)
+        cmd = [
+            ffmpeg, "-y", "-ss", f"{ts:.2f}", "-i", video_path,
+            "-frames:v", "1", "-vf", "scale=640:-2", "-q:v", "4",
+            "-f", "image2pipe", "-vcodec", "mjpeg", "-",
+        ]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, timeout=15)
+            if proc.returncode == 0 and proc.stdout:
+                frames.append(base64.b64encode(proc.stdout).decode("utf-8"))
+        except Exception:
+            continue
+    return frames
+
+
 async def check_frames_for_ads_or_nsfw(frames_b64: List[str], api_key: Optional[str] = None) -> Dict[str, Any]:
     """Ask Gemini Vision to inspect safety AND locate any gambling/source watermarks with normalized boxes."""
     key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
@@ -140,7 +159,7 @@ async def check_frames_for_ads_or_nsfw(frames_b64: List[str], api_key: Optional[
     prompt = (
         "Inspect these movie frames for social media (Reels/Shorts) safety and watermark removal. "
         "1) Detect gambling/betting overlay ads (Mostbet, 1xBet, Melbet, Pin-Up, Linebet, banners), end credits, or 18+ nudity/gore. Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (small corner watermarks like ASILMEDIA.NET/UZMOVI can be blurred safely). "
-        "2) Find EVERY overlaid source logo/watermark (e.g. ASILMEDIA.NET, UZMOVI, Kinochilar, @channel) OR overlaid ad banner anywhere in the frame (top-left, top-right, bottom, etc.), and return normalized [0.0-1.0] bounding boxes {x, y, w, h, kind:'watermark'|'ad'} with generous padding around text/logo so it can be blurred cleanly. Ignore subtitles and normal movie objects. "
+        "2) Find ONLY overlaid source logos/watermarks (e.g. ASILMEDIA.NET, UZMOVI, Kinochilar, @channel) OR overlaid ad banners that are ACTUALLY visible in the frame, and return normalized [0.0-1.0] bounding boxes {x, y, w, h, kind:'watermark'|'ad'} with generous padding. Do NOT add blur_boxes for clean empty corners; return [] if none are visible. Ignore subtitles and normal movie objects. "
         'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "blur_boxes": [{"x": 0.0, "y": 0.0, "w": 0.2, "h": 0.1, "kind": "watermark"}], "reason": "short"}'
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
@@ -205,7 +224,10 @@ async def select_best_scene_start(
     for idx, cand in enumerate(candidates):
         if not check_vision:
             return {"start_sec": cand["start_sec"], "score": cand["score"], "mean_volume_db": cand["mean_volume_db"], "has_ad_banner": False, "blur_boxes": [], "vision_used": False, "reason": "Audio+Visual top score"}
-        v_res = await check_frames_for_ads_or_nsfw(cand["frames"], api_key=api_key)
+        frames = cand.get("frames") or []
+        if not frames:
+            frames = await asyncio.to_thread(_extract_frames_ffmpeg_b64, ffmpeg, video_path, cand["start_sec"], clip_duration)
+        v_res = await check_frames_for_ads_or_nsfw(frames, api_key=api_key)
         if idx == 0:
             top_v_res = v_res
         if v_res["is_clean"]:
