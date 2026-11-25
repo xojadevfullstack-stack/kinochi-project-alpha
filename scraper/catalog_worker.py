@@ -16,6 +16,13 @@ from scraper.telethon_moderator_pipeline import TelethonModeratorPipeline
 logger = logging.getLogger(__name__)
 FORWARD_ONLY_SOURCES: tuple[str, ...] = ("uzmovi", "asilmedia")
 TASHKENT_TZ = timezone(timedelta(hours=5))
+_WORKER_STATE: dict[str, Any] = {
+    "running": False,
+    "started_at": None,
+    "last_tick_at": None,
+    "last_error": None,
+    "last_result": None,
+}
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -34,6 +41,20 @@ def is_render_catalog_enabled() -> bool:
 def _resolve_catalog_session_string() -> str:
     """Resolve dedicated catalog Telethon string session without reusing SMM session."""
     return (os.getenv("CATALOG_TELEGRAM_STRING_SESSION") or os.getenv("TELEGRAM_STRING_SESSION") or "").strip()
+
+
+def get_catalog_worker_state() -> dict[str, Any]:
+    """Return non-secret Render forward-only catalog worker runtime diagnostics."""
+    cat_sess = _resolve_catalog_session_string()
+    smm_sess = os.getenv("SMM_TELEGRAM_STRING_SESSION", "").strip()
+    return {
+        "enabled": is_render_catalog_enabled(),
+        "has_catalog_session": bool(cat_sess),
+        "session_collision": bool(cat_sess and smm_sess and cat_sess == smm_sess),
+        "has_api_creds": os.getenv("TELEGRAM_API_ID", "").strip().isdigit() and bool(os.getenv("TELEGRAM_API_HASH", "").strip()),
+        "daily_limit": max(1, int(os.getenv("RENDER_CATALOG_DAILY_LIMIT", "4"))),
+        **dict(_WORKER_STATE),
+    }
 
 
 def _build_telethon_client() -> Any:
@@ -153,12 +174,26 @@ async def supervised_run_catalog_worker() -> None:
     interval = max(120, int(os.getenv("CATALOG_WORKER_INTERVAL_SEC", "3600")))
     default_delay = "50" if (os.getenv("RENDER_EXTERNAL_URL") or os.getenv("RENDER")) else "0"
     startup_delay = max(0, int(os.getenv("CATALOG_STARTUP_DELAY_SEC", default_delay)))
-    logger.info("Render catalog worker started: enabled=%s has_session=%s interval=%ss", is_render_catalog_enabled(), bool(_resolve_catalog_session_string()), interval)
+    _WORKER_STATE["running"] = True
+    _WORKER_STATE["started_at"] = datetime.now(timezone.utc).isoformat()
+    logger.info(
+        "Render catalog worker started: enabled=%s has_session=%s interval=%ss startup_delay=%ss",
+        is_render_catalog_enabled(),
+        bool(_resolve_catalog_session_string()),
+        interval,
+        startup_delay,
+    )
     if startup_delay:
         await asyncio.sleep(startup_delay)
     while True:
         try:
-            logger.info("Render catalog tick: %s", await run_catalog_worker_tick())
+            res = await run_catalog_worker_tick()
+            _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
+            _WORKER_STATE["last_result"] = res
+            _WORKER_STATE["last_error"] = None
+            logger.info("Render catalog tick: %s", res)
         except Exception as exc:
+            _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
+            _WORKER_STATE["last_error"] = str(exc)
             logger.exception("Render catalog worker tick failed: %s", exc)
         await asyncio.sleep(interval)

@@ -80,3 +80,10 @@ async def test_run_catalog_worker_tick_respects_daily_cap_sources_and_session_gu
     assert res_ok["source"] == "uzmovi"
     assert mock_cls.call_args.kwargs["copy_only"] is True
     fake_tg.disconnect.assert_awaited_once()
+
+    monkeypatch.setenv("RENDER_CATALOG_ENABLED", "true")
+    state = catalog_worker.get_catalog_worker_state()
+    assert state["enabled"] is True
+    assert state["has_catalog_session"] is True
+    assert state["session_collision"] is False
+    assert state["has_api_creds"] is True

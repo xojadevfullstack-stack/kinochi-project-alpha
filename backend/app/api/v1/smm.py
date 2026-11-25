@@ -131,6 +131,19 @@ def _get_worker_state_safe() -> dict:
         }
 
 
+def _get_catalog_worker_state_safe() -> dict:
+    try:
+        _ensure_repo_root_on_path()
+        from scraper.catalog_worker import get_catalog_worker_state
+        return get_catalog_worker_state()
+    except Exception as exc:
+        return {
+            "enabled": os.getenv("RENDER_CATALOG_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
+            "running": False,
+            "last_error": f"{type(exc).__name__}: {exc}",
+        }
+
+
 async def _bg_publish_job(job_id: int) -> None:
     """Run immediate non-blocking clip restore + multi-platform publish after HTTP response."""
     if os.getenv("APP_ENV") == "testing":
@@ -228,6 +241,7 @@ async def get_smm_progress(db: AsyncSession = Depends(get_db_session), _admin: d
             ],
         },
         "worker": _get_worker_state_safe(),
+        "catalog_worker": _get_catalog_worker_state_safe(),
     }
 
 
