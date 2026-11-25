@@ -41,7 +41,7 @@ export const DEFAULT_SOCIAL_LINKS: SocialLinks = {
   instagram: (process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/mediaplusofficialbot/").trim(),
   youtube: (process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://www.youtube.com/@MediaPlusOfficialbot").trim(),
   facebook: (process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/profile.php?id=1321205927744639").trim(),
-  tiktok: (process.env.NEXT_PUBLIC_TIKTOK_URL || "").trim(),
+  tiktok: (process.env.NEXT_PUBLIC_TIKTOK_URL || "https://www.tiktok.com/@mediaplusofficialbot").trim(),
 };
 
 export async function getPublicConfig(): Promise<PublicConfig> {

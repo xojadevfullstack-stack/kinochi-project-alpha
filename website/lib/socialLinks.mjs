@@ -15,7 +15,7 @@ export function buildSocialItems(botUsername = "MediaPlusOfficialBot", socialLin
 
   const specs = [
     { key: "telegram_bot", label: "Telegram Bot", href: botUrl },
-    { key: "telegram_channel", label: "Kanal", href: socialLinks?.telegram_channel },
+    { key: "telegram_channel", label: "Telegram Kanal", href: socialLinks?.telegram_channel },
     { key: "instagram", label: "Instagram", href: socialLinks?.instagram },
     { key: "youtube", label: "YouTube", href: socialLinks?.youtube },
     { key: "facebook", label: "Facebook", href: socialLinks?.facebook },

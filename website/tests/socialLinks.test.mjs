@@ -17,6 +17,7 @@ test("buildSocialItems returns verified links in consistent order and omits empt
   );
   assert.equal(items[0].href, "https://t.me/MediaPlusOfficialBot");
   assert.equal(items[1].href, "https://t.me/MediaPlusOfficial");
+  assert.equal(items[1].label, "Telegram Kanal");
 });
 
 test("buildSocialItems includes TikTok when configured and drops unsafe non-http schemes", () => {

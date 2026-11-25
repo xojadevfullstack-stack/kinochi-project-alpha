@@ -231,10 +231,10 @@ async def test_public_config_includes_social_links_with_env_overrides(monkeypatc
     assert links["instagram"] == "https://www.instagram.com/mediaplusofficialbot/"
     assert links["youtube"] == "https://www.youtube.com/@CustomMediaPlus"
     assert links["facebook"] == "https://www.facebook.com/profile.php?id=1321205927744639"
-    assert links["tiktok"] == ""
+    assert links["tiktok"] == "https://www.tiktok.com/@mediaplusofficialbot"
 
-    monkeypatch.setenv("TIKTOK_URL", "https://www.tiktok.com/@mediaplusofficial")
+    monkeypatch.setenv("TIKTOK_URL", "https://www.tiktok.com/@custom_override")
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp2 = await ac.get("/api/v1/auth/public-config")
-    assert resp2.json()["social_links"]["tiktok"] == "https://www.tiktok.com/@mediaplusofficial"
+    assert resp2.json()["social_links"]["tiktok"] == "https://www.tiktok.com/@custom_override"
 

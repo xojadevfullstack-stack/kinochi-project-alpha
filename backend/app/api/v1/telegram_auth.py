@@ -108,7 +108,7 @@ def _resolve_social_links(bot_username: str) -> dict[str, str]:
             os.getenv("YOUTUBE_CHANNEL_URL") or os.getenv("YOUTUBE_URL") or "https://www.youtube.com/@MediaPlusOfficialbot"
         ).strip(),
         "facebook": (os.getenv("FACEBOOK_URL") or "https://www.facebook.com/profile.php?id=1321205927744639").strip(),
-        "tiktok": (os.getenv("TIKTOK_URL") or "").strip(),
+        "tiktok": (os.getenv("TIKTOK_URL") or "https://www.tiktok.com/@mediaplusofficialbot").strip(),
     }
 
 
