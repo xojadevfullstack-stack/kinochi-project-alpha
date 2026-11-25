@@ -128,5 +128,10 @@
 - Analogy: Mehmonxonaning kirish eshigida turadigan yo'lko'rsatuvchini xodimlar ishlaydigan omborxona ichiga qo'yib qo'ysangiz, har safar quti olib kirilganda "Yangi manzilga ko'chdik!" deb xalaqit beraveradi.
 
 ## Style-Preserving Poster Edit + Vision OCR Gate
-- Concept: **Exact Source First (`manual_poster_url`) + Cloudflare `flux-2-klein` (`9b`/`4b`) + OCR Verification & Pillow Fallback** — Begona TMDb `textless` rasmi o'rniga asl poster ustida faqat sarlavhani o'girish barcha personaj va effektlarni saqlaydi; chiqqan rasmni Gemini Vision OCR dan o'tkazib imlo xato yoki safety (`code 3030`) blokida zaxira `OpenCV/Pillow` ga o'tish barqarorlikni kafolatlaydi.
-- Analogy: Kitob muqovasini qayta chizmasdan, asl rasmni skanerda nusxalab faqat nomini original harf uslubida o'zbekchaga o'zgartirish va matbaa xatosi yo'qligini lupa (`OCR`) bilan tekshirib chiqarish.
+- Concept: **Exact Source First (`manual_poster_url`) + Cloudflare `flux-2-klein` (`4b`/`9b`) + OCR Verification & Pillow Fallback** — `4b` model (~`26–43` neyron/rasm) birinchi bo'lib kunlik 10,000 bepul neyron ichida ~`150–230` tagacha posterni o'giradi, faqat OCR imlo xatosida `9b` (~`1,545` neyron) ga chiqadi.
+- Analogy: Kundalik muqovalarni arzon va tez bosadigan stanokda chiqarib, lupa (`OCR`) xato topsagina qimmat stanokka uzatish.
+
+## Anti-Calque Title Translation & Clean Fallback Cache
+- Concept: **Natural Cinema Prompt + Non-Poisoning Machine Fallback (`is_translated=False`)** — Tarjima modeliga inglizcha `en_title` va kalka taqiqini berish hamda Google Translate zaxira javobini `is_translated=False` deb belgilab `30` kunlik keshga yozmaslik `"Qochgan Yer"` kabi robot tarjimalarning donor o'zbekcha nomlarni buzishini to'xtatadi.
+- Analogy: Vaqtincha tilmoch adashib so'zma-so'z tarjima qilsa, uni lug'atga 1 oyga muhrlab qo'ymaslik — aksincha, kutubxonadagi tayyor to'g'ri o'zbekcha nomni asrab qolish.
+

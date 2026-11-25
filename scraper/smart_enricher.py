@@ -180,20 +180,26 @@ def pick_canonical_uzbek_title(
     is_translated: bool,
     tmdb_title: Optional[str] = None,
     tmdb_original: Optional[str] = None,
+    tmdb_en: Optional[str] = None,
 ) -> str:
-    """Keep verified Uzbek localized title when TMDb translation falls back untranslated."""
+    """Keep verified Uzbek localized title when AI translation fails or falls back to machine calque."""
     cur = (existing_title or "").strip()
     cand = (translated_title or "").strip()
     if not cand or len(cand) <= 1:
         return cur
     if is_translated:
         return cand
-    # Translation failed / returned raw fallback: preserve existing non-CJK/non-Cyrillic Uzbek title
+    # Translation failed or dropped to unverified GTX fallback: preserve clean Latin donor Uzbek title
     has_non_latin = any(
         ("\u0400" <= ch <= "\u04FF") or ("\u4E00" <= ch <= "\u9FFF")
         for ch in cur
     )
-    if cur and not has_non_latin and cand.lower() in {(tmdb_title or "").strip().lower(), (tmdb_original or "").strip().lower()}:
+    raw_foreign = {
+        (tmdb_title or "").strip().lower(),
+        (tmdb_original or "").strip().lower(),
+        (tmdb_en or "").strip().lower(),
+    }
+    if cur and not has_non_latin and cur.lower() not in raw_foreign:
         return cur
     return cand
 
@@ -1057,7 +1063,8 @@ async def enrich_movie_smart(
                         try:
                             canon_t, canon_ok = await translator_service.translate_title_to_uzbek(
                                 title=details.get("title") or clean_title,
-                                original_title=tmdb_orig_title
+                                original_title=tmdb_orig_title,
+                                en_title=details.get("title_en"),
                             )
                             picked_t = pick_canonical_uzbek_title(
                                 existing_title=metadata.get("title"),
@@ -1065,6 +1072,7 @@ async def enrich_movie_smart(
                                 is_translated=canon_ok,
                                 tmdb_title=details.get("title"),
                                 tmdb_original=tmdb_orig_title,
+                                tmdb_en=details.get("title_en"),
                             )
                             if picked_t:
                                 metadata["title"] = picked_t

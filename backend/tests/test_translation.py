@@ -137,3 +137,53 @@ async def test_tmdb_get_details_captures_en_title_even_when_original_title_is_cj
                 assert details is not None
                 assert details["original_title"] == "星河入梦"
                 assert details["title_en"] == "Per Aspera Ad Astra"
+
+
+@pytest.mark.asyncio
+async def test_translate_title_free_fallback_returns_untranslated_and_does_not_cache_30_days():
+    """Regression: machine GTX fallback must return ok=False and never poison 30-day Gemini cache."""
+    from unittest.mock import AsyncMock
+    from app.infrastructure.external import translator as tr_mod
+
+    assert len(tr_mod.GEMINI_MODELS) >= 4
+    service = TranslatorService(api_key="")
+    with (
+        patch("app.infrastructure.external.translator.get_cache", new=AsyncMock(return_value=None)),
+        patch("app.infrastructure.external.translator.set_cache", new=AsyncMock(return_value=True)) as mock_set,
+        patch.object(service, "_translate_via_free_fallbacks", new=AsyncMock(return_value="Qochgan Yer")),
+    ):
+        title, ok = await service.translate_title_to_uzbek(
+            "Блуждающая Земля",
+            original_title="流浪地球",
+            en_title="The Wandering Earth",
+        )
+    assert title == "Qochgan Yer"
+    assert ok is False
+    mock_set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_translate_title_prompt_includes_anti_calque_and_en_title():
+    from unittest.mock import AsyncMock
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "candidates": [{"content": {"parts": [{"text": "Azizam, bolani katta qilib qo'ydim"}]}}]
+    }
+    service = TranslatorService(api_key="mock_gemini_key")
+    with (
+        patch("app.infrastructure.external.translator.get_cache", new=AsyncMock(return_value=None)),
+        patch("app.infrastructure.external.translator.set_cache", new=AsyncMock(return_value=True)),
+        patch("httpx.AsyncClient.post", new=AsyncMock(return_value=mock_resp)) as mock_post,
+    ):
+        title, ok = await service.translate_title_to_uzbek(
+            "Дорогая, я увеличил ребёнка",
+            original_title="Honey, I Blew Up the Kid",
+            en_title="Honey, I Blew Up the Kid",
+        )
+    assert ok is True
+    assert title == "Azizam, bolani katta qilib qo'ydim"
+    prompt_sent = mock_post.await_args.kwargs["json"]["contents"][0]["parts"][0]["text"]
+    assert "kalka" in prompt_sent.lower()
+    assert "Honey, I Blew Up the Kid" in prompt_sent

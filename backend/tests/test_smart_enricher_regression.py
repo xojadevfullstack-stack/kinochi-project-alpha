@@ -167,3 +167,16 @@ def test_pick_canonical_uzbek_title_preserves_uzbek_when_translation_fails():
         )
         == "O'rgimchak odam"
     )
+    # When Gemini failed and machine GTX fallback returned a calque (is_translated=False),
+    # keep existing clean Uzbek donor title instead of overwriting with calque
+    assert (
+        pick_canonical_uzbek_title(
+            existing_title="Darbadar Yer",
+            translated_title="Qochgan Yer",
+            is_translated=False,
+            tmdb_title="Блуждающая Земля",
+            tmdb_original="流浪地球",
+            tmdb_en="The Wandering Earth",
+        )
+        == "Darbadar Yer"
+    )

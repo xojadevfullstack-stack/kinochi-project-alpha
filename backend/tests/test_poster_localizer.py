@@ -323,3 +323,49 @@ async def test_edit_poster_with_cloudflare_retries_4b_on_ocr_fail_and_falls_back
             style={"placement": "bottom", "style_brief": "chrome"},
         )
     assert out_none is None
+
+
+@pytest.mark.asyncio
+async def test_edit_poster_with_cloudflare_prefers_4b_first_and_stops_on_429():
+    import base64
+    from unittest.mock import MagicMock
+    from app.infrastructure.external import poster_localizer
+
+    assert poster_localizer._CF_IMAGE_EDIT_MODELS[0].endswith("flux-2-klein-4b")
+    assert poster_localizer._CF_IMAGE_EDIT_MODELS[1].endswith("flux-2-klein-9b")
+
+    orig_bytes = _make_sample_jpeg(500, 750)
+    png_b64 = base64.b64encode(_make_sample_jpeg(512, 768)).decode("ascii")
+    resp_ok = MagicMock(status_code=200, headers={"content-type": "application/json"})
+    resp_ok.json.return_value = {"result": {"image": png_b64}}
+    resp_429 = MagicMock(status_code=429, headers={"content-type": "application/json"}, text='{"code":4006}')
+
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok"),
+        patch("httpx.AsyncClient.post", new=AsyncMock(return_value=resp_ok)) as mock_post,
+        patch.object(poster_localizer, "verify_localized_poster_ocr", new=AsyncMock(return_value=True)),
+    ):
+        out = await poster_localizer.edit_poster_with_cloudflare(
+            orig_bytes,
+            title="Qochgan Yer",
+            style={"placement": "bottom", "style_brief": "flat white condensed"},
+        )
+    assert out is not None
+    assert mock_post.await_count == 1
+    assert mock_post.await_args.args[0].endswith("flux-2-klein-4b")
+    assert "Exact word count: 2" in mock_post.await_args.kwargs["data"]["prompt"]
+
+    # 429 daily quota exhausted stops immediately without burning a second call on 9b
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok"),
+        patch("httpx.AsyncClient.post", new=AsyncMock(return_value=resp_429)) as mock_post_429,
+    ):
+        out_429 = await poster_localizer.edit_poster_with_cloudflare(
+            orig_bytes,
+            title="Shogun",
+            style={"placement": "bottom"},
+        )
+    assert out_429 is None
+    assert mock_post_429.await_count == 1

@@ -44,8 +44,8 @@ _GEMINI_VISION_MODELS = (
     "gemini-3.5-flash",
 )
 _CF_IMAGE_EDIT_MODELS = (
-    "@cf/black-forest-labs/flux-2-klein-9b",
     "@cf/black-forest-labs/flux-2-klein-4b",
+    "@cf/black-forest-labs/flux-2-klein-9b",
 )
 
 
@@ -211,13 +211,15 @@ async def edit_poster_with_cloudflare(
 
     cfg = style or {}
     upper_title = title.upper().strip()
+    words = [w for w in upper_title.split() if w]
+    word_count = len(words)
     brief = cfg.get("style_brief") or f"{cfg.get('placement', 'bottom')} title in {cfg.get('primary_color', '#FFFFFF')}"
     prompt = (
         f'Edit movie poster image_0 to localize ONLY the main title into Uzbek: "{upper_title}". '
         "Keep ALL characters, faces, poses, outfits, background, lighting and effects 100% IDENTICAL. "
         "Remove the ENTIRE original main title block (all English/foreign title lines and prefixes) cleanly. "
         f'Match this exact original typography style ({brief}): keep original flat matte or 3D bevel style without inventing mismatched colors or extra 3D chrome. '
-        f'Render "{upper_title}" ONCE only with exact spelling.'
+        f'Exact word count: {word_count}. Spell EVERY letter accurately: "{upper_title}". No extra letters, no missing letters, no duplicated words.'
     )
     gen_w = 512 if orig_h >= orig_w else 768
     gen_h = 768 if orig_h >= orig_w else 512
@@ -233,6 +235,9 @@ async def edit_poster_with_cloudflare(
                     files={"input_image_0": ("poster.png", small_png, "image/png")},
                     data={"prompt": prompt, "width": str(gen_w), "height": str(gen_h)},
                 )
+                if resp.status_code == 429:
+                    logger.warning("Cloudflare %s quota exhausted (429); falling back to Pillow", model)
+                    break
                 if resp.status_code != 200:
                     logger.info("Cloudflare %s HTTP %s", model, resp.status_code)
                     continue

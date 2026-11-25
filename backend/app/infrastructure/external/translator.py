@@ -92,7 +92,10 @@ def clean_translated_title_output(raw_text: str, fallback: str = "") -> str:
 
 GEMINI_MODELS = [
     "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
     "gemini-flash-latest",
+    "gemini-3.5-flash",
 ]
 
 
@@ -201,15 +204,18 @@ class TranslatorService:
         # 2. Try Gemini API
         if self.api_key:
             prompt = (
-                "Quyidagi film yoki serial sarlavhasini (nomini) o'zbek tiliga (lotin alifbosida) eng to'g'ri va o'zbek tomoshabinlariga tanish tarzda tarjima qil.\n"
+                "Quyidagi film yoki serial sarlavhasini (nomini) o'zbek tiliga (lotin alifbosida) eng to'g'ri, adabiy va o'zbek tomoshabinlariga tanish tarzda tarjima qil.\n"
                 "Qoidalar:\n"
-                "1. Agar film/serial O'zbekistonda tarjima kinolarda ma'lum bir o'zbekcha nom bilan mashhur bo'lsa "
+                "1. Agar film/serial O'zbekistonda ma'lum bir o'zbekcha nom bilan mashhur bo'lsa "
                 "(masalan: 'Один дома' -> 'Uyda yolg'iz', 'Истребитель демонов' -> 'Iblislar qotili', "
                 "'Человек-паук' -> 'O'rgimchak odam', 'Побег из Шоушенка' -> 'Shoushenkdan qochish'), aynan o'sha o'zbekcha nomini qaytar.\n"
-                "2. Agar bu xos ism, brend yoki xalqaro nom bo'lsa va tarjima qilinmasa "
-                "(masalan: 'Avatar', 'Batman', 'Interstellar', 'Naruto', 'Oppenheimer'), uni to'g'ri lotincha shaklda qoldir.\n"
-                "3. Faqat lotin yozuvida bo'lsin (kirill yozuvi bo'lmasin).\n"
-                "4. Hech qanday tirnoq (\", '), nuqta yoki ortiqcha tushuntirish yozma. FAQAT bitta nomning o'zini qaytar:\n\n"
+                "2. So'zma-so'z robot kalka tarjima qilma! Ma'nosiga qarab tabiiy o'zbekcha nom tuz "
+                "(masalan: 'Дорогая, я увеличил ребёнка' / 'Honey, I Blew Up the Kid' -> 'Azizam, bolani katta qilib qo'ydim' ['kattalashtirdim' emas]; "
+                "'Блуждающая Земля' / 'The Wandering Earth' -> 'Darbadar Yer' ['Qochgan Yer' emas]; "
+                "'То, что внутри' / 'It's What's Inside' -> 'Ichimizdagi sir').\n"
+                "3. Agar bu xos ism, brend yoki xalqaro nom bo'lsa (masalan: 'Avatar', 'Batman', 'Interstellar', 'Naruto', 'Oppenheimer', 'Vox Lux'), uni to'g'ri lotincha shaklda qoldir.\n"
+                "4. Faqat lotin yozuvida bo'lsin (kirill yozuvi mutlaqo bo'lmasin).\n"
+                "5. Hech qanday tirnoq, nuqta yoki ortiqcha izoh yozma. FAQAT bitta nomning o'zini qaytar:\n\n"
                 f"Nomi: {target_title}\n"
                 f"{f'Inglizcha nomi: {clean_en}' if clean_en and clean_en != target_title else ''}\n"
                 f"{f'Original nomi: {clean_orig}' if clean_orig and clean_orig not in (target_title, clean_en) else ''}"
@@ -222,7 +228,7 @@ class TranslatorService:
             for model in GEMINI_MODELS:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
                 try:
-                    async with httpx.AsyncClient(timeout=6.0) as client:
+                    async with httpx.AsyncClient(timeout=10.0) as client:
                         resp = await client.post(url, json=payload)
                         if resp.status_code == 200:
                             data = resp.json()
@@ -242,15 +248,14 @@ class TranslatorService:
                 except Exception as e:
                     logger.warning(f"Gemini {model} title translation error: {e}")
 
-        # 3. Fallback: Free translators (GTX, clients5, MyMemory)
-        fallback_raw = await self._translate_via_free_fallbacks(target_title)
+        # 3. Fallback: Free translators (marked is_translated=False & NOT cached 30d so calques don't stick)
+        fallback_raw = await self._translate_via_free_fallbacks(clean_en or target_title)
         if fallback_raw:
             fb_text = fallback_raw.strip().strip('\'"`* .').strip()
             if fb_text:
                 if any("\u0400" <= c <= "\u04FF" for c in fb_text):
                     fb_text = cyrillic_to_latin(fb_text)
-                await set_cache(cache_key, fb_text, ttl_seconds=2592000)
-                return fb_text, True
+                return fb_text, False
 
         # 4. Safe fallback: prefer Latin/English title over CJK or untranslated Russian Cyrillic
         if latin_fallback:
@@ -295,7 +300,7 @@ class TranslatorService:
             for model in GEMINI_MODELS:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
                 try:
-                    async with httpx.AsyncClient(timeout=7.0) as client:
+                    async with httpx.AsyncClient(timeout=12.0) as client:
                         resp = await client.post(url, json=payload)
                         if resp.status_code == 200:
                             data = resp.json()
@@ -313,12 +318,12 @@ class TranslatorService:
                 except Exception as e:
                     logger.warning(f"Gemini {model} translation error: {e}")
 
-        # 3. Fallback: Free translators (GTX, clients5, MyMemory)
+        # 3. Fallback: Free translators (short 5-min cache so machine fallback never sticks for 30 days)
         fb_text = await self._translate_via_free_fallbacks(clean_text)
         if fb_text:
             if any("\u0400" <= c <= "\u04FF" for c in fb_text):
                 fb_text = cyrillic_to_latin(fb_text)
-            await set_cache(cache_key, fb_text, ttl_seconds=2592000)
+            await set_cache(cache_key, fb_text, ttl_seconds=300)
             return fb_text, True
 
         # 4. Only transliterate actual Uzbek Cyrillic; never turn Russian prose into fake Latin
