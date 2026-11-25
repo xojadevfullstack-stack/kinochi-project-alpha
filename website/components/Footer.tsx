@@ -1,10 +1,19 @@
 import Link from "next/link";
+import { SocialLinks } from "@/lib/api";
+import { buildSocialItems } from "@/lib/socialLinks.mjs";
+import { SocialIcon } from "@/components/SocialIcon";
 
-export default function Footer({ botUsername: propBotUsername }: { botUsername?: string } = {}) {
+export default function Footer({
+  botUsername: propBotUsername,
+  socialLinks,
+}: {
+  botUsername?: string;
+  socialLinks?: SocialLinks;
+} = {}) {
   const botUsername = (propBotUsername || process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot")
     .trim()
     .replace(/^@+/, "");
-  const channelUrl = process.env.NEXT_PUBLIC_CHANNEL_URL || "https://t.me/kinochilar_uz";
+  const socialItems = buildSocialItems(botUsername, socialLinks);
 
   return (
     <footer className="cv-auto w-full bg-white dark:bg-[#08090C] border-t border-slate-200 dark:border-white/10 pt-10 pb-28 xl:pb-10 mt-12">
@@ -26,25 +35,19 @@ export default function Footer({ botUsername: propBotUsername }: { botUsername?:
             <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed max-w-sm mb-4">
               O&apos;zbekistondagi eng yirik va qulay multimedia platformasi. Kinolar, seriallar, anime, doramalar va multfilmlar o&apos;zbek tilida, yuqori sifatda (Full HD/4K) va reklamasiz.
             </p>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <a
-                href={`https://t.me/${botUsername}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[15px]">send</span>
-                <span>Telegram Bot</span>
-              </a>
-              <a
-                href={channelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-social-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[15px]">campaign</span>
-                <span>Kanal</span>
-              </a>
+            <div className="flex flex-wrap items-center gap-2">
+              {socialItems.map((item) => (
+                <a
+                  key={item.key}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer-social-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer"
+                >
+                  <SocialIcon platform={item.key} size={15} />
+                  <span>{item.label}</span>
+                </a>
+              ))}
             </div>
           </div>
 

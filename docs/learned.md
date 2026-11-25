@@ -102,3 +102,7 @@
 ## Webhook Adapter Fallback for OAuth-Gated Platforms
 - Concept: **Webhook Bridge Pattern (`MAKE_WEBHOOK_URL`)** — Shaxsiy Meta App SMS/App Review blokiga tushganda to'g'ridan-to'g'ri Graph API o'rniga tasdiqlangan partner platforma webhook'iga ochiq `video_url` va `caption` JSON uzatish barcha platforma avtopost shartnomasini (`PublishResult`) saqlab qolgan holda ishlaydi.
 - Analogy: Pochta bo'limi o'z mashinangizni darvozadan kiritmay qo'yganda, posilkani akkreditatsiyadan o'tgan kuryer shoxobchasi orqali manzilga yetkazib berish.
+
+## Runtime Public-Config Social Aggregation
+- Concept: **Single-Source Public Config (`GET /api/v1/auth/public-config` + `buildSocialItems`)** — Barcha ijtimoiy tarmoq linklarini frontendda tarqoq qattiq yozish o'rniga backend `/public-config` va yagona sanitizatsiya funksiyasi orqali berib, faqat `https://` tasdiqlangan va bo'sh bo'lmagan tugmalarni render qilish 404/soxta linklarni oldini oladi.
+- Analogy: Barcha filiallardagi e'lon taxtalariga manzillarni qo'lda yopishtirmasdan, bosh ofisdagi bitta rasmiy ro'yxatdan olib faqat ochiq turgan filiallarni ko'rsatish.

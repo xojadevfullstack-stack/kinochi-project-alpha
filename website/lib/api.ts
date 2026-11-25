@@ -15,21 +15,41 @@ function resolveApiUrl(): string {
 export const API_URL = resolveApiUrl();
 import { getToken, clearToken } from "./auth/tokenStorage";
 
+export interface SocialLinks {
+  telegram_bot?: string;
+  telegram_channel?: string;
+  instagram?: string;
+  youtube?: string;
+  facebook?: string;
+  tiktok?: string;
+}
+
 export interface PublicConfig {
   bot_username: string;
   website_url: string;
   stream_enabled: boolean;
+  social_links?: SocialLinks;
 }
 
 const FALLBACK_BOT_USERNAME = (process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot")
   .trim()
   .replace(/^@+/, "");
 
+export const DEFAULT_SOCIAL_LINKS: SocialLinks = {
+  telegram_bot: `https://t.me/${FALLBACK_BOT_USERNAME}`,
+  telegram_channel: (process.env.NEXT_PUBLIC_CHANNEL_URL || "https://t.me/MediaPlusOfficial").trim(),
+  instagram: (process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/mediaplusofficialbot/").trim(),
+  youtube: (process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://www.youtube.com/@MediaPlusOfficialbot").trim(),
+  facebook: (process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/profile.php?id=1321205927744639").trim(),
+  tiktok: (process.env.NEXT_PUBLIC_TIKTOK_URL || "").trim(),
+};
+
 export async function getPublicConfig(): Promise<PublicConfig> {
   const fallback: PublicConfig = {
     bot_username: FALLBACK_BOT_USERNAME,
     website_url: "https://kinochi-project-alpha.vercel.app",
     stream_enabled: false,
+    social_links: DEFAULT_SOCIAL_LINKS,
   };
   try {
     const res = await fetch(`${API_URL}/auth/public-config`, {
@@ -38,10 +58,17 @@ export async function getPublicConfig(): Promise<PublicConfig> {
     if (!res.ok) return fallback;
     const data = await res.json();
     const rawBot = typeof data?.bot_username === "string" ? data.bot_username.trim().replace(/^@+/, "") : "";
+    const bot = rawBot || fallback.bot_username;
+    const remoteLinks = data?.social_links && typeof data.social_links === "object" ? data.social_links : {};
     return {
-      bot_username: rawBot || fallback.bot_username,
+      bot_username: bot,
       website_url: typeof data?.website_url === "string" && data.website_url ? data.website_url : fallback.website_url,
       stream_enabled: Boolean(data?.stream_enabled),
+      social_links: {
+        ...DEFAULT_SOCIAL_LINKS,
+        ...remoteLinks,
+        telegram_bot: `https://t.me/${bot}`,
+      },
     };
   } catch {
     return fallback;

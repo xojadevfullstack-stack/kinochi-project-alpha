@@ -6,10 +6,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../lib/auth/AuthProvider";
 import LiveSearch from "./LiveSearch";
 import ThemeToggle from "./ThemeToggle";
-import { fetchApi } from "../lib/api";
+import { fetchApi, SocialLinks } from "../lib/api";
+import { buildSocialItems } from "../lib/socialLinks.mjs";
+import { SocialIcon } from "./SocialIcon";
 import { useOverlayBackClose, suppressOverlayHistoryBack } from "@/lib/hooks/useOverlayBackClose";
 
-export default function Navbar({ pages = [] }: { pages: any[] }) {
+export default function Navbar({ pages = [], socialLinks }: { pages: any[]; socialLinks?: SocialLinks }) {
   const pathname = usePathname();
   const router = useRouter();
   const { status, user, botUsername } = useAuth();
@@ -443,6 +445,27 @@ export default function Navbar({ pages = [] }: { pages: any[] }) {
               <span>Qo&apos;llanma (Qanday ishlaydi?)</span>
             </button>
           )}
+          {(() => {
+            const sideLinks = buildSocialItems(botUsername, socialLinks).filter((s) => s.key !== "telegram_bot");
+            if (!sideLinks.length) return null;
+            return (
+              <div className="grid grid-cols-5 gap-1.5">
+                {sideLinks.map((item) => (
+                  <a
+                    key={item.key}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={item.label}
+                    aria-label={item.label}
+                    className="footer-social-btn h-8 rounded-xl flex items-center justify-center transition cursor-pointer"
+                  >
+                    <SocialIcon platform={item.key} size={15} />
+                  </a>
+                ))}
+              </div>
+            );
+          })()}
           <a
             href={`https://t.me/${botUsername}`}
             target="_blank"

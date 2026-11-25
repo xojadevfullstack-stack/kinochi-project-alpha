@@ -9,7 +9,7 @@ import Breadcrumb from "@/components/Breadcrumb";
 import { BreadcrumbProvider } from "@/components/BreadcrumbContext";
 import Footer from "@/components/Footer";
 import TelegramInit from "@/components/TelegramInit";
-import { fetchApi, getPublicConfig } from "@/lib/api";
+import { fetchApi, getPublicConfig, DEFAULT_SOCIAL_LINKS, PublicConfig } from "@/lib/api";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import TopRouteLoader from "@/components/TopRouteLoader";
 import Script from "next/script";
@@ -46,7 +46,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let pages: any[] = [];
-  let publicConfig = { bot_username: process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot", website_url: "https://kinochi-project-alpha.vercel.app", stream_enabled: false };
+  let publicConfig: PublicConfig = {
+    bot_username: process.env.NEXT_PUBLIC_BOT_USERNAME || "MediaPlusOfficialBot",
+    website_url: "https://kinochi-project-alpha.vercel.app",
+    stream_enabled: false,
+    social_links: DEFAULT_SOCIAL_LINKS,
+  };
   try {
     const [data, cfg] = await Promise.all([
       fetchApi("/pages/").catch(() => ({ items: [] })),
@@ -79,7 +84,7 @@ export default async function RootLayout({
           <BreadcrumbProvider>
             <TopRouteLoader />
             <TelegramInit />
-            <Navbar pages={pages} />
+            <Navbar pages={pages} socialLinks={publicConfig.social_links} />
 
             <main className="min-h-screen pb-20 xl:pb-0">
               <SubheaderTabs />
@@ -89,7 +94,7 @@ export default async function RootLayout({
             
             <BottomNav />
             <FloatingBackButton />
-            <Footer botUsername={publicConfig.bot_username} />
+            <Footer botUsername={publicConfig.bot_username} socialLinks={publicConfig.social_links} />
           </BreadcrumbProvider>
         </AuthProvider>
       </body>
