@@ -135,3 +135,8 @@
 - Concept: **Natural Cinema Prompt + Non-Poisoning Machine Fallback (`is_translated=False`)** — Tarjima modeliga inglizcha `en_title` va kalka taqiqini berish hamda Google Translate zaxira javobini `is_translated=False` deb belgilab `30` kunlik keshga yozmaslik `"Qochgan Yer"` kabi robot tarjimalarning donor o'zbekcha nomlarni buzishini to'xtatadi.
 - Analogy: Vaqtincha tilmoch adashib so'zma-so'z tarjima qilsa, uni lug'atga 1 oyga muhrlab qo'ymaslik — aksincha, kutubxonadagi tayyor to'g'ri o'zbekcha nomni asrab qolish.
 
+## Audited Partner Bridge for TikTok Direct Post (`Zernio`)
+- Concept: **Presigned CDN Upload + Account/Profile Auto-Resolution (`/v1/accounts`)** — Auditdan o'tmagan TikTok ilovasi videoni `inbox` ga tashlasa, auditdan o'tgan partner API (`Zernio`) ga `/v1/media/presign` bilan `.mp4` yuklab, foydalanuvchi `profileId` bergan bo'lsa ham `platform == "tiktok"` ning haqiqiy `_id` sini topib `Direct Post` yuborish qo'lda tasdiqlashni yo'qotadi.
+- Analogy: Yangi kuryer ombor darvozasidan kiritilmaganda, akkreditatsiyadan o'tgan bosh kuryer xizmatiga posilkani topshirib, uning bo'lim ID sini ro'yxatdan o'zi topib oladigan qilib qo'yish.
+
+

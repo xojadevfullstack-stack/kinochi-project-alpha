@@ -313,3 +313,83 @@ async def test_instagram_make_webhook_requires_video_url_and_reports_http_error(
         err_res = await pub.publish(str(vid), caption="Kod: #3956", movie_code="3956", video_url="https://api.example/clip.mp4")
     assert err_res.success is False
     assert "410" in (err_res.error or "")
+
+
+@pytest.mark.asyncio
+async def test_tiktok_publisher_uses_zernio_direct_post_with_presign_and_profile_id_resolution(tmp_path, monkeypatch):
+    monkeypatch.setenv("ZERNIO_API_KEY", "z_key_abc")
+    monkeypatch.setenv("ZERNIO_TIKTOK_ACCOUNT_ID", "prof_123")
+    monkeypatch.delenv("TIKTOK_ACCESS_TOKEN", raising=False)
+
+    vid = tmp_path / "tt_zernio.mp4"
+    vid.write_bytes(b"mp4-bytes")
+
+    r_accs = MagicMock(status_code=200)
+    r_accs.json.return_value = {
+        "accounts": [
+            {"_id": "tt_acc_real", "platform": "tiktok", "profileId": {"_id": "prof_123"}}
+        ]
+    }
+    r_presign = MagicMock(status_code=200)
+    r_presign.json.return_value = {"uploadUrl": "https://cdn.example/up", "publicUrl": "https://cdn.example/clip.mp4"}
+    r_put = MagicMock(status_code=200)
+    r_post = MagicMock(status_code=201)
+    r_post.json.return_value = {
+        "post": {
+            "_id": "z_post_1",
+            "status": "published",
+            "platforms": [{"platform": "tiktok", "status": "published", "platformPostUrl": "https://www.tiktok.com/@bot/video/123"}],
+        }
+    }
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.get = AsyncMock(return_value=r_accs)
+    client.post = AsyncMock(side_effect=[r_presign, r_post])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = TikTokPublisher()
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kino kodi #3957", movie_code="3957")
+
+    assert res.success is True
+    assert res.platform == "tiktok"
+    assert res.post_id == "z_post_1"
+    assert res.post_url == "https://www.tiktok.com/@bot/video/123"
+    post_payload = client.post.call_args_list[1].kwargs["json"]
+    assert post_payload["platforms"][0]["accountId"] == "tt_acc_real"
+    assert post_payload["mediaItems"][0]["url"] == "https://cdn.example/clip.mp4"
+    assert post_payload["tiktokSettings"]["privacyLevel"] == "PUBLIC_TO_EVERYONE"
+    assert post_payload["tiktokSettings"]["draft"] is False
+    assert post_payload["publishNow"] is True
+
+
+@pytest.mark.asyncio
+async def test_tiktok_publisher_reports_zernio_error_without_legacy_creds(tmp_path, monkeypatch):
+    monkeypatch.setenv("ZERNIO_API_KEY", "z_key_abc")
+    monkeypatch.setenv("ZERNIO_TIKTOK_ACCOUNT_ID", "tt_acc_real")
+    monkeypatch.delenv("TIKTOK_ACCESS_TOKEN", raising=False)
+    monkeypatch.delenv("TIKTOK_REFRESH_TOKEN", raising=False)
+
+    vid = tmp_path / "tt_err.mp4"
+    vid.write_bytes(b"mp4-bytes")
+
+    r_accs = MagicMock(status_code=200)
+    r_accs.json.return_value = {"accounts": [{"_id": "tt_acc_real", "platform": "tiktok"}]}
+    r_presign = MagicMock(status_code=200)
+    r_presign.json.return_value = {"uploadUrl": "https://cdn.example/up", "publicUrl": "https://cdn.example/clip.mp4"}
+    r_put = MagicMock(status_code=200)
+    r_post_err = MagicMock(status_code=400, text='{"error":"invalid privacy"}')
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.get = AsyncMock(return_value=r_accs)
+    client.post = AsyncMock(side_effect=[r_presign, r_post_err])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = TikTokPublisher()
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(str(vid), caption="Kod: #889", movie_code="889")
+
+    assert res.success is False
+    assert "Zernio" in (res.error or "")
