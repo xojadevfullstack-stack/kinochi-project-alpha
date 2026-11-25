@@ -99,6 +99,10 @@
 - Concept: **Dual-Bot Strangler Pattern (`LEGACY_BOT_TOKEN` + `BOT_TOKEN`)** — Bot username almashtirilganda eski botni darhol o'chirish o'rniga alohida engil dispatcherda `?start=<payload>` ni saqlab yangi botga inline tugma bilan yo'naltirish eski SMM va veb havolalarning yo'qolishini oldini oladi.
 - Analogy: Eski do'kon eshigini yopib tashlamasdan, kirgan xaridorni aynan qo'lidagi buyurtma cheki bilan yonidagi yangi do'kon peshtaxtasiga olib o'tadigan ko'rsatkich qo'yish.
 
+## Hybrid View Tracking (Event Log + Materialized Counter + TTL Dedup)
+- Concept: **Append-Only Event Log (`media_view_events`) + Counter (`view_count`) + Redis Dedup** — Ko'rishlarni vaqt kesimida ("Bugun/7 kun/30 kun") tahlil qilish uchun har bir hodisani manbasi (`bot`/`web`/`stream`) bilan alohida jadvalga yozib, tezkor saralash uchun umumiy hisoblagichni (`view_count`) oshirish va sahifa qayta yuklanishini (`F5`) Redis TTL kaliti bilan filtrlash.
+- Analogy: Do'kon eshigidagi hisoblagich (jami kirganlar soni) bilan birga daftarga har bir mehmon qaysi soatda va qaysi eshikdan (Telegram yoki Sayt) kirganini yozib borish — bitta odam eshikni 5 marta ochib yopsa ham bir soat ichida 1 marta sanaladi.
+
 ## Webhook Adapter Fallback for OAuth-Gated Platforms
 - Concept: **Webhook Bridge Pattern (`MAKE_WEBHOOK_URL`)** — Shaxsiy Meta App SMS/App Review blokiga tushganda to'g'ridan-to'g'ri Graph API o'rniga tasdiqlangan partner platforma webhook'iga ochiq `video_url` va `caption` JSON uzatish barcha platforma avtopost shartnomasini (`PublishResult`) saqlab qolgan holda ishlaydi.
 - Analogy: Pochta bo'limi o'z mashinangizni darvozadan kiritmay qo'yganda, posilkani akkreditatsiyadan o'tgan kuryer shoxobchasi orqali manzilga yetkazib berish.

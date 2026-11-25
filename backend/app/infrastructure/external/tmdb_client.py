@@ -194,6 +194,31 @@ class TMDbClient:
     async def get_top_rated_tv(self, page: int = 1) -> dict[str, Any]:
         return await self.list_top_rated("tv", page=page)
 
+    async def get_feed(self, category: str = "trending_week", page: int = 1) -> dict[str, Any]:
+        """Fetch trending, upcoming, now_playing, or tv_on_the_air feeds from TMDb."""
+        feed_map = {
+            "trending_day": ("trending/all/day", 3600),
+            "trending_week": ("trending/all/week", 3600),
+            "upcoming": ("movie/upcoming", 21600),
+            "now_playing": ("movie/now_playing", 10800),
+            "tv_on_the_air": ("tv/on_the_air", 10800),
+        }
+        endpoint, ttl = feed_map.get(category, ("trending/all/week", 3600))
+        cache_key = f"cache:tmdb:feed:{category}:{page}"
+        cached = await get_cache(cache_key)
+        if cached:
+            return cached
+
+        data = await self._request_with_retry(
+            endpoint,
+            params={"page": page, "language": "ru-RU"},
+        )
+        if not data:
+            return {"page": page, "results": [], "total_pages": 0, "total_results": 0}
+
+        await set_cache(cache_key, data, ttl_seconds=ttl)
+        return data
+
     async def search(self, query: str, content_type: str = "movie") -> list[dict[str, Any]]:
         """
         Search for movies or TV shows on TMDb.

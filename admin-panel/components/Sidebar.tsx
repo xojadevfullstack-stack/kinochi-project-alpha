@@ -44,6 +44,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       title: null,
       items: [
         { name: "Dashboard", href: "/", icon: "dashboard" },
+        { name: "Analitika & TMDb", href: "/analytics", icon: "analytics" },
       ],
     },
     {

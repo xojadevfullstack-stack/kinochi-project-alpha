@@ -17,6 +17,7 @@ import AdultPoster from "@/components/AdultPoster";
 import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
 import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import SourceBadge from "@/components/SourceBadge";
+import MediaViewTracker from "@/components/media/MediaViewTracker";
 import OnboardingSpotlight, { TourStep } from "@/components/OnboardingSpotlight";
 
 const SERIES_TOUR_STEPS: TourStep[] = [
@@ -349,6 +350,7 @@ export default async function SeriesDetailsPage({ params }: Props) {
         storageKey="mediaplus_tour_series_v1"
         steps={SERIES_TOUR_STEPS}
       />
+      <MediaViewTracker mediaType="series" seriesId={series.id} />
     </>
   );
 }

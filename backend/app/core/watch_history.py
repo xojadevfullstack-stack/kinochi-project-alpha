@@ -9,6 +9,7 @@ from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, Serie
 from app.infrastructure.db.models.user import UserModel
 from app.api.v1.pages import delete_cache_pattern
 from app.core.achievements import evaluate_achievements
+from app.core.analytics import record_media_view
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,18 @@ async def mark_movie_started(user_id: int, movie_id: int):
         await session.execute(stmt)
         await session.commit()
         logger.info(f"Marked movie {movie_id} as started for user {actual_uid} (identifier {user_id})")
+        try:
+            await record_media_view(
+                session,
+                media_type="movie",
+                movie_id=movie_id,
+                source="bot",
+                user_id=actual_uid,
+                dedup_key=f"bot:{actual_uid}:movie:{movie_id}",
+                dedup_ttl_seconds=1800,
+            )
+        except Exception as exc:
+            logger.warning("Failed to record bot movie view (%s): %s", movie_id, exc)
 
 async def mark_movie_completed(user_id: int, movie_id: int):
     async with async_session_factory() as session:
@@ -134,7 +147,19 @@ async def mark_episode_progress(user_id: int, episode_id: int):
         
         await session.commit()
         logger.info(f"Marked episode {episode_id} as started for user {actual_uid} (identifier {user_id})")
-        
+        try:
+            await record_media_view(
+                session,
+                media_type="series",
+                episode_id=episode_id,
+                source="bot",
+                user_id=actual_uid,
+                dedup_key=f"bot:{actual_uid}:episode:{episode_id}",
+                dedup_ttl_seconds=1800,
+            )
+        except Exception as exc:
+            logger.warning("Failed to record bot episode view (%s): %s", episode_id, exc)
+
         unlocked = await evaluate_achievements(actual_uid)
         return unlocked
 

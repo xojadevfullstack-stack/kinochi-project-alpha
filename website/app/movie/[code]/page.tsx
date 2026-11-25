@@ -20,6 +20,7 @@ import HeroTrailerBackdrop from "@/components/media/HeroTrailerBackdrop";
 import { BreadcrumbTitle } from "@/components/BreadcrumbContext";
 import SourceBadge from "@/components/SourceBadge";
 import MovieWatchButton from "@/components/media/MovieWatchButton";
+import MediaViewTracker from "@/components/media/MediaViewTracker";
 import { getStreamableTranslations } from "@/lib/streamHelpers.mjs";
 
 type Props = {
@@ -370,6 +371,7 @@ export default async function MovieDetailsPage({ params }: Props) {
         initialKinochiRating={movie.kinochi_rating}
         initialVotesCount={movie.kinochi_votes_count || 0}
       />
+      <MediaViewTracker mediaType="movie" movieId={movie.id} />
     </>
   );
 }
