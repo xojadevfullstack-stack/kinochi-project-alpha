@@ -14,7 +14,7 @@ import random
 import asyncio
 import logging
 import sqlite3
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 
 if sys.platform == "win32":

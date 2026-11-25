@@ -87,3 +87,11 @@ async def test_run_catalog_worker_tick_respects_daily_cap_sources_and_session_gu
     assert state["has_catalog_session"] is True
     assert state["session_collision"] is False
     assert state["has_api_creds"] is True
+
+
+def test_telethon_pipeline_type_hints_resolve_without_py314_deferral():
+    import typing
+    import scraper.telethon_moderator_pipeline as mod
+
+    hints = typing.get_type_hints(mod.verify_season_episode_consistency)
+    assert "return" in hints

@@ -147,5 +147,9 @@
 - Concept: **Server-Side Forward Capability Splitting** — Render'ning `512 MB` RAM konteynerida faqat `send_file` orqali ko'chiriladigan manbalarni (`uzmovi`, `asilmedia`) `copy_only=True` va kunlik limit (`4/kun`) bilan yurgizib, `fast_download` talab qiladigan `kinochilar` manbasini lokal kompyuterga qoldirish serverni RAM portlashidan saqlaydi.
 - Analogy: Do'kondagi kichik kuryer faqat tayyor pochta qutilarini manzilga uzatib turadi, og'ir yuk mashinasini esa faqat ombor (noutbuk) yoqilganda ishlatiladi.
 
+## Python 3.12 Eager Annotations vs Python 3.14 PEP 649
+- Concept: **Pre-Push Undefined Name Audit (`ruff --select F821` + `get_type_hints`)** — Lokal `Python 3.14` (`PEP 649`) da kechiktirilgan tip annotatsiyalari (`-> Tuple[...]`) import paytida xato bermasa ham, Docker `Python 3.12` konteynerida darhol `NameError` chiqaradi; har bir push oldidan `F821` tekshiruvi buni oldindan tutadi.
+- Analogy: Yangi mashina dvigateli bo'sh qo'yilgan murvatni sezmay haydab ketaverishi, eski dvigatel esa kalit burilishi bilanoq o'chib qolishi kabi — yo'lga chiqmasdan barcha murvatlarni asbob (`ruff F821`) bilan tekshirish shart.
+
 
 
