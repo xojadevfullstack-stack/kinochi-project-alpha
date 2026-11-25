@@ -259,3 +259,57 @@ async def test_tiktok_publisher_falls_back_to_inbox_when_unaudited(tmp_path):
     assert res.post_id == "v_inbox_file~v2.123"
     assert "/inbox/video/init/" in client.post.call_args_list[1].args[0]
     assert "post_info" not in client.post.call_args_list[1].kwargs["json"]
+
+
+@pytest.mark.asyncio
+async def test_instagram_and_facebook_use_make_webhook_when_configured(tmp_path, monkeypatch):
+    monkeypatch.setenv("MAKE_WEBHOOK_URL", "https://hook.us2.make.com/ig_test_123")
+    monkeypatch.setenv("MAKE_FACEBOOK_WEBHOOK_URL", "https://hook.us2.make.com/fb_test_456")
+    monkeypatch.delenv("META_ACCESS_TOKEN", raising=False)
+    monkeypatch.delenv("FACEBOOK_ACCESS_TOKEN", raising=False)
+
+    vid = tmp_path / "clip.mp4"
+    vid.write_bytes(b"mp4")
+    r_ok = MagicMock(status_code=200, text="Accepted")
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(return_value=r_ok)
+
+    ig_pub = InstagramReelsPublisher()
+    fb_pub = FacebookReelsPublisher()
+    with patch("scraper.smm_publishers.meta_pub.httpx.AsyncClient", return_value=client):
+        ig_res = await ig_pub.publish(str(vid), caption="Kod: #3956", movie_code="3956", video_url="https://api.example/clip.mp4")
+        fb_res = await fb_pub.publish(str(vid), caption="Kod: #3956", movie_code="3956", video_url="https://api.example/clip.mp4")
+
+    assert ig_res.success is True
+    assert ig_res.post_id == "Accepted"
+    assert fb_res.success is True
+    assert client.post.call_args_list[0].args[0] == "https://hook.us2.make.com/ig_test_123"
+    assert client.post.call_args_list[0].kwargs["json"] == {
+        "video_url": "https://api.example/clip.mp4",
+        "caption": "Kod: #3956",
+        "movie_code": "3956",
+        "platform": "instagram",
+    }
+    assert client.post.call_args_list[1].args[0] == "https://hook.us2.make.com/fb_test_456"
+
+
+@pytest.mark.asyncio
+async def test_instagram_make_webhook_requires_video_url_and_reports_http_error(tmp_path, monkeypatch):
+    monkeypatch.setenv("MAKE_WEBHOOK_URL", "https://hook.us2.make.com/ig_test_err")
+    pub = InstagramReelsPublisher()
+    vid = tmp_path / "clip.mp4"
+    vid.write_bytes(b"mp4")
+
+    no_url = await pub.publish(str(vid), caption="Kod: #3956", movie_code="3956")
+    assert no_url.success is False
+    assert "video_url" in (no_url.error or "")
+
+    r_err = MagicMock(status_code=410, text="Scenario is not active")
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(return_value=r_err)
+    with patch("scraper.smm_publishers.meta_pub.httpx.AsyncClient", return_value=client):
+        err_res = await pub.publish(str(vid), caption="Kod: #3956", movie_code="3956", video_url="https://api.example/clip.mp4")
+    assert err_res.success is False
+    assert "410" in (err_res.error or "")

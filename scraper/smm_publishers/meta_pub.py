@@ -24,18 +24,49 @@ async def _upload_binary_to_rupload(client: httpx.AsyncClient, upload_url: str, 
     return None if resp.status_code in (200, 201) else f"Meta binary upload HTTP {resp.status_code}: {resp.text[:160]}"
 
 
+async def _post_to_make_webhook(
+    webhook_url: str,
+    platform: str,
+    video_url: str,
+    caption: str,
+    movie_code: str,
+) -> PublishResult:
+    """Dispatch public MP4 URL + caption to a Make.com Custom Webhook scenario."""
+    if not video_url:
+        return PublishResult(platform, False, error="Make.com webhook uchun ochiq video_url kerak")
+    payload = {"video_url": video_url, "caption": caption, "movie_code": movie_code, "platform": platform}
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(webhook_url, json=payload)
+        if resp.status_code in (200, 201, 202, 204):
+            post_ref = (resp.text or "").strip()[:80] or "make_accepted"
+            return PublishResult(platform, True, post_id=post_ref)
+        return PublishResult(platform, False, error=f"Make webhook HTTP {resp.status_code}: {resp.text[:160]}")
+    except Exception as exc:
+        return PublishResult(platform, False, error=str(exc))
+
+
 class InstagramReelsPublisher(BaseSocialPublisher):
-    """Publishes Reels to Instagram Professional accounts via Meta Graph API (URL or resumable local upload)."""
+    """Publishes Reels to Instagram Professional accounts via Make.com webhook or Meta Graph API."""
 
     platform = "instagram"
 
-    def __init__(self, ig_user_id: Optional[str] = None, access_token: Optional[str] = None):
+    def __init__(
+        self,
+        ig_user_id: Optional[str] = None,
+        access_token: Optional[str] = None,
+        make_webhook_url: Optional[str] = None,
+    ):
         self.ig_user_id = (ig_user_id if ig_user_id is not None else os.getenv("INSTAGRAM_IG_USER_ID", "")).strip()
         env_tok = os.getenv("META_ACCESS_TOKEN") or os.getenv("FACEBOOK_ACCESS_TOKEN", "")
         self.access_token = (access_token if access_token is not None else env_tok).strip()
+        raw_hook = make_webhook_url if make_webhook_url is not None else os.getenv("MAKE_WEBHOOK_URL", "")
+        self.make_webhook_url = raw_hook.strip()
 
     async def publish(self, video_path: str, caption: str, movie_code: str, **kwargs) -> PublishResult:
         video_url = (kwargs.get("video_url") or "").strip()
+        if self.make_webhook_url:
+            return await _post_to_make_webhook(self.make_webhook_url, self.platform, video_url, caption, movie_code)
         if not self.ig_user_id or not self.access_token:
             return PublishResult(self.platform, False, error="INSTAGRAM_IG_USER_ID yoki META_ACCESS_TOKEN sozlanmagan")
         if not video_url and not os.path.exists(video_path):
@@ -79,16 +110,26 @@ class InstagramReelsPublisher(BaseSocialPublisher):
 
 
 class FacebookReelsPublisher(BaseSocialPublisher):
-    """Publishes Reels directly from local MP4 file to a Facebook Page via Meta Graph API."""
+    """Publishes Reels directly from local MP4 file to a Facebook Page via Make.com webhook or Meta Graph API."""
 
     platform = "facebook"
 
-    def __init__(self, page_id: Optional[str] = None, access_token: Optional[str] = None):
+    def __init__(
+        self,
+        page_id: Optional[str] = None,
+        access_token: Optional[str] = None,
+        make_webhook_url: Optional[str] = None,
+    ):
         self.page_id = (page_id if page_id is not None else os.getenv("FACEBOOK_PAGE_ID", "")).strip()
         env_tok = os.getenv("FACEBOOK_ACCESS_TOKEN") or os.getenv("META_ACCESS_TOKEN", "")
         self.access_token = (access_token if access_token is not None else env_tok).strip()
+        raw_hook = make_webhook_url if make_webhook_url is not None else os.getenv("MAKE_FACEBOOK_WEBHOOK_URL", "")
+        self.make_webhook_url = raw_hook.strip()
 
     async def publish(self, video_path: str, caption: str, movie_code: str, **kwargs) -> PublishResult:
+        if self.make_webhook_url:
+            video_url = (kwargs.get("video_url") or "").strip()
+            return await _post_to_make_webhook(self.make_webhook_url, self.platform, video_url, caption, movie_code)
         if not self.page_id or not self.access_token:
             return PublishResult(self.platform, False, error="FACEBOOK_PAGE_ID yoki META_ACCESS_TOKEN sozlanmagan")
         if not os.path.exists(video_path):
