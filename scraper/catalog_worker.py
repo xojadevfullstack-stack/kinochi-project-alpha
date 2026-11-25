@@ -143,7 +143,11 @@ async def run_catalog_worker_tick(session_factory: Any = None, prefer_idx: int |
     if published_today >= daily_limit:
         return {"processed": 0, "skipped": "daily_limit", "published_today": published_today, "daily_limit": daily_limit}
 
-    qm = QueueManager()
+    qm_factory = session_factory
+    if qm_factory is None:
+        from app.infrastructure.db.session import async_session_factory
+        qm_factory = async_session_factory
+    qm = QueueManager(session_factory=qm_factory)
     await qm.recover_stale_in_progress_async(max_age_seconds=1800)
     item = await _claim_forward_item(qm, prefer_idx=prefer_idx)
     if item is None:
@@ -213,4 +217,5 @@ async def supervised_run_catalog_worker() -> None:
             _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
             _WORKER_STATE["last_error"] = str(exc)
             logger.exception("Render catalog worker tick failed: %s", exc)
+            sleep_for = retry_delay
         await asyncio.sleep(sleep_for)

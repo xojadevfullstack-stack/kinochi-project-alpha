@@ -92,6 +92,11 @@ def get_engine_kwargs(
     """SQLAlchemy async engine parametrlarini shakllantiradi."""
     effective_pool_size = pool_size if pool_size is not None else getattr(settings, "DB_POOL_SIZE", 10)
     effective_max_overflow = max_overflow if max_overflow is not None else getattr(settings, "DB_MAX_OVERFLOW", 20)
+    if "supabase" in url.lower() or os.getenv("RENDER"):
+        if pool_size is None:
+            effective_pool_size = min(effective_pool_size, 5)
+        if max_overflow is None:
+            effective_max_overflow = min(effective_max_overflow, 5)
 
     kwargs: dict = {
         "echo": False,

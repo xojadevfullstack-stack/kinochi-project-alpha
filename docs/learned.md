@@ -151,5 +151,9 @@
 - Concept: **Pre-Push Undefined Name Audit (`ruff --select F821` + `get_type_hints`)** — Lokal `Python 3.14` (`PEP 649`) da kechiktirilgan tip annotatsiyalari (`-> Tuple[...]`) import paytida xato bermasa ham, Docker `Python 3.12` konteynerida darhol `NameError` chiqaradi; har bir push oldidan `F821` tekshiruvi buni oldindan tutadi.
 - Analogy: Yangi mashina dvigateli bo'sh qo'yilgan murvatni sezmay haydab ketaverishi, eski dvigatel esa kalit burilishi bilanoq o'chib qolishi kabi — yo'lga chiqmasdan barcha murvatlarni asbob (`ruff F821`) bilan tekshirish shart.
 
+## Supabase Session Pooler Ceiling (`<= 15` Clients During Rolling Deploy)
+- Concept: **Rolling-Overlap Connection Budgeting (`pool_size<=5`) + Shared Session Factory** — Supabase Session Pooler ko'pi bilan `15` ta ulanish ko'taradi; Render yangilanayotganda eski va yangi konteyner bir necha soniya parallel turganda `pool_size=10` + alohida `NullPool` worker `EMAXCONNSESSION` beradi — `pool_size/max_overflow <= 5` va umumiy `async_session_factory` ni qayta ishlatish buni yo'qotadi.
+- Analogy: `15` o'rinli avtobusga bir bekatda ham eski, ham yangi guruh kirganda janjal chiqmasligi uchun har bir guruhga ko'pi bilan `5` tadan joy ajratib berish.
+
 
 

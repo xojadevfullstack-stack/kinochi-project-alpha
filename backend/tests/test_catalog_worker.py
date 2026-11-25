@@ -104,3 +104,11 @@ def test_next_tick_sleep_seconds_retries_quickly_when_unpublished():
     assert next_tick_sleep_seconds({"processed": 1, "published": 0}, interval=3600, retry_delay=60) == 60
     assert next_tick_sleep_seconds({"processed": 1, "published": 1}, interval=3600, retry_delay=60) == 3600
     assert next_tick_sleep_seconds({"processed": 0, "skipped": "daily_limit"}, interval=3600, retry_delay=60) == 3600
+
+
+def test_supabase_pooler_engine_caps_connections_below_session_limit():
+    from app.infrastructure.db.session import get_engine_kwargs
+
+    supa_kwargs = get_engine_kwargs("postgresql+asyncpg://u:p@aws-1-eu-west-1.pooler.supabase.com:5432/postgres")
+    assert supa_kwargs["pool_size"] <= 5
+    assert supa_kwargs["max_overflow"] <= 5
