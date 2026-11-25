@@ -44,6 +44,50 @@ interface CollectionRecommendation {
   items_count?: number;
 }
 
+type SettingsToggleRowProps = {
+  title: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onToggle: () => void;
+};
+
+function SettingsToggleRow({
+  title,
+  description,
+  checked,
+  disabled = false,
+  onToggle,
+}: SettingsToggleRowProps) {
+  return (
+    <div className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <div className="text-xs sm:text-sm font-bold text-white">{title}</div>
+        <div className="text-[11px] sm:text-xs text-text-secondary mt-0.5 leading-relaxed">
+          {description}
+        </div>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={title}
+        disabled={disabled}
+        onClick={onToggle}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#E50914]/40 disabled:opacity-60 ${
+          checked ? "bg-[#E50914]" : "bg-slate-300 dark:bg-white/15"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            checked ? "translate-x-[22px]" : "translate-x-0.5"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -723,62 +767,34 @@ function ProfileContent() {
 
           {/* TAB 4: SETTINGS */}
           {activeTab === "settings" && (
-            <div className="p-5 md:p-6 space-y-4">
-              <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+            <div className="p-5 md:p-6 space-y-3">
+              <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">
                 Profil sozlamalari
               </h2>
-              <div className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-white">Bildirishnomalar</div>
-                  <div className="text-[11px] text-text-secondary">Yangi kinolar va seriallar haqida xabar olish</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={toggleNotifications}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
-                    notificationsEnabled
-                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30"
-                      : "bg-white/10 text-text-secondary border-white/10 hover:bg-white/15"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${notificationsEnabled ? "bg-emerald-400 animate-pulse" : "bg-text-secondary"}`} />
-                  <span>{notificationsEnabled ? "Yoqilgan" : "O'chirilgan"}</span>
-                </button>
-              </div>
 
-              <div className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span>18+ kontent (Kattalar uchun)</span>
-                    <span className="badge-18plus text-[10px] font-extrabold px-1.5 py-0.5 rounded-md">18+</span>
-                  </div>
-                  <div className="text-[11px] text-text-secondary">
-                    O&apos;chirilganda 18+ filmlar umuman ko&apos;rinmaydi; yoqilganda har sahifada qayta tasdiq so&apos;ramaydi
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  disabled={adultSaving}
-                  onClick={async () => {
-                    if (!showAdultContent) {
-                      setAdultConfirmOpen(true);
-                      return;
-                    }
-                    setAdultSaving(true);
-                    await updateAdultContent(false);
-                    setAdultSaving(false);
-                    router.refresh();
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shrink-0 ${
-                    showAdultContent
-                      ? "bg-[#E50914] text-white border-[#E50914] hover:bg-[#B80710]"
-                      : "bg-white/10 text-text-secondary border-white/10 hover:bg-white/15"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${showAdultContent ? "bg-white animate-pulse" : "bg-text-secondary"}`} />
-                  <span>{showAdultContent ? "Yoqilgan" : "O'chirilgan"}</span>
-                </button>
-              </div>
+              <SettingsToggleRow
+                title="Bildirishnomalar"
+                description="Yangi kinolar va seriallar haqida xabar olish"
+                checked={notificationsEnabled}
+                onToggle={toggleNotifications}
+              />
+
+              <SettingsToggleRow
+                title="18+ kontentni ko'rsatish"
+                description="O'chirilganda 18+ filmlar umuman ko'rinmaydi; yoqilganda har sahifada tasdiq so'ramaydi"
+                checked={showAdultContent}
+                disabled={adultSaving}
+                onToggle={async () => {
+                  if (!showAdultContent) {
+                    setAdultConfirmOpen(true);
+                    return;
+                  }
+                  setAdultSaving(true);
+                  await updateAdultContent(false);
+                  setAdultSaving(false);
+                  router.refresh();
+                }}
+              />
             </div>
           )}
 
