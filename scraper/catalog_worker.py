@@ -88,22 +88,27 @@ async def _count_today_forward_published(session_factory: Any = None) -> int:
 
 async def _refresh_forward_queues_if_empty(qm: QueueManager) -> int:
     """Parse page 1 of forward-only sources when queue is exhausted."""
+    import aiohttp
     from scraper.site_parser import parse_asilmedia_page_async, parse_uzmovi_page_async
 
     added_total = 0
-    for src, parser_fn in (("uzmovi", parse_uzmovi_page_async), ("asilmedia", parse_asilmedia_page_async)):
-        try:
-            items = await parser_fn(page=1)
-            if items:
-                added_total += int(await qm.add_items_batch_async(items[:10]))
-        except Exception as exc:
-            logger.warning("Render catalog page-1 parse failed (%s): %s", src, exc)
+    async with aiohttp.ClientSession() as session:
+        for src, parser_fn, page_url in (
+            ("uzmovi", parse_uzmovi_page_async, "https://uzmovi.net/tarjima-kinolarri"),
+            ("asilmedia", parse_asilmedia_page_async, "https://asilmedia.org/films/tarjima_kinolar/"),
+        ):
+            try:
+                items = await parser_fn(session, page_url)
+                if items:
+                    added_total += int(await qm.add_items_batch_async(items[:10]))
+            except Exception as exc:
+                logger.warning("Render catalog page-1 parse failed (%s): %s", src, exc)
     return added_total
 
 
-async def _claim_forward_item(qm: QueueManager, worker_id: str = "render_forward") -> Any:
+async def _claim_forward_item(qm: QueueManager, worker_id: str = "render_forward", prefer_idx: int | None = None) -> Any:
     """Claim one queued item strictly from FORWARD_ONLY_SOURCES (never kinochilar)."""
-    offset = datetime.now(TASHKENT_TZ).hour % len(FORWARD_ONLY_SOURCES)
+    offset = (datetime.now(TASHKENT_TZ).hour if prefer_idx is None else prefer_idx) % len(FORWARD_ONLY_SOURCES)
     for src in FORWARD_ONLY_SOURCES[offset:] + FORWARD_ONLY_SOURCES[:offset]:
         item = await qm.claim_next_async(worker_id=worker_id, source=src)
         if item is not None:
@@ -111,7 +116,14 @@ async def _claim_forward_item(qm: QueueManager, worker_id: str = "render_forward
     return None
 
 
-async def run_catalog_worker_tick(session_factory: Any = None) -> dict[str, Any]:
+def next_tick_sleep_seconds(res: dict[str, Any], interval: int = 3600, retry_delay: int = 60) -> int:
+    """Retry quickly after a non-published item while waiting full interval on cap/success/idle."""
+    if int(res.get("processed") or 0) == 1 and int(res.get("published") or 0) == 0:
+        return retry_delay
+    return interval
+
+
+async def run_catalog_worker_tick(session_factory: Any = None, prefer_idx: int | None = None) -> dict[str, Any]:
     """Run one Render-safe forward-only catalog tick (at most 1 item, copy_only=True)."""
     if not is_render_catalog_enabled():
         return {"processed": 0, "skipped": "disabled"}
@@ -133,10 +145,10 @@ async def run_catalog_worker_tick(session_factory: Any = None) -> dict[str, Any]
 
     qm = QueueManager()
     await qm.recover_stale_in_progress_async(max_age_seconds=1800)
-    item = await _claim_forward_item(qm)
+    item = await _claim_forward_item(qm, prefer_idx=prefer_idx)
     if item is None:
         await _refresh_forward_queues_if_empty(qm)
-        item = await _claim_forward_item(qm)
+        item = await _claim_forward_item(qm, prefer_idx=prefer_idx)
     if item is None:
         return {"processed": 0, "skipped": "empty_queue"}
     if getattr(item, "source", None) not in FORWARD_ONLY_SOURCES:
@@ -172,6 +184,7 @@ async def run_catalog_worker_tick(session_factory: Any = None) -> dict[str, Any]
 async def supervised_run_catalog_worker() -> None:
     """Long-running background supervisor for Render forward-only catalog growth."""
     interval = max(120, int(os.getenv("CATALOG_WORKER_INTERVAL_SEC", "3600")))
+    retry_delay = max(15, int(os.getenv("CATALOG_RETRY_DELAY_SEC", "60")))
     default_delay = "50" if (os.getenv("RENDER_EXTERNAL_URL") or os.getenv("RENDER")) else "0"
     startup_delay = max(0, int(os.getenv("CATALOG_STARTUP_DELAY_SEC", default_delay)))
     _WORKER_STATE["running"] = True
@@ -185,15 +198,19 @@ async def supervised_run_catalog_worker() -> None:
     )
     if startup_delay:
         await asyncio.sleep(startup_delay)
+    tick_idx = 0
     while True:
+        sleep_for = interval
         try:
-            res = await run_catalog_worker_tick()
+            res = await run_catalog_worker_tick(prefer_idx=tick_idx)
+            tick_idx += 1
             _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
             _WORKER_STATE["last_result"] = res
             _WORKER_STATE["last_error"] = None
             logger.info("Render catalog tick: %s", res)
+            sleep_for = next_tick_sleep_seconds(res, interval=interval, retry_delay=retry_delay)
         except Exception as exc:
             _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
             _WORKER_STATE["last_error"] = str(exc)
             logger.exception("Render catalog worker tick failed: %s", exc)
-        await asyncio.sleep(interval)
+        await asyncio.sleep(sleep_for)

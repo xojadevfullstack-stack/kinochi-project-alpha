@@ -5523,7 +5523,21 @@ class TelethonModeratorPipeline:
                 logger.info(f"✅ [@{bot}] dan video muvaffaqiyatli qabul qilindi (Kod #{clean_code})!")
                 return m
             elif m.buttons:
-                for r_i, r_row in enumerate(m.buttons):
+                unlocked = await self.handle_sponsor_lock(bot, m)
+                if unlocked and unlocked is not m:
+                    m = unlocked
+                elif unlocked is None:
+                    sent = await self.client.send_message(bot, clean_code)
+                    retry_msgs = await poll_new_messages(self.client, bot, sent.id, timeout=6.0, condition=has_uzmovie_reply)
+                    for rm in retry_msgs:
+                        if rm.file:
+                            return rm
+                        if rm.buttons:
+                            m = rm
+                            break
+                if m.file:
+                    return m
+                for r_i, r_row in enumerate(m.buttons or []):
                     for c_i, b in enumerate(r_row):
                         b_data = getattr(b, "data", b"") or b""
                         if (b_data and b"episodes" in b_data.lower()) or "ko'rish" in b.text.lower():
@@ -5563,6 +5577,16 @@ class TelethonModeratorPipeline:
         if not recent_msgs:
             logger.warning(f"[@{bot}] dan javob kelmadi: '{clean_query}'")
             return None
+
+        for idx, m in enumerate(recent_msgs):
+            if m.buttons and any(w in (m.text or "").lower() for w in ("obuna", "homiy", "a'zo")):
+                unlocked = await self.handle_sponsor_lock(bot, m)
+                if unlocked is None:
+                    sent = await self.client.send_message(bot, msg_to_send)
+                    recent_msgs = await poll_new_messages(self.client, bot, sent.id, timeout=8.0)
+                elif unlocked is not m:
+                    recent_msgs[idx] = unlocked
+                break
 
         # 1. To'g'ridan-to'g'ri video
         for m in recent_msgs:

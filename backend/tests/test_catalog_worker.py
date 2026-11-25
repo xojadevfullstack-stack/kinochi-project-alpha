@@ -38,6 +38,7 @@ async def test_run_catalog_worker_tick_respects_daily_cap_sources_and_session_gu
     monkeypatch.setenv("RENDER_CATALOG_DAILY_LIMIT", "4")
     monkeypatch.setenv("TELEGRAM_API_ID", "12345")
     monkeypatch.setenv("TELEGRAM_API_HASH", "hash123")
+    monkeypatch.delenv("CATALOG_TELEGRAM_STRING_SESSION", raising=False)
     monkeypatch.setenv("TELEGRAM_STRING_SESSION", "same_sess")
     monkeypatch.setenv("SMM_TELEGRAM_STRING_SESSION", "same_sess")
 
@@ -95,3 +96,11 @@ def test_telethon_pipeline_type_hints_resolve_without_py314_deferral():
 
     hints = typing.get_type_hints(mod.verify_season_episode_consistency)
     assert "return" in hints
+
+
+def test_next_tick_sleep_seconds_retries_quickly_when_unpublished():
+    from scraper.catalog_worker import next_tick_sleep_seconds
+
+    assert next_tick_sleep_seconds({"processed": 1, "published": 0}, interval=3600, retry_delay=60) == 60
+    assert next_tick_sleep_seconds({"processed": 1, "published": 1}, interval=3600, retry_delay=60) == 3600
+    assert next_tick_sleep_seconds({"processed": 0, "skipped": "daily_limit"}, interval=3600, retry_delay=60) == 3600
