@@ -83,6 +83,38 @@ from scraper.video_verifier import VideoVerifier
 
 logger = logging.getLogger(__name__)
 
+
+async def localize_media_poster_safe(
+    media_type: str,
+    media_id: Optional[int],
+    tmdb_id: Optional[int] = None,
+    poster_url: Optional[str] = None,
+) -> Optional[str]:
+    """Run Uzbek poster localization after scraper DB commit without interrupting ingest on failure."""
+    try:
+        from app.api.v1.posters import run_poster_localization_task, should_localize_poster
+
+        if not media_id or not should_localize_poster(tmdb_id=tmdb_id, poster_url=poster_url):
+            return None
+        return await run_poster_localization_task(media_type, int(media_id))
+    except Exception as exc:
+        logger.warning("Scraper poster localization skipped (%s #%s): %s", media_type, media_id, exc)
+        return None
+
+
+async def delete_storage_message_safe(
+    client: Any,
+    chat_id: Any,
+    message_id: Optional[int],
+) -> None:
+    """Best-effort cleanup for orphaned Storage Channel messages when final_check rejects media."""
+    if not client or not chat_id or not message_id:
+        return
+    try:
+        await client.delete_messages(chat_id, [int(message_id)])
+    except Exception as exc:
+        logger.warning("Failed to delete rejected storage message (%s/%s): %s", chat_id, message_id, exc)
+
 def create_telethon_client(session_path: str = None) -> TelegramClient:
     """
     Telethon mijozini yaratadi (faqat env yoki .session fayldan; maxfiy fallback yo'q).
@@ -2821,6 +2853,14 @@ class TelethonModeratorPipeline:
                     )
                 await session.commit()
 
+            if f_ok:
+                await localize_media_poster_safe(
+                    "movie",
+                    movie_id,
+                    tmdb_id=meta.get("tmdb_id"),
+                    poster_url=getattr(m_db_obj, "poster_url", None) if m_db_obj else meta.get("poster_url"),
+                )
+
             try:
                 await delete_cache_pattern("cache:movies:*")
             except Exception:
@@ -3823,6 +3863,14 @@ class TelethonModeratorPipeline:
                         defects=f_defects
                     )
                 await session.commit()
+
+            if f_ok:
+                await localize_media_poster_safe(
+                    "movie",
+                    movie_id,
+                    tmdb_id=meta.get("tmdb_id"),
+                    poster_url=getattr(m_db_obj, "poster_url", None) if m_db_obj else meta.get("poster_url"),
+                )
 
             try:
                 await delete_cache_pattern("cache:movies:*")
@@ -4881,6 +4929,7 @@ class TelethonModeratorPipeline:
                     media_id=None,
                 )
                 await session.commit()
+            await delete_storage_message_safe(self.client, storage_chat, getattr(storage_msg, "id", None))
             defect_names = ",".join((d.get("defect") or d.get("code") or "unknown") for d in defects)
             item.status = "rejected"
             item.error_message = f"final_check_failed:{defect_names}"
@@ -5034,6 +5083,12 @@ class TelethonModeratorPipeline:
                 await maybe_enqueue_smm_for_movie(session, movie_id=movie_id, movie_code=str(movie_code), title=title)
                 await session.commit()
                 logger.info(f"🎉 WEBSAYTDA VIDEO TO'LIQ FAOLLASHTIRILDI! ID: {movie_id} | Kod: #{movie_code}")
+                await localize_media_poster_safe(
+                    "movie",
+                    movie_id,
+                    tmdb_id=getattr(m_obj, "tmdb_id", None) if m_obj else meta.get("tmdb_id"),
+                    poster_url=getattr(m_obj, "poster_url", None) if m_obj else meta.get("poster_url"),
+                )
         except Exception as db_err:
             logger.error(f"❌ Atomik DB tranzaksiyada xatolik: {db_err}")
             await self._delete_topic_safe(target_chat, thread_id)

@@ -118,3 +118,11 @@
 ## Textless-First Poster Localization & Telegram File-ID Proxy
 - Concept: **Textless-First + Vision/Inpaint Fallback + Immutable `file_id` Proxy (`/api/v1/posters/tg/{file_id}`)** — Tijoriy Image-to-Image AI lar mashhur aktyorlar yuzi/mualliflik huquqi sababli posterlarni bloklaganda, TMDb matnsiz posterini olib (yoki `cv2.inpaint` bilan tozalab) Pillow/TTF orqali o'zbekcha shrift chizish hamda Telegram'dagi eskiradigan `getFile` linki o'rniga proksi endpointdan doimiy URL berish.
 - Analogy: Mehmonxonada 1 soatda yaroqsiz bo'ladigan vaqtinchalik qog'oz ruxsatnoma tarqatmasdan, qabulxonada doimiy raqam bo'yicha arxivdan rasmni olib beradigan darcha ochish.
+
+## Single-Decode Low-RAM Rendering & CPU Priority Yield (`nice`)
+- Concept: **Single-Pass `split=2` + `os.nice(15)` + Subprocess Timeout + Startup Grace Delay** — Bitta 512MB/0.1-vCPU konteynerda Uvicorn/Bot bilan yonma-yon FFmpeg yurganda `[0:v]` ni 2 marta ochish va cheksiz `subprocess.run` qo'yish serverni qotirib qo'yadi; 1 marta decode+downscale qilib bo'lish va Linux `nice(15)` bilan veb-serverga CPU ustuvorligini qoldirish konteynerni tirik saqlaydi.
+- Analogy: Kichkina do'konda bitta sotuvchi ham kassa qilsa, ham omborda yuk tashisa — og'ir yuk ko'targanda kassadagi mijozlar kutib qolmasligi uchun yukni kichik qutilarga bo'lib, mijoz kelgan zahoti kassaga navbat berish.
+
+## Private-Only Bot Dispatch (`F.chat.type == "private"`)
+- Concept: **Chat-Scope Filter Isolation** — Yo'naltiruvchi bot barcha xabarlarni filtrsiz ushlasa, o'zi a'zo bo'lgan Storage superguruhidagi har bir mavzu/video ostiga ham javob yuborib axlatga to'ldiradi; faqat shaxsiy chat (`private`) bilan cheklash superguruhlarni toza saqlaydi.
+- Analogy: Mehmonxonaning kirish eshigida turadigan yo'lko'rsatuvchini xodimlar ishlaydigan omborxona ichiga qo'yib qo'ysangiz, har safar quti olib kirilganda "Yangi manzilga ko'chdik!" deb xalaqit beraveradi.

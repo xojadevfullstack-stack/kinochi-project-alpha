@@ -151,3 +151,32 @@ async def test_create_and_update_movie_series_trigger_poster_localization():
         mock_sched_s.assert_called_once()
         assert mock_sched_s.call_args.args[1:3] == ("series", 22)
 
+
+@pytest.mark.asyncio
+async def test_scraper_pipeline_localize_poster_safe_and_delete_storage_message_safe():
+    from scraper.telethon_moderator_pipeline import (
+        delete_storage_message_safe,
+        localize_media_poster_safe,
+    )
+
+    with patch(
+        "app.api.v1.posters.run_poster_localization_task",
+        new=AsyncMock(return_value="https://api.example.com/api/v1/posters/tg/AgAC_OK_1234567890123"),
+    ) as mock_task:
+        res = await localize_media_poster_safe(
+            "movie", 915, tmdb_id=426563, poster_url="https://image.tmdb.org/t/p/w500/raw.jpg"
+        )
+        assert res == "https://api.example.com/api/v1/posters/tg/AgAC_OK_1234567890123"
+        mock_task.assert_awaited_once_with("movie", 915)
+
+        res_skip = await localize_media_poster_safe(
+            "movie", 915, tmdb_id=426563, poster_url="https://api.example.com/api/v1/posters/tg/AgAC_ALREADY_DONE_123456"
+        )
+        assert res_skip is None
+        mock_task.assert_awaited_once()
+
+    fake_client = MagicMock()
+    fake_client.delete_messages = AsyncMock()
+    await delete_storage_message_safe(fake_client, -100111, 5070)
+    fake_client.delete_messages.assert_awaited_once_with(-100111, [5070])
+
