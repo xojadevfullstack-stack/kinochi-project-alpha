@@ -58,3 +58,20 @@ async def test_verify_storage_channel_access_reports_ok_and_missing_access():
     ok2, info2 = await verify_storage_channel_access(client_fail, -1001234567890)
     assert ok2 is False
     assert "ChannelPrivateError" in info2
+
+
+def test_save_session_key_and_collision_guard(tmp_path, monkeypatch):
+    from scripts.smm_telegram_login import check_session_collision, save_session_key_to_env_files
+
+    env_file = tmp_path / ".env"
+    env_file.write_text("SMM_TELEGRAM_STRING_SESSION=smm_secret\n", encoding="utf-8")
+
+    saved = save_session_key_to_env_files("CATALOG_TELEGRAM_STRING_SESSION", "cat_secret", root_dir=tmp_path)
+    assert saved == [env_file]
+    content = env_file.read_text(encoding="utf-8")
+    assert "SMM_TELEGRAM_STRING_SESSION=smm_secret" in content
+    assert "CATALOG_TELEGRAM_STRING_SESSION=cat_secret" in content
+
+    monkeypatch.setenv("SMM_TELEGRAM_STRING_SESSION", "smm_secret")
+    assert check_session_collision("CATALOG_TELEGRAM_STRING_SESSION", "smm_secret") == "SMM_TELEGRAM_STRING_SESSION"
+    assert check_session_collision("CATALOG_TELEGRAM_STRING_SESSION", "cat_secret") is None
