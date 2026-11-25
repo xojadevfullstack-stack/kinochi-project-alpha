@@ -143,3 +143,88 @@ async def test_localize_poster_manual_url_inpaints_existing_title():
         )
 
     assert result_url == "https://api.example.com/api/v1/posters/tg/AgAC_MANUAL_UZ"
+
+
+@pytest.mark.asyncio
+async def test_localize_poster_analyzes_original_poster_for_style_when_textless_exists():
+    from app.infrastructure.external.poster_localizer import localize_poster_and_upload
+
+    textless_bytes = _make_sample_jpeg(500, 750, color=(120, 120, 120))
+    original_bytes = _make_sample_jpeg(500, 750, color=(200, 110, 40))
+
+    async def _fake_dl(url: str):
+        return textless_bytes if "clean_textless" in url else original_bytes
+
+    with (
+        patch(
+            "app.infrastructure.external.poster_localizer.tmdb_client.get_textless_poster",
+            new=AsyncMock(return_value="https://image.tmdb.org/t/p/w500/clean_textless.jpg"),
+        ),
+        patch(
+            "app.infrastructure.external.poster_localizer._download_image_bytes",
+            side_effect=_fake_dl,
+        ),
+        patch(
+            "app.infrastructure.external.poster_localizer.analyze_poster_style",
+            new=AsyncMock(
+                return_value={
+                    "placement": "top",
+                    "y_ratio": 0.045,
+                    "font_style": "bold",
+                    "primary_color": "#F97316",
+                    "secondary_color": "#F97316",
+                    "needs_backdrop": False,
+                    "title_box": [40, 120, 150, 880],
+                }
+            ),
+        ) as mock_analyze,
+        patch(
+            "app.infrastructure.external.poster_localizer.render_uzbek_title_on_poster",
+            return_value=b"rendered-jpg",
+        ) as mock_render,
+        patch(
+            "app.infrastructure.external.poster_localizer.upload_poster_to_telegram",
+            new=AsyncMock(return_value="https://api.example.com/api/v1/posters/tg/AgAC_ORANGE_TOP"),
+        ),
+    ):
+        res = await localize_poster_and_upload(
+            title="Xolms va Vatson",
+            tmdb_id=426563,
+            content_type="movie",
+            manual_poster_url="https://image.tmdb.org/t/p/w500/orEUlKndjV1rEcWqXbbjegjfv97.jpg",
+            code="ANE487",
+        )
+
+    assert res == "https://api.example.com/api/v1/posters/tg/AgAC_ORANGE_TOP"
+    assert mock_analyze.await_args.args[0] == original_bytes
+    assert mock_render.call_args.kwargs["image_bytes"] == textless_bytes
+
+
+def test_render_uzbek_title_on_poster_preserves_top_y_ratio_orange_color_without_dark_mud():
+    from app.infrastructure.external.poster_localizer import render_uzbek_title_on_poster
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(150, 155, 160))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Xolms va Vatson",
+        style={
+            "placement": "top",
+            "y_ratio": 0.045,
+            "font_style": "bold",
+            "primary_color": "#F97316",
+            "secondary_color": "#F97316",
+            "needs_backdrop": False,
+            "title_box": [40, 120, 150, 880],
+        },
+        remove_existing_text=False,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes))
+    # Top sky outside title should remain bright gray (not darkened by a heavy black gradient)
+    corner = out_img.getpixel((10, 10))
+    assert corner[0] >= 135 and corner[1] >= 140
+    # Bottom region should stay completely untouched gray
+    bottom = out_img.getpixel((250, 700))
+    assert bottom[0] >= 140 and bottom[1] >= 145
+    # Orange title pixels should appear inside top band (around y=40..120), NOT red #E50914
+    top_band = [out_img.getpixel((x, y)) for x in range(120, 380, 4) for y in range(30, 110, 2)]
+    assert any(r > 200 and 70 <= g <= 160 and b < 80 for (r, g, b) in top_band)

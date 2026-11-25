@@ -28,9 +28,11 @@ _STYLE_FONT_MAP = {
 }
 _DEFAULT_STYLE: dict[str, Any] = {
     "placement": "bottom",
+    "y_ratio": None,
     "font_style": "bold",
     "primary_color": "#FFFFFF",
-    "secondary_color": "#E50914",
+    "secondary_color": "#FFFFFF",
+    "needs_backdrop": True,
     "title_box": None,
 }
 
@@ -82,15 +84,16 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
 
     b64 = base64.b64encode(image_bytes).decode("ascii")
     prompt = (
-        f"Analyze this movie poster for Uzbek localization of title '{title}'. "
-        "Return ONLY valid JSON with keys: "
-        'placement ("top" or "bottom"), '
-        'font_style ("epic", "serif", "bold", or "modern"), '
-        'primary_color (hex like "#FFFFFF"), '
-        'secondary_color (accent hex like "#E5B84B"), '
-        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 of any existing English/Russian title text, or null if textless)."
+        f"Inspect this original movie poster to replicate its EXACT title design & layout for Uzbek title '{title}'. "
+        "Match the original poster's title vertical position, color palette, and font weight. Return ONLY valid JSON with keys: "
+        'placement ("top" if title is in upper half, else "bottom"), '
+        "y_ratio (float 0.03-0.85 where the original main title starts vertically from top), "
+        'font_style ("bold" for condensed impact/action/comedy, "epic" for fantasy/historical serif, "serif", or "modern" clean sans), '
+        'primary_color (exact hex color of original title letters, e.g. "#F97316"), '
+        'secondary_color (bottom gradient hex of original title letters, same as primary_color if solid single-color), '
+        "needs_backdrop (false if background behind title is clean/uniform like sky/wall, true only if busy/low-contrast), "
+        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 of existing title text, or null if textless)."
     )
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     payload = {
         "contents": [{
             "parts": [
@@ -98,32 +101,43 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
                 {"inlineData": {"mimeType": "image/jpeg", "data": b64}},
             ]
         }],
-        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 200},
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1024, "responseMimeType": "application/json"},
     }
-    try:
-        async with httpx.AsyncClient(timeout=12.0) as client:
-            resp = await client.post(url, json=payload)
-            if resp.status_code != 200:
-                return dict(_DEFAULT_STYLE)
-            raw_text = (
-                resp.json().get("candidates", [{}])[0]
-                .get("content", {}).get("parts", [{}])[0]
-                .get("text", "")
-            )
-            match = re.search(r"\{[\s\S]*\}", raw_text)
-            if not match:
-                return dict(_DEFAULT_STYLE)
-            parsed = json.loads(match.group(0))
-            return {
-                "placement": "top" if parsed.get("placement") == "top" else "bottom",
-                "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
-                "primary_color": parsed.get("primary_color") or "#FFFFFF",
-                "secondary_color": parsed.get("secondary_color") or "#E50914",
-                "title_box": parsed.get("title_box") if isinstance(parsed.get("title_box"), list) else None,
-            }
-    except Exception as exc:
-        logger.debug("Gemini Vision style analysis fallback: %s", exc)
-        return dict(_DEFAULT_STYLE)
+    for model in ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"):
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        try:
+            async with httpx.AsyncClient(timeout=12.0) as client:
+                resp = await client.post(url, json=payload)
+                if resp.status_code != 200:
+                    continue
+                raw_text = (
+                    resp.json().get("candidates", [{}])[0]
+                    .get("content", {}).get("parts", [{}])[0]
+                    .get("text", "")
+                )
+                match = re.search(r"\{[\s\S]*\}", raw_text)
+                if not match:
+                    continue
+                parsed = json.loads(match.group(0))
+                tbox = parsed.get("title_box") if isinstance(parsed.get("title_box"), list) and len(parsed.get("title_box")) == 4 else None
+                inferred_top = (int(tbox[0]) < 450) if tbox else (parsed.get("placement") == "top")
+                y_val = parsed.get("y_ratio")
+                if y_val is None and tbox:
+                    y_val = float(tbox[0]) / 1000.0
+                p_col = parsed.get("primary_color") or "#FFFFFF"
+                s_col = parsed.get("secondary_color") or p_col
+                return {
+                    "placement": "top" if inferred_top else "bottom",
+                    "y_ratio": max(0.03, min(0.84, float(y_val))) if y_val is not None else None,
+                    "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
+                    "primary_color": p_col,
+                    "secondary_color": s_col,
+                    "needs_backdrop": bool(parsed.get("needs_backdrop", False if inferred_top else True)),
+                    "title_box": tbox,
+                }
+        except Exception as exc:
+            logger.debug("Gemini Vision style analysis (%s) fallback: %s", model, exc)
+    return dict(_DEFAULT_STYLE)
 
 
 def _inpaint_title_box(rgb_img: Image.Image, title_box: list[int] | None) -> Image.Image:
@@ -173,15 +187,16 @@ def render_uzbek_title_on_poster(
 
     w, h = img.size
     rgba = img.convert("RGBA")
-    grad_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    grad_draw = ImageDraw.Draw(grad_layer)
     is_top = cfg["placement"] == "top"
-    band_h = int(h * 0.28)
-    for dy in range(band_h):
-        alpha = int(155 * (1.0 - dy / band_h) ** 1.6)
-        y_pos = dy if is_top else (h - 1 - dy)
-        grad_draw.line([(0, y_pos), (w, y_pos)], fill=(8, 10, 16, alpha))
-    rgba = Image.alpha_composite(rgba, grad_layer)
+    if cfg.get("needs_backdrop", True):
+        grad_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        grad_draw = ImageDraw.Draw(grad_layer)
+        band_h = int(h * 0.25)
+        for dy in range(band_h):
+            alpha = int(115 * (1.0 - dy / band_h) ** 1.7)
+            y_pos = dy if is_top else (h - 1 - dy)
+            grad_draw.line([(0, y_pos), (w, y_pos)], fill=(8, 10, 16, alpha))
+        rgba = Image.alpha_composite(rgba, grad_layer)
 
     measure = ImageDraw.Draw(rgba)
     max_w = int(w * 0.86)
@@ -195,7 +210,11 @@ def render_uzbek_title_on_poster(
 
     line_h = int(font_size * 1.15)
     block_h = line_h * len(lines)
-    start_y = int(h * 0.065) if is_top else int(h * 0.90 - block_h)
+    y_ratio = cfg.get("y_ratio")
+    if y_ratio is not None:
+        start_y = max(int(h * 0.03), min(h - block_h - int(h * 0.03), int(h * float(y_ratio))))
+    else:
+        start_y = int(h * 0.055) if is_top else int(h * 0.90 - block_h)
 
     text_mask = Image.new("L", (w, h), 0)
     mask_draw = ImageDraw.Draw(text_mask)
@@ -213,7 +232,7 @@ def render_uzbek_title_on_poster(
     rgba = Image.alpha_composite(rgba, shadow_layer)
 
     c1 = _hex_to_rgb(cfg["primary_color"], (255, 255, 255))
-    c2 = _hex_to_rgb(cfg["secondary_color"], (229, 9, 20))
+    c2 = _hex_to_rgb(cfg.get("secondary_color") or cfg["primary_color"], c1)
     grad_fill = Image.new("RGBA", (w, h), (*c1, 255))
     fill_px = grad_fill.load()
     y_end = max(start_y + 1, start_y + block_h)
@@ -260,7 +279,13 @@ async def localize_poster_and_upload(
     if not raw_bytes:
         return None
 
-    style = await analyze_poster_style(raw_bytes, title=title)
+    style_bytes = raw_bytes
+    if is_textless and manual_poster_url and manual_poster_url != source_url:
+        orig_bytes = await _download_image_bytes(manual_poster_url)
+        if orig_bytes:
+            style_bytes = orig_bytes
+
+    style = await analyze_poster_style(style_bytes, title=title)
     localized_bytes = render_uzbek_title_on_poster(
         image_bytes=raw_bytes,
         title=title,
