@@ -65,11 +65,12 @@ def _build_fg_blur_chain(
     blur_watermark: bool,
     blur_bottom_ad: bool,
     blur_boxes: Optional[List[Dict[str, Any]]] = None,
+    max_zones: int = 4,
 ) -> Tuple[str, str]:
     """Build parameterized split+crop+boxblur+overlay filter chain for AI-detected or fallback zones."""
     zones = []
     if blur_boxes is not None:
-        for b in blur_boxes[:4]:
+        for b in blur_boxes[:max_zones]:
             if not isinstance(b, dict):
                 continue
             try:
@@ -91,6 +92,7 @@ def _build_fg_blur_chain(
             zones.append(("0.24", "0.22", "0.01", "0.02", "12:4:5:2"))
         if blur_bottom_ad:
             zones.append(("0.56", "0.22", "0.22", "0.76", "16:5:8:3"))
+    zones = zones[:max_zones]
     if not zones:
         return "", "fg0"
     chain, cur = [], "fg0"
@@ -133,13 +135,18 @@ def build_cinematic_filter_complex(
     safe_bot = escape_drawtext(f"Telegram bot: {bot_username}")
 
     w, h = (720, 1280) if low_ram else (1080, 1920)
-    bg_step = (
-        "[0:v]scale=270:480:force_original_aspect_ratio=increase,"
-        "crop=270:480,boxblur=6:2,eq=brightness=-0.28,scale=720:1280:flags=bilinear[bg];"
-        if low_ram
-        else "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
-        "crop=1080:1920,boxblur=20:5,eq=brightness=-0.28[bg];"
-    )
+    if low_ram:
+        decode_and_bg = (
+            "[0:v]fps=24,scale=720:-2:force_original_aspect_ratio=decrease,split=2[fg0][bg_in];"
+            "[bg_in]scale=270:480:force_original_aspect_ratio=increase,"
+            "crop=270:480,boxblur=6:2,eq=brightness=-0.28,scale=720:1280:flags=bilinear[bg];"
+        )
+    else:
+        decode_and_bg = (
+            "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+            "crop=1080:1920,boxblur=20:5,eq=brightness=-0.28[bg];"
+            "[0:v]scale=1080:-2:force_original_aspect_ratio=decrease[fg0];"
+        )
     h_fs, r_fs, c_fs, b_fs = (36, 26, 35, 23) if low_ram else (54, 38, 52, 34)
     y_h, y_r, box_spec, y_c, y_b = (
         (146, 214, "x=80:y=912:w=560:h=78", 934, 1010)
@@ -155,10 +162,11 @@ def build_cinematic_filter_complex(
             f"fontcolor=#F5C518:x=(w-text_w)/2:y={y_r}:shadowcolor=black@0.8:shadowx=2:shadowy=2"
         )
 
-    blur_chain, fg_label = _build_fg_blur_chain(blur_watermark, blur_bottom_ad, blur_boxes=blur_boxes)
+    blur_chain, fg_label = _build_fg_blur_chain(
+        blur_watermark, blur_bottom_ad, blur_boxes=blur_boxes, max_zones=2 if low_ram else 4
+    )
     vf = (
-        f"{bg_step}"
-        f"[0:v]scale={w}:-2:force_original_aspect_ratio=decrease[fg0];"
+        f"{decode_and_bg}"
         f"{blur_chain}"
         f"[bg][{fg_label}]overlay=(W-w)/2:(H-h)/2"
         f",drawtext={font_opt}text='{safe_header}':fontsize={h_fs}:"
@@ -203,7 +211,7 @@ def render_vertical_clip(
         low_ram=low_ram, blur_boxes=blur_boxes,
     )
     encode_opts = (
-        ["-threads", "1", "-filter_threads", "1", "-filter_complex_threads", "1", "-preset", "superfast", "-crf", "26"]
+        ["-threads", "1", "-filter_threads", "1", "-filter_complex_threads", "1", "-preset", "ultrafast", "-crf", "26"]
         if low_ram
         else ["-preset", "veryfast", "-crf", "23"]
     )
@@ -213,7 +221,14 @@ def render_vertical_clip(
         "-c:v", "libx264", *encode_opts, "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output_path,
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    render_timeout = max(30.0, float(os.getenv("SMM_RENDER_TIMEOUT_SEC", "240")))
+    run_kwargs: Dict[str, Any] = {"capture_output": True, "text": True, "timeout": render_timeout}
+    if os.name != "nt" and hasattr(os, "nice"):
+        run_kwargs["preexec_fn"] = lambda: os.nice(15)
+    try:
+        proc = subprocess.run(cmd, **run_kwargs)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"FFmpeg render timed out after {render_timeout:.0f}s") from exc
     if proc.returncode != 0:
         raise RuntimeError(f"FFmpeg render failed: {proc.stderr[-600:]}")
     return output_path

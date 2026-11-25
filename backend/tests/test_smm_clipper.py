@@ -262,3 +262,57 @@ def test_compute_sparse_byte_range_covers_scan_plus_clip_tail_via_stco():
     assert mid_offset <= offsets[35]
     # Must cover past index 36 (+45s..90s VBR spike) with buffer
     assert mid_offset + mid_bytes >= offsets[36] + 1_000_000
+
+
+def test_low_ram_decodes_input_once_caps_blur_zones_and_passes_timeout(monkeypatch, tmp_path):
+    many_boxes = [
+        {"x": 0.01, "y": 0.02, "w": 0.2, "h": 0.08, "kind": "watermark"},
+        {"x": 0.77, "y": 0.02, "w": 0.2, "h": 0.08, "kind": "watermark"},
+        {"x": 0.1, "y": 0.75, "w": 0.6, "h": 0.15, "kind": "ad"},
+        {"x": 0.2, "y": 0.85, "w": 0.5, "h": 0.1, "kind": "ad"},
+    ]
+    vf, _ = build_cinematic_filter_complex(
+        movie_code="3957",
+        imdb_rating=4.3,
+        low_ram=True,
+        blur_watermark=True,
+        blur_boxes=many_boxes,
+    )
+    assert vf.count("[0:v]") == 1
+    assert "fps=24" in vf
+    assert "split=2[fg0][bg_in]" in vf
+    assert vf.count("boxblur=") <= 3
+
+    captured = {}
+
+    def _fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        captured["kwargs"] = kwargs
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    render_vertical_clip(
+        str(tmp_path / "in.mp4"),
+        str(tmp_path / "out.mp4"),
+        movie_code="3957",
+        start_sec=0.0,
+        duration_sec=10.0,
+        low_ram=True,
+    )
+    assert "-preset" in captured["cmd"]
+    assert captured["cmd"][captured["cmd"].index("-preset") + 1] == "ultrafast"
+    assert captured["kwargs"].get("timeout", 0) >= 60
+
+
+def test_render_vertical_clip_raises_clear_error_on_timeout(monkeypatch, tmp_path):
+    def _timeout_run(cmd, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 240))
+
+    monkeypatch.setattr(subprocess, "run", _timeout_run)
+    with pytest.raises(RuntimeError, match="timed out"):
+        render_vertical_clip(
+            str(tmp_path / "in.mp4"),
+            str(tmp_path / "out.mp4"),
+            movie_code="3957",
+            low_ram=True,
+        )

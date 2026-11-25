@@ -445,3 +445,33 @@ def test_smm_worker_imports_gracefully_when_cv2_missing(monkeypatch):
     state = worker_mod.get_smm_worker_state()
     assert "started_at" in state
     assert "last_tick_at" in state
+
+
+@pytest.mark.asyncio
+async def test_supervised_run_smm_worker_waits_startup_delay_before_first_tick(monkeypatch):
+    import asyncio
+    from scraper import smm_worker
+
+    events = []
+    monkeypatch.setenv("SMM_AUTOPILOT_ENABLED", "true")
+    monkeypatch.setenv("SMM_STARTUP_DELAY_SEC", "25")
+    monkeypatch.setenv("SMM_WORKER_INTERVAL_SEC", "180")
+    monkeypatch.setattr(smm_worker, "resolve_smm_session_string", lambda: "")
+
+    async def _fake_sleep(secs):
+        events.append(("sleep", secs))
+        if len([e for e in events if e[0] == "cycle"]) >= 1:
+            raise asyncio.CancelledError()
+
+    async def _fake_cycle(**kwargs):
+        events.append(("cycle", kwargs))
+        return {"generated": 0, "published": 0}
+
+    monkeypatch.setattr(smm_worker.asyncio, "sleep", _fake_sleep)
+    monkeypatch.setattr(smm_worker, "run_smm_worker_cycle", _fake_cycle)
+
+    with pytest.raises(asyncio.CancelledError):
+        await smm_worker.supervised_run_smm_worker()
+
+    assert events[0] == ("sleep", 25)
+    assert events[1][0] == "cycle"

@@ -425,18 +425,23 @@ async def run_smm_worker_cycle(
 async def supervised_run_smm_worker() -> None:
     """Long-running background supervisor for Cycle 2 SMM rendering and publishing."""
     interval = max(30, int(os.getenv("SMM_WORKER_INTERVAL_SEC", "180")))
+    default_delay = "25" if (os.getenv("RENDER_EXTERNAL_URL") or os.getenv("RENDER")) else "0"
+    startup_delay = max(0, int(os.getenv("SMM_STARTUP_DELAY_SEC", default_delay)))
     tg_client = None
     session_disabled = False
     _WORKER_STATE["running"] = True
     _WORKER_STATE["started_at"] = datetime.now(timezone.utc).isoformat()
     logger.info(
-        "SMM worker started: enabled=%s has_smm_session=%s has_api_id=%s has_storage_id=%s interval=%ss",
+        "SMM worker started: enabled=%s has_smm_session=%s has_api_id=%s has_storage_id=%s interval=%ss startup_delay=%ss",
         os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
         bool(resolve_smm_session_string()),
         os.getenv("TELEGRAM_API_ID", "").strip().isdigit(),
         bool(os.getenv("STORAGE_CHANNEL_ID", "").strip()),
         interval,
+        startup_delay,
     )
+    if startup_delay > 0:
+        await asyncio.sleep(startup_delay)
 
     while True:
         try:
