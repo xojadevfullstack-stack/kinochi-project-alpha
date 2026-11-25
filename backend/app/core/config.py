@@ -145,6 +145,11 @@ class Settings(BaseSettings):
     TELEGRAM_API_HASH: str = ""
     TELEGRAM_STRING_SESSION: str = ""
 
+    # ── External MTProto Stream Microservice ─────────────────────────
+    STREAM_SERVICE_URL: str = ""
+    STREAM_SIGNING_SECRET: str = ""
+    STREAM_TOKEN_TTL_SECONDS: int = 14400
+
     @field_validator("TELEGRAM_API_ID", mode="before")
     @classmethod
     def validate_telegram_api_id(cls, v):
@@ -160,6 +165,8 @@ class Settings(BaseSettings):
     TMDB_API_KEY: str = ""
     KINOPOISK_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
+    CLOUDFLARE_ACCOUNT_ID: str = ""
+    CLOUDFLARE_API_TOKEN: str = ""
     AUTO_TOPIC_CHAT_ID: int | None = None
     AUTO_CONTENT_ENABLED: bool = False
     SCRAPER_ENABLED: bool = False

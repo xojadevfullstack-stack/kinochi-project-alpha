@@ -34,7 +34,19 @@ _DEFAULT_STYLE: dict[str, Any] = {
     "secondary_color": "#FFFFFF",
     "needs_backdrop": True,
     "title_box": None,
+    "style_brief": "",
 }
+_GEMINI_VISION_MODELS = (
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
+    "gemini-3.5-flash",
+)
+_CF_IMAGE_EDIT_MODELS = (
+    "@cf/black-forest-labs/flux-2-klein-9b",
+    "@cf/black-forest-labs/flux-2-klein-4b",
+)
 
 
 def _hex_to_rgb(value: str, fallback: tuple[int, int, int]) -> tuple[int, int, int]:
@@ -76,24 +88,16 @@ async def _download_image_bytes(url: str) -> Optional[bytes]:
     return None
 
 
-async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]:
-    """Use Gemini Vision to infer title box, placement, font style, and color palette."""
+async def _call_gemini_vision_json(
+    prompt: str,
+    image_bytes: bytes,
+    max_tokens: int = 1024,
+) -> Optional[dict[str, Any]]:
+    """Run a Gemini Vision JSON query across fallback flash-lite models."""
     api_key = (settings.GEMINI_API_KEY or "").strip()
     if not api_key or not image_bytes:
-        return dict(_DEFAULT_STYLE)
-
+        return None
     b64 = base64.b64encode(image_bytes).decode("ascii")
-    prompt = (
-        f"Inspect this original movie poster to replicate its EXACT title design & layout for Uzbek title '{title}'. "
-        "Match the original poster's title vertical position, color palette, and font weight. Return ONLY valid JSON with keys: "
-        'placement ("top" if title is in upper half, else "bottom"), '
-        "y_ratio (float 0.03-0.85 where the original main title starts vertically from top), "
-        'font_style ("bold" for condensed impact/action/comedy, "epic" for fantasy/historical serif, "serif", or "modern" clean sans), '
-        'primary_color (exact hex color of original title letters, e.g. "#F97316"), '
-        'secondary_color (bottom gradient hex of original title letters, same as primary_color if solid single-color), '
-        "needs_backdrop (false if background behind title is clean/uniform like sky/wall, true only if busy/low-contrast), "
-        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 of existing title text, or null if textless)."
-    )
     payload = {
         "contents": [{
             "parts": [
@@ -101,12 +105,12 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
                 {"inlineData": {"mimeType": "image/jpeg", "data": b64}},
             ]
         }],
-        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1024, "responseMimeType": "application/json"},
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": max_tokens, "responseMimeType": "application/json"},
     }
-    for model in ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"):
+    for model in _GEMINI_VISION_MODELS:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         try:
-            async with httpx.AsyncClient(timeout=12.0) as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(url, json=payload)
                 if resp.status_code != 200:
                     continue
@@ -116,28 +120,142 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
                     .get("text", "")
                 )
                 match = re.search(r"\{[\s\S]*\}", raw_text)
-                if not match:
-                    continue
-                parsed = json.loads(match.group(0))
-                tbox = parsed.get("title_box") if isinstance(parsed.get("title_box"), list) and len(parsed.get("title_box")) == 4 else None
-                inferred_top = (int(tbox[0]) < 450) if tbox else (parsed.get("placement") == "top")
-                y_val = parsed.get("y_ratio")
-                if y_val is None and tbox:
-                    y_val = float(tbox[0]) / 1000.0
-                p_col = parsed.get("primary_color") or "#FFFFFF"
-                s_col = parsed.get("secondary_color") or p_col
-                return {
-                    "placement": "top" if inferred_top else "bottom",
-                    "y_ratio": max(0.03, min(0.84, float(y_val))) if y_val is not None else None,
-                    "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
-                    "primary_color": p_col,
-                    "secondary_color": s_col,
-                    "needs_backdrop": bool(parsed.get("needs_backdrop", False if inferred_top else True)),
-                    "title_box": tbox,
-                }
+                if match:
+                    return json.loads(match.group(0))
         except Exception as exc:
-            logger.debug("Gemini Vision style analysis (%s) fallback: %s", model, exc)
-    return dict(_DEFAULT_STYLE)
+            logger.debug("Gemini Vision (%s) fallback: %s", model, exc)
+    return None
+
+
+async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]:
+    """Use Gemini Vision to infer title box, placement, font style, color palette, and visual spec."""
+    prompt = (
+        f"Inspect this original movie poster to replicate its EXACT title design & layout for Uzbek title '{title}'. "
+        "Match the original poster's title vertical position, color palette, flatness vs 3D bevel, and font weight. Return ONLY valid JSON with keys: "
+        'placement ("top" if title is in upper half, else "bottom"), '
+        "y_ratio (float 0.03-0.85 where the original main title starts vertically from top), "
+        'font_style ("bold" for condensed impact/action/comedy, "epic" for fantasy/historical serif, "serif", or "modern" clean sans), '
+        'primary_color (exact hex color of original title letters, e.g. "#F97316"), '
+        'secondary_color (bottom gradient hex of original title letters, same as primary_color if solid single-color), '
+        "needs_backdrop (false if background behind title is clean/uniform like sky/wall, true only if busy/low-contrast), "
+        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 of existing title text, or null if textless), "
+        "style_brief (concise 1-sentence description of exact title look: flat matte vs 3D chrome bevel, italic slant, box/frame colors, shadows, and location)."
+    )
+    parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=1024)
+    if not parsed:
+        return dict(_DEFAULT_STYLE)
+    tbox = parsed.get("title_box") if isinstance(parsed.get("title_box"), list) and len(parsed.get("title_box")) == 4 else None
+    inferred_top = (int(tbox[0]) < 450) if tbox else (parsed.get("placement") == "top")
+    y_val = parsed.get("y_ratio")
+    if y_val is None and tbox:
+        y_val = float(tbox[0]) / 1000.0
+    p_col = parsed.get("primary_color") or "#FFFFFF"
+    s_col = parsed.get("secondary_color") or p_col
+    return {
+        "placement": "top" if inferred_top else "bottom",
+        "y_ratio": max(0.03, min(0.84, float(y_val))) if y_val is not None else None,
+        "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
+        "primary_color": p_col,
+        "secondary_color": s_col,
+        "needs_backdrop": bool(parsed.get("needs_backdrop", False if inferred_top else True)),
+        "title_box": tbox,
+        "style_brief": str(parsed.get("style_brief") or "").strip(),
+    }
+
+
+async def verify_localized_poster_ocr(image_bytes: bytes, title: str) -> bool:
+    """Verify edited poster renders exact Uzbek title spelling cleanly without leftover foreign titles."""
+    expected = title.upper().strip()
+    prompt = (
+        f'Inspect this localized movie poster. Expected Uzbek main title: "{expected}". '
+        'Return ONLY JSON: {"detected_title": "...", "spelling_exact": true/false, "no_duplicate_words": true/false, "scene_intact": true/false}. '
+        "Set spelling_exact=false if ANY letter is missing, extra, or garbled, or if title text is missing; "
+        "no_duplicate_words=false if any word repeats unnecessarily or English/foreign main title words remain alongside it; "
+        "scene_intact=false if characters/background look corrupted or darkened abnormally."
+    )
+    parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
+    if not parsed:
+        return True
+    return bool(
+        parsed.get("spelling_exact")
+        and parsed.get("no_duplicate_words", True)
+        and parsed.get("scene_intact", True)
+    )
+
+
+async def edit_poster_with_cloudflare(
+    image_bytes: bytes,
+    title: str,
+    style: Optional[dict[str, Any]] = None,
+) -> Optional[bytes]:
+    """Use Cloudflare Workers AI flux-2-klein to edit ONLY the main title on the original poster."""
+    acc_id = (settings.CLOUDFLARE_ACCOUNT_ID or "").strip()
+    token = (settings.CLOUDFLARE_API_TOKEN or "").strip()
+    if not acc_id or not token or not image_bytes:
+        return None
+
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as im:
+            orig_w, orig_h = im.size
+            scale = min(504 / max(1, orig_w), 504 / max(1, orig_h), 1.0)
+            resized = im.convert("RGB").resize(
+                (max(64, int(orig_w * scale)), max(64, int(orig_h * scale))),
+                Image.Resampling.LANCZOS,
+            )
+            png_buf = io.BytesIO()
+            resized.save(png_buf, format="PNG")
+            small_png = png_buf.getvalue()
+    except Exception as exc:
+        logger.warning("Cloudflare poster preprocess error: %s", exc)
+        return None
+
+    cfg = style or {}
+    upper_title = title.upper().strip()
+    brief = cfg.get("style_brief") or f"{cfg.get('placement', 'bottom')} title in {cfg.get('primary_color', '#FFFFFF')}"
+    prompt = (
+        f'Edit movie poster image_0 to localize ONLY the main title into Uzbek: "{upper_title}". '
+        "Keep ALL characters, faces, poses, outfits, background, lighting and effects 100% IDENTICAL. "
+        "Remove the ENTIRE original main title block (all English/foreign title lines and prefixes) cleanly. "
+        f'Match this exact original typography style ({brief}): keep original flat matte or 3D bevel style without inventing mismatched colors or extra 3D chrome. '
+        f'Render "{upper_title}" ONCE only with exact spelling.'
+    )
+    gen_w = 512 if orig_h >= orig_w else 768
+    gen_h = 768 if orig_h >= orig_w else 512
+    headers = {"Authorization": f"Bearer {token}"}
+
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        for model in _CF_IMAGE_EDIT_MODELS:
+            url = f"https://api.cloudflare.com/client/v4/accounts/{acc_id}/ai/run/{model}"
+            try:
+                resp = await client.post(
+                    url,
+                    headers=headers,
+                    files={"input_image_0": ("poster.png", small_png, "image/png")},
+                    data={"prompt": prompt, "width": str(gen_w), "height": str(gen_h)},
+                )
+                if resp.status_code != 200:
+                    logger.info("Cloudflare %s HTTP %s", model, resp.status_code)
+                    continue
+                ctype = resp.headers.get("content-type", "")
+                if "json" in ctype:
+                    payload = resp.json()
+                    img_b64 = (payload.get("result") or {}).get("image") or payload.get("image")
+                    if not img_b64:
+                        continue
+                    raw_out = base64.b64decode(img_b64)
+                else:
+                    raw_out = resp.content
+                with Image.open(io.BytesIO(raw_out)) as out_im:
+                    restored = out_im.convert("RGB").resize((orig_w, orig_h), Image.Resampling.LANCZOS)
+                    jpg_buf = io.BytesIO()
+                    restored.save(jpg_buf, format="JPEG", quality=92, optimize=True)
+                    jpg_bytes = jpg_buf.getvalue()
+                if await verify_localized_poster_ocr(jpg_bytes, title=upper_title):
+                    return jpg_bytes
+                logger.info("Cloudflare %s failed OCR verification for '%s'", model, upper_title)
+            except Exception as exc:
+                logger.warning("Cloudflare %s edit exception: %s", model, exc)
+    return None
 
 
 def _inpaint_title_box(rgb_img: Image.Image, title_box: list[int] | None) -> Image.Image:
@@ -264,6 +382,23 @@ async def localize_poster_and_upload(
     if manual_poster_url and "/api/v1/posters/tg/" in manual_poster_url:
         return manual_poster_url
 
+    orig_bytes: Optional[bytes] = None
+    style: Optional[dict[str, Any]] = None
+    cf_ready = bool((settings.CLOUDFLARE_ACCOUNT_ID or "").strip() and (settings.CLOUDFLARE_API_TOKEN or "").strip())
+    if cf_ready and manual_poster_url:
+        orig_bytes = await _download_image_bytes(manual_poster_url)
+        if orig_bytes:
+            style = await analyze_poster_style(orig_bytes, title=title)
+            cf_bytes = await edit_poster_with_cloudflare(orig_bytes, title=title, style=style)
+            if cf_bytes:
+                return await upload_poster_to_telegram(
+                    photo_bytes=cf_bytes,
+                    title=title,
+                    code=code,
+                    topic_chat_id=topic_chat_id,
+                    topic_id=topic_id,
+                )
+
     source_url: Optional[str] = None
     is_textless = False
     if tmdb_id and int(tmdb_id) > 0:
@@ -275,17 +410,18 @@ async def localize_poster_and_upload(
     if not source_url:
         return None
 
-    raw_bytes = await _download_image_bytes(source_url)
+    raw_bytes = orig_bytes if (orig_bytes and source_url == manual_poster_url) else await _download_image_bytes(source_url)
     if not raw_bytes:
         return None
 
     style_bytes = raw_bytes
     if is_textless and manual_poster_url and manual_poster_url != source_url:
-        orig_bytes = await _download_image_bytes(manual_poster_url)
-        if orig_bytes:
-            style_bytes = orig_bytes
+        downloaded_orig = orig_bytes or await _download_image_bytes(manual_poster_url)
+        if downloaded_orig:
+            style_bytes = downloaded_orig
 
-    style = await analyze_poster_style(style_bytes, title=title)
+    if style is None or (style_bytes is not orig_bytes):
+        style = await analyze_poster_style(style_bytes, title=title)
     localized_bytes = render_uzbek_title_on_poster(
         image_bytes=raw_bytes,
         title=title,

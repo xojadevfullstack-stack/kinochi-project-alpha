@@ -228,3 +228,98 @@ def test_render_uzbek_title_on_poster_preserves_top_y_ratio_orange_color_without
     # Orange title pixels should appear inside top band (around y=40..120), NOT red #E50914
     top_band = [out_img.getpixel((x, y)) for x in range(120, 380, 4) for y in range(30, 110, 2)]
     assert any(r > 200 and 70 <= g <= 160 and b < 80 for (r, g, b) in top_band)
+
+
+@pytest.mark.asyncio
+async def test_localize_poster_uses_cloudflare_on_manual_url_first_without_textless_swap():
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750, color=(40, 80, 120))
+    cf_out_bytes = _make_sample_jpeg(500, 750, color=(42, 82, 122))
+
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc_123"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok_123"),
+        patch.object(poster_localizer.tmdb_client, "get_textless_poster", new=AsyncMock()) as mock_textless,
+        patch.object(poster_localizer, "_download_image_bytes", new=AsyncMock(return_value=orig_bytes)) as mock_dl,
+        patch.object(
+            poster_localizer,
+            "analyze_poster_style",
+            new=AsyncMock(
+                return_value={
+                    "placement": "bottom",
+                    "y_ratio": 0.7,
+                    "font_style": "bold",
+                    "primary_color": "#D0D8E0",
+                    "secondary_color": "#708090",
+                    "needs_backdrop": False,
+                    "title_box": [700, 60, 920, 940],
+                    "style_brief": "3D beveled metallic silver chrome blocky italic letters at bottom",
+                }
+            ),
+        ),
+        patch.object(
+            poster_localizer,
+            "edit_poster_with_cloudflare",
+            new=AsyncMock(return_value=cf_out_bytes),
+        ) as mock_cf,
+        patch.object(
+            poster_localizer,
+            "upload_poster_to_telegram",
+            new=AsyncMock(return_value="https://api.example.com/api/v1/posters/tg/AgAC_CF_EXACT"),
+        ) as mock_upload,
+    ):
+        url = await poster_localizer.localize_poster_and_upload(
+            title="Ertangi kun afsonalari",
+            tmdb_id=62643,
+            content_type="tv",
+            manual_poster_url="https://image.tmdb.org/t/p/w500/qNgAcg4gNYbZ9mySLB9ZX4ehZb6.jpg",
+        )
+
+    assert url == "https://api.example.com/api/v1/posters/tg/AgAC_CF_EXACT"
+    mock_textless.assert_not_called()
+    mock_dl.assert_awaited_once_with("https://image.tmdb.org/t/p/w500/qNgAcg4gNYbZ9mySLB9ZX4ehZb6.jpg")
+    assert mock_cf.await_args.args[0] == orig_bytes
+    assert mock_upload.await_args.kwargs["photo_bytes"] == cf_out_bytes
+
+
+@pytest.mark.asyncio
+async def test_edit_poster_with_cloudflare_retries_4b_on_ocr_fail_and_falls_back_when_flagged():
+    import base64
+    from unittest.mock import MagicMock
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750)
+    png_b64 = base64.b64encode(_make_sample_jpeg(512, 768)).decode("ascii")
+
+    resp_ok = MagicMock(status_code=200, headers={"content-type": "application/json"})
+    resp_ok.json.return_value = {"result": {"image": png_b64}}
+    resp_flagged = MagicMock(status_code=400, headers={"content-type": "application/json"}, text='{"code":3030}')
+
+    # Scenario 1: 9b fails OCR -> retries 4b -> passes OCR
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok"),
+        patch("httpx.AsyncClient.post", new=AsyncMock(side_effect=[resp_ok, resp_ok])),
+        patch.object(poster_localizer, "verify_localized_poster_ocr", new=AsyncMock(side_effect=[False, True])),
+    ):
+        out = await poster_localizer.edit_poster_with_cloudflare(
+            orig_bytes,
+            title="Ertangi kun afsonalari",
+            style={"placement": "bottom", "style_brief": "3D metallic"},
+        )
+    assert out is not None
+    assert Image.open(io.BytesIO(out)).size == (500, 750)
+
+    # Scenario 2: both flagged (code 3030) -> returns None so Pillow fallback takes over
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok"),
+        patch("httpx.AsyncClient.post", new=AsyncMock(side_effect=[resp_flagged, resp_flagged])),
+    ):
+        out_none = await poster_localizer.edit_poster_with_cloudflare(
+            orig_bytes,
+            title="Agentlar",
+            style={"placement": "bottom", "style_brief": "chrome"},
+        )
+    assert out_none is None

@@ -126,3 +126,7 @@
 ## Private-Only Bot Dispatch (`F.chat.type == "private"`)
 - Concept: **Chat-Scope Filter Isolation** — Yo'naltiruvchi bot barcha xabarlarni filtrsiz ushlasa, o'zi a'zo bo'lgan Storage superguruhidagi har bir mavzu/video ostiga ham javob yuborib axlatga to'ldiradi; faqat shaxsiy chat (`private`) bilan cheklash superguruhlarni toza saqlaydi.
 - Analogy: Mehmonxonaning kirish eshigida turadigan yo'lko'rsatuvchini xodimlar ishlaydigan omborxona ichiga qo'yib qo'ysangiz, har safar quti olib kirilganda "Yangi manzilga ko'chdik!" deb xalaqit beraveradi.
+
+## Style-Preserving Poster Edit + Vision OCR Gate
+- Concept: **Exact Source First (`manual_poster_url`) + Cloudflare `flux-2-klein` (`9b`/`4b`) + OCR Verification & Pillow Fallback** — Begona TMDb `textless` rasmi o'rniga asl poster ustida faqat sarlavhani o'girish barcha personaj va effektlarni saqlaydi; chiqqan rasmni Gemini Vision OCR dan o'tkazib imlo xato yoki safety (`code 3030`) blokida zaxira `OpenCV/Pillow` ga o'tish barqarorlikni kafolatlaydi.
+- Analogy: Kitob muqovasini qayta chizmasdan, asl rasmni skanerda nusxalab faqat nomini original harf uslubida o'zbekchaga o'zgartirish va matbaa xatosi yo'qligini lupa (`OCR`) bilan tekshirib chiqarish.
