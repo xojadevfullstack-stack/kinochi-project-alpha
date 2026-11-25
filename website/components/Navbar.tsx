@@ -320,19 +320,19 @@ export default function Navbar({ pages = [], socialLinks }: { pages: any[]; soci
             </div>
           </div>
 
-          {/* User Profile Card (Minimalist Dark Glass) */}
+          {/* User Profile Card (Minimalist Glass) */}
           <Link
             href="/profile"
-            className="block p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all shadow-sm group cursor-pointer"
+            className="block p-3 bg-slate-100/90 hover:bg-slate-200/80 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-slate-200 dark:border-white/10 transition-all shadow-sm group cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center font-bold text-xs text-white">
+                <div className="w-10 h-10 rounded-full bg-white dark:bg-white/10 border border-slate-200 dark:border-white/15 flex items-center justify-center font-bold text-xs text-slate-900 dark:text-white">
                   {status === "authenticated" && user?.first_name ? user.first_name.charAt(0) : "U"}
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-white truncate group-hover:text-white transition-colors">
+                <div className="text-xs font-bold text-slate-900 dark:text-white truncate transition-colors">
                   {status === "authenticated" && user ? `${user.first_name} ${user.last_name || ""}` : "Mehmon (Kiring)"}
                 </div>
                 <div className="text-[10px] text-text-secondary font-medium flex items-center gap-1 mt-0.5">

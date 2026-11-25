@@ -232,13 +232,13 @@ export default function ReviewsSection({
 
         {/* Review Form Drawer / Panel */}
         {formOpen && (
-          <div className="bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 sm:p-6 md:p-8 rounded-3xl border border-white/10 shadow-xl shadow-black/30 transition-all">
+          <div className="bg-white/95 dark:bg-white/[0.04] sm:dark:bg-white/5 backdrop-blur-xl p-5 sm:p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-xl dark:shadow-black/30 transition-all">
             {status !== "authenticated" ? (
               <div className="flex flex-col items-center justify-center py-8 text-center gap-4">
-                <span className="material-symbols-outlined text-5xl text-sky-400">lock</span>
+                <span className="material-symbols-outlined text-5xl text-sky-500 dark:text-sky-400">lock</span>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Fikr va baho qoldirish uchun tizimga kiring</h3>
-                  <p className="text-sm text-text-secondary mt-1">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Fikr va baho qoldirish uchun tizimga kiring</h3>
+                  <p className="text-sm text-slate-600 dark:text-text-secondary mt-1">
                     Telegram orqali 1 ta bosishda hisobingizga kiring va o'z sharhingizni qoldiring.
                   </p>
                 </div>
@@ -248,19 +248,19 @@ export default function ReviewsSection({
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-white/5 pb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-white">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                       {alreadyReviewed ? "O'z sharhingizni tahrirlash" : "Ushbu asarga baho bering"}
                     </h3>
-                    <p className="text-xs text-text-secondary mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-text-secondary mt-0.5">
                       1 dan 10 gacha yulduz tanlang va fikringizni yozing
                     </p>
                   </div>
 
                   {/* Selected rating badge */}
-                  <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/10 shrink-0">
-                    <span className="text-xs font-bold text-amber-400">
+                  <div className="flex items-center gap-2 bg-amber-50 dark:bg-black/40 px-4 py-2 rounded-xl border border-amber-200 dark:border-white/10 shrink-0">
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
                       {RATING_LABELS[activeRating] || `${activeRating}/10`}
                     </span>
                   </div>
@@ -268,7 +268,7 @@ export default function ReviewsSection({
 
                 {/* 1 to 10 Star Rating Selector */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-text-secondary">
                     Bahoingiz (1 - 10):
                   </label>
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -282,7 +282,7 @@ export default function ReviewsSection({
                         className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer font-bold text-sm ${
                           val <= activeRating
                             ? "bg-rating-gold text-black shadow-lg shadow-rating-gold/30 scale-105"
-                            : "bg-white/5 text-text-secondary hover:bg-white/10 hover:text-white"
+                            : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-text-secondary hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
                         }`}
                       >
                         {val}
@@ -293,7 +293,7 @@ export default function ReviewsSection({
 
                 {/* Comment Textarea */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-text-secondary">
                     Sharhingiz (ixtiyoriy):
                   </label>
                   <textarea
@@ -302,9 +302,9 @@ export default function ReviewsSection({
                     rows={4}
                     maxLength={1000}
                     placeholder="Asar sizga qanday taassurot qoldirdi? Aktyorlar mahorati, syujet va voqealar haqida nima deya olasiz?.."
-                    className="w-full bg-background-obsidian/80 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-text-secondary focus:border-sky-500/50 focus:outline-none transition-all resize-none"
+                    className="w-full bg-white dark:bg-background-obsidian/80 border border-slate-300 dark:border-white/10 rounded-2xl p-4 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-text-secondary focus:border-sky-500/50 focus:outline-none transition-all resize-none"
                   />
-                  <span className="text-[11px] text-text-secondary text-right">
+                  <span className="text-[11px] text-slate-500 dark:text-text-secondary text-right">
                     {commentText.length} / 1000 belgi
                   </span>
                 </div>
@@ -314,7 +314,7 @@ export default function ReviewsSection({
                   <button
                     type="button"
                     onClick={() => setFormOpen(false)}
-                    className="px-5 py-2.5 rounded-xl text-sm font-semibold text-text-secondary hover:text-white transition-colors cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                   >
                     Bekor qilish
                   </button>
@@ -355,15 +355,15 @@ export default function ReviewsSection({
               <div className="w-8 h-8 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
             </div>
           ) : reviews.length === 0 ? (
-            <div className="text-center py-12 bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 flex flex-col items-center gap-2">
-              <span className="material-symbols-outlined text-5xl text-text-secondary/50">chat_bubble_outline</span>
-              <p className="font-bold text-white">Hozircha sharhlar mavjud emas</p>
-              <p className="text-xs text-text-secondary max-w-sm">
+            <div className="text-center py-12 bg-white dark:bg-white/[0.04] sm:dark:bg-white/5 backdrop-blur-xl rounded-3xl border border-slate-200 dark:border-white/10 p-6 flex flex-col items-center gap-2 shadow-sm dark:shadow-none">
+              <span className="material-symbols-outlined text-5xl text-slate-400 dark:text-text-secondary/50">chat_bubble_outline</span>
+              <p className="font-bold text-slate-900 dark:text-white">Hozircha sharhlar mavjud emas</p>
+              <p className="text-xs text-slate-500 dark:text-text-secondary max-w-sm">
                 Birinchi bo'lib ushbu film/serial haqida o'z fikringiz va bahoyingizni qoldiring!
               </p>
               <button
                 onClick={() => setFormOpen(true)}
-                className="mt-2 text-xs font-bold text-sky-400 hover:text-sky-300 hover:underline cursor-pointer"
+                className="mt-2 text-xs font-bold text-[#E50914] dark:text-sky-400 hover:underline cursor-pointer"
               >
                 + Fikr qoldirish
               </button>
@@ -373,19 +373,19 @@ export default function ReviewsSection({
               {reviews.map((r) => (
                 <div
                   key={r.id}
-                  className="bg-white/[0.04] sm:bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 flex flex-col justify-between gap-3 hover:border-white/20 transition-all"
+                  className="bg-white dark:bg-white/[0.04] sm:dark:bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-between gap-3 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm dark:shadow-none"
                 >
                   <div>
                     {/* Review Header */}
                     <div className="flex items-center justify-between gap-2 mb-2.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-sky-500/15 border border-sky-500/20 text-sky-400 font-bold text-sm flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-sky-50 dark:bg-sky-500/15 border border-sky-200 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 font-bold text-sm flex items-center justify-center shrink-0">
                           {r.user_name.charAt(0).toUpperCase()}
                         </div>
                         <div className="overflow-hidden">
-                          <h4 className="font-bold text-sm text-white truncate">{r.user_name}</h4>
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">{r.user_name}</h4>
                           {r.created_at && (
-                            <span className="text-[11px] text-text-secondary">
+                            <span className="text-[11px] text-slate-500 dark:text-text-secondary">
                               {new Date(r.created_at).toLocaleDateString("uz-UZ", {
                                 day: "numeric",
                                 month: "short",
@@ -397,7 +397,7 @@ export default function ReviewsSection({
                       </div>
 
                       {/* Rating pill */}
-                      <div className="flex items-center gap-1 bg-rating-gold/15 text-rating-gold border border-rating-gold/20 px-2.5 py-1 rounded-xl text-xs font-black shrink-0">
+                      <div className="flex items-center gap-1 bg-amber-50 dark:bg-rating-gold/15 text-amber-600 dark:text-rating-gold border border-amber-200 dark:border-rating-gold/20 px-2.5 py-1 rounded-xl text-xs font-black shrink-0">
                         <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                           star
                         </span>

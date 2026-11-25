@@ -260,14 +260,14 @@ export default function NotificationsPage() {
         {/* Content */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white/40"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#E50914] border-t-transparent"></div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 bg-surface-container/20 rounded-3xl border border-white/5 p-8">
-            <span className="material-symbols-outlined text-6xl text-text-secondary mb-3">notifications_off</span>
-            <h3 className="text-lg font-bold text-white mb-1">Hozircha xabarlar yo'q</h3>
-            <p className="text-sm text-text-secondary">
-              Yangi filmlar va seriallar qo'shilganda shu yerda xabardor qilamiz.
+          <div className="text-center py-20 bg-white dark:bg-surface-container/20 rounded-3xl border border-slate-200 dark:border-white/5 p-8 shadow-sm dark:shadow-none">
+            <span className="material-symbols-outlined text-6xl text-slate-400 dark:text-text-secondary mb-3">notifications_off</span>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Hozircha xabarlar yo&apos;q</h3>
+            <p className="text-sm text-slate-500 dark:text-text-secondary">
+              Yangi filmlar va seriallar qo&apos;shilganda shu yerda xabardor qilamiz.
             </p>
           </div>
         ) : (

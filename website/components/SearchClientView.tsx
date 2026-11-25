@@ -376,7 +376,7 @@ export default function SearchClientView({
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
                   aria-label="Qidiruv natijalarini saralash"
-                  className="bg-[#13151b] border border-white/15 text-white text-xs rounded-xl px-3 py-1.5 focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                  className="bg-white dark:bg-[#13151b] border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-1.5 focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
                 >
                   <option value="default">Moslik bo'yicha</option>
                   <option value="rating">Reyting bo'yicha</option>
