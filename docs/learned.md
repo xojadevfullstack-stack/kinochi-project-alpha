@@ -103,6 +103,10 @@
 - Concept: **Append-Only Event Log (`media_view_events`) + Counter (`view_count`) + Redis Dedup** — Ko'rishlarni vaqt kesimida ("Bugun/7 kun/30 kun") tahlil qilish uchun har bir hodisani manbasi (`bot`/`web`/`stream`) bilan alohida jadvalga yozib, tezkor saralash uchun umumiy hisoblagichni (`view_count`) oshirish va sahifa qayta yuklanishini (`F5`) Redis TTL kaliti bilan filtrlash.
 - Analogy: Do'kon eshigidagi hisoblagich (jami kirganlar soni) bilan birga daftarga har bir mehmon qaysi soatda va qaysi eshikdan (Telegram yoki Sayt) kirganini yozib borish — bitta odam eshikni 5 marta ochib yopsa ham bir soat ichida 1 marta sanaladi.
 
+## Zero-Query Discovery & Click-Through Search Attribution
+- Concept: **Zero-Query Popular Feed + Click-Through Counter (`search_count`)** — Debounced autocomplete da har bir yozilayotgan chala harfni emas, faqat foydalanuvchi tanlab bosgan natijani 1 soatlik dedup bilan sanab, qidiruv bariga fokus bo'lishi bilanoq (`query=""`) eng ko'p qidirilganlarni chiqarish.
+- Analogy: Kutubxonada odamlar hali kitob nomini aytib ulgurmasidan peshtaxta ustida eng ko'p so'ralayotgan 8 ta kitobni ko'zga ko'rinarli qilib qo'yish va faqat chindan olib o'qilgan kitoblarnigina hisobga yozish.
+
 ## Webhook Adapter Fallback for OAuth-Gated Platforms
 - Concept: **Webhook Bridge Pattern (`MAKE_WEBHOOK_URL`)** — Shaxsiy Meta App SMS/App Review blokiga tushganda to'g'ridan-to'g'ri Graph API o'rniga tasdiqlangan partner platforma webhook'iga ochiq `video_url` va `caption` JSON uzatish barcha platforma avtopost shartnomasini (`PublishResult`) saqlab qolgan holda ishlaydi.
 - Analogy: Pochta bo'limi o'z mashinangizni darvozadan kiritmay qo'yganda, posilkani akkreditatsiyadan o'tgan kuryer shoxobchasi orqali manzilga yetkazib berish.

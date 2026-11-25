@@ -59,6 +59,12 @@ async def test_media_view_event_model_and_record_view(db_session):
 
     assert movie.view_count == 0
     assert series.view_count == 0
+    baseline_overview = await get_analytics_overview(db_session, days=7)
+    base_total_views = baseline_overview["summary"]["total_views"]
+    base_period_views = baseline_overview["summary"]["period_views"]
+    base_bot = baseline_overview["summary"]["bot_views"]
+    base_web = baseline_overview["summary"]["web_views"]
+    base_stream = baseline_overview["summary"]["stream_views"]
 
     with patch("app.core.analytics.get_cache", new=AsyncMock(return_value=None)), patch(
         "app.core.analytics.set_cache", new=AsyncMock(return_value=True)
@@ -98,11 +104,11 @@ async def test_media_view_event_model_and_record_view(db_session):
     assert len(events) == 3
 
     overview = await get_analytics_overview(db_session, days=7)
-    assert overview["summary"]["total_views"] == 3
-    assert overview["summary"]["period_views"] == 3
-    assert overview["summary"]["bot_views"] == 1
-    assert overview["summary"]["web_views"] == 1
-    assert overview["summary"]["stream_views"] == 1
+    assert overview["summary"]["total_views"] == base_total_views + 3
+    assert overview["summary"]["period_views"] == base_period_views + 3
+    assert overview["summary"]["bot_views"] == base_bot + 1
+    assert overview["summary"]["web_views"] == base_web + 1
+    assert overview["summary"]["stream_views"] == base_stream + 1
     assert overview["summary"]["active_users_today"] >= 1
     assert overview["summary"]["pending_requests"] == 1
     assert overview["top_movies"][0]["id"] == movie.id

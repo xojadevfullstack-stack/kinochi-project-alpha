@@ -2,11 +2,12 @@
 API v1 — Search endpoints.
 Provides ultra-fast debounced live search for website autocomplete and Telegram bot.
 """
+import logging
 import re
 from typing import Literal
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
-from sqlalchemy import select, or_, func, case
+from sqlalchemy import select, or_, func, case, desc, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
@@ -15,8 +16,9 @@ from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.collection import CollectionModel
 from app.infrastructure.db.query_filters import exclude_adult_media, non_adult_condition, published_only
-from app.core.cache import get_cache, set_cache
+from app.core.cache import delete_cache_pattern, get_cache, set_cache
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/search", tags=["search"])
 
 
@@ -31,12 +33,150 @@ class LiveSearchResultItem(BaseModel):
     imdb_rating: float | None = None
     type: Literal["movie", "series", "collection"]
     extra: str | None = None
+    search_count: int = 0
+    view_count: int = 0
 
 
 class LiveSearchResponse(BaseModel):
     query: str
     total: int
     results: list[LiveSearchResultItem]
+
+
+class SearchClickTrackRequest(BaseModel):
+    media_type: Literal["movie", "series"]
+    item_id: int
+
+
+class SearchClickTrackResponse(BaseModel):
+    recorded: bool
+
+
+@router.get("/popular", response_model=LiveSearchResponse)
+@limiter.limit("120/minute")
+async def popular_searches(
+    request: Request,
+    limit: int = Query(8, ge=1, le=20, description="Eng ko'p qidirilganlar soni"),
+    include_adult: bool = Query(False, description="Include 18+ content"),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """
+    Return most-searched movies and series (falling back to view_count and IMDb rating).
+    Shown immediately when the user clicks the search bar before typing.
+    """
+    cache_key = f"cache:search:popular:{include_adult}:{limit}"
+    cached = await get_cache(cache_key)
+    if cached:
+        return cached
+
+    movie_stmt = select(MovieModel).order_by(
+        desc(MovieModel.search_count),
+        desc(MovieModel.view_count),
+        MovieModel.imdb_rating.desc().nullslast(),
+        desc(MovieModel.id),
+    ).limit(limit)
+    movie_stmt = published_only(movie_stmt, MovieModel)
+    if not include_adult:
+        movie_stmt = exclude_adult_media(movie_stmt, MovieModel)
+
+    series_stmt = select(SeriesModel).order_by(
+        desc(SeriesModel.search_count),
+        desc(SeriesModel.view_count),
+        SeriesModel.imdb_rating.desc().nullslast(),
+        desc(SeriesModel.id),
+    ).limit(limit)
+    series_stmt = published_only(series_stmt, SeriesModel)
+    if not include_adult:
+        series_stmt = exclude_adult_media(series_stmt, SeriesModel)
+
+    movie_rows = (await db.execute(movie_stmt)).scalars().all()
+    series_rows = (await db.execute(series_stmt)).scalars().all()
+
+    combined: list[LiveSearchResultItem] = []
+    for m in movie_rows:
+        combined.append(
+            LiveSearchResultItem(
+                id=m.id,
+                title=m.title,
+                original_title=m.original_title,
+                code=m.code,
+                short_code=m.short_code,
+                year=m.release_year,
+                poster_url=m.poster_url,
+                imdb_rating=m.imdb_rating,
+                type="movie",
+                search_count=int(getattr(m, "search_count", 0) or 0),
+                view_count=int(getattr(m, "view_count", 0) or 0),
+            )
+        )
+    for s in series_rows:
+        combined.append(
+            LiveSearchResultItem(
+                id=s.id,
+                title=s.title,
+                original_title=None,
+                code=f"s_{s.id}",
+                year=s.release_year,
+                poster_url=s.poster_url,
+                imdb_rating=s.imdb_rating,
+                type="series",
+                search_count=int(getattr(s, "search_count", 0) or 0),
+                view_count=int(getattr(s, "view_count", 0) or 0),
+            )
+        )
+
+    combined.sort(
+        key=lambda x: (x.search_count, x.view_count, float(x.imdb_rating or 0.0), x.id),
+        reverse=True,
+    )
+    trimmed = combined[:limit]
+    resp = LiveSearchResponse(query="", total=len(trimmed), results=trimmed)
+    await set_cache(cache_key, resp.model_dump(mode="json"), 120)
+    return resp
+
+
+@router.post("/track-click", response_model=SearchClickTrackResponse)
+@limiter.limit("60/minute")
+async def track_search_click(
+    request: Request,
+    payload: SearchClickTrackRequest,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Increment search_count when a user selects a searched movie/series (1h IP dedup)."""
+    if payload.item_id <= 0:
+        return SearchClickTrackResponse(recorded=False)
+
+    client_ip = request.client.host if request.client else "unknown"
+    dedup_key = f"search_click_dedup:{client_ip}:{payload.media_type}:{payload.item_id}"
+    try:
+        if await get_cache(dedup_key):
+            return SearchClickTrackResponse(recorded=False)
+    except Exception as exc:
+        logger.debug("Search dedup cache read failed: %s", exc)
+
+    if payload.media_type == "movie":
+        res = await db.execute(
+            update(MovieModel)
+            .where(MovieModel.id == payload.item_id)
+            .values(search_count=MovieModel.search_count + 1)
+        )
+    else:
+        res = await db.execute(
+            update(SeriesModel)
+            .where(SeriesModel.id == payload.item_id)
+            .values(search_count=SeriesModel.search_count + 1)
+        )
+
+    if not res.rowcount:
+        return SearchClickTrackResponse(recorded=False)
+
+    await db.commit()
+    try:
+        await set_cache(dedup_key, "1", ttl_seconds=3600)
+        await delete_cache_pattern("cache:search:popular:*")
+    except Exception as exc:
+        logger.debug("Search dedup cache update failed: %s", exc)
+    return SearchClickTrackResponse(recorded=True)
 
 
 @router.get("/live", response_model=LiveSearchResponse)

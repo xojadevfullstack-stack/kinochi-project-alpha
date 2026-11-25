@@ -44,6 +44,12 @@ async def _ensure_user_adult_column_once(session: AsyncSession) -> None:
             await session.execute(
                 text("ALTER TABLE users ADD COLUMN IF NOT EXISTS show_adult_content BOOLEAN NOT NULL DEFAULT FALSE")
             )
+            await session.execute(
+                text("ALTER TABLE movies ADD COLUMN IF NOT EXISTS search_count INTEGER NOT NULL DEFAULT 0")
+            )
+            await session.execute(
+                text("ALTER TABLE series ADD COLUMN IF NOT EXISTS search_count INTEGER NOT NULL DEFAULT 0")
+            )
             await session.commit()
     except Exception:
         await session.rollback()

@@ -7,17 +7,25 @@ import { usePathname, useRouter } from "next/navigation";
 import RequestMovieModal, { RequestTargetItem } from "./RequestMovieModal";
 import { API_URL, readClientAdultPreference } from "@/lib/api";
 import { suppressOverlayHistoryBack } from "@/lib/hooks/useOverlayBackClose";
+import {
+  buildSearchTrackPayload,
+  getDisplaySearchCode,
+  getSearchResultHref,
+} from "@/lib/searchHelpers.mjs";
 
 interface SearchResultItem {
   id: number;
   title: string;
   original_title?: string | null;
   code: string;
+  short_code?: string | null;
   year?: number | null;
   poster_url?: string | null;
   imdb_rating?: number | null;
   type: "movie" | "series" | "collection";
   extra?: string | null;
+  search_count?: number;
+  view_count?: number;
 }
 
 interface ExternalResultItem {
@@ -124,6 +132,8 @@ export default function LiveSearch({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [externalResults, setExternalResults] = useState<ExternalResultItem[]>([]);
+  const [popularResults, setPopularResults] = useState<SearchResultItem[]>([]);
+  const [loadingPopular, setLoadingPopular] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -136,6 +146,35 @@ export default function LiveSearch({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suppressPopupRef = useRef(false);
+  const popularCacheMetaRef = useRef<{ loaded: boolean; includeAdult: boolean }>({
+    loaded: false,
+    includeAdult: false,
+  });
+
+  const loadPopularSearches = async () => {
+    const includeAdult = readClientAdultPreference();
+    if (
+      popularCacheMetaRef.current.loaded &&
+      popularCacheMetaRef.current.includeAdult === includeAdult
+    ) {
+      return;
+    }
+    setLoadingPopular(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/search/popular?limit=8&include_adult=${includeAdult ? "true" : "false"}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setPopularResults(data?.results || []);
+        popularCacheMetaRef.current = { loaded: true, includeAdult };
+      }
+    } catch {
+      // Keep previous list if offline
+    } finally {
+      setLoadingPopular(false);
+    }
+  };
 
   // Close quick-search popup immediately whenever route changes (e.g. navigating to /search)
   useEffect(() => {
@@ -144,10 +183,15 @@ export default function LiveSearch({
     setIsKeyboardNavigating(false);
   }, [pathname]);
 
-  // Auto focus input when autoFocus prop is enabled
+  // Auto focus input when autoFocus prop is enabled (e.g. Mobile search overlay opens)
   useEffect(() => {
     if (autoFocus && inputRef.current) {
+      suppressPopupRef.current = false;
       inputRef.current.focus();
+      if (!query.trim()) {
+        loadPopularSearches();
+        setIsOpen(true);
+      }
     }
   }, [autoFocus]);
 
@@ -170,7 +214,16 @@ export default function LiveSearch({
       setResults([]);
       setExternalResults([]);
       setIsLoading(false);
-      setIsOpen(false);
+      if (
+        !suppressPopupRef.current &&
+        typeof document !== "undefined" &&
+        document.activeElement === inputRef.current
+      ) {
+        loadPopularSearches();
+        setIsOpen(true);
+      } else if (!autoFocus) {
+        setIsOpen(false);
+      }
       return;
     }
 
@@ -240,6 +293,16 @@ export default function LiveSearch({
   }, []);
 
   const handleSelect = (item: SearchResultItem) => {
+    const trackPayload = buildSearchTrackPayload(item);
+    if (trackPayload) {
+      fetch(`${API_URL}/search/track-click`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(trackPayload),
+        keepalive: true,
+      }).catch(() => {});
+    }
+
     suppressOverlayHistoryBack();
     suppressPopupRef.current = true;
     inputRef.current?.blur();
@@ -248,14 +311,7 @@ export default function LiveSearch({
     onNavigate?.();
     onClose?.();
 
-    if (item.type === "movie") {
-      router.push(`/movie/${item.code}`);
-    } else if (item.type === "series") {
-      const serialId = item.code?.replace("s_", "") || item.id;
-      router.push(`/series/${serialId}`);
-    } else if (item.type === "collection") {
-      router.push(`/collections/${item.code}`);
-    }
+    router.push(getSearchResultHref(item));
   };
 
   const handleOpenRequest = (item: ExternalResultItem) => {
@@ -315,11 +371,13 @@ export default function LiveSearch({
     }
   };
 
+  const activeNavList = query.trim().length > 0 ? results : popularResults;
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     // Only select single item if user actively used keyboard arrow keys
-    if (isKeyboardNavigating && selectedIndex >= 0 && selectedIndex < results.length) {
-      handleSelect(results[selectedIndex]);
+    if (isKeyboardNavigating && selectedIndex >= 0 && selectedIndex < activeNavList.length) {
+      handleSelect(activeNavList[selectedIndex]);
       return;
     }
     handleFullSearch(e);
@@ -328,15 +386,15 @@ export default function LiveSearch({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) return;
 
-    if (results.length > 0) {
+    if (activeNavList.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setIsKeyboardNavigating(true);
-        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+        setSelectedIndex((prev) => (prev < activeNavList.length - 1 ? prev + 1 : 0));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setIsKeyboardNavigating(true);
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : activeNavList.length - 1));
       }
     }
     if (e.key === "Escape") {
@@ -346,7 +404,9 @@ export default function LiveSearch({
     }
   };
 
+  const hasQuery = query.trim().length > 0;
   const hasAnyResults = results.length > 0 || externalResults.length > 0;
+  const showPopularSection = !hasQuery && (popularResults.length > 0 || loadingPopular);
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -362,6 +422,9 @@ export default function LiveSearch({
             ref={inputRef}
             type="text"
             value={query}
+            onMouseDown={() => {
+              suppressPopupRef.current = false;
+            }}
             onChange={(e) => {
               suppressPopupRef.current = false;
               setQuery(e.target.value);
@@ -369,7 +432,13 @@ export default function LiveSearch({
               setIsKeyboardNavigating(false);
             }}
             onFocus={() => {
-              if (!suppressPopupRef.current && hasAnyResults) setIsOpen(true);
+              if (suppressPopupRef.current) return;
+              if (query.trim().length === 0) {
+                loadPopularSearches();
+                setIsOpen(true);
+              } else if (hasAnyResults) {
+                setIsOpen(true);
+              }
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
@@ -381,11 +450,14 @@ export default function LiveSearch({
             <button
               type="button"
               onClick={() => {
+                suppressPopupRef.current = false;
                 setQuery("");
                 setResults([]);
                 setExternalResults([]);
-                setIsOpen(false);
+                setSelectedIndex(-1);
                 setIsKeyboardNavigating(false);
+                loadPopularSearches();
+                setIsOpen(true);
                 inputRef.current?.focus();
               }}
               className="text-text-secondary hover:text-white transition-colors p-0.5"
@@ -397,17 +469,117 @@ export default function LiveSearch({
       </form>
 
       {/* Live Dropdown Results Popover */}
-      {isOpen && (
+      {isOpen && (hasQuery || showPopularSection) && (
         <div
           className={`bg-white/95 dark:bg-[#121318]/95 backdrop-blur-2xl border border-slate-200 dark:border-white/15 rounded-2xl shadow-2xl shadow-slate-900/15 dark:shadow-black/80 overflow-hidden transition-all flex flex-col ${
             isMobileBar
-              ? "fixed left-2 right-2 top-16 max-h-[72vh] z-[70]"
+              ? "fixed left-2 right-2 top-[64px] max-h-[calc(100dvh-152px)] z-[70]"
               : isMobileDrawer
               ? "absolute left-0 right-0 mt-2 max-h-[60vh] w-full z-50"
               : "absolute left-0 right-0 mt-2 min-w-[340px] sm:min-w-[480px] max-h-[520px] z-50"
           }`}
         >
-          {hasAnyResults ? (
+          {!hasQuery ? (
+            <div className="overflow-y-auto p-1.5">
+              <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-text-secondary flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-[#E50914]">
+                    local_fire_department
+                  </span>
+                  <span>Eng ko&apos;p qidirilganlar</span>
+                </span>
+                {popularResults.length > 0 && (
+                  <span className="text-[10px] text-[#D20A13] dark:text-[#E50914] font-bold">
+                    TOP {popularResults.length}
+                  </span>
+                )}
+              </div>
+
+              {loadingPopular && popularResults.length === 0 ? (
+                <div className="space-y-1.5 p-1.5">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-14 rounded-xl bg-slate-200/70 dark:bg-white/5 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                popularResults.map((item, idx) => {
+                  const isSelected = isKeyboardNavigating && idx === selectedIndex;
+                  const displayCode = getDisplaySearchCode(item);
+                  return (
+                    <button
+                      key={`pop-${item.type}-${item.id}`}
+                      type="button"
+                      onClick={() => handleSelect(item)}
+                      onMouseEnter={() => {
+                        setIsKeyboardNavigating(false);
+                        setSelectedIndex(idx);
+                      }}
+                      className={`w-full text-left flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-red-50 dark:bg-white/15 text-slate-900 dark:text-white"
+                          : "hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-text-primary"
+                      }`}
+                    >
+                      <span
+                        className={`w-5 text-center font-black text-xs shrink-0 ${
+                          idx < 3 ? "text-[#D20A13] dark:text-[#E50914]" : "text-slate-400 dark:text-white/40"
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+
+                      <div className="w-10 h-14 rounded-lg bg-slate-200 dark:bg-surface-container-high overflow-hidden shrink-0 relative border border-slate-200 dark:border-white/10">
+                        <SearchPoster item={item} />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-bold text-sm text-slate-900 dark:text-text-primary truncate">
+                            {item.title}
+                          </span>
+                          {item.year && (
+                            <span className="text-[11px] text-slate-500 dark:text-text-secondary shrink-0">
+                              ({item.year})
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-text-secondary">
+                          <span
+                            className={`px-1.5 py-0.5 rounded font-bold text-[10px] uppercase ${
+                              item.type === "series"
+                                ? "bg-sky-500/10 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400"
+                                : "bg-red-500/10 dark:bg-red-500/20 text-[#D20A13] dark:text-red-400"
+                            }`}
+                          >
+                            {item.type === "series" ? "Serial" : "Kino"}
+                          </span>
+
+                          {item.imdb_rating && (
+                            <span className="flex items-center gap-0.5 text-rating-gold font-bold text-[11px]">
+                              <span
+                                className="material-symbols-outlined text-[13px]"
+                                style={{ fontVariationSettings: "'FILL' 1" }}
+                              >
+                                star
+                              </span>
+                              {Number(item.imdb_rating).toFixed(1)}
+                            </span>
+                          )}
+
+                          {displayCode && (
+                            <span className="font-mono text-[11px] text-slate-500 dark:text-white/50">
+                              #{displayCode}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          ) : hasAnyResults ? (
             <div className="overflow-y-auto divide-y divide-slate-200/70 dark:divide-white/5 p-1.5">
               {/* Section 1: Local Internal Results */}
               {results.length > 0 && (

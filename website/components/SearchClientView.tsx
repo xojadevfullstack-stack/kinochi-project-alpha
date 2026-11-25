@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import BackButton from "@/components/BackButton";
 import ExternalSearchSection from "@/components/ExternalSearchSection";
-import { fetchApi } from "@/lib/api";
+import { API_URL, fetchApi } from "@/lib/api";
+import { buildSearchTrackPayload } from "@/lib/searchHelpers.mjs";
 import EmptyState from "@/components/ui/EmptyState";
 import MediaLoader from "@/components/ui/MediaLoader";
 
@@ -172,7 +173,19 @@ export default function SearchClientView({
     return (
       <Link
         href={linkUrl}
-        key={key}
+        key={key}
+        onClick={() => {
+          if (!isSearchActive) return;
+          const pl = buildSearchTrackPayload({ id: item.id, type: isSeries ? 'series' : 'movie' });
+          if (pl) {
+            fetch(`${API_URL}/search/track-click`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(pl),
+              keepalive: true,
+            }).catch(() => {});
+          }
+        }}
         className="group relative aspect-[2/3] rounded-xl overflow-hidden cursor-pointer bg-surface-container hover:scale-105 transition-transform duration-300 shadow-lg ring-1 ring-white/10 hover:ring-white/25"
       >
         {item.poster_url ? (
