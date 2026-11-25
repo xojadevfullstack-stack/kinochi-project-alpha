@@ -8,13 +8,14 @@ Vebsayt (`TelegramWatchButton`, TMA swipe qulfi, ixcham mobil media sahifa, OS q
 - Branch: `feat/smm-autopilot` & `main`.
 
 ## Blocked
-- Render jonli serverida `FACEBOOK_ACCESS_TOKEN` / `META_ACCESS_TOKEN` muddati tugagan (`20-Nov-26 PST`) va `SMM_AUTOPILOT_ENABLED` dublikat qatori o'chirilib asl qatori `true` ekanligi tekshirilishi kerak.
 - Jonli web stream (`streamer/`) uchun foydalanuvchi tomonidan VPS/domen tayyorlanguncha `STREAM_SERVICE_URL` bo'sh qoldirilgan (`stream_enabled: false`).
+- Majburiy obuna kanallari (`GET /api/v1/channels` `id: 4`) da `channel_username: "MediaPlusOfficialBot"` yozuvi o'rniga foydalanuvchi haqiqiy public Telegram kanali username'ini kiritishi kerak.
 
 ## Next step (one task)
-- Backend, bot, admin-panel va website tekshiruvlarini yakunlab GitHub'ga push qilish va Vercel/Render jonli saytini `browser` agent orqali tasdiqlash.
+- Admin Panel `/channels` da majburiy obuna kanalini yangilab, navbatdagi yangi klipni (`100%` avtomat yoki yarim-avtomat rejimda) 5/5 tarmoqqa chiqarish.
 
 ## Last verification & check results (Terminal Evidence)
+- **Live 5/5 SMM E2E Verified (`JOB #2` — `#3955`, Render + Make.com):** `GET /health` `200 OK` (`database: connected`, `redis: connected`, `bot_alive: True`), `worker.running: True`, `JOB #2` -> `completed`: `tiktok: published` (`v_inbox_file~v2.7711092000950470677`), `youtube: published` (`vGi8MIRYvMg`), `telegram: published` (`3`), `instagram: published` (`Accepted` -> Make `✓ Success` 36s, Instagram'ga Reels tushdi), `facebook: published` (`Accepted` via `MAKE_FACEBOOK_WEBHOOK_URL` -> Facebook Page `Mediaplusofficialbot` Reels bo'limiga `#3955` tushdi).
 - **Make.com Webhook Meta Adapter (`scraper/smm_publishers/meta_pub.py`):** `InstagramReelsPublisher` (`MAKE_WEBHOOK_URL`) va `FacebookReelsPublisher` (`MAKE_FACEBOOK_WEBHOOK_URL`) uchun ochiq `video_url` hamda `caption` ni Make.com Custom Webhook orqali yuboruvchi umumiy `_post_to_make_webhook()` qo'shildi (`ruff check` `All checks passed!`, backend SMM+enricher+verifier `72 passed, 2 warnings in 14.31s`, `bot/tests/` `115 passed in 7.97s`).
 - **Bot Subscription Cache & Live Diagnostic Fix (`subscription_check.py` + `check_sub.py`):** Fail-open holatida foydalanuvchi 5 daqiqa keshga yozilmasligi, faol kanallar ro'yxati o'zgarganda kesh darhol tozalanishi, `/start` har doim Telegram API dan jonli tekshirishi hamda botda `/subcheck` diagnostika buyrug'i qo'shildi.
 - **Detail Hero Alignment, HeroCarousel Lock, Right Mobile Menu & Channel ID Support:** `movie/[code]` & `series/[id]` (`md:items-center`, `md:line-clamp-4`, `HeroTrailerBackdrop` `md:min-h-[480px]`), `HeroCarousel` (`h-[236px] sm:h-[295px] md:h-[340px]`), `Navbar` (o'ng tarafdagi mobil hamburger tugma va o'ngdan chiquvchi drawer), `channels.py` + `admin-panel/app/channels/page.tsx` (`channel_id` yopiq kanal qo'llab-quvvatlashi) va `subscription_check.py` (`check_subscription` qayta tekshiruvi) yangilandi.
