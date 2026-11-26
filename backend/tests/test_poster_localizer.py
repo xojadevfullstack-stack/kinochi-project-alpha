@@ -650,6 +650,14 @@ def test_v6_line_layout_splits_subtitle_without_colon_and_preserves_high_y_ratio
     assert main.upper() == "QASOSKORLAR 4"
     assert subs == ["INTIHO"]
 
+    # Even if LLM line_layout omits the split, `<Title> <Num> <Subtitle>` splits cleanly
+    main_det, subs_det = _split_title_and_subtitle(
+        "Qasoskorlar 4 Intiho",
+        {"line_layout": ["QASOSKORLAR 4 INTIHO"]},
+    )
+    assert main_det.upper() == "QASOSKORLAR 4"
+    assert subs_det == ["INTIHO"]
+
 
 @pytest.mark.asyncio
 async def test_v6_analyze_poster_style_clears_title_box_when_no_visible_title():
@@ -697,6 +705,71 @@ async def test_verify_ocr_rejects_cyrillic_or_mismatched_detected_title():
     ):
         ok_latin = await poster_localizer.verify_localized_poster_ocr(_make_sample_jpeg(100, 150), "Shogun")
     assert ok_latin is True
+
+
+def test_v7_force_center_and_box_fill_tracking():
+    from app.infrastructure.external.poster_localizer import _build_main_title_mask
+
+    _, x_sh, _, tw_sh, _, _ = _build_main_title_mask(
+        1000,
+        1500,
+        "SHOGUN",
+        "epic",
+        [910, 196, 975, 924],
+        910,
+        False,
+        letter_spacing="ultra_wide",
+        font_weight="regular",
+        force_center=True,
+    )
+    center_x = x_sh + tw_sh / 2
+    assert abs(center_x - 500) <= 6
+
+    _, _, _, tw_inst, th_inst, _ = _build_main_title_mask(
+        1000,
+        1500,
+        "INSTITUT",
+        "modern",
+        [765, 64, 842, 938],
+        765,
+        False,
+        letter_spacing="wide",
+        font_weight="regular",
+        force_center=True,
+    )
+    assert tw_inst >= 700, "Wide-tracked short title must expand tracking to fill wide title_box"
+    assert th_inst <= 125
+
+
+def test_v7_italic_shear_and_cloudflare_scene_guard():
+    import numpy as np
+    from app.infrastructure.external.poster_localizer import (
+        _build_main_title_mask,
+        _is_scene_preserved_outside_title,
+    )
+
+    mask_it, _, y_it, _, th_it, _ = _build_main_title_mask(
+        1000,
+        1500,
+        "IIII",
+        "blockbuster",
+        [735, 100, 890, 900],
+        735,
+        False,
+        is_italic=True,
+    )
+    arr = np.asarray(mask_it)
+    top_xs = np.where(arr[y_it : y_it + max(4, th_it // 4), :] > 128)[1]
+    bot_xs = np.where(arr[y_it + (th_it * 3) // 4 : y_it + th_it, :] > 128)[1]
+    assert len(top_xs) > 0 and len(bot_xs) > 0
+    assert float(top_xs.mean()) > float(bot_xs.mean()) + 4.0
+
+    orig = _make_sample_jpeg(200, 300, color=(20, 40, 80))
+    same = _make_sample_jpeg(200, 300, color=(20, 40, 80))
+    warped = _make_sample_jpeg(200, 300, color=(150, 90, 30))
+    assert _is_scene_preserved_outside_title(orig, same, [750, 100, 900, 900]) is True
+    assert _is_scene_preserved_outside_title(orig, warped, [750, 100, 900, 900]) is False
+
 
 
 
