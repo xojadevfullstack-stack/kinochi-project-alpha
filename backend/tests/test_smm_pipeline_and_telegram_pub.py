@@ -207,3 +207,47 @@ async def test_create_smart_smm_clip_avoids_legacy_dual_corner_blur_when_vision_
         )
 
     assert mock_render.call_args.kwargs["blur_boxes"] == []
+
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_uses_srt_target_ratio_and_visual_cue(tmp_path):
+    out_path = str(tmp_path / "targeted.mp4")
+    seen = {}
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        seen["target_ratio"] = target_ratio
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 3376.0
+
+    mock_target = {
+        "peak_sec": 3225.0,
+        "srt_end_sec": 3318.2,
+        "target_ratio": 0.9493,
+        "visual_cue": "Ned Stark kneeling at Baelor sept",
+        "reason_uz": "Kulminatsiya",
+    }
+    mock_score = {"start_sec": 3207.8, "has_ad_banner": False, "blur_boxes": [], "score": 280.0, "reason": "Matched"}
+
+    with (
+        patch("scraper.smm_pipeline.find_viral_scene_target", new=AsyncMock(return_value=mock_target)),
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value=mock_score)) as mock_select,
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path),
+    ):
+        meta = await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1099",
+            tmdb_id=1399,
+            original_title="Game of Thrones",
+            content_type="tv",
+            season_number=1,
+            episode_number=9,
+        )
+
+    assert seen["target_ratio"] == pytest.approx(0.9493)
+    assert mock_select.call_args.kwargs["visual_cue"] == "Ned Stark kneeling at Baelor sept"
+    assert mock_select.call_args.kwargs["compare_candidates"] == 3
+    assert meta["start_sec"] == pytest.approx(3207.8)

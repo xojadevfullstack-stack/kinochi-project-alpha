@@ -8,6 +8,7 @@ import tempfile
 from typing import Any, Callable, Dict, Optional
 
 from scraper.smm_clipper import compute_clip_window, download_sparse_clip_source, render_vertical_clip
+from scraper.smm_scene_finder import find_viral_scene_target
 from scraper.smm_scene_scorer import select_best_scene_start
 
 
@@ -36,19 +37,38 @@ async def create_smart_smm_clip(
     copyright_shield: bool = False,
     bot_username: str = "@MediaPlusOfficialBot",
     progress_cb: Optional[Callable[[int, str], Any]] = None,
+    tmdb_id: Optional[int] = None,
+    original_title: Optional[str] = None,
+    content_type: str = "movie",
+    season_number: Optional[int] = None,
+    episode_number: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Download targeted sparse chunk, score cleanest moment, and render 9:16 clip."""
+    """Locate viral SRT timecode (with fallback), download targeted sparse chunk, verify with Vision, and render 9:16 clip."""
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     fd, raw_path = tempfile.mkstemp(suffix=".mp4")
     os.close(fd)
 
     try:
+        scene_hint: Optional[Dict[str, Any]] = None
+        eff_ratio = target_ratio
+        if start_sec is None and tmdb_id:
+            await _emit_progress(progress_cb, 10, "Qiziq sahna taymkodi qidirilmoqda...")
+            scene_hint = await find_viral_scene_target(
+                tmdb_id=tmdb_id,
+                title=original_title or "",
+                content_type=content_type,
+                season_number=season_number,
+                episode_number=episode_number,
+            )
+            if scene_hint and scene_hint.get("target_ratio"):
+                eff_ratio = float(scene_hint["target_ratio"])
+
         await _emit_progress(progress_cb, 15, "Video segment yuklanmoqda...")
         _, total_dur = await download_sparse_clip_source(
             client,
             storage_msg,
             raw_path,
-            target_ratio=target_ratio,
+            target_ratio=eff_ratio,
             chunk_mb=None,
         )
         effective_dur = total_dur or 120.0
@@ -57,15 +77,22 @@ async def create_smart_smm_clip(
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=start_sec)
             score_meta = {"start_sec": chosen_start, "has_ad_banner": False, "score": 0.0, "reason": "Manual start"}
         else:
-            center = effective_dur * target_ratio
-            scan_start = max(0.0, center - 10.0)
-            scan_end = min(effective_dur, center + duration_sec + 30.0)
+            if scene_hint and scene_hint.get("peak_sec") and scene_hint.get("srt_end_sec"):
+                mapped_peak = effective_dur * (float(scene_hint["peak_sec"]) / float(scene_hint["srt_end_sec"]))
+                scan_start = max(60.0, mapped_peak - 95.0)
+                scan_end = min(effective_dur - 15.0, mapped_peak + 15.0)
+            else:
+                center = effective_dur * eff_ratio
+                scan_start = max(0.0, center - 10.0)
+                scan_end = min(effective_dur, center + duration_sec + 30.0)
             score_meta = await select_best_scene_start(
                 raw_path,
                 clip_duration=duration_sec,
                 scan_start_sec=scan_start,
                 scan_end_sec=scan_end,
                 check_vision=check_vision,
+                visual_cue=(scene_hint or {}).get("visual_cue") or None,
+                compare_candidates=3,
             )
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=score_meta["start_sec"])
 

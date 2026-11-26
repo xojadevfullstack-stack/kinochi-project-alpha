@@ -157,3 +157,73 @@ async def test_select_best_scene_start_uses_ffmpeg_frame_fallback_when_cv2_empty
 
     assert res["vision_used"] is True
     assert len(seen_frames) >= 1 and len(seen_frames[0]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_find_viral_scene_target_from_srt_stremio():
+    from scraper.smm_scene_finder import find_viral_scene_target
+
+    sample_srt = (
+        "1\n00:02:10,000 --> 00:02:14,000\nQuiet breakfast talk.\n\n"
+        "2\n00:53:40,000 --> 00:53:45,000\nBring me his head!\n\n"
+        "3\n00:55:10,000 --> 00:55:15,000\nEnd credits music.\n"
+    )
+    mock_pick = {
+        "start_sec": 3180,
+        "peak_sec": 3222,
+        "visual_cue": "Ned Stark kneeling at Baelor sept",
+        "reason_uz": "Eng mashhur burilish sahnasi",
+    }
+    with (
+        patch("scraper.smm_scene_finder.fetch_imdb_id", new=AsyncMock(return_value="tt0944947")),
+        patch("scraper.smm_scene_finder.fetch_stremio_srt", new=AsyncMock(return_value=sample_srt)),
+        patch("scraper.smm_scene_finder._ask_gemini_scene_timecode", new=AsyncMock(return_value=mock_pick)),
+    ):
+        target = await find_viral_scene_target(
+            tmdb_id=1399,
+            title="Game of Thrones",
+            content_type="tv",
+            season_number=1,
+            episode_number=9,
+        )
+
+    assert target is not None
+    assert target["peak_sec"] == 3222.0
+    assert target["srt_end_sec"] == pytest.approx(3315.0)
+    assert "Ned Stark" in target["visual_cue"]
+
+
+@pytest.mark.asyncio
+async def test_select_best_scene_start_compares_candidates_by_excitement_and_cue_match(tmp_path):
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "compare_src.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=24:d=7",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=7",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    # Candidate 0 is clean but boring (excitement=3, cue_match=2); Candidate 1 is peak climax (excitement=9, cue_match=10)
+    side_effects = [
+        {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 3, "cue_match": 2, "blur_boxes": [], "vision_used": True, "reason": "Boring"},
+        {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 9, "cue_match": 10, "blur_boxes": [], "vision_used": True, "reason": "Climax twist"},
+        {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 4, "cue_match": 3, "blur_boxes": [], "vision_used": True, "reason": "Outro"},
+    ]
+    with patch("scraper.smm_scene_scorer.check_frames_for_ads_or_nsfw", new=AsyncMock(side_effect=side_effects)):
+        res = await select_best_scene_start(
+            str(src),
+            clip_duration=2.0,
+            check_vision=True,
+            visual_cue="Dramatic betrayal",
+            compare_candidates=3,
+        )
+
+    assert res["reason"] == "Climax twist"
+    assert res["start_sec"] > 0.0

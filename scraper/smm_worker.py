@@ -233,6 +233,31 @@ async def _resolve_job_media(
     )
 
 
+async def _resolve_scene_meta(db: AsyncSession, job: SmmClipJobModel) -> dict[str, Any]:
+    """Resolve optional TMDb/episode metadata for SRT iconic-scene lookup."""
+    if job.media_type == "episode":
+        ep_filter = EpisodeModel.id == job.media_id if job.media_id else or_(EpisodeModel.short_code == job.movie_code, EpisodeModel.code == job.movie_code)
+        ep = (await db.execute(select(EpisodeModel).where(ep_filter))).scalars().first()
+        if not ep:
+            return {}
+        season = (await db.execute(select(SeasonModel).where(SeasonModel.id == ep.season_id))).scalar_one_or_none()
+        series = (await db.execute(select(SeriesModel).where(SeriesModel.id == season.series_id))).scalar_one_or_none() if season else None
+        return {
+            "tmdb_id": getattr(series, "tmdb_id", None) if series else None,
+            "original_title": getattr(series, "title", None) if series else job.title,
+            "content_type": "tv",
+            "season_number": getattr(season, "season_number", None) if season else None,
+            "episode_number": getattr(ep, "episode_number", None),
+        }
+    m_filter = MovieModel.id == job.media_id if job.media_id else or_(MovieModel.short_code == job.movie_code, MovieModel.code == job.movie_code)
+    movie = (await db.execute(select(MovieModel).where(m_filter))).scalars().first()
+    return {
+        "tmdb_id": getattr(movie, "tmdb_id", None) if movie else None,
+        "original_title": (getattr(movie, "original_title", None) or getattr(movie, "title", None) or job.title) if movie else job.title,
+        "content_type": "movie",
+    }
+
+
 async def process_generating_job(
     db: AsyncSession,
     job: SmmClipJobModel,
@@ -261,6 +286,7 @@ async def process_generating_job(
             pass
 
     try:
+        scene_meta = await _resolve_scene_meta(db, job) if job.start_sec <= 0 else {}
         storage_msg = await tg_client.get_messages(storage_chat_id, ids=storage_msg_id)
         meta = await create_smart_smm_clip(
             client=tg_client, storage_msg=storage_msg, output_path=out_file,
@@ -270,6 +296,7 @@ async def process_generating_job(
             copyright_shield=cfg.copyright_shield,
             bot_username=bot_handle,
             progress_cb=_on_progress,
+            **scene_meta,
         )
     except Exception as exc:
         logger.warning("SMM clip generation failed for job #%s (%s): %s", job.id, job.movie_code, exc)

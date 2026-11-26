@@ -163,6 +163,10 @@
 - Concept: **Semantic Style & Motif Decomposition (`title_motifs`, `line_layout`, `badges_to_remove`)** — Arzon image-edit modellariga (`flux-2-klein-4b`) umumiy `"barcha eski sarlavhani o'chir"` buyrug'i o'rniga Vision tahlili orqali dekorativ emblema (`O` ichidagi qilich, tarozi, tally chiziqchalar), qator bo'linishi va ortiqcha reyting/kanal badjlarini alohida uzatish minimal token bilan logotip stilini saqlashni oshiradi.
 - Analogy: Rassomga *"eski afishani butunlay o'chirib qayta yoz"* deyish o'rniga, *"tarozi rasmi va shrift rangini o'z holicha qoldirib, faqat harflarni o'zbekchasiga almashtir, burchakdagi muhrni esa olib tashla"* deb aniq reja berish.
 
+## SRT-Guided Viral Scene Discovery & Non-Short-Circuiting Vision Ranking
+- Concept: **Open-Source Subtitle Timecode Lookup (`0 MB` Video) + Targeted Sparse Windowing** — Butun filmni yoki tasodifiy `35%` nuqtasini ko'chirish o'rniga TMDb `imdb_id` orqali Stremio OpenSubtitles `.srt` (`~60 KB` matn) ni yuklab, Gemini Flash-Lite dan eng kuchli kulminatsiya/burilish taymkodi (`peak_sec`, `visual_cue`) ni olish, faqat o'sha nuqtadan `~35 MB` sparse bo'lak tushirib Vision'da barcha nomzodlarni `excitement_score` va `cue_match` bo'yicha o'zaro solishtirish Render `512MB` RAM ni saqlab qiziq sahnalarni aniq kesadi.
+- Analogy: Qalin kitobning o'rtasidan tasodifan bitta sahifa yirtib o'qish o'rniga, avval mundarija va qisqa iqtiboslar ro'yxatidan eng keskin burilish bobini topib, faqat o'sha bobni ochib o'qish.
+
 
 
 

@@ -78,6 +78,7 @@ def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
             "is_nsfw_or_gore": is_nsfw,
             "is_credits": is_credits,
             "excitement_score": int(data.get("excitement_score", 5)),
+            "cue_match": int(data.get("cue_match", 5)),
             "blur_boxes": boxes,
             "vision_used": True,
             "reason": str(data.get("reason", "")),
@@ -85,7 +86,7 @@ def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
     except Exception:
         return {
             "is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False,
-            "is_credits": False, "excitement_score": 5, "blur_boxes": [],
+            "is_credits": False, "excitement_score": 5, "cue_match": 5, "blur_boxes": [],
             "vision_used": False, "reason": "Fallback clean",
         }
 
@@ -146,21 +147,27 @@ def _extract_frames_ffmpeg_b64(ffmpeg: str, video_path: str, start_sec: float, d
     return frames
 
 
-async def check_frames_for_ads_or_nsfw(frames_b64: List[str], api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Ask Gemini Vision to inspect safety AND locate any gambling/source watermarks with normalized boxes."""
+async def check_frames_for_ads_or_nsfw(
+    frames_b64: List[str],
+    api_key: Optional[str] = None,
+    visual_cue: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Ask Gemini Vision to inspect safety, watermark boxes, excitement, and optional iconic cue match."""
     key = (api_key or os.getenv("GEMINI_API_KEY") or "").strip()
     if not key or not frames_b64:
         return {
             "is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False,
-            "is_credits": False, "excitement_score": 5, "blur_boxes": [],
+            "is_credits": False, "excitement_score": 5, "cue_match": 5, "blur_boxes": [],
             "vision_used": False, "reason": "Vision skipped",
         }
 
+    cue_note = f'Target iconic scene cue: "{visual_cue}". Rate cue_match (1-10) for how well frames match this scene. ' if visual_cue else ""
     prompt = (
-        "Inspect these movie frames for social media (Reels/Shorts) safety and watermark removal. "
-        "1) Detect gambling/betting overlay ads (Mostbet, 1xBet, Melbet, Pin-Up, Linebet, banners), end credits, or 18+ nudity/gore. Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (small corner watermarks like ASILMEDIA.NET/UZMOVI can be blurred safely). "
-        "2) Find ONLY overlaid source logos/watermarks (e.g. ASILMEDIA.NET, UZMOVI, Kinochilar, @channel) OR overlaid ad banners that are ACTUALLY visible in the frame, and return normalized [0.0-1.0] bounding boxes {x, y, w, h, kind:'watermark'|'ad'} with generous padding. Do NOT add blur_boxes for clean empty corners; return [] if none are visible. Ignore subtitles and normal movie objects. "
-        'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "blur_boxes": [{"x": 0.0, "y": 0.0, "w": 0.2, "h": 0.1, "kind": "watermark"}], "reason": "short"}'
+        "Inspect these movie frames for social media (Reels/Shorts) safety, watermark removal, and scene excitement. "
+        f"{cue_note}"
+        "1) Detect gambling/betting overlay ads (Mostbet, 1xBet, Melbet, Pin-Up, Linebet, banners), end credits, or 18+ nudity/gore. Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (small corner watermarks like ASILMEDIA.NET/UZMOVI/ASLANBE STUDIO can be blurred safely). "
+        "2) Find ONLY overlaid source logos/watermarks (e.g. ASILMEDIA.NET, UZMOVI, ASLANBE STUDIO, Kinochilar, @channel) OR overlaid ad banners that are ACTUALLY visible in the frame, and return normalized [0.0-1.0] bounding boxes {x, y, w, h, kind:'watermark'|'ad'} with generous padding. Do NOT add blur_boxes for clean empty corners; return [] if none are visible. Ignore subtitles and normal movie objects. "
+        'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "cue_match": 1-10, "blur_boxes": [{"x": 0.0, "y": 0.0, "w": 0.2, "h": 0.1, "kind": "watermark"}], "reason": "short"}'
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
     payload = {"contents": [{"parts": parts}], "generationConfig": {"responseMimeType": "application/json"}}
@@ -196,6 +203,8 @@ async def select_best_scene_start(
     scan_end_sec: Optional[float] = None,
     check_vision: bool = True,
     api_key: Optional[str] = None,
+    visual_cue: Optional[str] = None,
+    compare_candidates: int = 1,
 ) -> Dict[str, Any]:
     """Score candidate windows by visual quality, motion, audio RMS, and Gemini Vision ad filter."""
     ffmpeg = resolve_ffmpeg_bin()
@@ -221,25 +230,38 @@ async def select_best_scene_start(
 
     candidates.sort(key=lambda c: c["score"], reverse=True)
     top_v_res: Optional[Dict[str, Any]] = None
+    best_clean: Optional[Dict[str, Any]] = None
+    evaluated_clean = 0
     for idx, cand in enumerate(candidates):
         if not check_vision:
             return {"start_sec": cand["start_sec"], "score": cand["score"], "mean_volume_db": cand["mean_volume_db"], "has_ad_banner": False, "blur_boxes": [], "vision_used": False, "reason": "Audio+Visual top score"}
         frames = cand.get("frames") or []
         if not frames:
             frames = await asyncio.to_thread(_extract_frames_ffmpeg_b64, ffmpeg, video_path, cand["start_sec"], clip_duration)
-        v_res = await check_frames_for_ads_or_nsfw(frames, api_key=api_key)
+        v_res = (
+            await check_frames_for_ads_or_nsfw(frames, api_key=api_key, visual_cue=visual_cue)
+            if visual_cue
+            else await check_frames_for_ads_or_nsfw(frames, api_key=api_key)
+        )
         if idx == 0:
             top_v_res = v_res
         if v_res["is_clean"]:
-            return {
+            scored_cand = {
                 "start_sec": cand["start_sec"],
-                "score": cand["score"] + v_res["excitement_score"] * 3,
+                "score": round(cand["score"] + int(v_res.get("excitement_score", 5)) * 8 + int(v_res.get("cue_match", 5)) * (10 if visual_cue else 0), 2),
                 "mean_volume_db": cand["mean_volume_db"],
                 "has_ad_banner": bool(v_res.get("has_ad_banner", False)),
                 "blur_boxes": v_res.get("blur_boxes", []),
                 "vision_used": bool(v_res.get("vision_used", False)),
                 "reason": v_res["reason"],
             }
+            if best_clean is None or scored_cand["score"] > best_clean["score"]:
+                best_clean = scored_cand
+            evaluated_clean += 1
+            if evaluated_clean >= max(1, compare_candidates):
+                break
+    if best_clean is not None:
+        return best_clean
 
     top = candidates[0] if candidates else {"start_sec": round(scan_start_sec, 2), "score": 0.0, "mean_volume_db": -90.0}
     top_v = top_v_res or {}
