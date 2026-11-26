@@ -8,7 +8,7 @@ import tempfile
 from typing import Any, Callable, Dict, Optional
 
 from scraper.smm_clipper import build_clip_cover_image, compute_clip_window, download_sparse_clip_source, render_vertical_clip
-from scraper.smm_scene_finder import find_viral_scene_target
+from scraper.smm_scene_finder import fallback_hook_for_genres, find_viral_scene_target, sanitize_hook_text
 from scraper.smm_scene_scorer import select_best_scene_start
 
 
@@ -72,6 +72,8 @@ async def create_smart_smm_clip(
     episode_number: Optional[int] = None,
     poster_url: Optional[str] = None,
     cover_duration_sec: float = 0.35,
+    hook_text: Optional[str] = None,
+    genres: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Locate viral SRT timecode (with fallback), download targeted sparse chunk, verify with Vision, and render 9:16 clip."""
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
@@ -137,6 +139,24 @@ async def create_smart_smm_clip(
                     "score": 0.0,
                     "reason": "Scorer timeout fallback",
                 }
+            if score_meta.get("is_credits") and eff_ratio > 0.60:
+                await download_sparse_clip_source(client, storage_msg, raw_path, target_ratio=0.50, chunk_mb=None)
+                mid_start = max(0.0, effective_dur * 0.50)
+                mid_end = min(effective_dur - 15.0, mid_start + duration_sec + 30.0)
+                try:
+                    score_meta = await asyncio.wait_for(
+                        select_best_scene_start(
+                            raw_path,
+                            clip_duration=duration_sec,
+                            scan_start_sec=mid_start,
+                            scan_end_sec=mid_end,
+                            check_vision=check_vision,
+                            compare_candidates=2,
+                        ),
+                        timeout=60.0,
+                    )
+                except asyncio.TimeoutError:
+                    score_meta = {"start_sec": round(mid_start + 5.0, 2), "has_ad_banner": False, "blur_boxes": [], "score": 0.0, "reason": "Midpoint credits fallback"}
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=score_meta["start_sec"])
 
         blur_ad = bool(score_meta.get("has_ad_banner", False))
@@ -156,6 +176,11 @@ async def create_smart_smm_clip(
                     low_ram=low_ram,
                 )
         await _emit_progress(progress_cb, 70, "9:16 vertikal klipp render qilinmoqda...")
+        effective_hook = (
+            sanitize_hook_text(hook_text or "", movie_title=original_title or "")
+            or (scene_hint or {}).get("hook_uz")
+            or fallback_hook_for_genres(genres)
+        )
         await asyncio.to_thread(
             render_vertical_clip,
             input_path=raw_path,
@@ -172,6 +197,7 @@ async def create_smart_smm_clip(
             blur_boxes=ai_boxes,
             cover_image_path=cover_path,
             cover_duration_sec=cover_duration_sec,
+            hook_text=effective_hook,
         )
         await _emit_progress(progress_cb, 95, "Telegram preview & bazaga saqlanmoqda...")
         return {
@@ -182,6 +208,8 @@ async def create_smart_smm_clip(
             "blur_boxes": ai_boxes or [],
             "scene_score": score_meta.get("score", 0.0),
             "reason": score_meta.get("reason", ""),
+            "hook_text": effective_hook,
+            "yt_title": (scene_hint or {}).get("yt_title_uz") or effective_hook,
         }
     finally:
         for p in (raw_path, cover_path):
@@ -190,3 +218,4 @@ async def create_smart_smm_clip(
                     os.remove(p)
                 except OSError:
                     pass
+

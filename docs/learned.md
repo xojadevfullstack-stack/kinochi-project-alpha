@@ -191,6 +191,14 @@
 - Concept: **`overlay=eof_action=repeat:enable='lt(t,0.35)'` + Multi-Factor Gem Queue (`IMDb + Year + Views`)** — Alohida `concat` qilib audio desinxron chiqarish o'rniga `0.35s` poster muqovani bitta FFmpeg `overlay` o'tishida `0.0s` ga yopishtirish barcha `5` tarmoq panjarasiga professional ablojka beradi; avto-tanlovni esa `id.desc()` o'rniga reyting/yangilik balliga ko'chirish zerikarli mediaga kvota kuydirishni to'xtatadi.
 - Analogy: Kitobning birinchi betiga chiroyli rangli muqova yopishtirib darhol asosiy voqeadan boshlash va vitrinaga omborga oxirgi kirgan eski kitobni emas, eng mashhur bestsellerlarni terish.
 
+## End-Credits Anchor Cap (`<= 0.84`) & `is_credits` Midpoint Recovery
+- Concept: **Pre-Credits Sparse Anchoring (`srt_end - 45s`, `ratio <= 0.84`) + Midpoint Retry** — Subtitr oxirgi qatorida (`srt_end`) titrlar bo'lmagani uchun `target_ratio = 0.95` to'g'ridan-to'g'ri titrlar ichiga tushib ketadi; `anchor = peak - 120s` ni `0.84` bilan cheklash va `is_credits=True` qaytganda `0.50` o'rta nuqtaga sakrash qora titr kesishni to'xtatadi.
+- Analogy: Qissa kitobining mundarijasida oxirgi sahifa ko'rsatilgan bo'lsa ham orqasidagi 5 bet minnatdorchilik ro'yxatiga o'tib ketmaslik uchun doim kamida 2 bet oldindan ochish.
 
 
 
+
+
+## Spoiler-Free Time-Windowed Hook & Sparse-Bounded Montage
+- Concept: **Time-Windowed Hook Overlay (`between(t,0.35,5.50)`) + Sparse Window Bounding** — Birinchi 2–3 soniyada tomoshabin swipe qilishini to‘xtatish uchun `0.35s` poster muqovadan darhol keyin film nomini ochmaydigan (`sanitize_hook_text`) 1 qatorli intriga-hook matn ko‘rsatiladi; ko‘p kadrli `Bilasizmi?` montajida esa `moov` to‘liq davomiyligi emas, balki faqat sparse yuklangan haqiqiy bayt oralig‘i (`window_start..window_end`) kesiladi.
+- Analogy: Gazeta sarlavhasida voqeaning oxirini yozib qo‘ymasdan qiziq savol qo‘yib o‘quvchini to‘xtatish va videomontajda faqat qo‘lda mavjud bo‘lgan kassetaning aniq daqiqalaridan kadr olish kabi.

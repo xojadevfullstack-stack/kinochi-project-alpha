@@ -299,3 +299,88 @@ async def test_select_best_scene_start_aggregates_watermark_boxes_across_candida
     assert res["reason"] == "Dark winner"
     assert len(res["blur_boxes"]) == 1
     assert res["blur_boxes"][0]["x"] == pytest.approx(0.82)
+
+
+@pytest.mark.asyncio
+async def test_find_viral_scene_target_caps_ratio_away_from_end_credits():
+    from scraper.smm_scene_finder import find_viral_scene_target
+
+    sample_srt = (
+        "1\n00:01:00,000 --> 00:01:05,000\nIntro talk.\n\n"
+        "2\n00:46:30,000 --> 00:46:35,000\nThe Lannisters send their regards.\n\n"
+        "3\n00:50:20,000 --> 00:50:25,000\nFinal scream before black screen.\n"
+    )
+    # Gemini picks peak right at the end of SRT (3025s == srt_end_sec), which previously overshot into end credits
+    mock_pick = {"start_sec": 2980, "peak_sec": 3025, "visual_cue": "Red Wedding finale", "reason_uz": "Kulminatsiya"}
+    with (
+        patch("scraper.smm_scene_finder.fetch_imdb_id", new=AsyncMock(return_value="tt2178784")),
+        patch("scraper.smm_scene_finder.fetch_stremio_srt", new=AsyncMock(return_value=sample_srt)),
+        patch("scraper.smm_scene_finder._ask_gemini_scene_timecode", new=AsyncMock(return_value=mock_pick)),
+    ):
+        target = await find_viral_scene_target(tmdb_id=1399, title="Game of Thrones", content_type="tv", season_number=3, episode_number=9)
+
+    assert target is not None
+    assert target["target_ratio"] <= 0.84
+    assert target["peak_sec"] < 3025.0
+
+
+@pytest.mark.asyncio
+async def test_select_best_scene_start_marks_all_credits_fallback(tmp_path):
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "credits_only.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "color=c=black:s=640x360:d=5",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=5",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    credits_res = {
+        "is_clean": False, "has_ad_banner": False, "is_nsfw_or_gore": False,
+        "is_credits": True, "excitement_score": 1, "cue_match": 1, "blur_boxes": [], "vision_used": True, "reason": "End credits",
+    }
+    with patch("scraper.smm_scene_scorer.check_frames_for_ads_or_nsfw", new=AsyncMock(return_value=credits_res)):
+        res = await select_best_scene_start(str(src), clip_duration=2.0, check_vision=True)
+
+    assert res.get("is_credits") is True
+
+
+@pytest.mark.asyncio
+async def test_scene_finder_generates_spoiler_free_uzbek_hook_and_fallback():
+    from scraper.smm_scene_finder import fallback_hook_for_genres, find_viral_scene_target, sanitize_hook_text
+
+    # 1. Strips emoji/hashtags and prevents leaking movie title
+    assert sanitize_hook_text("😱 #Interstellar eshik ortida nima bor?!", movie_title="Interstellar") == ""
+    clean = sanitize_hook_text("Bu eshik ortida nima bor edi?! 😱 #kino", movie_title="Ouk Strit")
+    assert clean == "Bu eshik ortida nima bor edi?!"
+
+    # 2. Genre-based fallback produces punchy Uzbek hooks
+    assert "oxir" in fallback_hook_for_genres("Triller, Sirli").lower() or "kut" in fallback_hook_for_genres("Triller, Sirli").lower()
+    assert fallback_hook_for_genres(None)
+
+    # 3. find_viral_scene_target returns hook_uz and yt_title_uz from Gemini
+    srt = "1\n00:10:00,000 --> 00:10:05,000\nOpen the door!\n\n2\n00:25:00,000 --> 00:25:05,000\nNo way!\n\n3\n00:40:00,000 --> 00:40:05,000\nRun!\n\n"
+    fake_pick = {
+        "start_sec": 1480,
+        "peak_sec": 1500,
+        "visual_cue": "Hero opens secret vault",
+        "reason_uz": "Kutilmagan burilish",
+        "hook_uz": "U eshikni ochgach hammasi o'zgardi!",
+        "yt_title_uz": "Bu eshik ortida nima bor edi?",
+    }
+    with (
+        patch("scraper.smm_scene_finder.fetch_imdb_id", new=AsyncMock(return_value="tt1234567")),
+        patch("scraper.smm_scene_finder.fetch_stremio_srt", new=AsyncMock(return_value=srt)),
+        patch("scraper.smm_scene_finder._ask_gemini_scene_timecode", new=AsyncMock(return_value=fake_pick)),
+    ):
+        hint = await find_viral_scene_target(tmdb_id=999, title="Secret Vault")
+
+    assert hint is not None
+    assert hint["hook_uz"] == "U eshikni ochgach hammasi o'zgardi!"
+    assert hint["yt_title_uz"] == "Bu eshik ortida nima bor edi?"
+

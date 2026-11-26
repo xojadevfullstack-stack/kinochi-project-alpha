@@ -13,6 +13,41 @@ logger = logging.getLogger(__name__)
 _GEMINI_SCENE_MODELS = ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite")
 
 
+def sanitize_hook_text(raw_hook: str, movie_title: str = "", max_chars: int = 44) -> str:
+    """Clean emojis/hashtags, enforce word length, and block movie-title spoilers in hooks."""
+    raw_low = (raw_hook or "").lower()
+    title_words = [w.lower() for w in re.findall(r"[A-Za-z0-9\u0400-\u04ff']+", movie_title or "") if len(w) >= 4]
+    if any(w in raw_low for w in title_words):
+        return ""
+    txt = re.sub(r"#\S+", "", raw_hook or "")
+    txt = "".join(ch for ch in txt if (32 <= ord(ch) <= 126) or ch in "‘’“”–—" or ("\u0400" <= ch <= "\u04ff"))
+    txt = re.sub(r"\s+", " ", txt).strip(" \t\r\n\"'«»")
+    if not txt:
+        return ""
+    if len(txt) > max_chars:
+        cut = txt[: max_chars - 1].rsplit(" ", 1)[0].strip()
+        txt = (cut or txt[: max_chars - 1]).rstrip(",;:") + "..."
+    return txt
+
+
+def fallback_hook_for_genres(genres: Optional[str] = None) -> str:
+    """Return a punchy Uzbek intrigue hook tailored to movie genre without spoilers."""
+    low = (genres or "").lower()
+    if any(k in low for k in ("triller", "thriller", "sirli", "mystery", "detektiv")):
+        return "Oxirida nima bo'lishini kutmagandingiz!"
+    if any(k in low for k in ("jangari", "ekshn", "action", "sarguzasht")):
+        return "Bu kadrni oxirigacha ko'ring!"
+    if any(k in low for k in ("fantastika", "sci-fi", "fentezi")):
+        return "Bunday burilishni hech kim kutmagan edi!"
+    if "anime" in low:
+        return "Eng kuchli anime sahnalardan biri!"
+    if any(k in low for k in ("komediya", "comedy")):
+        return "Kulmasdan oxirigacha ko'ra olasizmi?"
+    if any(k in low for k in ("qo'rqinchli", "horror", "dahshat")):
+        return "Yolg'iz ko'rish tavsiya etilmaydi!"
+    return "Bu sahnadan keyin hamma hayratda qoldi!"
+
+
 def parse_srt_blocks(srt_text: str) -> List[Tuple[float, float, str]]:
     """Parse SRT captions into (start_sec, end_sec, text) tuples."""
     blocks: List[Tuple[float, float, str]] = []
@@ -104,9 +139,10 @@ async def _ask_gemini_scene_timecode(
     ep_tag = f" Season {season_number} Episode {episode_number}" if season_number and episode_number else ""
     prompt = (
         f"Analyze the timestamped subtitle digest of '{title}'{ep_tag} (span: {int(srt_end_sec)}s).\n"
-        "Pick the SINGLE MOST ICONIC / VIRAL 45s moment (plot twist, shock reveal, climax, or gripping action/emotion) for Reels/TikTok.\n"
-        "Avoid first 120s intro recaps and last 150s credits.\n"
-        'Return STRICT JSON ONLY: {"start_sec": int, "peak_sec": int, "visual_cue": "short visual description", "reason_uz": "1 short Uzbek sentence"}\n\n'
+        "Pick the SINGLE MOST ICONIC / VIRAL 25-30s moment (plot twist, shock reveal, climax, or gripping action/emotion) for Reels/TikTok.\n"
+        "Avoid first 120s intro recaps and NEVER pick timestamps in the last 10% (credits) of the subtitle span.\n"
+        "Also write a punchy 3-6 word Uzbek intrigue hook (`hook_uz`) and YouTube Shorts hook title (`yt_title_uz`) WITHOUT revealing the movie title or ending.\n"
+        'Return STRICT JSON ONLY: {"start_sec": int, "peak_sec": int, "visual_cue": "short visual description", "reason_uz": "1 short Uzbek sentence", "hook_uz": "3-6 word Uzbek hook", "yt_title_uz": "short Uzbek YT title"}\n\n'
         f"SUBTITLE DIGEST:\n{digest}"
     )
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}}
@@ -161,11 +197,17 @@ async def find_viral_scene_target(
         return None
     if peak <= 0:
         return None
-    anchor_sec = max(60.0, peak - 70.0)
+    max_safe_peak = max(120.0, srt_end - 45.0)
+    peak = min(peak, max_safe_peak)
+    anchor_sec = max(60.0, peak - 120.0)
+    hook_uz = sanitize_hook_text(str(pick.get("hook_uz") or ""), movie_title=title)
+    yt_title_uz = sanitize_hook_text(str(pick.get("yt_title_uz") or ""), movie_title=title, max_chars=58)
     return {
         "peak_sec": peak,
         "srt_end_sec": srt_end,
-        "target_ratio": round(max(0.05, min(0.95, anchor_sec / srt_end)), 4),
+        "target_ratio": round(max(0.05, min(0.84, anchor_sec / srt_end)), 4),
         "visual_cue": str(pick.get("visual_cue") or "").strip(),
         "reason_uz": str(pick.get("reason_uz") or "").strip(),
+        "hook_uz": hook_uz,
+        "yt_title_uz": yt_title_uz or hook_uz,
     }
