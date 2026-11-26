@@ -159,5 +159,10 @@
 - Concept: **Token-Tagged Cache Key + Multi-Bot `getFile` Fallback** — Telegram `file_id` har bir bot tokeniga bog'langan bo'ladi; yangi `BOT_TOKEN` ga ko'chganda eski `LEGACY_BOT_TOKEN` yuklagan `/posters/tg/{file_id}` rasmlari `404` qaytarmasligi uchun kesh kalitini token xeshi bilan ajratib `LEGACY_BOT_TOKEN` zaxirasini ulash shart.
 - Analogy: Eski ombor kaliti (`LEGACY_BOT_TOKEN`) bilan qulflangan hujjatlarni yangi omborxona mudiri ocha olmaganda, zaxira eski kalitni ham bog'lamda saqlab qo'yish.
 
+## Motif-Preserving Structured Poster Prompting
+- Concept: **Semantic Style & Motif Decomposition (`title_motifs`, `line_layout`, `badges_to_remove`)** — Arzon image-edit modellariga (`flux-2-klein-4b`) umumiy `"barcha eski sarlavhani o'chir"` buyrug'i o'rniga Vision tahlili orqali dekorativ emblema (`O` ichidagi qilich, tarozi, tally chiziqchalar), qator bo'linishi va ortiqcha reyting/kanal badjlarini alohida uzatish minimal token bilan logotip stilini saqlashni oshiradi.
+- Analogy: Rassomga *"eski afishani butunlay o'chirib qayta yoz"* deyish o'rniga, *"tarozi rasmi va shrift rangini o'z holicha qoldirib, faqat harflarni o'zbekchasiga almashtir, burchakdagi muhrni esa olib tashla"* deb aniq reja berish.
+
+
 
 

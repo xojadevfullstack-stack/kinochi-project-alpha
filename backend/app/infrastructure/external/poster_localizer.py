@@ -35,6 +35,9 @@ _DEFAULT_STYLE: dict[str, Any] = {
     "needs_backdrop": True,
     "title_box": None,
     "style_brief": "",
+    "title_motifs": "",
+    "line_layout": [],
+    "badges_to_remove": [],
 }
 _GEMINI_VISION_MODELS = (
     "gemini-flash-lite-latest",
@@ -127,11 +130,25 @@ async def _call_gemini_vision_json(
     return None
 
 
+def _normalize_str_list(raw: Any, ignore_none: bool = False) -> list[str]:
+    if isinstance(raw, str):
+        items = [raw]
+    elif isinstance(raw, list):
+        items = [str(item) for item in raw]
+    else:
+        return []
+    cleaned = [item.strip() for item in items if item and item.strip()]
+    if ignore_none:
+        return [item for item in cleaned if item.lower() not in {"none", "yo'q", "n/a"}]
+    return cleaned
+
+
 async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]:
-    """Use Gemini Vision to infer title box, placement, font style, color palette, and visual spec."""
+    """Use Gemini Vision to infer title box, motifs, line split, badges, and typography spec."""
+    upper_title = title.upper().strip()
     prompt = (
-        f"Inspect this original movie poster to replicate its EXACT title design & layout for Uzbek title '{title}'. "
-        "Match the original poster's title vertical position, color palette, flatness vs 3D bevel, and font weight. Return ONLY valid JSON with keys: "
+        f"Inspect this original movie poster to replicate its EXACT title design, custom symbols & layout for Uzbek title '{upper_title}'. "
+        "Match the original poster's title vertical position, color palette per line, flatness vs 3D bevel, tilt, and font craft. Return ONLY valid JSON with keys: "
         'placement ("top" if title is in upper half, else "bottom"), '
         "y_ratio (float 0.03-0.85 where the original main title starts vertically from top), "
         'font_style ("bold" for condensed impact/action/comedy, "epic" for fantasy/historical serif, "serif", or "modern" clean sans), '
@@ -139,7 +156,10 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         'secondary_color (bottom gradient hex of original title letters, same as primary_color if solid single-color), '
         "needs_backdrop (false if background behind title is clean/uniform like sky/wall, true only if busy/low-contrast), "
         "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 of existing title text, or null if textless), "
-        "style_brief (concise 1-sentence description of exact title look: flat matte vs 3D chrome bevel, italic slant, box/frame colors, shadows, and location)."
+        "style_brief (concise 1-2 sentence description of exact typography: flat matte vs 3D chrome/chiseled serif vs brush script, tilt/slant, colors per line, shadows), "
+        'title_motifs (concise description of iconic decorative emblems/motifs integrated into/under the title such as vertical sword bars inside O, silhouette inside A, scales of justice, or tally marks; "" if none), '
+        f'line_layout (JSON array of 1-3 uppercase lines splitting "{upper_title}" to match original title line/color composition), '
+        'badges_to_remove (JSON array of corner rating badges or TV network logos like "top-right 9.2 star badge" or "bottom 8.6 AMC badge" to clean up, or []).'
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=1024)
     if not parsed:
@@ -151,6 +171,8 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         y_val = float(tbox[0]) / 1000.0
     p_col = parsed.get("primary_color") or "#FFFFFF"
     s_col = parsed.get("secondary_color") or p_col
+    raw_motifs = str(parsed.get("title_motifs") or "").strip()
+    motifs = "" if raw_motifs.lower() in {"none", "yo'q", "n/a"} else raw_motifs
     return {
         "placement": "top" if inferred_top else "bottom",
         "y_ratio": max(0.03, min(0.84, float(y_val))) if y_val is not None else None,
@@ -160,6 +182,9 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         "needs_backdrop": bool(parsed.get("needs_backdrop", False if inferred_top else True)),
         "title_box": tbox,
         "style_brief": str(parsed.get("style_brief") or "").strip(),
+        "title_motifs": motifs,
+        "line_layout": _normalize_str_list(parsed.get("line_layout")),
+        "badges_to_remove": _normalize_str_list(parsed.get("badges_to_remove"), ignore_none=True),
     }
 
 
@@ -169,7 +194,7 @@ async def verify_localized_poster_ocr(image_bytes: bytes, title: str) -> bool:
     prompt = (
         f'Inspect this localized movie poster. Expected Uzbek main title: "{expected}". '
         'Return ONLY JSON: {"detected_title": "...", "spelling_exact": true/false, "no_duplicate_words": true/false, "scene_intact": true/false}. '
-        "Set spelling_exact=false if ANY letter is missing, extra, or garbled, or if title text is missing; "
+        "Set spelling_exact=false if ANY letter or Uzbek apostrophe (O', G', ') is missing, extra, or garbled, or if title text is missing; "
         "no_duplicate_words=false if any word repeats unnecessarily or English/foreign main title words remain alongside it; "
         "scene_intact=false if characters/background look corrupted or darkened abnormally."
     )
@@ -180,6 +205,40 @@ async def verify_localized_poster_ocr(image_bytes: bytes, title: str) -> bool:
         parsed.get("spelling_exact")
         and parsed.get("no_duplicate_words", True)
         and parsed.get("scene_intact", True)
+    )
+
+
+def _build_cf_edit_prompt(upper_title: str, style: Optional[dict[str, Any]]) -> str:
+    """Build a style-, motif-, and badge-aware Cloudflare image-edit prompt."""
+    cfg = style or {}
+    words = [w for w in upper_title.split() if w]
+    brief = cfg.get("style_brief") or f"{cfg.get('placement', 'bottom')} title in {cfg.get('primary_color', '#FFFFFF')}"
+    motifs = str(cfg.get("title_motifs") or "").strip()
+    lines = _normalize_str_list(cfg.get("line_layout"))
+    badges = _normalize_str_list(cfg.get("badges_to_remove"), ignore_none=True)
+
+    motif_clause = (
+        f"PRESERVE and integrate the original iconic title motifs/emblems ({motifs}) naturally with the Uzbek letters. "
+        if motifs
+        else ""
+    )
+    layout_clause = f'Layout lines: {" / ".join(lines)}. ' if lines else ""
+    badge_clause = (
+        f'Cleanly remove overlay rating/network badges ({", ".join(badges)}) and fill background naturally. '
+        if badges
+        else ""
+    )
+    apostrophe_clause = "Preserve every Uzbek apostrophe (O', G', ') accurately. " if "'" in upper_title else ""
+
+    return (
+        f'Edit movie poster image_0 to localize ONLY the main title into Uzbek: "{upper_title}". '
+        "Keep ALL characters, faces, poses, outfits, background, lighting and effects 100% IDENTICAL. "
+        "Replace ALL original English/foreign title letters cleanly without leaving foreign words. "
+        f"{motif_clause}"
+        f"Match this exact original typography style ({brief}): keep original flat matte, brush, or 3D bevel style without inventing mismatched colors or extra 3D chrome. "
+        f"{layout_clause}{badge_clause}"
+        f'Exact word count: {len(words)}. Spell EVERY letter accurately: "{upper_title}". '
+        f"{apostrophe_clause}No extra letters, no missing letters, no duplicated words."
     )
 
 
@@ -209,24 +268,19 @@ async def edit_poster_with_cloudflare(
         logger.warning("Cloudflare poster preprocess error: %s", exc)
         return None
 
-    cfg = style or {}
     upper_title = title.upper().strip()
-    words = [w for w in upper_title.split() if w]
-    word_count = len(words)
-    brief = cfg.get("style_brief") or f"{cfg.get('placement', 'bottom')} title in {cfg.get('primary_color', '#FFFFFF')}"
-    prompt = (
-        f'Edit movie poster image_0 to localize ONLY the main title into Uzbek: "{upper_title}". '
-        "Keep ALL characters, faces, poses, outfits, background, lighting and effects 100% IDENTICAL. "
-        "Remove the ENTIRE original main title block (all English/foreign title lines and prefixes) cleanly. "
-        f'Match this exact original typography style ({brief}): keep original flat matte or 3D bevel style without inventing mismatched colors or extra 3D chrome. '
-        f'Exact word count: {word_count}. Spell EVERY letter accurately: "{upper_title}". No extra letters, no missing letters, no duplicated words.'
-    )
+    prompt = _build_cf_edit_prompt(upper_title, style)
     gen_w = 512 if orig_h >= orig_w else 768
     gen_h = 768 if orig_h >= orig_w else 512
     headers = {"Authorization": f"Bearer {token}"}
 
+    models = (
+        _CF_IMAGE_EDIT_MODELS
+        if getattr(settings, "CLOUDFLARE_ENABLE_9B", False)
+        else (_CF_IMAGE_EDIT_MODELS[0], _CF_IMAGE_EDIT_MODELS[0])
+    )
     async with httpx.AsyncClient(timeout=90.0) as client:
-        for model in _CF_IMAGE_EDIT_MODELS:
+        for model in models:
             url = f"https://api.cloudflare.com/client/v4/accounts/{acc_id}/ai/run/{model}"
             try:
                 resp = await client.post(

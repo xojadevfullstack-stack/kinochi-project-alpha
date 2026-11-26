@@ -167,6 +167,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     CLOUDFLARE_ACCOUNT_ID: str = ""
     CLOUDFLARE_API_TOKEN: str = ""
+    CLOUDFLARE_ENABLE_9B: bool = False
     AUTO_TOPIC_CHAT_ID: int | None = None
     AUTO_CONTENT_ENABLED: bool = False
     SCRAPER_ENABLED: bool = False

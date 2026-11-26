@@ -369,3 +369,106 @@ async def test_edit_poster_with_cloudflare_prefers_4b_first_and_stops_on_429():
         )
     assert out_429 is None
     assert mock_post_429.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_analyze_poster_style_extracts_motifs_line_layout_and_badges():
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750)
+    mock_payload = {
+        "placement": "bottom",
+        "y_ratio": 0.72,
+        "font_style": "bold",
+        "primary_color": "#FACC15",
+        "secondary_color": "#DC2626",
+        "needs_backdrop": False,
+        "title_box": [680, 120, 890, 860],
+        "style_brief": "Tilted bold yellow sans top lines paired with red handwritten brush script bottom lines.",
+        "title_motifs": "golden scales of justice emblem beside the title",
+        "line_layout": ["YAXSHISI SOULGA", "QO'NG'IROQ QILING"],
+        "badges_to_remove": ["bottom 8.6 AMC badge", "none"],
+    }
+    with patch.object(
+        poster_localizer,
+        "_call_gemini_vision_json",
+        new=AsyncMock(return_value=mock_payload),
+    ):
+        style = await poster_localizer.analyze_poster_style(
+            orig_bytes,
+            title="Yaxshisi Soulga Qo'ng'iroq Qiling",
+        )
+
+    assert style["title_motifs"] == "golden scales of justice emblem beside the title"
+    assert style["line_layout"] == ["YAXSHISI SOULGA", "QO'NG'IROQ QILING"]
+    assert style["badges_to_remove"] == ["bottom 8.6 AMC badge"]
+
+
+@pytest.mark.asyncio
+async def test_edit_poster_with_cloudflare_prompt_preserves_motifs_and_removes_badges():
+    import base64
+    from unittest.mock import MagicMock
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750)
+    png_b64 = base64.b64encode(_make_sample_jpeg(512, 768)).decode("ascii")
+    resp_ok = MagicMock(status_code=200, headers={"content-type": "application/json"})
+    resp_ok.json.return_value = {"result": {"image": png_b64}}
+
+    rich_style = {
+        "placement": "bottom",
+        "style_brief": "Tilted yellow sans + red brush script",
+        "title_motifs": "golden scales of justice emblem beside the title",
+        "line_layout": ["YAXSHISI SOULGA", "QO'NG'IROQ QILING"],
+        "badges_to_remove": ["bottom 8.6 AMC badge"],
+    }
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok"),
+        patch("httpx.AsyncClient.post", new=AsyncMock(return_value=resp_ok)) as mock_post,
+        patch.object(poster_localizer, "verify_localized_poster_ocr", new=AsyncMock(return_value=True)),
+    ):
+        out = await poster_localizer.edit_poster_with_cloudflare(
+            orig_bytes,
+            title="Yaxshisi Soulga Qo'ng'iroq Qiling",
+            style=rich_style,
+        )
+
+    assert out is not None
+    sent_prompt = mock_post.await_args.kwargs["data"]["prompt"]
+    assert "Exact word count: 4" in sent_prompt
+    assert "golden scales of justice emblem beside the title" in sent_prompt
+    assert "YAXSHISI SOULGA / QO'NG'IROQ QILING" in sent_prompt
+    assert "bottom 8.6 AMC badge" in sent_prompt
+    assert "apostrophe" in sent_prompt.lower()
+
+
+@pytest.mark.asyncio
+async def test_edit_poster_with_cloudflare_blocks_9b_by_default_and_retries_4b():
+    import base64
+    from unittest.mock import MagicMock
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750)
+    png_b64 = base64.b64encode(_make_sample_jpeg(512, 768)).decode("ascii")
+    resp_ok = MagicMock(status_code=200, headers={"content-type": "application/json"})
+    resp_ok.json.return_value = {"result": {"image": png_b64}}
+
+    assert getattr(poster_localizer.settings, "CLOUDFLARE_ENABLE_9B", False) is False
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "cf_acc"),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", "cf_tok"),
+        patch("httpx.AsyncClient.post", new=AsyncMock(side_effect=[resp_ok, resp_ok])) as mock_post,
+        patch.object(poster_localizer, "verify_localized_poster_ocr", new=AsyncMock(side_effect=[False, True])),
+    ):
+        out = await poster_localizer.edit_poster_with_cloudflare(
+            orig_bytes,
+            title="Taxtlar o'yini",
+            style={"placement": "bottom"},
+        )
+
+    assert out is not None
+    assert mock_post.await_count == 2
+    assert all(call.args[0].endswith("flux-2-klein-4b") for call in mock_post.await_args_list)
+
+
