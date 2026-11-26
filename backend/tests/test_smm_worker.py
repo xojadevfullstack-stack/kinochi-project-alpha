@@ -601,3 +601,80 @@ async def test_auto_pick_catalog_movie_prioritizes_gems_and_skips_low_rated_old_
     # Boring old 4.7 movie must be skipped instead of wasting quota
     j3 = await auto_pick_catalog_movie(db_session)
     assert j3 is None
+
+
+@pytest.mark.asyncio
+async def test_auto_pick_catalog_movie_boosts_high_retention_genres(db_session):
+    from sqlalchemy import delete
+    from scraper.smm_worker import auto_pick_catalog_movie
+
+    await db_session.execute(delete(SmmClipJobModel))
+    await db_session.execute(delete(MovieTranslationModel))
+    await db_session.execute(delete(MovieModel))
+
+    m_drama = MovieModel(
+        title="Sokin Drama",
+        code="DRM1",
+        short_code="9301",
+        release_year=2024,
+        imdb_rating=7.2,
+        genres="Drama, Melodrama",
+        publish_status="published",
+    )
+    m_thriller = MovieModel(
+        title="Tezkor Triller",
+        code="THR1",
+        short_code="9302",
+        release_year=2024,
+        imdb_rating=7.0,
+        genres="Triller, Jangari, Fantastika",
+        publish_status="published",
+    )
+    db_session.add_all([m_drama, m_thriller])
+    await db_session.flush()
+    db_session.add_all([
+        MovieTranslationModel(movie_id=m_drama.id, language="O'zbekcha", storage_channel_message_id=401),
+        MovieTranslationModel(movie_id=m_thriller.id, language="O'zbekcha", storage_channel_message_id=402),
+    ])
+    await db_session.merge(
+        SmmSettingsModel(id=1, mode="FULL_AUTO", daily_limit=3, auto_pick_from_catalog=True, enabled_platforms=["telegram"])
+    )
+    await db_session.commit()
+
+    picked = await auto_pick_catalog_movie(db_session)
+    assert picked is not None
+    assert picked.movie_code == "9302"
+    assert picked.clip_mode == "scene"
+
+
+@pytest.mark.asyncio
+async def test_resolve_media_poster_url_localizes_unlocalized_poster_before_cover(db_session):
+    from scraper.smm_worker import _resolve_media_poster_url
+
+    movie = MovieModel(
+        title="Qasoskorlar 4 Intiho",
+        code="AV4",
+        short_code="9401",
+        tmdb_id=299534,
+        poster_url="https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+        publish_status="published",
+    )
+    db_session.add(movie)
+    await db_session.flush()
+    job = SmmClipJobModel(movie_code="9401", title="Qasoskorlar 4 Intiho", media_type="movie", media_id=movie.id, status="generating")
+    db_session.add(job)
+    await db_session.commit()
+
+    localized_url = "https://kinochi-project-alpha-9g6j.onrender.com/api/v1/posters/tg/AgAC_LOCALIZED_AV4"
+    with patch(
+        "app.infrastructure.external.poster_localizer.localize_poster_and_upload",
+        new=AsyncMock(return_value=localized_url),
+    ) as mock_loc:
+        resolved = await _resolve_media_poster_url(db_session, job)
+
+    assert resolved == localized_url
+    assert movie.poster_url == localized_url
+    mock_loc.assert_awaited_once()
+
+
+

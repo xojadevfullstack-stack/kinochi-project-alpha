@@ -255,32 +255,30 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
 
 
 async def verify_localized_poster_ocr(image_bytes: bytes, title: str) -> bool:
-    """Verify edited poster renders exact Latin-script Uzbek title spelling cleanly without leftover foreign/Cyrillic titles."""
-    expected = title.upper().strip()
+    """Blind OCR check: read visible title without revealing expected text to prevent confirmation bias."""
+    expected = _sanitize_font_text(title).upper().strip()
     prompt = (
-        f'Inspect this localized movie poster. Expected Latin-script Uzbek main title: "{expected}". '
-        'Return ONLY JSON: {"detected_title": "...", "latin_script": true/false, "spelling_exact": true/false, "no_duplicate_words": true/false, "scene_intact": true/false}. '
-        "Copy the EXACT Unicode characters printed on the poster into detected_title (do NOT transliterate Cyrillic to Latin!). "
-        "Set latin_script=false and spelling_exact=false if ANY Cyrillic character (Ш, О, Г, У, Н, И, Д, etc.) appears, or if any letter or Uzbek apostrophe (O', G', ') is missing/extra/garbled; "
-        "no_duplicate_words=false if any word repeats unnecessarily or English/foreign main title words remain alongside it; "
+        "Perform strict BLIND OCR on this movie poster's main title text. "
+        'Return ONLY JSON: {"detected_title": "...", "latin_script": true/false, "no_duplicate_words": true/false, "scene_intact": true/false}. '
+        "Copy the EXACT characters printed on the poster into detected_title verbatim (do NOT guess, correct spelling, or transliterate Cyrillic!). "
+        "Set latin_script=false if ANY Cyrillic character (Ш, О, Г, У, Н, И, Д, etc.) appears; "
+        "no_duplicate_words=false if duplicate titles or foreign subtitles remain alongside the main title; "
         "scene_intact=false if faces/characters/background look corrupted or distorted."
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
     if not parsed:
-        return True
-    detected = str(parsed.get("detected_title") or "").strip()
-    if re.search(r"[\u0400-\u04FF]", detected):
+        return False
+    detected = _sanitize_font_text(str(parsed.get("detected_title") or "").strip())
+    if not detected or re.search(r"[\u0400-\u04FF]", detected):
         return False
     if not parsed.get("latin_script", True):
         return False
-    if detected:
-        norm_det = re.sub(r"[^A-Z0-9]", "", detected.upper())
-        norm_exp = re.sub(r"[^A-Z0-9]", "", expected)
-        if norm_det != norm_exp:
-            return False
+    norm_det = re.sub(r"[^A-Z0-9]", "", detected.upper())
+    norm_exp = re.sub(r"[^A-Z0-9]", "", expected)
+    if norm_det != norm_exp:
+        return False
     return bool(
-        parsed.get("spelling_exact")
-        and parsed.get("no_duplicate_words", True)
+        parsed.get("no_duplicate_words", True)
         and parsed.get("scene_intact", True)
     )
 
@@ -459,8 +457,13 @@ _TRACKING_FACTORS = {
 }
 
 
+def _sanitize_font_text(text: str) -> str:
+    """Map Uzbek Unicode modifier apostrophes (ʻ, ʼ, ‘, ’) to ASCII ' supported by all OFL display fonts."""
+    return re.sub(r"[\u02bb\u02bc\u2018\u2019`´]", "'", text)
+
+
 def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, list[str]]:
-    clean = " ".join(title.strip().split())
+    clean = " ".join(_sanitize_font_text(title).strip().split())
     if ":" in clean:
         head, tail = [p.strip() for p in clean.split(":", 1)]
         if head and tail:
@@ -661,7 +664,9 @@ def render_uzbek_title_on_poster(
     words_parts = render_str.split()
     if acc_hex and len(words_parts) >= 2 and words_parts[-1].isdigit():
         acc_rgb = _hex_to_rgb(acc_hex, c1)
-        split_x = int(x_hi + target_w * (1.0 - max(0.14, len(words_parts[-1]) / max(2, len(render_str)))))
+        tail_tok = words_parts[-1]
+        ratio_tail = (len(tail_tok) + 0.35) / max(3, len(render_str))
+        split_x = int(x_hi + target_w * (1.0 - max(0.08, min(0.28, ratio_tail))))
         grad[:, split_x:, 0] = acc_rgb[0]
         grad[:, split_x:, 1] = acc_rgb[1]
         grad[:, split_x:, 2] = acc_rgb[2]

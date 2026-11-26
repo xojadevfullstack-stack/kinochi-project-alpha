@@ -388,3 +388,95 @@ async def test_create_smart_smm_clip_passes_and_returns_hook_text(tmp_path):
     assert meta["hook_text"] == "U eshikni ochgach hamma hayratda qoldi!"
     assert mr.call_args.kwargs["hook_text"] == "U eshikni ochgach hamma hayratda qoldi!"
 
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_scan_window_wraps_peak_and_uses_backup_on_credits(tmp_path):
+    out_path = str(tmp_path / "climax_wrap.mp4")
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 2818.0
+
+    # Peak at 2175s with ~35s lead-in anchor (0.7594) -> scan window MUST cover mapped_peak=2175s directly
+    bb_hint = {
+        "peak_sec": 2175.0,
+        "srt_end_sec": 2818.0,
+        "target_ratio": round((2175.0 - 35.0) / 2818.0, 4),
+        "backup_ratio": 0.42,
+        "visual_cue": "Knife standoff",
+    }
+    with (
+        patch("scraper.smm_pipeline.find_viral_scene_target", new=AsyncMock(return_value=bb_hint)),
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value={"start_sec": 2162.0, "has_ad_banner": False, "blur_boxes": []})) as mock_sel,
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path),
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1272",
+            duration_sec=28.0,
+            tmdb_id=1396,
+            content_type="tv",
+            season_number=5,
+            episode_number=14,
+        )
+
+    assert mock_sel.call_args.kwargs["scan_start_sec"] <= 2175.0 <= mock_sel.call_args.kwargs["scan_end_sec"]
+    assert mock_sel.call_args.kwargs["compare_candidates"] >= 3
+
+    # When late climax hits end credits, retry should use backup_ratio (0.42) instead of blind 0.50
+    seen_ratios = []
+
+    async def fake_dl_retry(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        seen_ratios.append(target_ratio)
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 2818.0
+
+    late_hint = {"peak_sec": 2650.0, "srt_end_sec": 2818.0, "target_ratio": 0.90, "backup_ratio": 0.42, "visual_cue": "Shootout"}
+    sel_side_effects = [
+        {"start_sec": 2550.0, "is_credits": True, "has_ad_banner": False, "blur_boxes": []},
+        {"start_sec": 1190.0, "is_credits": False, "has_ad_banner": False, "blur_boxes": []},
+    ]
+    with (
+        patch("scraper.smm_pipeline.find_viral_scene_target", new=AsyncMock(return_value=late_hint)),
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_dl_retry),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(side_effect=sel_side_effects)),
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path),
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1272",
+            duration_sec=28.0,
+            tmdb_id=1396,
+        )
+
+    assert seen_ratios == [pytest.approx(0.90), pytest.approx(0.42)]
+
+
+@pytest.mark.asyncio
+async def test_fetch_poster_bytes_reads_full_tg_proxy_url_directly_from_telegram():
+    from scraper.smm_pipeline import _fetch_poster_bytes
+
+    with (
+        patch(
+            "app.infrastructure.telegram.telegram_client.telegram_client.download_file_bytes",
+            new=AsyncMock(return_value=(b"jpeg-v7-cover", "image/jpeg")),
+        ) as mock_tg,
+        patch("httpx.AsyncClient.get") as mock_http,
+    ):
+        data = await _fetch_poster_bytes(
+            "https://kinochi-project-alpha-9g6j.onrender.com/api/v1/posters/tg/AgAC_V7_COVER"
+        )
+
+    assert data == b"jpeg-v7-cover"
+    mock_tg.assert_awaited_once_with("AgAC_V7_COVER")
+    mock_http.assert_not_called()
+
+
+

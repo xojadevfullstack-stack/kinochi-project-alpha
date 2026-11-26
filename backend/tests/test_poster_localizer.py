@@ -771,6 +771,27 @@ def test_v7_italic_shear_and_cloudflare_scene_guard():
     assert _is_scene_preserved_outside_title(orig, warped, [750, 100, 900, 900]) is False
 
 
+def test_v7_normalizes_uzbek_unicode_apostrophes_to_ascii():
+    from app.infrastructure.external.poster_localizer import _sanitize_font_text
+
+    assert _sanitize_font_text("Taxtlar o\u02bbyini") == "Taxtlar o'yini"
+    assert _sanitize_font_text("So\u2018nggi o\u02bcg\u2019ri") == "So'nggi o'g'ri"
+
+
+@pytest.mark.asyncio
+async def test_verify_ocr_fails_closed_when_empty_or_none():
+    from app.infrastructure.external import poster_localizer
+
+    with patch.object(poster_localizer, "_call_gemini_vision_json", new=AsyncMock(return_value=None)):
+        assert await poster_localizer.verify_localized_poster_ocr(_make_sample_jpeg(100, 150), "Taxtlar o'yini") is False
+    with patch.object(
+        poster_localizer,
+        "_call_gemini_vision_json",
+        new=AsyncMock(return_value={"detected_title": "", "spelling_exact": True}),
+    ):
+        assert await poster_localizer.verify_localized_poster_ocr(_make_sample_jpeg(100, 150), "Taxtlar o'yini") is False
+
+
 
 
 

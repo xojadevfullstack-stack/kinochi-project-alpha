@@ -95,9 +95,25 @@ async def auto_pick_catalog_movie(db: AsyncSession) -> Optional[SmmClipJobModel]
         MovieModel.imdb_rating >= 5.8,
         MovieModel.release_year >= 2023,
     )
+    genres_l = func.lower(func.coalesce(MovieModel.genres, ""))
+    high_retention = or_(
+        genres_l.contains("triller"),
+        genres_l.contains("thriller"),
+        genres_l.contains("jangari"),
+        genres_l.contains("ekshn"),
+        genres_l.contains("action"),
+        genres_l.contains("fantastika"),
+        genres_l.contains("sci-fi"),
+        genres_l.contains("anime"),
+        genres_l.contains("sirli"),
+        genres_l.contains("mystery"),
+        genres_l.contains("kriminal"),
+        genres_l.contains("sarguzasht"),
+    )
     gem_score = (
         func.coalesce(MovieModel.imdb_rating, 0.0) * 10.0
         + case((MovieModel.release_year >= 2023, 25.0), else_=0.0)
+        + case((high_retention, 18.0), else_=0.0)
         + func.coalesce(MovieModel.view_count, 0) * 2.0
     )
     stmt = (
@@ -139,6 +155,9 @@ async def enqueue_smm_clip_job(
     media_id: Optional[int] = None,
     media_type: str = "movie",
     start_sec: float = 0.0,
+    clip_mode: str = "scene",
+    hook_text: Optional[str] = None,
+    duration_sec: Optional[float] = None,
 ) -> SmmClipJobModel:
     """Enqueue a clip generation job if an active job for movie_code does not already exist."""
     existing = (
@@ -153,11 +172,12 @@ async def enqueue_smm_clip_job(
         return existing
 
     cfg = (await db.execute(select(SmmSettingsModel).where(SmmSettingsModel.id == 1))).scalar_one_or_none()
-    duration = float(cfg.clip_duration_sec) if cfg else 45.0
+    duration = float(duration_sec) if duration_sec is not None else float(cfg.clip_duration_sec if cfg else 28.0)
     platforms = {p: {"enabled": True, "status": "pending", "post_id": None, "error": None} for p in (cfg.enabled_platforms if cfg else ["telegram"])}
     job = SmmClipJobModel(
         media_type=media_type, media_id=media_id, movie_code=movie_code,
-        title=title, start_sec=start_sec, duration_sec=duration,
+        title=title, clip_mode=clip_mode, hook_text=hook_text,
+        start_sec=start_sec, duration_sec=duration,
         status="generating", platforms_status=platforms,
     )
     db.add(job)
@@ -274,8 +294,53 @@ async def _resolve_scene_meta(db: AsyncSession, job: SmmClipJobModel) -> dict[st
     }
 
 
+async def _ensure_localized_poster_url(
+    db: AsyncSession,
+    media: Any,
+    content_type: str,
+    code: Optional[str] = None,
+    topic_chat_id: Optional[int | str] = None,
+    topic_id: Optional[int] = None,
+) -> Optional[str]:
+    """Ensure media poster is Uzbek-localized in Telegram storage before rendering SMM clip cover."""
+    if not media:
+        return None
+    current = (getattr(media, "poster_url", None) or "").strip()
+    if "/api/v1/posters/tg/" in current:
+        return current
+    tmdb_id = getattr(media, "tmdb_id", None)
+    if not tmdb_id and not current:
+        return None
+    try:
+        from app.core.cache import delete_cache_pattern
+        from app.infrastructure.external.poster_localizer import localize_poster_and_upload
+
+        localized = await localize_poster_and_upload(
+            title=str(getattr(media, "title", "") or ""),
+            tmdb_id=tmdb_id,
+            content_type=content_type,
+            manual_poster_url=current or None,
+            code=code,
+            topic_chat_id=topic_chat_id,
+            topic_id=topic_id,
+        )
+        if localized:
+            media.poster_url = localized
+            await db.flush()
+            try:
+                prefix = "cache:series:*" if content_type == "tv" else "cache:movies:*"
+                await delete_cache_pattern(prefix)
+                await delete_cache_pattern("cache:search:*")
+            except Exception as cache_exc:
+                logger.debug("Poster cache invalidation skipped: %s", cache_exc)
+            return localized
+    except Exception as exc:
+        logger.warning("SMM poster cover auto-localization fallback for %s: %s", getattr(media, "title", ""), exc)
+    return current or None
+
+
 async def _resolve_media_poster_url(db: AsyncSession, job: SmmClipJobModel) -> Optional[str]:
-    """Fetch poster_url for movie or parent series of an episode job."""
+    """Fetch (and localize if needed) poster_url for movie or parent series of an episode job."""
     if job.media_type == "episode":
         ep_filter = EpisodeModel.id == job.media_id if job.media_id else or_(EpisodeModel.short_code == job.movie_code, EpisodeModel.code == job.movie_code)
         ep = (await db.execute(select(EpisodeModel).where(ep_filter))).scalars().first()
@@ -283,10 +348,19 @@ async def _resolve_media_poster_url(db: AsyncSession, job: SmmClipJobModel) -> O
             return None
         season = (await db.execute(select(SeasonModel).where(SeasonModel.id == ep.season_id))).scalar_one_or_none()
         series = (await db.execute(select(SeriesModel).where(SeriesModel.id == season.series_id))).scalar_one_or_none() if season else None
-        return getattr(series, "poster_url", None) if series else None
+        return await _ensure_localized_poster_url(db, series, content_type="tv")
     m_filter = MovieModel.id == job.media_id if job.media_id else or_(MovieModel.short_code == job.movie_code, MovieModel.code == job.movie_code)
     movie = (await db.execute(select(MovieModel).where(m_filter))).scalars().first()
-    return getattr(movie, "poster_url", None) if movie else None
+    if not movie:
+        return None
+    return await _ensure_localized_poster_url(
+        db,
+        movie,
+        content_type="movie",
+        code=getattr(movie, "code", None),
+        topic_chat_id=getattr(movie, "source_chat_id", None),
+        topic_id=getattr(movie, "source_topic_id", None),
+    )
 
 
 async def process_generating_job(
@@ -329,6 +403,8 @@ async def process_generating_job(
             bot_username=bot_handle,
             progress_cb=_on_progress,
             poster_url=poster_url,
+            hook_text=getattr(job, "hook_text", None),
+            genres=genres,
             **scene_meta,
         )
     except Exception as exc:
@@ -339,8 +415,9 @@ async def process_generating_job(
         await db.refresh(job)
         return job
 
-    job.start_sec = float(meta["start_sec"])
-    job.duration_sec = float(meta["duration_sec"])
+    job.start_sec = float(meta.get("start_sec") or 0.0)
+    job.duration_sec = float(meta.get("duration_sec") or job.duration_sec or cfg.clip_duration_sec or 28.0)
+    job.hook_text = meta.get("hook_text") or getattr(job, "hook_text", None)
     job.clip_path = f"uploads/smm/clip_{job.id}.mp4"
 
     # Backup generated clip to Telegram Storage (prefer BOT_TOKEN since SMM userbot may be read-only member)
@@ -373,6 +450,7 @@ async def process_generating_job(
     job.caption = job.caption or build_movie_caption(
         movie_code=display_code, imdb_rating=imdb_rating,
         genres=genres, bot_username=bot_handle,
+        hook_text=getattr(job, "hook_text", None),
     )
     job.status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
     job.progress_pct = 100
@@ -439,7 +517,7 @@ async def process_publish_job(
         results = await dispatcher.publish_all(
             video_path=target_path, caption=job.caption or "",
             movie_code=display_code, platforms=pending_platforms, video_url=video_url,
-            bot_username=bot_handle,
+            bot_username=bot_handle, hook_text=getattr(job, "hook_text", None) or "",
         )
         for plat, res in results.items():
             status_map[plat] = {"enabled": True, "status": "published" if res.success else "failed", "post_id": res.post_id, "error": res.error}

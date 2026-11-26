@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 import os
 import tempfile
 from typing import Any, Callable, Dict, Optional
@@ -11,24 +12,29 @@ from scraper.smm_clipper import build_clip_cover_image, compute_clip_window, dow
 from scraper.smm_scene_finder import fallback_hook_for_genres, find_viral_scene_target, sanitize_hook_text
 from scraper.smm_scene_scorer import select_best_scene_start
 
+logger = logging.getLogger(__name__)
+
 
 async def _fetch_poster_bytes(poster_url: Optional[str]) -> Optional[bytes]:
-    """Download poster image bytes from external HTTPS URL or local Telegram file proxy."""
+    """Download poster image bytes directly from Telegram Storage proxy or external HTTPS URL."""
     url = (poster_url or "").strip()
     if not url:
         return None
-    if url.startswith("/api/v1/posters/tg/"):
+    if "/api/v1/posters/tg/" in url:
         file_id = url.rsplit("/", 1)[-1].split("?", 1)[0].strip()
         if file_id:
             try:
-                from app.infrastructure.external.telegram_client import download_file_bytes
-                data = await download_file_bytes(file_id)
+                from app.infrastructure.telegram.telegram_client import telegram_client
+
+                dl_res = await telegram_client.download_file_bytes(file_id)
+                data = dl_res[0] if isinstance(dl_res, tuple) else dl_res
                 if data:
                     return data
-            except Exception:
-                pass
-        base = os.getenv("PUBLIC_API_BASE_URL", "https://kinochi-project-alpha-9g6j.onrender.com").rstrip("/")
-        url = f"{base}{url}"
+            except Exception as exc:
+                logger.debug("Direct TG poster fetch fallback for %s: %s", file_id, exc)
+        if url.startswith("/api/v1/posters/tg/"):
+            base = os.getenv("PUBLIC_API_BASE_URL", "https://kinochi-project-alpha-9g6j.onrender.com").rstrip("/")
+            url = f"{base}{url}"
     if not url.startswith(("http://", "https://")):
         return None
     try:
@@ -36,7 +42,8 @@ async def _fetch_poster_bytes(poster_url: Optional[str]) -> Optional[bytes]:
         async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
             resp = await client.get(url)
         return resp.content if resp.status_code == 200 and resp.content else None
-    except Exception:
+    except Exception as exc:
+        logger.debug("HTTP poster fetch failed for %s: %s", url, exc)
         return None
 
 
@@ -111,15 +118,15 @@ async def create_smart_smm_clip(
             score_meta = {"start_sec": chosen_start, "has_ad_banner": False, "score": 0.0, "reason": "Manual start"}
         else:
             chunk_floor = effective_dur * eff_ratio
-            chunk_ceil = min(effective_dur - 10.0, chunk_floor + duration_sec + 35.0)
+            chunk_ceil = min(effective_dur - 10.0, chunk_floor + duration_sec + 38.0)
             if scene_hint and scene_hint.get("peak_sec") and scene_hint.get("srt_end_sec"):
                 mapped_peak = effective_dur * (float(scene_hint["peak_sec"]) / float(scene_hint["srt_end_sec"]))
-                max_start = max(chunk_floor, chunk_ceil - duration_sec - 5.0)
-                scan_start = min(max_start, max(chunk_floor, mapped_peak - 70.0))
-                scan_end = min(chunk_ceil, max(scan_start + duration_sec + 25.0, mapped_peak + 15.0))
+                max_start = max(chunk_floor, chunk_ceil - duration_sec)
+                scan_start = min(max_start, max(chunk_floor, mapped_peak - max(25.0, duration_sec * 1.15)))
+                scan_end = min(chunk_ceil, max(scan_start + duration_sec + 10.0, mapped_peak + duration_sec + 8.0))
             else:
                 scan_start = max(0.0, chunk_floor - 10.0)
-                scan_end = min(chunk_ceil, chunk_floor + duration_sec + 30.0)
+                scan_end = min(chunk_ceil, chunk_floor + duration_sec + 35.0)
             try:
                 score_meta = await asyncio.wait_for(
                     select_best_scene_start(
@@ -142,9 +149,10 @@ async def create_smart_smm_clip(
                     "reason": "Scorer timeout fallback",
                 }
             if score_meta.get("is_credits") and eff_ratio > 0.60:
-                await download_sparse_clip_source(client, storage_msg, raw_path, target_ratio=0.50, chunk_mb=None)
-                mid_start = max(0.0, effective_dur * 0.50)
-                mid_end = min(effective_dur - 15.0, mid_start + duration_sec + 30.0)
+                retry_ratio = float(scene_hint["backup_ratio"]) if scene_hint and scene_hint.get("backup_ratio") else 0.50
+                await download_sparse_clip_source(client, storage_msg, raw_path, target_ratio=retry_ratio, chunk_mb=None)
+                mid_start = max(0.0, effective_dur * retry_ratio)
+                mid_end = min(effective_dur - 15.0, mid_start + duration_sec + 35.0)
                 try:
                     score_meta = await asyncio.wait_for(
                         select_best_scene_start(
