@@ -140,6 +140,11 @@ def test_smm_job_video_endpoint_serves_file_and_404_when_missing(admin_client, t
     assert ok.status_code == 200
     assert ok.headers["content-type"].startswith("video/mp4")
 
+    head_ok = admin_client.head(f"/api/v1/smm/jobs/{jid}/video")
+    assert head_ok.status_code == 200
+    assert head_ok.headers["content-type"].startswith("video/mp4")
+    assert int(head_ok.headers.get("content-length", 0)) > 0
+
     missing = admin_client.post(
         "/api/v1/smm/jobs",
         json={"media_type": "movie", "movie_code": "3961", "title": "Missing Video", "clip_path": str(tmp_path / "missing.mp4")},
@@ -188,3 +193,45 @@ def test_get_worker_state_safe_never_swallows_import_error_and_ensures_repo_path
     assert state["running"] is False
     assert state["last_error"] is not None
     assert "ModuleNotFoundError" in state["last_error"]
+
+
+@pytest.mark.asyncio
+async def test_restore_clip_from_telegram_coalesces_concurrent_requests(tmp_path, monkeypatch):
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from app.api.v1 import smm as smm_api
+    from app.core.config import settings
+
+    dest = tmp_path / "clip_7.mp4"
+    monkeypatch.setenv("SMM_TELEGRAM_STRING_SESSION", "sess_abc")
+    monkeypatch.setattr(settings, "TELEGRAM_API_ID", 12345)
+    monkeypatch.setattr(settings, "TELEGRAM_API_HASH", "hash_xyz")
+    monkeypatch.setattr(settings, "STORAGE_CHANNEL_ID", "-100123")
+
+    dl_calls = []
+
+    async def fake_download(msg, file=None):
+        dl_calls.append(file)
+        await asyncio.sleep(0.05)
+        with open(file, "wb") as f:
+            f.write(b"valid-mp4-data")
+
+    mock_client = MagicMock()
+    mock_client.connect = AsyncMock()
+    mock_client.disconnect = AsyncMock()
+    mock_client.get_messages = AsyncMock(return_value=MagicMock(media=object()))
+    mock_client.download_media = AsyncMock(side_effect=fake_download)
+
+    with (
+        patch("telethon.TelegramClient", return_value=mock_client),
+        patch("telethon.sessions.StringSession", return_value=MagicMock()),
+    ):
+        r1, r2 = await asyncio.gather(
+            smm_api._restore_clip_from_telegram(str(dest), 5088),
+            smm_api._restore_clip_from_telegram(str(dest), 5088),
+        )
+
+    assert r1 is True and r2 is True
+    assert dest.read_bytes() == b"valid-mp4-data"
+    assert len(dl_calls) == 1
+

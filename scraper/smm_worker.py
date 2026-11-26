@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
@@ -382,7 +383,7 @@ async def process_publish_job(
             os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
             msg = await tg_client.get_messages(storage_chat_id, ids=int(job.clip_storage_message_id))
             if msg and getattr(msg, "media", None):
-                tmp_path = f"{target_path}.tmp.{os.getpid()}"
+                tmp_path = f"{target_path}.tmp.{uuid.uuid4().hex}"
                 await tg_client.download_media(msg, file=tmp_path)
                 if os.path.exists(tmp_path) and os.path.getsize(tmp_path) > 0:
                     os.replace(tmp_path, target_path)

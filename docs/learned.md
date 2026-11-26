@@ -167,6 +167,10 @@
 - Concept: **Open-Source Subtitle Timecode Lookup (`0 MB` Video) + Targeted Sparse Windowing** — Butun filmni yoki tasodifiy `35%` nuqtasini ko'chirish o'rniga TMDb `imdb_id` orqali Stremio OpenSubtitles `.srt` (`~60 KB` matn) ni yuklab, Gemini Flash-Lite dan eng kuchli kulminatsiya/burilish taymkodi (`peak_sec`, `visual_cue`) ni olish, faqat o'sha nuqtadan `~35 MB` sparse bo'lak tushirib Vision'da barcha nomzodlarni `excitement_score` va `cue_match` bo'yicha o'zaro solishtirish Render `512MB` RAM ni saqlab qiziq sahnalarni aniq kesadi.
 - Analogy: Qalin kitobning o'rtasidan tasodifan bitta sahifa yirtib o'qish o'rniga, avval mundarija va qisqa iqtiboslar ro'yxatidan eng keskin burilish bobini topib, faqat o'sha bobni ochib o'qish.
 
+## Per-File Async Lock & `HEAD` Support for Webhook Media Proxies
+- Concept: **Request Coalescing Lock + `uuid4` Temp Atomic Swap (`GET`/`HEAD`)** — Bir nechta tashqi webhook (`Instagram` va `Facebook` Make.com ssenariylari) bitta efemer media endpointini bir soniyada chaqirganda `os.getpid()` bir xil temp faylga yozib poyga (`race condition`) va `HEAD 405` yaratmasligi uchun har bir fayl yo'li bo'yicha `asyncio.Lock`, `uuid4` vaqtinchalik fayl va `HEAD 200` sarlavhasi majburiydir.
+- Analogy: Ikki kuryer bir vaqtda ombordan bitta posilkani so'raganda ikkisi ham bitta qutini tortishib yirtib qo'ymasligi uchun avval birinchisi olib chiqib qo'yishi, ikkinchisi esa tayyor turganini 0 soniyada olishi kabi.
+
 
 
 
