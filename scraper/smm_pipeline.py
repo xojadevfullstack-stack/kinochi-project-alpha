@@ -7,9 +7,37 @@ import os
 import tempfile
 from typing import Any, Callable, Dict, Optional
 
-from scraper.smm_clipper import compute_clip_window, download_sparse_clip_source, render_vertical_clip
+from scraper.smm_clipper import build_clip_cover_image, compute_clip_window, download_sparse_clip_source, render_vertical_clip
 from scraper.smm_scene_finder import find_viral_scene_target
 from scraper.smm_scene_scorer import select_best_scene_start
+
+
+async def _fetch_poster_bytes(poster_url: Optional[str]) -> Optional[bytes]:
+    """Download poster image bytes from external HTTPS URL or local Telegram file proxy."""
+    url = (poster_url or "").strip()
+    if not url:
+        return None
+    if url.startswith("/api/v1/posters/tg/"):
+        file_id = url.rsplit("/", 1)[-1].split("?", 1)[0].strip()
+        if file_id:
+            try:
+                from app.infrastructure.external.telegram_client import download_file_bytes
+                data = await download_file_bytes(file_id)
+                if data:
+                    return data
+            except Exception:
+                pass
+        base = os.getenv("PUBLIC_API_BASE_URL", "https://kinochi-project-alpha-9g6j.onrender.com").rstrip("/")
+        url = f"{base}{url}"
+    if not url.startswith(("http://", "https://")):
+        return None
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(url)
+        return resp.content if resp.status_code == 200 and resp.content else None
+    except Exception:
+        return None
 
 
 async def _emit_progress(progress_cb: Optional[Callable[[int, str], Any]], pct: int, stage: str) -> None:
@@ -42,11 +70,14 @@ async def create_smart_smm_clip(
     content_type: str = "movie",
     season_number: Optional[int] = None,
     episode_number: Optional[int] = None,
+    poster_url: Optional[str] = None,
+    cover_duration_sec: float = 0.35,
 ) -> Dict[str, Any]:
     """Locate viral SRT timecode (with fallback), download targeted sparse chunk, verify with Vision, and render 9:16 clip."""
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     fd, raw_path = tempfile.mkstemp(suffix=".mp4")
     os.close(fd)
+    cover_path: Optional[str] = None
 
     try:
         scene_hint: Optional[Dict[str, Any]] = None
@@ -111,6 +142,19 @@ async def create_smart_smm_clip(
         blur_ad = bool(score_meta.get("has_ad_banner", False))
         ai_boxes = list(score_meta.get("blur_boxes") or []) if check_vision else None
         low_ram = os.getenv("SMM_LOW_RAM", "true").strip().lower() in {"1", "true", "yes", "on"}
+        if poster_url and cover_duration_sec > 0:
+            poster_bytes = await _fetch_poster_bytes(poster_url)
+            if poster_bytes:
+                cfd, tmp_cov = tempfile.mkstemp(suffix=".png")
+                os.close(cfd)
+                cover_path = build_clip_cover_image(
+                    poster_bytes=poster_bytes,
+                    output_path=tmp_cov,
+                    movie_code=movie_code,
+                    imdb_rating=imdb_rating,
+                    bot_username=bot_username,
+                    low_ram=low_ram,
+                )
         await _emit_progress(progress_cb, 70, "9:16 vertikal klipp render qilinmoqda...")
         await asyncio.to_thread(
             render_vertical_clip,
@@ -126,6 +170,8 @@ async def create_smart_smm_clip(
             blur_bottom_ad=blur_ad,
             low_ram=low_ram,
             blur_boxes=ai_boxes,
+            cover_image_path=cover_path,
+            cover_duration_sec=cover_duration_sec,
         )
         await _emit_progress(progress_cb, 95, "Telegram preview & bazaga saqlanmoqda...")
         return {
@@ -138,8 +184,9 @@ async def create_smart_smm_clip(
             "reason": score_meta.get("reason", ""),
         }
     finally:
-        if os.path.exists(raw_path):
-            try:
-                os.remove(raw_path)
-            except OSError:
-                pass
+        for p in (raw_path, cover_path):
+            if p and os.path.exists(p):
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass

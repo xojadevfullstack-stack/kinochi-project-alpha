@@ -567,3 +567,37 @@ async def test_run_smm_worker_tick_triggers_auto_pick_and_respects_monthly_cap(d
     with patch("scraper.smm_worker.create_smart_smm_clip", new=AsyncMock(return_value=fake_clip)):
         res_ok = await smm_worker.run_smm_worker_tick(db_session, tg_client=tg_client, storage_chat_id=-1001)
     assert res_ok["generated"] == 1
+
+
+@pytest.mark.asyncio
+async def test_auto_pick_catalog_movie_prioritizes_gems_and_skips_low_rated_old_movies(db_session):
+    from sqlalchemy import delete
+    from scraper.smm_worker import auto_pick_catalog_movie
+
+    await db_session.execute(delete(SmmClipJobModel))
+    await db_session.execute(delete(MovieTranslationModel))
+    await db_session.execute(delete(MovieModel))
+
+    m_mid = MovieModel(title="Mid Film", code="MID1", short_code="9201", release_year=2015, imdb_rating=6.4, publish_status="published")
+    m_gem = MovieModel(title="Interstellar Hit", code="GEM1", short_code="9202", release_year=2014, imdb_rating=8.6, view_count=5, publish_status="published")
+    m_boring_newest = MovieModel(title="Zerikarli Flop", code="BRG1", short_code="9203", release_year=1990, imdb_rating=4.7, publish_status="published")
+    db_session.add_all([m_mid, m_gem, m_boring_newest])
+    await db_session.flush()
+    db_session.add_all([
+        MovieTranslationModel(movie_id=m_mid.id, language="O'zbekcha", storage_channel_message_id=301),
+        MovieTranslationModel(movie_id=m_gem.id, language="O'zbekcha", storage_channel_message_id=302),
+        MovieTranslationModel(movie_id=m_boring_newest.id, language="O'zbekcha", storage_channel_message_id=303),
+    ])
+    await db_session.merge(
+        SmmSettingsModel(id=1, mode="FULL_AUTO", daily_limit=3, auto_pick_from_catalog=True, enabled_platforms=["telegram"])
+    )
+    await db_session.commit()
+
+    # Must pick IMDb 8.6 gem even though boring 4.7 movie has newer id
+    j1 = await auto_pick_catalog_movie(db_session)
+    assert j1 is not None and j1.movie_code == "9202"
+    j2 = await auto_pick_catalog_movie(db_session)
+    assert j2 is not None and j2.movie_code == "9201"
+    # Boring old 4.7 movie must be skipped instead of wasting quota
+    j3 = await auto_pick_catalog_movie(db_session)
+    assert j3 is None

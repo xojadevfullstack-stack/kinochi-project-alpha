@@ -1,4 +1,5 @@
 import json
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -252,3 +253,56 @@ async def test_create_smart_smm_clip_uses_srt_target_ratio_and_visual_cue(tmp_pa
     assert mock_select.call_args.kwargs["compare_candidates"] == 3
     assert mock_select.call_args.kwargs["scan_start_sec"] >= 3376.0 * 0.9493
     assert meta["start_sec"] == pytest.approx(3207.8)
+
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_builds_poster_cover_when_available_and_falls_back(tmp_path):
+    from io import BytesIO
+    from PIL import Image
+
+    buf = BytesIO()
+    Image.new("RGB", (200, 300), color=(180, 40, 40)).save(buf, format="JPEG")
+    out_path = str(tmp_path / "cover_pipe.mp4")
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 1200.0
+
+    seen_cover_exists = []
+
+    def fake_render(**kwargs):
+        cp = kwargs.get("cover_image_path")
+        seen_cover_exists.append(bool(cp and os.path.exists(cp)))
+        return out_path
+
+    with (
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value={"start_sec": 420.0, "has_ad_banner": False, "blur_boxes": []})),
+        patch("scraper.smm_pipeline._fetch_poster_bytes", new=AsyncMock(return_value=buf.getvalue())),
+        patch("scraper.smm_pipeline.render_vertical_clip", side_effect=fake_render),
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1014",
+            imdb_rating=8.2,
+            poster_url="https://image.tmdb.org/t/p/w500/test.jpg",
+        )
+    assert seen_cover_exists == [True]
+
+    with (
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value={"start_sec": 420.0, "has_ad_banner": False, "blur_boxes": []})),
+        patch("scraper.smm_pipeline._fetch_poster_bytes", new=AsyncMock(return_value=None)),
+        patch("scraper.smm_pipeline.render_vertical_clip", side_effect=fake_render) as mr2,
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1014",
+            poster_url="https://image.tmdb.org/t/p/w500/missing.jpg",
+        )
+    assert mr2.call_args.kwargs.get("cover_image_path") is None

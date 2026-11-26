@@ -187,6 +187,10 @@
 - Concept: **4-Corner Vision Prompt + Prose Recovery (`_infer_corner_watermark_boxes`) + Candidate Aggregation** — Yengil Vision modellari qorong'i kadrlarda burchak logotipini (`Kinochilar`) `reason` matnida yozib turib `blur_boxes: []` qoldirishi yoki nomzodlar orasida faqat bittasida topishi mumkin; matndan burchakni tiklash, ichkariga kengaytirish (`>= 0.75`) va barcha toza nomzodlar qutilarini jamlash watermark o'tib ketishini to'xtatadi.
 - Analogy: Uchta kamera bitta binoni kuzatganda bittasi qo'riqchi o'ng burchakda begona belgini ko'rsa, qolgan kameralar qorong'ida payqamagan bo'lsa ham darhol o'sha burchakni yopib qo'yish.
 
+## Single-Pass Frame-0 Branded Poster Cover & Gem-Priority Scoring
+- Concept: **`overlay=eof_action=repeat:enable='lt(t,0.35)'` + Multi-Factor Gem Queue (`IMDb + Year + Views`)** — Alohida `concat` qilib audio desinxron chiqarish o'rniga `0.35s` poster muqovani bitta FFmpeg `overlay` o'tishida `0.0s` ga yopishtirish barcha `5` tarmoq panjarasiga professional ablojka beradi; avto-tanlovni esa `id.desc()` o'rniga reyting/yangilik balliga ko'chirish zerikarli mediaga kvota kuydirishni to'xtatadi.
+- Analogy: Kitobning birinchi betiga chiroyli rangli muqova yopishtirib darhol asosiy voqeadan boshlash va vitrinaga omborga oxirgi kirgan eski kitobni emas, eng mashhur bestsellerlarni terish.
+
 
 
 

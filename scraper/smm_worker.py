@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, List, Optional
 
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import case, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models.movie import MovieModel
@@ -78,7 +78,7 @@ def is_schedule_due(
 
 
 async def auto_pick_catalog_movie(db: AsyncSession) -> Optional[SmmClipJobModel]:
-    """Select one newest published movie with Storage video that has no SMM job yet."""
+    """Select highest-value published gem/recent movie with Storage video that has no SMM job yet."""
     used_ids = select(SmmClipJobModel.media_id).where(
         SmmClipJobModel.media_type == "movie",
         SmmClipJobModel.media_id.isnot(None),
@@ -90,16 +90,31 @@ async def auto_pick_catalog_movie(db: AsyncSession) -> Optional[SmmClipJobModel]
             MovieTranslationModel.storage_channel_message_id.isnot(None),
         )
     )
+    quality_gate = or_(
+        MovieModel.imdb_rating.is_(None),
+        MovieModel.imdb_rating >= 5.8,
+        MovieModel.release_year >= 2023,
+    )
+    gem_score = (
+        func.coalesce(MovieModel.imdb_rating, 0.0) * 10.0
+        + case((MovieModel.release_year >= 2023, 25.0), else_=0.0)
+        + func.coalesce(MovieModel.view_count, 0) * 2.0
+    )
     stmt = (
         select(MovieModel)
         .where(
             MovieModel.publish_status == "published",
+            quality_gate,
             has_storage,
             MovieModel.id.notin_(used_ids),
             func.coalesce(MovieModel.short_code, MovieModel.code).notin_(used_codes),
             MovieModel.code.notin_(used_codes),
         )
-        .order_by(MovieModel.id.desc())
+        .order_by(
+            gem_score.desc(),
+            func.coalesce(MovieModel.release_year, 0).desc(),
+            MovieModel.id.desc(),
+        )
         .limit(1)
     )
     movie = (await db.execute(stmt)).scalar_one_or_none()
@@ -259,6 +274,21 @@ async def _resolve_scene_meta(db: AsyncSession, job: SmmClipJobModel) -> dict[st
     }
 
 
+async def _resolve_media_poster_url(db: AsyncSession, job: SmmClipJobModel) -> Optional[str]:
+    """Fetch poster_url for movie or parent series of an episode job."""
+    if job.media_type == "episode":
+        ep_filter = EpisodeModel.id == job.media_id if job.media_id else or_(EpisodeModel.short_code == job.movie_code, EpisodeModel.code == job.movie_code)
+        ep = (await db.execute(select(EpisodeModel).where(ep_filter))).scalars().first()
+        if not ep:
+            return None
+        season = (await db.execute(select(SeasonModel).where(SeasonModel.id == ep.season_id))).scalar_one_or_none()
+        series = (await db.execute(select(SeriesModel).where(SeriesModel.id == season.series_id))).scalar_one_or_none() if season else None
+        return getattr(series, "poster_url", None) if series else None
+    m_filter = MovieModel.id == job.media_id if job.media_id else or_(MovieModel.short_code == job.movie_code, MovieModel.code == job.movie_code)
+    movie = (await db.execute(select(MovieModel).where(m_filter))).scalars().first()
+    return getattr(movie, "poster_url", None) if movie else None
+
+
 async def process_generating_job(
     db: AsyncSession,
     job: SmmClipJobModel,
@@ -288,6 +318,7 @@ async def process_generating_job(
 
     try:
         scene_meta = await _resolve_scene_meta(db, job) if job.start_sec <= 0 else {}
+        poster_url = await _resolve_media_poster_url(db, job)
         storage_msg = await tg_client.get_messages(storage_chat_id, ids=storage_msg_id)
         meta = await create_smart_smm_clip(
             client=tg_client, storage_msg=storage_msg, output_path=out_file,
@@ -297,6 +328,7 @@ async def process_generating_job(
             copyright_shield=cfg.copyright_shield,
             bot_username=bot_handle,
             progress_cb=_on_progress,
+            poster_url=poster_url,
             **scene_meta,
         )
     except Exception as exc:
