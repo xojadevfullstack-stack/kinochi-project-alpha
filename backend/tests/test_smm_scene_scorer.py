@@ -243,3 +243,59 @@ def test_measure_audio_db_enforces_timeout_and_recovers(tmp_path):
 
     assert "timeout" in seen_kwargs and seen_kwargs["timeout"] <= 20
     assert (mean_db, max_db) == (-90.0, -90.0)
+
+
+def test_parse_scene_vision_recovers_corner_box_from_reason_and_keeps_small_watermark():
+    # Case 1: Model explicitly mentions bottom-right watermark in reason but forgot blur_boxes
+    contradictory = (
+        '{"is_clean": true, "has_ad_banner": false, "is_nsfw_or_gore": false, "is_credits": false, '
+        '"excitement_score": 4, "blur_boxes": [], '
+        '"reason": "Contains a watermark at the bottom right corner (Kinochilar) which can be blurred."}'
+    )
+    res1 = parse_scene_vision_response(contradictory)
+    assert len(res1["blur_boxes"]) == 1
+    b1 = res1["blur_boxes"][0]
+    assert b1["x"] >= 0.75 and b1["y"] >= 0.78 and b1["x"] + b1["w"] >= 0.95
+
+    # Case 2: Negated watermark phrase must NOT synthesize fake blur boxes
+    clean_neg = '{"is_clean": true, "has_ad_banner": false, "blur_boxes": [], "reason": "Clean frame, no watermark or ads."}'
+    assert parse_scene_vision_response(clean_neg)["blur_boxes"] == []
+
+    # Case 3: Small 3% tall corner watermark on ultrawide 2.4:1 frame & tight bottom-right box pad inward cleanly
+    tiny = '{"is_clean": true, "blur_boxes": [{"x": 0.86, "y": 0.92, "w": 0.12, "h": 0.032, "kind": "watermark"}], "reason": "WM"}'
+    res3 = parse_scene_vision_response(tiny)
+    assert len(res3["blur_boxes"]) == 1
+    assert res3["blur_boxes"][0]["x"] <= 0.825
+    assert res3["blur_boxes"][0]["y"] <= 0.885
+    assert res3["blur_boxes"][0]["h"] >= 0.08
+
+
+@pytest.mark.asyncio
+async def test_select_best_scene_start_aggregates_watermark_boxes_across_candidates(tmp_path):
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "agg_wm.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=24:d=7",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=7",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    wm_box = {"x": 0.82, "y": 0.85, "w": 0.17, "h": 0.12, "kind": "watermark"}
+    side_effects = [
+        {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 4, "cue_match": 4, "blur_boxes": [wm_box], "vision_used": True, "reason": "Bright corner"},
+        {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 9, "cue_match": 9, "blur_boxes": [], "vision_used": True, "reason": "Dark winner"},
+        {"is_clean": True, "has_ad_banner": False, "is_nsfw_or_gore": False, "is_credits": False, "excitement_score": 5, "cue_match": 5, "blur_boxes": [], "vision_used": True, "reason": "Third"},
+    ]
+    with patch("scraper.smm_scene_scorer.check_frames_for_ads_or_nsfw", new=AsyncMock(side_effect=side_effects)):
+        res = await select_best_scene_start(str(src), clip_duration=2.0, check_vision=True, visual_cue="Hero", compare_candidates=3)
+
+    assert res["reason"] == "Dark winner"
+    assert len(res["blur_boxes"]) == 1
+    assert res["blur_boxes"][0]["x"] == pytest.approx(0.82)

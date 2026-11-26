@@ -45,14 +45,48 @@ def _sanitize_blur_boxes(raw_boxes: Any) -> List[Dict[str, Any]]:
             h = float(item.get("h", 0.0))
         except (TypeError, ValueError):
             continue
-        if w < 0.04 or h < 0.04:
+        if w < 0.025 or h < 0.025:
             continue
+        kind = str(item.get("kind", "watermark"))[:16]
+        if kind == "watermark" and (w < 0.10 or h < 0.06):
+            pad_x, pad_y = max(0.015, (0.14 - w) / 2.0), max(0.015, (0.09 - h) / 2.0)
+            x = max(0.0, x - (pad_x if x > 0.05 else 0.0))
+            y = max(0.0, y - (pad_y if y > 0.05 else 0.0))
+            w = max(w + 2 * pad_x, 0.14)
+            h = max(h + 2 * pad_y, 0.09)
+        if kind == "watermark" and (x >= 0.75 or y >= 0.75):
+            if x >= 0.75:
+                shift_x = min(x, 0.035)
+                x -= shift_x
+                w += shift_x + 0.01
+            if y >= 0.75:
+                shift_y = min(y, 0.035)
+                y -= shift_y
+                h += shift_y + 0.01
         w = min(w, 0.85, 1.0 - x)
         h = min(h, 0.45, 1.0 - y)
         if w < 0.04 or h < 0.04:
             continue
-        safe.append({"x": round(x, 3), "y": round(y, 3), "w": round(w, 3), "h": round(h, 3), "kind": str(item.get("kind", "watermark"))[:16]})
+        safe.append({"x": round(x, 3), "y": round(y, 3), "w": round(w, 3), "h": round(h, 3), "kind": kind})
     return safe
+
+
+def _infer_corner_watermark_boxes(reason: str) -> List[Dict[str, Any]]:
+    """Recover corner watermark box when Vision mentions a visible logo in prose but leaves blur_boxes empty."""
+    low = (reason or "").lower()
+    if not low or re.search(r"\b(no|without|none|free of)\s+(?:any\s+|visible\s+|corner\s+|site\s+)?(watermark|logo|overlay)", low):
+        return []
+    if not re.search(r"(watermark|logo|kinochilar|asilmedia|uzmovi|aslanbe)", low):
+        return []
+    if re.search(r"(bottom|lower)[- ]right", low):
+        return [{"x": 0.78, "y": 0.80, "w": 0.22, "h": 0.20, "kind": "watermark"}]
+    if re.search(r"(bottom|lower)[- ]left", low):
+        return [{"x": 0.0, "y": 0.80, "w": 0.22, "h": 0.20, "kind": "watermark"}]
+    if re.search(r"(top|upper)[- ]right", low):
+        return [{"x": 0.77, "y": 0.0, "w": 0.23, "h": 0.18, "kind": "watermark"}]
+    if re.search(r"(top|upper)[- ]left", low):
+        return [{"x": 0.0, "y": 0.0, "w": 0.24, "h": 0.18, "kind": "watermark"}]
+    return []
 
 
 def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
@@ -68,7 +102,8 @@ def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
         has_ad = bool(data.get("has_ad_banner", False))
         is_nsfw = bool(data.get("is_nsfw_or_gore", False))
         is_credits = bool(data.get("is_credits", False))
-        boxes = _sanitize_blur_boxes(data.get("blur_boxes"))
+        reason_str = str(data.get("reason", ""))
+        boxes = _sanitize_blur_boxes(data.get("blur_boxes")) or _infer_corner_watermark_boxes(reason_str)
         unsafe_scene = has_ad or is_nsfw or is_credits
         # A corner source logo/watermark can be blurred out dynamically via blur_boxes without rejecting the scene
         is_clean = True if (not unsafe_scene and boxes) else bool(data.get("is_clean", not unsafe_scene))
@@ -167,10 +202,12 @@ async def check_frames_for_ads_or_nsfw(
 
     cue_note = f'Target iconic scene cue: "{visual_cue}". Rate cue_match (1-10) for how well frames match this scene. ' if visual_cue else ""
     prompt = (
-        "Inspect these movie frames for social media (Reels/Shorts) safety, watermark removal, and scene excitement. "
+        "Inspect these movie frames for social media (Reels/Shorts) safety, corner watermark/logo detection, and scene excitement. "
         f"{cue_note}"
-        "1) Detect gambling/betting overlay ads (Mostbet, 1xBet, Melbet, Pin-Up, Linebet, banners), end credits, or 18+ nudity/gore. Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (small corner watermarks like ASILMEDIA.NET/UZMOVI/ASLANBE STUDIO can be blurred safely). "
-        "2) Find ONLY overlaid source logos/watermarks (e.g. ASILMEDIA.NET, UZMOVI, ASLANBE STUDIO, Kinochilar, @channel) OR overlaid ad banners that are ACTUALLY visible in the frame, and return normalized [0.0-1.0] bounding boxes {x, y, w, h, kind:'watermark'|'ad'} with generous padding. Do NOT add blur_boxes for clean empty corners; return [] if none are visible. Ignore subtitles and normal movie objects. "
+        "1) Carefully check ALL FOUR CORNERS (top-left, top-right, bottom-left, bottom-right) — even dark or semi-transparent areas — for overlaid website/channel watermarks/logos "
+        "(e.g. Kinochilar, ASILMEDIA.NET, UZMOVI, ASLANBE STUDIO, @channel) or betting ad banners (Mostbet, 1xBet, Melbet, Pin-Up, Linebet). "
+        "2) CONSISTENCY RULE: Whenever ANY watermark/logo/ad is visible in ANY corner (even small or faint), you MUST include its normalized [0.0-1.0] box in blur_boxes with generous padding; NEVER mention a watermark/logo in reason while returning blur_boxes: []. Return [] ONLY if all four corners are genuinely clean. "
+        "3) Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (corner site watermarks can be blurred safely). Ignore dialogue subtitles and normal movie props. "
         'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "cue_match": 1-10, "blur_boxes": [{"x": 0.0, "y": 0.0, "w": 0.2, "h": 0.1, "kind": "watermark"}], "reason": "short"}'
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
@@ -235,6 +272,7 @@ async def select_best_scene_start(
     candidates.sort(key=lambda c: c["score"], reverse=True)
     top_v_res: Optional[Dict[str, Any]] = None
     best_clean: Optional[Dict[str, Any]] = None
+    merged_boxes: List[Dict[str, Any]] = []
     evaluated_clean = 0
     for idx, cand in enumerate(candidates):
         if not check_vision:
@@ -250,17 +288,22 @@ async def select_best_scene_start(
         if idx == 0:
             top_v_res = v_res
         if v_res["is_clean"]:
+            for box in v_res.get("blur_boxes") or []:
+                if not any(abs(box["x"] - b["x"]) < 0.12 and abs(box["y"] - b["y"]) < 0.12 for b in merged_boxes):
+                    merged_boxes.append(box)
             scored_cand = {
                 "start_sec": cand["start_sec"],
                 "score": round(cand["score"] + int(v_res.get("excitement_score", 5)) * 8 + int(v_res.get("cue_match", 5)) * (10 if visual_cue else 0), 2),
                 "mean_volume_db": cand["mean_volume_db"],
                 "has_ad_banner": bool(v_res.get("has_ad_banner", False)),
-                "blur_boxes": v_res.get("blur_boxes", []),
+                "blur_boxes": list(merged_boxes[:4]),
                 "vision_used": bool(v_res.get("vision_used", False)),
                 "reason": v_res["reason"],
             }
             if best_clean is None or scored_cand["score"] > best_clean["score"]:
                 best_clean = scored_cand
+            else:
+                best_clean["blur_boxes"] = list(merged_boxes[:4])
             evaluated_clean += 1
             if evaluated_clean >= max(1, compare_candidates):
                 break

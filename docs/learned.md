@@ -183,6 +183,10 @@
 - Concept: **Dynamic `moov` Size Discovery (`parse_mp4_moov_end`) + Audio/Video `stco` Bounding** — Uzun filmlarda MP4 `moov` indeksi `4 MB` dan katta (`5.5–8 MB`) bo'lishi mumkin; boshidan qat'iy `4 MB` yuklash Video `stco` ni saqlab **2-trek (`Audio stco`)** ni nollab qo'yadi va `ffmpeg -map 0:a?` ovozsiz klip chiqaradi — shuning uchun `moov` o'lchamini o'qib oxirigacha yuklash va barcha asosiy treklarning `stco` chegarasini qamrash shart.
 - Analogy: Kitobning mundarijasi 6 bet bo'lsa-yu, siz faqat birinchi 4 betini nusxalab olib ketsangiz — oxirgi ikki betdagi audio bobi ko'rinmay qolib, film jim-jit chiqadi.
 
+## Cross-Candidate Corner Watermark Consensus & Reason Recovery
+- Concept: **4-Corner Vision Prompt + Prose Recovery (`_infer_corner_watermark_boxes`) + Candidate Aggregation** — Yengil Vision modellari qorong'i kadrlarda burchak logotipini (`Kinochilar`) `reason` matnida yozib turib `blur_boxes: []` qoldirishi yoki nomzodlar orasida faqat bittasida topishi mumkin; matndan burchakni tiklash, ichkariga kengaytirish (`>= 0.75`) va barcha toza nomzodlar qutilarini jamlash watermark o'tib ketishini to'xtatadi.
+- Analogy: Uchta kamera bitta binoni kuzatganda bittasi qo'riqchi o'ng burchakda begona belgini ko'rsa, qolgan kameralar qorong'ida payqamagan bo'lsa ham darhol o'sha burchakni yopib qo'yish.
+
 
 
 
