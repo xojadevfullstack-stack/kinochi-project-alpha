@@ -202,3 +202,7 @@
 ## Spoiler-Free Time-Windowed Hook & Sparse-Bounded Montage
 - Concept: **Time-Windowed Hook Overlay (`between(t,0.35,5.50)`) + Sparse Window Bounding** — Birinchi 2–3 soniyada tomoshabin swipe qilishini to‘xtatish uchun `0.35s` poster muqovadan darhol keyin film nomini ochmaydigan (`sanitize_hook_text`) 1 qatorli intriga-hook matn ko‘rsatiladi; ko‘p kadrli `Bilasizmi?` montajida esa `moov` to‘liq davomiyligi emas, balki faqat sparse yuklangan haqiqiy bayt oralig‘i (`window_start..window_end`) kesiladi.
 - Analogy: Gazeta sarlavhasida voqeaning oxirini yozib qo‘ymasdan qiziq savol qo‘yib o‘quvchini to‘xtatish va videomontajda faqat qo‘lda mavjud bo‘lgan kassetaning aniq daqiqalaridan kadr olish kabi.
+
+## Title-Crop Typography Evaluation & Hue-Preserving Metallic Bevel
+- Concept: **Hue-Preserving Specular Shading (`grad * contrast + hi^p`) + Title-Crop Evaluation** — Butun poster bo'ylab piksel taqqoslash 85% fon bir xilligi sababli shrift/rang xatolarini (`95%` deb) yashirib qo'yadi, qora-oq `+145` bevel esa to'q binafsha/oltin ranglarni oqartirib yuboradi; faqat sarlavha qismini qirqib baholash va yorug'likni asosiy rang nisbatida kuchaytirish haqiqiy sifatni beradi.
+- Analogy: Faqat mashinaning diskini bo'yab turib, butun kuzovi yangi ko'rinadi deb o'zini aldamaslik — baho faqat bo'yalgan diskning o'ziga va uning haqiqiy chuqur rangiga qarab berilishi kerak.

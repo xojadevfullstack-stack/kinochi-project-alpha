@@ -594,4 +594,110 @@ def test_render_v5_gothic_chiseled_rim_and_accent_number():
     assert any(r > 160 and g < 70 and b < 70 for (r, g, b) in right_band)
 
 
+def test_v6_letter_spacing_and_sleek_box_height():
+    from app.infrastructure.external.poster_localizer import _build_main_title_mask
+
+    mask_tight, *_ = _build_main_title_mask(
+        1000, 1500, "SHOGUN", "epic", [910, 180, 975, 920], 910, False, letter_spacing="tight", font_weight="regular"
+    )
+    mask_wide, _, _, tw_wide, th_wide, _ = _build_main_title_mask(
+        1000, 1500, "SHOGUN", "epic", [910, 180, 975, 920], 910, False, letter_spacing="ultra_wide", font_weight="regular"
+    )
+    bbox_tight = mask_tight.getbbox()
+    bbox_wide = mask_wide.getbbox()
+    assert bbox_tight is not None and bbox_wide is not None
+    # Ultra-wide tracking spans noticeably wider while staying sleek inside ~6.5% height box (not inflated to 8%+)
+    assert (bbox_wide[2] - bbox_wide[0]) > (bbox_tight[2] - bbox_tight[0]) * 1.15
+    assert th_wide <= int(1500 * 0.068)
+
+
+def test_v6_skips_similar_rim_and_preserves_rich_metallic_purple():
+    from app.infrastructure.external.poster_localizer import _should_apply_rim, render_uzbek_title_on_poster
+
+    assert _should_apply_rim((243, 228, 196), (209, 194, 151), (179, 159, 113)) is False
+    assert _should_apply_rim((216, 172, 74), (106, 76, 230), (41, 21, 115)) is True
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(8, 8, 14))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Qasoskorlar: Intiho",
+        style={
+            "placement": "bottom",
+            "y_ratio": 0.74,
+            "font_style": "blockbuster",
+            "bevel_style": "metallic",
+            "primary_color": "#6A4CE6",
+            "secondary_color": "#291573",
+            "rim_color": "#D8AC4A",
+            "needs_backdrop": False,
+            "title_box": [735, 160, 885, 840],
+        },
+        remove_existing_text=False,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes))
+    band = [out_img.getpixel((x, y)) for x in range(100, 400, 4) for y in range(555, 655, 4)]
+    purple_pixels = [px for px in band if px[2] > 110 and px[2] > px[1] + 35 and px[0] < 160]
+    assert len(purple_pixels) > 25, "Rich royal purple must not wash out into pastel grey/blue"
+
+
+def test_v6_line_layout_splits_subtitle_without_colon_and_preserves_high_y_ratio():
+    from app.infrastructure.external.poster_localizer import _split_title_and_subtitle
+
+    main, subs = _split_title_and_subtitle(
+        "Qasoskorlar 4 Intiho",
+        {"line_layout": ["QASOSKORLAR 4", "INTIHO"]},
+    )
+    assert main.upper() == "QASOSKORLAR 4"
+    assert subs == ["INTIHO"]
+
+
+@pytest.mark.asyncio
+async def test_v6_analyze_poster_style_clears_title_box_when_no_visible_title():
+    from app.infrastructure.external import poster_localizer
+
+    mock_json = {
+        "has_visible_title": False,
+        "placement": "bottom",
+        "y_ratio": 0.85,
+        "font_style": "epic",
+        "title_box": [850, 120, 950, 880],
+    }
+    with patch.object(
+        poster_localizer, "_call_gemini_vision_json", new=AsyncMock(return_value=mock_json)
+    ):
+        st = await poster_localizer.analyze_poster_style(_make_sample_jpeg(500, 750), "Shogun")
+    assert st["title_box"] is None
+
+
+@pytest.mark.asyncio
+async def test_verify_ocr_rejects_cyrillic_or_mismatched_detected_title():
+    from app.infrastructure.external import poster_localizer
+
+    cyrillic_resp = {
+        "detected_title": "ШОГУН",
+        "spelling_exact": True,
+        "no_duplicate_words": True,
+        "scene_intact": True,
+    }
+    with patch.object(
+        poster_localizer, "_call_gemini_vision_json", new=AsyncMock(return_value=cyrillic_resp)
+    ):
+        ok = await poster_localizer.verify_localized_poster_ocr(_make_sample_jpeg(100, 150), "Shogun")
+    assert ok is False
+
+    latin_resp = {
+        "detected_title": "SHOGUN",
+        "latin_script": True,
+        "spelling_exact": True,
+        "no_duplicate_words": True,
+        "scene_intact": True,
+    }
+    with patch.object(
+        poster_localizer, "_call_gemini_vision_json", new=AsyncMock(return_value=latin_resp)
+    ):
+        ok_latin = await poster_localizer.verify_localized_poster_ocr(_make_sample_jpeg(100, 150), "Shogun")
+    assert ok_latin is True
+
+
+
 

@@ -25,16 +25,25 @@ _STYLE_FONT_MAP = {
     "ornate": ("CinzelDecorative-Bold.ttf", "Metamorphous-Regular.ttf", "Cinzel-Bold.ttf"),
     "blockbuster": ("Anton-Regular.ttf", "BebasNeue-Regular.ttf", "Oswald-Bold.ttf"),
     "cartoon": ("LuckiestGuy-Regular.ttf", "Anton-Regular.ttf", "Montserrat-Bold.ttf"),
-    "epic": ("Cinzel-Bold.ttf", "CinzelDecorative-Bold.ttf", "georgiab.ttf", "DejaVuSerif-Bold.ttf"),
-    "serif": ("Cinzel-Bold.ttf", "georgiab.ttf", "DejaVuSerif-Bold.ttf"),
+    "epic": ("Cinzel-Bold.ttf", "Cinzel-SemiBold.ttf", "CinzelDecorative-Bold.ttf", "georgiab.ttf", "DejaVuSerif-Bold.ttf"),
+    "serif": ("Cinzel-Bold.ttf", "Cinzel-SemiBold.ttf", "georgiab.ttf", "DejaVuSerif-Bold.ttf"),
     "bold": ("Oswald-Bold.ttf", "Anton-Regular.ttf", "Montserrat-Bold.ttf", "impact.ttf", "DejaVuSans-Bold.ttf"),
-    "modern": ("Montserrat-Bold.ttf", "Oswald-Bold.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"),
+    "modern": ("Montserrat-Bold.ttf", "Montserrat-SemiBold.ttf", "Oswald-Bold.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"),
+}
+_REGULAR_FONT_MAP = {
+    "epic": ("Cinzel-SemiBold.ttf", "Cinzel-Regular.ttf", "Cinzel-Bold.ttf"),
+    "serif": ("Cinzel-SemiBold.ttf", "Cinzel-Regular.ttf", "Cinzel-Bold.ttf"),
+    "modern": ("Montserrat-SemiBold.ttf", "Montserrat-Medium.ttf", "Montserrat-Bold.ttf"),
 }
 _DEFAULT_STYLE: dict[str, Any] = {
     "placement": "bottom",
     "y_ratio": None,
     "font_style": "bold",
+    "font_weight": "bold",
+    "letter_spacing": "normal",
     "bevel_style": "flat",
+    "texture_style": "clean",
+    "subtitle_spacing": "normal",
     "primary_color": "#FFFFFF",
     "secondary_color": "#FFFFFF",
     "accent_color": None,
@@ -67,8 +76,26 @@ def _hex_to_rgb(value: str, fallback: tuple[int, int, int]) -> tuple[int, int, i
     return fallback
 
 
-def _load_font(font_style: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    candidates = _STYLE_FONT_MAP.get(font_style, _STYLE_FONT_MAP["bold"])
+def _should_apply_rim(
+    rim_rgb: tuple[int, int, int],
+    c1: tuple[int, int, int],
+    c2: tuple[int, int, int],
+) -> bool:
+    """Ignore bright same-hue rim colors that bloat letters; keep contrasting trims like gold-on-purple or dark outlines."""
+    lum = (rim_rgb[0] + rim_rgb[1] + rim_rgb[2]) / 3.0
+    d1 = sum((rim_rgb[i] - c1[i]) ** 2 for i in range(3)) ** 0.5
+    d2 = sum((rim_rgb[i] - c2[i]) ** 2 for i in range(3)) ** 0.5
+    if lum > 125.0 and min(d1, d2) < 90.0:
+        return False
+    return True
+
+
+def _load_font(font_style: str, size: int, font_weight: str = "bold") -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    candidates = (
+        _REGULAR_FONT_MAP[font_style]
+        if font_weight == "regular" and font_style in _REGULAR_FONT_MAP
+        else _STYLE_FONT_MAP.get(font_style, _STYLE_FONT_MAP["bold"])
+    )
     search_dirs = [
         _FONTS_DIR,
         Path("/usr/share/fonts/truetype/dejavu"),
@@ -152,35 +179,44 @@ def _normalize_str_list(raw: Any, ignore_none: bool = False) -> list[str]:
 
 
 async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]:
-    """Use Gemini Vision to infer title box, motifs, bevel/rim style, and typography spec."""
+    """Use Gemini Vision to infer title box, motifs, tracking, texture, bevel/rim style, and typography spec."""
     upper_title = title.upper().strip()
     prompt = (
         f"Inspect this original movie poster to replicate its EXACT title design, custom symbols & layout for Uzbek title '{upper_title}'. "
-        "Match the original poster's title vertical position, color palette, 3D bevel, rim outline, and font craft. Return ONLY valid JSON with keys: "
+        "Match the original poster's exact vertical position, letter tracking, weight, texture, saturated body fill color palette, and bevel. Return ONLY valid JSON with keys: "
+        'has_visible_title (true ONLY if readable title text actually exists on this image right now; MUST be false and title_box=null if this is a clean textless image), '
         'placement ("top" if title is in upper half, else "bottom"), '
-        "y_ratio (float 0.03-0.85 where the original main title starts vertically from top), "
-        'font_style ("gothic" for angular fantasy/horror like Harry Potter, "ornate" for decorative fantasy, "blockbuster" for wide heavy action like Avengers, "cartoon" for playful animation, "epic"/"serif" for classical, "bold" for condensed, or "modern" clean sans), '
-        'bevel_style ("chiseled" for carved steel/stone, "metallic" for smooth brushed 3D chrome/gold/purple, or "flat"), '
-        'primary_color (exact top hex color of original title letters), '
-        'secondary_color (bottom gradient hex of original title letters, same as primary_color if solid), '
-        'accent_color (hex color of a contrasting trailing number/word like red "8" in Siccin 8, or null), '
-        'rim_color (hex color of outer gold/dark outline trim like "#D8AC4A", or null), '
-        "needs_backdrop (false if background behind title is clean/uniform, true only if busy/low-contrast), "
-        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 of existing main title text, or null if textless), "
-        "extra_boxes (array of [ymin, xmin, ymax, xmax] normalized 0-1000 for any foreign top taglines, bottom director credits, or overlay badges to erase, or []), "
-        "style_brief (concise 1-2 sentence description of exact typography: flat matte vs 3D chrome/chiseled serif, colors, shadows), "
-        'title_motifs (concise description of iconic decorative emblems/motifs integrated into/under the title; "" if none), '
-        f'line_layout (JSON array of 1-3 uppercase lines splitting "{upper_title}" to match original title line/color composition), '
+        "y_ratio (float 0.03-0.93 exact normalized top edge of main title letters), "
+        'font_style ("gothic" for angular fantasy like Harry Potter/Siccin, "ornate" for decorative fantasy, "blockbuster" for wide heavy action like Avengers, "cartoon" for playful animation, "epic"/"serif" for classical serif like Shogun, "bold" for condensed, or "modern" clean sans like The Institute), '
+        'font_weight ("regular" for sleek/medium stems like Shogun or The Institute, "bold" for standard, "heavy" for thick blocky letters), '
+        'letter_spacing ("ultra_wide" for huge gaps like S H O G U N, "wide" for spaced letters like THE INSTITUTE, "normal", or "tight" for compact blockbusters like Avengers/Harry Potter), '
+        'bevel_style ("chiseled" for faceted carved steel like Harry Potter/Siccin, "metallic" for glossy 3D metallic purple/gold like Avengers, or "flat" for clean or brushed matte/stone like Shogun/The Institute), '
+        'texture_style ("weathered" for distressed frosted stone/ice like The Institute, "brushed" for textured gold leaf like Shogun, "steel" for scratched metal, or "clean"), '
+        'subtitle_spacing ("wide" if subtitle below is widely tracked like E N D G A M E, else "normal"), '
+        'primary_color (exact DEEP saturated body top hex of title letters — e.g. deep royal violet "#5E3EE0" for Avengers or warm gold "#DEC078" for Shogun — NEVER pale glare or bright background fire), '
+        'secondary_color (bottom gradient hex of title letters; keep deep saturated hue family matching primary_color), '
+        'accent_color (hex color ONLY for a contrasting trailing number/word like red "8" in Siccin 8, or null), '
+        'rim_color (hex ONLY if letters have a separate clearly contrasting outer stroke trim like gold "#D8AC4A" on purple Avengers or dark "#1C2430" around silver Harry Potter; MUST be null when letters have no separate colored border like Shogun or The Institute), '
+        "needs_backdrop (false if background behind title is clean/dark/uniform, true only if busy/low-contrast), "
+        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 tightly bounding ONLY existing Latin main title text, or null if has_visible_title=false), "
+        "extra_boxes (array of [ymin, xmin, ymax, xmax] normalized 0-1000 ONLY for competing foreign taglines/director credits/rating badges to erase; [] if textless), "
+        "style_brief (concise 1-2 sentence description of exact typography, spacing, colors, texture), "
+        'title_motifs (concise description of iconic decorative emblems/motifs integrated into/next to the title; "" if none), '
+        f'line_layout (JSON array of 1-3 uppercase lines splitting ALL words of "{upper_title}" to match original hierarchy, e.g. ["QASOSKORLAR 4", "INTIHO"] if there is a wide subtitle below), '
         'badges_to_remove (JSON array of corner rating badges or TV network logos to clean up, or []).'
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=1024)
     if not parsed:
         return dict(_DEFAULT_STYLE)
-    tbox = parsed.get("title_box") if isinstance(parsed.get("title_box"), list) and len(parsed.get("title_box")) == 4 else None
+    has_title = bool(parsed.get("has_visible_title", True))
+    raw_tbox = parsed.get("title_box") if (has_title and isinstance(parsed.get("title_box"), list) and len(parsed.get("title_box")) == 4) else None
+    tbox = raw_tbox
     inferred_top = (int(tbox[0]) < 450) if tbox else (parsed.get("placement") == "top")
     y_val = parsed.get("y_ratio")
-    if y_val is None and tbox:
-        y_val = float(tbox[0]) / 1000.0
+    if tbox:
+        box_top = float(tbox[0]) / 1000.0
+        if y_val is None or abs(float(y_val) - box_top) > 0.04:
+            y_val = box_top
     p_col = parsed.get("primary_color") or "#FFFFFF"
     s_col = parsed.get("secondary_color") or p_col
     raw_motifs = str(parsed.get("title_motifs") or "").strip()
@@ -188,11 +224,19 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
     raw_extra = parsed.get("extra_boxes") if isinstance(parsed.get("extra_boxes"), list) else []
     extra_boxes = [b for b in raw_extra if isinstance(b, list) and len(b) == 4]
     bevel = parsed.get("bevel_style")
+    weight = parsed.get("font_weight")
+    spacing = parsed.get("letter_spacing")
+    tex = parsed.get("texture_style")
+    sub_sp = parsed.get("subtitle_spacing")
     return {
         "placement": "top" if inferred_top else "bottom",
-        "y_ratio": max(0.03, min(0.84, float(y_val))) if y_val is not None else None,
+        "y_ratio": max(0.03, min(0.93, float(y_val))) if y_val is not None else None,
         "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
+        "font_weight": weight if weight in ("regular", "bold", "heavy") else "bold",
+        "letter_spacing": spacing if spacing in ("tight", "normal", "wide", "ultra_wide") else "normal",
         "bevel_style": bevel if bevel in ("chiseled", "metallic", "flat") else "flat",
+        "texture_style": tex if tex in ("clean", "weathered", "brushed", "steel") else "clean",
+        "subtitle_spacing": sub_sp if sub_sp in ("normal", "wide") else "normal",
         "primary_color": p_col,
         "secondary_color": s_col,
         "accent_color": parsed.get("accent_color") or None,
@@ -208,18 +252,29 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
 
 
 async def verify_localized_poster_ocr(image_bytes: bytes, title: str) -> bool:
-    """Verify edited poster renders exact Uzbek title spelling cleanly without leftover foreign titles."""
+    """Verify edited poster renders exact Latin-script Uzbek title spelling cleanly without leftover foreign/Cyrillic titles."""
     expected = title.upper().strip()
     prompt = (
-        f'Inspect this localized movie poster. Expected Uzbek main title: "{expected}". '
-        'Return ONLY JSON: {"detected_title": "...", "spelling_exact": true/false, "no_duplicate_words": true/false, "scene_intact": true/false}. '
-        "Set spelling_exact=false if ANY letter or Uzbek apostrophe (O', G', ') is missing, extra, or garbled, or if title text is missing; "
+        f'Inspect this localized movie poster. Expected Latin-script Uzbek main title: "{expected}". '
+        'Return ONLY JSON: {"detected_title": "...", "latin_script": true/false, "spelling_exact": true/false, "no_duplicate_words": true/false, "scene_intact": true/false}. '
+        "Copy the EXACT Unicode characters printed on the poster into detected_title (do NOT transliterate Cyrillic to Latin!). "
+        "Set latin_script=false and spelling_exact=false if ANY Cyrillic character (Ш, О, Г, У, Н, И, Д, etc.) appears, or if any letter or Uzbek apostrophe (O', G', ') is missing/extra/garbled; "
         "no_duplicate_words=false if any word repeats unnecessarily or English/foreign main title words remain alongside it; "
-        "scene_intact=false if characters/background look corrupted or darkened abnormally."
+        "scene_intact=false if faces/characters/background look corrupted or distorted."
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
     if not parsed:
         return True
+    detected = str(parsed.get("detected_title") or "").strip()
+    if re.search(r"[\u0400-\u04FF]", detected):
+        return False
+    if not parsed.get("latin_script", True):
+        return False
+    if detected:
+        norm_det = re.sub(r"[^A-Z0-9]", "", detected.upper())
+        norm_exp = re.sub(r"[^A-Z0-9]", "", expected)
+        if norm_det != norm_exp:
+            return False
     return bool(
         parsed.get("spelling_exact")
         and parsed.get("no_duplicate_words", True)
@@ -256,7 +311,7 @@ def _build_cf_edit_prompt(upper_title: str, style: Optional[dict[str, Any]]) -> 
         f"{motif_clause}"
         f"Match this exact original typography style ({brief}): keep original flat matte, brush, or 3D bevel style without inventing mismatched colors or extra 3D chrome. "
         f"{layout_clause}{badge_clause}"
-        f'Exact word count: {len(words)}. Spell EVERY letter accurately: "{upper_title}". '
+        f'Exact word count: {len(words)}. STRICTLY USE LATIN ALPHABET ONLY (A-Z, O\', G\'); NEVER use Cyrillic letters. Spell EVERY letter accurately: "{upper_title}". '
         f"{apostrophe_clause}No extra letters, no missing letters, no duplicated words."
     )
 
@@ -364,6 +419,14 @@ def _inpaint_boxes(rgb_img: Image.Image, boxes: list[list[int]]) -> Image.Image:
     return Image.fromarray(cv2.cvtColor(blended, cv2.COLOR_BGR2RGB))
 
 
+_TRACKING_FACTORS = {
+    "tight": -0.02,
+    "normal": 0.04,
+    "wide": 0.24,
+    "ultra_wide": 0.52,
+}
+
+
 def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, list[str]]:
     clean = " ".join(title.strip().split())
     if ":" in clean:
@@ -376,7 +439,32 @@ def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, l
         words = tail.split()
         sub_lines = [words[0], " ".join(words[1:])] if len(words) >= 3 else [tail]
         return head, sub_lines
+    layout = _normalize_str_list(style.get("line_layout"))
+    if len(layout) >= 2:
+        joined_layout = " ".join(layout).upper().split()
+        if joined_layout == clean.upper().split():
+            return layout[0], [line.upper() for line in layout[1:]]
     return clean, []
+
+
+def _draw_tracked_text(
+    draw: ImageDraw.ImageDraw,
+    origin: tuple[int, int],
+    text: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    fill: Any,
+    tracking_px: float,
+) -> float:
+    if abs(tracking_px) < 0.5 or len(text) <= 1:
+        draw.text(origin, text, font=font, fill=fill)
+        return float(draw.textlength(text, font=font))
+    x, y = float(origin[0]), float(origin[1])
+    for idx, ch in enumerate(text):
+        draw.text((round(x), y), ch, font=font, fill=fill)
+        x += float(draw.textlength(ch, font=font))
+        if idx < len(text) - 1:
+            x += tracking_px
+    return x - float(origin[0])
 
 
 def _build_main_title_mask(
@@ -387,42 +475,61 @@ def _build_main_title_mask(
     title_box: list[int] | None,
     y_start_1x: int,
     is_top: bool,
-) -> tuple[Image.Image, int, int, int]:
-    """Render 2x supersampled main title mask fitted to target box dimensions."""
+    letter_spacing: str = "normal",
+    font_weight: str = "bold",
+) -> tuple[Image.Image, int, int, int, int, str]:
+    """Render 2x supersampled main title mask fitted accurately to target box and tracking."""
     fsize = 156
-    font = _load_font(font_style, fsize)
+    font = _load_font(font_style, fsize, font_weight=font_weight)
     tmp = ImageDraw.Draw(Image.new("L", (10, 10)))
-    is_gothic_mixed = font_style == "gothic" and len(main_text) >= 6 and not main_text.rstrip().endswith(("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"))
+    is_gothic_mixed = (
+        font_style == "gothic"
+        and len(main_text) >= 6
+        and not main_text.rstrip().endswith(("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"))
+    )
     render_str = main_text.title() if is_gothic_mixed else main_text.upper()
 
-    max_w_limit = int(sw * 0.90)
-    while fsize > 44 and tmp.textlength(render_str, font=font) > max_w_limit:
-        fsize -= 4
-        font = _load_font(font_style, fsize)
+    track_mult = _TRACKING_FACTORS.get(letter_spacing, 0.04)
 
-    raw_w = max(sw, int(tmp.textlength(render_str, font=font) + 80))
+    def _est_len(sz: int, fn: ImageFont.FreeTypeFont | ImageFont.ImageFont) -> float:
+        return float(tmp.textlength(render_str, font=fn)) + max(0, len(render_str) - 1) * (sz * track_mult)
+
+    max_w_limit = int(sw * 0.90)
+    while fsize > 44 and _est_len(fsize, font) > max_w_limit:
+        fsize -= 4
+        font = _load_font(font_style, fsize, font_weight=font_weight)
+
+    tracking_px = fsize * track_mult
+    raw_w = max(sw, int(_est_len(fsize, font) + 96))
     raw_h = int(fsize * 1.65)
     raw_mask = Image.new("L", (raw_w, raw_h), 0)
     md = ImageDraw.Draw(raw_mask)
-    md.text((40, int(fsize * 0.18)), render_str, font=font, fill=255)
+    _draw_tracked_text(md, (48, int(fsize * 0.18)), render_str, font, fill=255, tracking_px=tracking_px)
     bbox = raw_mask.getbbox() or (0, 0, raw_w, raw_h)
     tight_w = max(1, bbox[2] - bbox[0])
     tight_h = max(1, bbox[3] - bbox[1])
 
     if title_box and len(title_box) == 4:
-        box_w = max(int(sw * 0.45), min(int(sw * 0.93), int((title_box[3] - title_box[1]) * sw / 1000)))
-        box_h = max(int(sh * 0.08), min(int(sh * 0.22), int((title_box[2] - title_box[0]) * sh / 1000)))
-        target_w = max(box_w, int(sw * 0.84)) if len(render_str) >= 8 else box_w
-        target_h = min(box_h, int(tight_h * (target_w / tight_w) * 1.48))
-        target_h = max(int(tight_h * (target_w / tight_w)), target_h)
+        box_w = max(int(sw * 0.42), min(int(sw * 0.92), int((title_box[3] - title_box[1]) * sw / 1000)))
+        box_h = max(int(sh * 0.038), min(int(sh * 0.24), int((title_box[2] - title_box[0]) * sh / 1000)))
+        scale_fit = min(box_w / tight_w, box_h / tight_h)
+        target_w = max(1, int(tight_w * scale_fit))
+        if font_style in ("gothic", "blockbuster", "ornate") and letter_spacing in ("tight", "normal"):
+            target_h = min(box_h, max(1, int(tight_h * scale_fit * 1.28)))
+        else:
+            target_h = max(1, int(tight_h * scale_fit))
+        box_center_norm = (title_box[1] + title_box[3]) / 2000.0
+        center_x = int(sw * box_center_norm) if abs(box_center_norm - 0.5) > 0.05 else int(sw / 2)
     else:
         scale = min(1.0, (sw * 0.86) / tight_w)
         target_w = int(tight_w * scale)
-        target_h = int(tight_h * scale * (1.25 if font_style in ("gothic", "blockbuster", "ornate") else 1.0))
+        stretch_y = 1.22 if (font_style in ("gothic", "blockbuster", "ornate") and letter_spacing == "tight") else 1.0
+        target_h = int(tight_h * scale * stretch_y)
+        center_x = int(sw / 2)
 
     cropped = raw_mask.crop(bbox).resize((max(1, target_w), max(1, target_h)), Image.Resampling.LANCZOS)
-    x_hi = int((sw - target_w) / 2)
-    y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.05), y_start_1x * 2))
+    x_hi = max(int(sw * 0.03), min(sw - target_w - int(sw * 0.03), center_x - target_w // 2))
+    y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), y_start_1x * 2))
     mask_hi = Image.new("L", (sw, sh), 0)
     mask_hi.paste(cropped, (x_hi, y_hi))
     return mask_hi, x_hi, y_hi, target_w, target_h, render_str
@@ -464,7 +571,15 @@ def render_uzbek_title_on_poster(
     S = 2
     sw, sh = w * S, h * S
     mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_main_title_mask(
-        sw, sh, main_text, cfg["font_style"], cfg.get("title_box"), y_start_1x, is_top
+        sw,
+        sh,
+        main_text,
+        cfg["font_style"],
+        cfg.get("title_box"),
+        y_start_1x,
+        is_top,
+        letter_spacing=cfg.get("letter_spacing", "normal"),
+        font_weight=cfg.get("font_weight", "bold"),
     )
     mask_np = np.asarray(mask_hi, dtype=np.uint8)
     binary = (mask_np > 125).astype(np.uint8)
@@ -490,21 +605,38 @@ def render_uzbek_title_on_poster(
         grad[:, split_x:, 2] = acc_rgb[2]
 
     bevel_style = cfg.get("bevel_style", "flat")
-    if bevel_style in ("chiseled", "metallic"):
+    if bevel_style == "chiseled":
         dist = cv2.GaussianBlur(cv2.distanceTransform(binary, cv2.DIST_L2, 5), (5, 5), 0)
         norm_d = np.clip(dist / max(1.0, float(dist.max()) * 0.62), 0.0, 1.0)
         gx = cv2.Sobel(norm_d, cv2.CV_32F, 1, 0, ksize=5) / 8.0
         gy = cv2.Sobel(norm_d, cv2.CV_32F, 0, 1, ksize=5) / 8.0
         light = -0.65 * gx - 0.75 * gy
-        if bevel_style == "chiseled":
-            yy, xx = np.mgrid[0:sh, 0:sw].astype(np.float32)
-            facets = np.sin(xx * 0.07 + yy * 0.12) * 0.22 + np.cos(xx * 0.04 - yy * 0.10) * 0.18
-            bevel = np.clip(light * 1.9 + facets, -0.55, 0.85) * 0.68
-        else:
-            bevel = np.clip(light * 1.4, -0.45, 0.65) * 0.45
-        shaded = np.clip(grad * (0.85 + norm_d[..., None] * 0.22) + bevel[..., None] * 145.0, 8, 255).astype(np.uint8)
+        yy, xx = np.mgrid[0:sh, 0:sw].astype(np.float32)
+        facets = np.sin(xx * 0.07 + yy * 0.12) * 0.22 + np.cos(xx * 0.04 - yy * 0.10) * 0.18
+        bevel = np.clip(light * 1.9 + facets, -0.55, 0.85) * 0.68
+        shaded_f = grad * (0.85 + norm_d[..., None] * 0.22) + bevel[..., None] * 145.0
+    elif bevel_style == "metallic":
+        dist = cv2.GaussianBlur(cv2.distanceTransform(binary, cv2.DIST_L2, 5), (3, 3), 0)
+        norm_d = np.clip(dist / max(1.0, float(dist.max()) * 0.55), 0.0, 1.0)
+        gx = cv2.Sobel(norm_d, cv2.CV_32F, 1, 0, ksize=5) / 8.0
+        gy = cv2.Sobel(norm_d, cv2.CV_32F, 0, 1, ksize=5) / 8.0
+        light = -0.60 * gx - 0.80 * gy
+        hi = np.clip(light * 1.35 + norm_d * 0.10, 0.0, 1.0)
+        lo = np.clip(-light * 1.20 + (1.0 - norm_d) * 0.16, 0.0, 1.0)
+        # Preserve original saturated body hues (no pastel +145 gray wash) while carving metallic ridge sheen
+        shaded_f = grad * (1.0 - lo[..., None] * 0.48 + hi[..., None] * 0.28) + (hi[..., None] ** 2.3) * 58.0
     else:
-        shaded = np.clip(grad, 0, 255).astype(np.uint8)
+        shaded_f = grad.copy()
+
+    tex_style = cfg.get("texture_style", "clean")
+    if tex_style in ("weathered", "brushed"):
+        rng = np.random.default_rng(42)
+        grain = rng.normal(0.95, 0.07, (sh, sw)).astype(np.float32)
+        if tex_style == "brushed":
+            grain = cv2.GaussianBlur(grain, (3, 9), 0)
+        shaded_f = shaded_f * np.clip(grain, 0.78, 1.08)[..., None]
+
+    shaded = np.clip(shaded_f, 8, 255).astype(np.uint8)
 
     comp_hi = Image.new("RGBA", (sw, sh), (0, 0, 0, 0))
     drop = mask_hi.filter(ImageFilter.GaussianBlur(radius=6))
@@ -515,36 +647,46 @@ def render_uzbek_title_on_poster(
     rim_hex = cfg.get("rim_color")
     if rim_hex:
         rim_rgb = _hex_to_rgb(rim_hex, (20, 20, 20))
-        dilated = cv2.GaussianBlur(
-            cv2.dilate(binary.astype(np.float32), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))),
-            (5, 5),
-            0,
-        )
-        rim_alpha = np.clip((dilated - (mask_np / 255.0) * 0.4) * 255.0, 0, 255).astype(np.uint8)
-        rim_layer = np.zeros((sh, sw, 4), dtype=np.uint8)
-        rim_layer[:, :, 0:3] = rim_rgb
-        rim_layer[:, :, 3] = rim_alpha
-        comp_hi = Image.alpha_composite(comp_hi, Image.fromarray(rim_layer))
+        if _should_apply_rim(rim_rgb, c1, c2):
+            dilated = cv2.GaussianBlur(
+                cv2.dilate(binary.astype(np.float32), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))),
+                (3, 3),
+                0,
+            )
+            rim_alpha = np.clip((dilated - (mask_np / 255.0) * 0.35) * 255.0, 0, 255).astype(np.uint8)
+            rim_layer = np.zeros((sh, sw, 4), dtype=np.uint8)
+            rim_layer[:, :, 0:3] = rim_rgb
+            rim_layer[:, :, 3] = rim_alpha
+            comp_hi = Image.alpha_composite(comp_hi, Image.fromarray(rim_layer))
 
     comp_hi = Image.alpha_composite(comp_hi, Image.fromarray(np.dstack([shaded, mask_np])))
     rgba = Image.alpha_composite(rgba, comp_hi.resize((w, h), Image.Resampling.LANCZOS))
 
     if sub_lines:
-        sub_font = _load_font("serif", 16)
+        sub_size = max(15, int(w * 0.036))
+        sub_font = _load_font("serif", sub_size, font_weight="regular")
         sub_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         sd = ImageDraw.Draw(sub_layer)
-        sub_y = min(h - 46, y_start_1x + int(target_h / S) + 4)
+        sub_y = min(h - int(sub_size * 2.5), y_start_1x + int(target_h / S) + 6)
+        center_sub_x = int((x_hi + target_w / 2) / S)
         right_edge = int((x_hi + target_w) / S)
         rim_hex = cfg.get("rim_color")
         rim_rgb_sub = _hex_to_rgb(rim_hex, c1) if rim_hex else c1
         use_rim = bool(rim_hex and (sum(rim_rgb_sub) / 3.0) > 130)
         sub_col = rim_rgb_sub if use_rim else c1
+        wide_sub = cfg.get("subtitle_spacing") == "wide" or (not is_top and len(sub_lines) == 1 and len(sub_lines[0]) <= 14)
         for idx, sl in enumerate(sub_lines):
-            sw_txt = sd.textlength(sl, font=sub_font)
-            sx = int(right_edge - sw_txt) if is_top and len(sub_lines) >= 2 else int((w - sw_txt) / 2)
-            sy = sub_y + idx * 19
-            sd.text((sx + 1, sy + 2), sl, font=sub_font, fill=(0, 0, 0, 235))
-            sd.text((sx, sy), sl, font=sub_font, fill=(*sub_col, 245))
+            raw_sw = float(sd.textlength(sl, font=sub_font))
+            if wide_sub and len(sl) > 1:
+                desired_w = max(raw_sw, (target_w / S) * 0.56)
+                sub_track = min(14.0, (desired_w - raw_sw) / (len(sl) - 1))
+            else:
+                sub_track = 0.0
+            sw_txt = raw_sw + max(0, len(sl) - 1) * sub_track
+            sx = int(right_edge - sw_txt) if is_top and len(sub_lines) >= 2 else int(center_sub_x - sw_txt / 2)
+            sy = sub_y + idx * (sub_size + 4)
+            _draw_tracked_text(sd, (sx + 1, sy + 2), sl, sub_font, fill=(0, 0, 0, 235), tracking_px=sub_track)
+            _draw_tracked_text(sd, (sx, sy), sl, sub_font, fill=(*sub_col, 245), tracking_px=sub_track)
         rgba = Image.alpha_composite(rgba, sub_layer)
 
     out_buf = io.BytesIO()
