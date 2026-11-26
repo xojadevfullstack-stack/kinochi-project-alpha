@@ -182,6 +182,67 @@ def build_cinematic_filter_complex(
     return vf, ("atempo=1.02" if copyright_shield else "anull")
 
 
+def build_clip_cover_image(
+    poster_bytes: bytes,
+    output_path: str,
+    movie_code: str = "",
+    imdb_rating: Optional[float] = None,
+    bot_name: str = "MEDIAPLUSBOT",
+    bot_username: str = "@MediaPlusOfficialBot",
+    low_ram: bool = True,
+) -> Optional[str]:
+    """Render a branded 9:16 cinema poster cover PNG for frame-0 thumbnail & intro hook."""
+    if not poster_bytes:
+        return None
+    try:
+        from io import BytesIO
+        from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+
+        W, H = (720, 1280) if low_ram else (1080, 1920)
+        s = 2 / 3 if low_ram else 1.0
+        src = Image.open(BytesIO(poster_bytes)).convert("RGBA")
+        scale_bg = max(W / max(1, src.width), H / max(1, src.height))
+        bg = src.resize((int(src.width * scale_bg), int(src.height * scale_bg)), Image.Resampling.LANCZOS)
+        left, top = (bg.width - W) // 2, (bg.height - H) // 2
+        bg = bg.crop((left, top, left + W, top + H)).filter(ImageFilter.GaussianBlur(max(12, int(40 * s))))
+        canvas = ImageEnhance.Brightness(bg).enhance(0.32).convert("RGBA")
+
+        pw, ph = int(660 * s), int(990 * s)
+        px, py = (W - pw) // 2, int(415 * s)
+        card = src.resize((pw, ph), Image.Resampling.LANCZOS)
+        mask = Image.new("L", (pw, ph), 0)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, pw - 1, ph - 1], radius=int(32 * s), fill=255)
+        canvas.paste(card, (px, py), mask)
+
+        draw = ImageDraw.Draw(canvas)
+        draw.rounded_rectangle([px, py, px + pw - 1, py + ph - 1], radius=int(32 * s), outline=(255, 255, 255, 65), width=max(1, int(3 * s)))
+        font_file = next(
+            (p for p in ("backend/app/assets/fonts/Montserrat-ExtraBold.ttf", "backend/app/assets/fonts/Montserrat-Bold.ttf") if os.path.exists(p)),
+            resolve_font_file(),
+        )
+        _f = lambda sz: ImageFont.truetype(font_file, max(12, int(sz * s))) if font_file else ImageFont.load_default()  # noqa: E731
+
+        def _text(txt: str, y_px: int, font: Any, fill: Tuple[int, int, int, int]) -> None:
+            bx = draw.textbbox((0, 0), txt, font=font)
+            tx = (W - (bx[2] - bx[0])) // 2
+            draw.text((tx + 2, y_px + 2), txt, font=font, fill=(0, 0, 0, 210))
+            draw.text((tx, y_px), txt, font=font, fill=fill)
+
+        _text((bot_name or "MEDIAPLUSBOT").upper(), int(195 * s), _f(58), (255, 255, 255, 255))
+        if imdb_rating and imdb_rating > 0:
+            _text(f"IMDb: {imdb_rating:.1f} / 10", int(282 * s), _f(40), (245, 197, 24, 255))
+        bx0, by0, bw, bh = int(150 * s), int(1480 * s), W - int(300 * s), int(118 * s)
+        draw.rounded_rectangle([bx0, by0, bx0 + bw, by0 + bh], radius=int(22 * s), fill=(229, 9, 20, 245))
+        _text(f"KINO KODI: #{movie_code}", by0 + int(28 * s), _f(54), (255, 255, 255, 255))
+        _text(f"Telegram bot: {bot_username}", int(1630 * s), _f(34), (229, 231, 235, 255))
+
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        canvas.convert("RGB").save(output_path, format="PNG")
+        return output_path
+    except Exception:
+        return None
+
+
 def render_vertical_clip(
     input_path: str,
     output_path: str,
@@ -199,6 +260,8 @@ def render_vertical_clip(
     blur_bottom_ad: bool = False,
     low_ram: bool = False,
     blur_boxes: Optional[List[Dict[str, Any]]] = None,
+    cover_image_path: Optional[str] = None,
+    cover_duration_sec: float = 0.35,
 ) -> str:
     """Cut segment from input_path and render 9:16 vertical MP4 to output_path."""
     ffmpeg = resolve_ffmpeg_bin()
@@ -210,13 +273,21 @@ def render_vertical_clip(
         blur_watermark=blur_watermark, blur_bottom_ad=blur_bottom_ad,
         low_ram=low_ram, blur_boxes=blur_boxes,
     )
+    extra_inputs: List[str] = []
+    if cover_image_path and os.path.exists(cover_image_path) and cover_duration_sec > 0 and vf.endswith("[vout]"):
+        w, h = (720, 1280) if low_ram else (1080, 1920)
+        vf = (
+            vf[: -len("[vout]")]
+            + f"[vbase];[1:v]scale={w}:{h},format=yuv420p[cov];[vbase][cov]overlay=0:0:eof_action=repeat:enable='lt(t,{cover_duration_sec:.2f})'[vout]"
+        )
+        extra_inputs = ["-i", cover_image_path]
     encode_opts = (
         ["-threads", "1", "-filter_threads", "1", "-filter_complex_threads", "1", "-preset", "ultrafast", "-crf", "26"]
         if low_ram
         else ["-preset", "veryfast", "-crf", "23"]
     )
     cmd = [
-        ffmpeg, "-y", "-ss", str(start_sec), "-t", str(duration_sec), "-i", input_path,
+        ffmpeg, "-y", "-ss", str(start_sec), "-t", str(duration_sec), "-i", input_path, *extra_inputs,
         "-filter_complex", vf, "-map", "[vout]", "-map", "0:a?", "-af", af,
         "-c:v", "libx264", *encode_opts, "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output_path,

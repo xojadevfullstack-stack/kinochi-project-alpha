@@ -395,3 +395,67 @@ async def test_download_sparse_clip_source_fetches_full_moov_past_4mb(tmp_path):
         got_tail = f.read(len(marker))
     assert got_stco == b"stco"
     assert got_tail == marker
+
+
+def test_build_clip_cover_image_and_render_with_frame0_cover(tmp_path):
+    from io import BytesIO
+    from PIL import Image
+    from scraper.smm_clipper import build_clip_cover_image
+
+    ffmpeg = resolve_ffmpeg_bin()
+    poster_img = Image.new("RGB", (300, 450), color=(210, 30, 30))
+    buf = BytesIO()
+    poster_img.save(buf, format="JPEG")
+    cover_path = tmp_path / "cover.png"
+    out_cover = build_clip_cover_image(
+        poster_bytes=buf.getvalue(),
+        output_path=str(cover_path),
+        movie_code="1014",
+        imdb_rating=8.2,
+        low_ram=True,
+    )
+    assert out_cover and os.path.exists(out_cover)
+    with Image.open(out_cover) as im:
+        assert im.size == (720, 1280)
+
+    src = tmp_path / "green_src.mp4"
+    out = tmp_path / "covered_clip.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "color=c=0x00FF00:s=640x360:d=2:r=24",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    res_path = render_vertical_clip(
+        input_path=str(src),
+        output_path=str(out),
+        movie_code="1014",
+        start_sec=0.0,
+        duration_sec=2.0,
+        imdb_rating=8.2,
+        low_ram=True,
+        blur_watermark=False,
+        cover_image_path=out_cover,
+        cover_duration_sec=0.35,
+    )
+    assert os.path.exists(res_path)
+
+    import cv2
+    cap = cv2.VideoCapture(res_path)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 1)
+    ok0, frame0 = cap.read()
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 30)
+    ok1, frame1 = cap.read()
+    cap.release()
+    assert ok0 and ok1
+    # At frame 1 (~0.04s), center pixel shows red poster cover (R > G); at frame 30 (1.25s), center is green video (G > R)
+    c0 = frame0[640, 360]  # BGR
+    c1 = frame1[640, 360]
+    assert int(c0[2]) > int(c0[1]) + 40
+    assert int(c1[1]) > int(c1[2]) + 40
