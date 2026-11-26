@@ -539,26 +539,72 @@ class TMDbClient:
         await set_cache(cache_key, result, ttl_seconds=86400)
         return result
 
-    async def get_textless_poster(self, tmdb_id: int, content_type: str = "movie") -> str | None:
-        """TMDb'dan matnsiz (iso_639_1=null/xx) eng sifatli posterni oladi."""
+    async def get_textless_poster(
+        self,
+        tmdb_id: int,
+        content_type: str = "movie",
+        reference_bytes: bytes | None = None,
+        placement: str = "bottom",
+        max_mae: float = 25.0,
+    ) -> str | None:
+        """TMDb'dan matnsiz (iso_639_1=null/xx) eng sifatli yoki reference_bytes ga mos egizak posterni oladi."""
         if not self.api_key or not tmdb_id:
             return None
         endpoint_type = "tv" if content_type in ("tv", "series") else "movie"
-        cache_key = f"tmdb:textless_poster:{endpoint_type}:{tmdb_id}"
-        cached = await get_cache(cache_key)
-        if cached is not None:
-            return cached or None
+        cache_key = f"tmdb:textless_posters_list:{endpoint_type}:{tmdb_id}"
+        textless = await get_cache(cache_key)
+        if textless is None:
+            data = await self._request_with_retry(
+                f"{endpoint_type}/{tmdb_id}/images",
+                params={"include_image_language": "null,xx"},
+                timeout=6.0,
+            )
+            posters = (data or {}).get("posters") or []
+            textless = [p for p in posters if p.get("iso_639_1") in (None, "", "xx") and p.get("file_path")]
+            await set_cache(cache_key, textless, ttl_seconds=86400 if textless else 43200)
 
-        data = await self._request_with_retry(
-            f"{endpoint_type}/{tmdb_id}/images",
-            params={"include_image_language": "null,xx"},
-            timeout=6.0,
-        )
-        posters = (data or {}).get("posters") or []
-        textless = [p for p in posters if p.get("iso_639_1") in (None, "", "xx") and p.get("file_path")]
         if not textless:
-            await set_cache(cache_key, "", ttl_seconds=43200)
             return None
+
+        if reference_bytes:
+            import io
+            import numpy as np
+            from PIL import Image
+
+            try:
+                ref_arr = np.asarray(
+                    Image.open(io.BytesIO(reference_bytes)).convert("RGB").resize((92, 138)),
+                    dtype=np.float32,
+                )
+                scene_slice = slice(45, 138) if placement == "top" else slice(0, 95)
+                ref_roi = ref_arr[scene_slice, :]
+                candidates = textless[:15]
+
+                async def _fetch_mae(client: httpx.AsyncClient, p: dict) -> tuple[float, dict]:
+                    fp = p["file_path"]
+                    try:
+                        r = await client.get(f"https://image.tmdb.org/t/p/w92{fp}")
+                        if r.status_code != 200:
+                            return (999.0, p)
+                        c_arr = np.asarray(
+                            Image.open(io.BytesIO(r.content)).convert("RGB").resize((92, 138)),
+                            dtype=np.float32,
+                        )
+                        mae = float(np.mean(np.abs(ref_roi - c_arr[scene_slice, :])))
+                        return (mae, p)
+                    except Exception as exc:
+                        logger.debug("Textless twin MAE probe failed (%s): %s", fp, exc)
+                        return (999.0, p)
+
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    scored = await asyncio.gather(*(_fetch_mae(client, c) for c in candidates))
+                best_mae, best_p = min(scored, key=lambda x: x[0])
+                if best_mae <= max_mae:
+                    return f"{TMDB_IMAGE_BASE}{best_p['file_path']}"
+                logger.info("No matching textless twin for %s #%s (min_mae=%.2f)", endpoint_type, tmdb_id, best_mae)
+                return None
+            except Exception as exc:
+                logger.debug("Reference twin matching fallback (%s #%s): %s", endpoint_type, tmdb_id, exc)
 
         best = max(
             textless,
@@ -568,9 +614,7 @@ class TMDbClient:
                 int(p.get("width") or 0),
             ),
         )
-        url = f"{TMDB_IMAGE_BASE}{best['file_path']}"
-        await set_cache(cache_key, url, ttl_seconds=86400)
-        return url
+        return f"{TMDB_IMAGE_BASE}{best['file_path']}"
 
 
     async def get_credits_and_details(

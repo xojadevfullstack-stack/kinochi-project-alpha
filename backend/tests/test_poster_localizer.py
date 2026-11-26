@@ -472,3 +472,126 @@ async def test_edit_poster_with_cloudflare_blocks_9b_by_default_and_retries_4b()
     assert all(call.args[0].endswith("flux-2-klein-4b") for call in mock_post.await_args_list)
 
 
+@pytest.mark.asyncio
+async def test_tmdb_get_textless_poster_matches_reference_twin_and_rejects_unrelated():
+    from app.infrastructure.external.tmdb_client import tmdb_client
+
+    ref_img = Image.new("RGB", (92, 138), (30, 80, 140))
+    ref_buf = io.BytesIO()
+    ref_img.save(ref_buf, format="JPEG")
+    ref_bytes = ref_buf.getvalue()
+
+    twin_img = Image.new("RGB", (92, 138), (32, 82, 142))
+    twin_buf = io.BytesIO()
+    twin_img.save(twin_buf, format="JPEG")
+
+    other_img = Image.new("RGB", (92, 138), (220, 40, 20))
+    other_buf = io.BytesIO()
+    other_img.save(other_buf, format="JPEG")
+
+    payload = {
+        "posters": [
+            {"file_path": "/unrelated_high_vote.jpg", "iso_639_1": None, "vote_average": 10.0, "width": 1000, "height": 1500},
+            {"file_path": "/exact_twin.jpg", "iso_639_1": None, "vote_average": 1.0, "width": 1000, "height": 1500},
+        ]
+    }
+
+    async def fake_get(url, *args, **kwargs):
+        from unittest.mock import MagicMock
+        r = MagicMock(status_code=200)
+        r.content = twin_buf.getvalue() if "exact_twin" in url else other_buf.getvalue()
+        return r
+
+    with (
+        patch("app.infrastructure.external.tmdb_client.get_cache", new=AsyncMock(return_value=None)),
+        patch("app.infrastructure.external.tmdb_client.set_cache", new=AsyncMock(return_value=True)),
+        patch.object(tmdb_client, "_request_with_retry", new=AsyncMock(return_value=payload)),
+        patch("httpx.AsyncClient.get", side_effect=fake_get),
+    ):
+        url = await tmdb_client.get_textless_poster(
+            tmdb_id=671,
+            content_type="movie",
+            reference_bytes=ref_bytes,
+            placement="top",
+        )
+    assert url == "https://image.tmdb.org/t/p/w500/exact_twin.jpg"
+
+
+@pytest.mark.asyncio
+async def test_localize_poster_cleans_mislabeled_tmdb_textless_poster():
+    from app.infrastructure.external import poster_localizer
+
+    mislabeled_bytes = _make_sample_jpeg(500, 750, color=(20, 15, 15))
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", ""),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", ""),
+        patch.object(
+            poster_localizer.tmdb_client,
+            "get_textless_poster",
+            new=AsyncMock(return_value="https://image.tmdb.org/t/p/w500/mislabeled_siccin.jpg"),
+        ),
+        patch.object(poster_localizer, "_download_image_bytes", new=AsyncMock(return_value=mislabeled_bytes)),
+        patch.object(
+            poster_localizer,
+            "analyze_poster_style",
+            new=AsyncMock(
+                return_value={
+                    "placement": "bottom",
+                    "y_ratio": 0.78,
+                    "font_style": "serif",
+                    "bevel_style": "chiseled",
+                    "primary_color": "#D4CBB8",
+                    "secondary_color": "#8E8472",
+                    "accent_color": "#DC2626",
+                    "needs_backdrop": False,
+                    "title_box": [780, 180, 910, 820],
+                    "extra_boxes": [[20, 40, 65, 960]],
+                }
+            ),
+        ),
+        patch.object(poster_localizer, "render_uzbek_title_on_poster", return_value=b"clean-sijjin") as mock_render,
+        patch.object(
+            poster_localizer,
+            "upload_poster_to_telegram",
+            new=AsyncMock(return_value="https://api.example.com/api/v1/posters/tg/AgAC_SIJJIN8"),
+        ),
+    ):
+        url = await poster_localizer.localize_poster_and_upload(
+            title="Sijjin 8",
+            tmdb_id=1315706,
+            content_type="movie",
+        )
+
+    assert url == "https://api.example.com/api/v1/posters/tg/AgAC_SIJJIN8"
+    assert mock_render.call_args.kwargs["remove_existing_text"] is True
+
+
+def test_render_v5_gothic_chiseled_rim_and_accent_number():
+    from app.infrastructure.external.poster_localizer import render_uzbek_title_on_poster
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(10, 12, 18))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Sijjin 8",
+        style={
+            "placement": "bottom",
+            "y_ratio": 0.79,
+            "font_style": "gothic",
+            "bevel_style": "chiseled",
+            "primary_color": "#D9D2C5",
+            "secondary_color": "#7D7465",
+            "accent_color": "#DC2626",
+            "rim_color": "#1A1410",
+            "needs_backdrop": False,
+            "title_box": [790, 180, 910, 820],
+        },
+        remove_existing_text=True,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes))
+    assert out_img.size == (500, 750)
+    # Check red pixels exist on the right side for the '8' accent color
+    right_band = [out_img.getpixel((x, y)) for x in range(280, 430, 3) for y in range(580, 690, 3)]
+    assert any(r > 160 and g < 70 and b < 70 for (r, g, b) in right_band)
+
+
+
