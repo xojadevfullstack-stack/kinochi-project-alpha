@@ -112,3 +112,21 @@ def test_supabase_pooler_engine_caps_connections_below_session_limit():
     supa_kwargs = get_engine_kwargs("postgresql+asyncpg://u:p@aws-1-eu-west-1.pooler.supabase.com:5432/postgres")
     assert supa_kwargs["pool_size"] <= 5
     assert supa_kwargs["max_overflow"] <= 5
+
+
+@pytest.mark.asyncio
+async def test_refresh_forward_queues_advances_past_already_seen_page_1():
+    from scraper.catalog_worker import _refresh_forward_queues_if_empty
+
+    fake_qm = MagicMock()
+    fake_qm.add_items_batch_async = AsyncMock(side_effect=[0, 0, 5, 0])
+    fake_parser = AsyncMock(return_value=[MagicMock()])
+
+    with (
+        patch("scraper.site_parser.parse_uzmovi_page_async", new=fake_parser),
+        patch("scraper.site_parser.parse_asilmedia_page_async", new=fake_parser),
+    ):
+        added = await _refresh_forward_queues_if_empty(fake_qm)
+
+    assert added == 5
+    assert fake_qm.add_items_batch_async.await_count >= 3

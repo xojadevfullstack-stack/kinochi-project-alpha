@@ -155,5 +155,9 @@
 - Concept: **Rolling-Overlap Connection Budgeting (`pool_size<=5`) + Shared Session Factory** — Supabase Session Pooler ko'pi bilan `15` ta ulanish ko'taradi; Render yangilanayotganda eski va yangi konteyner bir necha soniya parallel turganda `pool_size=10` + alohida `NullPool` worker `EMAXCONNSESSION` beradi — `pool_size/max_overflow <= 5` va umumiy `async_session_factory` ni qayta ishlatish buni yo'qotadi.
 - Analogy: `15` o'rinli avtobusga bir bekatda ham eski, ham yangi guruh kirganda janjal chiqmasligi uchun har bir guruhga ko'pi bilan `5` tadan joy ajratib berish.
 
+## Bot-Scoped `file_id` Legacy Proxy Fallback
+- Concept: **Token-Tagged Cache Key + Multi-Bot `getFile` Fallback** — Telegram `file_id` har bir bot tokeniga bog'langan bo'ladi; yangi `BOT_TOKEN` ga ko'chganda eski `LEGACY_BOT_TOKEN` yuklagan `/posters/tg/{file_id}` rasmlari `404` qaytarmasligi uchun kesh kalitini token xeshi bilan ajratib `LEGACY_BOT_TOKEN` zaxirasini ulash shart.
+- Analogy: Eski ombor kaliti (`LEGACY_BOT_TOKEN`) bilan qulflangan hujjatlarni yangi omborxona mudiri ocha olmaganda, zaxira eski kalitni ham bog'lamda saqlab qo'yish.
+
 
 

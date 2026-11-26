@@ -1,3 +1,4 @@
+import hashlib
 import httpx
 import logging
 import os
@@ -646,36 +647,53 @@ class TelegramClient:
         )
         return res.success
 
-    async def download_file_bytes(self, file_id: str) -> Optional[Tuple[bytes, str]]:
-        """Telegram file_id bo'yicha fayl baytlarini va MIME turini yuklab oladi."""
-        if not self.bot_token or not file_id:
-            return None
+    async def _download_bytes_with_token(
+        self, client: httpx.AsyncClient, token: str, file_id: str
+    ) -> Optional[Tuple[bytes, str]]:
         from app.core.cache import get_cache, set_cache
 
-        cache_key = f"cache:tg_file_path:{file_id}"
+        tok_tag = hashlib.sha256(token.encode("utf-8")).hexdigest()[:8]
+        cache_key = f"cache:tg_file_path:{tok_tag}:{file_id}"
         file_path: Optional[str] = await get_cache(cache_key)
+        if not file_path:
+            meta_resp = await client.get(f"https://api.telegram.org/bot{token}/getFile", params={"file_id": file_id})
+            if meta_resp.status_code != 200 or not meta_resp.json().get("ok"):
+                logger.warning(f"Telegram getFile failed for {file_id}: {meta_resp.status_code}")
+                return None
+            file_path = (meta_resp.json().get("result") or {}).get("file_path")
+            if not file_path:
+                return None
+            await set_cache(cache_key, file_path, ttl_seconds=2700)
+
+        dl_url = f"https://api.telegram.org/file/bot{token}/{file_path.lstrip('/')}"
+        file_resp = await client.get(dl_url)
+        if file_resp.status_code != 200:
+            logger.warning(f"Telegram file download failed ({file_resp.status_code}) for {file_id}")
+            return None
+        mime = "image/png" if file_path.lower().endswith(".png") else "image/jpeg"
+        return file_resp.content, mime
+
+    async def download_file_bytes(self, file_id: str) -> Optional[Tuple[bytes, str]]:
+        """Telegram file_id bo'yicha fayl baytlarini (asosiy va LEGACY_BOT_TOKEN fallback bilan) yuklaydi."""
+        if not file_id:
+            return None
+        tokens: list[str] = []
+        for raw_tok in (self.bot_token, os.getenv("LEGACY_BOT_TOKEN", "")):
+            tok = (raw_tok or "").strip()
+            if tok and tok not in tokens:
+                tokens.append(tok)
+        if not tokens:
+            return None
+
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
-                if not file_path:
-                    meta_resp = await client.get(f"{self.base_url}/getFile", params={"file_id": file_id})
-                    if meta_resp.status_code != 200 or not meta_resp.json().get("ok"):
-                        logger.warning(f"Telegram getFile failed for {file_id}: {meta_resp.status_code}")
-                        return None
-                    file_path = (meta_resp.json().get("result") or {}).get("file_path")
-                    if not file_path:
-                        return None
-                    await set_cache(cache_key, file_path, ttl_seconds=2700)
-
-                dl_url = f"https://api.telegram.org/file/bot{self.bot_token}/{file_path.lstrip('/')}"
-                file_resp = await client.get(dl_url)
-                if file_resp.status_code != 200:
-                    logger.warning(f"Telegram file download failed ({file_resp.status_code}) for {file_id}")
-                    return None
-                mime = "image/png" if file_path.lower().endswith(".png") else "image/jpeg"
-                return file_resp.content, mime
+                for tok in tokens:
+                    res = await self._download_bytes_with_token(client, tok, file_id)
+                    if res is not None:
+                        return res
         except Exception as e:
             logger.warning(f"download_file_bytes error for {file_id}: {e}")
-            return None
+        return None
 
     async def send_video(
         self,

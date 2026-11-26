@@ -87,22 +87,26 @@ async def _count_today_forward_published(session_factory: Any = None) -> int:
 
 
 async def _refresh_forward_queues_if_empty(qm: QueueManager) -> int:
-    """Parse page 1 of forward-only sources when queue is exhausted."""
+    """Scan pages 1..5 of forward-only sources until fresh unseen items are queued."""
     import aiohttp
     from scraper.site_parser import parse_asilmedia_page_async, parse_uzmovi_page_async
 
     added_total = 0
     async with aiohttp.ClientSession() as session:
-        for src, parser_fn, page_url in (
-            ("uzmovi", parse_uzmovi_page_async, "https://uzmovi.net/tarjima-kinolarri"),
-            ("asilmedia", parse_asilmedia_page_async, "https://asilmedia.org/films/tarjima_kinolar/"),
-        ):
-            try:
-                items = await parser_fn(session, page_url)
-                if items:
-                    added_total += int(await qm.add_items_batch_async(items[:10]))
-            except Exception as exc:
-                logger.warning("Render catalog page-1 parse failed (%s): %s", src, exc)
+        for page in range(1, 6):
+            for src, parser_fn, base_url in (
+                ("asilmedia", parse_asilmedia_page_async, "https://asilmedia.org/films/tarjima_kinolar/"),
+                ("uzmovi", parse_uzmovi_page_async, "https://uzmovi.net/tarjima-kinolarri"),
+            ):
+                page_url = base_url if page == 1 else f"{base_url.rstrip('/')}/page/{page}/"
+                try:
+                    items = await parser_fn(session, page_url)
+                    if items:
+                        added_total += int(await qm.add_items_batch_async(items[:15]))
+                except Exception as exc:
+                    logger.warning("Render catalog page-%s parse failed (%s): %s", page, src, exc)
+            if added_total >= 5:
+                break
     return added_total
 
 

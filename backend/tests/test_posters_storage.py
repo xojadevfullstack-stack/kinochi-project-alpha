@@ -150,3 +150,34 @@ async def test_download_file_bytes_caches_file_path_with_ttl_seconds():
     mock_set_cache.assert_awaited_once()
     assert "ttl_seconds" in mock_set_cache.call_args.kwargs
 
+
+@pytest.mark.asyncio
+async def test_download_file_bytes_falls_back_to_legacy_bot_token(monkeypatch):
+    from app.infrastructure.telegram.telegram_client import TelegramClient
+
+    monkeypatch.setenv("LEGACY_BOT_TOKEN", "999999:LEGACY_TOKEN")
+    client = TelegramClient()
+    client.bot_token = "123456:NEW_TOKEN"
+    client.base_url = "https://api.telegram.org/bot123456:NEW_TOKEN"
+
+    fail_meta = MagicMock(status_code=400)
+    fail_meta.json.return_value = {"ok": False, "description": "Bad Request: wrong file_id"}
+    ok_meta = MagicMock(status_code=200)
+    ok_meta.json.return_value = {"ok": True, "result": {"file_path": "photos/legacy.jpg"}}
+    ok_dl = MagicMock(status_code=200, content=b"LEGACY_BYTES")
+
+    mock_http = AsyncMock()
+    mock_http.get = AsyncMock(side_effect=[fail_meta, ok_meta, ok_dl])
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_http)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+
+    with (
+        patch("app.infrastructure.telegram.telegram_client.httpx.AsyncClient", return_value=mock_ctx),
+        patch("app.core.cache.get_cache", new=AsyncMock(return_value=None)),
+        patch("app.core.cache.set_cache", new=AsyncMock(return_value=True)),
+    ):
+        res = await client.download_file_bytes("AgACAgIAAyEGAATgPfgXAAIT02sHHfkREfhwTogaQ4vpYCpYDDxAAAKwJmsbXv44SPuOK6nl_9VYAQADAgADeAADPQQ")
+
+    assert res == (b"LEGACY_BYTES", "image/jpeg")
+
