@@ -121,6 +121,9 @@ def build_cinematic_filter_complex(
     blur_bottom_ad: bool = False,
     low_ram: bool = False,
     blur_boxes: Optional[List[Dict[str, Any]]] = None,
+    hook_text: Optional[str] = None,
+    cover_duration_sec: float = 0.35,
+    duration_sec: float = 28.0,
 ) -> Tuple[str, str]:
     """Build 9:16 Cinematic Red FFmpeg filter_complex (1080x1920 standard or 720x1280 low_ram)."""
     font_file = resolve_font_file(font_path)
@@ -168,7 +171,7 @@ def build_cinematic_filter_complex(
     vf = (
         f"{decode_and_bg}"
         f"{blur_chain}"
-        f"[bg][{fg_label}]overlay=(W-w)/2:(H-h)/2"
+        f"[bg][{fg_label}]overlay=(W-w)/2:(H-h)/2,eq=contrast=1.06:saturation=1.12"
         f",drawtext={font_opt}text='{safe_header}':fontsize={h_fs}:"
         f"fontcolor=white:x=(w-text_w)/2:y={y_h}:line_spacing=12:shadowcolor=black@0.85:shadowx=3:shadowy=3"
         f"{rating_filter}"
@@ -179,7 +182,15 @@ def build_cinematic_filter_complex(
         f"fontcolor=#E5E7EB:x=(w-text_w)/2:y={y_b}:shadowcolor=black@0.8:shadowx=2:shadowy=2"
         "[vout]"
     )
-    return vf, ("atempo=1.02" if copyright_shield else "anull")
+    fade_out_st = max(0.5, float(duration_sec or 28.0) - 0.4)
+    af_parts = [
+        "dynaudnorm=f=150:g=11",
+        "afade=t=in:st=0:d=0.25",
+        f"afade=t=out:st={fade_out_st:.2f}:d=0.4",
+    ]
+    if copyright_shield:
+        af_parts.append("atempo=1.02")
+    return vf, ",".join(af_parts)
 
 
 def build_clip_cover_image(
@@ -262,6 +273,7 @@ def render_vertical_clip(
     blur_boxes: Optional[List[Dict[str, Any]]] = None,
     cover_image_path: Optional[str] = None,
     cover_duration_sec: float = 0.35,
+    hook_text: Optional[str] = None,
 ) -> str:
     """Cut segment from input_path and render 9:16 vertical MP4 to output_path."""
     ffmpeg = resolve_ffmpeg_bin()
@@ -272,6 +284,7 @@ def render_vertical_clip(
         copyright_shield=copyright_shield, show_title=show_title,
         blur_watermark=blur_watermark, blur_bottom_ad=blur_bottom_ad,
         low_ram=low_ram, blur_boxes=blur_boxes,
+        hook_text=hook_text, cover_duration_sec=cover_duration_sec, duration_sec=duration_sec,
     )
     extra_inputs: List[str] = []
     if cover_image_path and os.path.exists(cover_image_path) and cover_duration_sec > 0 and vf.endswith("[vout]"):
@@ -292,7 +305,7 @@ def render_vertical_clip(
         "-c:v", "libx264", *encode_opts, "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output_path,
     ]
-    render_timeout = max(30.0, float(os.getenv("SMM_RENDER_TIMEOUT_SEC", "240")))
+    render_timeout = max(30.0, float(os.getenv("SMM_RENDER_TIMEOUT_SEC", "360")))
     run_kwargs: Dict[str, Any] = {"capture_output": True, "text": True, "timeout": render_timeout}
     if os.name != "nt" and hasattr(os, "nice"):
         run_kwargs["preexec_fn"] = lambda: os.nice(15)

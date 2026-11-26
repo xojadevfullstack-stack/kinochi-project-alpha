@@ -18,6 +18,16 @@ def test_build_movie_caption_hides_title_and_includes_code_and_bot():
     assert "8.4" in caption
     assert "#kino" in caption
 
+    hook_cap = build_movie_caption(
+        movie_code="5064",
+        imdb_rating=8.4,
+        genres="Triller",
+        hook_text="Bu sahnani ko'rib hayratda qolasiz!",
+    )
+    assert "Bu sahnani ko'rib hayratda qolasiz!" in hook_cap
+    assert "#kinokod" in hook_cap
+
+
 
 @pytest.mark.asyncio
 async def test_telegram_publisher_sends_video_with_deep_link_button(tmp_path):
@@ -306,3 +316,75 @@ async def test_create_smart_smm_clip_builds_poster_cover_when_available_and_fall
             poster_url="https://image.tmdb.org/t/p/w500/missing.jpg",
         )
     assert mr2.call_args.kwargs.get("cover_image_path") is None
+
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_clamps_scan_window_inside_sparse_chunk_ceiling(tmp_path):
+    out_path = str(tmp_path / "bounded.mp4")
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 3047.0
+
+    # Target ratio clamped at 0.84 while peak_sec sits at 3008.2/3053.2 (~98.5%): scan must NOT overshoot past downloaded headroom!
+    mock_target = {"peak_sec": 3008.222, "srt_end_sec": 3053.222, "target_ratio": 0.84, "visual_cue": "Feast betrayal"}
+    with (
+        patch("scraper.smm_pipeline.find_viral_scene_target", new=AsyncMock(return_value=mock_target)),
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value={"start_sec": 2580.0, "has_ad_banner": False, "blur_boxes": []})) as mock_sel,
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path),
+    ):
+        await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1119",
+            duration_sec=45.0,
+            tmdb_id=1399,
+            content_type="tv",
+            season_number=3,
+            episode_number=9,
+        )
+
+    chunk_floor = 3047.0 * 0.84
+    assert mock_sel.call_args.kwargs["scan_start_sec"] >= chunk_floor
+    assert mock_sel.call_args.kwargs["scan_end_sec"] <= chunk_floor + 45.0 + 40.0
+
+
+@pytest.mark.asyncio
+async def test_create_smart_smm_clip_passes_and_returns_hook_text(tmp_path):
+    out_path = str(tmp_path / "hook_pipe.mp4")
+
+    async def fake_download(client, msg, dest_path, target_ratio=0.35, chunk_mb=None):
+        with open(dest_path, "wb") as f:
+            f.write(b"raw")
+        return dest_path, 1200.0
+
+    fake_hint = {
+        "peak_sec": 600.0,
+        "srt_end_sec": 1200.0,
+        "target_ratio": 0.44,
+        "visual_cue": "Explosion",
+        "hook_uz": "U eshikni ochgach hamma hayratda qoldi!",
+        "yt_title_uz": "Bu sahnani oxirigacha ko'ring",
+    }
+    with (
+        patch("scraper.smm_pipeline.find_viral_scene_target", new=AsyncMock(return_value=fake_hint)),
+        patch("scraper.smm_pipeline.download_sparse_clip_source", side_effect=fake_download),
+        patch("scraper.smm_pipeline.select_best_scene_start", new=AsyncMock(return_value={"start_sec": 530.0, "has_ad_banner": False, "blur_boxes": []})),
+        patch("scraper.smm_pipeline.render_vertical_clip", return_value=out_path) as mr,
+    ):
+        meta = await create_smart_smm_clip(
+            client=MagicMock(),
+            storage_msg=MagicMock(),
+            output_path=out_path,
+            movie_code="1014",
+            tmdb_id=299534,
+            original_title="Avengers: Endgame",
+            genres="Triller, Fantastika",
+        )
+
+    assert meta["hook_text"] == "U eshikni ochgach hamma hayratda qoldi!"
+    assert mr.call_args.kwargs["hook_text"] == "U eshikni ochgach hamma hayratda qoldi!"
+

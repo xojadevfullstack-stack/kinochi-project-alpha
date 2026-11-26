@@ -111,13 +111,15 @@ async def create_smart_smm_clip(
             score_meta = {"start_sec": chosen_start, "has_ad_banner": False, "score": 0.0, "reason": "Manual start"}
         else:
             chunk_floor = effective_dur * eff_ratio
+            chunk_ceil = min(effective_dur - 10.0, chunk_floor + duration_sec + 35.0)
             if scene_hint and scene_hint.get("peak_sec") and scene_hint.get("srt_end_sec"):
                 mapped_peak = effective_dur * (float(scene_hint["peak_sec"]) / float(scene_hint["srt_end_sec"]))
-                scan_start = max(chunk_floor, mapped_peak - 70.0)
-                scan_end = min(effective_dur - 10.0, max(scan_start + duration_sec + 25.0, mapped_peak + 15.0))
+                max_start = max(chunk_floor, chunk_ceil - duration_sec - 5.0)
+                scan_start = min(max_start, max(chunk_floor, mapped_peak - 70.0))
+                scan_end = min(chunk_ceil, max(scan_start + duration_sec + 25.0, mapped_peak + 15.0))
             else:
                 scan_start = max(0.0, chunk_floor - 10.0)
-                scan_end = min(effective_dur, chunk_floor + duration_sec + 30.0)
+                scan_end = min(chunk_ceil, chunk_floor + duration_sec + 30.0)
             try:
                 score_meta = await asyncio.wait_for(
                     select_best_scene_start(
