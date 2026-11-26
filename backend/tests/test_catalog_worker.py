@@ -130,3 +130,61 @@ async def test_refresh_forward_queues_advances_past_already_seen_page_1():
 
     assert added == 5
     assert fake_qm.add_items_batch_async.await_count >= 3
+
+
+def test_next_tick_sleep_seconds_backs_off_on_flood_wait_and_failure_streak():
+    from scraper.catalog_worker import next_tick_sleep_seconds
+
+    assert next_tick_sleep_seconds(
+        {"processed": 1, "published": 0, "flood_wait": True, "flood_sleep_sec": 1920},
+        interval=3600,
+        retry_delay=60,
+    ) == 1920
+    assert next_tick_sleep_seconds(
+        {"processed": 1, "published": 0},
+        interval=3600,
+        retry_delay=60,
+        consecutive_failures=4,
+    ) == 600
+
+
+@pytest.mark.asyncio
+async def test_run_catalog_worker_tick_requeues_item_on_bot_flood_limit(monkeypatch):
+    from scraper import catalog_worker
+
+    monkeypatch.setenv("RENDER_CATALOG_ENABLED", "true")
+    monkeypatch.setenv("CATALOG_TELEGRAM_STRING_SESSION", "cat_sess_1")
+    monkeypatch.setenv("SMM_TELEGRAM_STRING_SESSION", "smm_sess_2")
+    monkeypatch.setenv("TELEGRAM_API_ID", "12345")
+    monkeypatch.setenv("TELEGRAM_API_HASH", "hash_xyz")
+
+    fake_item = MagicMock(id="asilmedia_3905", source="asilmedia", title="Sahroda yolg'iz")
+    flood_refreshed = MagicMock(id="asilmedia_3905", error_message="Bot flood limiti (30 daqiqa kutilishi talab etiladi)", reason=None)
+    fake_qm = MagicMock()
+    fake_qm.recover_stale_in_progress_async = AsyncMock(return_value=0)
+    fake_qm.claim_next_async = AsyncMock(return_value=fake_item)
+    fake_qm.get_item_async = AsyncMock(return_value=flood_refreshed)
+    fake_qm.update_status_async = AsyncMock(return_value=fake_item)
+
+    fake_tg = MagicMock()
+    fake_tg.connect = AsyncMock()
+    fake_tg.disconnect = AsyncMock()
+    fake_tg.is_user_authorized = AsyncMock(return_value=True)
+
+    fake_pipeline = MagicMock()
+    fake_pipeline.run_item = AsyncMock(return_value=False)
+
+    with (
+        patch.object(catalog_worker, "_count_today_forward_published", new=AsyncMock(return_value=0)),
+        patch.object(catalog_worker, "QueueManager", return_value=fake_qm),
+        patch.object(catalog_worker, "_build_telethon_client", return_value=fake_tg),
+        patch.object(catalog_worker, "DuplicateChecker", return_value=MagicMock(refresh_cache=AsyncMock())),
+        patch.object(catalog_worker, "TelethonModeratorPipeline", return_value=fake_pipeline),
+    ):
+        res = await catalog_worker.run_catalog_worker_tick(session_factory=MagicMock())
+
+    assert res["flood_wait"] is True
+    assert res["flood_sleep_sec"] >= 1800
+    fake_qm.update_status_async.assert_awaited_once()
+    assert fake_qm.update_status_async.await_args.args[:2] == ("asilmedia_3905", "queued")
+

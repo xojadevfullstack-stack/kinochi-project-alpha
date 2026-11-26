@@ -171,6 +171,14 @@
 - Concept: **Request Coalescing Lock + `uuid4` Temp Atomic Swap (`GET`/`HEAD`)** — Bir nechta tashqi webhook (`Instagram` va `Facebook` Make.com ssenariylari) bitta efemer media endpointini bir soniyada chaqirganda `os.getpid()` bir xil temp faylga yozib poyga (`race condition`) va `HEAD 405` yaratmasligi uchun har bir fayl yo'li bo'yicha `asyncio.Lock`, `uuid4` vaqtinchalik fayl va `HEAD 200` sarlavhasi majburiydir.
 - Analogy: Ikki kuryer bir vaqtda ombordan bitta posilkani so'raganda ikkisi ham bitta qutini tortishib yirtib qo'ymasligi uchun avval birinchisi olib chiqib qo'yishi, ikkinchisi esa tayyor turganini 0 soniyada olishi kabi.
 
+## Donor Bot Flood-Safe Requeue & Failure-Streak Backoff
+- Concept: **Semantic Flood Recovery + Exponential/Streak Backoff** — Donor Telegram boti (`@asilmediabot`, `@UzmovieTV_Bot`) `BotFloodWaitError` berib `30 daqiqa` kutishni talab qilganda har `60s` da keyingi navbatni olib hammasini `failed` qilib tashlash o'rniga, itemni `queued` ga qaytarish va aynan kutish vaqtigacha (`1800s+`) uyquga ketish navbatni saqlab qoladi.
+- Analogy: Do'kon eshigida "30 daqiqa tanaffus" yozuvi turganda har 1 daqiqada navbatdagi yuk mashinasini haydab kelib qaytarib yuborish o'rniga, tanaffus tugashini kutib birinchi mashinani o'zini olib kirish.
+
+## Waveform Pause Alignment & Segmental Low-RAM Montage
+- Concept: **RMS Silence Gap Alignment + Sequential Segment Concat** — Yagona TTS audiodagi real pauzalarni `20ms` RMS energiya bo'yicha topib gaplarni sinxronlash (`0` qo'shimcha ASR model) va video kesimlarni bitta og'ir `xfade` grafi o'rniga alohida qisqa `.mp4` bo'laklarda `concat demuxer` bilan birlashtirish `512 MB` RAM serverlarda OOM xavfisiz tezkor montaj beradi.
+- Analogy: Butun poyezd vagonlarini bir kichik ustaxonada birga bo'yash o'rniga, har bir vagonni alohida-alohida tayyorlab chiqarib, oxirida ularni bitta temiryo'lda ulab qo'yish.
+
 
 
 

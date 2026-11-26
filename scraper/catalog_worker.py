@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -120,11 +122,64 @@ async def _claim_forward_item(qm: QueueManager, worker_id: str = "render_forward
     return None
 
 
-def next_tick_sleep_seconds(res: dict[str, Any], interval: int = 3600, retry_delay: int = 60) -> int:
-    """Retry quickly after a non-published item while waiting full interval on cap/success/idle."""
+def next_tick_sleep_seconds(
+    res: dict[str, Any],
+    interval: int = 3600,
+    retry_delay: int = 60,
+    consecutive_failures: int = 0,
+) -> int:
+    """Back off cleanly on bot flood waits or failure streaks while retrying single misses quickly."""
+    if res.get("flood_wait"):
+        return max(retry_delay, min(interval, int(res.get("flood_sleep_sec") or 1800)))
     if int(res.get("processed") or 0) == 1 and int(res.get("published") or 0) == 0:
+        if consecutive_failures >= 4:
+            return min(interval, retry_delay * 10)
         return retry_delay
     return interval
+
+
+def _parse_flood_sleep_seconds(err_text: str) -> int | None:
+    """Return cooldown seconds (>= 300) when error indicates donor bot flood limit, else None."""
+    low = (err_text or "").lower()
+    if not any(tok in low for tok in ("flood", "daqiqa kutilishi")):
+        return None
+    m_min = re.search(r"(\d+)\s*(?:daqiqa|min)", low)
+    if m_min:
+        return min(3600, max(300, int(m_min.group(1)) * 60 + 60))
+    m_sec = re.search(r"(\d+)\s*(?:sekund|sec|s\b)", low)
+    if m_sec:
+        return min(3600, max(300, int(m_sec.group(1)) + 60))
+    return 1800
+
+
+async def _handle_unpublished_outcome(qm: Any, item: Any, exc_text: str = "") -> dict[str, Any]:
+    """Re-queue item on donor bot flood wait so queued movies are preserved across cooldowns."""
+    err_text = exc_text
+    if not err_text and hasattr(qm, "get_item_async"):
+        raw_res = qm.get_item_async(item.id)
+        refreshed = await raw_res if inspect.isawaitable(raw_res) else raw_res
+        if refreshed is not None:
+            cand_err = getattr(refreshed, "error_message", None) or getattr(refreshed, "reason", None)
+            if isinstance(cand_err, str):
+                err_text = cand_err
+    flood_sec = _parse_flood_sleep_seconds(err_text)
+    if flood_sec is not None:
+        await qm.update_status_async(item.id, "queued", error_message=err_text[:400])
+        return {
+            "processed": 1,
+            "published": 0,
+            "flood_wait": True,
+            "flood_sleep_sec": flood_sec,
+            "source": getattr(item, "source", None),
+            "item_id": str(getattr(item, "id", "")),
+            "error": err_text,
+        }
+    return {
+        "processed": 1,
+        "published": 0,
+        "source": getattr(item, "source", None),
+        "item_id": str(getattr(item, "id", "")),
+    }
 
 
 async def run_catalog_worker_tick(session_factory: Any = None, prefer_idx: int | None = None) -> dict[str, Any]:
@@ -174,9 +229,14 @@ async def run_catalog_worker_tick(session_factory: Any = None, prefer_idx: int |
         await dup_checker.refresh_cache()
         pipeline = TelethonModeratorPipeline(client=tg_client, duplicate_checker=dup_checker, copy_only=True)
         ok = await pipeline.run_item(item)
-        return {"processed": 1, "published": int(bool(ok)), "source": getattr(item, "source", None), "item_id": str(getattr(item, "id", ""))}
+        if not ok:
+            return await _handle_unpublished_outcome(qm, item)
+        return {"processed": 1, "published": 1, "source": getattr(item, "source", None), "item_id": str(getattr(item, "id", ""))}
     except Exception as exc:
         logger.warning("Render catalog worker item failed (%s): %s", getattr(item, "id", "?"), exc)
+        flood_res = await _handle_unpublished_outcome(qm, item, exc_text=str(exc))
+        if flood_res.get("flood_wait"):
+            return flood_res
         try:
             await qm.update_status_async(item.id, "failed", error_message=str(exc)[:400])
         except Exception:
@@ -207,6 +267,7 @@ async def supervised_run_catalog_worker() -> None:
     if startup_delay:
         await asyncio.sleep(startup_delay)
     tick_idx = 0
+    consecutive_failures = 0
     while True:
         sleep_for = interval
         try:
@@ -216,7 +277,16 @@ async def supervised_run_catalog_worker() -> None:
             _WORKER_STATE["last_result"] = res
             _WORKER_STATE["last_error"] = None
             logger.info("Render catalog tick: %s", res)
-            sleep_for = next_tick_sleep_seconds(res, interval=interval, retry_delay=retry_delay)
+            if int(res.get("processed") or 0) == 1 and int(res.get("published") or 0) == 0:
+                consecutive_failures += 1
+            else:
+                consecutive_failures = 0
+            sleep_for = next_tick_sleep_seconds(
+                res,
+                interval=interval,
+                retry_delay=retry_delay,
+                consecutive_failures=consecutive_failures,
+            )
         except Exception as exc:
             _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
             _WORKER_STATE["last_error"] = str(exc)
