@@ -250,4 +250,5 @@ async def test_create_smart_smm_clip_uses_srt_target_ratio_and_visual_cue(tmp_pa
     assert seen["target_ratio"] == pytest.approx(0.9493)
     assert mock_select.call_args.kwargs["visual_cue"] == "Ned Stark kneeling at Baelor sept"
     assert mock_select.call_args.kwargs["compare_candidates"] == 3
+    assert mock_select.call_args.kwargs["scan_start_sec"] >= 3376.0 * 0.9493
     assert meta["start_sec"] == pytest.approx(3207.8)

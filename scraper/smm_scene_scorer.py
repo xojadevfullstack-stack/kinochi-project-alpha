@@ -93,8 +93,12 @@ def parse_scene_vision_response(raw_text: str) -> Dict[str, Any]:
 
 def _measure_audio_db(ffmpeg: str, video_path: str, start_sec: float, probe_dur: float) -> Tuple[float, float]:
     cmd = [ffmpeg, "-ss", f"{start_sec:.2f}", "-t", f"{probe_dur:.2f}", "-i", video_path, "-vn", "-af", "volumedetect", "-f", "null", "-"]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    return parse_volumedetect_output(proc.stderr)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        return parse_volumedetect_output(proc.stderr)
+    except Exception as exc:
+        logger.debug("Audio volumedetect timeout/skip at %.1fs: %s", start_sec, exc)
+        return -90.0, -90.0
 
 
 def _sample_window_visuals(video_path: str, start_sec: float, duration_sec: float) -> Tuple[float, List[str]]:
@@ -171,10 +175,10 @@ async def check_frames_for_ads_or_nsfw(
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
     payload = {"contents": [{"parts": parts}], "generationConfig": {"responseMimeType": "application/json"}}
-    for model in ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-flash-latest"):
+    for model in ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"):
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=12.0) as client:
                 resp = await client.post(url, json=payload)
             if resp.status_code == 200:
                 text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]

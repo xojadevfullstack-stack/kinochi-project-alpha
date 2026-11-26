@@ -77,23 +77,35 @@ async def create_smart_smm_clip(
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=start_sec)
             score_meta = {"start_sec": chosen_start, "has_ad_banner": False, "score": 0.0, "reason": "Manual start"}
         else:
+            chunk_floor = effective_dur * eff_ratio
             if scene_hint and scene_hint.get("peak_sec") and scene_hint.get("srt_end_sec"):
                 mapped_peak = effective_dur * (float(scene_hint["peak_sec"]) / float(scene_hint["srt_end_sec"]))
-                scan_start = max(60.0, mapped_peak - 95.0)
-                scan_end = min(effective_dur - 15.0, mapped_peak + 15.0)
+                scan_start = max(chunk_floor, mapped_peak - 70.0)
+                scan_end = min(effective_dur - 10.0, max(scan_start + duration_sec + 25.0, mapped_peak + 15.0))
             else:
-                center = effective_dur * eff_ratio
-                scan_start = max(0.0, center - 10.0)
-                scan_end = min(effective_dur, center + duration_sec + 30.0)
-            score_meta = await select_best_scene_start(
-                raw_path,
-                clip_duration=duration_sec,
-                scan_start_sec=scan_start,
-                scan_end_sec=scan_end,
-                check_vision=check_vision,
-                visual_cue=(scene_hint or {}).get("visual_cue") or None,
-                compare_candidates=3,
-            )
+                scan_start = max(0.0, chunk_floor - 10.0)
+                scan_end = min(effective_dur, chunk_floor + duration_sec + 30.0)
+            try:
+                score_meta = await asyncio.wait_for(
+                    select_best_scene_start(
+                        raw_path,
+                        clip_duration=duration_sec,
+                        scan_start_sec=scan_start,
+                        scan_end_sec=scan_end,
+                        check_vision=check_vision,
+                        visual_cue=(scene_hint or {}).get("visual_cue") or None,
+                        compare_candidates=3,
+                    ),
+                    timeout=90.0,
+                )
+            except asyncio.TimeoutError:
+                score_meta = {
+                    "start_sec": round(min(max(0.0, scan_start + 5.0), max(0.0, effective_dur - duration_sec)), 2),
+                    "has_ad_banner": False,
+                    "blur_boxes": [],
+                    "score": 0.0,
+                    "reason": "Scorer timeout fallback",
+                }
             chosen_start, clip_dur = compute_clip_window(effective_dur, duration_sec=duration_sec, start_sec=score_meta["start_sec"])
 
         blur_ad = bool(score_meta.get("has_ad_banner", False))

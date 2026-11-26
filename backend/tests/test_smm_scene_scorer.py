@@ -227,3 +227,19 @@ async def test_select_best_scene_start_compares_candidates_by_excitement_and_cue
 
     assert res["reason"] == "Climax twist"
     assert res["start_sec"] > 0.0
+
+
+def test_measure_audio_db_enforces_timeout_and_recovers(tmp_path):
+    from scraper.smm_scene_scorer import _measure_audio_db
+
+    seen_kwargs = {}
+
+    def fake_run(cmd, **kwargs):
+        seen_kwargs.update(kwargs)
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 15))
+
+    with patch("scraper.smm_scene_scorer.subprocess.run", side_effect=fake_run):
+        mean_db, max_db = _measure_audio_db("ffmpeg", str(tmp_path / "x.mp4"), 100.0, 15.0)
+
+    assert "timeout" in seen_kwargs and seen_kwargs["timeout"] <= 20
+    assert (mean_db, max_db) == (-90.0, -90.0)
