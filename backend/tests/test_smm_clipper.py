@@ -316,3 +316,82 @@ def test_render_vertical_clip_raises_clear_error_on_timeout(monkeypatch, tmp_pat
             movie_code="3957",
             low_ram=True,
         )
+
+
+def test_render_vertical_clip_raises_when_input_audio_dropped_from_output(monkeypatch, tmp_path):
+    fake_stderr = (
+        "Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'in.mp4':\n"
+        "  Stream #0:0: Video: h264\n"
+        "  Stream #0:1: Audio: aac, 48000 Hz, stereo\n"
+        "Output #0, mp4, to 'out.mp4':\n"
+        "  Stream #0:0: Video: h264\n"
+    )
+
+    def _silent_out(cmd, **kwargs):
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr=fake_stderr)
+
+    monkeypatch.setattr(subprocess, "run", _silent_out)
+    with pytest.raises(RuntimeError, match="audio"):
+        render_vertical_clip(str(tmp_path / "in.mp4"), str(tmp_path / "out.mp4"), movie_code="1088", low_ram=True)
+
+
+def test_compute_sparse_byte_range_covers_video_and_audio_stco_tracks():
+    import struct
+    from scraper.smm_clipper import compute_sparse_byte_range
+
+    v_offsets = [5_800_000 + i * 1_500_000 for i in range(100)]
+    a_offsets = [5_800_000 + i * 1_500_000 - 3_500_000 if i > 5 else 5_800_000 for i in range(100)]
+    v_offsets[36] += 4_000_000
+    a_stco = b"stco\x00\x00\x00\x00" + struct.pack(">I", 100) + b"".join(struct.pack(">I", x) for x in a_offsets)
+    v_stco = b"stco\x00\x00\x00\x00" + struct.pack(">I", 100) + b"".join(struct.pack(">I", x) for x in v_offsets)
+    moov = b"\x00\x00\x00\x00moov" + v_stco + a_stco
+
+    mid_offset, mid_bytes = compute_sparse_byte_range(
+        moov_source=moov,
+        total_size=800_000_000,
+        total_duration=8297.0,
+        target_ratio=0.35,
+    )
+    assert mid_offset <= a_offsets[35]
+    assert mid_offset + mid_bytes >= v_offsets[36] + 1_000_000
+
+
+@pytest.mark.asyncio
+async def test_download_sparse_clip_source_fetches_full_moov_past_4mb(tmp_path):
+    import struct
+    from types import SimpleNamespace
+    from scraper.smm_clipper import download_sparse_clip_source
+
+    moov_size = 5_600_000
+    blob = bytearray(80 * 1024 * 1024)
+    blob[0:32] = b"\x00\x00\x00 ftypisom" + b"\x00" * 20
+    blob[32:40] = struct.pack(">I", moov_size) + b"moov"
+    # Place second track stco past 4 MB (at 5.0 MB) inside moov
+    stco_pos = 5_000_000
+    offs = [6_000_000 + i * 500_000 for i in range(100)]
+    blob[stco_pos : stco_pos + 12 + 400] = (
+        b"stco\x00\x00\x00\x00" + struct.pack(">I", 100) + b"".join(struct.pack(">I", x) for x in offs)
+    )
+    marker = b"AUDIO_MOOV_TAIL_OK"
+    blob[32 + moov_size - len(marker) : 32 + moov_size] = marker
+
+    class _FakeClient:
+        async def iter_download(self, media, offset=0, request_size=1024 * 1024):
+            pos = int(offset)
+            while pos < len(blob):
+                yield bytes(blob[pos : pos + request_size])
+                pos += request_size
+
+    doc = SimpleNamespace(size=len(blob), attributes=[SimpleNamespace(duration=5000.0)])
+    msg = SimpleNamespace(media=SimpleNamespace(document=doc))
+    dest = tmp_path / "sparse.mp4"
+
+    await download_sparse_clip_source(_FakeClient(), msg, str(dest), target_ratio=0.35, clip_duration=45.0)
+
+    with open(dest, "rb") as f:
+        f.seek(stco_pos)
+        got_stco = f.read(4)
+        f.seek(32 + moov_size - len(marker))
+        got_tail = f.read(len(marker))
+    assert got_stco == b"stco"
+    assert got_tail == marker

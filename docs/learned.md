@@ -179,6 +179,10 @@
 - Concept: **RMS Silence Gap Alignment + Sequential Segment Concat** — Yagona TTS audiodagi real pauzalarni `20ms` RMS energiya bo'yicha topib gaplarni sinxronlash (`0` qo'shimcha ASR model) va video kesimlarni bitta og'ir `xfade` grafi o'rniga alohida qisqa `.mp4` bo'laklarda `concat demuxer` bilan birlashtirish `512 MB` RAM serverlarda OOM xavfisiz tezkor montaj beradi.
 - Analogy: Butun poyezd vagonlarini bir kichik ustaxonada birga bo'yash o'rniga, har bir vagonni alohida-alohida tayyorlab chiqarib, oxirida ularni bitta temiryo'lda ulab qo'yish.
 
+## Full MP4 `moov` Atom Header Parsing & Multi-Track `stco` Alignment
+- Concept: **Dynamic `moov` Size Discovery (`parse_mp4_moov_end`) + Audio/Video `stco` Bounding** — Uzun filmlarda MP4 `moov` indeksi `4 MB` dan katta (`5.5–8 MB`) bo'lishi mumkin; boshidan qat'iy `4 MB` yuklash Video `stco` ni saqlab **2-trek (`Audio stco`)** ni nollab qo'yadi va `ffmpeg -map 0:a?` ovozsiz klip chiqaradi — shuning uchun `moov` o'lchamini o'qib oxirigacha yuklash va barcha asosiy treklarning `stco` chegarasini qamrash shart.
+- Analogy: Kitobning mundarijasi 6 bet bo'lsa-yu, siz faqat birinchi 4 betini nusxalab olib ketsangiz — oxirgi ikki betdagi audio bobi ko'rinmay qolib, film jim-jit chiqadi.
+
 
 
 

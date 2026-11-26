@@ -231,19 +231,51 @@ def render_vertical_clip(
         raise RuntimeError(f"FFmpeg render timed out after {render_timeout:.0f}s") from exc
     if proc.returncode != 0:
         raise RuntimeError(f"FFmpeg render failed: {proc.stderr[-600:]}")
+    if "Output #0" in (proc.stderr or ""):
+        in_part, out_part = proc.stderr.split("Output #0", 1)
+        if "Audio:" in in_part and "Audio:" not in out_part:
+            raise RuntimeError("FFmpeg render dropped input audio track (silent output)")
     return output_path
+
+
+def parse_mp4_moov_end(buf: bytes) -> Optional[int]:
+    """Return byte end offset (moov_start + moov_size) if an MP4 'moov' header exists in buf."""
+    idx = buf.find(b"moov")
+    if idx < 4:
+        return None
+    size = struct.unpack(">I", buf[idx - 4 : idx])[0]
+    if size == 1 and len(buf) >= idx + 12:
+        size = struct.unpack(">Q", buf[idx + 4 : idx + 12])[0]
+    return (idx - 4) + size if size >= 8 else None
+
+
+def _find_all_track_offsets(buf: bytes, ratio: float) -> List[int]:
+    """Collect chunk byte offsets at ratio across all substantial stco/co64 tracks in moov."""
+    clamped = max(0.0, min(1.0, ratio))
+    entries: List[Tuple[int, int]] = []
+    for atom, fmt, size in ((b"stco", "I", 4), (b"co64", "Q", 8)):
+        search_pos = 0
+        while True:
+            idx = buf.find(atom, search_pos)
+            if idx == -1 or len(buf) < idx + 12:
+                break
+            cnt = struct.unpack(">I", buf[idx + 8 : idx + 12])[0]
+            if cnt > 0 and len(buf) >= idx + 12 + cnt * size:
+                pos = min(cnt - 1, max(0, int(cnt * clamped)))
+                off = struct.unpack(f">{fmt}", buf[idx + 12 + pos * size : idx + 12 + (pos + 1) * size])[0]
+                entries.append((cnt, off))
+            search_pos = idx + 4
+    if not entries:
+        return []
+    max_cnt = max(c for c, _ in entries)
+    min_cnt = max(1, max_cnt // 20) if max_cnt >= 20 else 1
+    return [off for cnt, off in entries if cnt >= min_cnt]
 
 
 def find_mp4_chunk_offset_for_ratio(buf: bytes, ratio: float) -> Optional[int]:
     """Read MP4 stco/co64 chunk table from moov buffer and return exact byte offset for ratio."""
-    for atom, fmt, size in ((b"stco", "I", 4), (b"co64", "Q", 8)):
-        idx = buf.find(atom)
-        if idx != -1 and len(buf) >= idx + 12:
-            cnt = struct.unpack(">I", buf[idx + 8 : idx + 12])[0]
-            if cnt > 0 and len(buf) >= idx + 12 + cnt * size:
-                pos = min(cnt - 1, max(0, int(cnt * max(0.0, min(1.0, ratio)))))
-                return struct.unpack(f">{fmt}", buf[idx + 12 + pos * size : idx + 12 + (pos + 1) * size])[0]
-    return None
+    offs = _find_all_track_offsets(buf, ratio)
+    return min(offs) if offs else None
 
 
 def compute_sparse_chunk_mb(
@@ -294,7 +326,8 @@ def compute_sparse_byte_range(
             else 0.04
         )
         end_ratio = min(0.99, max(target_ratio + 0.01, target_ratio + end_delta))
-        exact_end = find_mp4_chunk_offset_for_ratio(moov_source, end_ratio)
+        end_offs = [c for c in _find_all_track_offsets(moov_source, end_ratio) if c > base_offset]
+        exact_end = max([c for c in end_offs if (c - base_offset) <= max_mb * 1024 * 1024], default=(max(end_offs) if end_offs else None))
         if exact_end and exact_end > base_offset:
             need_bytes = max(est_bytes, (exact_end - base_offset) + 2 * 1024 * 1024)
         need_bytes = min(max_mb * 1024 * 1024, need_bytes)
@@ -337,10 +370,18 @@ async def download_sparse_clip_source(
         return buf
 
     head_buf = await _fetch(0, 4 * 1024 * 1024)
+    if b"moov" in head_buf:
+        moov_end = parse_mp4_moov_end(bytes(head_buf))
+        target_head = min(total_size, 24 * 1024 * 1024, (moov_end + 4096) if moov_end else 0)
+        if target_head > len(head_buf):
+            head_buf.extend(await _fetch(len(head_buf), target_head - len(head_buf)))
     end_buf, end_offset = bytearray(), 0
     if b"moov" not in head_buf:
         end_offset = max(0, total_size - 10 * 1024 * 1024)
         end_buf = await _fetch(end_offset, 10 * 1024 * 1024)
+        if b"moov" not in end_buf and total_size > 10 * 1024 * 1024:
+            end_offset = max(0, total_size - 20 * 1024 * 1024)
+            end_buf = await _fetch(end_offset, 20 * 1024 * 1024)
 
     moov_source = bytes(head_buf) if b"moov" in head_buf else bytes(end_buf)
     mid_offset, mid_bytes = compute_sparse_byte_range(
