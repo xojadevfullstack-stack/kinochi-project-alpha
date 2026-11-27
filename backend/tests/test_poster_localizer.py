@@ -792,6 +792,170 @@ async def test_verify_ocr_fails_closed_when_empty_or_none():
         assert await poster_localizer.verify_localized_poster_ocr(_make_sample_jpeg(100, 150), "Taxtlar o'yini") is False
 
 
+def test_v8_clean_display_title_and_stacked_equal_multiline():
+    from app.infrastructure.external.poster_localizer import (
+        _build_main_title_mask,
+        _clean_poster_display_title,
+        _split_title_and_subtitle,
+    )
+
+    assert _clean_poster_display_title("Yakkaxon daraja oshirish (Solo Leveling)") == "Yakkaxon daraja oshirish"
+    main, subs = _split_title_and_subtitle(
+        "Mashaqqatlar sari",
+        {"title_stack_mode": "stacked_equal", "line_layout": ["MASHAQQATLAR", "SARI"]},
+    )
+    assert main == "MASHAQQATLAR\nSARI"
+    assert subs == []
+
+    mask_hi, _, _, tw, th, rstr = _build_main_title_mask(
+        1000, 1500, main, "modern", [670, 220, 900, 780], 502, False
+    )
+    assert "\n" in rstr
+    assert mask_hi.getbbox() is not None and th >= 140
+
+
+def test_v8_stroke_inpaint_preserves_background_between_letters():
+    import numpy as np
+    from PIL import ImageDraw
+    from app.infrastructure.external.poster_localizer import _inpaint_boxes
+
+    # Textured blue-green background with crisp white letters inside a huge box [400..800]
+    img = Image.new("RGB", (400, 600), (18, 88, 128))
+    arr = np.asarray(img).copy()
+    arr[250:480, 30:370, 1] += 25
+    img = Image.fromarray(arr)
+    before = np.asarray(img).copy()
+    draw = ImageDraw.Draw(img)
+    draw.text((80, 310), "SEAL", fill=(255, 255, 255))
+
+    cleaned = _inpaint_boxes(img, [[400, 50, 800, 950]])
+    after = np.asarray(cleaned)
+    roi_before = before[245:475, 25:375]
+    roi_after = after[245:475, 25:375]
+    preserved_ratio = float(np.mean(np.max(np.abs(roi_before.astype(int) - roi_after.astype(int)), axis=2) <= 4))
+    assert preserved_ratio >= 0.45, "Stroke-masked inpaint must not destroy intact background into an X smear"
+
+
+@pytest.mark.asyncio
+async def test_v8_cleans_mislabeled_textless_even_when_manual_url_present():
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750, color=(40, 20, 20))
+    mislabeled_tl_bytes = _make_sample_jpeg(500, 750, color=(20, 15, 15))
+    orig_style = {
+        "placement": "bottom",
+        "y_ratio": 0.75,
+        "font_style": "gothic",
+        "bevel_style": "chiseled",
+        "primary_color": "#D4CBB8",
+        "secondary_color": "#8E8472",
+        "title_box": [720, 140, 890, 860],
+        "extra_boxes": [],
+    }
+
+    async def fake_dl(url):
+        return mislabeled_tl_bytes if "null_with_text" in url else orig_bytes
+
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", ""),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", ""),
+        patch.object(
+            poster_localizer.tmdb_client,
+            "get_textless_poster",
+            new=AsyncMock(return_value="https://image.tmdb.org/t/p/w500/null_with_text.jpg"),
+        ),
+        patch.object(poster_localizer, "_download_image_bytes", side_effect=fake_dl),
+        patch.object(poster_localizer, "analyze_poster_style", new=AsyncMock(return_value=orig_style)),
+        patch.object(
+            poster_localizer,
+            "_detect_residual_text_boxes",
+            new=AsyncMock(return_value=[[700, 150, 910, 850], [10, 50, 70, 950]]),
+        ),
+        patch.object(poster_localizer, "render_uzbek_title_on_poster", return_value=b"cleaned") as mock_render,
+        patch.object(
+            poster_localizer,
+            "upload_poster_to_telegram",
+            new=AsyncMock(return_value="https://api.example.com/api/v1/posters/tg/AgAC_CLEANED"),
+        ),
+    ):
+        url = await poster_localizer.localize_poster_and_upload(
+            title="Sijjin 8",
+            tmdb_id=1315706,
+            content_type="movie",
+            manual_poster_url="https://image.tmdb.org/t/p/w500/orig_tr.jpg",
+        )
+
+    assert url == "https://api.example.com/api/v1/posters/tg/AgAC_CLEANED"
+    assert mock_render.call_args.kwargs["remove_existing_text"] is True
+    assert [700, 150, 910, 850] in mock_render.call_args.kwargs["style"]["extra_boxes"]
+    assert [10, 50, 70, 950] in mock_render.call_args.kwargs["style"]["extra_boxes"]
+
+
+@pytest.mark.asyncio
+async def test_v8_giant_cartoon_logo_falls_back_to_clean_tmdb_art():
+    from app.infrastructure.external import poster_localizer
+
+    orig_bytes = _make_sample_jpeg(500, 750, color=(20, 80, 120))
+    clean_alt_bytes = _make_sample_jpeg(500, 750, color=(90, 170, 220))
+    orig_style = {
+        "placement": "bottom",
+        "y_ratio": 0.43,
+        "font_style": "cartoon",
+        "bevel_style": "metallic",
+        "primary_color": "#FFFFFF",
+        "secondary_color": "#FF33CC",
+        "rim_color": "#2A0860",
+        "title_stack_mode": "stacked_equal",
+        "line_layout": ["SUV MUSHUKLARI", "JAMOASI"],
+        "title_box": [430, 40, 780, 960],
+        "extra_boxes": [],
+    }
+    alt_space_style = {
+        **orig_style,
+        "placement": "top",
+        "y_ratio": 0.06,
+        "title_box": None,
+        "needs_backdrop": False,
+    }
+
+    async def fake_dl(url):
+        return clean_alt_bytes if "clean_alt" in url else orig_bytes
+
+    with (
+        patch.object(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", ""),
+        patch.object(poster_localizer.settings, "CLOUDFLARE_API_TOKEN", ""),
+        patch.object(
+            poster_localizer.tmdb_client,
+            "get_textless_poster",
+            new=AsyncMock(side_effect=[None, "https://image.tmdb.org/t/p/w500/clean_alt.jpg"]),
+        ) as mock_tl,
+        patch.object(poster_localizer, "_download_image_bytes", side_effect=fake_dl),
+        patch.object(poster_localizer, "analyze_poster_style", new=AsyncMock(side_effect=[orig_style, alt_space_style])),
+        patch.object(poster_localizer, "_detect_residual_text_boxes", new=AsyncMock(return_value=[])),
+        patch.object(poster_localizer, "render_uzbek_title_on_poster", return_value=b"rendered-alt") as mock_render,
+        patch.object(
+            poster_localizer,
+            "upload_poster_to_telegram",
+            new=AsyncMock(return_value="https://api.example.com/api/v1/posters/tg/AgAC_SEAL_CLEAN"),
+        ),
+    ):
+        url = await poster_localizer.localize_poster_and_upload(
+            title="Suv mushuklari jamoasi",
+            tmdb_id=823610,
+            content_type="movie",
+            manual_poster_url="https://image.tmdb.org/t/p/w500/orig_seal.jpg",
+        )
+
+    assert url == "https://api.example.com/api/v1/posters/tg/AgAC_SEAL_CLEAN"
+    assert mock_tl.await_count == 2
+    assert mock_tl.await_args_list[1].kwargs["reference_bytes"] is None
+    assert mock_render.call_args.kwargs["image_bytes"] == clean_alt_bytes
+    assert mock_render.call_args.kwargs["remove_existing_text"] is False
+    assert mock_render.call_args.kwargs["style"]["placement"] == "top"
+
+
+
+
 
 
 

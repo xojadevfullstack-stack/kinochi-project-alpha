@@ -206,3 +206,7 @@
 ## Title-Crop Typography Evaluation & Hue-Preserving Metallic Bevel
 - Concept: **Hue-Preserving Specular Shading (`grad * contrast + hi^p`) + Title-Crop Evaluation** — Butun poster bo'ylab piksel taqqoslash 85% fon bir xilligi sababli shrift/rang xatolarini (`95%` deb) yashirib qo'yadi, qora-oq `+145` bevel esa to'q binafsha/oltin ranglarni oqartirib yuboradi; faqat sarlavha qismini qirqib baholash va yorug'likni asosiy rang nisbatida kuchaytirish haqiqiy sifatni beradi.
 - Analogy: Faqat mashinaning diskini bo'yab turib, butun kuzovi yangi ko'rinadi deb o'zini aldamaslik — baho faqat bo'yalgan diskning o'ziga va uning haqiqiy chuqur rangiga qarab berilishi kerak.
+
+## Morphological Stroke Inpainting & Residual Textless Audit
+- Concept: **Stroke-Level Inpainting (`Top-Hat/Black-Hat + Canny`) + Residual Text Check (`_detect_residual_text_boxes`)** — Katta matn blokini to'liq bo'yash (`TELEA`) `X` shaklidagi xiralashuv beradi; faqat harf konturlarini o'chirish fonni (`45%+`) saqlaydi, residual tekshiruv esa TMDb "textless" deb aldaganda ham yozuvlarni tozalaydi.
+- Analogy: Devordagi eski e'lonni bo'yashda butun xona devorini chaplab tashlamasdan, faqat harflarning o'zini mayda cho'tka bilan tekislash va boshqa usta bo'yab ketgan joyda hali yozuv qolmaganini alohida chiroq bilan tekshirish.

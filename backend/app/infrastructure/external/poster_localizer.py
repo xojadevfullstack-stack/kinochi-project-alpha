@@ -41,6 +41,7 @@ _DEFAULT_STYLE: dict[str, Any] = {
     "font_style": "bold",
     "font_weight": "bold",
     "letter_spacing": "normal",
+    "title_stack_mode": "single",
     "is_italic": False,
     "bevel_style": "flat",
     "texture_style": "clean",
@@ -181,7 +182,7 @@ def _normalize_str_list(raw: Any, ignore_none: bool = False) -> list[str]:
 
 async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]:
     """Use Gemini Vision to infer title box, motifs, tracking, texture, bevel/rim style, and typography spec."""
-    upper_title = title.upper().strip()
+    upper_title = _clean_poster_display_title(title).upper().strip()
     prompt = (
         f"Inspect this original movie poster to replicate its EXACT title design, custom symbols & layout for Uzbek title '{upper_title}'. "
         "Match the original poster's exact vertical position, letter tracking, weight, texture, saturated body fill color palette, and bevel. Return ONLY valid JSON with keys: "
@@ -195,16 +196,17 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         'bevel_style ("chiseled" for faceted carved steel like Harry Potter/Siccin, "metallic" for glossy 3D metallic purple/gold like Avengers, or "flat" for clean or brushed matte/stone like Shogun/The Institute), '
         'texture_style ("weathered" for distressed frosted stone/ice like The Institute, "brushed" for textured gold leaf like Shogun, "steel" for scratched metal, or "clean"), '
         'subtitle_spacing ("wide" if subtitle below is widely tracked like E N D G A M E, else "normal"), '
+        'title_stack_mode ("stacked_equal" if original title stacks 2 equal big main lines like Breaking/Bad, SEAL/TEAM, GAME OF/THRONES; "main_plus_subtitle" if 1 giant title + smaller subtitle below like Harry Potter or Avengers Endgame; else "single"), '
         'primary_color (exact DEEP saturated body top hex of title letters — e.g. deep royal violet "#5E3EE0" for Avengers or warm gold "#DEC078" for Shogun — NEVER pale glare or bright background fire), '
         'secondary_color (bottom gradient hex of title letters; keep deep saturated hue family matching primary_color), '
         'accent_color (hex color ONLY for a contrasting trailing number/word like red "8" in Siccin 8, or null), '
         'rim_color (hex ONLY if letters have a separate clearly contrasting outer stroke trim like gold "#D8AC4A" on purple Avengers or dark "#1C2430" around silver Harry Potter; MUST be null when letters have no separate colored border like Shogun or The Institute), '
         "needs_backdrop (false if background behind title is clean/dark/uniform, true only if busy/low-contrast), "
-        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 tightly bounding ONLY existing Latin main title text, or null if has_visible_title=false), "
-        "extra_boxes (array of [ymin, xmin, ymax, xmax] normalized 0-1000 ONLY for competing foreign taglines/director credits/rating badges to erase; [] if textless), "
+        "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 enclosing ALL main title lines AND any stacked Japanese/English title/subtitle logos together as one tight bounding box, or null if has_visible_title=false), "
+        "extra_boxes (array of [ymin, xmin, ymax, xmax] normalized 0-1000 for ALL remaining top/bottom taglines, director credits, foreign kanjis or rating badges to erase; [] if textless), "
         "style_brief (concise 1-2 sentence description of exact typography, spacing, colors, texture), "
         'title_motifs (concise description of iconic decorative emblems/motifs integrated into/next to the title; "" if none), '
-        f'line_layout (JSON array of 1-3 uppercase lines splitting ALL words of "{upper_title}" to match original hierarchy, e.g. ["QASOSKORLAR 4", "INTIHO"] if there is a wide subtitle below), '
+        f'line_layout (JSON array of 1-3 uppercase lines splitting ALL words of "{upper_title}" to match original hierarchy, e.g. ["MASHAQQATLAR", "SARI"] or ["QASOSKORLAR 4", "INTIHO"]), '
         'badges_to_remove (JSON array of corner rating badges or TV network logos to clean up, or []).'
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=1024)
@@ -230,12 +232,14 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
     spacing = parsed.get("letter_spacing")
     tex = parsed.get("texture_style")
     sub_sp = parsed.get("subtitle_spacing")
+    stack_mode = parsed.get("title_stack_mode")
     return {
         "placement": "top" if inferred_top else "bottom",
         "y_ratio": max(0.03, min(0.93, float(y_val))) if y_val is not None else None,
         "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
         "font_weight": weight if weight in ("regular", "bold", "heavy") else "bold",
         "letter_spacing": spacing if spacing in ("tight", "normal", "wide", "ultra_wide") else "normal",
+        "title_stack_mode": stack_mode if stack_mode in ("single", "stacked_equal", "main_plus_subtitle") else "single",
         "is_italic": bool(parsed.get("is_italic", False)),
         "bevel_style": bevel if bevel in ("chiseled", "metallic", "flat") else "flat",
         "texture_style": tex if tex in ("clean", "weathered", "brushed", "steel") else "clean",
@@ -427,25 +431,45 @@ async def edit_poster_with_cloudflare(
 
 
 def _inpaint_boxes(rgb_img: Image.Image, boxes: list[list[int]]) -> Image.Image:
+    """Erase foreign text boxes using stroke-aware morphological masking to prevent hourglass X-smears."""
     valid = [b for b in boxes if isinstance(b, list) and len(b) == 4]
     if not valid:
         return rgb_img
     w, h = rgb_img.size
+    bgr = cv2.cvtColor(np.array(rgb_img), cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     mask = np.zeros((h, w), dtype=np.uint8)
+    stroke_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 21))
+    close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
+    dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+
     for box in valid:
         ymin, xmin, ymax, xmax = [max(0, min(1000, int(v))) for v in box]
-        y1, y2 = int(ymin * h / 1000), int(ymax * h / 1000)
-        x1, x2 = int(xmin * w / 1000), int(xmax * w / 1000)
-        if y2 > y1 + 4 and x2 > x1 + 4:
-            mask[max(0, y1 - 8):min(h, y2 + 8), max(0, x1 - 16):min(w, x2 + 16)] = 255
+        y1 = max(0, int(ymin * h / 1000) - 8)
+        y2 = min(h, int(ymax * h / 1000) + 8)
+        x1 = max(0, int(xmin * w / 1000) - 16)
+        x2 = min(w, int(xmax * w / 1000) + 16)
+        if y2 <= y1 + 4 or x2 <= x1 + 4:
+            continue
+        if (y2 - y1) < 42:
+            # Thin single-line taglines/credits can be cleanly masked directly
+            mask[y1:y2, x1:x2] = 255
+            continue
+        roi_g = gray[y1:y2, x1:x2]
+        tophat = cv2.morphologyEx(roi_g, cv2.MORPH_TOPHAT, stroke_kernel)
+        blackhat = cv2.morphologyEx(roi_g, cv2.MORPH_BLACKHAT, stroke_kernel)
+        edges = cv2.Canny(roi_g, 45, 130)
+        stroke = ((tophat > 24) | (blackhat > 24) | (edges > 0)).astype(np.uint8) * 255
+        stroke = cv2.morphologyEx(stroke, cv2.MORPH_CLOSE, close_kernel)
+        stroke = cv2.dilate(stroke, dilate_kernel)
+        mask[y1:y2, x1:x2] = np.maximum(mask[y1:y2, x1:x2], stroke)
+
     if not np.any(mask):
         return rgb_img
-    bgr = cv2.cvtColor(np.array(rgb_img), cv2.COLOR_RGB2BGR)
-    cleaned = cv2.inpaint(bgr, mask, 7, cv2.INPAINT_TELEA)
-    # Soften residual high-contrast text streaks inside cleaned boxes while keeping surrounding pixels crisp
-    blurred = cv2.GaussianBlur(cleaned, (13, 13), 0)
-    alpha = cv2.GaussianBlur(mask.astype(np.float32) / 255.0, (9, 9), 0)[..., None]
-    blended = np.clip(cleaned.astype(np.float32) * (1.0 - alpha * 0.65) + blurred.astype(np.float32) * (alpha * 0.65), 0, 255).astype(np.uint8)
+    cleaned = cv2.inpaint(bgr, mask, 5, cv2.INPAINT_TELEA)
+    blurred = cv2.GaussianBlur(cleaned, (7, 7), 0)
+    alpha = cv2.GaussianBlur(mask.astype(np.float32) / 255.0, (5, 5), 0)[..., None]
+    blended = np.clip(cleaned.astype(np.float32) * (1.0 - alpha * 0.25) + blurred.astype(np.float32) * (alpha * 0.25), 0, 255).astype(np.uint8)
     return Image.fromarray(cv2.cvtColor(blended, cv2.COLOR_BGR2RGB))
 
 
@@ -462,8 +486,16 @@ def _sanitize_font_text(text: str) -> str:
     return re.sub(r"[\u02bb\u02bc\u2018\u2019`´]", "'", text)
 
 
+def _clean_poster_display_title(title: str) -> str:
+    """Strip parenthetical foreign aliases/years like '(Solo Leveling)' before rendering poster typography."""
+    cleaned = _sanitize_font_text(title)
+    without_parens = re.sub(r"\s*\([^)]*\)\s*", " ", cleaned)
+    final_clean = " ".join(without_parens.strip().split())
+    return final_clean or " ".join(cleaned.strip().split())
+
+
 def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, list[str]]:
-    clean = " ".join(_sanitize_font_text(title).strip().split())
+    clean = _clean_poster_display_title(title)
     if ":" in clean:
         head, tail = [p.strip() for p in clean.split(":", 1)]
         if head and tail:
@@ -474,7 +506,18 @@ def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, l
         words = tail.split()
         sub_lines = [words[0], " ".join(words[1:])] if len(words) >= 3 else [tail]
         return head, sub_lines
-    layout = _normalize_str_list(style.get("line_layout"))
+
+    stack_mode = style.get("title_stack_mode", "single")
+    layout = [_clean_poster_display_title(x) for x in _normalize_str_list(style.get("line_layout"))]
+    layout = [x for x in layout if x]
+    if stack_mode == "stacked_equal":
+        if len(layout) >= 2 and " ".join(layout).upper().split() == clean.upper().split():
+            return "\n".join(line.upper() for line in layout[:2]), []
+        words = clean.split()
+        if len(words) >= 2:
+            mid = max(1, len(words) // 2)
+            return "\n".join([" ".join(words[:mid]).upper(), " ".join(words[mid:]).upper()]), []
+
     if len(layout) >= 2:
         joined_layout = " ".join(layout).upper().split()
         if joined_layout == clean.upper().split():
@@ -518,46 +561,55 @@ def _build_main_title_mask(
     is_italic: bool = False,
     force_center: bool = True,
 ) -> tuple[Image.Image, int, int, int, int, str]:
-    """Render 2x supersampled main title mask fitted accurately to target box, tracking, and slant."""
+    """Render 2x supersampled (single or stacked multi-line) title mask fitted to box, tracking, and slant."""
     fsize = 156
     font = _load_font(font_style, fsize, font_weight=font_weight)
     tmp = ImageDraw.Draw(Image.new("L", (10, 10)))
+    raw_lines = [ln.strip() for ln in main_text.split("\n") if ln.strip()] or [main_text]
     is_gothic_mixed = (
         font_style == "gothic"
+        and len(raw_lines) == 1
         and len(main_text) >= 6
         and not main_text.rstrip().endswith(("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"))
     )
-    render_str = main_text.title() if is_gothic_mixed else main_text.upper()
+    lines_fmt = [ln.title() if is_gothic_mixed else ln.upper() for ln in raw_lines]
+    render_str = "\n".join(lines_fmt)
+    widest_line = max(lines_fmt, key=len)
 
     track_mult = _TRACKING_FACTORS.get(letter_spacing, 0.04)
 
-    def _est_len(sz: int, fn: ImageFont.FreeTypeFont | ImageFont.ImageFont, tm: float) -> float:
-        return float(tmp.textlength(render_str, font=fn)) + max(0, len(render_str) - 1) * (sz * tm)
+    def _est_len(sz: int, fn: ImageFont.FreeTypeFont | ImageFont.ImageFont, ln: str, tm: float) -> float:
+        return float(tmp.textlength(ln, font=fn)) + max(0, len(ln) - 1) * (sz * tm)
 
     max_w_limit = int(sw * 0.90)
-    while fsize > 44 and _est_len(fsize, font, track_mult) > max_w_limit:
+    while fsize > 44 and _est_len(fsize, font, widest_line, track_mult) > max_w_limit:
         fsize -= 4
         font = _load_font(font_style, fsize, font_weight=font_weight)
 
     tracking_px = fsize * track_mult
-    if title_box and len(title_box) == 4 and letter_spacing in ("wide", "ultra_wide") and len(render_str) > 1:
+    if len(lines_fmt) == 1 and title_box and len(title_box) == 4 and letter_spacing in ("wide", "ultra_wide") and len(widest_line) > 1:
         box_w_pre = max(int(sw * 0.42), min(int(sw * 0.92), int((title_box[3] - title_box[1]) * sw / 1000)))
         box_h_pre = max(int(sh * 0.038), min(int(sh * 0.24), int((title_box[2] - title_box[0]) * sh / 1000)))
-        base_glyph_w = float(tmp.textlength(render_str, font=font))
+        base_glyph_w = float(tmp.textlength(widest_line, font=font))
         probe_mask = Image.new("L", (max(sw, int(base_glyph_w + 96)), int(fsize * 1.65)), 0)
-        ImageDraw.Draw(probe_mask).text((48, int(fsize * 0.18)), render_str, font=font, fill=255)
+        ImageDraw.Draw(probe_mask).text((48, int(fsize * 0.18)), widest_line, font=font, fill=255)
         pb = probe_mask.getbbox() or (0, 0, 100, fsize)
         est_scale_h = box_h_pre / max(1, pb[3] - pb[1])
         desired_raw_w = (box_w_pre * 0.88) / max(0.15, est_scale_h)
-        needed_track = (desired_raw_w - max(1, pb[2] - pb[0])) / (len(render_str) - 1)
+        needed_track = (desired_raw_w - max(1, pb[2] - pb[0])) / (len(widest_line) - 1)
         cap_track = fsize * (1.25 if letter_spacing == "ultra_wide" else 0.82)
         tracking_px = max(tracking_px, min(cap_track, needed_track))
 
-    raw_w = max(sw, int(float(tmp.textlength(render_str, font=font)) + max(0, len(render_str) - 1) * tracking_px + 140))
-    raw_h = int(fsize * 1.65)
+    raw_w = max(sw, int(float(tmp.textlength(widest_line, font=font)) + max(0, len(widest_line) - 1) * tracking_px + 140))
+    line_step = int(fsize * 1.18)
+    raw_h = max(int(fsize * 1.65), line_step * len(lines_fmt) + int(fsize * 0.55))
     raw_mask = Image.new("L", (raw_w, raw_h), 0)
     md = ImageDraw.Draw(raw_mask)
-    _draw_tracked_text(md, (56, int(fsize * 0.18)), render_str, font, fill=255, tracking_px=tracking_px)
+    for l_idx, ln in enumerate(lines_fmt):
+        lw = float(tmp.textlength(ln, font=font)) + max(0, len(ln) - 1) * tracking_px
+        lx = int((raw_w - lw) / 2)
+        ly = int(fsize * 0.18) + l_idx * line_step
+        _draw_tracked_text(md, (lx, ly), ln, font, fill=255, tracking_px=tracking_px)
     if is_italic:
         shear = 0.16
         raw_mask = raw_mask.transform(
@@ -572,12 +624,13 @@ def _build_main_title_mask(
 
     if title_box and len(title_box) == 4:
         box_w = max(int(sw * 0.42), min(int(sw * 0.92), int((title_box[3] - title_box[1]) * sw / 1000)))
-        if font_style == "blockbuster" and box_w < int(sw * 0.80) and len(render_str) >= 9:
-            box_w = max(box_w, int(sw * 0.86))
-        box_h = max(int(sh * 0.038), min(int(sh * 0.24), int((title_box[2] - title_box[0]) * sh / 1000)))
+        if (font_style == "blockbuster" or len(lines_fmt) >= 2) and box_w < int(sw * 0.82) and len(widest_line) >= 9:
+            box_w = max(box_w, int(sw * 0.84))
+        max_h_frac = 0.30 if len(lines_fmt) >= 2 else 0.24
+        box_h = max(int(sh * 0.038), min(int(sh * max_h_frac), int((title_box[2] - title_box[0]) * sh / 1000)))
         scale_fit = min(box_w / tight_w, box_h / tight_h)
         target_w = max(1, int(tight_w * scale_fit))
-        if font_style in ("gothic", "blockbuster", "ornate") and letter_spacing in ("tight", "normal"):
+        if font_style in ("gothic", "blockbuster", "ornate") and letter_spacing in ("tight", "normal") and len(lines_fmt) == 1:
             target_h = min(box_h, max(1, int(tight_h * scale_fit * 1.24)))
         else:
             target_h = max(1, int(tight_h * scale_fit))
@@ -586,7 +639,7 @@ def _build_main_title_mask(
     else:
         scale = min(1.0, (sw * 0.86) / tight_w)
         target_w = int(tight_w * scale)
-        stretch_y = 1.22 if (font_style in ("gothic", "blockbuster", "ornate") and letter_spacing == "tight") else 1.0
+        stretch_y = 1.22 if (font_style in ("gothic", "blockbuster", "ornate") and letter_spacing == "tight" and len(lines_fmt) == 1) else 1.0
         target_h = int(tight_h * scale * stretch_y)
         center_x = int(sw / 2)
 
@@ -779,6 +832,23 @@ def render_uzbek_title_on_poster(
     return out_buf.getvalue()
 
 
+async def _detect_residual_text_boxes(image_bytes: bytes) -> list[list[int]]:
+    """Verify whether a supposedly textless TMDb image actually contains leftover titles/credits to erase."""
+    prompt = (
+        "Check strictly if ANY visible title text, Japanese/foreign logos, taglines, or director credits exist on this poster. "
+        'Return ONLY JSON: {"has_text": true/false, "boxes": [[ymin, xmin, ymax, xmax], ...]}. '
+        "If clean textless artwork with NO words/letters anywhere, return {\"has_text\": false, \"boxes\": []}. "
+        "Coordinates must be normalized 0-1000 enclosing ALL visible words/kanji lines."
+    )
+    parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
+    if not parsed or not parsed.get("has_text"):
+        return []
+    raw_boxes = parsed.get("boxes")
+    if not isinstance(raw_boxes, list):
+        return []
+    return [b for b in raw_boxes if isinstance(b, list) and len(b) == 4]
+
+
 async def localize_poster_and_upload(
     title: str,
     tmdb_id: Optional[int] = None,
@@ -791,6 +861,7 @@ async def localize_poster_and_upload(
     """Fetch clean or source poster, render Uzbek title, save in Telegram channel/topic."""
     if manual_poster_url and "/api/v1/posters/tg/" in manual_poster_url:
         return manual_poster_url
+    clean_title = _clean_poster_display_title(title)
 
     orig_bytes: Optional[bytes] = None
     style: Optional[dict[str, Any]] = None
@@ -798,12 +869,12 @@ async def localize_poster_and_upload(
     if cf_ready and manual_poster_url:
         orig_bytes = await _download_image_bytes(manual_poster_url)
         if orig_bytes:
-            style = await analyze_poster_style(orig_bytes, title=title)
-            cf_bytes = await edit_poster_with_cloudflare(orig_bytes, title=title, style=style)
+            style = await analyze_poster_style(orig_bytes, title=clean_title)
+            cf_bytes = await edit_poster_with_cloudflare(orig_bytes, title=clean_title, style=style)
             if cf_bytes:
                 return await upload_poster_to_telegram(
                     photo_bytes=cf_bytes,
-                    title=title,
+                    title=clean_title,
                     code=code,
                     topic_chat_id=topic_chat_id,
                     topic_id=topic_id,
@@ -811,11 +882,12 @@ async def localize_poster_and_upload(
 
     source_url: Optional[str] = None
     is_textless = False
+    used_alt_textless = False
     if tmdb_id and int(tmdb_id) > 0:
         if orig_bytes is None and manual_poster_url:
             orig_bytes = await _download_image_bytes(manual_poster_url)
         if orig_bytes and style is None:
-            style = await analyze_poster_style(orig_bytes, title=title)
+            style = await analyze_poster_style(orig_bytes, title=clean_title)
         source_url = await tmdb_client.get_textless_poster(
             int(tmdb_id),
             content_type=content_type,
@@ -823,6 +895,35 @@ async def localize_poster_and_upload(
             placement=(style or {}).get("placement", "bottom"),
         )
         is_textless = bool(source_url)
+        tbox_orig = (style or {}).get("title_box")
+        box_h_norm = ((tbox_orig[2] - tbox_orig[0]) / 1000.0) if (tbox_orig and len(tbox_orig) == 4) else 0.0
+        is_giant_logo = box_h_norm >= 0.22 and ((style or {}).get("font_style") == "cartoon" or box_h_norm >= 0.28)
+        if not source_url and is_giant_logo:
+            alt_url = await tmdb_client.get_textless_poster(int(tmdb_id), content_type=content_type, reference_bytes=None)
+            if alt_url:
+                alt_bytes = await _download_image_bytes(alt_url)
+                if alt_bytes and not await _detect_residual_text_boxes(alt_bytes):
+                    source_url = alt_url
+                    is_textless = True
+                    used_alt_textless = True
+                    alt_style = await analyze_poster_style(alt_bytes, title=clean_title)
+                    chosen_pl = alt_style.get("placement", "top")
+                    try:
+                        im_alt = np.asarray(Image.open(io.BytesIO(alt_bytes)).convert("L"), dtype=np.float32)
+                        ah = im_alt.shape[0]
+                        top_std = float(np.std(cv2.Laplacian(im_alt[int(ah * 0.04) : int(ah * 0.30), :], cv2.CV_32F)))
+                        bot_std = float(np.std(cv2.Laplacian(im_alt[int(ah * 0.72) : int(ah * 0.96), :], cv2.CV_32F)))
+                        if alt_style.get("title_box") is None:
+                            chosen_pl = "top" if top_std <= bot_std * 1.15 else "bottom"
+                    except Exception as band_exc:
+                        logger.debug("Clean band probe skipped: %s", band_exc)
+                    style = {
+                        **(style or {}),
+                        "placement": chosen_pl,
+                        "y_ratio": 0.055 if chosen_pl == "top" else 0.76,
+                        "needs_backdrop": False if chosen_pl == "top" else True,
+                        "title_box": [55, 80, 300, 920] if chosen_pl == "top" else [730, 80, 940, 920],
+                    }
 
     if not source_url:
         source_url = manual_poster_url
@@ -839,19 +940,24 @@ async def localize_poster_and_upload(
         if downloaded_orig:
             style_bytes = downloaded_orig
 
-    if style is None or (style_bytes is not orig_bytes):
-        style = await analyze_poster_style(style_bytes, title=title)
-    # Never leave mislabeled foreign text on a TMDb "null" poster when Vision detects a title_box
+    if style is None or (style_bytes is not orig_bytes and not used_alt_textless):
+        style = await analyze_poster_style(style_bytes, title=clean_title)
+    # Never leave mislabeled foreign text on a TMDb "null" poster even when style came from manual_poster_url
     needs_clean = (not is_textless) or bool(style_bytes is raw_bytes and style.get("title_box"))
+    if is_textless and style_bytes is not raw_bytes and not used_alt_textless:
+        residual = await _detect_residual_text_boxes(raw_bytes)
+        if residual:
+            needs_clean = True
+            style = {**style, "extra_boxes": [*(style.get("extra_boxes") or []), *residual]}
     localized_bytes = render_uzbek_title_on_poster(
         image_bytes=raw_bytes,
-        title=title,
+        title=clean_title,
         style=style,
         remove_existing_text=needs_clean,
     )
     return await upload_poster_to_telegram(
         photo_bytes=localized_bytes,
-        title=title,
+        title=clean_title,
         code=code,
         topic_chat_id=topic_chat_id,
         topic_id=topic_id,
