@@ -630,12 +630,17 @@ def _build_main_title_mask(
     line_step = int(fsize * 1.18)
     raw_h = max(int(fsize * 1.65), line_step * len(lines_fmt) + int(fsize * 0.55))
     raw_mask = Image.new("L", (raw_w, raw_h), 0)
-    md = ImageDraw.Draw(raw_mask)
+    line_band_h = int(fsize * 1.6)
     for l_idx, ln in enumerate(lines_fmt):
-        lw = float(tmp.textlength(ln, font=font)) + max(0, len(ln) - 1) * tracking_px
-        lx = int((raw_w - lw) / 2)
-        ly = int(fsize * 0.18) + l_idx * line_step
-        _draw_tracked_text(md, (lx, ly), ln, font, fill=255, tracking_px=tracking_px)
+        ln_mask = Image.new("L", (raw_w, line_band_h), 0)
+        _draw_tracked_text(ImageDraw.Draw(ln_mask), (40, int(fsize * 0.18)), ln, font, fill=255, tracking_px=tracking_px)
+        lb = ln_mask.getbbox()
+        if lb:
+            ink_w = lb[2] - lb[0]
+            ink_crop = ln_mask.crop((lb[0], 0, lb[2], line_band_h))
+            lx = max(0, int((raw_w - ink_w) / 2))
+            ly = l_idx * line_step
+            raw_mask.paste(ink_crop, (lx, ly), ink_crop)
     if is_italic:
         shear = 0.16
         raw_mask = raw_mask.transform(
@@ -661,8 +666,9 @@ def _build_main_title_mask(
             cropped = cropped.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
             target_w, target_h = cropped.size
             center_x = int(sw * (title_box[1] + title_box[3]) / 2000.0)
+            center_y = int(sh * (title_box[0] + title_box[2]) / 2000.0)
             x_hi = max(int(sw * 0.02), min(sw - target_w - int(sw * 0.02), center_x - target_w // 2))
-            y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), int(title_box[0] * sh / 1000)))
+            y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), center_y - target_h // 2))
             mask_hi = Image.new("L", (sw, sh), 0)
             mask_hi.paste(cropped, (x_hi, y_hi))
             return mask_hi, x_hi, y_hi, target_w, target_h, render_str
@@ -681,7 +687,8 @@ def _build_main_title_mask(
         else:
             target_h = max(1, int(tight_h * scale_fit))
         box_center_norm = (title_box[1] + title_box[3]) / 2000.0
-        center_x = int(sw / 2) if (force_center or abs(box_center_norm - 0.5) <= 0.05) else int(sw * box_center_norm)
+        is_near_center = abs(box_center_norm - 0.5) <= 0.14 or (title_box[1] < 320 and title_box[3] > 680)
+        center_x = int(sw / 2) if (force_center or is_near_center) else int(sw * box_center_norm)
     else:
         scale = min(1.0, (sw * 0.86) / tight_w)
         target_w = int(tight_w * scale)
@@ -721,7 +728,7 @@ def _render_periodic_tile_poster(
 
     def _calc_tile_size(fsz: int, fnt: ImageFont.FreeTypeFont | ImageFont.ImageFont) -> int:
         max_pref_w = max(float(draw.textlength(p1, font=fnt)), float(draw.textlength(p2, font=fnt)))
-        return max(int(fsz * 1.44), int(max_pref_w + fsz * 0.36))
+        return max(int(fsz * 1.34), int(max_pref_w + fsz * 0.24))
 
     tile_s = _calc_tile_size(font_size, font)
     while font_size > 24 and (tile_s + draw.textlength(r1, font=font) + 28) > w * 0.88:
@@ -730,13 +737,15 @@ def _render_periodic_tile_poster(
         num_font = _load_font("modern", max(10, int(font_size * 0.24)), font_weight="bold")
         tile_s = _calc_tile_size(font_size, font)
 
-    gap_y = max(4, int(tile_s * 0.10))
+    gap_y = max(2, int(tile_s * 0.04))
     total_h = tile_s * 2 + gap_y
     y1 = max(int(h * 0.05), min(h - total_h - int(h * 0.04), y_start_1x))
-    total_w1 = tile_s + 4 + float(draw.textlength(r1, font=font))
+    total_w1 = tile_s + 2 + float(draw.textlength(r1, font=font))
+    total_w2 = tile_s + 2 + float(draw.textlength(r2, font=font))
     x1 = max(int(w * 0.05), int((w - total_w1) / 2))
-    # Stagger second tile diagonally under right edge of first square (Breaking Bad signature layout)
-    x2 = min(w - int(tile_s + 4 + float(draw.textlength(r2, font=font)) + w * 0.05), x1 + int(tile_s * 0.82))
+    # Center line 2 symmetrically under line 1 while preserving staggered periodic-tile diagonal overlap
+    x2_centered = int((w - total_w2) / 2)
+    x2 = max(x1 + int(tile_s * 0.72), min(w - int(total_w2 + w * 0.05), x2_centered))
     y2 = y1 + tile_s + gap_y
 
     atomic_nums = ("12", "62")
@@ -756,7 +765,7 @@ def _render_periodic_tile_poster(
         draw.text((px_pos + 1, py_pos + 2), pref, font=font, fill=(0, 0, 0, 170))
         draw.text((px_pos, py_pos), pref, font=font, fill=(255, 255, 255, 255))
         if rest:
-            rx_pos = tx + tile_s + 5
+            rx_pos = tx + tile_s + 2
             draw.text((rx_pos + 2, py_pos + 2), rest, font=font, fill=(0, 0, 0, 210))
             draw.text((rx_pos, py_pos), rest, font=font, fill=(255, 255, 255, 255))
 

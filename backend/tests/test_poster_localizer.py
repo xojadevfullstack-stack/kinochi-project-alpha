@@ -3,6 +3,7 @@
 import io
 from unittest.mock import AsyncMock, patch
 import pytest
+import numpy as np
 from PIL import Image
 
 
@@ -1051,4 +1052,58 @@ async def test_v9_vertical_title_does_not_trigger_giant_logo_fallback(monkeypatc
     )
     assert res == "https://kinochi.example/api/v1/posters/tg/vertical_ok"
     assert calls == [True], "Tall vertical title must keep original poster and skip unreferenced alt fallback"
+
+
+def test_periodic_tile_line2_is_centered_symmetrically():
+    from app.infrastructure.external.poster_localizer import render_uzbek_title_on_poster
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(15, 22, 12))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Mashaqqatlar sari",
+        style={
+            "placement": "bottom",
+            "y_ratio": 0.68,
+            "font_style": "modern",
+            "bevel_style": "flat",
+            "primary_color": "#FFFFFF",
+            "secondary_color": "#E5EFE8",
+            "title_stack_mode": "stacked_equal",
+            "badge_motif": "periodic_tile",
+            "line_layout": ["MASHAQQATLAR", "SARI"],
+            "title_box": [680, 230, 920, 770],
+            "needs_backdrop": False,
+        },
+        remove_existing_text=False,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes)).convert("RGB")
+    arr = np.asarray(out_img)
+    white = (arr[:, :, 0] > 210) & (arr[:, :, 1] > 210) & (arr[:, :, 2] > 210)
+    ys, xs = np.where(white)
+    mid_y = (ys.min() + ys.max()) // 2
+    bot_xs = xs[ys >= mid_y + 5]
+    assert len(bot_xs) > 10
+    center_err = abs(((bot_xs.min() + bot_xs.max()) / 2.0) - 250.0)
+    assert center_err <= 8.0, f"Periodic tile line 2 shifted off-center by {center_err:.1f}px"
+
+
+def test_near_center_jittered_box_snaps_to_exact_horizontal_center():
+    from app.infrastructure.external.poster_localizer import _build_main_title_mask
+
+    # Jittered box [820, 120, 910, 740] has box_center_norm = 0.43 (within 0.14 tolerance)
+    mask_hi, x_hi, _y_hi, target_w, _target_h, _ = _build_main_title_mask(
+        1000,
+        1500,
+        "YAKKAXON\nDARAJA OSHIRISH",
+        "modern",
+        [820, 120, 910, 740],
+        1230,
+        False,
+        force_center=False,
+    )
+    bbox = mask_hi.getbbox()
+    assert bbox is not None
+    actual_center = (bbox[0] + bbox[2]) / 2.0
+    assert abs(actual_center - 500.0) <= 2.0
+
 
