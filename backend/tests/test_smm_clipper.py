@@ -279,6 +279,7 @@ def test_low_ram_decodes_input_once_caps_blur_zones_and_passes_timeout(monkeypat
         blur_boxes=many_boxes,
     )
     assert vf.count("[0:v]") == 1
+    assert "setpts=PTS-STARTPTS" in vf
     assert "fps=24" in vf
     assert "split=2[fg0][bg_in]" in vf
     assert vf.count("boxblur=") <= 3

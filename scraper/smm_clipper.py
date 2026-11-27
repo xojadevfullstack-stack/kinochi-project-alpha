@@ -140,15 +140,16 @@ def build_cinematic_filter_complex(
     w, h = (720, 1280) if low_ram else (1080, 1920)
     if low_ram:
         decode_and_bg = (
-            "[0:v]fps=24,scale=720:-2:force_original_aspect_ratio=decrease,split=2[fg0][bg_in];"
+            "[0:v]setpts=PTS-STARTPTS,fps=24,scale=720:-2:force_original_aspect_ratio=decrease,split=2[fg0][bg_in];"
             "[bg_in]scale=270:480:force_original_aspect_ratio=increase,"
             "crop=270:480,boxblur=6:2,eq=brightness=-0.28,scale=720:1280:flags=bilinear[bg];"
         )
     else:
         decode_and_bg = (
-            "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+            "[0:v]setpts=PTS-STARTPTS,split=2[fg_src][bg_src];"
+            "[bg_src]scale=1080:1920:force_original_aspect_ratio=increase,"
             "crop=1080:1920,boxblur=20:5,eq=brightness=-0.28[bg];"
-            "[0:v]scale=1080:-2:force_original_aspect_ratio=decrease[fg0];"
+            "[fg_src]scale=1080:-2:force_original_aspect_ratio=decrease[fg0];"
         )
     h_fs, r_fs, c_fs, b_fs = (36, 26, 35, 23) if low_ram else (54, 38, 52, 34)
     y_h, y_r, box_spec, y_c, y_b = (
@@ -185,6 +186,7 @@ def build_cinematic_filter_complex(
     )
     fade_out_st = max(0.5, float(duration_sec or 28.0) - 0.4)
     af_parts = [
+        "asetpts=PTS-STARTPTS",
         "dynaudnorm=f=150:g=11",
         "afade=t=in:st=0:d=0.25",
         f"afade=t=out:st={fade_out_st:.2f}:d=0.4",
