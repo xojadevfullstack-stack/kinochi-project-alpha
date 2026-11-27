@@ -34,10 +34,12 @@ _REGULAR_FONT_MAP = {
     "epic": ("Cinzel-SemiBold.ttf", "Cinzel-Regular.ttf", "Cinzel-Bold.ttf"),
     "serif": ("Cinzel-SemiBold.ttf", "Cinzel-Regular.ttf", "Cinzel-Bold.ttf"),
     "modern": ("Montserrat-SemiBold.ttf", "Montserrat-Medium.ttf", "Montserrat-Bold.ttf"),
+    "gothic": ("Almendra-Bold.ttf", "Metamorphous-Regular.ttf", "Cinzel-Regular.ttf"),
 }
 _DEFAULT_STYLE: dict[str, Any] = {
     "placement": "bottom",
     "y_ratio": None,
+    "layout_mode": "standard",
     "font_style": "bold",
     "font_weight": "bold",
     "letter_spacing": "normal",
@@ -199,10 +201,11 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         'subtitle_spacing ("wide" if subtitle below is widely tracked like E N D G A M E, else "normal"), '
         'title_stack_mode ("stacked_equal" if original title stacks 2 equal big main lines like Breaking/Bad, SEAL/TEAM, GAME OF/THRONES; "main_plus_subtitle" if 1 giant title + smaller subtitle below like Harry Potter or Avengers Endgame; else "single"), '
         'badge_motif ("periodic_tile" ONLY if leading letters sit inside green/colored periodic-table chemical element squares like Breaking Bad, else "none"), '
-        'primary_color (exact DEEP saturated body top hex of title letters — e.g. deep royal violet "#5E3EE0" for Avengers or warm gold "#DEC078" for Shogun — NEVER pale glare or bright background fire), '
+        'layout_mode ("split_around_center" if main title words sit on LEFT and RIGHT sides of a central figure/character standing between the words like "JUJUTSU [hero] KAISEN"; "emblem_inner" if title text is painted INSIDE a distinctive graphic emblem/circle/crest/shield that defines the poster identity like a red-and-white Japanese brush circle; else "standard"), '
+        'primary_color (exact DEEP saturated body top hex of title letters — e.g. deep royal violet "#5E3EE0" for Avengers, "#111111" for dark ink, or warm gold "#DEC078" for Shogun — NEVER pale glare), '
         'secondary_color (bottom gradient hex of title letters; keep deep saturated hue family matching primary_color), '
         'accent_color (hex color ONLY for a contrasting trailing number/word like red "8" in Siccin 8, or null), '
-        'rim_color (hex ONLY if letters have a separate clearly contrasting outer stroke trim like gold "#D8AC4A" on purple Avengers or dark "#1C2430" around silver Harry Potter; MUST be null when letters have no separate colored border like Shogun or The Institute), '
+        'rim_color (hex ONLY if letters have a separate contrasting outer outline/stroke like pale yellow "#EAE068" outline around black letters, gold "#D8AC4A" on purple, or dark "#1C2430" around silver; MUST be null when letters have no separate colored border), '
         "needs_backdrop (false if background behind title is clean/dark/uniform, true only if busy/low-contrast), "
         "title_box ([ymin, xmin, ymax, xmax] normalized 0-1000 enclosing ALL main title lines AND any stacked Japanese/English title/subtitle logos together as one tight bounding box, or null if has_visible_title=false), "
         "extra_boxes (array of [ymin, xmin, ymax, xmax] normalized 0-1000 for ALL remaining top/bottom taglines, director credits, foreign kanjis or rating badges to erase; [] if textless), "
@@ -236,12 +239,21 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
     sub_sp = parsed.get("subtitle_spacing")
     stack_mode = parsed.get("title_stack_mode")
     badge_motif = parsed.get("badge_motif")
+    layout_mode = parsed.get("layout_mode")
+    joined_desc = f"{raw_motifs} {parsed.get('style_brief', '')}".lower()
     if badge_motif not in ("periodic_tile", "none"):
-        joined_desc = f"{raw_motifs} {parsed.get('style_brief', '')}".lower()
         badge_motif = "periodic_tile" if any(k in joined_desc for k in ("periodic", "chemical", "element square", "atomic")) else "none"
+    if layout_mode not in ("standard", "split_around_center", "emblem_inner"):
+        if any(k in joined_desc for k in ("circle emblem", "enso", "white circle", "red circle", "inside a circle", "inside emblem")):
+            layout_mode = "emblem_inner"
+        elif any(k in joined_desc for k in ("left and right of", "either side of", "flanking the character")):
+            layout_mode = "split_around_center"
+        else:
+            layout_mode = "standard"
     return {
         "placement": "top" if inferred_top else "bottom",
         "y_ratio": max(0.03, min(0.93, float(y_val))) if y_val is not None else None,
+        "layout_mode": layout_mode,
         "font_style": parsed.get("font_style") if parsed.get("font_style") in _STYLE_FONT_MAP else "bold",
         "font_weight": weight if weight in ("regular", "bold", "heavy") else "bold",
         "letter_spacing": spacing if spacing in ("tight", "normal", "wide", "ultra_wide") else "normal",
@@ -554,17 +566,18 @@ def _build_spray_stencil_mask(
     if not letter_imgs:
         return _build_main_title_mask(sw, sh, main_text, "modern", title_box, y_start_1x, False)
 
-    total_lw = sum(im.width if im else 38 for im, _ in letter_imgs) + max(0, len(letter_imgs) - 1) * 3
     max_lh = max((im.height for im, _ in letter_imgs if im), default=120) + 40
+    gap = max(9, int(max_lh * 0.065))
+    total_lw = sum(im.width if im else 38 for im, _ in letter_imgs) + max(0, len(letter_imgs) - 1) * gap
     canvas = Image.new("L", (total_lw + 140, max_lh + 140), 0)
     cx = 70
     for im, dy in letter_imgs:
         if im is None:
-            cx += 41
+            cx += 44
             continue
         y_p = 70 + (max_lh - 40 - im.height) // 2 + dy
         canvas.paste(im, (cx, y_p), im)
-        cx += im.width + 3
+        cx += im.width + gap
 
     arr = cv2.dilate(np.asarray(canvas, dtype=np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
     ch_h, ch_w = arr.shape
@@ -692,6 +705,7 @@ def _build_main_title_mask(
     font_weight: str = "bold",
     is_italic: bool = False,
     force_center: bool = True,
+    respect_box_bounds: bool = False,
 ) -> tuple[Image.Image, int, int, int, int, str]:
     """Render 2x supersampled (single or stacked multi-line) title mask fitted to box, tracking, and slant."""
     fsize = 156
@@ -780,11 +794,14 @@ def _build_main_title_mask(
             return mask_hi, x_hi, y_hi, target_w, target_h, render_str
 
         box_w = max(int(sw * 0.42), min(int(sw * 0.92), int((title_box[3] - title_box[1]) * sw / 1000)))
-        if (font_style == "blockbuster" or len(lines_fmt) >= 2) and box_w < int(sw * 0.82) and len(widest_line) >= 9:
-            box_w = max(box_w, int(sw * 0.84))
+        if not respect_box_bounds:
+            if (font_style == "blockbuster" or len(lines_fmt) >= 2) and box_w < int(sw * 0.82) and len(widest_line) >= 9:
+                box_w = max(box_w, int(sw * 0.84))
+        else:
+            box_w = max(int(sw * 0.22), int((title_box[3] - title_box[1]) * sw / 1000 * 0.82))
         max_h_frac = 0.30 if len(lines_fmt) >= 2 else 0.24
         box_h = max(int(sh * 0.038), min(int(sh * max_h_frac), int((title_box[2] - title_box[0]) * sh / 1000)))
-        if len(lines_fmt) >= 2:
+        if len(lines_fmt) >= 2 and not respect_box_bounds:
             box_h = max(box_h, int(sh * 0.135))
         scale_fit = min(box_w / tight_w, box_h / tight_h)
         target_w = max(1, int(tight_w * scale_fit))
@@ -804,10 +821,64 @@ def _build_main_title_mask(
 
     cropped = raw_mask.crop(bbox).resize((max(1, target_w), max(1, target_h)), Image.Resampling.LANCZOS)
     x_hi = max(int(sw * 0.03), min(sw - target_w - int(sw * 0.03), center_x - target_w // 2))
-    y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), y_start_1x * 2))
+    if respect_box_bounds and title_box and len(title_box) == 4:
+        cy_hi = int(sh * (title_box[0] + title_box[2]) / 2000.0)
+        y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), cy_hi - target_h // 2))
+    else:
+        y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), y_start_1x * 2))
     mask_hi = Image.new("L", (sw, sh), 0)
     mask_hi.paste(cropped, (x_hi, y_hi))
     return mask_hi, x_hi, y_hi, target_w, target_h, render_str
+
+
+def _build_split_around_center_mask(
+    sw: int,
+    sh: int,
+    main_text: str,
+    font_style: str,
+    title_box: Optional[list[int]],
+    y_start_1x: int,
+    font_weight: str = "bold",
+) -> tuple[Image.Image, int, int, int, int, str]:
+    """Render left/right flanking title halves leaving the central 20% subject gap unobstructed."""
+    words = " ".join(main_text.upper().split()).split()
+    if len(words) < 2:
+        return _build_main_title_mask(sw, sh, main_text, font_style, title_box, y_start_1x, False, font_weight=font_weight)
+    mid = max(1, len(words) // 2)
+    left_str = " ".join(words[:mid])
+    right_str = " ".join(words[mid:])
+
+    fsize = 112
+    font = _load_font(font_style, fsize, font_weight=font_weight)
+    zone_w = int(sw * 0.36)
+    max_h = int(sh * 0.085)
+    if title_box and len(title_box) == 4:
+        max_h = max(int(sh * 0.055), min(int(sh * 0.14), int((title_box[2] - title_box[0]) * sh / 1000)))
+
+    def _render_half(txt: str) -> Image.Image:
+        probe = Image.new("L", (max(sw, len(txt) * 140), int(fsize * 1.6)), 0)
+        ImageDraw.Draw(probe).text((32, 24), txt, font=font, fill=255)
+        pb = probe.getbbox() or (0, 0, 100, 80)
+        cw, ch = max(1, pb[2] - pb[0]), max(1, pb[3] - pb[1])
+        sc = min(zone_w / cw, max_h / ch)
+        return probe.crop(pb).resize((max(1, int(cw * sc)), max(1, int(ch * sc))), Image.Resampling.LANCZOS)
+
+    l_img = _render_half(left_str)
+    r_img = _render_half(right_str)
+    common_h = min(l_img.height, r_img.height)
+    if l_img.height != common_h:
+        l_img = l_img.resize((max(1, int(l_img.width * common_h / l_img.height)), common_h), Image.Resampling.LANCZOS)
+    if r_img.height != common_h:
+        r_img = r_img.resize((max(1, int(r_img.width * common_h / r_img.height)), common_h), Image.Resampling.LANCZOS)
+
+    cy_hi = int(sh * (title_box[0] + title_box[2]) / 2000.0) if (title_box and len(title_box) == 4) else (y_start_1x * 2 + common_h // 2)
+    y_hi = max(int(sh * 0.04), min(sh - common_h - int(sh * 0.04), cy_hi - common_h // 2))
+    lx = max(int(sw * 0.03), int(sw * 0.39) - l_img.width)
+    rx = min(sw - r_img.width - int(sw * 0.03), int(sw * 0.61))
+    mask_hi = Image.new("L", (sw, sh), 0)
+    mask_hi.paste(l_img, (lx, y_hi))
+    mask_hi.paste(r_img, (rx, y_hi))
+    return mask_hi, lx, y_hi, (rx + r_img.width) - lx, common_h, f"{left_str} {right_str}"
 
 
 def _render_periodic_tile_poster(
@@ -878,6 +949,40 @@ def _render_periodic_tile_poster(
     return Image.alpha_composite(rgba, layer)
 
 
+def _clean_bright_emblem_interior(rgb_img: Image.Image, box: list[int]) -> Optional[Image.Image]:
+    """Erase dark text inside a bright white/cream badge or circle emblem without smearing its colored outer ring."""
+    if not box or len(box) != 4:
+        return None
+    arr = np.asarray(rgb_img, dtype=np.uint8).copy()
+    h, w = arr.shape[:2]
+    y1 = max(0, min(h - 1, int(box[0] * h / 1000)))
+    x1 = max(0, min(w - 1, int(box[1] * w / 1000)))
+    y2 = max(y1 + 4, min(h, int(box[2] * h / 1000)))
+    x2 = max(x1 + 4, min(w, int(box[3] * w / 1000)))
+    roi = arr[y1:y2, x1:x2]
+    rh, rw = roi.shape[:2]
+    if rh < 16 or rw < 16:
+        return None
+    lum = roi.mean(axis=2)
+    sat = roi.max(axis=2) - roi.min(axis=2)
+    bright = (lum > 205) & (sat < 42)
+    if np.mean(bright) < 0.16:
+        return None
+    # Restrict cleanup strictly inside the convex bright interior ellipse so outer red/colored border stays intact
+    yy, xx = np.ogrid[:rh, :rw]
+    ell = (((yy - rh * 0.49) / max(1.0, rh * 0.42)) ** 2 + ((xx - rw * 0.50) / max(1.0, rw * 0.44)) ** 2) <= 1.0
+    ink = ell & (lum < 190) & (sat < 58)
+    if not np.any(ink):
+        return rgb_img
+    fill_rgb = np.median(roi[bright], axis=0).astype(np.uint8)
+    ink_dil = cv2.dilate(ink.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
+    # Only overwrite interior pixels inside ellipse that are not vivid colored emblem strokes (sat < 58)
+    replace_mask = ink_dil & ell & (sat < 58)
+    roi[replace_mask] = fill_rgb
+    arr[y1:y2, x1:x2] = roi
+    return Image.fromarray(arr)
+
+
 def render_uzbek_title_on_poster(
     image_bytes: bytes,
     title: str,
@@ -886,18 +991,32 @@ def render_uzbek_title_on_poster(
 ) -> bytes:
     """Clean old text (if present) and render 2x supersampled Uzbek cinema typography."""
     cfg = {**_DEFAULT_STYLE, **(style or {})}
+    is_emblem = cfg.get("layout_mode") == "emblem_inner"
+    is_split = cfg.get("layout_mode") == "split_around_center"
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     if remove_existing_text:
-        boxes_to_clean = []
-        if cfg.get("title_box"):
-            boxes_to_clean.append(cfg["title_box"])
-        boxes_to_clean.extend(cfg.get("extra_boxes") or [])
-        img = _inpaint_boxes(img, boxes_to_clean)
+        tbox_raw = cfg.get("title_box")
+        cleaned_emblem = _clean_bright_emblem_interior(img, tbox_raw) if (is_emblem and tbox_raw) else None
+        if cleaned_emblem is not None:
+            img = cleaned_emblem
+            if cfg.get("extra_boxes"):
+                img = _inpaint_boxes(img, list(cfg["extra_boxes"]))
+        else:
+            boxes_to_clean = []
+            if tbox_raw:
+                tb = [int(v) for v in tbox_raw]
+                if is_emblem and len(tb) == 4:
+                    pad_y = int((tb[2] - tb[0]) * 0.08)
+                    pad_x = int((tb[3] - tb[1]) * 0.09)
+                    tb = [tb[0] + pad_y, tb[1] + pad_x, tb[2] - pad_y, tb[3] - pad_x]
+                boxes_to_clean.append(tb)
+            boxes_to_clean.extend(cfg.get("extra_boxes") or [])
+            img = _inpaint_boxes(img, boxes_to_clean)
 
     w, h = img.size
     rgba = img.convert("RGBA")
     is_top = cfg["placement"] == "top"
-    if cfg.get("needs_backdrop", True):
+    if cfg.get("needs_backdrop", True) and not is_emblem and not is_split:
         grad_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         grad_draw = ImageDraw.Draw(grad_layer)
         band_h = int(h * 0.25)
@@ -908,6 +1027,16 @@ def render_uzbek_title_on_poster(
         rgba = Image.alpha_composite(rgba, grad_layer)
 
     main_text, sub_lines = _split_title_and_subtitle(title, cfg)
+    if is_split:
+        clean_full = _clean_poster_display_title(title)
+        if len(clean_full.split()) >= 2:
+            main_text = clean_full
+            sub_lines = []
+    if is_emblem and len(_clean_poster_display_title(title).split()) == 2:
+        # Stack 2-word Uzbek title cleanly inside circular emblem instead of shrinking 1 tiny subline
+        w_parts = _clean_poster_display_title(title).upper().split()
+        main_text = "\n".join(w_parts)
+        sub_lines = []
     y_ratio = cfg.get("y_ratio")
     y_start_1x = int(h * float(y_ratio)) if y_ratio is not None else (int(h * 0.045) if is_top else int(h * 0.77))
     main_lines_split = [ln.strip() for ln in main_text.split("\n") if ln.strip()]
@@ -947,6 +1076,18 @@ def render_uzbek_title_on_poster(
         )
         c1 = _hex_to_rgb("#F4F0E4", (244, 240, 228))
         c2 = c1
+    elif is_split and not is_vert and len(" ".join(main_text.split()).split()) >= 2:
+        mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_split_around_center_mask(
+            sw, sh, main_text, eff_font_style, tbox, y_start_1x, font_weight=cfg.get("font_weight", "bold")
+        )
+        c1 = _hex_to_rgb(cfg["primary_color"], (255, 255, 255))
+        c2 = _hex_to_rgb(cfg.get("secondary_color") or cfg["primary_color"], c1)
+        # If Gemini mistook bright white emblem circle (#FFF) as primary_color, force high-contrast crisp dark ink
+        if is_emblem and (sum(c1) / 3.0) > 195.0:
+            c1 = (16, 16, 20)
+            c2 = (26, 26, 30)
+            cfg["rim_color"] = None
+            cfg["bevel_style"] = "flat"
     else:
         mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_main_title_mask(
             sw,
@@ -960,9 +1101,16 @@ def render_uzbek_title_on_poster(
             font_weight=cfg.get("font_weight", "bold"),
             is_italic=eff_is_italic,
             force_center=(not remove_existing_text) and (not is_vert),
+            respect_box_bounds=is_emblem,
         )
         c1 = _hex_to_rgb(cfg["primary_color"], (255, 255, 255))
         c2 = _hex_to_rgb(cfg.get("secondary_color") or cfg["primary_color"], c1)
+        # If Gemini mistook bright white emblem circle (#FFF) as primary_color, force high-contrast crisp dark ink
+        if is_emblem and (sum(c1) / 3.0) > 195.0:
+            c1 = (16, 16, 20)
+            c2 = (26, 26, 30)
+            cfg["rim_color"] = None
+            cfg["bevel_style"] = "flat"
     mask_np = np.asarray(mask_hi, dtype=np.uint8)
     binary = (mask_np > 125).astype(np.uint8)
 
@@ -1027,7 +1175,7 @@ def render_uzbek_title_on_poster(
     shaded = np.clip(shaded_f, 8, 255).astype(np.uint8)
 
     comp_hi = Image.new("RGBA", (sw, sh), (0, 0, 0, 0))
-    if not (is_vert and bevel_style == "flat"):
+    if not ((is_vert and bevel_style == "flat") or is_emblem):
         drop = mask_hi.filter(ImageFilter.GaussianBlur(radius=9 if (sum(c1) / 3.0) > 175.0 else 6))
         dr_arr = np.zeros((sh, sw, 4), dtype=np.uint8)
         dr_arr[6:, :, 3] = np.clip(np.asarray(drop)[:-6, :] * 0.94, 0, 255).astype(np.uint8)
@@ -1048,8 +1196,9 @@ def render_uzbek_title_on_poster(
                     w_arr[y_dst : y_dst + h_cp, x_dst : x_dst + w_cp, 0:3] = wall_rgb
                     w_arr[y_dst : y_dst + h_cp, x_dst : x_dst + w_cp, 3] = mask_np[:h_cp, max(0, -dx_s) : max(0, -dx_s) + w_cp]
                     comp_hi = Image.alpha_composite(comp_hi, Image.fromarray(w_arr))
+            k_rim = (7, 7) if (bevel_style == "flat" and (sum(c1) / 3.0) < 95.0) else (5, 5)
             dilated = cv2.GaussianBlur(
-                cv2.dilate(binary.astype(np.float32), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))),
+                cv2.dilate(binary.astype(np.float32), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, k_rim)),
                 (3, 3),
                 0,
             )
@@ -1067,7 +1216,7 @@ def render_uzbek_title_on_poster(
         sub_font = _load_font("serif", sub_size, font_weight="regular")
         sub_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         sd = ImageDraw.Draw(sub_layer)
-        sub_y = min(h - int(sub_size * 2.5), y_start_1x + int(target_h / S) + 6)
+        sub_y = min(h - int(sub_size * 2.5), int(y_hi / S) + int(target_h / S) + 4)
         center_sub_x = int((x_hi + target_w / 2) / S)
         right_edge = int((x_hi + target_w) / S)
         rim_hex = cfg.get("rim_color")
@@ -1097,10 +1246,11 @@ def render_uzbek_title_on_poster(
 async def _detect_residual_text_boxes(image_bytes: bytes) -> list[list[int]]:
     """Verify whether a supposedly textless TMDb image actually contains leftover titles/credits to erase."""
     prompt = (
-        "Check strictly if ANY visible title text, Japanese/foreign logos, taglines, or director credits exist on this poster. "
+        "Check strictly if ANY visible poster title text, Japanese/foreign title logos, taglines, or director credits exist on this poster. "
+        "IGNORE small street/building signs, shop signs, book labels, or scene props inside the background artwork/photo. "
         'Return ONLY JSON: {"has_text": true/false, "boxes": [[ymin, xmin, ymax, xmax], ...]}. '
-        "If clean textless artwork with NO words/letters anywhere, return {\"has_text\": false, \"boxes\": []}. "
-        "Coordinates must be normalized 0-1000 enclosing ALL visible words/kanji lines."
+        "If clean textless artwork with NO overlay title/tagline/credits, return {\"has_text\": false, \"boxes\": []}. "
+        "Coordinates must be normalized 0-1000 enclosing ONLY poster overlay text."
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
     if not parsed or not parsed.get("has_text"):
@@ -1112,12 +1262,13 @@ async def _detect_residual_text_boxes(image_bytes: bytes) -> list[list[int]]:
 
 
 async def _verify_rendered_poster_quality(image_bytes: bytes, expected_title: str) -> bool:
-    """Fail-closed Vision quality gate so auto-localization never saves unreadable/overlapping posters."""
+    """Fail-closed Vision visual quality gate (no false-positive Uzbek spelling rejections on exact Pillow renders)."""
     clean_expected = _clean_poster_display_title(expected_title).upper().strip()
     prompt = (
-        f'Inspect this Uzbek localized movie poster (expected title: "{clean_expected}"). '
+        f'Inspect the visual layout & cleanliness of this localized movie poster ("{clean_expected}"). '
+        "Do NOT critique Uzbek spelling or apostrophes; inspect ONLY layout, legibility, background cleanliness, and character faces. "
         'Return ONLY JSON: {"score": 1-10, "overlap_face": true/false, "broken_text": true/false, "reason": "..."}. '
-        "score < 7 if title overlaps a main character face, looks severely off-center/cut off, leaves uncleaned old foreign title words, or has unreadable/corrupted spelling."
+        "score < 7 if title overlaps a main character face, has big ugly blurry smear blobs from incomplete text removal, leaves old foreign title words behind, or is severely off-center/cut off."
     )
     parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
     if not parsed:
@@ -1176,13 +1327,17 @@ async def localize_poster_and_upload(
             orig_bytes = await _download_image_bytes(manual_poster_url)
         if orig_bytes and style is None:
             style = await analyze_poster_style(orig_bytes, title=clean_title)
-        source_url = await tmdb_client.get_textless_poster(
-            int(tmdb_id),
-            content_type=content_type,
-            reference_bytes=orig_bytes,
-            placement=(style or {}).get("placement", "bottom"),
-        )
-        is_textless = bool(source_url)
+        if (style or {}).get("layout_mode") == "emblem_inner":
+            source_url = None
+            is_textless = False
+        else:
+            source_url = await tmdb_client.get_textless_poster(
+                int(tmdb_id),
+                content_type=content_type,
+                reference_bytes=orig_bytes,
+                placement=(style or {}).get("placement", "bottom"),
+            )
+            is_textless = bool(source_url)
         tbox_orig = (style or {}).get("title_box")
         box_h_norm = ((tbox_orig[2] - tbox_orig[0]) / 1000.0) if (tbox_orig and len(tbox_orig) == 4) else 0.0
         is_vert_orig = _is_vertical_title_box(tbox_orig, 1000, 1500)

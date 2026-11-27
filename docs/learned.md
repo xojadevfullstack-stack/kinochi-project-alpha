@@ -219,6 +219,10 @@
 - Concept: **Morphological Dilation + Displacement Warp (`_build_spray_stencil_mask`) + Fail-Closed Judge (`_verify_rendered_poster_quality`)** — Tayyor `.ttf` harflarini `cv2.dilate` bilan semirtirib `cv2.remap` va tumanli Gaussian buluti bilan cho'tka/sprey uslubiga yaqinlashtirish hamda har bir avtomatik renderni saqlashdan oldin Vision hakamidan (`score >= 7`) o'tkazish sifatsiz poster bazaga tushishini to'xtatadi.
 - Analogy: Bosmaxonadan chiqqan harflarni trafaret bo'yoq bilan qo'lda yumshatib sepish va qadoqlashdan oldin nazoratchi ko'rigidan (`score >= 7`) o'tkazib, yaroqsizini peshtaxtaga chiqarmaslik.
 
+## Subject-Flanking Split Layout & Bright-Emblem Interior Cleanup
+- Concept: **`split_around_center` (Central `20%` Gap) + `_clean_bright_emblem_interior` (Saturation-Guarded Ellipse Fill)** — Markazdagi qahramonni yopmaslik uchun so'zlarni ikki yon qanotga (`0.03..0.39` va `0.61..0.97`) ajratish hamda doira/emblema ichidagi qora yozuvni OpenCV blur bilan qizil chegarani chaplamasdan, faqat past-to'yingan ichki ellips ichida tozalash badiiy muvozanatni saqlaydi; shuningdek deterministik Pillow matni uchun LLM imlo taxminini o'chirish yolg'on rad etishlarni to'xtatadi.
+- Analogy: Sahna o'rtasida bosh qahramon turganda e'lon taxtasini uning ko'kragiga osmasdan ikki yoniga bo'lib yopishtirish, va muhr ichidagi yozuvni o'zgartirganda qizil muhr chizig'iga bo'yoq tekkizmasdan faqat oq o'rtasini tozalash.
+
 ## Peak-Centered Sparse Climax Windowing
 - Concept: **Peak-Centered Sliding Window (`anchor = peak - 35s`, `ratio <= 0.91`)** — Agar `anchor = peak - 120s` olinib skan oynasi `63s` bilan cheklansa, `scan_end` kulminatsiya boshlanishidan `60s` oldin tugaydi (`0x00` emas, lekin bo'sh dialog!); oynani `peak - 35s .. peak + 30s` atrofida markazlash va `0.91` gacha ruxsat berish kechki kulminatsiyalarni to'g'ri ushlaydi.
 - Analogy: Darvoza to'pini suratga olishda videoni goldan 2 daqiqa oldin yoqib, 1 daqiqa ichida o'chirib qo'ymaslik — kamerani zarbadan atigi 20–30 soniya oldin yoqib golning o'zini o'rtaga olish.

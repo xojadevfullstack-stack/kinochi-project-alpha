@@ -1082,6 +1082,87 @@ async def test_quality_gate_blocks_low_score_poster_before_upload(monkeypatch):
     assert uploaded_calls == []
 
 
+def test_split_around_center_leaves_middle_subject_unobstructed():
+    from app.infrastructure.external.poster_localizer import render_uzbek_title_on_poster
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(45, 35, 65))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Jodugarlar Jangi",
+        style={
+            "placement": "bottom",
+            "layout_mode": "split_around_center",
+            "font_style": "gothic",
+            "bevel_style": "flat",
+            "primary_color": "#111111",
+            "secondary_color": "#111111",
+            "rim_color": "#EAE068",
+            "title_box": [430, 100, 535, 900],
+            "needs_backdrop": False,
+        },
+        remove_existing_text=False,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes)).convert("RGB")
+    arr = np.asarray(out_img)
+    # Central column (x=220..280) at y=300..420 must stay clean (no yellow stroke pixels in center gap)
+    center_band = arr[300:420, 225:275]
+    yellow_center = (center_band[:, :, 0] > 180) & (center_band[:, :, 1] > 170) & (center_band[:, :, 2] < 130)
+    assert int(np.sum(yellow_center)) == 0
+    # Left and right flanking zones must contain yellow outline pixels
+    left_band = arr[300:420, 30:195]
+    right_band = arr[300:420, 305:470]
+    assert int(np.sum((left_band[:, :, 0] > 180) & (left_band[:, :, 1] > 170) & (left_band[:, :, 2] < 130))) > 25
+    assert int(np.sum((right_band[:, :, 0] > 180) & (right_band[:, :, 1] > 170) & (right_band[:, :, 2] < 130))) > 25
+
+
+@pytest.mark.asyncio
+async def test_emblem_inner_skips_textless_swap_to_preserve_emblem(monkeypatch):
+    from app.infrastructure.external import poster_localizer
+
+    textless_called = []
+
+    async def fake_textless(*args, **kwargs):
+        textless_called.append(True)
+        return "https://image.tmdb.org/t/p/w500/empty_bg.jpg"
+
+    async def fake_download(url):
+        return _make_sample_jpeg(400, 600, color=(200, 30, 30))
+
+    async def fake_analyze(img, title):
+        return {
+            "placement": "bottom",
+            "layout_mode": "emblem_inner",
+            "font_style": "ornate",
+            "bevel_style": "flat",
+            "primary_color": "#111111",
+            "title_box": [560, 330, 760, 670],
+            "needs_backdrop": False,
+        }
+
+    async def fake_upload(**kwargs):
+        return "https://kinochi.example/tg/emblem_ok"
+
+    async def fake_quality(img_bytes, title):
+        return True
+
+    monkeypatch.setattr(poster_localizer.tmdb_client, "get_textless_poster", fake_textless)
+    monkeypatch.setattr(poster_localizer, "_download_image_bytes", fake_download)
+    monkeypatch.setattr(poster_localizer, "analyze_poster_style", fake_analyze)
+    monkeypatch.setattr(poster_localizer, "upload_poster_to_telegram", fake_upload)
+    monkeypatch.setattr(poster_localizer, "_verify_rendered_poster_quality", fake_quality)
+    monkeypatch.setattr(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "")
+
+    res = await poster_localizer.localize_poster_and_upload(
+        title="Iblislar qotili",
+        tmdb_id=85937,
+        content_type="tv",
+        manual_poster_url="https://image.tmdb.org/t/p/w500/emblem_orig.jpg",
+    )
+    assert res == "https://kinochi.example/tg/emblem_ok"
+    assert textless_called == [], "emblem_inner must keep original poster emblem instead of fetching textless"
+
+
+
 
 
 @pytest.mark.asyncio
