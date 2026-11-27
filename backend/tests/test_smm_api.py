@@ -235,3 +235,26 @@ async def test_restore_clip_from_telegram_coalesces_concurrent_requests(tmp_path
     assert dest.read_bytes() == b"valid-mp4-data"
     assert len(dl_calls) == 1
 
+
+def test_smm_job_supports_clip_mode_and_hook_text_and_28s_default(admin_client):
+    cfg = admin_client.get("/api/v1/smm/settings")
+    assert cfg.status_code == 200
+    assert cfg.json()["clip_duration_sec"] == 28
+
+    c = admin_client.post(
+        "/api/v1/smm/jobs",
+        json={
+            "media_type": "movie",
+            "movie_code": "3999",
+            "title": "Hook Facts Test",
+            "clip_mode": "facts",
+            "hook_text": "Bu sahna bitta dublda olingan!",
+        },
+    )
+    assert c.status_code == 201
+    body = c.json()
+    assert body["clip_mode"] == "facts"
+    assert body["hook_text"] == "Bu sahna bitta dublda olingan!"
+    assert body["duration_sec"] == 28.0
+
+

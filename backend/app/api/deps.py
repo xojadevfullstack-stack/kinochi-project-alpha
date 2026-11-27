@@ -50,6 +50,12 @@ async def _ensure_user_adult_column_once(session: AsyncSession) -> None:
             await session.execute(
                 text("ALTER TABLE series ADD COLUMN IF NOT EXISTS search_count INTEGER NOT NULL DEFAULT 0")
             )
+            await session.execute(
+                text("ALTER TABLE smm_clip_jobs ADD COLUMN IF NOT EXISTS clip_mode VARCHAR(20) NOT NULL DEFAULT 'scene'")
+            )
+            await session.execute(
+                text("ALTER TABLE smm_clip_jobs ADD COLUMN IF NOT EXISTS hook_text TEXT")
+            )
             await session.commit()
     except Exception:
         await session.rollback()

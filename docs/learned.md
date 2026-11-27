@@ -230,3 +230,7 @@
 ## Idle Quality-Gated Poster Backfill & Cooldown Loop Protection
 - Concept: **Single-Per-Idle-Tick Backfill + 7-Day Rejection Cooldown (`poster:v10:skip`)** — Yuklangan yuzlab eski medialarni bir vaqtda chizish Render `512MB` RAM va Gemini limitini portlatmasligi hamda sifat hakamidan o'tolmagan (`score < 7`) bitta film cheksiz qayta urinilib kvotani yeb qo'ymasligi uchun faqat bo'sh tickda `1` ta media olinib, rad etilgani Redis'da 7 kunga muzlatiladi.
 - Analogy: Ustaxona bo'sh qolganda eski arxivdan bittadan kitob olib muqovalash, sifat nazoratidan o'tmagan murakkab kitobni esa har daqiqa qayta-qayta stolga qo'ymay 1 haftalik javonga chetlatib turish.
+
+## Sequential Low-RAM Concat & Subject Focus Reframing
+- Concept: **Per-Shot Isolated Cut + `concat -c copy` + Subject Centering (`compute_subject_focus_x`)** — 512MB Render tugunida 12 ta kirishni birdan `xfade` qilish OOM beradi; har kadrni alohida `-threads 1` bilan kesishdan oldin yuz/kontrast markazini (`0.25..0.75`) aniqlab, so'ngra qayta kodlamasdan ulash (`-c copy`) xotirani keskin kamaytiradi va bosh/yuz chetidan kesilishini yo'qotadi.
+- Analogy: 12 ta og'ir stendni bitta tor stolga birdan qo'yib stoli sindirmasdan, har birini alohida suratini to'g'rilab tayyorlab, oxirida bitta yengil albomga ketma-ket tikib qo'yish.

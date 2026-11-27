@@ -24,6 +24,8 @@ type SmmJob = {
   media_type: "movie" | "series" | "episode";
   movie_code: string;
   title: string;
+  clip_mode?: "scene" | "facts";
+  hook_text?: string | null;
   start_sec: number;
   duration_sec: number;
   clip_path: string | null;
@@ -72,7 +74,7 @@ export default function SmmStudioPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [recutStart, setRecutStart] = useState<Record<number, string>>({});
   const [brokenVideo, setBrokenVideo] = useState<Record<number, boolean>>({});
-  const [newJob, setNewJob] = useState({ media_type: "movie" as "movie" | "episode", movie_code: "", title: "", start_sec: "300", duration_sec: "45" });
+  const [newJob, setNewJob] = useState({ media_type: "movie" as "movie" | "episode", movie_code: "", title: "", hook_text: "", start_sec: "300", duration_sec: "28" });
   const loadSeqRef = useRef(0);
 
   const loadAll = async (statusVal = filter) => {
@@ -140,12 +142,13 @@ export default function SmmStudioPage() {
           media_type: newJob.media_type,
           movie_code: code,
           title,
+          hook_text: newJob.hook_text.trim() || null,
           start_sec: Number(newJob.start_sec) || 0,
-          duration_sec: Number(newJob.duration_sec) || 45,
+          duration_sec: Number(newJob.duration_sec) || settings?.clip_duration_sec || 28,
           generate: true,
         }),
       });
-      setNewJob({ media_type: "movie", movie_code: "", title: "", start_sec: "300", duration_sec: "45" });
+      setNewJob({ media_type: "movie", movie_code: "", title: "", hook_text: "", start_sec: "300", duration_sec: String(settings?.clip_duration_sec || 28) });
       setNotice(`#${code} klipp tayyorlash navbatiga qo'shildi`);
       await loadAll();
     } catch (e: unknown) {
@@ -353,7 +356,7 @@ export default function SmmStudioPage() {
         </select>
         <input placeholder="Kod (#3956)" value={newJob.movie_code} onChange={(e) => setNewJob({ ...newJob, movie_code: e.target.value })} className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white" />
         <input placeholder="Nomi (faqat admin ko'radi)" value={newJob.title} onChange={(e) => setNewJob({ ...newJob, title: e.target.value })} className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white sm:col-span-2" />
-        <input placeholder="Boshlanish (s)" value={newJob.start_sec} onChange={(e) => setNewJob({ ...newJob, start_sec: e.target.value })} className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white" />
+        <input placeholder="Hook matn (ixtiyoriy)" value={newJob.hook_text} onChange={(e) => setNewJob({ ...newJob, hook_text: e.target.value })} className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white" />
         <button onClick={createJob} className="py-2 px-4 rounded-lg bg-[#E50914] hover:bg-red-700 text-white text-sm font-semibold">+ Navbatga qo&apos;shish</button>
       </div>
 
@@ -372,11 +375,12 @@ export default function SmmStudioPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {jobs.map((job) => (
           <div key={job.id} className="metric-card rounded-2xl p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#E50914] text-white">#{job.movie_code}</span>
               <span className="text-xs text-text-secondary uppercase">{formatSmmStatusLabel(job.status)}</span>
             </div>
             <h3 className="text-sm font-semibold text-white truncate">{job.title}</h3>
+            {job.hook_text && <div className="text-[11px] text-white/80 italic truncate">&ldquo;{job.hook_text}&rdquo;</div>}
             {job.clip_path && !brokenVideo[job.id] ? (
               <video
                 src={`${API_URL}/smm/jobs/${job.id}/video`}

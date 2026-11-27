@@ -15,7 +15,8 @@ from app.infrastructure.db.models.movie import MovieModel
 from app.infrastructure.db.models.series import EpisodeModel, SeasonModel, SeriesModel
 from app.infrastructure.db.models.smm import SmmClipJobModel, SmmSettingsModel
 from app.infrastructure.db.models.translation import EpisodeTranslationModel, MovieTranslationModel
-from scraper.smm_pipeline import create_smart_smm_clip
+from scraper.smm_clipper import download_sparse_clip_source
+from scraper.smm_pipeline import _fetch_poster_bytes, create_smart_smm_clip
 from scraper.smm_publishers.dispatcher import MultiPlatformDispatcher
 from scraper.smm_publishers.telegram_pub import (
     TelegramChannelPublisher,
@@ -23,6 +24,8 @@ from scraper.smm_publishers.telegram_pub import (
     build_movie_caption,
     send_admin_smm_preview,
 )
+from scraper.smm_rubric_engine import create_rubric_smm_clip
+from scraper.smm_rubric_planner import RUBRIC_MODES, pick_rubric_media, select_weekly_rubric
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +80,25 @@ def is_schedule_due(
     return True
 
 
-async def auto_pick_catalog_movie(db: AsyncSession) -> Optional[SmmClipJobModel]:
-    """Select highest-value published gem/recent movie with Storage video that has no SMM job yet."""
+async def auto_pick_catalog_movie(db: AsyncSession, now_local: Optional[datetime] = None) -> Optional[SmmClipJobModel]:
+    """Select weekly rubric media on prime evening slots (Mon/Wed/Fri/Sun) or high-retention gem movie."""
+    if now_local is not None:
+        day_start = now_local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+        week_start = (now_local - timedelta(days=now_local.weekday())).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+        today_modes = list((await db.execute(select(SmmClipJobModel.clip_mode).where(SmmClipJobModel.created_at >= day_start))).scalars().all())
+        week_modes = list((await db.execute(select(SmmClipJobModel.clip_mode).where(SmmClipJobModel.created_at >= week_start))).scalars().all())
+        rubric = select_weekly_rubric(now_local, completed_today=today_modes, completed_week=week_modes)
+        if rubric in RUBRIC_MODES:
+            picked = await pick_rubric_media(db, rubric)
+            if picked:
+                return await enqueue_smm_clip_job(
+                    db=db,
+                    movie_code=picked["movie_code"],
+                    title=picked["title"],
+                    media_id=picked["media_id"],
+                    media_type="movie",
+                    clip_mode=rubric,
+                )
     used_ids = select(SmmClipJobModel.media_id).where(
         SmmClipJobModel.media_type == "movie",
         SmmClipJobModel.media_id.isnot(None),
@@ -394,19 +414,59 @@ async def process_generating_job(
         scene_meta = await _resolve_scene_meta(db, job) if job.start_sec <= 0 else {}
         poster_url = await _resolve_media_poster_url(db, job)
         storage_msg = await tg_client.get_messages(storage_chat_id, ids=storage_msg_id)
-        meta = await create_smart_smm_clip(
-            client=tg_client, storage_msg=storage_msg, output_path=out_file,
-            movie_code=display_code, imdb_rating=imdb_rating,
-            duration_sec=job.duration_sec or cfg.clip_duration_sec,
-            start_sec=job.start_sec if job.start_sec > 0 else None,
-            copyright_shield=cfg.copyright_shield,
-            bot_username=bot_handle,
-            progress_cb=_on_progress,
-            poster_url=poster_url,
-            hook_text=getattr(job, "hook_text", None),
-            genres=genres,
-            **scene_meta,
-        )
+        mode = (getattr(job, "clip_mode", "scene") or "scene").strip().lower()
+        meta: Optional[dict[str, Any]] = None
+        if mode in RUBRIC_MODES or mode == "facts":
+            try:
+                import tempfile
+                m_row = (await db.execute(select(MovieModel).where(MovieModel.id == job.media_id))).scalar_one_or_none() if job.media_id else None
+                poster_b = await _fetch_poster_bytes(poster_url)
+                backdrop_b = await _fetch_poster_bytes(getattr(m_row, "backdrop_url", None)) if m_row else None
+                low_ram = os.getenv("SMM_HD_ENABLED", "").strip().lower() not in {"1", "true", "yes", "on"}
+                await _on_progress(25, f"{mode.upper()} rubrika videosi tayyorlanmoqda...")
+                with tempfile.TemporaryDirectory() as r_td:
+                    chunk_p = os.path.join(r_td, "chunk.mp4")
+                    _, full_dur = await download_sparse_clip_source(
+                        tg_client, storage_msg, chunk_p,
+                        target_ratio=0.35,
+                        chunk_mb=int(os.getenv("SMM_RUBRIC_CHUNK_MB", "0")) or None,
+                        clip_duration=90.0,
+                    )
+                    sparse_s = (full_dur * 0.35) if full_dur > 120.0 else None
+                    meta = await create_rubric_smm_clip(
+                        video_path=chunk_p,
+                        output_path=out_file,
+                        rubric="bilasizmi" if mode == "facts" else mode,
+                        title=job.title,
+                        year=getattr(m_row, "release_year", None) if m_row else None,
+                        imdb_rating=imdb_rating,
+                        movie_code=display_code,
+                        description=getattr(m_row, "description", None) if m_row else None,
+                        genres=genres,
+                        poster_bytes=poster_b,
+                        backdrop_bytes=backdrop_b,
+                        low_ram=low_ram,
+                        sample_start_sec=sparse_s,
+                        sample_span_sec=80.0 if sparse_s is not None else None,
+                    )
+            except Exception as rubric_exc:
+                logger.warning("Rubric render fallback to scene for job #%s (%s): %s", job.id, mode, rubric_exc)
+                job.clip_mode = "scene"
+                meta = None
+        if meta is None:
+            meta = await create_smart_smm_clip(
+                client=tg_client, storage_msg=storage_msg, output_path=out_file,
+                movie_code=display_code, imdb_rating=imdb_rating,
+                duration_sec=job.duration_sec or cfg.clip_duration_sec,
+                start_sec=job.start_sec if job.start_sec > 0 else None,
+                copyright_shield=cfg.copyright_shield,
+                bot_username=bot_handle,
+                progress_cb=_on_progress,
+                poster_url=poster_url,
+                hook_text=getattr(job, "hook_text", None),
+                genres=genres,
+                **scene_meta,
+            )
     except Exception as exc:
         logger.warning("SMM clip generation failed for job #%s (%s): %s", job.id, job.movie_code, exc)
         job.status = "failed"
@@ -557,7 +617,7 @@ async def run_smm_worker_tick(
         await db.execute(
             select(SmmClipJobModel)
             .where(SmmClipJobModel.status == "generating")
-            .order_by(SmmClipJobModel.id.asc())
+            .order_by(case((SmmClipJobModel.clip_mode != "scene", 0), else_=1), SmmClipJobModel.id.asc())
             .limit(1)
         )
     ).scalar_one_or_none()
@@ -577,13 +637,27 @@ async def run_smm_worker_tick(
             )
         ).scalar() or 0
         if int(buffered) == 0:
-            gen_job = await auto_pick_catalog_movie(db)
+            gen_job = await auto_pick_catalog_movie(db, now_local=now_local)
     if gen_job and tg_client and storage_chat_id:
         updated_gen = await process_generating_job(db, gen_job, cfg, tg_client, storage_chat_id)
         if updated_gen.status != "failed":
             generated = 1
 
-    pub_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "publishing").limit(1))).scalar_one_or_none()
+    pub_job = (await db.execute(select(SmmClipJobModel).where(SmmClipJobModel.status == "publishing").order_by(SmmClipJobModel.id.asc()).limit(1))).scalar_one_or_none()
+    if not pub_job:
+        now_utc = datetime.now(timezone.utc)
+        pub_job = (
+            await db.execute(
+                select(SmmClipJobModel)
+                .where(
+                    SmmClipJobModel.status == "scheduled",
+                    SmmClipJobModel.scheduled_at.isnot(None),
+                    SmmClipJobModel.scheduled_at <= now_utc,
+                )
+                .order_by(SmmClipJobModel.id.asc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
     if not pub_job and cfg.mode == "FULL_AUTO":
         last_pub = (await db.execute(select(func.max(SmmClipJobModel.updated_at)).where(SmmClipJobModel.status == "completed"))).scalar()
         if is_schedule_due(
@@ -653,8 +727,8 @@ async def run_smm_worker_cycle(
 
 
 def compute_worker_sleep_seconds(interval: int, last_result: Optional[dict]) -> int:
-    """Short-circuit the 180s idle poll sleep to 10s when queued jobs are actively rendering."""
-    if last_result and int(last_result.get("generated") or 0) > 0:
+    """Short-circuit the 180s idle poll sleep to 10s when queued jobs are actively rendering or publishing."""
+    if last_result and (int(last_result.get("generated") or 0) > 0 or int(last_result.get("published") or 0) > 0):
         return min(int(interval), 10)
     return int(interval)
 

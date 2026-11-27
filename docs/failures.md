@@ -1,5 +1,45 @@
 # Failure Log (docs/failures.md)
 
+## Failure 013: Muddy Ambient Backdrop Gradients and Conflicting Dark Stage Enforcement in Light Mode (2026-11-18)
+- **Mistake:** Attempting to preserve a blurred backdrop image with dark gradients (`bg-gradient-to-t from-[#08090C] ...`) and forcing `.cinema-stage` to `#09090B` with white glowing text inside Light Mode, resulting in an ugly grey/black smudge behind movie titles, unreadable white-on-white text, and dark rectangular patches across light mode mockups.
+- **Impact:** Light Mode on mobile and desktop detail pages (`mockup_media_detail.html`, `mockup_series_detail.html`) looked dirty, broken, and unreadable, frustrating the user repeatedly.
+- **Fix:** Completely purged the `<div class="absolute inset-0 z-0">` ambient blur and gradient overlays from the HTML, removed the broken contrast enforcement block across all 23 mockups, and converted `.cinema-stage` in Light Mode into a 100% clean, spotless solid white (`#FFFFFF`) canvas with dark slate (`#0F172A`) typography.
+- **Rule:** Never layer dark gradient overlays or blurred images onto light-mode containers; in light mode, stage backgrounds must be solid, crisp, and clean with zero gradient mud.
+
+## Failure 012: CSS Light Mode Inverted Specificity Collision on Cinema Stage Elements (2026-11-18)
+- **Mistake:** Forcing `.cinema-stage` to remain dark (`#0A0D14 !important`) in Light Mode while a global rule `body.light-theme .text-white { color: #0F172A !important; }` converted title text to dark navy, resulting in unreadable dark-on-dark text in Light Mode.
+- **Impact:** Movie detail titles (e.g. "Dune: Part Two") became nearly invisible dark navy text against a black stage background.
+- **Fix:** Redesigned `.cinema-stage` in Light Mode to render as an authentic clean light canvas (`#FFFFFF`) with crystal clear `#0F172A` text, and guaranteed `#FFFFFF` text inside all primary red CTA buttons.
+- **Rule:** Never apply dark backgrounds to sections in light mode without scoping child text rules to `#FFFFFF` with strict priority, and prefer consistent theme semantics across all views.
+
+## Failure 011: Autopilot Enrichment, Vision Gate False Positives & Kinochilar Series Pagination Bugs (2026-11-18)
+- **Mistake:**
+  1. **Donghua vs Anime Collision (`#1116`):** Chinese donghua «Ishlayotgan yovuz qirol» (*The Demon King Who Lost His Job*, `TMDb 283322`, 2025) from `@ANITOOBUZ_BOT` was misidentified as 2013 Japanese anime *The Devil is a Part-Timer!* (`TMDb 45997`).
+  2. **Missing Kinochilar Site Search:** `scraper/site_search.py` lacked `_search_kinochilar()`, returning empty results in Admin Panel when searching the `kinochilar` source.
+  3. **Vision Gate False Positives on Studio Intros:** Opening frames (`35s–85s`) showing studio intros, watermarks, or cast credits caused Gemini Vision to return `"Unknown"` / `"studio intro"`, which Vision Gate treated as a content mismatch (`rejected`), while unawaited `QueueManager().update_status()` calls overwrote the specific reason with generic `"Video olinmadi yoki xatolik"`.
+  4. **Verbose LLM Title Translation (`#889`):** Gemini returned multi-line explanatory prose instead of a bare title for *Ode to My Father* (`Otamga qasida`), polluting `movies.title` and topic `#9595`.
+  5. **Kinochilar Series Stopping After Episode 1:** `@kinochilar_fast_bot` requires clicking `"Qismlar ro'yxati"`, mutates the episode list message in-place into quality buttons without a back button after Episode 1 is clicked, uses `➡️ Keyingi` / `⬅️ Oldingi` pagination, and captions subsequent episodes with the donor's original title (`item.title`) rather than the TMDb-enriched title.
+- **Fix:**
+  1. Updated `series #1116`, `series_sources #1298`, and Topic `#9463` to `Ishlayotgan yovuz qirol (2025)` (`TMDb 283322`), and added the mapping to `ANIME_TITLE_MAP` in `scraper/smart_enricher.py`.
+  2. Added `_search_kinochilar()` in `scraper/site_search.py` and wired it into `search_sites()`.
+  3. Updated `scraper/autopilot_vision_gate.py` and `scraper/video_verifier.py` to gracefully pass `"Unknown"` / `"watermark"` / `"studio intro"` / `"credits"` frames when no conflicting title is detected, and switched status updates in `scraper/telethon_moderator_pipeline.py` to `await QueueManager().update_status_async(...)`.
+  4. Added `clean_translated_title_output()` in `backend/app/infrastructure/external/translator.py` and cleaned Movie `#889` (`Otamga qasida`) and Topic `#9595`.
+  5. Added `"Qismlar ro'yxati"` auto-click, `_reopen_series_episodes_card()`, `➡️ Keyingi` / `⬅️ Oldingi` pagination support, and `item.title` / `source_id` matching in `matches_series_video()` inside `scraper/telethon_moderator_pipeline.py`; re-queued 8 incomplete series with `priority = 100`.
+- **Rule:** Always handle in-place Telegram message mutations in donor bots by re-fetching the start card when episode buttons disappear, strip LLM conversational preamble from title translations, and never reject videos on generic studio intro/watermark frames unless a distinct conflicting title is positively identified.
+
+## Failure 010: Direct Ingest Status Transition from `queued` to `published` Violating State Machine
+- **Mistake:** Fast ingestion routes in autopilot attempted to update item status from `queued` directly to `published` via `QueueManager().update_status()`. IngestItemModel state machine only permitted `queued -> in_progress`.
+- **Impact:** Raised `ValueError: Taqiqlangan status o'tishi: 'queued' -> 'published'`, aborting database queue item status sync even though the media itself was successfully uploaded and published.
+- **Fix:** Enhanced `update_status_async` in `scraper/queue_manager.py` to automatically execute intermediary `queued -> in_progress` transition before transitioning to `published`.
+- **Rule:** When updating state machine entities to terminal states, always respect intermediary lifecycle stages or auto-promote through permitted paths.
+
+## Failure 009: Unvalidated Ingest Seed TMDb IDs Causing Franchise Corruption (Kichkina Dodo)
+- **Mistake:** Seed catalog `ingest_items` contained erroneous/copy-pasted `tmdb_id` entries (e.g. `82540` for Slime Code 218, which actually corresponds to German cartoon "Kleiner Dodo"), and `smart_enricher.py` gave `explicit_tmdb_id` an unconditional `100.0` score without verifying title compatibility.
+- **Impact:** Pipeline created Series 1102 "Kichkina Dodo" and uploaded Slime anime episodes under the caption "Kichkina Dodo 4-Mavsum" in Telegram topic 7959.
+- **Fix:** Purged Series 1102, its seasons, episodes, and Telegram topic 7959. Added an automated title validation guard in `scraper/smart_enricher.py`: if `explicit_tmdb_id` scores < 35.0 against the candidate title, it is rejected with a warning and falls back to AI search. Audited and cleaned all corrupted TMDb IDs in `ingest_items`.
+- **Rule:** Never trust external or pre-seeded IDs without semantic verification against the input entity's title.
+
+
 ## Failure 001: Asyncpg Multi-Statement Execution Failure in Migrations
 - **Mistake:** Passing multiple SQL statements inside a single `op.execute()` call in Alembic migration files (`c011ec7100`, `d012ec7201`, `e013ec7302`).
 - **Impact:** Asyncpg protocol strictly forbids multiple statements in a single prepared query, causing migration crashes on clean test databases.
@@ -47,6 +87,12 @@
 - **Impact:** The homepage rendered two distinct "Seriallar" rows: the main row with seeded series (Taxtlar oʻyini, Breaking Bad), and an isolated second row below containing only a single card ("Flash").
 - **Fix:** Removed `page_ids.append(13)` in `telethon_moderator_pipeline.py`. Deleted Page 13 ("Seriallar") from `pages` table and unbound Flash from `page_series`. Added frontend duplicate protection in `website/app/page.tsx` filtering out `pagesData` with title or slug matching "Seriallar" or "Kinolar".
 - **Rule:** Primary media entities (`movies`, `series`) must not be given dummy subpage IDs matching their main entity names. Homepage dynamic page loops must filter out canonical sections to prevent row title duplication.
+
+## Failure 009: Premature Franchise Guessing & Multi-Card Ingestion Collision
+- **Mistake:** Blindly assuming that sequential AniToob bot card codes (e.g. 227..234) represented sequential anime seasons (1..6) in `sync_anitoob_merged_queue.py` without verifying their real content in Telegram.
+- **Impact:** Card 230 was marked Season 4, creating an empty gap (Season 1 had 1 episode, Seasons 2 and 3 were skipped, and Season 4 was created with 11 episodes). In reality, AniToob only possessed Season 1 across multiple re-uploaded/split cards.
+- **Fix:** (1) Inspected real bot card content via Telethon, identifying that codes 227..234 are Season 1 copies. (2) Removed fake season mappings, marked redundant duplicates as `already_exists`, and mapped working Code 230 to Season 1. (3) Updated `telethon_moderator_pipeline.py` to dynamically adjust `total_ep_count = max(total_ep_count, max(ep_video_map.keys()))`. (4) Cleaned up Series 1100 corrupted seasons/episodes and re-ingested clean Season 1.
+- **Rule:** Never invent or assume season numbers in franchise mappings without verifying actual episode counts and bot card payloads. Duplicate and broken cards must be marked `already_exists` or `failed`.
 
 ## Failure 009: Telethon Topic Deletion Parameter & Multi-Season Bundling Flaw
 - **Mistake:** (1) In `_delete_topic_safe`, `DeleteTopicHistoryRequest` was imported from `telethon.tl.functions.channels` instead of `messages`, and passed `channel=peer` instead of `peer=peer`, causing silent failures on every forum topic deletion attempt. (2) AniToob and Animeelar pipelines hardcoded `season_number=1`, ignoring season tags in titles (e.g. "Naruto 2-fasl") and dumping multi-season episodes into Season 1 or creating duplicate series cards. (3) `smart_enricher` did not enforce strict animation genre (16) for anime, allowing non-animated archive broadcasts (Obs 86 Show) and fan edits (Naruto The Ocean Cut) to match.
@@ -130,3 +176,27 @@
   4. Updated catalog/page.tsx, doramas/page.tsx, movies/page.tsx, and series/page.tsx to fetch balanced mixes of series and movies.
   5. Added comprehensive regression test suite in ackend/tests/test_dorama_catalog_distribution.py (4 tests).
 - **Rule:** Never rely on a single categorization vector; always enforce dual-index resilience between Categories and Pages in repositories. Isolate anime from cartoons by explicitly stripping cross-genres. Always query both series and movie endpoints when rendering polymorphic catalog media types.
+
+### 2026-11-14: Blind Trust in Seeded Ingest TMDb IDs Causing Cartoon Hallucination ("Kichkina Dodo")
+- **What happened:** Ingestion of Code 218 (`Shilliq sifatida qayta tug'ilganim haqida (4-mavsum)`) erroneously created Series 1102 titled `"Kichkina Dodo (2026)"` and posted anime episodes into a newly created Telegram topic titled `"📺 Kichkina Dodo (2026)"`.
+- **Root cause:** 
+  1. Historical seed typo in `ingest_items` table: row 1223 had `tmdb_id = 82540` (TMDb ID for the European animation "Kleiner Dodo" / "Kichkina Dodo") instead of `82684` ("That Time I Got Reincarnated as a Slime"). Similar dummy IDs existed for Cyberpunk and Tomodachi Game.
+  2. `smart_enricher.py` blindly trusted `explicit_tmdb_id` with `best_score = 100.0` without cross-validating the candidate title against the input title.
+- **Fix:**
+  1. Immediately killed the ingestion task, deleted Telegram topic 7959 via Telegram Bot API, purged Series 1102, its seasons, and episodes from PostgreSQL.
+  2. Updated `smart_enricher.py` to strictly score `explicit_tmdb_id` against the input title: if score < 35.0, it rejects the explicit ID, logs a warning, and falls back to AI search.
+  3. Added Slime directly into `ANIME_TITLE_MAP` with TMDb ID `82684`.
+  4. Swept `ingest_items` in PostgreSQL and corrected all corrupted placeholder `tmdb_id`s (82540, 209867).
+- **Rule:** Never grant 100.0 confidence to external or seeded TMDb IDs without title token validation. Always verify token overlap before renaming a media entity.
+
+
+### 2026-11-18: Global CSS Gradient Selector Bleed into Cinema Stage Hero
+- **What happened:** A global utility override `body.light-theme .from-[#08090C]` intended to soften marquee edge fades globally overrode the dark gradients inside `.cinema-stage`, turning mobile hero headers into washed-out muddy grey-white vertical split gradients and causing film titles to render in dark navy blue against dark images.
+- **Root cause:** Writing un-scoped Tailwind arbitrary utility overrides (`.from-[#08090C]`) in the global light theme stylesheet without scoping them strictly to `.marquee-container`.
+- **Fix:** Confined all marquee gradient overrides strictly to `.marquee-container .from-[#08090C]` and explicitly enforced deep dark cinema backgrounds (`#08090C`) and luminous white typography (`#FFFFFF`) with KaTeX/CSS specificity inside `.cinema-stage`.
+- **Rule:** Never apply un-scoped color overrides to arbitrary Tailwind gradient utility classes (`.from-*`, `.to-*`); always prefix them with a parent container class.
+
+### 2026-11-27: Shared SQLite Test Pollution & Post-Reload Mock Binding in `test_smm_worker.py`
+- **What happened:** Adding `await db_session.commit()` inside `test_smm_rubric_planner.py` persisted `MovieModel(id=1)` inside `test_shared.sqlite3` across test files, breaking `test_auto_pick_catalog_movie_selects_unused_published_movie_with_storage`; additionally, importing `process_generating_job` at top of `test_smm_worker.py` bypassed `patch(...)` after an earlier test ran `importlib.reload(scraper.smm_worker)`, and calling `download_sparse_clip_source` with unverified kwargs caused silent fallback.
+- **Fix:** Switched new unit tests to `await db_session.flush()` (no committed row leakage), used post-reload module imports inside worker tests, and fixed `download_sparse_clip_source(..., target_ratio=0.35, chunk_mb=..., clip_duration=90.0)` with explicit `sample_start_sec`/`sample_span_sec` bounds so sparse `0x00` holes are never probed.
+- **Rule:** Never guess helper keyword signatures without reading their declaration, avoid `.commit()` in shared-SQLite unit tests unless cleaning up explicitly, and avoid binding module attributes before tests that call `importlib.reload`.

@@ -686,4 +686,140 @@ async def test_resolve_media_poster_url_localizes_unlocalized_poster_before_cove
     mock_loc.assert_awaited_once()
 
 
+@pytest.mark.asyncio
+async def test_auto_pick_catalog_movie_selects_weekly_rubric_in_prime_slot(db_session):
+    from datetime import timedelta
+    from scraper.smm_worker import auto_pick_catalog_movie
+
+    tashkent = timezone(timedelta(hours=5))
+    movie = MovieModel(
+        title="Muqaddima",
+        code="INC1",
+        short_code="1012",
+        release_year=2010,
+        imdb_rating=8.4,
+        tmdb_id=27205,
+        genres="Triller",
+        publish_status="published",
+    )
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbekcha", storage_channel_message_id=501))
+    await db_session.merge(SmmSettingsModel(id=1, mode="FULL_AUTO", daily_limit=3, auto_pick_from_catalog=True, enabled_platforms=["telegram"]))
+    await db_session.flush()
+
+    # Monday 21:05 Tashkent prime slot -> selects 'tavsiya'
+    mon_prime = datetime(2026, 11, 23, 21, 5, tzinfo=tashkent)
+    picked = await auto_pick_catalog_movie(db_session, now_local=mon_prime)
+    assert picked is not None
+    assert picked.movie_code == "1012"
+    assert picked.clip_mode == "tavsiya"
+
+
+@pytest.mark.asyncio
+async def test_process_generating_job_routes_rubric_to_golden_standard_engine(db_session, tmp_path):
+    from pathlib import Path
+    from scraper.smm_worker import process_generating_job as run_gen_job
+
+    movie = MovieModel(
+        title="Yulduzlar sari",
+        code="AST1",
+        short_code="3955",
+        release_year=2026,
+        imdb_rating=8.1,
+        tmdb_id=1359005,
+        description="Kosmik kema tush tizimi ishdan chiqadi.",
+        genres="Fantastika",
+        publish_status="published",
+    )
+    db_session.add(movie)
+    await db_session.flush()
+    db_session.add(MovieTranslationModel(movie_id=movie.id, language="O'zbek tilida", storage_channel_message_id=601))
+    cfg = await db_session.merge(SmmSettingsModel(id=1, mode="FULL_AUTO", enabled_platforms=["telegram"], telegram_channel_id="-100123"))
+    job = SmmClipJobModel(movie_code="3955", title="Yulduzlar sari", media_type="movie", media_id=movie.id, clip_mode="yangiliklar", status="generating")
+    db_session.add(job)
+    await db_session.flush()
+
+    tg_client = AsyncMock()
+    tg_client.get_messages = AsyncMock(return_value=MagicMock(id=601))
+    out_file = tmp_path / f"clip_{job.id}.mp4"
+
+    async def _fake_sparse(client, msg, chunk_path, **kwargs):
+        Path(chunk_path).write_bytes(b"fake-chunk")
+        return chunk_path, 1800.0
+
+    async def _fake_rubric(**kwargs):
+        Path(kwargs["output_path"]).write_bytes(b"rubric-mp4")
+        return {"output_path": kwargs["output_path"], "rubric": "yangiliklar", "hook_text": "2026 PREMYERASI", "duration_sec": 28.0, "narration_end": 21.5}
+
+    with (
+        patch("scraper.smm_worker.download_sparse_clip_source", new=AsyncMock(side_effect=_fake_sparse)),
+        patch("scraper.smm_worker.create_rubric_smm_clip", new=AsyncMock(side_effect=_fake_rubric)) as mock_rubric,
+        patch("scraper.smm_worker._resolve_media_poster_url", new=AsyncMock(return_value=None)),
+        patch("scraper.smm_worker._post_telegram_video", new=AsyncMock(return_value=(True, "777", None))),
+    ):
+        updated = await run_gen_job(db_session, job, cfg, tg_client, storage_chat_id=-100999, uploads_dir=str(tmp_path))
+
+    assert out_file.exists()
+    assert updated.status == "scheduled"
+    assert updated.hook_text == "2026 PREMYERASI"
+    assert updated.clip_mode == "yangiliklar"
+    mock_rubric.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_run_smm_worker_tick_prioritizes_rubrics_and_publishes_due_scheduled_at(db_session):
+    from datetime import timedelta
+    from sqlalchemy import delete
+    from scraper.smm_worker import run_smm_worker_tick as run_tick
+
+    await db_session.execute(delete(SmmClipJobModel))
+    await db_session.merge(
+        SmmSettingsModel(
+            id=1,
+            mode="FULL_AUTO",
+            daily_limit=1,
+            schedule_hours=["21:00"],
+            auto_pick_from_catalog=False,
+            enabled_platforms=["telegram"],
+            telegram_channel_id="-100123",
+        )
+    )
+    scene_job = SmmClipJobModel(movie_code="1014", title="Old scene", clip_mode="scene", status="generating")
+    rubric_job = SmmClipJobModel(movie_code="3968", title="Spider", clip_mode="yangiliklar", status="generating")
+    due_pub = SmmClipJobModel(
+        movie_code="3955",
+        title="Due Rubric",
+        clip_mode="tavsiya",
+        status="scheduled",
+        scheduled_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+    )
+    db_session.add_all([scene_job, rubric_job, due_pub])
+    await db_session.flush()
+
+    picked_gen_ids = []
+    picked_pub_ids = []
+
+    async def _fake_gen(db, job, cfg, tg_client, storage_chat_id):
+        picked_gen_ids.append(job.id)
+        job.status = "scheduled"
+        return job
+
+    async def _fake_pub(db, job, cfg, **kwargs):
+        picked_pub_ids.append(job.id)
+        job.status = "completed"
+        return job
+
+    with (
+        patch("scraper.smm_worker.process_generating_job", side_effect=_fake_gen),
+        patch("scraper.smm_worker.process_publish_job", side_effect=_fake_pub),
+    ):
+        res = await run_tick(db_session, tg_client=MagicMock(), storage_chat_id=-100999)
+
+    assert picked_gen_ids == [rubric_job.id]
+    assert picked_pub_ids == [due_pub.id]
+    assert res == {"generated": 1, "published": 1}
+
+
+
 

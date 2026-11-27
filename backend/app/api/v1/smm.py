@@ -42,8 +42,10 @@ class SmmClipJobCreate(BaseModel):
     media_id: int | None = None
     movie_code: str
     title: str
+    clip_mode: Literal["scene", "facts", "tavsiya", "bilasizmi", "yangiliklar", "kadr_ortida"] = "scene"
+    hook_text: str | None = None
     start_sec: float = 0.0
-    duration_sec: float = 45.0
+    duration_sec: float | None = None
     clip_path: str | None = None
     caption: str | None = None
     generate: bool = False
@@ -261,8 +263,11 @@ async def create_smm_job(
         initial_status = "scheduled" if cfg.mode == "FULL_AUTO" else "waiting_approval"
         stage = None
     platforms = {p: {"enabled": True, "status": "pending", "post_id": None, "error": None} for p in cfg.enabled_platforms}
+    data = payload.model_dump(exclude={"generate"})
+    if data.get("duration_sec") is None:
+        data["duration_sec"] = float(cfg.clip_duration_sec or 28)
     job = SmmClipJobModel(
-        **payload.model_dump(exclude={"generate"}),
+        **data,
         status=initial_status,
         progress_pct=0,
         progress_stage=stage,
