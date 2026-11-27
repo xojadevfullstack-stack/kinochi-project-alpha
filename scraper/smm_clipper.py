@@ -305,7 +305,7 @@ def render_vertical_clip(
         "-c:v", "libx264", *encode_opts, "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output_path,
     ]
-    render_timeout = max(30.0, float(os.getenv("SMM_RENDER_TIMEOUT_SEC", "360")))
+    render_timeout = max(30.0, float(os.getenv("SMM_RENDER_TIMEOUT_SEC", "540")))
     run_kwargs: Dict[str, Any] = {"capture_output": True, "text": True, "timeout": render_timeout}
     if os.name != "nt" and hasattr(os, "nice"):
         run_kwargs["preexec_fn"] = lambda: os.nice(15)
