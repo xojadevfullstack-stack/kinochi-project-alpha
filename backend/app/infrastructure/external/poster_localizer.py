@@ -516,6 +516,65 @@ def _is_periodic_tile_style(cfg: dict[str, Any]) -> bool:
     return any(k in desc for k in ("periodic", "chemical", "element tile", "element square", "atomic number"))
 
 
+def _is_spray_stencil_style(cfg: dict[str, Any]) -> bool:
+    desc = f"{cfg.get('title_motifs', '')} {cfg.get('style_brief', '')}".lower()
+    return any(k in desc for k in ("spray", "stencil", "drip", "splatter"))
+
+
+def _apply_spray_stencil_mask(
+    mask_hi: Image.Image,
+    x_hi: int,
+    y_hi: int,
+    target_w: int,
+    target_h: int,
+) -> Image.Image:
+    """Add authentic spray-paint mist halo, subtle stencil grit, and bottom paint drips to a title mask."""
+    sw, sh = mask_hi.size
+    arr = np.asarray(mask_hi, dtype=np.float32)
+    rng = np.random.default_rng(7)
+
+    # Fine spray-paint mist specks around letter edges
+    halo = cv2.GaussianBlur(arr, (21, 21), 0)
+    speck_noise = rng.random((sh, sw), dtype=np.float32)
+    mist = np.where((halo > 18.0) & (arr < 120.0) & (speck_noise < halo / 360.0), 210.0, 0.0)
+    # Subtle rough stencil edge pitting inside solid strokes
+    edge = cv2.dilate(arr, np.ones((5, 5), np.uint8)) - cv2.erode(arr, np.ones((7, 7), np.uint8))
+    grit = np.where((edge > 40.0) & (rng.random((sh, sw), dtype=np.float32) < 0.24), 0.35, 1.0)
+    out = np.clip(arr * grit + mist, 0.0, 255.0)
+
+    # Organic vertical paint drips extending downward from thick bottom strokes
+    drip_layer = Image.fromarray(out.astype(np.uint8))
+    dd = ImageDraw.Draw(drip_layer)
+    x_end = min(sw - 6, x_hi + target_w)
+    num_drips = max(5, min(9, target_w // 95))
+    if x_end > x_hi + 20:
+        cand_xs = np.linspace(x_hi + int(target_w * 0.06), x_end - int(target_w * 0.06), num_drips)
+        for idx, cx_f in enumerate(cand_xs):
+            cx = int(cx_f + rng.integers(-12, 13))
+            cx = max(4, min(sw - 5, cx))
+            col = arr[:, cx]
+            ys_on = np.where(col > 180)[0]
+            if len(ys_on) == 0:
+                continue
+            y_base = int(ys_on[-1])
+            if y_base < y_hi + int(target_h * 0.85):
+                continue
+            drip_len = int(target_h * (0.18 + 0.18 * ((idx * 37) % 5) / 4.0))
+            if y_base + drip_len >= sh - 6:
+                continue
+            rad_top = max(3, int(target_h * 0.024))
+            rad_bot = max(4, int(target_h * 0.032))
+            dd.polygon(
+                [(cx - rad_top, y_base - 3), (cx + rad_top, y_base - 3), (cx + rad_bot // 2, y_base + drip_len), (cx - rad_bot // 2, y_base + drip_len)],
+                fill=245,
+            )
+            dd.ellipse(
+                [cx - rad_bot, y_base + drip_len - rad_bot, cx + rad_bot, y_base + drip_len + rad_bot],
+                fill=248,
+            )
+    return drip_layer
+
+
 def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, list[str]]:
     clean = _clean_poster_display_title(title)
     if ":" in clean:
@@ -811,22 +870,46 @@ def render_uzbek_title_on_poster(
         rgba.convert("RGB").save(out_buf, format="JPEG", quality=92, optimize=True)
         return out_buf.getvalue()
 
+    is_spray = _is_spray_stencil_style(cfg)
+    tbox = cfg.get("title_box")
+    # If a 2-word stacked title like "THE BOYS" collapsed into 1 Uzbek word ("YIGITLAR"),
+    # anchor below the small top word ("THE") so characters above stay unobstructed.
+    if (
+        len(main_lines_split) == 1
+        and not sub_lines
+        and not is_top
+        and tbox
+        and len(tbox) == 4
+        and (int(tbox[2]) - int(tbox[0])) >= 230
+    ):
+        y_start_1x = int(h * (int(tbox[0]) + int((int(tbox[2]) - int(tbox[0])) * 0.24)) / 1000.0)
+        tbox = [int(tbox[0] + (int(tbox[2]) - int(tbox[0])) * 0.22), tbox[1], tbox[2], tbox[3]]
+
+    eff_font_style = "bold" if (is_spray and cfg["font_style"] in ("blockbuster", "modern", "bold")) else cfg["font_style"]
+    eff_is_italic = bool(
+        cfg.get("is_italic", False)
+        or (eff_font_style == "blockbuster" and cfg.get("bevel_style") == "metallic")
+    )
+
     S = 2
     sw, sh = w * S, h * S
-    is_vert = _is_vertical_title_box(cfg.get("title_box"), w, h)
+    is_vert = _is_vertical_title_box(tbox, w, h)
     mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_main_title_mask(
         sw,
         sh,
         main_text,
-        cfg["font_style"],
-        cfg.get("title_box"),
+        eff_font_style,
+        tbox,
         y_start_1x,
         is_top,
         letter_spacing=cfg.get("letter_spacing", "normal"),
         font_weight=cfg.get("font_weight", "bold"),
-        is_italic=bool(cfg.get("is_italic", False) or cfg["font_style"] == "blockbuster"),
+        is_italic=eff_is_italic,
         force_center=(not remove_existing_text) and (not is_vert),
     )
+    if is_spray and not is_vert:
+        mask_hi = _apply_spray_stencil_mask(mask_hi, x_hi, y_hi, target_w, target_h)
+        target_h = min(sh - y_hi - 2, int(target_h * 1.32))
     mask_np = np.asarray(mask_hi, dtype=np.uint8)
     binary = (mask_np > 125).astype(np.uint8)
 

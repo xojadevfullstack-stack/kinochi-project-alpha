@@ -1007,6 +1007,43 @@ def test_v9_periodic_tile_renders_green_element_squares():
     assert len(emerald_pixels) > 30, "Periodic tile motif must draw emerald green chemical squares"
 
 
+def test_spray_stencil_renders_upright_with_bottom_drips_only():
+    from app.infrastructure.external.poster_localizer import render_uzbek_title_on_poster
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(20, 32, 38))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Yigitlar",
+        style={
+            "placement": "bottom",
+            "y_ratio": 0.612,
+            "font_style": "blockbuster",
+            "font_weight": "heavy",
+            "letter_spacing": "tight",
+            "title_stack_mode": "stacked_equal",
+            "is_italic": False,
+            "bevel_style": "flat",
+            "texture_style": "weathered",
+            "primary_color": "#F0F0F0",
+            "secondary_color": "#D0D0D0",
+            "needs_backdrop": False,
+            "title_box": [612, 98, 924, 888],
+            "style_brief": "Heavy stencil spray-painted lettering with dripping paint.",
+            "title_motifs": "Spray-paint drips extending from the bottom edges.",
+        },
+        remove_existing_text=False,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes)).convert("RGB")
+    arr = np.asarray(out_img)
+    white = (arr[:, :, 0] > 200) & (arr[:, :, 1] > 200) & (arr[:, :, 2] > 200)
+    ys, xs = np.where(white)
+    assert len(xs) > 500
+    # Lowered anchor sits strictly below 65% height (avoiding character boots above) and centered horizontally
+    assert int(ys.min()) >= int(750 * 0.65)
+    assert abs(((xs.min() + xs.max()) / 2.0) - 250.0) <= 4.0
+
+
+
 @pytest.mark.asyncio
 async def test_v9_vertical_title_does_not_trigger_giant_logo_fallback(monkeypatch):
     from app.infrastructure.external import poster_localizer
