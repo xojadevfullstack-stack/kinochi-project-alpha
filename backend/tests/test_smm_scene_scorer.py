@@ -320,7 +320,7 @@ async def test_find_viral_scene_target_caps_ratio_away_from_end_credits():
         target = await find_viral_scene_target(tmdb_id=1399, title="Game of Thrones", content_type="tv", season_number=3, episode_number=9)
 
     assert target is not None
-    assert target["target_ratio"] <= 0.84
+    assert target["target_ratio"] <= 0.91
     assert target["peak_sec"] < 3025.0
 
 
@@ -383,4 +383,47 @@ async def test_scene_finder_generates_spoiler_free_uzbek_hook_and_fallback():
     assert hint is not None
     assert hint["hook_uz"] == "U eshikni ochgach hammasi o'zgardi!"
     assert hint["yt_title_uz"] == "Bu eshik ortida nima bor edi?"
+
+
+@pytest.mark.asyncio
+async def test_find_viral_scene_target_centers_anchor_near_climax_and_allows_late_act():
+    from scraper.smm_scene_finder import compress_srt_for_llm, find_viral_scene_target, parse_srt_blocks
+
+    # Finer SRT digest resolution (<75s buckets for standard ~45m episode)
+    ep_srt = (
+        "1\n00:01:00,000 --> 00:01:05,000\nStart.\n\n"
+        "2\n00:01:40,000 --> 00:01:45,000\nSecond beat.\n\n"
+        "3\n00:36:15,000 --> 00:36:20,000\nPut the knife down!\n\n"
+        "4\n00:46:50,000 --> 00:46:58,000\nOutro.\n"
+    )
+    digest = compress_srt_for_llm(parse_srt_blocks(ep_srt))
+    assert "[100s " in digest or "[90s " in digest
+
+    # Breaking Bad S05E14 (peak=2175s, srt_end=2818s): anchor should sit ~30-45s before peak, not 120s early!
+    bb_pick = {"peak_sec": 2175, "backup_peak_sec": 1200, "visual_cue": "Skyler knife confrontation", "reason_uz": "To'qnashuv"}
+    with (
+        patch("scraper.smm_scene_finder.fetch_imdb_id", new=AsyncMock(return_value="tt2301451")),
+        patch("scraper.smm_scene_finder.fetch_stremio_srt", new=AsyncMock(return_value=ep_srt)),
+        patch("scraper.smm_scene_finder._ask_gemini_scene_timecode", new=AsyncMock(return_value=bb_pick)),
+    ):
+        bb = await find_viral_scene_target(tmdb_id=1396, title="Breaking Bad", content_type="tv", season_number=5, episode_number=14)
+
+    assert bb is not None
+    anchor_sec = bb["target_ratio"] * bb["srt_end_sec"]
+    assert 2125.0 <= anchor_sec <= 2150.0
+    assert bb["backup_ratio"] == pytest.approx(round((1200.0 - 35.0) / bb["srt_end_sec"], 4), abs=0.01)
+
+    # Late-act climax like Endgame Snap (9000 / 10153 = 88.6%) must NOT be throttled down to 0.84
+    long_srt = "1\n00:02:00,000 --> 00:02:05,000\nIntro\n\n2\n02:30:00,000 --> 02:30:05,000\nI am Iron Man\n\n3\n02:49:10,000 --> 02:49:13,000\nCredits\n"
+    eg_pick = {"peak_sec": 9000, "visual_cue": "Iron Man snap", "reason_uz": "Yakun"}
+    with (
+        patch("scraper.smm_scene_finder.fetch_imdb_id", new=AsyncMock(return_value="tt4154796")),
+        patch("scraper.smm_scene_finder.fetch_stremio_srt", new=AsyncMock(return_value=long_srt)),
+        patch("scraper.smm_scene_finder._ask_gemini_scene_timecode", new=AsyncMock(return_value=eg_pick)),
+    ):
+        eg = await find_viral_scene_target(tmdb_id=299534, title="Avengers: Endgame", content_type="movie")
+
+    assert eg is not None
+    assert 0.86 <= eg["target_ratio"] <= 0.91
+
 

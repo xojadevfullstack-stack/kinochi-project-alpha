@@ -64,16 +64,21 @@ def parse_srt_blocks(srt_text: str) -> List[Tuple[float, float, str]]:
     return blocks
 
 
-def compress_srt_for_llm(blocks: List[Tuple[float, float, str]], bucket_sec: int = 75) -> str:
-    """Group timestamped SRT lines into ~75s buckets for compact LLM timecode lookup."""
+def compress_srt_for_llm(blocks: List[Tuple[float, float, str]], bucket_sec: Optional[int] = None) -> str:
+    """Group timestamped SRT lines into adaptive ~30-60s buckets for accurate LLM timecode lookup."""
     if not blocks:
         return ""
+    if bucket_sec is None:
+        span = float(blocks[-1][1])
+        eff_bucket = 30 if span <= 3600 else (45 if span <= 7200 else 60)
+    else:
+        eff_bucket = max(15, int(bucket_sec))
     buckets: Dict[int, List[str]] = {}
     for start, _, txt in blocks:
-        buckets.setdefault(int(start // max(15, bucket_sec)), []).append(txt)
+        buckets.setdefault(int(start // eff_bucket), []).append(txt)
     lines = []
     for b in sorted(buckets):
-        t = b * max(15, bucket_sec)
+        t = b * eff_bucket
         mm, ss = divmod(t, 60)
         lines.append(f"[{t}s / {mm:02d}:{ss:02d}] {' | '.join(buckets[b])[:220]}")
     return "\n".join(lines)
@@ -139,10 +144,11 @@ async def _ask_gemini_scene_timecode(
     ep_tag = f" Season {season_number} Episode {episode_number}" if season_number and episode_number else ""
     prompt = (
         f"Analyze the timestamped subtitle digest of '{title}'{ep_tag} (span: {int(srt_end_sec)}s).\n"
-        "Pick the SINGLE MOST ICONIC / VIRAL 25-30s moment (plot twist, shock reveal, climax, or gripping action/emotion) for Reels/TikTok.\n"
-        "Avoid first 120s intro recaps and NEVER pick timestamps in the last 10% (credits) of the subtitle span.\n"
+        "Pick peak_sec at the EXACT peak climax/action/plot-twist moment (NOT slow buildup beforehand) for a 25-30s Reel/Short, "
+        "plus a strong backup_peak_sec earlier (25%-75% of span) in case the finale overlaps credits.\n"
+        "Avoid first 120s intro recaps and NEVER pick timestamps in the final 6% (end credits) of the span.\n"
         "Also write a punchy 3-6 word Uzbek intrigue hook (`hook_uz`) and YouTube Shorts hook title (`yt_title_uz`) WITHOUT revealing the movie title or ending.\n"
-        'Return STRICT JSON ONLY: {"start_sec": int, "peak_sec": int, "visual_cue": "short visual description", "reason_uz": "1 short Uzbek sentence", "hook_uz": "3-6 word Uzbek hook", "yt_title_uz": "short Uzbek YT title"}\n\n'
+        'Return STRICT JSON ONLY: {"start_sec": int, "peak_sec": int, "backup_peak_sec": int, "visual_cue": "short visual description", "reason_uz": "1 short Uzbek sentence", "hook_uz": "3-6 word Uzbek hook", "yt_title_uz": "short Uzbek YT title"}\n\n'
         f"SUBTITLE DIGEST:\n{digest}"
     )
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}}
@@ -199,13 +205,21 @@ async def find_viral_scene_target(
         return None
     max_safe_peak = max(120.0, srt_end - 45.0)
     peak = min(peak, max_safe_peak)
-    anchor_sec = max(60.0, peak - 120.0)
+    anchor_sec = max(60.0, peak - 35.0)
+    backup_ratio: Optional[float] = None
+    try:
+        backup_peak = float(pick.get("backup_peak_sec") or 0)
+        if 120.0 <= backup_peak < peak - 90.0:
+            backup_ratio = round(max(0.15, min(0.78, (backup_peak - 35.0) / srt_end)), 4)
+    except (TypeError, ValueError):
+        backup_ratio = None
     hook_uz = sanitize_hook_text(str(pick.get("hook_uz") or ""), movie_title=title)
     yt_title_uz = sanitize_hook_text(str(pick.get("yt_title_uz") or ""), movie_title=title, max_chars=58)
     return {
         "peak_sec": peak,
         "srt_end_sec": srt_end,
-        "target_ratio": round(max(0.05, min(0.84, anchor_sec / srt_end)), 4),
+        "target_ratio": round(max(0.05, min(0.91, anchor_sec / srt_end)), 4),
+        "backup_ratio": backup_ratio,
         "visual_cue": str(pick.get("visual_cue") or "").strip(),
         "reason_uz": str(pick.get("reason_uz") or "").strip(),
         "hook_uz": hook_uz,

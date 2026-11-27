@@ -207,7 +207,8 @@ async def check_frames_for_ads_or_nsfw(
         "1) Carefully check ALL FOUR CORNERS (top-left, top-right, bottom-left, bottom-right) — even dark or semi-transparent areas — for overlaid website/channel watermarks/logos "
         "(e.g. Kinochilar, ASILMEDIA.NET, UZMOVI, ASLANBE STUDIO, @channel) or betting ad banners (Mostbet, 1xBet, Melbet, Pin-Up, Linebet). "
         "2) CONSISTENCY RULE: Whenever ANY watermark/logo/ad is visible in ANY corner (even small or faint), you MUST include its normalized [0.0-1.0] box in blur_boxes with generous padding; NEVER mention a watermark/logo in reason while returning blur_boxes: []. Return [] ONLY if all four corners are genuinely clean. "
-        "3) Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (corner site watermarks can be blurred safely). Ignore dialogue subtitles and normal movie props. "
+        "3) Set is_clean=true if there is no NSFW/gore, no end credits, and no gambling ad banner (corner site watermarks can be blurred safely). Ignore dialogue subtitles and normal movie props.\n"
+        "4) Score excitement_score STRICTLY: 8-10 ONLY for gripping action, intense confrontation, shock reveal, or high emotion; 1-4 for calm walking, static dialogue, or slow buildup.\n"
         'Return STRICT JSON: {"is_clean": bool, "has_ad_banner": bool, "is_nsfw_or_gore": bool, "is_credits": bool, "excitement_score": 1-10, "cue_match": 1-10, "blur_boxes": [{"x": 0.0, "y": 0.0, "w": 0.2, "h": 0.1, "kind": "watermark"}], "reason": "short"}'
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
@@ -293,7 +294,7 @@ async def select_best_scene_start(
                     merged_boxes.append(box)
             scored_cand = {
                 "start_sec": cand["start_sec"],
-                "score": round(cand["score"] + int(v_res.get("excitement_score", 5)) * 8 + int(v_res.get("cue_match", 5)) * (10 if visual_cue else 0), 2),
+                "score": round(cand["score"] + int(v_res.get("excitement_score", 5)) * 12 + int(v_res.get("cue_match", 5)) * (16 if visual_cue else 0), 2),
                 "mean_volume_db": cand["mean_volume_db"],
                 "has_ad_banner": bool(v_res.get("has_ad_banner", False)),
                 "blur_boxes": list(merged_boxes[:4]),
