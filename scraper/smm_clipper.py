@@ -90,6 +90,7 @@ def _build_fg_blur_chain(
         if blur_watermark:
             zones.append(("0.22", "0.14", "0.77", "0.02", "10:4:5:2"))
             zones.append(("0.24", "0.22", "0.01", "0.02", "12:4:5:2"))
+            zones.append(("0.35", "0.24", "0.64", "0.74", "12:4:5:2"))
         if blur_bottom_ad:
             zones.append(("0.56", "0.22", "0.22", "0.76", "16:5:8:3"))
     zones = zones[:max_zones]

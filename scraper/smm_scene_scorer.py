@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
@@ -21,6 +22,46 @@ from scraper.smm_clipper import resolve_ffmpeg_bin
 from scraper.video_verifier import is_frame_valid
 
 logger = logging.getLogger(__name__)
+_MODEL_COOLDOWN_UNTIL: Dict[str, float] = {}
+_CORNER_ROIS: Tuple[Tuple[str, Tuple[float, float, float, float], Dict[str, Any]], ...] = (
+    ("top_left", (0.00, 0.00, 0.28, 0.20), {"x": 0.01, "y": 0.02, "w": 0.24, "h": 0.16, "kind": "watermark"}),
+    ("top_right", (0.68, 0.00, 0.32, 0.20), {"x": 0.74, "y": 0.02, "w": 0.25, "h": 0.16, "kind": "watermark"}),
+    ("bottom_left", (0.00, 0.72, 0.30, 0.28), {"x": 0.01, "y": 0.78, "w": 0.26, "h": 0.18, "kind": "watermark"}),
+    ("bottom_right", (0.58, 0.70, 0.42, 0.30), {"x": 0.62, "y": 0.72, "w": 0.37, "h": 0.26, "kind": "watermark"}),
+)
+
+
+def detect_static_corner_watermarks(frames_b64: List[str], min_static_ratio: float = 0.014) -> List[Dict[str, Any]]:
+    """Detect persistent static corner logos/watermarks across >=2 frames via OpenCV Canny intersection."""
+    if cv2 is None or len(frames_b64) < 2:
+        return []
+    imgs = []
+    for b64 in frames_b64[:3]:
+        try:
+            arr = np.frombuffer(base64.b64decode(b64), dtype=np.uint8)
+            im = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+            if im is not None and im.size > 0:
+                imgs.append(im)
+        except Exception:
+            continue
+    if len(imgs) < 2:
+        return []
+    h, w = imgs[0].shape[:2]
+    f1, f2 = imgs[0], imgs[-1]
+    if f2.shape[:2] != (h, w):
+        f2 = cv2.resize(f2, (w, h))
+    boxes: List[Dict[str, Any]] = []
+    for _, (rx, ry, rw, rh), box in _CORNER_ROIS:
+        x0, y0, x1, y1 = int(rx * w), int(ry * h), int((rx + rw) * w), int((ry + rh) * h)
+        if x1 <= x0 + 8 or y1 <= y0 + 8:
+            continue
+        g1 = cv2.cvtColor(f1[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
+        g2 = cv2.cvtColor(f2[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
+        e1 = cv2.Canny(g1, 60, 160) > 0
+        e2 = cv2.Canny(g2, 60, 160) > 0
+        if float(np.mean(e1 & e2)) >= min_static_ratio:
+            boxes.append(dict(box))
+    return boxes
 
 
 def parse_volumedetect_output(stderr_text: str) -> Tuple[float, float]:
@@ -213,7 +254,10 @@ async def check_frames_for_ads_or_nsfw(
     )
     parts: List[Dict[str, Any]] = [{"text": prompt}] + [{"inline_data": {"mime_type": "image/jpeg", "data": b}} for b in frames_b64[:2]]
     payload = {"contents": [{"parts": parts}], "generationConfig": {"responseMimeType": "application/json"}}
-    for model in ("gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"):
+    now_mono = time.monotonic()
+    for model in ("gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-3.5-flash-lite"):
+        if _MODEL_COOLDOWN_UNTIL.get(model, 0.0) > now_mono:
+            continue
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
         try:
             async with httpx.AsyncClient(timeout=12.0) as client:
@@ -226,6 +270,8 @@ async def check_frames_for_ads_or_nsfw(
                 logger.warning("Gemini Vision %s unparseable JSON: %s", model, text[:180])
                 continue
             logger.warning("Gemini Vision %s HTTP %s: %s", model, resp.status_code, resp.text[:180])
+            if resp.status_code == 429:
+                _MODEL_COOLDOWN_UNTIL[model] = now_mono + 120.0
             if resp.status_code in (401, 403):
                 break
         except Exception as exc:
@@ -289,7 +335,8 @@ async def select_best_scene_start(
         if idx == 0:
             top_v_res = v_res
         if v_res["is_clean"]:
-            for box in v_res.get("blur_boxes") or []:
+            cv_boxes = [] if v_res.get("vision_used") else detect_static_corner_watermarks(frames)
+            for box in list(v_res.get("blur_boxes") or []) + cv_boxes:
                 if not any(abs(box["x"] - b["x"]) < 0.12 and abs(box["y"] - b["y"]) < 0.12 for b in merged_boxes):
                     merged_boxes.append(box)
             scored_cand = {

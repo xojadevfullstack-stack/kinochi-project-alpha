@@ -138,7 +138,7 @@ async def create_smart_smm_clip(
                         visual_cue=(scene_hint or {}).get("visual_cue") or None,
                         compare_candidates=3,
                     ),
-                    timeout=90.0,
+                    timeout=120.0,
                 )
             except asyncio.TimeoutError:
                 score_meta = {

@@ -427,3 +427,22 @@ async def test_find_viral_scene_target_centers_anchor_near_climax_and_allows_lat
     assert 0.86 <= eg["target_ratio"] <= 0.91
 
 
+def test_detect_static_corner_watermarks_catches_persistent_corner_logo():
+    import base64
+    import cv2
+    import numpy as np
+    from scraper.smm_scene_scorer import detect_static_corner_watermarks
+
+    frames = []
+    for seed in (10, 90):
+        img = np.full((360, 640, 3), seed, dtype=np.uint8)
+        cv2.putText(img, "ASILMEDIA.NET", (410, 330), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+        ok, buf = cv2.imencode(".jpg", img)
+        assert ok
+        frames.append(base64.b64encode(buf.tobytes()).decode("utf-8"))
+
+    boxes = detect_static_corner_watermarks(frames)
+    assert any(b["x"] >= 0.58 and b["y"] >= 0.70 for b in boxes)
+
+
+
