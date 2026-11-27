@@ -60,6 +60,10 @@ type SmmProgressSnapshot = {
     last_tick_at?: string | null;
     last_error?: string | null;
   };
+  catalog_worker?: {
+    running?: boolean;
+    daily_limit?: number;
+  };
 };
 
 const ALL_PLATFORMS = ["telegram", "instagram", "facebook", "youtube", "tiktok"] as const;
@@ -344,6 +348,37 @@ export default function SmmStudioPage() {
           </div>
         </div>
       )}
+
+      <div className="glass-panel rounded-2xl p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-white">Avtopilot Jadvali (Toshkent UTC+5)</h2>
+          <span className="text-xs text-text-secondary">
+            SMM Worker: {progress?.worker?.running ? "Faol" : "To'xtagan"} • Katalog: {progress?.catalog_worker?.running ? `Faol (${progress.catalog_worker.daily_limit ?? 4}/kun)` : "Nofaol"}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="rounded-xl bg-black/30 border border-white/10 p-3 space-y-1">
+            <div className="text-text-secondary">SMM Nashr Soatlari</div>
+            <div className="text-white font-semibold">{(settings?.schedule_hours || ["11:00", "16:00", "21:00"]).join(" • ")}</div>
+            <div className="text-text-secondary">Kunlik limit: {settings?.daily_limit ?? 3} ta • Oylik: 90 ta</div>
+          </div>
+          <div className="rounded-xl bg-black/30 border border-white/10 p-3 space-y-1">
+            <div className="text-text-secondary">21:00 Haftalik Rubrikalar</div>
+            <div className="text-white font-semibold">Du: Tavsiya • Cho: Bilasizmi?</div>
+            <div className="text-white font-semibold">Ju: Yangiliklar • Ya: Kadr ortida</div>
+          </div>
+          <div className="rounded-xl bg-black/30 border border-white/10 p-3 space-y-1">
+            <div className="text-text-secondary">SMM Klip Navbati (Live)</div>
+            <div className="text-white font-semibold">Tayyorlanmoqda: {progress?.cycle2?.generating ?? 0} • Navbatda: {progress?.cycle2?.scheduled ?? 0}</div>
+            <div className="text-text-secondary">Chiqarilgan: {progress?.cycle2?.completed ?? 0} • Xato: {progress?.cycle2?.failed ?? 0}</div>
+          </div>
+          <div className="rounded-xl bg-black/30 border border-white/10 p-3 space-y-1">
+            <div className="text-text-secondary">Katalog va Posterlar</div>
+            <div className="text-white font-semibold">Kino yuklash: 24/7 ({progress?.catalog_worker?.daily_limit ?? 4}/kun)</div>
+            <div className="text-text-secondary">Poster o&apos;zbekcha: Bo&apos;sh vaqtda (15/kun)</div>
+          </div>
+        </div>
+      </div>
 
       <div className="glass-panel rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-6 gap-3">
         <select
