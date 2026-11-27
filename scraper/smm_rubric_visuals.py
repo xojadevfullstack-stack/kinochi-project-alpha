@@ -107,7 +107,7 @@ def build_rubric_ass(phrases: List[Tuple[float, float, float, str]], out_ass: st
                             parts.append(r"{\1c&HECEFF4&\1a&H1C&\blur0.4\fscx100\fscy100}" + up)
                         gi += 1
                     rendered.append(" ".join(parts))
-                lines.append(f"Dialogue: 0,{_ass_ts(wt)},{_ass_ts(we)},Default,,0,0,0,,{r'\\N'.join(rendered)}\n")
+                lines.append(f"Dialogue: 0,{_ass_ts(wt)},{_ass_ts(we)},Default,,0,0,0,,{r'\N'.join(rendered)}\n")
                 wt = we
             c_start = c_end
     with open(out_ass, "w", encoding="utf-8") as f:

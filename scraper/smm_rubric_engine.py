@@ -180,12 +180,12 @@ def render_rubric_reels_mp4(
             f"[0:v][2:v]overlay=0:0:enable='lt(t,{narration_end:.3f})'[vhud];"
             f"[vhud][3:v]overlay=0:0:enable='gte(t,{narration_end:.3f})'[voutro];"
             f"[voutro]ass='{ass_esc}'{fonts_opt}[vsub];"
-            f"[vsub][4:v]overlay=0:0:enable='lt(t,0.08)':eof_action=pass,setsar=1[vout]"
+            f"[vsub][4:v]overlay=0:0:enable='lt(t,0.55)':eof_action=pass,setsar=1[vout]"
         )
         subprocess.run(
             [
                 ffmpeg, "-y", "-i", merged, "-i", voice_wav, "-i", hud_png, "-i", outro_png,
-                "-loop", "1", "-t", "0.12", "-i", cover_jpg,
+                "-loop", "1", "-t", "0.60", "-i", cover_jpg,
                 "-filter_complex", fc, "-map", "[vout]", "-map", "1:a", "-shortest",
                 "-r", "24", "-ar", "48000", "-ac", "2", "-c:v", "libx264", *enc, "-pix_fmt", "yuv420p",
                 "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", output_path,
