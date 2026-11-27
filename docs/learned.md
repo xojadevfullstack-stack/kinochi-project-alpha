@@ -210,3 +210,7 @@
 ## Morphological Stroke Inpainting & Residual Textless Audit
 - Concept: **Stroke-Level Inpainting (`Top-Hat/Black-Hat + Canny`) + Residual Text Check (`_detect_residual_text_boxes`)** — Katta matn blokini to'liq bo'yash (`TELEA`) `X` shaklidagi xiralashuv beradi; faqat harf konturlarini o'chirish fonni (`45%+`) saqlaydi, residual tekshiruv esa TMDb "textless" deb aldaganda ham yozuvlarni tozalaydi.
 - Analogy: Devordagi eski e'lonni bo'yashda butun xona devorini chaplab tashlamasdan, faqat harflarning o'zini mayda cho'tka bilan tekislash va boshqa usta bo'yab ketgan joyda hali yozuv qolmaganini alohida chiroq bilan tekshirish.
+
+## Aspect-Aware Vertical Title Routing & Procedural Periodic Motif
+- Concept: **Orientation Guard (`_is_vertical_title_box`) + Parametric Icon Motif (`_render_periodic_tile_poster`)** — Baland va ensiz quti (`height >= width * 1.4`) katta multfilm markaziy logotipi (`is_giant_logo`) emas, balki chap chetdagi `90°` vertikal sarlavhadir; aks holda fallback boshqa tekstsiz rasmga almashib qoladi. *Breaking Bad* kabi maxsus kimyoviy kataklar esa umumiy shriftni cho'zish o'rniga harf kengligiga mos dinamik kvadrat (`_calc_tile_size`) sifatida procedural chiziladi.
+- Analogy: Uzun bo'yli bannerni "katta kvadrat reklama" deb o'ylab devordan yulib tashlamaslik, va maxsus kimyoviy emblemali peshtaxtani oddiy tekis yozuv bilan almashtirmasdan o'z ramkali qutisi bilan qayta yasash.

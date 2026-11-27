@@ -954,8 +954,101 @@ async def test_v8_giant_cartoon_logo_falls_back_to_clean_tmdb_art():
     assert mock_render.call_args.kwargs["style"]["placement"] == "top"
 
 
+def test_v9_vertical_rotated_title_mask():
+    from app.infrastructure.external.poster_localizer import _build_main_title_mask
+
+    mask_hi, x_hi, y_hi, tw, th, _ = _build_main_title_mask(
+        1000, 1500, "LEGION", "modern", [37, 44, 574, 157], 37, True, letter_spacing="wide", force_center=False
+    )
+    # Tall narrow box [37..574, 44..157] must render vertically down the left edge (th > tw * 2)
+    assert th > tw * 2
+    assert x_hi < 200
+    assert mask_hi.getbbox() is not None
 
 
+def test_v9_wraps_long_single_line_title_for_readability():
+    from app.infrastructure.external.poster_localizer import _split_title_and_subtitle
+
+    main, subs = _split_title_and_subtitle(
+        "Yakkaxon daraja oshirish (Solo Leveling)",
+        {"title_stack_mode": "single", "title_box": [850, 100, 910, 900]},
+    )
+    assert "\n" in main
+    assert main == "YAKKAXON\nDARAJA OSHIRISH"
+    assert subs == []
 
 
+def test_v9_periodic_tile_renders_green_element_squares():
+    from app.infrastructure.external.poster_localizer import render_uzbek_title_on_poster
+
+    raw_bytes = _make_sample_jpeg(500, 750, color=(15, 22, 12))
+    out_bytes = render_uzbek_title_on_poster(
+        image_bytes=raw_bytes,
+        title="Mashaqqatlar sari",
+        style={
+            "placement": "bottom",
+            "y_ratio": 0.68,
+            "font_style": "modern",
+            "bevel_style": "flat",
+            "primary_color": "#FFFFFF",
+            "secondary_color": "#E5EFE8",
+            "title_stack_mode": "stacked_equal",
+            "badge_motif": "periodic_tile",
+            "line_layout": ["MASHAQQATLAR", "SARI"],
+            "title_box": [680, 230, 920, 770],
+            "needs_backdrop": False,
+        },
+        remove_existing_text=False,
+    )
+    out_img = Image.open(io.BytesIO(out_bytes))
+    band = [out_img.getpixel((x, y)) for x in range(80, 380, 3) for y in range(500, 700, 3)]
+    emerald_pixels = [px for px in band if px[1] > px[0] + 25 and px[1] > px[2] + 15 and px[1] >= 70]
+    assert len(emerald_pixels) > 30, "Periodic tile motif must draw emerald green chemical squares"
+
+
+@pytest.mark.asyncio
+async def test_v9_vertical_title_does_not_trigger_giant_logo_fallback(monkeypatch):
+    from app.infrastructure.external import poster_localizer
+
+    calls = []
+
+    async def fake_get_textless(tmdb_id, content_type="movie", reference_bytes=None, placement="bottom"):
+        calls.append(reference_bytes is not None)
+        return None
+
+    orig_bytes = _make_sample_jpeg(400, 600, color=(150, 240, 190))
+
+    async def fake_download(url):
+        return orig_bytes
+
+    async def fake_analyze(img_bytes, title):
+        return {
+            "placement": "top",
+            "y_ratio": 0.03,
+            "font_style": "modern",
+            "bevel_style": "flat",
+            "title_box": [36, 44, 574, 157],
+            "needs_backdrop": False,
+        }
+
+    uploaded = {}
+
+    async def fake_upload(**kwargs):
+        uploaded["bytes"] = kwargs["photo_bytes"]
+        return "https://kinochi.example/api/v1/posters/tg/vertical_ok"
+
+    monkeypatch.setattr(poster_localizer.tmdb_client, "get_textless_poster", fake_get_textless)
+    monkeypatch.setattr(poster_localizer, "_download_image_bytes", fake_download)
+    monkeypatch.setattr(poster_localizer, "analyze_poster_style", fake_analyze)
+    monkeypatch.setattr(poster_localizer, "upload_poster_to_telegram", fake_upload)
+    monkeypatch.setattr(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "")
+
+    res = await poster_localizer.localize_poster_and_upload(
+        title="Legion",
+        tmdb_id=67195,
+        content_type="tv",
+        manual_poster_url="https://image.tmdb.org/t/p/w500/xhJtYVTsdXQCIlB5hAXkMCPUG9y.jpg",
+    )
+    assert res == "https://kinochi.example/api/v1/posters/tg/vertical_ok"
+    assert calls == [True], "Tall vertical title must keep original poster and skip unreferenced alt fallback"
 

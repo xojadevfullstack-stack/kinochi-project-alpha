@@ -42,6 +42,7 @@ _DEFAULT_STYLE: dict[str, Any] = {
     "font_weight": "bold",
     "letter_spacing": "normal",
     "title_stack_mode": "single",
+    "badge_motif": "none",
     "is_italic": False,
     "bevel_style": "flat",
     "texture_style": "clean",
@@ -197,6 +198,7 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         'texture_style ("weathered" for distressed frosted stone/ice like The Institute, "brushed" for textured gold leaf like Shogun, "steel" for scratched metal, or "clean"), '
         'subtitle_spacing ("wide" if subtitle below is widely tracked like E N D G A M E, else "normal"), '
         'title_stack_mode ("stacked_equal" if original title stacks 2 equal big main lines like Breaking/Bad, SEAL/TEAM, GAME OF/THRONES; "main_plus_subtitle" if 1 giant title + smaller subtitle below like Harry Potter or Avengers Endgame; else "single"), '
+        'badge_motif ("periodic_tile" ONLY if leading letters sit inside green/colored periodic-table chemical element squares like Breaking Bad, else "none"), '
         'primary_color (exact DEEP saturated body top hex of title letters — e.g. deep royal violet "#5E3EE0" for Avengers or warm gold "#DEC078" for Shogun — NEVER pale glare or bright background fire), '
         'secondary_color (bottom gradient hex of title letters; keep deep saturated hue family matching primary_color), '
         'accent_color (hex color ONLY for a contrasting trailing number/word like red "8" in Siccin 8, or null), '
@@ -233,6 +235,10 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
     tex = parsed.get("texture_style")
     sub_sp = parsed.get("subtitle_spacing")
     stack_mode = parsed.get("title_stack_mode")
+    badge_motif = parsed.get("badge_motif")
+    if badge_motif not in ("periodic_tile", "none"):
+        joined_desc = f"{raw_motifs} {parsed.get('style_brief', '')}".lower()
+        badge_motif = "periodic_tile" if any(k in joined_desc for k in ("periodic", "chemical", "element square", "atomic")) else "none"
     return {
         "placement": "top" if inferred_top else "bottom",
         "y_ratio": max(0.03, min(0.93, float(y_val))) if y_val is not None else None,
@@ -240,6 +246,7 @@ async def analyze_poster_style(image_bytes: bytes, title: str) -> dict[str, Any]
         "font_weight": weight if weight in ("regular", "bold", "heavy") else "bold",
         "letter_spacing": spacing if spacing in ("tight", "normal", "wide", "ultra_wide") else "normal",
         "title_stack_mode": stack_mode if stack_mode in ("single", "stacked_equal", "main_plus_subtitle") else "single",
+        "badge_motif": badge_motif,
         "is_italic": bool(parsed.get("is_italic", False)),
         "bevel_style": bevel if bevel in ("chiseled", "metallic", "flat") else "flat",
         "texture_style": tex if tex in ("clean", "weathered", "brushed", "steel") else "clean",
@@ -494,6 +501,21 @@ def _clean_poster_display_title(title: str) -> str:
     return final_clean or " ".join(cleaned.strip().split())
 
 
+def _is_vertical_title_box(title_box: Optional[list[int]], img_w: int, img_h: int) -> bool:
+    if not title_box or len(title_box) != 4:
+        return False
+    bw = max(1.0, (int(title_box[3]) - int(title_box[1])) * img_w / 1000.0)
+    bh = max(1.0, (int(title_box[2]) - int(title_box[0])) * img_h / 1000.0)
+    return bh > bw * 1.65
+
+
+def _is_periodic_tile_style(cfg: dict[str, Any]) -> bool:
+    if cfg.get("badge_motif") == "periodic_tile":
+        return True
+    desc = f"{cfg.get('title_motifs', '')} {cfg.get('style_brief', '')}".lower()
+    return any(k in desc for k in ("periodic", "chemical", "element tile", "element square", "atomic number"))
+
+
 def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, list[str]]:
     clean = _clean_poster_display_title(title)
     if ":" in clean:
@@ -525,6 +547,10 @@ def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, l
     m_seq = re.match(r"^(\S+\s+\d+)\s+(\S{4,})$", clean)
     if m_seq:
         return m_seq.group(1), [m_seq.group(2).upper()]
+    words = clean.split()
+    if stack_mode == "single" and not _is_vertical_title_box(style.get("title_box"), 500, 750) and len(clean) >= 18 and len(words) >= 2:
+        mid = max(1, len(words) // 2)
+        return "\n".join([" ".join(words[:mid]).upper(), " ".join(words[mid:]).upper()]), []
     return clean, []
 
 
@@ -622,12 +648,32 @@ def _build_main_title_mask(
     tight_w = max(1, bbox[2] - bbox[0])
     tight_h = max(1, bbox[3] - bbox[1])
 
+    is_vertical = _is_vertical_title_box(title_box, sw, sh)
     if title_box and len(title_box) == 4:
+        if is_vertical:
+            v_box_w = max(int(sh * 0.25), int((title_box[2] - title_box[0]) * sh / 1000))
+            v_box_h = max(int(sw * 0.045), min(int(sw * 0.20), int((title_box[3] - title_box[1]) * sw / 1000)))
+            scale_fit = min(v_box_w / tight_w, v_box_h / tight_h)
+            cropped = raw_mask.crop(bbox).resize(
+                (max(1, int(tight_w * scale_fit)), max(1, int(tight_h * scale_fit))),
+                Image.Resampling.LANCZOS,
+            )
+            cropped = cropped.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
+            target_w, target_h = cropped.size
+            center_x = int(sw * (title_box[1] + title_box[3]) / 2000.0)
+            x_hi = max(int(sw * 0.02), min(sw - target_w - int(sw * 0.02), center_x - target_w // 2))
+            y_hi = max(int(sh * 0.03), min(sh - target_h - int(sh * 0.04), int(title_box[0] * sh / 1000)))
+            mask_hi = Image.new("L", (sw, sh), 0)
+            mask_hi.paste(cropped, (x_hi, y_hi))
+            return mask_hi, x_hi, y_hi, target_w, target_h, render_str
+
         box_w = max(int(sw * 0.42), min(int(sw * 0.92), int((title_box[3] - title_box[1]) * sw / 1000)))
         if (font_style == "blockbuster" or len(lines_fmt) >= 2) and box_w < int(sw * 0.82) and len(widest_line) >= 9:
             box_w = max(box_w, int(sw * 0.84))
         max_h_frac = 0.30 if len(lines_fmt) >= 2 else 0.24
         box_h = max(int(sh * 0.038), min(int(sh * max_h_frac), int((title_box[2] - title_box[0]) * sh / 1000)))
+        if len(lines_fmt) >= 2:
+            box_h = max(box_h, int(sh * 0.135))
         scale_fit = min(box_w / tight_w, box_h / tight_h)
         target_w = max(1, int(tight_w * scale_fit))
         if font_style in ("gothic", "blockbuster", "ornate") and letter_spacing in ("tight", "normal") and len(lines_fmt) == 1:
@@ -649,6 +695,72 @@ def _build_main_title_mask(
     mask_hi = Image.new("L", (sw, sh), 0)
     mask_hi.paste(cropped, (x_hi, y_hi))
     return mask_hi, x_hi, y_hi, target_w, target_h, render_str
+
+
+def _render_periodic_tile_poster(
+    rgba: Image.Image,
+    lines_raw: list[str],
+    title_box: Optional[list[int]],
+    y_start_1x: int,
+) -> Image.Image:
+    """Render Breaking Bad style dark-emerald periodic table squares for leading 2-letter prefixes."""
+    w, h = rgba.size
+    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    clean_lines = [ln.strip().title() for ln in lines_raw[:2] if ln.strip()]
+    if len(clean_lines) < 2:
+        return rgba
+
+    font_size = max(32, min(58, int(w * 0.11)))
+    font = _load_font("modern", font_size, font_weight="bold")
+    num_font = _load_font("modern", max(10, int(font_size * 0.24)), font_weight="bold")
+
+    l1, l2 = clean_lines[0], clean_lines[1]
+    p1, r1 = (l1[:2], l1[2:]) if len(l1) >= 3 else (l1, "")
+    p2, r2 = (l2[:2], l2[2:]) if len(l2) >= 3 else (l2, "")
+
+    def _calc_tile_size(fsz: int, fnt: ImageFont.FreeTypeFont | ImageFont.ImageFont) -> int:
+        max_pref_w = max(float(draw.textlength(p1, font=fnt)), float(draw.textlength(p2, font=fnt)))
+        return max(int(fsz * 1.44), int(max_pref_w + fsz * 0.36))
+
+    tile_s = _calc_tile_size(font_size, font)
+    while font_size > 24 and (tile_s + draw.textlength(r1, font=font) + 28) > w * 0.88:
+        font_size -= 3
+        font = _load_font("modern", font_size, font_weight="bold")
+        num_font = _load_font("modern", max(10, int(font_size * 0.24)), font_weight="bold")
+        tile_s = _calc_tile_size(font_size, font)
+
+    gap_y = max(4, int(tile_s * 0.10))
+    total_h = tile_s * 2 + gap_y
+    y1 = max(int(h * 0.05), min(h - total_h - int(h * 0.04), y_start_1x))
+    total_w1 = tile_s + 4 + float(draw.textlength(r1, font=font))
+    x1 = max(int(w * 0.05), int((w - total_w1) / 2))
+    # Stagger second tile diagonally under right edge of first square (Breaking Bad signature layout)
+    x2 = min(w - int(tile_s + 4 + float(draw.textlength(r2, font=font)) + w * 0.05), x1 + int(tile_s * 0.82))
+    y2 = y1 + tile_s + gap_y
+
+    atomic_nums = ("12", "62")
+    for idx, (tx, ty, pref, rest) in enumerate(((x1, y1, p1, r1), (x2, y2, p2, r2))):
+        # Emerald green gradient tile + crisp white border
+        for py in range(tile_s):
+            t = py / max(1, tile_s - 1)
+            row_col = (int(34 * (1 - t) + 12 * t), int(112 * (1 - t) + 58 * t), int(68 * (1 - t) + 34 * t), 245)
+            draw.line([(tx, ty + py), (tx + tile_s, ty + py)], fill=row_col)
+        draw.rectangle([tx, ty, tx + tile_s, ty + tile_s], outline=(245, 250, 246, 240), width=2)
+        num_str = atomic_nums[idx]
+        nw = draw.textlength(num_str, font=num_font)
+        draw.text((tx + tile_s - nw - 5, ty + 3), num_str, font=num_font, fill=(240, 248, 242, 235))
+        pw = draw.textlength(pref, font=font)
+        px_pos = tx + (tile_s - pw) / 2
+        py_pos = ty + (tile_s - font_size) / 2 + max(1, int(tile_s * 0.04))
+        draw.text((px_pos + 1, py_pos + 2), pref, font=font, fill=(0, 0, 0, 170))
+        draw.text((px_pos, py_pos), pref, font=font, fill=(255, 255, 255, 255))
+        if rest:
+            rx_pos = tx + tile_s + 5
+            draw.text((rx_pos + 2, py_pos + 2), rest, font=font, fill=(0, 0, 0, 210))
+            draw.text((rx_pos, py_pos), rest, font=font, fill=(255, 255, 255, 255))
+
+    return Image.alpha_composite(rgba, layer)
 
 
 def render_uzbek_title_on_poster(
@@ -683,9 +795,16 @@ def render_uzbek_title_on_poster(
     main_text, sub_lines = _split_title_and_subtitle(title, cfg)
     y_ratio = cfg.get("y_ratio")
     y_start_1x = int(h * float(y_ratio)) if y_ratio is not None else (int(h * 0.045) if is_top else int(h * 0.77))
+    main_lines_split = [ln.strip() for ln in main_text.split("\n") if ln.strip()]
+    if _is_periodic_tile_style(cfg) and len(main_lines_split) >= 2:
+        rgba = _render_periodic_tile_poster(rgba, main_lines_split, cfg.get("title_box"), y_start_1x)
+        out_buf = io.BytesIO()
+        rgba.convert("RGB").save(out_buf, format="JPEG", quality=92, optimize=True)
+        return out_buf.getvalue()
 
     S = 2
     sw, sh = w * S, h * S
+    is_vert = _is_vertical_title_box(cfg.get("title_box"), w, h)
     mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_main_title_mask(
         sw,
         sh,
@@ -697,7 +816,7 @@ def render_uzbek_title_on_poster(
         letter_spacing=cfg.get("letter_spacing", "normal"),
         font_weight=cfg.get("font_weight", "bold"),
         is_italic=bool(cfg.get("is_italic", False) or cfg["font_style"] == "blockbuster"),
-        force_center=not remove_existing_text,
+        force_center=(not remove_existing_text) and (not is_vert),
     )
     mask_np = np.asarray(mask_hi, dtype=np.uint8)
     binary = (mask_np > 125).astype(np.uint8)
@@ -766,10 +885,11 @@ def render_uzbek_title_on_poster(
     shaded = np.clip(shaded_f, 8, 255).astype(np.uint8)
 
     comp_hi = Image.new("RGBA", (sw, sh), (0, 0, 0, 0))
-    drop = mask_hi.filter(ImageFilter.GaussianBlur(radius=9 if (sum(c1) / 3.0) > 175.0 else 6))
-    dr_arr = np.zeros((sh, sw, 4), dtype=np.uint8)
-    dr_arr[6:, :, 3] = np.clip(np.asarray(drop)[:-6, :] * 0.94, 0, 255).astype(np.uint8)
-    comp_hi = Image.alpha_composite(comp_hi, Image.fromarray(dr_arr))
+    if not (is_vert and bevel_style == "flat"):
+        drop = mask_hi.filter(ImageFilter.GaussianBlur(radius=9 if (sum(c1) / 3.0) > 175.0 else 6))
+        dr_arr = np.zeros((sh, sw, 4), dtype=np.uint8)
+        dr_arr[6:, :, 3] = np.clip(np.asarray(drop)[:-6, :] * 0.94, 0, 255).astype(np.uint8)
+        comp_hi = Image.alpha_composite(comp_hi, Image.fromarray(dr_arr))
 
     rim_hex = cfg.get("rim_color")
     if rim_hex:
@@ -897,7 +1017,12 @@ async def localize_poster_and_upload(
         is_textless = bool(source_url)
         tbox_orig = (style or {}).get("title_box")
         box_h_norm = ((tbox_orig[2] - tbox_orig[0]) / 1000.0) if (tbox_orig and len(tbox_orig) == 4) else 0.0
-        is_giant_logo = box_h_norm >= 0.22 and ((style or {}).get("font_style") == "cartoon" or box_h_norm >= 0.28)
+        is_vert_orig = _is_vertical_title_box(tbox_orig, 1000, 1500)
+        is_giant_logo = (
+            (not is_vert_orig)
+            and box_h_norm >= 0.22
+            and ((style or {}).get("font_style") == "cartoon" or box_h_norm >= 0.28)
+        )
         if not source_url and is_giant_logo:
             alt_url = await tmdb_client.get_textless_poster(int(tmdb_id), content_type=content_type, reference_bytes=None)
             if alt_url:
