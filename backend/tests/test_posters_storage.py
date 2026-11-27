@@ -181,3 +181,63 @@ async def test_download_file_bytes_falls_back_to_legacy_bot_token(monkeypatch):
 
     assert res == (b"LEGACY_BYTES", "image/jpeg")
 
+
+@pytest.mark.asyncio
+async def test_backfill_one_unlocalized_poster_updates_db_and_skips_failed_with_cooldown(monkeypatch):
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.api.v1 import posters as posters_mod
+    from app.infrastructure.db.models.movie import MovieModel
+    from app.infrastructure.db.models.series import SeriesModel
+    from app.infrastructure.db.session import Base
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    Session = async_sessionmaker(engine, expire_on_commit=False)
+
+    posters_mod._BACKFILL_SKIP_CACHE.clear()
+    fake_redis_cache: dict[str, str] = {}
+
+    async def fake_get_cache(key):
+        return fake_redis_cache.get(key)
+
+    async def fake_set_cache(key, val, ttl_seconds=0):
+        fake_redis_cache[key] = str(val)
+        return True
+
+    async def fake_del_pattern(pattern):
+        return 0
+
+    calls = []
+
+    async def fake_localize(title, tmdb_id=None, content_type="movie", manual_poster_url=None, **kwargs):
+        calls.append((content_type, title))
+        if title == "Rejected Poster":
+            return None
+        return f"https://kinochi.example/api/v1/posters/tg/{title.replace(' ', '_')}"
+
+    monkeypatch.setattr("app.core.cache.get_cache", fake_get_cache)
+    monkeypatch.setattr("app.core.cache.set_cache", fake_set_cache)
+    monkeypatch.setattr("app.core.cache.delete_cache_pattern", fake_del_pattern)
+    monkeypatch.setattr("app.infrastructure.external.poster_localizer.localize_poster_and_upload", fake_localize)
+
+    async with Session() as db:
+        db.add(MovieModel(title="Rejected Poster", code="REJ01", tmdb_id=101, poster_url="https://image.tmdb.org/t/p/w500/r.jpg"))
+        db.add(SeriesModel(title="Yigitlar", tmdb_id=76479, poster_url="https://image.tmdb.org/t/p/w500/y.jpg"))
+        await db.commit()
+
+        # First call rejects Movie #1 ("Rejected Poster") and sets cooldown
+        r1 = await posters_mod.backfill_one_unlocalized_poster(db, allow_in_testing=True)
+        await db.commit()
+        assert r1["localized"] == 0 and r1["skipped"] == 1
+
+        # Second call MUST skip "Rejected Poster" due to cooldown and localize Series "Yigitlar"
+        r2 = await posters_mod.backfill_one_unlocalized_poster(db, allow_in_testing=True)
+        await db.commit()
+        assert r2["localized"] == 1 and r2["media_type"] == "series"
+        assert calls == [("movie", "Rejected Poster"), ("tv", "Yigitlar")]
+
+    await engine.dispose()
+
+

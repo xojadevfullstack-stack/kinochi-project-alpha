@@ -607,6 +607,16 @@ async def run_smm_worker_tick(
             storage_chat_id=storage_chat_id,
         )
         published = 1
+
+    if generated == 0 and published == 0 and os.getenv("POSTER_BACKFILL_ENABLED", "1").strip().lower() in {"1", "true", "yes", "on"}:
+        try:
+            from app.api.v1.posters import backfill_one_unlocalized_poster
+
+            bf_res = await backfill_one_unlocalized_poster(db)
+            if bf_res.get("localized"):
+                logger.info("Idle poster backfill localized: %s#%s", bf_res.get("media_type"), bf_res.get("media_id"))
+        except Exception as bf_exc:
+            logger.warning("Idle poster backfill skipped: %s", bf_exc)
     return {"generated": generated, "published": published}
 
 

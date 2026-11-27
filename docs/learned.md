@@ -226,3 +226,7 @@
 ## Peak-Centered Sparse Climax Windowing
 - Concept: **Peak-Centered Sliding Window (`anchor = peak - 35s`, `ratio <= 0.91`)** — Agar `anchor = peak - 120s` olinib skan oynasi `63s` bilan cheklansa, `scan_end` kulminatsiya boshlanishidan `60s` oldin tugaydi (`0x00` emas, lekin bo'sh dialog!); oynani `peak - 35s .. peak + 30s` atrofida markazlash va `0.91` gacha ruxsat berish kechki kulminatsiyalarni to'g'ri ushlaydi.
 - Analogy: Darvoza to'pini suratga olishda videoni goldan 2 daqiqa oldin yoqib, 1 daqiqa ichida o'chirib qo'ymaslik — kamerani zarbadan atigi 20–30 soniya oldin yoqib golning o'zini o'rtaga olish.
+
+## Idle Quality-Gated Poster Backfill & Cooldown Loop Protection
+- Concept: **Single-Per-Idle-Tick Backfill + 7-Day Rejection Cooldown (`poster:v10:skip`)** — Yuklangan yuzlab eski medialarni bir vaqtda chizish Render `512MB` RAM va Gemini limitini portlatmasligi hamda sifat hakamidan o'tolmagan (`score < 7`) bitta film cheksiz qayta urinilib kvotani yeb qo'ymasligi uchun faqat bo'sh tickda `1` ta media olinib, rad etilgani Redis'da 7 kunga muzlatiladi.
+- Analogy: Ustaxona bo'sh qolganda eski arxivdan bittadan kitob olib muqovalash, sifat nazoratidan o'tmagan murakkab kitobni esa har daqiqa qayta-qayta stolga qo'ymay 1 haftalik javonga chetlatib turish.

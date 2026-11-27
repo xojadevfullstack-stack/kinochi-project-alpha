@@ -4,7 +4,7 @@ import html
 import logging
 import os
 import re
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 
@@ -19,6 +19,8 @@ router = APIRouter(prefix="/posters", tags=["posters"])
 
 _VALID_FILE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{20,160}$")
 _DEFAULT_PUBLIC_API_BASE = "https://kinochi-project-alpha-9g6j.onrender.com"
+_BACKFILL_SKIP_CACHE: set[str] = set()
+_BACKFILL_SKIP_TTL_SEC = 7 * 86400
 
 
 def build_telegram_poster_url(file_id: str) -> str:
@@ -192,3 +194,91 @@ async def localize_media_poster_now(
     if not new_url:
         raise HTTPException(status_code=400, detail="Posterni o'zbekchalashtirib bo'lmadi (TMDb ID yoki poster_url tekshiring).")
     return {"success": True, "poster_url": new_url}
+
+
+async def _is_backfill_skipped(cache_key: str) -> bool:
+    if cache_key in _BACKFILL_SKIP_CACHE:
+        return True
+    try:
+        from app.core.cache import get_cache
+
+        val = await get_cache(cache_key)
+        if val is not None:
+            _BACKFILL_SKIP_CACHE.add(cache_key)
+            return True
+    except Exception as exc:
+        logger.debug("Poster backfill skip check failed (%s): %s", cache_key, exc)
+    return False
+
+
+async def _mark_backfill_skipped(cache_key: str) -> None:
+    _BACKFILL_SKIP_CACHE.add(cache_key)
+    try:
+        from app.core.cache import set_cache
+
+        await set_cache(cache_key, "1", ttl_seconds=_BACKFILL_SKIP_TTL_SEC)
+    except Exception as exc:
+        logger.debug("Poster backfill skip mark failed (%s): %s", cache_key, exc)
+
+
+async def backfill_one_unlocalized_poster(db: Any, allow_in_testing: bool = False) -> dict[str, Any]:
+    """Safely localize 1 already-uploaded movie/series poster using v10 quality gate + 7d skip cooldown."""
+    if os.getenv("APP_ENV") == "testing" and not allow_in_testing:
+        return {"localized": 0, "skipped": 0}
+    from sqlalchemy import or_, select
+    from sqlalchemy.orm import selectinload
+
+    from app.core.cache import delete_cache_pattern
+    from app.infrastructure.db.models.movie import MovieModel
+    from app.infrastructure.db.models.series import SeriesModel
+    from app.infrastructure.external.poster_localizer import localize_poster_and_upload
+
+    candidates: list[tuple[str, Any, Optional[str], Optional[int | str], Optional[int]]] = []
+    movies = (
+        await db.execute(
+            select(MovieModel)
+            .where(or_(MovieModel.poster_url.is_(None), ~MovieModel.poster_url.contains("/posters/tg/")))
+            .order_by(MovieModel.id.desc())
+            .limit(20)
+        )
+    ).scalars().all()
+    for m in movies:
+        if should_localize_poster(getattr(m, "tmdb_id", None), getattr(m, "poster_url", None)):
+            candidates.append(("movie", m, getattr(m, "code", None), getattr(m, "source_chat_id", None), getattr(m, "source_topic_id", None)))
+
+    series_rows = (
+        await db.execute(
+            select(SeriesModel)
+            .options(selectinload(SeriesModel.source))
+            .where(or_(SeriesModel.poster_url.is_(None), ~SeriesModel.poster_url.contains("/posters/tg/")))
+            .order_by(SeriesModel.id.desc())
+            .limit(20)
+        )
+    ).scalars().all()
+    for sr in series_rows:
+        if should_localize_poster(getattr(sr, "tmdb_id", None), getattr(sr, "poster_url", None)):
+            src = getattr(sr, "source", None)
+            candidates.append(("series", sr, None, getattr(src, "chat_id", None) if src else None, getattr(src, "topic_id", None) if src else None))
+
+    for media_type, obj, code, topic_chat_id, topic_id in candidates:
+        skip_key = f"poster:v10:skip:{media_type}:{obj.id}"
+        if await _is_backfill_skipped(skip_key):
+            continue
+        new_url = await localize_poster_and_upload(
+            title=obj.title,
+            tmdb_id=getattr(obj, "tmdb_id", None),
+            content_type="tv" if media_type == "series" else "movie",
+            manual_poster_url=getattr(obj, "poster_url", None),
+            code=code,
+            topic_chat_id=topic_chat_id,
+            topic_id=topic_id,
+        )
+        if new_url and new_url != obj.poster_url:
+            obj.poster_url = new_url
+            await db.flush()
+            await delete_cache_pattern("cache:movies:*" if media_type == "movie" else "cache:series:*")
+            await delete_cache_pattern("cache:search:*")
+            return {"localized": 1, "skipped": 0, "media_type": media_type, "media_id": obj.id, "title": obj.title}
+        await _mark_backfill_skipped(skip_key)
+        return {"localized": 0, "skipped": 1, "media_type": media_type, "media_id": obj.id, "title": obj.title}
+    return {"localized": 0, "skipped": 0}
