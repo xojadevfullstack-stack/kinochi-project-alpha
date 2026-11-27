@@ -75,34 +75,41 @@ def build_rubric_ass(phrases: List[Tuple[float, float, float, str]], out_ass: st
         "[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 2\nScaledBorderAndShadow: yes\n\n"
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
         "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-        "Style: Default,Montserrat,56,&H1CECEFF4,&H001409E5,&H00080A10,&H80000000,1,0,0,0,100,100,0.5,0,1,3.2,2.2,2,65,65,430,1\n\n"
+        "Style: Default,Montserrat,48,&H1CECEFF4,&H001409E5,&H00080A10,&H80000000,1,0,0,0,100,100,0.4,0,1,3.0,2.0,2,80,80,380,1\n\n"
         "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
     )
-    font = _load_font(56, bold=True)
+    font = _load_font(48, bold=True)
     lines = [header]
     for sp_st, sp_en, dwell_en, text in phrases:
-        words = (text or "").strip().split()
-        if not words:
+        all_words = (text or "").strip().split()
+        if not all_words:
             continue
-        st = max(0.0, sp_st - 0.06)
-        speak_dur = max(0.30, sp_en - st)
-        tot_c = sum(max(2, len(w)) for w in words)
-        flat = [[w.upper() for w in g] for g in _wrap_lines(words, font, max_px=840)]
-        wt = st
-        for idx, w in enumerate(words):
-            we = dwell_en if idx == len(words) - 1 else min(sp_en, wt + speak_dur * (max(2, len(w)) / tot_c))
-            rendered, gi = [], 0
-            for grp in flat:
-                parts = []
-                for up in grp:
-                    if gi == idx:
-                        parts.append(r"{\1c&H1409E5&\blur0.5\fscx100\fscy100\t(0,60,\fscx106\fscy106)\t(60,130,\fscx103\fscy103)}" + up)
-                    else:
-                        parts.append(r"{\1c&HECEFF4&\1a&H1C&\blur0.4\fscx100\fscy100}" + up)
-                    gi += 1
-                rendered.append(" ".join(parts))
-            lines.append(f"Dialogue: 0,{_ass_ts(wt)},{_ass_ts(we)},Default,,0,0,0,,{r'\\N'.join(rendered)}\n")
-            wt = we
+        st0 = max(0.0, sp_st - 0.06)
+        tot_dur = max(0.35, sp_en - st0)
+        tot_chars = sum(max(2, len(w)) for w in all_words)
+        chunks = [all_words[i : i + 5] for i in range(0, len(all_words), 5)]
+        c_start = st0
+        for c_idx, words in enumerate(chunks):
+            c_chars = sum(max(2, len(w)) for w in words)
+            c_end = dwell_en if c_idx == len(chunks) - 1 else min(sp_en, c_start + tot_dur * (c_chars / tot_chars))
+            speak_dur = max(0.25, c_end - c_start)
+            flat = [[w.upper() for w in g] for g in _wrap_lines(words, font, max_px=760)]
+            wt = c_start
+            for idx, w in enumerate(words):
+                we = c_end if idx == len(words) - 1 else min(c_end, wt + speak_dur * (max(2, len(w)) / c_chars))
+                rendered, gi = [], 0
+                for grp in flat:
+                    parts = []
+                    for up in grp:
+                        if gi == idx:
+                            parts.append(r"{\1c&H1409E5&\blur0.5\fscx100\fscy100\t(0,60,\fscx106\fscy106)\t(60,130,\fscx103\fscy103)}" + up)
+                        else:
+                            parts.append(r"{\1c&HECEFF4&\1a&H1C&\blur0.4\fscx100\fscy100}" + up)
+                        gi += 1
+                    rendered.append(" ".join(parts))
+                lines.append(f"Dialogue: 0,{_ass_ts(wt)},{_ass_ts(we)},Default,,0,0,0,,{r'\\N'.join(rendered)}\n")
+                wt = we
+            c_start = c_end
     with open(out_ass, "w", encoding="utf-8") as f:
         f.writelines(lines)
 

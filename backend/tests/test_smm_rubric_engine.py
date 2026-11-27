@@ -56,7 +56,7 @@ def test_build_rubric_ass_writes_soft_red_active_word_and_margin430(tmp_path: Pa
     ass_path = tmp_path / "rubric.ass"
     build_rubric_ass([(0.20, 2.00, 2.25, "Muqaddima filmida Dom Kobb")], str(ass_path))
     txt = ass_path.read_text(encoding="utf-8")
-    assert "430" in txt
+    assert "380" in txt
     assert "&H1409E5&" in txt
     assert "MUQADDIMA" in txt
 
@@ -227,3 +227,15 @@ async def test_create_rubric_smm_clip_extracts_backdrop_from_video_when_none(tmp
 
     mock_ext.assert_called_once()
     assert mock_cov.call_args.args[7] is not None
+
+
+def test_build_rubric_ass_wraps_long_sentence_within_safe_width(tmp_path: Path):
+    ass_p = tmp_path / "long.ass"
+    long_text = "Chiqariladigan ilmiy fantastika va jangari ushbu film IMDbda 8.5 ballga baholangan"
+    build_rubric_ass([(0.0, 4.0, 4.2, long_text)], str(ass_p))
+    txt = ass_p.read_text(encoding="utf-8")
+    assert "Fontsize" in txt
+    assert ",48," in txt
+    # Every Dialogue line must be split into short chunks so no line overflows 1080px
+    dialogues = [ln for ln in txt.splitlines() if ln.startswith("Dialogue:")]
+    assert len(dialogues) >= 2

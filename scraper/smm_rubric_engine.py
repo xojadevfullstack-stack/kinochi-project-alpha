@@ -162,7 +162,7 @@ def render_rubric_reels_mp4(
             fx = compute_subject_focus_x(probe_jpg) if os.path.exists(probe_jpg) else 0.50
             is_outro = idx == len(windows) - 1
             blur_f = ",gblur=sigma=24,eq=contrast=1.04:brightness=-0.22" if is_outro else ",unsharp=5:5:0.4:3:3:0.0,eq=contrast=1.07:saturation=1.10"
-            vf = f"crop=ih*9/16:ih:(iw-ih*9/16)*{fx:.2f}:0,scale={w}:{h}:flags=lanczos,setsar=1{blur_f},fps=24,format=yuv420p"
+            vf = f"crop=min(iw\\,ih*0.78):ih:(iw-ow)*{fx:.2f}:0,scale={w}:-2:flags=lanczos,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black,setsar=1{blur_f},fps=24,format=yuv420p"
             seg = os.path.join(td, f"seg_{idx:02d}.mp4")
             subprocess.run([ffmpeg, "-y", "-ss", f"{st:.2f}", "-t", f"{dur:.2f}", "-i", video_path, "-an", "-vf", vf, "-r", "24", "-c:v", "libx264", *enc, seg], capture_output=True, check=True, timeout=90)
             seg_files.append(seg)
