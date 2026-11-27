@@ -521,58 +521,105 @@ def _is_spray_stencil_style(cfg: dict[str, Any]) -> bool:
     return any(k in desc for k in ("spray", "stencil", "drip", "splatter"))
 
 
-def _apply_spray_stencil_mask(
-    mask_hi: Image.Image,
-    x_hi: int,
-    y_hi: int,
-    target_w: int,
-    target_h: int,
-) -> Image.Image:
-    """Add authentic spray-paint mist halo, subtle stencil grit, and bottom paint drips to a title mask."""
-    sw, sh = mask_hi.size
-    arr = np.asarray(mask_hi, dtype=np.float32)
-    rng = np.random.default_rng(7)
+def _build_spray_stencil_mask(
+    sw: int,
+    sh: int,
+    main_text: str,
+    title_box: Optional[list[int]],
+    y_start_1x: int,
+) -> tuple[Image.Image, int, int, int, int, str]:
+    """Render wide chunky spray-painted street stencil lettering with soft mist haze and tapered organic drips."""
+    font_path = _FONTS_DIR / "Montserrat-ExtraBold.ttf"
+    font = (
+        ImageFont.truetype(str(font_path), 132)
+        if font_path.is_file()
+        else _load_font("modern", 132, font_weight="bold")
+    )
+    word = " ".join(main_text.upper().split())
+    rng = np.random.default_rng(11)
 
-    # Fine spray-paint mist specks around letter edges
-    halo = cv2.GaussianBlur(arr, (21, 21), 0)
-    speck_noise = rng.random((sh, sw), dtype=np.float32)
-    mist = np.where((halo > 18.0) & (arr < 120.0) & (speck_noise < halo / 360.0), 210.0, 0.0)
-    # Subtle rough stencil edge pitting inside solid strokes
-    edge = cv2.dilate(arr, np.ones((5, 5), np.uint8)) - cv2.erode(arr, np.ones((7, 7), np.uint8))
-    grit = np.where((edge > 40.0) & (rng.random((sh, sw), dtype=np.float32) < 0.24), 0.35, 1.0)
-    out = np.clip(arr * grit + mist, 0.0, 255.0)
+    letter_imgs: list[tuple[Image.Image | None, int]] = []
+    for ch in word:
+        if ch == " ":
+            letter_imgs.append((None, 0))
+            continue
+        cm = Image.new("L", (220, 220), 0)
+        ImageDraw.Draw(cm).text((40, 40), ch, font=font, fill=255)
+        b = cm.getbbox()
+        if not b:
+            continue
+        rot = cm.crop(b).rotate(float(rng.uniform(-2.4, 2.4)), expand=True, resample=Image.Resampling.BICUBIC)
+        letter_imgs.append((rot, int(rng.integers(-6, 7))))
 
-    # Organic vertical paint drips extending downward from thick bottom strokes
-    drip_layer = Image.fromarray(out.astype(np.uint8))
-    dd = ImageDraw.Draw(drip_layer)
-    x_end = min(sw - 6, x_hi + target_w)
-    num_drips = max(5, min(9, target_w // 95))
-    if x_end > x_hi + 20:
-        cand_xs = np.linspace(x_hi + int(target_w * 0.06), x_end - int(target_w * 0.06), num_drips)
-        for idx, cx_f in enumerate(cand_xs):
-            cx = int(cx_f + rng.integers(-12, 13))
-            cx = max(4, min(sw - 5, cx))
-            col = arr[:, cx]
-            ys_on = np.where(col > 180)[0]
-            if len(ys_on) == 0:
-                continue
-            y_base = int(ys_on[-1])
-            if y_base < y_hi + int(target_h * 0.85):
-                continue
-            drip_len = int(target_h * (0.18 + 0.18 * ((idx * 37) % 5) / 4.0))
-            if y_base + drip_len >= sh - 6:
-                continue
-            rad_top = max(3, int(target_h * 0.024))
-            rad_bot = max(4, int(target_h * 0.032))
-            dd.polygon(
-                [(cx - rad_top, y_base - 3), (cx + rad_top, y_base - 3), (cx + rad_bot // 2, y_base + drip_len), (cx - rad_bot // 2, y_base + drip_len)],
-                fill=245,
-            )
-            dd.ellipse(
-                [cx - rad_bot, y_base + drip_len - rad_bot, cx + rad_bot, y_base + drip_len + rad_bot],
-                fill=248,
-            )
-    return drip_layer
+    if not letter_imgs:
+        return _build_main_title_mask(sw, sh, main_text, "modern", title_box, y_start_1x, False)
+
+    total_lw = sum(im.width if im else 38 for im, _ in letter_imgs) + max(0, len(letter_imgs) - 1) * 3
+    max_lh = max((im.height for im, _ in letter_imgs if im), default=120) + 40
+    canvas = Image.new("L", (total_lw + 140, max_lh + 140), 0)
+    cx = 70
+    for im, dy in letter_imgs:
+        if im is None:
+            cx += 41
+            continue
+        y_p = 70 + (max_lh - 40 - im.height) // 2 + dy
+        canvas.paste(im, (cx, y_p), im)
+        cx += im.width + 3
+
+    arr = cv2.dilate(np.asarray(canvas, dtype=np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
+    ch_h, ch_w = arr.shape
+    yy, xx = np.mgrid[0:ch_h, 0:ch_w].astype(np.float32)
+    nx = cv2.GaussianBlur(rng.normal(0, 4.2, (ch_h, ch_w)).astype(np.float32), (21, 21), 0)
+    ny = cv2.GaussianBlur(rng.normal(0, 4.2, (ch_h, ch_w)).astype(np.float32), (21, 21), 0)
+    warped = cv2.remap(arr, np.clip(xx + nx + np.sin(yy * 0.08) * 2.0, 0, ch_w - 1), np.clip(yy + ny + np.cos(xx * 0.06) * 2.0, 0, ch_h - 1), cv2.INTER_LINEAR)
+    chunky = np.clip((cv2.GaussianBlur(warped.astype(np.float32), (7, 7), 0) - 92.0) * 2.7, 0, 255).astype(np.uint8)
+
+    cm_img = Image.fromarray(chunky)
+    cb = cm_img.getbbox() or (0, 0, ch_w, ch_h)
+    cropped = cm_img.crop(cb)
+    box_w = int(sw * 0.84)
+    if title_box and len(title_box) == 4:
+        box_w = max(int(sw * 0.62), min(int(sw * 0.88), int((title_box[3] - title_box[1]) * sw / 1000)))
+    tw = box_w
+    th = min(int(sh * 0.21), max(40, int(cropped.height * (tw / max(1, cropped.width)))))
+    fitted = cropped.resize((tw, th), Image.Resampling.LANCZOS)
+
+    mask_hi = Image.new("L", (sw, sh), 0)
+    x_hi = max(int(sw * 0.04), (sw - tw) // 2)
+    y_hi = max(int(sh * 0.04), min(sh - int(th * 1.45) - int(sh * 0.03), y_start_1x * 2))
+    mask_hi.paste(fitted, (x_hi, y_hi))
+    m_arr = np.asarray(mask_hi, dtype=np.float32)
+
+    drip_canvas = np.zeros_like(m_arr)
+    for frac_x, frac_len, thick_px, curve_dx in ((0.08, 0.26, 10, -3), (0.16, 0.31, 12, 2), (0.55, 0.14, 9, -2), (0.90, 0.43, 13, 5)):
+        px = int(x_hi + tw * frac_x)
+        ys_on = np.where(m_arr[:, px] > 180)[0]
+        if len(ys_on) == 0:
+            continue
+        yb = int(ys_on[-1]) - 4
+        if yb < y_hi + int(th * 0.80):
+            continue
+        dlen = int(th * frac_len)
+        for s_i in range(max(8, dlen // 3)):
+            t = s_i / max(1, max(8, dlen // 3) - 1)
+            yy_s = int(yb + t * dlen)
+            xx_s = int(px + np.sin(t * np.pi) * curve_dx)
+            if yy_s >= sh - 4:
+                break
+            r = max(3, int(thick_px * (0.95 * (1 - t) ** 1.4 + 0.30 + 0.45 * np.exp(-((t - 0.94) ** 2) / 0.008))))
+            cv2.circle(drip_canvas, (xx_s, yy_s), r, 255.0, -1)
+
+    merged_body = np.clip((np.maximum(m_arr, cv2.GaussianBlur(drip_canvas, (5, 5), 0)) - 70.0) * 1.45, 0, 255)
+    haze = cv2.GaussianBlur(merged_body, (45, 45), 0)
+    mist_cloud = np.clip(haze * 0.54, 0, 190)
+    halo_ring = cv2.GaussianBlur(merged_body, (29, 29), 0)
+    dots = cv2.GaussianBlur(np.where((halo_ring > 14) & (merged_body < 40) & (rng.random((sh, sw)) < (halo_ring / 380.0)), 170.0, 0.0).astype(np.float32), (3, 3), 0)
+    pockets = cv2.GaussianBlur(rng.normal(0, 1, (sh, sw)).astype(np.float32), (17, 17), 0)
+    edge_band = np.clip((cv2.dilate(merged_body, np.ones((9, 9), np.uint8)) - cv2.erode(merged_body, np.ones((15, 15), np.uint8))) / 255.0, 0, 1)
+    y_rows = np.arange(sh, dtype=np.float32)[:, None]
+    cutout = np.where((y_rows < y_hi + th * 0.85) & (edge_band > 0.32) & (pockets > 0.16), 0.32, 1.0)
+    final_alpha = np.clip(np.maximum(merged_body * cutout, np.maximum(mist_cloud, dots)), 0, 255).astype(np.uint8)
+    return Image.fromarray(final_alpha), x_hi, y_hi, tw, int(th * 1.40), word
 
 
 def _split_title_and_subtitle(title: str, style: dict[str, Any]) -> tuple[str, list[str]]:
@@ -894,27 +941,30 @@ def render_uzbek_title_on_poster(
     S = 2
     sw, sh = w * S, h * S
     is_vert = _is_vertical_title_box(tbox, w, h)
-    mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_main_title_mask(
-        sw,
-        sh,
-        main_text,
-        eff_font_style,
-        tbox,
-        y_start_1x,
-        is_top,
-        letter_spacing=cfg.get("letter_spacing", "normal"),
-        font_weight=cfg.get("font_weight", "bold"),
-        is_italic=eff_is_italic,
-        force_center=(not remove_existing_text) and (not is_vert),
-    )
     if is_spray and not is_vert:
-        mask_hi = _apply_spray_stencil_mask(mask_hi, x_hi, y_hi, target_w, target_h)
-        target_h = min(sh - y_hi - 2, int(target_h * 1.32))
+        mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_spray_stencil_mask(
+            sw, sh, main_text, tbox, y_start_1x
+        )
+        c1 = _hex_to_rgb("#F4F0E4", (244, 240, 228))
+        c2 = c1
+    else:
+        mask_hi, x_hi, y_hi, target_w, target_h, render_str = _build_main_title_mask(
+            sw,
+            sh,
+            main_text,
+            eff_font_style,
+            tbox,
+            y_start_1x,
+            is_top,
+            letter_spacing=cfg.get("letter_spacing", "normal"),
+            font_weight=cfg.get("font_weight", "bold"),
+            is_italic=eff_is_italic,
+            force_center=(not remove_existing_text) and (not is_vert),
+        )
+        c1 = _hex_to_rgb(cfg["primary_color"], (255, 255, 255))
+        c2 = _hex_to_rgb(cfg.get("secondary_color") or cfg["primary_color"], c1)
     mask_np = np.asarray(mask_hi, dtype=np.uint8)
     binary = (mask_np > 125).astype(np.uint8)
-
-    c1 = _hex_to_rgb(cfg["primary_color"], (255, 255, 255))
-    c2 = _hex_to_rgb(cfg.get("secondary_color") or cfg["primary_color"], c1)
 
     grad = np.zeros((sh, sw, 3), dtype=np.float32)
     y_bot_hi = min(sh, y_hi + target_h)
@@ -964,7 +1014,7 @@ def render_uzbek_title_on_poster(
         shaded_f = grad.copy()
 
     tex_style = cfg.get("texture_style", "clean")
-    if tex_style in ("weathered", "brushed"):
+    if tex_style in ("weathered", "brushed") and not is_spray:
         rng = np.random.default_rng(42)
         grain = rng.normal(0.95, 0.07, (sh, sw)).astype(np.float32)
         if tex_style == "brushed":
@@ -1059,6 +1109,32 @@ async def _detect_residual_text_boxes(image_bytes: bytes) -> list[list[int]]:
     if not isinstance(raw_boxes, list):
         return []
     return [b for b in raw_boxes if isinstance(b, list) and len(b) == 4]
+
+
+async def _verify_rendered_poster_quality(image_bytes: bytes, expected_title: str) -> bool:
+    """Fail-closed Vision quality gate so auto-localization never saves unreadable/overlapping posters."""
+    clean_expected = _clean_poster_display_title(expected_title).upper().strip()
+    prompt = (
+        f'Inspect this Uzbek localized movie poster (expected title: "{clean_expected}"). '
+        'Return ONLY JSON: {"score": 1-10, "overlap_face": true/false, "broken_text": true/false, "reason": "..."}. '
+        "score < 7 if title overlaps a main character face, looks severely off-center/cut off, leaves uncleaned old foreign title words, or has unreadable/corrupted spelling."
+    )
+    parsed = await _call_gemini_vision_json(prompt, image_bytes, max_tokens=256)
+    if not parsed:
+        return True
+    try:
+        score = float(parsed.get("score", 8))
+    except (TypeError, ValueError):
+        score = 8.0
+    if score < 7.0 or bool(parsed.get("overlap_face")) or bool(parsed.get("broken_text")):
+        logger.warning(
+            "Poster auto-localization rejected by quality gate (%s): score=%s reason=%s",
+            clean_expected,
+            score,
+            parsed.get("reason", ""),
+        )
+        return False
+    return True
 
 
 async def localize_poster_and_upload(
@@ -1172,6 +1248,8 @@ async def localize_poster_and_upload(
         style=style,
         remove_existing_text=needs_clean,
     )
+    if not await _verify_rendered_poster_quality(localized_bytes, clean_title):
+        return None
     return await upload_poster_to_telegram(
         photo_bytes=localized_bytes,
         title=clean_title,

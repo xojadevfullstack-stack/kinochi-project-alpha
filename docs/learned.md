@@ -215,6 +215,10 @@
 - Concept: **Orientation Guard (`_is_vertical_title_box`) + Parametric Icon Motif (`_render_periodic_tile_poster`)** — Baland va ensiz quti (`height >= width * 1.4`) katta multfilm markaziy logotipi (`is_giant_logo`) emas, balki chap chetdagi `90°` vertikal sarlavhadir; aks holda fallback boshqa tekstsiz rasmga almashib qoladi. *Breaking Bad* kabi maxsus kimyoviy kataklar esa umumiy shriftni cho'zish o'rniga harf kengligiga mos dinamik kvadrat (`_calc_tile_size`) sifatida procedural chiziladi.
 - Analogy: Uzun bo'yli bannerni "katta kvadrat reklama" deb o'ylab devordan yulib tashlamaslik, va maxsus kimyoviy emblemali peshtaxtani oddiy tekis yozuv bilan almashtirmasdan o'z ramkali qutisi bilan qayta yasash.
 
+## Organic Brush Distortion & Fail-Closed Vision Quality Gate
+- Concept: **Morphological Dilation + Displacement Warp (`_build_spray_stencil_mask`) + Fail-Closed Judge (`_verify_rendered_poster_quality`)** — Tayyor `.ttf` harflarini `cv2.dilate` bilan semirtirib `cv2.remap` va tumanli Gaussian buluti bilan cho'tka/sprey uslubiga yaqinlashtirish hamda har bir avtomatik renderni saqlashdan oldin Vision hakamidan (`score >= 7`) o'tkazish sifatsiz poster bazaga tushishini to'xtatadi.
+- Analogy: Bosmaxonadan chiqqan harflarni trafaret bo'yoq bilan qo'lda yumshatib sepish va qadoqlashdan oldin nazoratchi ko'rigidan (`score >= 7`) o'tkazib, yaroqsizini peshtaxtaga chiqarmaslik.
+
 ## Peak-Centered Sparse Climax Windowing
 - Concept: **Peak-Centered Sliding Window (`anchor = peak - 35s`, `ratio <= 0.91`)** — Agar `anchor = peak - 120s` olinib skan oynasi `63s` bilan cheklansa, `scan_end` kulminatsiya boshlanishidan `60s` oldin tugaydi (`0x00` emas, lekin bo'sh dialog!); oynani `peak - 35s .. peak + 30s` atrofida markazlash va `0.91` gacha ruxsat berish kechki kulminatsiyalarni to'g'ri ushlaydi.
 - Analogy: Darvoza to'pini suratga olishda videoni goldan 2 daqiqa oldin yoqib, 1 daqiqa ichida o'chirib qo'ymaslik — kamerani zarbadan atigi 20–30 soniya oldin yoqib golning o'zini o'rtaga olish.

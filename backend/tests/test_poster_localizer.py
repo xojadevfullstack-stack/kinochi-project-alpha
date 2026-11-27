@@ -1043,6 +1043,46 @@ def test_spray_stencil_renders_upright_with_bottom_drips_only():
     assert abs(((xs.min() + xs.max()) / 2.0) - 250.0) <= 4.0
 
 
+@pytest.mark.asyncio
+async def test_quality_gate_blocks_low_score_poster_before_upload(monkeypatch):
+    from app.infrastructure.external import poster_localizer
+
+    uploaded_calls = []
+
+    async def fake_upload(**kwargs):
+        uploaded_calls.append(kwargs)
+        return "https://kinochi.example/tg/should_not_upload"
+
+    async def fake_download(url):
+        return _make_sample_jpeg(400, 600, color=(25, 35, 55))
+
+    async def fake_analyze(img, title):
+        return {"placement": "bottom", "y_ratio": 0.78, "font_style": "modern", "title_box": [780, 100, 900, 900]}
+
+    async def fake_textless(*args, **kwargs):
+        return None
+
+    async def fake_vision_json(prompt, image_bytes, max_tokens=256):
+        return {"score": 4, "overlap_face": True, "broken_text": False, "reason": "Overlaps character face"}
+
+    monkeypatch.setattr(poster_localizer.tmdb_client, "get_textless_poster", fake_textless)
+    monkeypatch.setattr(poster_localizer, "_download_image_bytes", fake_download)
+    monkeypatch.setattr(poster_localizer, "analyze_poster_style", fake_analyze)
+    monkeypatch.setattr(poster_localizer, "upload_poster_to_telegram", fake_upload)
+    monkeypatch.setattr(poster_localizer, "_call_gemini_vision_json", fake_vision_json)
+    monkeypatch.setattr(poster_localizer.settings, "CLOUDFLARE_ACCOUNT_ID", "")
+
+    res = await poster_localizer.localize_poster_and_upload(
+        title="Test Film",
+        tmdb_id=999,
+        content_type="movie",
+        manual_poster_url="https://image.tmdb.org/t/p/w500/sample.jpg",
+    )
+    assert res is None
+    assert uploaded_calls == []
+
+
+
 
 @pytest.mark.asyncio
 async def test_v9_vertical_title_does_not_trigger_giant_logo_fallback(monkeypatch):
