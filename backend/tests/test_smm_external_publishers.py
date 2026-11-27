@@ -424,3 +424,38 @@ async def test_tiktok_publisher_zernio_upgrades_legacy_self_only_to_public(tmp_p
 
     assert res.success is True
     assert client.post.call_args_list[1].kwargs["json"]["tiktokSettings"]["privacyLevel"] == "PUBLIC_TO_EVERYONE"
+
+
+@pytest.mark.asyncio
+async def test_youtube_shorts_publisher_uses_intriguing_hook_title_and_hashtags(tmp_path):
+    vid = tmp_path / "short_hook.mp4"
+    vid.write_bytes(b"yt-bytes")
+    r_tok = MagicMock(status_code=200)
+    r_tok.json.return_value = {"access_token": "yt_access"}
+    r_init = MagicMock(status_code=200, headers={"location": "https://upload.youtube.com/session/2"})
+    r_put = MagicMock(status_code=200)
+    r_put.json.return_value = {"id": "yt_short_hook1"}
+
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(side_effect=[r_tok, r_init])
+    client.put = AsyncMock(return_value=r_put)
+
+    pub = YouTubeShortsPublisher(client_id="cid", client_secret="csec", refresh_token="rtok")
+    with patch("scraper.smm_publishers.youtube_tiktok_pub.httpx.AsyncClient", return_value=client):
+        res = await pub.publish(
+            str(vid),
+            caption="Kod #1014",
+            movie_code="1014",
+            hook_text="Oxirgi soniyada hammasi o'zgardi!",
+        )
+
+    assert res.success is True
+    init_json = client.post.call_args_list[1].kwargs["json"]
+    title = init_json["snippet"]["title"]
+    assert "Oxirgi soniyada hammasi o'zgardi!" in title
+    assert "#1014" in title
+    assert "#Shorts" in title
+    assert len(title) <= 100
+    assert "#tarjimakinolar" in init_json["snippet"]["description"]
+

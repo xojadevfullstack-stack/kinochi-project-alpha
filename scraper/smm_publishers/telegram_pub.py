@@ -17,11 +17,13 @@ def build_movie_caption(
     imdb_rating: Optional[float] = None,
     genres: Optional[str] = None,
     bot_username: str = "@MediaPlusOfficialBot",
+    hook_text: Optional[str] = None,
 ) -> str:
     """Build mystery Uzbek SMM caption without revealing the movie title."""
     raw_bot = (bot_username or "@MediaPlusOfficialBot").strip()
     clean_bot = raw_bot if raw_bot.startswith("@") else f"@{raw_bot}"
-    lines = ["🎬 Bu qaysi kino ekanini topdingizmi?"]
+    lead = f"🎬 <b>{html.escape(hook_text.strip(), quote=False)}</b>" if (hook_text or "").strip() else "🎬 Bu qaysi kino ekanini topdingizmi?"
+    lines = [lead]
     if imdb_rating:
         lines.append(f"⭐ IMDb: {imdb_rating:.1f} / 10")
     if genres:
@@ -29,7 +31,8 @@ def build_movie_caption(
         lines.append(f"🎭 Janr: {clean_genres}")
     lines.append(f"🔑 Kino kodi: <b>#{movie_code}</b>")
     lines.append(f"🤖 To'liq o'zbek tilida: {clean_bot}")
-    lines.append("\n#kino #uzbekkino #tarjimakinolar #mediaplus")
+    lines.append("💬 Siz bu kinoni ko'rganmisiz? Fikringizni yozing!")
+    lines.append("\n#kino #uzbekkino #tarjimakinolar #kinokod #mediaplus")
     return "\n".join(lines)
 
 

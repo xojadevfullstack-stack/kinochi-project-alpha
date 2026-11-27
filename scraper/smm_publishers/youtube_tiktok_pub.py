@@ -45,9 +45,18 @@ class YouTubeShortsPublisher(BaseSocialPublisher):
                 raw_bot = (kwargs.get("bot_username") or "@MediaPlusOfficialBot").strip()
                 bot_handle = raw_bot if raw_bot.startswith("@") else f"@{raw_bot}"
                 deep_link = f"https://t.me/{bot_handle.lstrip('@')}?start={movie_code}"
-                yt_desc = caption if deep_link in (caption or "") else f"{caption}\n\n🎬 Kinoni ko'rish: {deep_link}".strip()
+                hook = (kwargs.get("yt_title") or kwargs.get("hook_text") or "").strip()
+                raw_title = (
+                    f"{hook[:55]} | Kino kodi #{movie_code} #Shorts"
+                    if hook
+                    else f"Bu qaysi kino? | Kino kodi #{movie_code} | {bot_handle} #Shorts"
+                )
+                yt_title = raw_title[:100]
+                base_desc = caption if deep_link in (caption or "") else f"{caption}\n\n🎬 Kinoni ko'rish: {deep_link}".strip()
+                yt_tags = "#kino #tarjimakinolar #uzbekkino #kinokod #shorts #mediaplus"
+                yt_desc = base_desc if "#tarjimakinolar" in base_desc else f"{base_desc}\n\n{yt_tags}".strip()
                 meta = {
-                    "snippet": {"title": f"Kino kodi #{movie_code} | {bot_handle} #Shorts", "description": yt_desc, "categoryId": "24"},
+                    "snippet": {"title": yt_title, "description": yt_desc, "categoryId": "24"},
                     "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False},
                 }
                 i_resp = await client.post(
