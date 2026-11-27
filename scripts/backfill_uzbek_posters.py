@@ -15,7 +15,7 @@ async def _run_batch(limit: int, delay_sec: float) -> None:
     localized, skipped = 0, 0
     for idx in range(limit):
         async with async_session_factory() as db:
-            res = await backfill_one_unlocalized_poster(db, allow_in_testing=True)
+            res = await backfill_one_unlocalized_poster(db, allow_in_testing=True, daily_limit=max(100, limit))
             await db.commit()
         if res.get("localized"):
             localized += 1

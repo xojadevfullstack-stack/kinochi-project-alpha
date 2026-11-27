@@ -197,6 +197,7 @@ async def test_backfill_one_unlocalized_poster_updates_db_and_skips_failed_with_
     Session = async_sessionmaker(engine, expire_on_commit=False)
 
     posters_mod._BACKFILL_SKIP_CACHE.clear()
+    posters_mod._BACKFILL_DAY_COUNTS.clear()
     fake_redis_cache: dict[str, str] = {}
 
     async def fake_get_cache(key):
@@ -239,5 +240,61 @@ async def test_backfill_one_unlocalized_poster_updates_db_and_skips_failed_with_
         assert calls == [("movie", "Rejected Poster"), ("tv", "Yigitlar")]
 
     await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_backfill_stops_when_daily_quota_cap_reached(monkeypatch):
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from app.api.v1 import posters as posters_mod
+    from app.infrastructure.db.models.movie import MovieModel
+    from app.infrastructure.db.session import Base
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    Session = async_sessionmaker(engine, expire_on_commit=False)
+
+    posters_mod._BACKFILL_SKIP_CACHE.clear()
+    posters_mod._BACKFILL_DAY_COUNTS.clear()
+    monkeypatch.setenv("POSTER_BACKFILL_DAILY_LIMIT", "1")
+    fake_cache: dict[str, str] = {}
+
+    async def fake_get_cache(key):
+        return fake_cache.get(key)
+
+    async def fake_set_cache(key, val, ttl_seconds=0):
+        fake_cache[key] = str(val)
+        return True
+
+    async def fake_del_pattern(pattern):
+        return 0
+
+    calls = []
+
+    async def fake_localize(title, **kwargs):
+        calls.append(title)
+        return f"https://kinochi.example/api/v1/posters/tg/{title}"
+
+    monkeypatch.setattr("app.core.cache.get_cache", fake_get_cache)
+    monkeypatch.setattr("app.core.cache.set_cache", fake_set_cache)
+    monkeypatch.setattr("app.core.cache.delete_cache_pattern", fake_del_pattern)
+    monkeypatch.setattr("app.infrastructure.external.poster_localizer.localize_poster_and_upload", fake_localize)
+
+    async with Session() as db:
+        db.add(MovieModel(title="Film1", code="F01", tmdb_id=1, poster_url="https://image.tmdb.org/t/p/w500/1.jpg"))
+        db.add(MovieModel(title="Film2", code="F02", tmdb_id=2, poster_url="https://image.tmdb.org/t/p/w500/2.jpg"))
+        await db.commit()
+
+        first = await posters_mod.backfill_one_unlocalized_poster(db, allow_in_testing=True)
+        await db.commit()
+        second = await posters_mod.backfill_one_unlocalized_poster(db, allow_in_testing=True)
+        assert first["localized"] == 1
+        assert second.get("capped") is True
+        assert second["localized"] == 0
+        assert len(calls) == 1
+
+    await engine.dispose()
+
 
 

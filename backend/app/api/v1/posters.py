@@ -21,6 +21,8 @@ _VALID_FILE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{20,160}$")
 _DEFAULT_PUBLIC_API_BASE = "https://kinochi-project-alpha-9g6j.onrender.com"
 _BACKFILL_SKIP_CACHE: set[str] = set()
 _BACKFILL_SKIP_TTL_SEC = 7 * 86400
+_BACKFILL_DAY_COUNTS: dict[str, int] = {}
+_DEFAULT_BACKFILL_DAILY_LIMIT = 15
 
 
 def build_telegram_poster_url(file_id: str) -> str:
@@ -221,12 +223,47 @@ async def _mark_backfill_skipped(cache_key: str) -> None:
         logger.debug("Poster backfill skip mark failed (%s): %s", cache_key, exc)
 
 
-async def backfill_one_unlocalized_poster(db: Any, allow_in_testing: bool = False) -> dict[str, Any]:
-    """Safely localize 1 already-uploaded movie/series poster using v10 quality gate + 7d skip cooldown."""
+async def _get_backfill_daily_count(day_key: str) -> int:
+    in_proc = _BACKFILL_DAY_COUNTS.get(day_key, 0)
+    try:
+        from app.core.cache import get_cache
+
+        val = await get_cache(day_key)
+        if val is not None:
+            return max(in_proc, int(val))
+    except Exception as exc:
+        logger.debug("Poster backfill daily count read failed (%s): %s", day_key, exc)
+    return in_proc
+
+
+async def _inc_backfill_daily_count(day_key: str) -> None:
+    new_val = (await _get_backfill_daily_count(day_key)) + 1
+    _BACKFILL_DAY_COUNTS[day_key] = new_val
+    try:
+        from app.core.cache import set_cache
+
+        await set_cache(day_key, str(new_val), ttl_seconds=36 * 3600)
+    except Exception as exc:
+        logger.debug("Poster backfill daily count write failed (%s): %s", day_key, exc)
+
+
+async def backfill_one_unlocalized_poster(
+    db: Any,
+    allow_in_testing: bool = False,
+    daily_limit: Optional[int] = None,
+) -> dict[str, Any]:
+    """Safely localize 1 already-uploaded movie/series poster using v10 quality gate, 7d skip & daily cap."""
     if os.getenv("APP_ENV") == "testing" and not allow_in_testing:
         return {"localized": 0, "skipped": 0}
+    from datetime import datetime, timedelta, timezone
     from sqlalchemy import or_, select
     from sqlalchemy.orm import selectinload
+
+    tashkent_day = (datetime.now(timezone.utc) + timedelta(hours=5)).strftime("%Y-%m-%d")
+    day_key = f"poster:v10:backfill:day:{tashkent_day}"
+    eff_limit = daily_limit if daily_limit is not None else max(0, int(os.getenv("POSTER_BACKFILL_DAILY_LIMIT", str(_DEFAULT_BACKFILL_DAILY_LIMIT))))
+    if eff_limit == 0 or (await _get_backfill_daily_count(day_key)) >= eff_limit:
+        return {"localized": 0, "skipped": 0, "capped": True}
 
     from app.core.cache import delete_cache_pattern
     from app.infrastructure.db.models.movie import MovieModel
@@ -239,7 +276,7 @@ async def backfill_one_unlocalized_poster(db: Any, allow_in_testing: bool = Fals
             select(MovieModel)
             .where(or_(MovieModel.poster_url.is_(None), ~MovieModel.poster_url.contains("/posters/tg/")))
             .order_by(MovieModel.id.desc())
-            .limit(20)
+            .limit(100)
         )
     ).scalars().all()
     for m in movies:
@@ -252,7 +289,7 @@ async def backfill_one_unlocalized_poster(db: Any, allow_in_testing: bool = Fals
             .options(selectinload(SeriesModel.source))
             .where(or_(SeriesModel.poster_url.is_(None), ~SeriesModel.poster_url.contains("/posters/tg/")))
             .order_by(SeriesModel.id.desc())
-            .limit(20)
+            .limit(100)
         )
     ).scalars().all()
     for sr in series_rows:
@@ -264,6 +301,7 @@ async def backfill_one_unlocalized_poster(db: Any, allow_in_testing: bool = Fals
         skip_key = f"poster:v10:skip:{media_type}:{obj.id}"
         if await _is_backfill_skipped(skip_key):
             continue
+        await _inc_backfill_daily_count(day_key)
         new_url = await localize_poster_and_upload(
             title=obj.title,
             tmdb_id=getattr(obj, "tmdb_id", None),
