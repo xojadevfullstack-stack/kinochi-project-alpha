@@ -137,6 +137,40 @@ async def send_admin_smm_preview(
     return any_sent
 
 
+logger_tg = None
+_ALERT_COOLDOWN: dict[str, float] = {}
+
+
+async def send_admin_alert(
+    alert_key: str,
+    text: str,
+    admin_telegram_id: Optional[str] = None,
+    cooldown_sec: int = 3600,
+) -> bool:
+    """Send a rate-limited plain/HTML Telegram alert to the admin on token, session, or worker errors."""
+    import time
+
+    now = time.monotonic()
+    if _ALERT_COOLDOWN.get(alert_key, 0.0) > now:
+        return False
+    bot_token = os.getenv("BOT_TOKEN", "").strip()
+    target_chat = (admin_telegram_id or os.getenv("ADMIN_TELEGRAM_ID") or "").strip()
+    if not bot_token or not target_chat:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                json={"chat_id": target_chat, "text": text[:3800], "parse_mode": "HTML"},
+            )
+        if resp.status_code == 200 and resp.json().get("ok"):
+            _ALERT_COOLDOWN[alert_key] = now + max(60, int(cooldown_sec))
+            return True
+    except Exception:
+        pass
+    return False
+
+
 class TelegramChannelPublisher(BaseSocialPublisher):
     """Publishes 9:16 clips to a Telegram channel via Bot API sendVideo."""
 

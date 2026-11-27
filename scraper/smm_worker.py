@@ -22,6 +22,7 @@ from scraper.smm_publishers.telegram_pub import (
     TelegramChannelPublisher,
     _post_telegram_video,
     build_movie_caption,
+    send_admin_alert,
     send_admin_smm_preview,
 )
 from scraper.smm_rubric_engine import create_rubric_smm_clip
@@ -581,6 +582,12 @@ async def process_publish_job(
         )
         for plat, res in results.items():
             status_map[plat] = {"enabled": True, "status": "published" if res.success else "failed", "post_id": res.post_id, "error": res.error}
+            if not res.success:
+                await send_admin_alert(
+                    f"pub_err:{plat}",
+                    f"⚠️ <b>SMM Nashr Xatosi ({plat})</b>\n🎬 Job #{job.id} (#{display_code})\n❌ {res.error or 'Noma’lum xato'}\n\n<i>Token muddati tugagan bo‘lsa Render env dan yangilang.</i>",
+                    admin_telegram_id=getattr(cfg, "admin_telegram_id", None),
+                )
 
     any_ok = any(st.get("status") == "published" for st in status_map.values() if isinstance(st, dict))
     job.platforms_status = status_map
@@ -777,6 +784,10 @@ async def supervised_run_smm_worker() -> None:
                         tg_client = None
                         if "AuthKeyDuplicated" in type(tg_exc).__name__ or "AuthKeyDuplicated" in str(tg_exc):
                             session_disabled = True
+                            await send_admin_alert(
+                                "smm_session_dead",
+                                f"🚨 <b>SMM Telegram Sessiya Uzildi</b>\n❌ {type(tg_exc).__name__}: {tg_exc}\n\n<i>SMM_TELEGRAM_STRING_SESSION ni yangilab Render ga qo‘ying.</i>",
+                            )
                         _WORKER_STATE["last_error"] = f"Telethon connect: {tg_exc}"
                         logger.warning("SMM Telethon connect error (publish still active): %s", tg_exc)
                 res = await run_smm_worker_cycle(tg_client=tg_client)
@@ -796,6 +807,12 @@ async def supervised_run_smm_worker() -> None:
             if "AuthKeyDuplicated" in type(exc).__name__ or "AuthKeyDuplicated" in str(exc):
                 session_disabled = True
                 tg_client = None
+                await send_admin_alert(
+                    "smm_session_dead",
+                    f"🚨 <b>SMM Telegram Sessiya Uzildi</b>\n❌ {exc}\n\n<i>SMM_TELEGRAM_STRING_SESSION ni yangilab Render ga qo‘ying.</i>",
+                )
+            else:
+                await send_admin_alert("smm_worker_err", f"⚠️ <b>SMM Worker Xatosi</b>\n❌ {type(exc).__name__}: {exc}")
             _WORKER_STATE["last_error"] = str(exc)
             logger.warning("SMM worker tick error (API/Bot isolated): %s", exc)
         await asyncio.sleep(compute_worker_sleep_seconds(interval, res))

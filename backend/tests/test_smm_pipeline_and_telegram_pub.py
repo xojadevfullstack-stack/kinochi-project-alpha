@@ -460,6 +460,29 @@ async def test_create_smart_smm_clip_scan_window_wraps_peak_and_uses_backup_on_c
 
 
 @pytest.mark.asyncio
+async def test_send_admin_alert_rate_limits_duplicate_keys(monkeypatch):
+    from scraper.smm_publishers.telegram_pub import _ALERT_COOLDOWN, send_admin_alert
+
+    _ALERT_COOLDOWN.clear()
+    monkeypatch.setenv("BOT_TOKEN", "123:abc")
+    monkeypatch.setenv("ADMIN_TELEGRAM_ID", "1990156236")
+    resp = MagicMock(status_code=200)
+    resp.json.return_value = {"ok": True}
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    client.post = AsyncMock(return_value=resp)
+
+    with patch("scraper.smm_publishers.telegram_pub.httpx.AsyncClient", return_value=client):
+        ok1 = await send_admin_alert("pub_err:youtube", "YouTube HTTP 400", cooldown_sec=3600)
+        ok2 = await send_admin_alert("pub_err:youtube", "YouTube HTTP 400", cooldown_sec=3600)
+
+    assert ok1 is True
+    assert ok2 is False
+    assert client.post.call_count == 1
+
+
+
+@pytest.mark.asyncio
 async def test_fetch_poster_bytes_reads_full_tg_proxy_url_directly_from_telegram():
     from scraper.smm_pipeline import _fetch_poster_bytes
 
