@@ -302,6 +302,10 @@ def test_low_ram_decodes_input_once_caps_blur_zones_and_passes_timeout(monkeypat
     assert "-preset" in captured["cmd"]
     assert captured["cmd"][captured["cmd"].index("-preset") + 1] == "ultrafast"
     assert captured["kwargs"].get("timeout", 0) >= 60
+    # Decoder -threads 1 MUST appear BEFORE -i input_path to prevent multi-thread 1080p OOM on 512MB Render
+    in_idx = captured["cmd"].index("-i")
+    assert "-threads" in captured["cmd"][:in_idx]
+    assert captured["cmd"][captured["cmd"].index("-threads") + 1] == "1"
 
 
 def test_render_vertical_clip_raises_clear_error_on_timeout(monkeypatch, tmp_path):
@@ -459,3 +463,48 @@ def test_build_clip_cover_image_and_render_with_frame0_cover(tmp_path):
     c1 = frame1[640, 360]
     assert int(c0[2]) > int(c0[1]) + 40
     assert int(c1[1]) > int(c1[2]) + 40
+
+
+def test_build_cinematic_filter_complex_keeps_clean_header_with_color_and_audio_polish(tmp_path):
+    vf, af = build_cinematic_filter_complex(
+        movie_code="1014",
+        imdb_rating=8.4,
+        hook_text="Bu eshik ortida nima bor?!",
+        duration_sec=28.0,
+        low_ram=True,
+    )
+    assert "BU ESHIK ORTIDA" not in vf
+    assert "MEDIAPLUSBOT" in vf
+    assert "between(t,0.35," not in vf
+    assert "contrast=" in vf
+    assert "dynaudnorm" in af
+    assert "afade=" in af
+
+    ffmpeg = resolve_ffmpeg_bin()
+    src = tmp_path / "hook_src.mp4"
+    out = tmp_path / "hook_out.mp4"
+    subprocess.run(
+        [
+            ffmpeg, "-y",
+            "-f", "lavfi", "-i", "testsrc2=duration=2:size=640x360:rate=24",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
+            "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+            str(src),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    res_path = render_vertical_clip(
+        input_path=str(src),
+        output_path=str(out),
+        movie_code="1014",
+        start_sec=0.0,
+        duration_sec=2.0,
+        imdb_rating=8.4,
+        hook_text="Bu eshik ortida nima bor?!",
+        low_ram=True,
+        blur_watermark=False,
+    )
+    assert os.path.exists(res_path) and os.path.getsize(res_path) > 5000
+

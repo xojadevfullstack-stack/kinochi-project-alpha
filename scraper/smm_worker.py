@@ -652,6 +652,13 @@ async def run_smm_worker_cycle(
         return res
 
 
+def compute_worker_sleep_seconds(interval: int, last_result: Optional[dict]) -> int:
+    """Short-circuit the 180s idle poll sleep to 10s when queued jobs are actively rendering."""
+    if last_result and int(last_result.get("generated") or 0) > 0:
+        return min(int(interval), 10)
+    return int(interval)
+
+
 async def supervised_run_smm_worker() -> None:
     """Long-running background supervisor for Cycle 2 SMM rendering and publishing."""
     interval = max(30, int(os.getenv("SMM_WORKER_INTERVAL_SEC", "180")))
@@ -674,6 +681,7 @@ async def supervised_run_smm_worker() -> None:
         await asyncio.sleep(startup_delay)
 
     while True:
+        res: Optional[dict] = None
         try:
             _WORKER_STATE["last_tick_at"] = datetime.now(timezone.utc).isoformat()
             enabled = os.getenv("SMM_AUTOPILOT_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
@@ -716,4 +724,4 @@ async def supervised_run_smm_worker() -> None:
                 tg_client = None
             _WORKER_STATE["last_error"] = str(exc)
             logger.warning("SMM worker tick error (API/Bot isolated): %s", exc)
-        await asyncio.sleep(interval)
+        await asyncio.sleep(compute_worker_sleep_seconds(interval, res))

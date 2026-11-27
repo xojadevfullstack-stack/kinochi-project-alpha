@@ -171,7 +171,8 @@ def build_cinematic_filter_complex(
     vf = (
         f"{decode_and_bg}"
         f"{blur_chain}"
-        f"[bg][{fg_label}]overlay=(W-w)/2:(H-h)/2,eq=contrast=1.06:saturation=1.12"
+        f"[{fg_label}]eq=contrast=1.06:saturation=1.12[fg_pop];"
+        f"[bg][fg_pop]overlay=(W-w)/2:(H-h)/2"
         f",drawtext={font_opt}text='{safe_header}':fontsize={h_fs}:"
         f"fontcolor=white:x=(w-text_w)/2:y={y_h}:line_spacing=12:shadowcolor=black@0.85:shadowx=3:shadowy=3"
         f"{rating_filter}"
@@ -291,16 +292,17 @@ def render_vertical_clip(
         w, h = (720, 1280) if low_ram else (1080, 1920)
         vf = (
             vf[: -len("[vout]")]
-            + f"[vbase];[1:v]scale={w}:{h},format=yuv420p[cov];[vbase][cov]overlay=0:0:eof_action=repeat:enable='lt(t,{cover_duration_sec:.2f})'[vout]"
+            + f"[vbase];[1:v]scale={w}:{h},format=yuv420p[cov];[vbase][cov]overlay=0:0:eof_action=pass[vout]"
         )
-        extra_inputs = ["-i", cover_image_path]
+        extra_inputs = ["-loop", "1", "-t", f"{cover_duration_sec:.2f}", "-i", cover_image_path]
+    decode_opts = ["-threads", "1"] if low_ram else []
     encode_opts = (
         ["-threads", "1", "-filter_threads", "1", "-filter_complex_threads", "1", "-preset", "ultrafast", "-crf", "26"]
         if low_ram
         else ["-preset", "veryfast", "-crf", "23"]
     )
     cmd = [
-        ffmpeg, "-y", "-ss", str(start_sec), "-t", str(duration_sec), "-i", input_path, *extra_inputs,
+        ffmpeg, "-y", *decode_opts, "-ss", str(start_sec), "-t", str(duration_sec), "-i", input_path, *extra_inputs,
         "-filter_complex", vf, "-map", "[vout]", "-map", "0:a?", "-af", af,
         "-c:v", "libx264", *encode_opts, "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output_path,

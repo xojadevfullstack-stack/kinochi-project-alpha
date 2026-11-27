@@ -477,6 +477,15 @@ async def test_supervised_run_smm_worker_waits_startup_delay_before_first_tick(m
     assert events[1][0] == "cycle"
 
 
+def test_compute_worker_sleep_seconds_fast_chains_when_generated():
+    from scraper.smm_worker import compute_worker_sleep_seconds
+
+    assert compute_worker_sleep_seconds(180, {"generated": 1, "published": 0}) == 10
+    assert compute_worker_sleep_seconds(180, {"generated": 0, "published": 0}) == 180
+    assert compute_worker_sleep_seconds(5, {"generated": 1, "published": 0}) == 5
+
+
+
 def test_is_schedule_due_enforces_monthly_limit_and_tashkent_tz():
     from datetime import timedelta
 
